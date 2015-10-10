@@ -8,7 +8,6 @@ import (
     "fmt"
     "com.jfrog/bintray/cli/command"
     "log"
-    "reflect"
 )
 
 const flagUsername = "username"
@@ -86,19 +85,11 @@ func main() {
             }...),
             Action: func(c *cli.Context) {
                 bt := newClient(c)
-                results, err := command.Upload{}.Execute(bt)
-                if err != nil {
-                    log.Panicf("Upload failed %s\n", err)
-                }
-                /*ress := []*command.Result(results)
-                for _, res := range ress {
-                    fmt.Printf("RES: %s\n", res)
-                }*/
-                //cannot range over results (type interface {})
-                s := reflect.ValueOf(results)
-                for i := 0; i < s.Len(); i++ {
-                    fmt.Printf("RES: %s\n", s.Index(i))
-                }
+                args := &command.UploadArgs{Parallel: uint32(c.Int("parallel")), FilePath: c.String("path"),
+                    Subject: bt.Subject(), Repo: c.String("repo"), Pkg: c.String("package"),
+                    Version: c.String("version"), Publish: c.Bool("publish")}
+                upload := command.Upload{}
+                upload.Execute(bt, args)
             },
 
         },
@@ -136,11 +127,11 @@ func main() {
 func newClient(c *cli.Context) *client.Bintray {
     username := c.String(flagUsername)
     if username == "" {
-        panic("Bintray username not set")
+        log.Panic("Bintray username not set")
     }
     apiKey := c.String(flagApiKey)
     if apiKey == "" {
-        panic("Bintray API key not set")
+        log.Panic("Bintray API key not set")
     }
     apiUrl := c.String(flagApiUrl)
     flags := makeFlagsMap(c)
@@ -154,7 +145,7 @@ func makeFlagsMap(c *cli.Context) map[string]string {
         log.Printf("flag: %s: %s\n", name, c.String(name))
     }
     subject := c.String(flagSubject)
-    if (subject == "") {
+    if subject == "" {
         keyVals["subject"] = c.String(flagUsername)
     }
     return keyVals

@@ -14,39 +14,53 @@ import (
 )
 
 type Upload struct {
+    filePath string
 }
 
-type Result struct {
+type UploadArgs struct {
+    Parallel uint32
+    FilePath string
+    Subject string
+    Repo string
+    Pkg string
+    Version string
+    Publish bool
+}
+
+type UploadResult struct {
     filePath string
     err      error
     json     string
 }
 
-func (res Result) String() string {
+func (res UploadResult) String() string {
     return fmt.Sprintf("path: %s, err: %v, json: %s", res.filePath, res.err, res.json)
 }
 
+//TODO: create a CommandArgs using NewArgs() and use it in execute()
+
 type UploadHandle struct {
     ch      chan *os.File
-    results []*Result
+    results []*UploadResult
 }
 
-func (cmd Upload) Execute(bt *client.Bintray) (result interface{}, err error) {
+func (cmd Upload) Execute(bt *client.Bintray, args *UploadArgs) (result interface{}, err error) {
     //buffering - block sender until there is a listener
-    parallel, _ := strconv.Atoi(bt.Flags["parallel"])
-    ch := make(chan *os.File, parallel)
-    results := make([]*Result, cap(ch))
+    ch := make(chan *os.File, args.Parallel)
+    results := make([]*UploadResult, cap(ch))
     uh := &UploadHandle{ch, results}
 
-    filePath := bt.Flags["path"]
-    upload(filePath, bt, uh)
-    fmt.Println("COUNT ", len(uh.results))
+    filePath := args.FilePath
+    upload(filePath, bt, args, uh)
+
+    buf, _ := json.MarshalIndent(uh.results, "", "  ")
+    fmt.Printf("%s\n", buf)
 
     //Todo: collect all results to an array and return it
     return uh.results, nil
 }
 
-func upload(filePath string, bt *client.Bintray, uh *UploadHandle) {
+func upload(filePath string, bt *client.Bintray, args *UploadArgs, uh *UploadHandle) {
     f, err := os.Open(filePath)
     if err != nil {
         log.Fatalf("Cannot open file: %s\n", filePath)
@@ -65,15 +79,15 @@ func upload(filePath string, bt *client.Bintray, uh *UploadHandle) {
 
         for _, child := range list {
             //fmt.Println("*** CHILD: " + child)
-            upload(filePath + child, bt, uh)
+            upload(filePath + child, bt, args, uh)
         }
     } else {
         //        fmt.Println("*** FILE: " + fi.Name())
         uh.ch <- f
         go func() {
             defer f.Close()
-            fmt.Printf("Uploading: %v\n", filePath)
-            res := uploadFile(f, bt)
+            log.Printf("Uploading: %v\n", filePath)
+            res := uploadFile(f, bt, args)
             uh.results = append(uh.results, res)
             fmt.Printf("Upload done for %s (count: %d)\n", res.filePath, len(uh.results))
             <-uh.ch
@@ -81,25 +95,25 @@ func upload(filePath string, bt *client.Bintray, uh *UploadHandle) {
     }
 }
 
-func uploadFile(f *os.File, bt *client.Bintray) *Result {
+func uploadFile(f *os.File, bt *client.Bintray, args *UploadArgs) *UploadResult {
     //Use the relative path
-    filePath := bt.Flags["path"]
+    filePath := args.FilePath
     relPath, _ := filepath.Rel(filePath, f.Name())
 
-    url := bt.ApiUrl + "content/" + bt.Flags["subject"] + "/" + bt.Flags["repo"] + "/" +bt.Flags["package"] +
-    "/" + bt.Flags["version"] + "/" + relPath + "?publish=" + bt.Flags["publish"]
+    url := bt.ApiUrl + "content/" + args.Subject + "/" + args.Repo + "/" + args.Pkg +
+    "/" + args.Version + "/" + relPath + "?publish=" + strconv.FormatBool(args.Publish)
 
-    //    fmt.Println("Uploading to: " + url)
+//    log.Println("Uploading to: " + url)
     req, err := http.NewRequest("PUT", url, f)
     if err != nil {
-        return &Result{filePath: f.Name(), err: err}
+        return &UploadResult{filePath: f.Name(), err: err}
     }
     updateRequestAuth(req, bt)
 
     client := &http.Client{}
     res, err := client.Do(req)
     if err != nil {
-        return &Result{filePath: f.Name(), err: err}
+        return &UploadResult{filePath: f.Name(), err: err}
     }
 
     //    fmt.Printf("RES: %v", res)
@@ -118,5 +132,5 @@ func uploadFile(f *os.File, bt *client.Bintray) *Result {
     //REMOVE!!!
     time.Sleep(time.Millisecond * 2000)//time.Duration(rand.Intn(1000))
 
-    return &Result{filePath: f.Name(), json: vres["message"], err: err}
+    return &UploadResult{filePath: f.Name(), json: vres["message"], err: err}
 }
