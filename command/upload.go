@@ -8,8 +8,6 @@ import (
     "encoding/json"
     "io/ioutil"
     "log"
-    "fmt"
-    "time"
     "strconv"
 )
 
@@ -20,43 +18,51 @@ type Upload struct {
 type UploadArgs struct {
     Parallel uint32
     FilePath string
-    Subject string
-    Repo string
-    Pkg string
-    Version string
-    Publish bool
+    Subject  string
+    Repo     string
+    Pkg      string
+    Version  string
+    Publish  bool
 }
 
 type UploadResult struct {
-    filePath string
-    err      error
-    json     string
+    FilePath string `json:"path"`
+    Err      error  `json:"error,omitempty"`
+    Message  string  `json:"message"`
 }
 
 func (res UploadResult) String() string {
-    return fmt.Sprintf("path: %s, err: %v, json: %s", res.filePath, res.err, res.json)
+    b, _ := json.Marshal(&res)
+    return string(b)
 }
 
-//TODO: create a CommandArgs using NewArgs() and use it in execute()
-
 type UploadHandle struct {
-    ch      chan *os.File
-    results []*UploadResult
+    fileCount int
+    ch        chan *os.File
+    results   []UploadResult
 }
 
 func (cmd Upload) Execute(bt *client.Bintray, args *UploadArgs) (result interface{}, err error) {
     //buffering - block sender until there is a listener
     ch := make(chan *os.File, args.Parallel)
-    results := make([]*UploadResult, cap(ch))
-    uh := &UploadHandle{ch, results}
+    results := make([]UploadResult, 0)
+    uh := &UploadHandle{0, ch, results}
 
     filePath := args.FilePath
     upload(filePath, bt, args, uh)
 
-    buf, _ := json.MarshalIndent(uh.results, "", "  ")
-    fmt.Printf("%s\n", buf)
+    for i := 0; i < uh.fileCount; i++ {
+        <-uh.ch
+    }
 
-    //Todo: collect all results to an array and return it
+    /*log.Printf("RES: %s\n", uh.results)
+    for _, res := range uh.results {
+        log.Printf("RES: %s\n", res)
+    }*/
+
+    buf, _ := json.MarshalIndent(uh.results, "", "  ")
+    log.Printf("%s\n", buf)
+
     return uh.results, nil
 }
 
@@ -83,14 +89,15 @@ func upload(filePath string, bt *client.Bintray, args *UploadArgs, uh *UploadHan
         }
     } else {
         //        fmt.Println("*** FILE: " + fi.Name())
-        uh.ch <- f
+        //All writers block when full. Readers block when no value to read
+        uh.fileCount++
         go func() {
             defer f.Close()
             log.Printf("Uploading: %v\n", filePath)
             res := uploadFile(f, bt, args)
-            uh.results = append(uh.results, res)
-            fmt.Printf("Upload done for %s (count: %d)\n", res.filePath, len(uh.results))
-            <-uh.ch
+            log.Printf("Uploaded: %s\n", res)
+            uh.results = append(uh.results, *res)
+            uh.ch <- f
         }()
     }
 }
@@ -103,20 +110,20 @@ func uploadFile(f *os.File, bt *client.Bintray, args *UploadArgs) *UploadResult 
     url := bt.ApiUrl + "content/" + args.Subject + "/" + args.Repo + "/" + args.Pkg +
     "/" + args.Version + "/" + relPath + "?publish=" + strconv.FormatBool(args.Publish)
 
-//    log.Println("Uploading to: " + url)
+    //log.Println("Uploading to: " + url)
     req, err := http.NewRequest("PUT", url, f)
     if err != nil {
-        return &UploadResult{filePath: f.Name(), err: err}
+        return &UploadResult{FilePath: f.Name(), Err: err}
     }
     updateRequestAuth(req, bt)
 
     client := &http.Client{}
     res, err := client.Do(req)
     if err != nil {
-        return &UploadResult{filePath: f.Name(), err: err}
+        return &UploadResult{FilePath: f.Name(), Err: err}
     }
 
-    //    fmt.Printf("RES: %v", res)
+    //fmt.Printf("RES: %v\n", res.Body)
 
     defer res.Body.Close()
     if res.StatusCode > 202 {
@@ -125,12 +132,15 @@ func uploadFile(f *os.File, bt *client.Bintray, args *UploadArgs) *UploadResult 
 
     body, err := ioutil.ReadAll(res.Body)
     perror(err)
+
     var vres map[string]string
-    //    fmt.Printf("BODY: %s", json: vres["message"])
+    //fmt.Printf("BODY: %v\n", body)
     err = json.Unmarshal(body, &vres)
 
-    //REMOVE!!!
-    time.Sleep(time.Millisecond * 2000)//time.Duration(rand.Intn(1000))
+    //Artificial delay for tests - REMOVE
+    //time.Sleep(time.Duration(rand.Intn(3000)))
 
-    return &UploadResult{filePath: f.Name(), json: vres["message"], err: err}
+    //log.Printf("MSG: %s\n", vres["message"])
+
+    return &UploadResult{FilePath: f.Name(), Message: vres["message"], Err: err}
 }

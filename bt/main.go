@@ -142,7 +142,7 @@ func makeFlagsMap(c *cli.Context) map[string]string {
     keyVals := make(map[string]string, len(c.FlagNames()))
     for _, name := range c.FlagNames() {
         keyVals[name] = c.String(name)
-        log.Printf("flag: %s: %s\n", name, c.String(name))
+        //log.Printf("flag: %s: %s\n", name, c.String(name))
     }
     subject := c.String(flagSubject)
     if subject == "" {

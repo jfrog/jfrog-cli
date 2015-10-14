@@ -48,4 +48,5 @@ func TestUpload(t *testing.T) {
     }
     os.Args = []string{"btray", "upload", "--path", tmpDir, "--repo", "gen", "--package", "pkg", "--version", "v2"}
     main()
+    //TODO: get the result and check that it contains all uploaded files
 }
