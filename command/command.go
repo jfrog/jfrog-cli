@@ -8,11 +8,8 @@ import (
 
 const defaultApiUrl = "https://bintray.com/api/v1/"
 
-type CommandArgs interface {
-}
-
 type Command interface {
-    Execute(bt *client.Bintray, args *CommandArgs) (result interface{}, err error)
+    Execute(bt *client.Bintray, args interface {}) (result interface{}, err error)
 }
 
 func updateRequestAuth(req *http.Request, bt *client.Bintray) {

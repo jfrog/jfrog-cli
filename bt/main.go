@@ -33,6 +33,7 @@ var globFlags = []cli.Flag{
     },
     cli.StringFlag{
         Name: flagSubject,
+        EnvVar: "BINTRAY_ORG",
         Usage: "Optional subject",
     },
 }
