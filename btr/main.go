@@ -8,6 +8,7 @@ import (
     "fmt"
     "com.jfrog/bintray/cli/command"
     "log"
+    "com.jfrog/bintray/cli/btr/flags"
 )
 
 const flagUsername = "username"
@@ -48,42 +49,7 @@ func main() {
             Name:    "upload",
             ShortName: "up",
             Usage:   "upload files",
-            Flags: append(globFlags, []cli.Flag{
-                cli.StringFlag{
-                    Name: "path",
-                    Usage: "File or folder path to upload",
-                },
-                cli.StringFlag{
-                    Name: "type",
-                    Usage: "The repository type, used for automatic repo search/create. "+
-                    "Can be one of: debian, rpm, docker, maven, generic",
-                },
-                cli.StringFlag{
-                    Name: "repo",
-                    Usage: "repository name",
-                    Value: "generic",
-                },
-                cli.StringFlag{
-                    Name: "package",
-                    Usage: "package name",
-                    Value: "default",
-                },
-                cli.StringFlag{
-                    Name: "version",
-                    Usage: "version name",
-                    Value: "default",
-                },
-                cli.StringFlag{
-                    Name: "publish",
-                    Usage: "auto publish the uploaded files (0/[1])",
-                    Value: "0",
-                },
-                cli.IntFlag{
-                    Name: "parallel",
-                    Usage: "The amount concurrenct uploads (default is 10)",
-                    Value: 10,
-                },
-            }...),
+            Flags: append(globFlags, flags.UploadFlags{}.Get() ...),
             Action: func(c *cli.Context) {
                 bt := newClient(c)
                 args := &command.UploadArgs{Parallel: uint32(c.Int("parallel")), FilePath: c.String("path"),

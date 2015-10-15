@@ -38,21 +38,23 @@ func (res UploadResult) String() string {
 
 type UploadHandle struct {
     fileCount int
-    ch        chan *os.File
+    done      chan bool
+    files     chan *os.File
     results   []UploadResult
 }
 
 func (cmd Upload) Execute(bt *client.Bintray, args *UploadArgs) (result interface{}, err error) {
     //buffering - block sender until there is a listener
-    ch := make(chan *os.File, args.Parallel)
+    done := make(chan bool, args.Parallel)
+    files := make(chan *os.File)
     results := make([]UploadResult, 0)
-    uh := &UploadHandle{0, ch, results}
+    uh := &UploadHandle{0, done, files, results}
 
     filePath := args.FilePath
     upload(filePath, bt, args, uh)
 
     for i := 0; i < uh.fileCount; i++ {
-        <-uh.ch
+        <-uh.files
     }
 
     /*log.Printf("RES: %s\n", uh.results)
@@ -93,11 +95,13 @@ func upload(filePath string, bt *client.Bintray, args *UploadArgs, uh *UploadHan
         uh.fileCount++
         go func() {
             defer f.Close()
+            uh.done <- false
             log.Printf("Uploading: %v\n", filePath)
             res := uploadFile(f, bt, args)
+            <-uh.done
+            uh.files <- f
             log.Printf("Uploaded: %s\n", res)
             uh.results = append(uh.results, *res)
-            uh.ch <- f
         }()
     }
 }
@@ -138,7 +142,7 @@ func uploadFile(f *os.File, bt *client.Bintray, args *UploadArgs) *UploadResult 
     err = json.Unmarshal(body, &vres)
 
     //Artificial delay for tests - REMOVE
-    //time.Sleep(time.Duration(rand.Intn(3000)))
+    //time.Sleep(time.Second * 3)
 
     //log.Printf("MSG: %s\n", vres["message"])
 
