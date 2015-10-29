@@ -3,7 +3,7 @@ package command
 import (
     "path/filepath"
     "net/http"
-    "com.jfrog/bintray/cli/client"
+    "github.com/JFrogDev/bintray-cli-go/client"
     "os"
     "encoding/json"
     "io/ioutil"

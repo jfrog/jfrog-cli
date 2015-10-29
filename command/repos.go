@@ -5,7 +5,7 @@ import (
     "encoding/json"
     "io/ioutil"
     "net/http"
-    "com.jfrog/bintray/cli/client"
+    "github.com/JFrogDev/bintray-cli-go/client"
 )
 
 type GetRepos struct {

@@ -1,43 +1,11 @@
 package main
 
 import (
-    "com.jfrog/bintray/cli/client"
     "os"
     "github.com/codegangsta/cli"
-    "encoding/json"
-    "fmt"
-    "com.jfrog/bintray/cli/command"
-    "log"
-    "com.jfrog/bintray/cli/btr/flags"
+    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/commands"
 )
-
-const flagUsername = "username"
-const flagApiKey = "apikey"
-const flagApiUrl = "apiUrl"
-const flagSubject = "subject"
-
-var globFlags = []cli.Flag{
-    cli.StringFlag{
-        Name: flagUsername,
-        EnvVar: "BINTRAY_USER",
-        Usage: "Bintray username",
-    },
-    cli.StringFlag{
-        Name: flagApiKey,
-        EnvVar: "BINTRAY_KEY",
-        Usage: "Bintray API key",
-    },
-    cli.StringFlag{
-        Name: flagApiUrl,
-        EnvVar: "BINTRAY_API_URL",
-        Usage: "Bintray API url",
-    },
-    cli.StringFlag{
-        Name: flagSubject,
-        EnvVar: "BINTRAY_ORG",
-        Usage: "Optional subject",
-    },
-}
 
 func main() {
     app := cli.NewApp()
@@ -46,74 +14,106 @@ func main() {
 
     app.Commands = []cli.Command{
         {
-            Name:    "upload",
-            ShortName: "up",
-            Usage:   "upload files",
-            Flags: append(globFlags, flags.UploadFlags{}.Get() ...),
+            Name: "download-ver",
+            Usage: "download-ver",
+            Aliases: []string{"dv"},
+            Flags: getDownloadVersionFlags(),
             Action: func(c *cli.Context) {
-                bt := newClient(c)
-                args := &command.UploadArgs{Parallel: uint32(c.Int("parallel")), FilePath: c.String("path"),
-                    Subject: bt.Subject(), Repo: c.String("repo"), Pkg: c.String("package"),
-                    Version: c.String("version"), Publish: c.Bool("publish")}
-                upload := command.Upload{}
-                upload.Execute(bt, args)
+                downloadVersion(c)
             },
-
-        },
-        {
-            Name:    "search-repos",
-            ShortName: "sr",
-            Usage:   "find repositories",
-            Flags: globFlags,
-            Action: func(c *cli.Context) {
-                bt := newClient(c)
-                repos, _ := command.GetRepos{}.Execute(bt)
-                buf, _ := json.MarshalIndent(repos, "", "  ")
-                fmt.Printf("%s\n", buf)
-            },
-
         },
     }
     app.Run(os.Args)
-
-    /*(&cli.App{
-        Flags: []cli.Flag{
-            cli.StringFlag{Name: "count, c", EnvVar: "COMPAT_COUNT,APP_COUNT"},
-        },
-        Action: func(ctx *cli.Context) {
-            if ctx.String("count") != "20" {
-                t.Errorf("main name not set")
-            }
-            if ctx.String("c") != "20" {
-                t.Errorf("short name not set")
-            }
-        },
-    }).Run([]string{"run"})*/
 }
 
-func newClient(c *cli.Context) *client.Bintray {
-    username := c.String(flagUsername)
-    if username == "" {
-        log.Panic("Bintray username not set")
+func getFlags() []cli.Flag {
+    return []cli.Flag{
+        cli.StringFlag{
+            Name:  "user",
+            EnvVar: "BINTRAY_USER",
+            Usage: "Bintray username",
+        },
+        cli.StringFlag{
+            Name:  "key",
+            EnvVar: "BINTRAY_KEY",
+            Usage: "Bintray API key",
+        },
+        cli.StringFlag{
+            Name:  "org",
+            EnvVar: "BINTRAY_ORG",
+            Usage: "Bintray organization",
+        },
+        cli.StringFlag{
+            Name: "url",
+            EnvVar: "BINTRAY_API_URL",
+            Usage: "Bintray API URL",
+        },
     }
-    apiKey := c.String(flagApiKey)
-    if apiKey == "" {
-        log.Panic("Bintray API key not set")
-    }
-    apiUrl := c.String(flagApiUrl)
-    flags := makeFlagsMap(c)
-    return client.New(username, apiKey, apiUrl, flags)
 }
 
-func makeFlagsMap(c *cli.Context) map[string]string {
-    keyVals := make(map[string]string, len(c.FlagNames()))
-    for _, name := range c.FlagNames() {
-        keyVals[name] = c.String(name)
-        //log.Printf("flag: %s: %s\n", name, c.String(name))
+func getDownloadVersionFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,
     }
-    subject := c.String(flagSubject)
-    if subject == "" {
-        keyVals["subject"] = c.String(flagUsername)
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+         Name:  "repo",
+         Usage: "Bintray repository",
     }
-    return keyVals
+    flags[5] = cli.StringFlag{
+         Name:  "package",
+         Usage: "Bintray package",
+    }
+    flags[6] = cli.StringFlag{
+         Name:  "version",
+         Usage: "Package version",
+    }
+    return flags
+}
+
+func downloadVersion(c *cli.Context) {
+    flags := createDownloadVersionFlags(c)
+    commands.DownloadVersion(flags)
+}
+
+func createDownloadVersionFlags(c *cli.Context) *commands.DownloadVersionFlags {
+    repo := c.String("repo")
+    pkg := c.String("package")
+    version := c.String("version")
+    if repo == "" {
+        utils.Exit("The --repo option is mandatory")
+    }
+    if pkg == "" {
+        utils.Exit("The --package option is mandatory")
+    }
+    if version == "" {
+        utils.Exit("The --version option is mandatory")
+    }
+    return &commands.DownloadVersionFlags {
+        Repo: repo,
+        Package: pkg,
+        Version: version,
+        BintrayDetails: createBintrayDetails(c)}
+}
+
+func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
+    if c.String("user") == "" {
+        utils.Exit("Please use the --user option or set the BINTRAY_USER envrionemt variable")
+    }
+    if c.String("key") == "" {
+        utils.Exit("Please use the --key option or set the BINTRAY_KEY envrionemt variable")
+    }
+    url := c.String("url")
+    if url == "" {
+        url = "https://api.bintray.com"
+    }
+    org := c.String("org")
+    if org == "" {
+        org = c.String("user")
+    }
+    return &utils.BintrayDetails {
+        Url: url,
+        Org: org,
+        User: c.String("user"),
+        Key: c.String("key") }
 }
