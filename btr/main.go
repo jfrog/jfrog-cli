@@ -9,8 +9,9 @@ import (
 
 func main() {
     app := cli.NewApp()
-    app.Name = "btray"
-    app.Usage = "task list on the command line"
+    app.Name = "btr"
+    app.Usage = "See https://github.com/JFrogDev/bintray-cli-go for usage instructions."
+    app.Version = "0.0.1"
 
     app.Commands = []cli.Command{
         {
@@ -31,40 +32,45 @@ func getFlags() []cli.Flag {
         cli.StringFlag{
             Name:  "user",
             EnvVar: "BINTRAY_USER",
-            Usage: "Bintray username",
+            Usage: "[Mandatory] Bintray username",
         },
         cli.StringFlag{
             Name:  "key",
             EnvVar: "BINTRAY_KEY",
-            Usage: "Bintray API key",
+            Usage: "[Mandatory] Bintray API key",
         },
         cli.StringFlag{
             Name:  "org",
             EnvVar: "BINTRAY_ORG",
-            Usage: "Bintray organization",
+            Usage: "[Optional] Bintray organization",
         },
         cli.StringFlag{
-            Name: "url",
+            Name: "api-url",
             EnvVar: "BINTRAY_API_URL",
-            Usage: "Bintray API URL",
+            Usage: "[Default: https://api.bintray.com] Bintray API URL",
+        },
+        cli.StringFlag{
+            Name: "download-url",
+            EnvVar: "BINTRAY_DOWNLOAD_URL",
+            Usage: "[Default: https://dl.bintray.com] Bintray download server URL",
         },
     }
 }
 
 func getDownloadVersionFlags() []cli.Flag {
     flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,nil,
     }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
+    copy(flags[0:5], getFlags())
+    flags[5] = cli.StringFlag{
          Name:  "repo",
          Usage: "Bintray repository",
     }
-    flags[5] = cli.StringFlag{
+    flags[6] = cli.StringFlag{
          Name:  "package",
          Usage: "Bintray package",
     }
-    flags[6] = cli.StringFlag{
+    flags[7] = cli.StringFlag{
          Name:  "version",
          Usage: "Package version",
     }
@@ -103,16 +109,24 @@ func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
     if c.String("key") == "" {
         utils.Exit("Please use the --key option or set the BINTRAY_KEY envrionemt variable")
     }
-    url := c.String("url")
-    if url == "" {
-        url = "https://api.bintray.com"
+    apiUrl := c.String("api-url")
+    if apiUrl == "" {
+        apiUrl = "https://api.bintray.com/"
     }
+    downloadServerUrl := c.String("download-url")
+    if downloadServerUrl == "" {
+        downloadServerUrl = "https://dl.bintray.com/"
+    }
+
+    apiUrl = utils.AddTrailingSlashIfNeeded(apiUrl)
+    downloadServerUrl = utils.AddTrailingSlashIfNeeded(downloadServerUrl)
     org := c.String("org")
     if org == "" {
         org = c.String("user")
     }
     return &utils.BintrayDetails {
-        Url: url,
+        ApiUrl: apiUrl,
+        DownloadServerUrl: downloadServerUrl,
         Org: org,
         User: c.String("user"),
         Key: c.String("key") }
