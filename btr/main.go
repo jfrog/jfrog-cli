@@ -16,11 +16,20 @@ func main() {
     app.Commands = []cli.Command{
         {
             Name: "download-ver",
-            Usage: "download-ver",
+            Usage: "Download version files",
             Aliases: []string{"dv"},
             Flags: getDownloadVersionFlags(),
             Action: func(c *cli.Context) {
                 downloadVersion(c)
+            },
+        },
+        {
+            Name: "download-file",
+            Usage: "Download file",
+            Aliases: []string{"df"},
+            Flags: getDownloadFileFlags(),
+            Action: func(c *cli.Context) {
+                downloadFile(c)
             },
         },
     }
@@ -59,46 +68,72 @@ func getFlags() []cli.Flag {
 
 func getDownloadVersionFlags() []cli.Flag {
     flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,
     }
     copy(flags[0:5], getFlags())
     flags[5] = cli.StringFlag{
          Name:  "repo",
-         Usage: "Bintray repository",
+         Usage: "[Mandatory] Bintray repository",
     }
     flags[6] = cli.StringFlag{
          Name:  "package",
-         Usage: "Bintray package",
+         Usage: "[Mandatory] Bintray package",
     }
-    flags[7] = cli.StringFlag{
-         Name:  "version",
-         Usage: "Package version",
+    return flags
+}
+
+func getDownloadFileFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:5], getFlags())
+    flags[5] = cli.StringFlag{
+         Name:  "repo",
+         Usage: "[Mandatory] Bintray repository",
     }
     return flags
 }
 
 func downloadVersion(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
+    }
+    version := c.Args()[0]
     flags := createDownloadVersionFlags(c)
-    commands.DownloadVersion(flags)
+    commands.DownloadVersion(version, flags)
+}
+
+func downloadFile(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
+    }
+    path := c.Args()[0]
+    flags := createDownloadFileFlags(c)
+    commands.DownloadFile(path, flags)
 }
 
 func createDownloadVersionFlags(c *cli.Context) *commands.DownloadVersionFlags {
     repo := c.String("repo")
     pkg := c.String("package")
-    version := c.String("version")
     if repo == "" {
         utils.Exit("The --repo option is mandatory")
     }
     if pkg == "" {
         utils.Exit("The --package option is mandatory")
     }
-    if version == "" {
-        utils.Exit("The --version option is mandatory")
-    }
     return &commands.DownloadVersionFlags {
         Repo: repo,
         Package: pkg,
-        Version: version,
+        BintrayDetails: createBintrayDetails(c)}
+}
+
+func createDownloadFileFlags(c *cli.Context) *commands.DownloadFileFlags {
+    repo := c.String("repo")
+    if repo == "" {
+        utils.Exit("The --repo option is mandatory")
+    }
+    return &commands.DownloadFileFlags {
+        Repo: repo,
         BintrayDetails: createBintrayDetails(c)}
 }
 
