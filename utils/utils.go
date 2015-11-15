@@ -42,14 +42,53 @@ func ReadBintrayMessage(resp []byte) string {
     return response.Message
 }
 
+func CreateVersionDetails(versionStr string) *VersionDetails {
+    parts := strings.Split(versionStr, "/")
+    if len(parts) != 4 {
+        Exit("Expecting an argument in the form of subject/repository/package/version")
+    }
+    return &VersionDetails {
+        Subject: parts[0],
+        Repo: parts[1],
+        Package: parts[2],
+        Version: parts[3]}
+}
+
+func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDetails, path string) {
+    parts := strings.Split(versionStr, "/")
+    size := len(parts)
+    if size < 4 {
+        Exit("Expecting an argument in the form of subject/repository/package/version/path")
+    }
+    versionDetails = &VersionDetails {
+        Subject: parts[0],
+        Repo: parts[1],
+        Package: parts[2],
+        Version: parts[3]}
+
+    for i := 4; i < size; i++ {
+        path += parts[i]
+        if i+1 < size {
+            path += "/"
+        }
+    }
+    return
+}
+
 type bintrayResponse struct {
     Message string
+}
+
+type VersionDetails struct {
+    Subject string
+    Repo string
+    Package string
+    Version string
 }
 
 type BintrayDetails struct {
     ApiUrl string
     DownloadServerUrl string
-    Org string
     User string
     Key string
 }

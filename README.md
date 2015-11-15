@@ -31,44 +31,41 @@ $ cd $GOPATH/bin
 ```
 #### Usage
 
-You can copy the *btr* executable to any location on your file-system as long as you add it to your *PATH* environment variable,
+You can copy the *bt* executable to any location on your file-system as long as you add it to your *PATH* environment variable,
 so that you can access it from any path.
 
 ##### Command syntax
 
 ```console
-$ btr command-name options arguments
+$ bt command-name options arguments
 ```
 
 The sections below specify the available commands, their respective options and additional arguments that may be needed.
-*btr* should be followed by a command name (for example, download-ver), a list of options (for example, --repo=my-bintray-repo)
+*bt* should be followed by a command name (for example, download-ver), a list of options (for example, --repo=my-bintray-repo)
 and the list of arguments for the command.
 
-##### The *download-ver* (dv) command
+##### The *download-ver* (dlv) command
 
 ###### Function
 Used to download the files of a specific version from Bintray.
 
 ###### Command options
-```console
-   --user            [Mandatory] Bintray username. It can be also set using the BINTRAY_USER environment variable.
+` ``console
+   --user            [Optional] Bintray username. It can be also set using the BINTRAY_USER environment variable. If not set, the subject sent as part of the command argument is used for authentication.
    --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
-   --org             [Optional] Bintray organization. It can be also set using the BINTRAY_ORG environment variable.
    --api-url         [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
    --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
-   --repo            [Mandatory] Bintray repository.
-   --package         [Mandatory] Bintray package.
 ```
 
 ###### Arguments
-The command expects one argument - the package version.
+The command expects one argument in the form of *subject/repository/package/version*.
 
 ###### Examples
 ```console
-btr download-ver 3.8 --repo=my-swamp --package=green-frog --user=my-user --key=my-api-key
+bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 ```
 
-##### The *download-file* (df) command
+##### The *download-file* (dlf) command
 
 ###### Function
 Used to download a specific file from Bintray.
@@ -78,9 +75,9 @@ Used to download a specific file from Bintray.
 Same as the *download-ver* command.
 
 ###### Arguments
-The command expects one argument - the Bintray file path.
+The command expects one argument in the form of *subject/repository/package/version/path*.
 
 ###### Example
 ```console
-btr download-file /com/jfrog/bintray/example/3.8/froggy.zip --repo=my-swamp --package=green-frog --user=my-user --key=my-api-key
+bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
 ```

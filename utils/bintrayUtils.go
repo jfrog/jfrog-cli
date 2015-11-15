@@ -1,8 +1,8 @@
 package utils
 
-func DownloadBintrayFile(details *BintrayDetails, repo, path string) {
-    url := details.DownloadServerUrl + details.Org + "/" + repo + "/" + path
+func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string) {
+    url := bintrayDetails.DownloadServerUrl + versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
     println("Downloading " + url)
-    resp := DownloadFile(url, details.User, details.Key)
+    resp := DownloadFile(url, bintrayDetails.User, bintrayDetails.Key)
     println("Bintray response: " + resp.Status)
 }

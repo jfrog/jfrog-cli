@@ -17,7 +17,7 @@ func main() {
         {
             Name: "download-ver",
             Usage: "Download version files",
-            Aliases: []string{"dv"},
+            Aliases: []string{"dlv"},
             Flags: getDownloadVersionFlags(),
             Action: func(c *cli.Context) {
                 downloadVersion(c)
@@ -26,7 +26,7 @@ func main() {
         {
             Name: "download-file",
             Usage: "Download file",
-            Aliases: []string{"df"},
+            Aliases: []string{"dlf"},
             Flags: getDownloadFileFlags(),
             Action: func(c *cli.Context) {
                 downloadFile(c)
@@ -41,17 +41,12 @@ func getFlags() []cli.Flag {
         cli.StringFlag{
             Name:  "user",
             EnvVar: "BINTRAY_USER",
-            Usage: "[Mandatory] Bintray username",
+            Usage: "[Optional] Bintray username. If not set, the subject sent as part of the command argument is used for authentication.",
         },
         cli.StringFlag{
             Name:  "key",
             EnvVar: "BINTRAY_KEY",
             Usage: "[Mandatory] Bintray API key",
-        },
-        cli.StringFlag{
-            Name:  "org",
-            EnvVar: "BINTRAY_ORG",
-            Usage: "[Optional] Bintray organization",
         },
         cli.StringFlag{
             Name: "api-url",
@@ -67,80 +62,38 @@ func getFlags() []cli.Flag {
 }
 
 func getDownloadVersionFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:5], getFlags())
-    flags[5] = cli.StringFlag{
-         Name:  "repo",
-         Usage: "[Mandatory] Bintray repository",
-    }
-    flags[6] = cli.StringFlag{
-         Name:  "package",
-         Usage: "[Mandatory] Bintray package",
-    }
-    return flags
+    return getFlags()
 }
 
 func getDownloadFileFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:5], getFlags())
-    flags[5] = cli.StringFlag{
-         Name:  "repo",
-         Usage: "[Mandatory] Bintray repository",
-    }
-    return flags
+    return getFlags()
 }
 
 func downloadVersion(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
     }
-    version := c.Args()[0]
-    flags := createDownloadVersionFlags(c)
-    commands.DownloadVersion(version, flags)
+    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
+    commands.DownloadVersion(versionDetails, bintrayDetails)
 }
 
 func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
     }
-    path := c.Args()[0]
-    flags := createDownloadFileFlags(c)
-    commands.DownloadFile(path, flags)
-}
-
-func createDownloadVersionFlags(c *cli.Context) *commands.DownloadVersionFlags {
-    repo := c.String("repo")
-    pkg := c.String("package")
-    if repo == "" {
-        utils.Exit("The --repo option is mandatory")
+    versionDetails, path := utils.CreateVersionDetailsAndPath(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
     }
-    if pkg == "" {
-        utils.Exit("The --package option is mandatory")
-    }
-    return &commands.DownloadVersionFlags {
-        Repo: repo,
-        Package: pkg,
-        BintrayDetails: createBintrayDetails(c)}
-}
-
-func createDownloadFileFlags(c *cli.Context) *commands.DownloadFileFlags {
-    repo := c.String("repo")
-    if repo == "" {
-        utils.Exit("The --repo option is mandatory")
-    }
-    return &commands.DownloadFileFlags {
-        Repo: repo,
-        BintrayDetails: createBintrayDetails(c)}
+    commands.DownloadFile(versionDetails, path, bintrayDetails)
 }
 
 func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
-    if c.String("user") == "" {
-        utils.Exit("Please use the --user option or set the BINTRAY_USER envrionemt variable")
-    }
     if c.String("key") == "" {
         utils.Exit("Please use the --key option or set the BINTRAY_KEY envrionemt variable")
     }
@@ -155,14 +108,9 @@ func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
 
     apiUrl = utils.AddTrailingSlashIfNeeded(apiUrl)
     downloadServerUrl = utils.AddTrailingSlashIfNeeded(downloadServerUrl)
-    org := c.String("org")
-    if org == "" {
-        org = c.String("user")
-    }
     return &utils.BintrayDetails {
         ApiUrl: apiUrl,
         DownloadServerUrl: downloadServerUrl,
-        Org: org,
         User: c.String("user"),
         Key: c.String("key") }
 }

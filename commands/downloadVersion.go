@@ -5,10 +5,10 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func DownloadVersion(version string, flags *DownloadVersionFlags) {
-    path := flags.BintrayDetails.ApiUrl + "packages/" + flags.BintrayDetails.Org + "/" +
-        flags.Repo + "/" + flags.Package + "/versions/" + version + "/files"
-    resp, body := utils.SendGet(path, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.BintrayDetails) {
+    path := flags.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+        versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
+    resp, body := utils.SendGet(path, nil, flags.User, flags.Key)
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
@@ -17,7 +17,7 @@ func DownloadVersion(version string, flags *DownloadVersionFlags) {
     utils.CheckError(err)
 
     for _, result := range results {
-        utils.DownloadBintrayFile(flags.BintrayDetails, flags.Repo, result.Path)
+        utils.DownloadBintrayFile(flags, versionDetails, result.Path)
     }
 }
 

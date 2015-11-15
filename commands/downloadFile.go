@@ -4,8 +4,8 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func DownloadFile(path string, flags *DownloadFileFlags) {
-    utils.DownloadBintrayFile(flags.BintrayDetails, flags.Repo, path)
+func DownloadFile(versionDetails *utils.VersionDetails, path string, bintrayDetails *utils.BintrayDetails) {
+    utils.DownloadBintrayFile(bintrayDetails, versionDetails, path)
 }
 
 type DownloadFileFlags struct {
