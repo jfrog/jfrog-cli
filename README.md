@@ -50,7 +50,7 @@ and the list of arguments for the command.
 Used to download the files of a specific version from Bintray.
 
 ###### Command options
-` ``console
+```console
    --user            [Optional] Bintray username. It can be also set using the BINTRAY_USER environment variable. If not set, the subject sent as part of the command argument is used for authentication.
    --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
    --api-url         [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
