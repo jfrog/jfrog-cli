@@ -9,7 +9,7 @@ import (
 
 func main() {
     app := cli.NewApp()
-    app.Name = "btr"
+    app.Name = "bt"
     app.Usage = "See https://github.com/JFrogDev/bintray-cli-go for usage instructions."
     app.Version = "0.0.1"
 
@@ -30,6 +30,15 @@ func main() {
             Flags: getDownloadFileFlags(),
             Action: func(c *cli.Context) {
                 downloadFile(c)
+            },
+        },
+        {
+            Name: "entitlements",
+            Usage: "Entitlements",
+            Aliases: []string{"ent"},
+            Flags: getEntitlementsFlags(),
+            Action: func(c *cli.Context) {
+                entitlements(c)
             },
         },
     }
@@ -69,9 +78,29 @@ func getDownloadFileFlags() []cli.Flag {
     return getFlags()
 }
 
+func getEntitlementsFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+         Name:  "org",
+         Usage: "[Optional] Bintray organization",
+    }
+    flags[5] = cli.StringFlag{
+         Name:  "id",
+         Usage: "[Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'",
+    }
+    flags[6] = cli.StringFlag{
+         Name:  "expiry",
+         Usage: "[Optional] Download Key expiry (required for 'bt entitlements key show/create/update/delete'",
+    }
+    return flags
+}
+
 func downloadVersion(c *cli.Context) {
     if len(c.Args()) != 1 {
-        utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
+        utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
     }
     versionDetails := utils.CreateVersionDetails(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
@@ -83,7 +112,7 @@ func downloadVersion(c *cli.Context) {
 
 func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
-        utils.Exit("Wrong number of arguments. Try 'btr download-ver --help'.")
+        utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
     }
     versionDetails, path := utils.CreateVersionDetailsAndPath(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
@@ -93,9 +122,44 @@ func downloadFile(c *cli.Context) {
     commands.DownloadFile(versionDetails, path, bintrayDetails)
 }
 
+func entitlements(c *cli.Context) {
+    org := c.String("org")
+    argsSize := len(c.Args())
+    if argsSize == 0 {
+        utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
+    }
+    bintrayDetails := createBintrayDetails(c)
+    if c.Args()[0] == "keys" {
+        commands.ShowDownloadKeys(bintrayDetails, org)
+        return
+    }
+    if argsSize != 2 {
+        utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
+    }
+    if c.Args()[0] == "key" {
+        if c.Args()[1] == "create" {
+            commands.CreateDownloadKeys(createDownloadKey(c), org)
+            return
+        }
+    }
+}
+
+func createDownloadKey(c *cli.Context) *commands.DownloadKeyFlags {
+    if c.String("id") == "" {
+        utils.Exit("Please add the --id option")
+    }
+    if c.String("expiry") == "" {
+        utils.Exit("Please add the --expiry option")
+    }
+    return &commands.DownloadKeyFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Id: c.String("id"),
+        Expiry: c.String("expiry") }
+}
+
 func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
     if c.String("key") == "" {
-        utils.Exit("Please use the --key option or set the BINTRAY_KEY envrionemt variable")
+        utils.Exit("Please add the --key option or set the BINTRAY_KEY envrionemt variable")
     }
     apiUrl := c.String("api-url")
     if apiUrl == "" {

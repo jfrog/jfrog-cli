@@ -24,9 +24,3 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.BintrayD
 type VersionFilesResult struct {
     Path string
 }
-
-type DownloadVersionFlags struct {
-    BintrayDetails *utils.BintrayDetails
-    Repo string
-    Package string
-}

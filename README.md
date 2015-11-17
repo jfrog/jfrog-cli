@@ -63,6 +63,7 @@ The command expects one argument in the form of *subject/repository/package/vers
 ###### Examples
 ```console
 bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
+bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 ```
 
 ##### The *download-file* (dlf) command
@@ -77,7 +78,30 @@ Same as the *download-ver* command.
 ###### Arguments
 The command expects one argument in the form of *subject/repository/package/version/path*.
 
-###### Example
+###### Examples
 ```console
 bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
+bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
 ```
+
+##### The *entitlements* (ent) command
+
+###### Function
+Used to manage Entitlements and Download Keys.
+
+###### Command options
+```console
+   --user            [Mandatory] Bintray username. It can be also set using the BINTRAY_USER environment variable.
+   --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
+   --api-url         [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
+   --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
+   --org             [Optional] Bintray organization.
+   --id              [Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'.
+   --expiry          [Optional] Download Key expiry (required for 'bt entitlements key create/update'.
+```
+
+###### Arguments
+* If the argument *keys* is sent, the command displayes a list of all download keys. For example, *bt ent keys ...*
+* If the argument *key* is sent, then it should be followed by one of the following arguments: show, create, update or delete. For example, *bt ent key show ...*
+
+###### Examples
