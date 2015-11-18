@@ -91,13 +91,17 @@ Used to manage Entitlements and Download Keys.
 
 ###### Command options
 ```console
-   --user            [Mandatory] Bintray username. It can be also set using the BINTRAY_USER environment variable.
-   --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
-   --api-url         [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
-   --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
-   --org             [Optional] Bintray organization.
-   --id              [Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'.
-   --expiry          [Optional] Download Key expiry (required for 'bt entitlements key create/update'.
+   --user                [Mandatory] Bintray username. It can be also set using the BINTRAY_USER environment variable.
+   --key                 [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
+   --api-url             [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
+   --download-url        [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
+   --org                 [Optional] Bintray organization.
+   --key-id              [Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'
+   --key-expiry          [Optional] Download Key expiry (required for 'bt entitlements key show/create/update/delete'
+   --key-ex-check-url    [Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.
+   --key-ex-check-cache  [Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.
+   --key-white-cidrs     [Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/22 will allow access only for those IPs that exist in that address range.
+   --key-black-cidrs     [Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/22 will block access for all IPs that exist in the specified range.
 ```
 
 ###### Arguments
@@ -105,3 +109,10 @@ Used to manage Entitlements and Download Keys.
 * If the argument *key* is sent, then it should be followed by one of the following arguments: show, create, update or delete. For example, *bt ent key show ...*
 
 ###### Examples
+```console
+bt ent keys
+bt ent key create --key-id=key1 --key-expiry=7956915742000 --key-ex-check-url=http://callback.com --key-white-cidrs=127.0.0.1/22,193.5.0.1/92 --key-black-cidrs=127.0.0.1/22,193.5.0.1/92
+bt ent key show --key-id=key1
+bt ent key update --key-id=key1 --key-expiry=7956915742000 --key-ex-check-url=http://new-callback.com --key-white-cidrs=127.0.0.1/22,193.5.0.1/92 --key-black-cidrs=127.0.0.1/22,193.5.0.1/92
+bt ent key delete --key-id=key1
+```

@@ -2,6 +2,7 @@ package main
 
 import (
     "os"
+    "strconv"
     "github.com/codegangsta/cli"
     "github.com/JFrogDev/bintray-cli-go/utils"
     "github.com/JFrogDev/bintray-cli-go/commands"
@@ -80,7 +81,7 @@ func getDownloadFileFlags() []cli.Flag {
 
 func getEntitlementsFlags() []cli.Flag {
     flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
     }
     copy(flags[0:4], getFlags())
     flags[4] = cli.StringFlag{
@@ -88,12 +89,32 @@ func getEntitlementsFlags() []cli.Flag {
          Usage: "[Optional] Bintray organization",
     }
     flags[5] = cli.StringFlag{
-         Name:  "id",
+         Name:  "key-id",
          Usage: "[Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'",
     }
     flags[6] = cli.StringFlag{
-         Name:  "expiry",
+         Name:  "key-expiry",
          Usage: "[Optional] Download Key expiry (required for 'bt entitlements key show/create/update/delete'",
+    }
+    flags[7] = cli.StringFlag{
+         Name:  "key-ex-check-url",
+         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
+    }
+    flags[8] = cli.StringFlag{
+         Name:  "key-ex-check-cache",
+         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
+    }
+    flags[8] = cli.StringFlag{
+         Name:  "key-ex-check-cache",
+         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
+    }
+    flags[9] = cli.StringFlag{
+         Name:  "key-white-cidrs",
+         Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\", \"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
+    }
+    flags[10] = cli.StringFlag{
+         Name:  "key-black-cidrs",
+         Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
     }
     return flags
 }
@@ -138,23 +159,48 @@ func entitlements(c *cli.Context) {
     }
     if c.Args()[0] == "key" {
         if c.Args()[1] == "create" {
-            commands.CreateDownloadKeys(createDownloadKey(c), org)
-            return
+            commands.CreateDownloadKey(createDownloadKeyForCreate(c), org)
+        } else
+        if c.Args()[1] == "update" {
+            commands.UpdateDownloadKey(createDownloadKeyForCreate(c), org)
+        } else
+        if c.Args()[1] == "delete" {
+            commands.DeleteDownloadKey(createDownloadKeyForDelete(c), org)
+        } else {
+            utils.Exit("Expecting create, update or delete after the key argument.")
         }
     }
 }
 
-func createDownloadKey(c *cli.Context) *commands.DownloadKeyFlags {
-    if c.String("id") == "" {
-        utils.Exit("Please add the --id option")
-    }
-    if c.String("expiry") == "" {
-        utils.Exit("Please add the --expiry option")
+func createDownloadKeyForDelete(c *cli.Context) *commands.DownloadKeyFlags {
+    if c.String("key-id") == "" {
+        utils.Exit("Please add the --key-id option")
     }
     return &commands.DownloadKeyFlags {
         BintrayDetails: createBintrayDetails(c),
-        Id: c.String("id"),
-        Expiry: c.String("expiry") }
+        Id: c.String("key-id") }
+}
+
+func createDownloadKeyForCreate(c *cli.Context) *commands.DownloadKeyFlags {
+    if c.String("key-id") == "" {
+        utils.Exit("Please add the --key-id option")
+    }
+    var cachePeriod int
+    if c.String("key-ex-check-cache") != "" {
+        var err error
+        cachePeriod, err = strconv.Atoi(c.String("key-ex-check-cache"))
+        if err != nil {
+            utils.Exit("The --key-ex-check-cache option should have a numeric value.")
+        }
+    }
+    return &commands.DownloadKeyFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Id: c.String("key-id"),
+        Expiry: c.String("key-expiry"),
+        ExistenceCheckUrl: c.String("key-ex-check-url"),
+        ExistenceCheckCache: cachePeriod,
+        WhiteCidrs: c.String("key-white-cidrs"),
+        BlackCidrs: c.String("key-black-cidrs") }
 }
 
 func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {

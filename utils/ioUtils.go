@@ -26,6 +26,14 @@ func SendPost(url string, content []byte, user string, password string) (*http.R
     return Send("POST", url, content, nil, user, password)
 }
 
+func SendPatch(url string, content []byte, user string, password string) (*http.Response, []byte) {
+    return Send("PATCH", url, content, nil, user, password)
+}
+
+func SendDelete(url string, user string, password string) (*http.Response, []byte) {
+    return Send("DELETE", url, nil, nil, user, password)
+}
+
 func Send(method string, url string, content []byte, headers map[string]string, user, password string) (*http.Response, []byte) {
     var req *http.Request
     var err error
