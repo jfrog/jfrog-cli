@@ -158,21 +158,24 @@ func entitlements(c *cli.Context) {
         utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
     }
     if c.Args()[0] == "key" {
+        if c.Args()[1] == "show" {
+            commands.ShowDownloadKey(createDownloadKeyForShowAndDelete(c), org)
+        } else
         if c.Args()[1] == "create" {
-            commands.CreateDownloadKey(createDownloadKeyForCreate(c), org)
+            commands.CreateDownloadKey(createDownloadKeyForCreateAndUpdate(c), org)
         } else
         if c.Args()[1] == "update" {
-            commands.UpdateDownloadKey(createDownloadKeyForCreate(c), org)
+            commands.UpdateDownloadKey(createDownloadKeyForCreateAndUpdate(c), org)
         } else
         if c.Args()[1] == "delete" {
-            commands.DeleteDownloadKey(createDownloadKeyForDelete(c), org)
+            commands.DeleteDownloadKey(createDownloadKeyForShowAndDelete(c), org)
         } else {
-            utils.Exit("Expecting create, update or delete after the key argument.")
+            utils.Exit("Expecting show, create, update or delete after the key argument. Got " + c.Args()[1])
         }
     }
 }
 
-func createDownloadKeyForDelete(c *cli.Context) *commands.DownloadKeyFlags {
+func createDownloadKeyForShowAndDelete(c *cli.Context) *commands.DownloadKeyFlags {
     if c.String("key-id") == "" {
         utils.Exit("Please add the --key-id option")
     }
@@ -181,7 +184,7 @@ func createDownloadKeyForDelete(c *cli.Context) *commands.DownloadKeyFlags {
         Id: c.String("key-id") }
 }
 
-func createDownloadKeyForCreate(c *cli.Context) *commands.DownloadKeyFlags {
+func createDownloadKeyForCreateAndUpdate(c *cli.Context) *commands.DownloadKeyFlags {
     if c.String("key-id") == "" {
         utils.Exit("Please add the --key-id option")
     }

@@ -109,10 +109,27 @@ Used to manage Entitlements and Download Keys.
 * If the argument *key* is sent, then it should be followed by one of the following arguments: show, create, update or delete. For example, *bt ent key show ...*
 
 ###### Examples
+
+Show all Download Keys
 ```console
 bt ent keys
+```
+Create a Download Key
+```console
 bt ent key create --key-id=key1 --key-expiry=7956915742000 --key-ex-check-url=http://callback.com --key-white-cidrs=127.0.0.1/22,193.5.0.1/92 --key-black-cidrs=127.0.0.1/22,193.5.0.1/92
+```
+
+Show a specific Download Key
+```console
 bt ent key show --key-id=key1
+```
+
+Update a Download Key
+```console
 bt ent key update --key-id=key1 --key-expiry=7956915742000 --key-ex-check-url=http://new-callback.com --key-white-cidrs=127.0.0.1/22,193.5.0.1/92 --key-black-cidrs=127.0.0.1/22,193.5.0.1/92
+```
+
+Delete a Download Key
+```console
 bt ent key delete --key-id=key1
 ```

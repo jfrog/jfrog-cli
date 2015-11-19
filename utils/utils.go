@@ -2,6 +2,7 @@ package utils
 
 import (
     "os"
+    "bytes"
     "strings"
     "encoding/json"
 )
@@ -73,6 +74,15 @@ func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDeta
         }
     }
     return
+}
+
+func IndentJson(jsonStr []byte) string {
+    var content bytes.Buffer
+    err := json.Indent(&content, jsonStr, "", "  ")
+    if err == nil {
+        return content.String()
+    }
+    return string(jsonStr)
 }
 
 type bintrayResponse struct {

@@ -13,7 +13,18 @@ func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     println("Bintray response: " + resp.Status)
-    println(string(body))
+    println(utils.IndentJson(body))
+}
+
+func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
+    url := getDownloadKeysPath(flags.BintrayDetails, org)
+    url += "/" + flags.Id
+    resp, body := utils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    if resp.StatusCode != 200 {
+        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+    }
+    println("Bintray response: " + resp.Status)
+    println(utils.IndentJson(body))
 }
 
 func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
@@ -24,7 +35,7 @@ func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     println("Bintray response: " + resp.Status)
-    println(string(body))
+    println(utils.IndentJson(body))
 }
 
 func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
@@ -36,7 +47,7 @@ func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     println("Bintray response: " + resp.Status)
-    println(string(body))
+    println(utils.IndentJson(body))
 }
 
 func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
