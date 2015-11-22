@@ -36,7 +36,7 @@ so that you can access it from any path.
 
 ##### Command syntax
 
-` ``console
+```console
 $ bt command-name global-options command-options arguments
 ```
 
