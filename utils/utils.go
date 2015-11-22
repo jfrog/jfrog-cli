@@ -43,16 +43,40 @@ func ReadBintrayMessage(resp []byte) string {
     return response.Message
 }
 
+func CreateBintrayPath(details *VersionDetails) string {
+    if details.Version == "" {
+        if details.Package == "" {
+            return "repos/" + details.Subject + "/" + details.Repo + "/entitlements"
+        }
+        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package + "/entitlements"
+    } else {
+        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package +
+            "/versions/" + details.Version + "/entitlements"
+    }
+}
+
 func CreateVersionDetails(versionStr string) *VersionDetails {
     parts := strings.Split(versionStr, "/")
-    if len(parts) != 4 {
-        Exit("Expecting an argument in the form of subject/repository/package/version")
+    size := len(parts)
+    if size < 1 || size > 4 {
+        Exit("Unexpected format for argument: " + versionStr)
+    }
+    var subject, repo, pkg, version string
+    if size >= 2 {
+        subject = parts[0]
+        repo = parts[1]
+    }
+    if size >= 3 {
+        pkg = parts[2]
+    }
+    if size == 4 {
+        version = parts[3]
     }
     return &VersionDetails {
-        Subject: parts[0],
-        Repo: parts[1],
-        Package: parts[2],
-        Version: parts[3]}
+        Subject: subject,
+        Repo: repo,
+        Package: pkg,
+        Version: version}
 }
 
 func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDetails, path string) {

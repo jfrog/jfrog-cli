@@ -81,38 +81,50 @@ func getDownloadFileFlags() []cli.Flag {
 
 func getEntitlementsFlags() []cli.Flag {
     flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
     }
     copy(flags[0:4], getFlags())
     flags[4] = cli.StringFlag{
+         Name:  "id",
+         Usage: "[Optional] Entitlement ID. Used for Entitlements update.",
+    }
+    flags[5] = cli.StringFlag{
+         Name:  "access",
+         Usage: "[Optional] Entitlement access. Used for Entitlements creation and update.",
+    }
+    flags[6] = cli.StringFlag{
+         Name:  "keys",
+         Usage: "[Optional] Used for Entitlements creation and update. List of Download Keys in the form of \"key1\",\"key2\"...",
+    }
+    flags[7] = cli.StringFlag{
+         Name:  "path",
+         Usage: "[Optional] Entitlement path. Used for Entitlements creating and update.",
+    }
+    flags[8] = cli.StringFlag{
          Name:  "org",
          Usage: "[Optional] Bintray organization",
     }
-    flags[5] = cli.StringFlag{
+    flags[9] = cli.StringFlag{
          Name:  "key-id",
          Usage: "[Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'",
     }
-    flags[6] = cli.StringFlag{
+    flags[10] = cli.StringFlag{
          Name:  "key-expiry",
          Usage: "[Optional] Download Key expiry (required for 'bt entitlements key show/create/update/delete'",
     }
-    flags[7] = cli.StringFlag{
+    flags[11] = cli.StringFlag{
          Name:  "key-ex-check-url",
          Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
     }
-    flags[8] = cli.StringFlag{
+    flags[12] = cli.StringFlag{
          Name:  "key-ex-check-cache",
          Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
     }
-    flags[8] = cli.StringFlag{
-         Name:  "key-ex-check-cache",
-         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
-    }
-    flags[9] = cli.StringFlag{
+    flags[13] = cli.StringFlag{
          Name:  "key-white-cidrs",
          Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\", \"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
     }
-    flags[10] = cli.StringFlag{
+    flags[14] = cli.StringFlag{
          Name:  "key-black-cidrs",
          Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
     }
@@ -149,9 +161,14 @@ func entitlements(c *cli.Context) {
     if argsSize == 0 {
         utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
     }
-    bintrayDetails := createBintrayDetails(c)
-    if c.Args()[0] == "keys" {
-        commands.ShowDownloadKeys(bintrayDetails, org)
+    if argsSize == 1 {
+        bintrayDetails := createBintrayDetails(c)
+        if c.Args()[0] == "keys" {
+            commands.ShowDownloadKeys(bintrayDetails, org)
+            return
+        }
+        details := utils.CreateVersionDetails(c.Args()[0])
+        commands.ShowEntitlements(bintrayDetails, details)
         return
     }
     if argsSize != 2 {
@@ -172,7 +189,38 @@ func entitlements(c *cli.Context) {
         } else {
             utils.Exit("Expecting show, create, update or delete after the key argument. Got " + c.Args()[1])
         }
+        return
     }
+    details := utils.CreateVersionDetails(c.Args()[1])
+    if c.Args()[0] == "show" {
+        println("show")
+    } else
+    if c.Args()[0] == "create" {
+        commands.CreateEntitlement(createEntitlementForCreateAndUpdate(c), details)
+    } else
+    if c.Args()[0] == "update" {
+        println("update")
+    } else
+    if c.Args()[0] == "delete" {
+        println("delete")
+    } else {
+        utils.Exit("Expecting show, create, update or delete before " + c.Args()[1] + ". Got " + c.Args()[0])
+    }
+}
+
+func createEntitlementForCreateAndUpdate(c *cli.Context) *commands.EntitlementFlags {
+    if c.String("keys") == "" {
+        utils.Exit("Please add the --keys option")
+    }
+    if c.String("access") == "" {
+        utils.Exit("Please add the --access option")
+    }
+    return &commands.EntitlementFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Id: c.String("id"),
+        Path: c.String("path"),
+        Access: c.String("access"),
+        Keys: c.String("keys") }
 }
 
 func createDownloadKeyForShowAndDelete(c *cli.Context) *commands.DownloadKeyFlags {
