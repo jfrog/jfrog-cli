@@ -46,12 +46,12 @@ func ReadBintrayMessage(resp []byte) string {
 func CreateBintrayPath(details *VersionDetails) string {
     if details.Version == "" {
         if details.Package == "" {
-            return "repos/" + details.Subject + "/" + details.Repo + "/entitlements"
+            return "repos/" + details.Subject + "/" + details.Repo
         }
-        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package + "/entitlements"
+        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package
     } else {
         return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package +
-            "/versions/" + details.Version + "/entitlements"
+            "/versions/" + details.Version
     }
 }
 

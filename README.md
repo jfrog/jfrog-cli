@@ -97,7 +97,7 @@ Used managing Download Keys.
 ###### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --org                 Bintray organization.
+   --org             Bintray organization.
    --expiry          Download Key expiry (required for 'bt ent-keys show/create/update/delete'
    --ex-check-url    Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.
    --ex-check-cache  Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.
@@ -107,7 +107,7 @@ The command uses the global options, in addition to the following command option
 
 ###### Arguments
 * With no arguments, a list of all download keys is displayed.
-* When sending the show, create, update or delete argument, it should be followed by an argument indicating the download key ID to show, create, update or delete.
+* When sending the show, create, update or delete argument, it should be followed by an argument indicating the download key ID to show, create, update or delete the download key.
 
 ###### Examples
 Show all Download Keys
@@ -163,26 +163,30 @@ bt ent my-org/swamp-repo
 
 Show all Entitlements of the green-frog package.
 ```console
-bt ent my-org/maven/green-frog
-```
-
-Show all Entitlements of the green-frog package.
-```console
-bt ent my-org/maven/green-frog
+bt ent my-org/swamp-repo/green-frog
 ```
 
 Show all Entitlements of version 1.0 of the green-frog package.
 ```console
-bt ent my-org/maven/green-frog/1.0
+bt ent my-org/swamp-repo/green-frog/1.0
 ```
 
 Create an Entitlement for the green-frog package, with rw access, the key1 and key2 Download Keys and the a/b/c path.
 ```console
-bt ent create my-org/maven/green-frog --access=rw --keys=key1,key2 --path=a/b/c
+bt ent create my-org/swamp-repo/green-frog --access=rw --keys=key1,key2 --path=a/b/c
 ```
 
-TODO: bt ent show
+Show a specific Entitlement on the swamp-repo repository.
+```console
+bt ent show my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
+```
 
-TODO: bt ent update
+Update the download keys and access of an Entitlement on the swamp-repo repository.
+```console
+bt ent update my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc --keys=key1,key2 --access=r
+```
 
-TODO: bt ent delete
+Delete an Entitlement on the my-org/swamp-repo.
+```console 
+bt ent delete my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
+```

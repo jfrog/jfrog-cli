@@ -216,24 +216,44 @@ func entitlements(c *cli.Context) {
     }
     details := commands.CreateVersionDetailsForEntitlements(c.Args()[1])
     if c.Args()[0] == "show" {
-        println("show")
+        commands.ShowEntitlement(createEntitlementForShowAndDelete(c), details)
     } else
     if c.Args()[0] == "create" {
-        commands.CreateEntitlement(createEntitlementForCreateAndUpdate(c), details)
+        commands.CreateEntitlement(createEntitlementForCreate(c), details)
     } else
     if c.Args()[0] == "update" {
-        println("update")
+        commands.UpdateEntitlement(createEntitlementForUpdate(c), details)
     } else
     if c.Args()[0] == "delete" {
-        println("delete")
+        commands.DeleteEntitlement(createEntitlementForShowAndDelete(c), details)
     } else {
         utils.Exit("Expecting show, create, update or delete before " + c.Args()[1] + ". Got " + c.Args()[0])
     }
 }
 
-func createEntitlementForCreateAndUpdate(c *cli.Context) *commands.EntitlementFlags {
-    if c.String("keys") == "" {
-        utils.Exit("Please add the --keys option")
+func createEntitlementForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {
+    if c.String("id") == "" {
+        utils.Exit("Please add the --id option")
+    }
+    return &commands.EntitlementFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Id: c.String("id") }
+}
+
+func createEntitlementForCreate(c *cli.Context) *commands.EntitlementFlags {
+    if c.String("access") == "" {
+        utils.Exit("Please add the --access option")
+    }
+    return &commands.EntitlementFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Path: c.String("path"),
+        Access: c.String("access"),
+        Keys: c.String("keys") }
+}
+
+func createEntitlementForUpdate(c *cli.Context) *commands.EntitlementFlags {
+    if c.String("id") == "" {
+        utils.Exit("Please add the --id option")
     }
     if c.String("access") == "" {
         utils.Exit("Please add the --access option")

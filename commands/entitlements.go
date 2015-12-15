@@ -6,11 +6,11 @@ import (
 )
 
 func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.VersionDetails) {
-    var path = bintrayDetails.ApiUrl + utils.CreateBintrayPath(details)
+    url := bintrayDetails.ApiUrl + utils.CreateBintrayPath(details) + "/entitlements"
     if bintrayDetails.User == "" {
         bintrayDetails.User = details.Subject
     }
-    resp, body := utils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := utils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
@@ -18,14 +18,56 @@ func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.Versi
     println(utils.IndentJson(body))
 }
 
+func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
+    url := flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+        "/entitlements/" + flags.Id
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = details.Subject
+    }
+    resp, body := utils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    if resp.StatusCode != 200 {
+        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+    }
+    println("Bintray response: " + resp.Status)
+    println(utils.IndentJson(body))
+}
+
+func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
+    url := flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+        "/entitlements/" + flags.Id
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = details.Subject
+    }
+    resp, body := utils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    if resp.StatusCode != 200 {
+        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+    }
+    println("Bintray response: " + resp.Status)
+}
+
 func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
-    var path = flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details)
+    var path = flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) + "/entitlements"
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
     }
     data := buildEntitlementJson(flags, true)
     resp, body := utils.SendPost(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
+        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+    }
+    println("Bintray response: " + resp.Status)
+    println(utils.IndentJson(body))
+}
+
+func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
+    var path = flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+        "/entitlements/" + flags.Id
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = details.Subject
+    }
+    data := buildEntitlementJson(flags, true)
+    resp, body := utils.SendPatch(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     println("Bintray response: " + resp.Status)
@@ -42,11 +84,15 @@ func CreateVersionDetailsForEntitlements(versionStr string) *utils.VersionDetail
 
 func buildEntitlementJson(flags *EntitlementFlags, create bool) string {
     data := "{" +
-        "\"access\": \"" + flags.Access + "\"," +
-        "\"download_keys\": " + fixArgList(flags.Keys) + "," +
-        "\"path\": \"" + flags.Path + "\"" +
-        "}"
+        "\"access\": \"" + flags.Access + "\""
 
+    if flags.Keys != "" {
+        data += ",\"download_keys\": " + fixArgList(flags.Keys)
+    }
+    if flags.Path != "" {
+        data += ",\"path\": \"" + flags.Path + "\""
+    }
+    data += "}"
     return data
 }
 
