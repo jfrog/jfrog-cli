@@ -1,6 +1,7 @@
 package commands
 
 import (
+    "strings"
     "encoding/json"
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
@@ -19,6 +20,14 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.BintrayD
     for _, result := range results {
         utils.DownloadBintrayFile(flags, versionDetails, result.Path)
     }
+}
+
+func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDetails {
+    parts := strings.Split(versionStr, "/")
+    if len(parts) != 4 {
+        utils.Exit("Argument format should be subject/repository/package/version. Got " + versionStr)
+    }
+    return utils.CreateVersionDetails(versionStr)
 }
 
 type VersionFilesResult struct {

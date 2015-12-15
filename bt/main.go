@@ -42,6 +42,15 @@ func main() {
                 entitlements(c)
             },
         },
+        {
+            Name: "entitlement-keys",
+            Usage: "Entitlement keys",
+            Aliases: []string{"ent-keys"},
+            Flags: getEntitlementKeysFlags(),
+            Action: func(c *cli.Context) {
+                entitlementKeys(c)
+            },
+        },
     }
     app.Run(os.Args)
 }
@@ -81,7 +90,7 @@ func getDownloadFileFlags() []cli.Flag {
 
 func getEntitlementsFlags() []cli.Flag {
     flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,nil,
     }
     copy(flags[0:4], getFlags())
     flags[4] = cli.StringFlag{
@@ -100,32 +109,40 @@ func getEntitlementsFlags() []cli.Flag {
          Name:  "path",
          Usage: "[Optional] Entitlement path. Used for Entitlements creating and update.",
     }
-    flags[8] = cli.StringFlag{
+    return flags
+}
+
+func getEntitlementKeysFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
          Name:  "org",
          Usage: "[Optional] Bintray organization",
     }
-    flags[9] = cli.StringFlag{
-         Name:  "key-id",
-         Usage: "[Optional] Download Key ID (required for 'bt entitlements key show/create/update/delete'",
+    flags[5] = cli.StringFlag{
+         Name:  "id",
+         Usage: "[Optional] Download Key ID (required for 'bt ent-keys show/create/update/delete'",
     }
-    flags[10] = cli.StringFlag{
-         Name:  "key-expiry",
-         Usage: "[Optional] Download Key expiry (required for 'bt entitlements key show/create/update/delete'",
+    flags[6] = cli.StringFlag{
+         Name:  "expiry",
+         Usage: "[Optional] Download Key expiry (required for 'bt ent-keys show/create/update/delete'",
     }
-    flags[11] = cli.StringFlag{
-         Name:  "key-ex-check-url",
+    flags[7] = cli.StringFlag{
+         Name:  "ex-check-url",
          Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
     }
-    flags[12] = cli.StringFlag{
-         Name:  "key-ex-check-cache",
+    flags[8] = cli.StringFlag{
+         Name:  "ex-check-cache",
          Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
     }
-    flags[13] = cli.StringFlag{
-         Name:  "key-white-cidrs",
-         Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\", \"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
+    flags[9] = cli.StringFlag{
+         Name:  "white-cidrs",
+         Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\",\"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
     }
-    flags[14] = cli.StringFlag{
-         Name:  "key-black-cidrs",
+    flags[10] = cli.StringFlag{
+         Name:  "black-cidrs",
          Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
     }
     return flags
@@ -135,7 +152,7 @@ func downloadVersion(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
     }
-    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
     if bintrayDetails.User == "" {
         bintrayDetails.User = versionDetails.Subject
@@ -155,43 +172,49 @@ func downloadFile(c *cli.Context) {
     commands.DownloadFile(versionDetails, path, bintrayDetails)
 }
 
-func entitlements(c *cli.Context) {
+func entitlementKeys(c *cli.Context) {
     org := c.String("org")
     argsSize := len(c.Args())
     if argsSize == 0 {
-        utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
+        bintrayDetails := createBintrayDetails(c)
+        commands.ShowDownloadKeys(bintrayDetails, org)
+        return
+    }
+    if argsSize != 2 {
+        utils.Exit("Wrong number of arguments. Try 'bt ent-keys --help'.")
+    }
+    keyId := c.Args()[1]
+    if c.Args()[0] == "show" {
+        commands.ShowDownloadKey(createDownloadKeyForShowAndDelete(keyId, c), org)
+    } else
+    if c.Args()[0] == "create" {
+        commands.CreateDownloadKey(createDownloadKeyForCreateAndUpdate(keyId, c), org)
+    } else
+    if c.Args()[0] == "update" {
+        commands.UpdateDownloadKey(createDownloadKeyForCreateAndUpdate(keyId, c), org)
+    } else
+    if c.Args()[0] == "delete" {
+        commands.DeleteDownloadKey(createDownloadKeyForShowAndDelete(keyId, c), org)
+    } else {
+        utils.Exit("Expecting show, create, update or delete after the key argument. Got " + c.Args()[0])
+    }
+}
+
+func entitlements(c *cli.Context) {
+    argsSize := len(c.Args())
+    if argsSize == 0 {
+        utils.Exit("Wrong number of arguments. Try 'bt ent --help'.")
     }
     if argsSize == 1 {
         bintrayDetails := createBintrayDetails(c)
-        if c.Args()[0] == "keys" {
-            commands.ShowDownloadKeys(bintrayDetails, org)
-            return
-        }
-        details := utils.CreateVersionDetails(c.Args()[0])
+        details := commands.CreateVersionDetailsForEntitlements(c.Args()[0])
         commands.ShowEntitlements(bintrayDetails, details)
         return
     }
     if argsSize != 2 {
-        utils.Exit("Wrong number of arguments. Try 'bt entitlements --help'.")
+        utils.Exit("Wrong number of arguments. Try 'bt ent --help'.")
     }
-    if c.Args()[0] == "key" {
-        if c.Args()[1] == "show" {
-            commands.ShowDownloadKey(createDownloadKeyForShowAndDelete(c), org)
-        } else
-        if c.Args()[1] == "create" {
-            commands.CreateDownloadKey(createDownloadKeyForCreateAndUpdate(c), org)
-        } else
-        if c.Args()[1] == "update" {
-            commands.UpdateDownloadKey(createDownloadKeyForCreateAndUpdate(c), org)
-        } else
-        if c.Args()[1] == "delete" {
-            commands.DeleteDownloadKey(createDownloadKeyForShowAndDelete(c), org)
-        } else {
-            utils.Exit("Expecting show, create, update or delete after the key argument. Got " + c.Args()[1])
-        }
-        return
-    }
-    details := utils.CreateVersionDetails(c.Args()[1])
+    details := commands.CreateVersionDetailsForEntitlements(c.Args()[1])
     if c.Args()[0] == "show" {
         println("show")
     } else
@@ -223,35 +246,29 @@ func createEntitlementForCreateAndUpdate(c *cli.Context) *commands.EntitlementFl
         Keys: c.String("keys") }
 }
 
-func createDownloadKeyForShowAndDelete(c *cli.Context) *commands.DownloadKeyFlags {
-    if c.String("key-id") == "" {
-        utils.Exit("Please add the --key-id option")
-    }
+func createDownloadKeyForShowAndDelete(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
     return &commands.DownloadKeyFlags {
         BintrayDetails: createBintrayDetails(c),
-        Id: c.String("key-id") }
+        Id: keyId }
 }
 
-func createDownloadKeyForCreateAndUpdate(c *cli.Context) *commands.DownloadKeyFlags {
-    if c.String("key-id") == "" {
-        utils.Exit("Please add the --key-id option")
-    }
+func createDownloadKeyForCreateAndUpdate(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
     var cachePeriod int
-    if c.String("key-ex-check-cache") != "" {
+    if c.String("ex-check-cache") != "" {
         var err error
-        cachePeriod, err = strconv.Atoi(c.String("key-ex-check-cache"))
+        cachePeriod, err = strconv.Atoi(c.String("ex-check-cache"))
         if err != nil {
-            utils.Exit("The --key-ex-check-cache option should have a numeric value.")
+            utils.Exit("The --ex-check-cache option should have a numeric value.")
         }
     }
     return &commands.DownloadKeyFlags {
         BintrayDetails: createBintrayDetails(c),
-        Id: c.String("key-id"),
-        Expiry: c.String("key-expiry"),
-        ExistenceCheckUrl: c.String("key-ex-check-url"),
+        Id: keyId,
+        Expiry: c.String("expiry"),
+        ExistenceCheckUrl: c.String("ex-check-url"),
         ExistenceCheckCache: cachePeriod,
-        WhiteCidrs: c.String("key-white-cidrs"),
-        BlackCidrs: c.String("key-black-cidrs") }
+        WhiteCidrs: c.String("white-cidrs"),
+        BlackCidrs: c.String("black-cidrs") }
 }
 
 func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
