@@ -80,6 +80,18 @@ func CreateVersionDetails(versionStr string) *VersionDetails {
         Version: version}
 }
 
+func CreatePackageDetails(packageStr string) *VersionDetails {
+    parts := strings.Split(packageStr, "/")
+    size := len(parts)
+    if size != 3 {
+        Exit("Expecting an argument in the form of subject/repository/package")
+    }
+    return &VersionDetails {
+        Subject: parts[0],
+        Repo: parts[1],
+        Package: parts[2]}
+}
+
 func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDetails, path string) {
     parts := strings.Split(versionStr, "/")
     size := len(parts)
@@ -108,6 +120,25 @@ func IndentJson(jsonStr []byte) string {
         return content.String()
     }
     return string(jsonStr)
+}
+
+// Creates a string in the form of ["item-1","item-2","item-3"...] from an input
+// in the form of item-1,item-1,item-1...
+func BuildListString(listStr string) string {
+    if listStr == "" {
+        return ""
+    }
+    split := strings.Split(listStr, ",")
+    size := len(split)
+    str := "[\""
+    for i := 0; i < size; i++ {
+        str += split[i]
+        if i+1 < size {
+            str += "\",\""
+        }
+    }
+    str += "\"]"
+    return str
 }
 
 type bintrayResponse struct {

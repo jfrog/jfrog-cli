@@ -20,7 +20,7 @@ If you prefer, you may instead build the client in go.
 
 ##### Download Bintray CLI from GitHub
 
-Run the following command to create the *artifactory-cli-go* project:
+Run the following command to create the *bintray-cli-go* project:
 ```console
 $ go get github.com/JFrogDev/bintray-cli-go/...
 ```
@@ -64,11 +64,11 @@ Used to upload files to Bintray
    --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
    --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
    --regexp       [Default: false] Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
-   --dry-run      [Default: false] Set to true to disable communication with Artifactory.
+   --dry-run      [Default: false] Set to true to disable communication with Bintray.
 ```
 
 ###### Arguments
-* The first argument is the local file-system path to the artifacts to be uploaded to Artifactory.
+* The first argument is the local file-system path to the artifacts to be uploaded to Bintray.
 The path can include a single file or multiple artifacts, by using the * wildcard.
 **Important:** If the path is provided as a regular expression (with the --regexp=true option) then
 the first regular expression appearing as part of the argument must be enclosed in parenthesis.
@@ -79,13 +79,13 @@ These symbols are replaced with the sections enclosed with parenthesis in the fi
 
 ###### Examples
 
-Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0* 
+Upload all files located under *dir/sub-dir*, with names that start with *frog*, to the root path under version *1.0* 
 of the *froggy-package* package 
 ```console
 bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
 ```
 
-Upload all files located under *dir/sub-dir* with names that start with *frog* to the /frog-files under version *1.0* 
+Upload all files located under *dir/sub-dir*, with names that start with *frog* to the /frog-files folder, under version *1.0* 
 of the *froggy-package* package 
 ```console
 bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
@@ -132,10 +132,40 @@ bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api
 bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 ```
 
+##### The *package-create* (pc) command
+
+###### Function
+Used for creating packages in Bintray
+
+###### Command options
+The command uses the global options, in addition to the following command options.
+```console
+   --desc               [Optional]        Package description.
+   --labels             [Optional]        Package lables in the form of "lable11","lable2"...
+   --licenses           [Mandatory]       Package licenses in the form of "Apache-2.0","GPL-3.0"...
+   --cust-licenses      [Optional]        Package custom licenses in the form of "my-license-1","my-license-2"...
+   --vcs-url            [Mandatory]       Package VCS URL.
+   --website-url        [Optional]        Package web site URL.
+   --i-tracker-url      [Optional]        Package Issues Tracker URL.
+   --github-repo        [Optional]        Package Github repository.
+   --github-rel-notes   [Optional]        Github release notes file.
+   --pub-dn             [Default: false]  Public download numbers.
+   --pub-stats          [Default: false]  Public statistics
+```
+
+###### Arguments
+The command expects one argument in the form of *subject/repository/package.
+
+###### Examples
+Create the *super-frog-package* package 
+```console
+bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+```
+
 ##### The *entitlement-keys* (ent-keys) command
 
 ###### Function
-Used managing Download Keys.
+Used for managing Download Keys.
 
 ###### Command options
 The command uses the global options, in addition to the following command options.

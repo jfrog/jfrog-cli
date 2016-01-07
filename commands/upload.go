@@ -8,20 +8,19 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string, flags *UploadFlags,
-    bintrayDetails *utils.BintrayDetails) {
+func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string, flags *UploadFlags) {
 
     // Get the list of artifacts to be uploaded to:
     artifacts := getFilesToUpload(localPath, uploadPath, flags)
 
-    baseUrl := bintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
+    baseUrl := flags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
            versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/";
 
     for _, artifact := range artifacts {
         url := baseUrl + artifact.TargetPath
         if !flags.DryRun {
             fmt.Println("Uploading artifact: " + url)
-            resp := utils.UploadFile(artifact.LocalPath, url, bintrayDetails.User, bintrayDetails.Key)
+            resp := utils.UploadFile(artifact.LocalPath, url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
             fmt.Println("Bintray response: " + resp.Status)
         } else {
             fmt.Println("[Dry Run] Uploading artifact: " + url)

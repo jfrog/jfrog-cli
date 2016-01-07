@@ -34,6 +34,24 @@ func main() {
             },
         },
         {
+            Name: "download-ver",
+            Usage: "Download version files",
+            Aliases: []string{"dlv"},
+            Flags: getFlags(),
+            Action: func(c *cli.Context) {
+                downloadVersion(c)
+            },
+        },
+        {
+            Name: "package-create",
+            Usage: "Create a package",
+            Aliases: []string{"pc"},
+            Flags: getCreatePackageFlags(),
+            Action: func(c *cli.Context) {
+                createPackage(c)
+            },
+        },
+        {
             Name: "entitlements",
             Usage: "Entitlements",
             Aliases: []string{"ent"},
@@ -78,6 +96,68 @@ func getFlags() []cli.Flag {
             Usage: "[Default: https://dl.bintray.com] Bintray download server URL",
         },
     }
+}
+
+func getCreatePackageFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+        Name:  "desc",
+        Value:  "",
+        Usage: "[Optional] Package description.",
+    }
+    flags[5] = cli.StringFlag{
+        Name:  "labels",
+        Value:  "",
+        Usage: "[Optional] Package lables in the form of \"lable11\",\"lable2\"...",
+    }
+    flags[6] = cli.StringFlag{
+         Name:  "licenses",
+         Value:  "",
+         Usage: "[Mandatory] Package licenses in the form of \"Apache-2.0\",\"GPL-3.0\"...",
+    }
+    flags[7] = cli.StringFlag{
+         Name:  "cust-licenses",
+         Value:  "",
+         Usage: "[Optional] Package custom licenses in the form of \"my-license-1\",\"my-license-2\"...",
+    }
+    flags[8] = cli.StringFlag{
+         Name:  "vcs-url",
+         Value:  "",
+         Usage: "[Mandatory] Package VCS URL.",
+    }
+    flags[9] = cli.StringFlag{
+         Name:  "website-url",
+         Value:  "",
+         Usage: "[Optional] Package web site URL.",
+    }
+    flags[10] = cli.StringFlag{
+         Name:  "i-tracker-url",
+         Value:  "",
+         Usage: "[Optional] Package Issues Tracker URL.",
+    }
+    flags[11] = cli.StringFlag{
+         Name:  "github-repo",
+         Value:  "",
+         Usage: "[Optional] Package Github repository.",
+    }
+    flags[12] = cli.StringFlag{
+         Name:  "github-rel-notes",
+         Value:  "",
+         Usage: "[Optional] Github release notes file.",
+    }
+    flags[13] = cli.BoolFlag{
+         Name:  "pub-dn",
+         Usage: "[Default: false] Public download numbers.",
+    }
+    flags[14] = cli.BoolFlag{
+         Name:  "pub-stats",
+         Usage: "[Default: false] Public statistics",
+    }
+
+    return flags
 }
 
 func getUploadFlags() []cli.Flag {
@@ -166,6 +246,18 @@ func getEntitlementKeysFlags() []cli.Flag {
     return flags
 }
 
+func createPackage(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt create-package --help'.")
+    }
+    packageDetails := utils.CreatePackageDetails(c.Args()[0])
+    packageFlags := createPackageFlags(c)
+    if packageFlags.BintrayDetails.User == "" {
+        packageFlags.BintrayDetails.User = packageDetails.Subject
+    }
+    commands.CreatePackage(packageDetails, packageFlags)
+}
+
 func downloadVersion(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
@@ -185,11 +277,10 @@ func upload(c *cli.Context) {
     localPath := c.Args()[0]
     versionDetails, uploadPath := utils.CreateVersionDetailsAndPath(c.Args()[1])
     uploadFlags := createUploadFlags(c)
-    bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
+    if uploadFlags.BintrayDetails.User == "" {
+        uploadFlags.BintrayDetails.User = versionDetails.Subject
     }
-    commands.Upload(versionDetails, localPath, uploadPath, uploadFlags, bintrayDetails)
+    commands.Upload(versionDetails, localPath, uploadPath, uploadFlags)
 }
 
 func downloadFile(c *cli.Context) {
@@ -261,6 +352,22 @@ func entitlements(c *cli.Context) {
     } else {
         utils.Exit("Expecting show, create, update or delete before " + c.Args()[1] + ". Got " + c.Args()[0])
     }
+}
+
+func createPackageFlags(c *cli.Context) *commands.PackageFlags {
+    return &commands.PackageFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Desc: c.String("desc"),
+        Labels: c.String("labels"),
+        Licenses: c.String("licenses"),
+        CustomLicenses: c.String("cust-licenses"),
+        VcsUrl: c.String("vcs-url"),
+        WebsiteUrl: c.String("website-url"),
+        IssueTrackerUrl: c.String("i-tracker-url"),
+        GithubRepo: c.String("github-repo"),
+        GithubReleaseNotesFile: c.String("github-rel-notes"),
+        PublicDownloadNumbers: c.Bool("pub-dn"),
+        PublicStats: c.Bool("pub-stats") }
 }
 
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {

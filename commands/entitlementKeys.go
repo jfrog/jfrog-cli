@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-    "strings"
     "strconv"
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
@@ -63,10 +62,10 @@ func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
     }
 
     if flags.WhiteCidrs != "" {
-        whiteCidrs = "\"white_cidrs\": " + fixArgList(flags.WhiteCidrs)
+        whiteCidrs = "\"white_cidrs\": " + utils.BuildListString(flags.WhiteCidrs)
     }
     if flags.BlackCidrs != "" {
-        blackCidrs = "\"black_cidrs\": " + fixArgList(flags.BlackCidrs)
+        blackCidrs = "\"black_cidrs\": " + utils.BuildListString(flags.BlackCidrs)
     }
 
     data := "{"
@@ -97,20 +96,6 @@ func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-}
-
-func fixArgList(cidr string) string {
-    split := strings.Split(cidr, ",")
-    size := len(split)
-    str := "[\""
-    for i := 0; i < size; i++ {
-        str += split[i]
-        if i+1 < size {
-            str += "\",\""
-        }
-    }
-    str += "\"]"
-    return str
 }
 
 func getDownloadKeysPath(bintrayDetails *utils.BintrayDetails, org string) string {

@@ -88,7 +88,7 @@ func buildEntitlementJson(flags *EntitlementFlags, create bool) string {
         "\"access\": \"" + flags.Access + "\""
 
     if flags.Keys != "" {
-        data += ",\"download_keys\": " + fixArgList(flags.Keys)
+        data += ",\"download_keys\": " + utils.BuildListString(flags.Keys)
     }
     if flags.Path != "" {
         data += ",\"path\": \"" + flags.Path + "\""
