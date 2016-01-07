@@ -81,25 +81,21 @@ These symbols are replaced with the sections enclosed with parenthesis in the fi
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0* 
 of the *froggy-package* package 
-` ``console
+```console
 bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
 ```
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the /frog-files under version *1.0* 
 of the *froggy-package* package 
-` ``console
+```console
 bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
 ```
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0*, 
 while adding the *-up* suffix to their names in Bintray.  
-` ``console
+```console
 bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
 ```
-
-
-
-
 
 ##### The *download-file* (dlf) command
 
