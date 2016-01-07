@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
     "strings"
     "strconv"
     "github.com/JFrogDev/bintray-cli-go/utils"
@@ -12,8 +13,8 @@ func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
@@ -23,8 +24,8 @@ func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
@@ -34,8 +35,8 @@ func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
     if resp.StatusCode != 201 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
@@ -46,8 +47,8 @@ func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
@@ -95,7 +96,7 @@ func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
+    fmt.Println("Bintray response: " + resp.Status)
 }
 
 func fixArgList(cidr string) string {

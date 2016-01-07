@@ -54,6 +54,53 @@ Global options are used for all commands.
    --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
 ```
 
+##### The *upload* (u) command
+
+###### Function
+Used to upload files to Bintray
+
+###### Command options
+```console
+   --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
+   --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
+   --regexp       [Default: false] Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
+   --dry-run      [Default: false] Set to true to disable communication with Artifactory.
+```
+
+###### Arguments
+* The first argument is the local file-system path to the artifacts to be uploaded to Artifactory.
+The path can include a single file or multiple artifacts, by using the * wildcard.
+**Important:** If the path is provided as a regular expression (with the --regexp=true option) then
+the first regular expression appearing as part of the argument must be enclosed in parenthesis.
+
+* The second argument is the upload path in Bintray.
+The path can include symbols in the form of {1}, {2}, ...
+These symbols are replaced with the sections enclosed with parenthesis in the first argument.
+
+###### Examples
+
+Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0* 
+of the *froggy-package* package 
+` ``console
+bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
+```
+
+Upload all files located under *dir/sub-dir* with names that start with *frog* to the /frog-files under version *1.0* 
+of the *froggy-package* package 
+` ``console
+bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
+```
+
+Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0*, 
+while adding the *-up* suffix to their names in Bintray.  
+` ``console
+bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
+```
+
+
+
+
+
 ##### The *download-file* (dlf) command
 
 ###### Function
@@ -61,7 +108,7 @@ Used to download a specific file from Bintray.
 
 ###### Command options
 
-Same as the *download-ver* command.
+This command has no command options. It uses however the global options.
 
 ###### Arguments
 The command expects one argument in the form of *subject/repository/package/version/path*.

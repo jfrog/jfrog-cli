@@ -2,6 +2,7 @@ package utils
 
 import (
     "os"
+    "fmt"
     "bytes"
     "strings"
     "encoding/json"
@@ -14,7 +15,7 @@ func CheckError(err error) {
 }
 
 func Exit(msg string) {
-    println(msg)
+    fmt.Println(msg)
     os.Exit(1)
 }
 

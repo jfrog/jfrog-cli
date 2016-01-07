@@ -16,19 +16,19 @@ func main() {
 
     app.Commands = []cli.Command{
         {
-            Name: "download-ver",
-            Usage: "Download version files",
-            Aliases: []string{"dlv"},
-            Flags: getDownloadVersionFlags(),
+            Name: "upload",
+            Usage: "Upload files",
+            Aliases: []string{"u"},
+            Flags: getUploadFlags(),
             Action: func(c *cli.Context) {
-                downloadVersion(c)
+                upload(c)
             },
         },
         {
             Name: "download-file",
             Usage: "Download file",
             Aliases: []string{"dlf"},
-            Flags: getDownloadFileFlags(),
+            Flags: getFlags(),
             Action: func(c *cli.Context) {
                 downloadFile(c)
             },
@@ -80,12 +80,30 @@ func getFlags() []cli.Flag {
     }
 }
 
-func getDownloadVersionFlags() []cli.Flag {
-    return getFlags()
-}
-
-func getDownloadFileFlags() []cli.Flag {
-    return getFlags()
+func getUploadFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+        Name:  "recursive",
+        Value:  "",
+        Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
+    }
+    flags[5] = cli.StringFlag{
+        Name:  "flat",
+        Value:  "",
+        Usage: "[Default: true] If not set to true, and the upload path ends with a slash, files are uploaded according to their file system hierarchy.",
+    }
+    flags[6] = cli.BoolFlag{
+         Name:  "regexp",
+         Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
+    }
+    flags[7] = cli.BoolFlag{
+         Name:  "dry-run",
+         Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+    }
+    return flags
 }
 
 func getEntitlementsFlags() []cli.Flag {
@@ -160,6 +178,20 @@ func downloadVersion(c *cli.Context) {
     commands.DownloadVersion(versionDetails, bintrayDetails)
 }
 
+func upload(c *cli.Context) {
+    if len(c.Args()) != 2 {
+        utils.Exit("Wrong number of arguments. Try 'bt upload --help'.")
+    }
+    localPath := c.Args()[0]
+    versionDetails, uploadPath := utils.CreateVersionDetailsAndPath(c.Args()[1])
+    uploadFlags := createUploadFlags(c)
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
+    commands.Upload(versionDetails, localPath, uploadPath, uploadFlags, bintrayDetails)
+}
+
 func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
@@ -185,16 +217,16 @@ func entitlementKeys(c *cli.Context) {
     }
     keyId := c.Args()[1]
     if c.Args()[0] == "show" {
-        commands.ShowDownloadKey(createDownloadKeyForShowAndDelete(keyId, c), org)
+        commands.ShowDownloadKey(createDownloadKeyFlagsForShowAndDelete(keyId, c), org)
     } else
     if c.Args()[0] == "create" {
-        commands.CreateDownloadKey(createDownloadKeyForCreateAndUpdate(keyId, c), org)
+        commands.CreateDownloadKey(createDownloadKeyFlagsForCreateAndUpdate(keyId, c), org)
     } else
     if c.Args()[0] == "update" {
-        commands.UpdateDownloadKey(createDownloadKeyForCreateAndUpdate(keyId, c), org)
+        commands.UpdateDownloadKey(createDownloadKeyFlagsForCreateAndUpdate(keyId, c), org)
     } else
     if c.Args()[0] == "delete" {
-        commands.DeleteDownloadKey(createDownloadKeyForShowAndDelete(keyId, c), org)
+        commands.DeleteDownloadKey(createDownloadKeyFlagsForShowAndDelete(keyId, c), org)
     } else {
         utils.Exit("Expecting show, create, update or delete after the key argument. Got " + c.Args()[0])
     }
@@ -216,22 +248,45 @@ func entitlements(c *cli.Context) {
     }
     details := commands.CreateVersionDetailsForEntitlements(c.Args()[1])
     if c.Args()[0] == "show" {
-        commands.ShowEntitlement(createEntitlementForShowAndDelete(c), details)
+        commands.ShowEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
     } else
     if c.Args()[0] == "create" {
-        commands.CreateEntitlement(createEntitlementForCreate(c), details)
+        commands.CreateEntitlement(createEntitlementFlagsForCreate(c), details)
     } else
     if c.Args()[0] == "update" {
-        commands.UpdateEntitlement(createEntitlementForUpdate(c), details)
+        commands.UpdateEntitlement(createEntitlementFlagsForUpdate(c), details)
     } else
     if c.Args()[0] == "delete" {
-        commands.DeleteEntitlement(createEntitlementForShowAndDelete(c), details)
+        commands.DeleteEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
     } else {
         utils.Exit("Expecting show, create, update or delete before " + c.Args()[1] + ". Got " + c.Args()[0])
     }
 }
 
-func createEntitlementForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {
+func createUploadFlags(c *cli.Context) *commands.UploadFlags {
+    var recursive bool
+    var flat bool
+
+    if c.String("recursive") == "" {
+        recursive = true
+    } else {
+        recursive = c.Bool("recursive")
+    }
+    if c.String("flat") == "" {
+        flat = true
+    } else {
+        flat = c.Bool("flat")
+    }
+
+    return &commands.UploadFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Recursive: recursive,
+        Flat: flat,
+        UseRegExp: c.Bool("regexp"),
+        DryRun: c.Bool("dry-run") }
+}
+
+func createEntitlementFlagsForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {
     if c.String("id") == "" {
         utils.Exit("Please add the --id option")
     }
@@ -240,7 +295,7 @@ func createEntitlementForShowAndDelete(c *cli.Context) *commands.EntitlementFlag
         Id: c.String("id") }
 }
 
-func createEntitlementForCreate(c *cli.Context) *commands.EntitlementFlags {
+func createEntitlementFlagsForCreate(c *cli.Context) *commands.EntitlementFlags {
     if c.String("access") == "" {
         utils.Exit("Please add the --access option")
     }
@@ -251,7 +306,7 @@ func createEntitlementForCreate(c *cli.Context) *commands.EntitlementFlags {
         Keys: c.String("keys") }
 }
 
-func createEntitlementForUpdate(c *cli.Context) *commands.EntitlementFlags {
+func createEntitlementFlagsForUpdate(c *cli.Context) *commands.EntitlementFlags {
     if c.String("id") == "" {
         utils.Exit("Please add the --id option")
     }
@@ -266,13 +321,13 @@ func createEntitlementForUpdate(c *cli.Context) *commands.EntitlementFlags {
         Keys: c.String("keys") }
 }
 
-func createDownloadKeyForShowAndDelete(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
+func createDownloadKeyFlagsForShowAndDelete(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
     return &commands.DownloadKeyFlags {
         BintrayDetails: createBintrayDetails(c),
         Id: keyId }
 }
 
-func createDownloadKeyForCreateAndUpdate(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
+func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
     var cachePeriod int
     if c.String("ex-check-cache") != "" {
         var err error

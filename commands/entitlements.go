@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
     "strings"
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
@@ -14,8 +15,8 @@ func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.Versi
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -28,8 +29,8 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -42,7 +43,7 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
+    fmt.Println("Bintray response: " + resp.Status)
 }
 
 func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -55,8 +56,8 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if resp.StatusCode != 201 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -70,8 +71,8 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
-    println("Bintray response: " + resp.Status)
-    println(utils.IndentJson(body))
+    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(utils.IndentJson(body))
 }
 
 func CreateVersionDetailsForEntitlements(versionStr string) *utils.VersionDetails {
