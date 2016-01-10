@@ -52,6 +52,15 @@ func main() {
             },
         },
         {
+            Name: "package-delete",
+            Usage: "Delete a package",
+            Aliases: []string{"pd"},
+            Flags: getCreatePackageFlags(),
+            Action: func(c *cli.Context) {
+                deletePackage(c)
+            },
+        },
+        {
             Name: "entitlements",
             Usage: "Entitlements",
             Aliases: []string{"ent"},
@@ -248,7 +257,7 @@ func getEntitlementKeysFlags() []cli.Flag {
 
 func createPackage(c *cli.Context) {
     if len(c.Args()) != 1 {
-        utils.Exit("Wrong number of arguments. Try 'bt create-package --help'.")
+        utils.Exit("Wrong number of arguments. Try 'bt package-create --help'.")
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
     packageFlags := createPackageFlags(c)
@@ -256,6 +265,18 @@ func createPackage(c *cli.Context) {
         packageFlags.BintrayDetails.User = packageDetails.Subject
     }
     commands.CreatePackage(packageDetails, packageFlags)
+}
+
+func deletePackage(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt package-delete --help'.")
+    }
+    packageDetails := utils.CreatePackageDetails(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = packageDetails.Subject
+    }
+    commands.DeletePackage(packageDetails, bintrayDetails)
 }
 
 func downloadVersion(c *cli.Context) {

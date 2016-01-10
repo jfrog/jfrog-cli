@@ -11,8 +11,6 @@ func CreatePackage(packageDetails *utils.VersionDetails, flags *PackageFlags) {
     url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo
 
-println(data)
-
     fmt.Println("Creating package: " + packageDetails.Package)
     resp, body := utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {

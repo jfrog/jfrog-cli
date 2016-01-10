@@ -1,24 +1,25 @@
-## Bintray CLI
+# Bintray CLI
+Bintray CLI
 
 Bintray CLI provides a command line interface for invoking actions on Bintray.
 
-### Getting Started
+## Getting Started
 
-#### Downloading the executables from Bintray
+### Downloading the executables from Bintray
 
 [TO DO]
 
-#### Building the command line executable
+### Building the command line executable
 
 If you prefer, you may instead build the client in go.
 
-##### Setup GO on your machine
+#### Setup GO on your machine
 
 * Make sure you have a working Go environment. [See the install instructions](http://golang.org/doc/install).
 * Navigate to the directory where you want to create the *bintray-cli-go* project.
 * Set the value of the GOPATH environment variable to the full path of this directory.
 
-##### Download Bintray CLI from GitHub
+#### Download Bintray CLI from GitHub
 
 Run the following command to create the *bintray-cli-go* project:
 ```console
@@ -29,12 +30,12 @@ Navigate to the following directory
 ```console
 $ cd $GOPATH/bin
 ```
-#### Usage
+### Usage
 
 You can copy the *bt* executable to any location on your file-system as long as you add it to your *PATH* environment variable,
 so that you can access it from any path.
 
-##### Command syntax
+#### Command syntax
 
 ```console
 $ bt command-name global-options command-options arguments
@@ -44,7 +45,7 @@ The sections below specify the available commands, their respective options and 
 *bt* should be followed by a command name (for example, download-ver), a list of options (for example, --repo=my-bintray-repo)
 and the list of arguments for the command.
 
-##### Global options
+#### Global options
 
 Global options are used for all commands.
 ```console
@@ -54,12 +55,22 @@ Global options are used for all commands.
    --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
 ```
 
-##### The *upload* (u) command
+#### Commands List
+- [upload (u)](#upload)
+- [download-file (dlf)](#download-file)
+- [download-ver (dlv)](#download-ver)
+- [package-create (pc)](#package-create)
+- [package-delete (pd)](#package-delete)
+- [entitlements (ent)](#entitlements)
+- [entitlement-keys (ent-keys)](#entitlement-keys)
 
-###### Function
+<a name="upload"/>
+#### The *upload* (u) command
+
+##### Function
 Used to upload files to Bintray
 
-###### Command options
+##### Command options
 ```console
    --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
    --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
@@ -67,7 +78,7 @@ Used to upload files to Bintray
    --dry-run      [Default: false] Set to true to disable communication with Bintray.
 ```
 
-###### Arguments
+##### Arguments
 * The first argument is the local file-system path to the artifacts to be uploaded to Bintray.
 The path can include a single file or multiple artifacts, by using the * wildcard.
 **Important:** If the path is provided as a regular expression (with the --regexp=true option) then
@@ -77,7 +88,7 @@ the first regular expression appearing as part of the argument must be enclosed 
 The path can include symbols in the form of {1}, {2}, ...
 These symbols are replaced with the sections enclosed with parenthesis in the first argument.
 
-###### Examples
+##### Examples
 
 Upload all files located under *dir/sub-dir*, with names that start with *frog*, to the root path under version *1.0* 
 of the *froggy-package* package 
@@ -96,48 +107,50 @@ while adding the *-up* suffix to their names in Bintray.
 ```console
 bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
 ```
+<a name="download-file"/>
+#### The *download-file* (dlf) command
 
-##### The *download-file* (dlf) command
-
-###### Function
+##### Function
 Used to download a specific file from Bintray.
 
-###### Command options
+##### Command options
 
 This command has no command options. It uses however the global options.
 
-###### Arguments
+##### Arguments
 The command expects one argument in the form of *subject/repository/package/version/path*.
 
-###### Examples
+##### Examples
 ```console
 bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
 bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
 ```
 
-##### The *download-ver* (dlv) command
+<a name="download-ver"/>
+#### The *download-ver* (dlv) command
 
-###### Function
+##### Function
 Used to download the files of a specific version from Bintray.
 
-###### Command options
+##### Command options
 This command has no command options. It uses however the global options.
 
-###### Arguments
+##### Arguments
 The command expects one argument in the form of *subject/repository/package/version*.
 
-###### Examples
+##### Examples
 ```console
 bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 ```
 
-##### The *package-create* (pc) command
+<a name="package-create"/>
+#### The *package-create* (pc) command
 
-###### Function
+##### Function
 Used for creating packages in Bintray
 
-###### Command options
+##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
    --desc               [Optional]        Package description.
@@ -153,21 +166,34 @@ The command uses the global options, in addition to the following command option
    --pub-stats          [Default: false]  Public statistics
 ```
 
-###### Arguments
+##### Arguments
 The command expects one argument in the form of *subject/repository/package.
 
-###### Examples
+##### Examples
 Create the *super-frog-package* package 
 ```console
 bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
-##### The *entitlement-keys* (ent-keys) command
+<a name="package-delete"/>
+#### The *package-delete* (pd) command
 
-###### Function
+##### Function
+Used for deleting packages in Bintray
+
+##### Command options
+This command has no command options. It uses however the global options.
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package.
+
+<a name="entitlement-keys"/>
+#### The *entitlement-keys* (ent-keys) command
+
+##### Function
 Used for managing Download Keys.
 
-###### Command options
+##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
    --org             Bintray organization.
@@ -178,11 +204,11 @@ The command uses the global options, in addition to the following command option
    --black-cidrs     Used for Download Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/22 will block access for all IPs that exist in the specified range.
 ```
 
-###### Arguments
+##### Arguments
 * With no arguments, a list of all download keys is displayed.
 * When sending the show, create, update or delete argument, it should be followed by an argument indicating the download key ID to show, create, update or delete the download key.
 
-###### Examples
+##### Examples
 Show all Download Keys
 ```console
 bt ent-keys
@@ -209,12 +235,13 @@ Delete a Download Key
 bt ent key delete key1
 ```
 
-##### The *entitlements* (ent) command
+<a name="entitlements"/>
+#### The *entitlements* (ent) command
 
-###### Function
+##### Function
 Used to manage Entitlements.
 
-###### Command options
+##### Command options
 The command uses the global options, in addition to the following command.
 ```console
    --id              Entitlement ID. Used for Entitlements update.
@@ -223,11 +250,11 @@ The command uses the global options, in addition to the following command.
    --path            Entitlement path. Used for Entitlements creating and update.
 ```
 
-###### Arguments
+##### Arguments
 * When sending an argument in the form of subject/repo or subject/repo/package or subject/repo/package/version, a list of all entitles for the send repo, package or version is displayed.
 * If the first argument sent is show, create, update or delete, it should be followed by an argument in the form of subject/repo or subject/repo/package or subject/repo/package/version to show, create, update or delete the entitlement.
 
-###### Examples
+##### Examples
 
 Show all Entitlements of the swamp-repo repository.
 ```console
