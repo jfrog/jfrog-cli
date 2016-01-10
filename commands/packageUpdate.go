@@ -5,14 +5,14 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
+func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
     data := utils.CreatePackageJson(packageDetails.Package, flags)
     url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
-        packageDetails.Repo
+        packageDetails.Repo + "/" + packageDetails.Package
 
-    fmt.Println("Creating package: " + packageDetails.Package)
-    resp, body := utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
-    if resp.StatusCode != 201 {
+    fmt.Println("Updating package: " + packageDetails.Package)
+    resp, body := utils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    if resp.StatusCode != 200 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)

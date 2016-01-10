@@ -60,6 +60,7 @@ Global options are used for all commands.
 - [download-file (dlf)](#download-file)
 - [download-ver (dlv)](#download-ver)
 - [package-create (pc)](#package-create)
+- [package-update (pc)](#package-update)
 - [package-delete (pd)](#package-delete)
 - [entitlements (ent)](#entitlements)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
@@ -175,6 +176,24 @@ Create the *super-frog-package* package
 bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
+<a name="package-update"/>
+#### The *package-update* (pu) command
+
+##### Function
+Used for updating packages in Bintray
+
+##### Command options
+The command uses the same option as the *package-create* command
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package.
+
+##### Examples
+Create the *super-frog-package* package 
+```console
+bt pu my-org/swamp-repo/super-frog-package --labels=label1,label2,label3 
+```
+
 <a name="package-delete"/>
 #### The *package-delete* (pd) command
 
@@ -182,10 +201,19 @@ bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-u
 Used for deleting packages in Bintray
 
 ##### Command options
-This command has no command options. It uses however the global options.
+The command uses the global options, in addition to the following command option.
+```console
+   --q      [Default: false]       Set to true to skip the delete confirmation message.
+```
 
 ##### Arguments
 The command expects one argument in the form of *subject/repository/package.
+
+##### Examples
+Delete the *froger-package* package 
+` ``console
+bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+```
 
 <a name="entitlement-keys"/>
 #### The *entitlement-keys* (ent-keys) command

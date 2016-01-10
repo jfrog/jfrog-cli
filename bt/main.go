@@ -2,6 +2,7 @@ package main
 
 import (
     "os"
+    "fmt"
     "strconv"
     "github.com/codegangsta/cli"
     "github.com/JFrogDev/bintray-cli-go/utils"
@@ -46,16 +47,25 @@ func main() {
             Name: "package-create",
             Usage: "Create a package",
             Aliases: []string{"pc"},
-            Flags: getCreatePackageFlags(),
+            Flags: getCreateAndUpdatePackageFlags(),
             Action: func(c *cli.Context) {
                 createPackage(c)
+            },
+        },
+        {
+            Name: "package-update",
+            Usage: "Update a package",
+            Aliases: []string{"pu"},
+            Flags: getCreateAndUpdatePackageFlags(),
+            Action: func(c *cli.Context) {
+                updatePackage(c)
             },
         },
         {
             Name: "package-delete",
             Usage: "Delete a package",
             Aliases: []string{"pd"},
-            Flags: getCreatePackageFlags(),
+            Flags: getDeletePackageFlags(),
             Action: func(c *cli.Context) {
                 deletePackage(c)
             },
@@ -107,7 +117,7 @@ func getFlags() []cli.Flag {
     }
 }
 
-func getCreatePackageFlags() []cli.Flag {
+func getCreateAndUpdatePackageFlags() []cli.Flag {
     flags := []cli.Flag{
         nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
     }
@@ -166,6 +176,19 @@ func getCreatePackageFlags() []cli.Flag {
          Usage: "[Default: false] Public statistics",
     }
 
+    return flags
+}
+
+func getDeletePackageFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+        Name:  "q",
+        Value:  "",
+        Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+    }
     return flags
 }
 
@@ -267,6 +290,18 @@ func createPackage(c *cli.Context) {
     commands.CreatePackage(packageDetails, packageFlags)
 }
 
+func updatePackage(c *cli.Context) {
+  if len(c.Args()) != 1 {
+      utils.Exit("Wrong number of arguments. Try 'bt package-update --help'.")
+  }
+  packageDetails := utils.CreatePackageDetails(c.Args()[0])
+  packageFlags := createPackageFlags(c)
+  if packageFlags.BintrayDetails.User == "" {
+      packageFlags.BintrayDetails.User = packageDetails.Subject
+  }
+  commands.UpdatePackage(packageDetails, packageFlags)
+}
+
 func deletePackage(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt package-delete --help'.")
@@ -275,6 +310,15 @@ func deletePackage(c *cli.Context) {
     bintrayDetails := createBintrayDetails(c)
     if bintrayDetails.User == "" {
         bintrayDetails.User = packageDetails.Subject
+    }
+
+    if !c.Bool("q") {
+        var confirm string
+        fmt.Print("Delete package " + packageDetails.Package + "? (y/n): ")
+        fmt.Scanln(&confirm)
+        if !utils.ConfirmAnswer(confirm) {
+            return
+        }
     }
     commands.DeletePackage(packageDetails, bintrayDetails)
 }
@@ -375,8 +419,8 @@ func entitlements(c *cli.Context) {
     }
 }
 
-func createPackageFlags(c *cli.Context) *commands.PackageFlags {
-    return &commands.PackageFlags {
+func createPackageFlags(c *cli.Context) *utils.PackageFlags {
+    return &utils.PackageFlags {
         BintrayDetails: createBintrayDetails(c),
         Desc: c.String("desc"),
         Labels: c.String("labels"),

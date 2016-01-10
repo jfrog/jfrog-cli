@@ -7,7 +7,7 @@ import (
 )
 
 func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.VersionDetails) {
-    url := bintrayDetails.ApiUrl + utils.CreateBintrayPath(details) + "/entitlements"
+    url := bintrayDetails.ApiUrl + createBintrayPath(details) + "/entitlements"
     if bintrayDetails.User == "" {
         bintrayDetails.User = details.Subject
     }
@@ -20,7 +20,7 @@ func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.Versi
 }
 
 func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
-    url := flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+    url := flags.BintrayDetails.ApiUrl + createBintrayPath(details) +
         "/entitlements/" + flags.Id
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
@@ -34,7 +34,7 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 }
 
 func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
-    url := flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+    url := flags.BintrayDetails.ApiUrl + createBintrayPath(details) +
         "/entitlements/" + flags.Id
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
@@ -47,7 +47,7 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 }
 
 func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
-    var path = flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) + "/entitlements"
+    var path = flags.BintrayDetails.ApiUrl + createBintrayPath(details) + "/entitlements"
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
     }
@@ -61,7 +61,7 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 }
 
 func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
-    var path = flags.BintrayDetails.ApiUrl + utils.CreateBintrayPath(details) +
+    var path = flags.BintrayDetails.ApiUrl + createBintrayPath(details) +
         "/entitlements/" + flags.Id
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
@@ -95,6 +95,18 @@ func buildEntitlementJson(flags *EntitlementFlags, create bool) string {
     }
     data += "}"
     return data
+}
+
+func createBintrayPath(details *utils.VersionDetails) string {
+    if details.Version == "" {
+        if details.Package == "" {
+            return "repos/" + details.Subject + "/" + details.Repo
+        }
+        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package
+    } else {
+        return "packages/" + details.Subject + "/" + details.Repo + "/" + details.Package +
+            "/versions/" + details.Version
+    }
 }
 
 type EntitlementFlags struct {
