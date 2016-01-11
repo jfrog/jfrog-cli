@@ -81,6 +81,15 @@ func main() {
             },
         },
         {
+            Name: "version-show",
+            Usage: "Show version",
+            Aliases: []string{"vs"},
+            Flags: getFlags(),
+            Action: func(c *cli.Context) {
+                showVersion(c)
+            },
+        },
+        {
             Name: "version-create",
             Usage: "Create version",
             Aliases: []string{"vc"},
@@ -359,6 +368,18 @@ func showPackage(c *cli.Context) {
         bintrayDetails.User = packageDetails.Subject
     }
     commands.ShowPackage(packageDetails, bintrayDetails)
+}
+
+func showVersion(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt version-show --help'.")
+    }
+    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
+    commands.ShowVersion(versionDetails, bintrayDetails)
 }
 
 func createPackage(c *cli.Context) {

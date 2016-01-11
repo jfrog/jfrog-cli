@@ -55,7 +55,7 @@ Global options are used for all commands.
    --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
 ```
 
-#### Commands List
+#### Commands list
 - [upload (u)](#upload)
 - [download-file (dlf)](#download-file)
 - [download-ver (dlv)](#download-ver)
@@ -63,6 +63,7 @@ Global options are used for all commands.
 - [package-create (pc)](#package-create)
 - [package-update (pc)](#package-update)
 - [package-delete (pd)](#package-delete)
+- [version-show (vs)](#version-show)
 - [version-create (vc)](#version-create)
 - [version-update (vu)](#version-update)
 - [version-delete (vd)](#version-delete)
@@ -152,7 +153,7 @@ bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 #### The *package-show* (ps) command
 
 ##### Function
-Used for show package details.
+Used for showing package details.
 
 ##### Command options
 This command has no command options. It uses however the global options.
@@ -234,6 +235,33 @@ The command expects one argument in the form of *subject/repository/package.
 Delete the *froger-package* package 
 ```console
 bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+```
+
+
+
+<a name="version-show"/>
+#### The *version-show* (vs) command
+
+##### Function
+Used for showing version details.
+
+##### Command options
+This command has no command options. It uses however the global options.
+
+##### Arguments
+The command expects one argument in one of the forms
+* *subject/repository/package* to show the latest published version.
+* *subject/repository/package/version* to show the specified version.
+
+##### Examples
+Show version 1.0.0 of package *super-frog-package* 
+```console
+bt vs my-org/swamp-repo/super-frog-package/1.0 
+```
+
+Show the latest published version of package *super-frog-package* 
+```console
+bt vs my-org/swamp-repo/super-frog-package 
 ```
 
 <a name="version-create"/>
