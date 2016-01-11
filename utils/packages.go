@@ -1,24 +1,43 @@
 package utils
 
-import (
-    "strconv"
-)
-
 func CreatePackageJson(packageName string, flags *PackageFlags) string {
     json := "{" +
-        "\"name\": \"" + packageName + "\"," +
-        "\"desc\": \"" + flags.Desc + "\"," +
-        "\"labels\": " + BuildListString(flags.Labels) + "," +
-        "\"licenses\": " + BuildListString(flags.Licenses) + "," +
-        "\"custom_licenses\": \"" + BuildListString(flags.CustomLicenses) + "\"," +
-        "\"vcs_url\": \"" + flags.VcsUrl + "\"," +
-        "\"website_url\": \"" + flags.WebsiteUrl + "\"," +
-        "\"issue_tracker_url\": \"" + flags.IssueTrackerUrl + "\"," +
-        "\"github_repo\": \"" + flags.GithubRepo + "\"," +
-        "\"github_release_notes_file\": \"" + flags.GithubReleaseNotesFile + "\"," +
-        "\"public_download_numbers\": " + strconv.FormatBool(flags.PublicDownloadNumbers) + "," +
-        "\"public_stats\": " + strconv.FormatBool(flags.PublicStats) +
-    "}"
+        "\"name\": \"" + packageName + "\""
+        if flags.Desc != "" {
+            json += "," + "\"desc\": \"" + flags.Desc + "\""
+        }
+        if flags.Labels != "" {
+            json += "," + "\"labels\": " + BuildListString(flags.Labels)
+        }
+        if flags.Licenses != "" {
+            json += "," + "\"licenses\": " + BuildListString(flags.Licenses)
+        }
+        if flags.CustomLicenses != "" {
+            json += "," + "\"custom_licenses\": \"" + BuildListString(flags.CustomLicenses)
+        }
+        if flags.VcsUrl != "" {
+            json += "," + "\"vcs_url\": \"" + flags.VcsUrl + "\""
+        }
+        if flags.WebsiteUrl != "" {
+            json += "," + "\"website_url\": \"" + flags.WebsiteUrl + "\""
+        }
+        if flags.IssueTrackerUrl != "" {
+            json += "," + "\"issue_tracker_url\": \"" + flags.IssueTrackerUrl + "\""
+        }
+        if flags.GithubRepo != "" {
+            json += "," + "\"github_repo\": \"" + flags.GithubRepo + "\""
+        }
+        if flags.GithubReleaseNotesFile != "" {
+            json += "," + "\"github_release_notes_file\": \"" + flags.GithubReleaseNotesFile + "\""
+        }
+        if flags.PublicDownloadNumbers != "" {
+            json += "," + "\"public_download_numbers\": " + flags.PublicDownloadNumbers
+        }
+        if flags.PublicStats != "" {
+            json += "," + "\"public_stats\": " + flags.PublicStats
+        }
+        json += "}"
+
     return json
 }
 
@@ -33,6 +52,6 @@ type PackageFlags struct {
     IssueTrackerUrl string
     GithubRepo string
     GithubReleaseNotesFile string
-    PublicDownloadNumbers bool
-    PublicStats bool
+    PublicDownloadNumbers string
+    PublicStats string
 }

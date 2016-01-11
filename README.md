@@ -63,6 +63,9 @@ Global options are used for all commands.
 - [package-create (pc)](#package-create)
 - [package-update (pc)](#package-update)
 - [package-delete (pd)](#package-delete)
+- [version-create (vc)](#version-create)
+- [version-update (vu)](#version-update)
+- [version-delete (vd)](#version-delete)
 - [entitlements (ent)](#entitlements)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
 
@@ -158,9 +161,9 @@ This command has no command options. It uses however the global options.
 The command expects one argument in the form of *subject/repository/package.
 
 ##### Examples
-Create the *super-frog-package* package 
+Show package *super-frog-package* 
 ```console
-bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+bt ps my-org/swamp-repo/super-frog-package 
 ```
 
 <a name="package-create"/>
@@ -231,6 +234,70 @@ The command expects one argument in the form of *subject/repository/package.
 Delete the *froger-package* package 
 ` ``console
 bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+```
+
+<a name="version-create"/>
+#### The *version-create* (vc) command
+
+##### Function
+Used for creating versions in Bintray
+
+##### Command options
+The command uses the global options, in addition to the following command options.
+```console
+   --desc                    [Optional]   Version description.
+   --vcs-tag                 [Optional]   VCS tag.
+   --released                [Optional]   Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ).
+   --github-rel-notes        [Optional]   Github release notes file.
+   --github-tag-rel-notes    [Optional]   Set to true if you wish to use a Github tag release notes.
+```
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package/version.
+
+##### Examples
+Create version 1.0.0 in package *super-frog-package* 
+```console
+bt vc my-org/swamp-repo/super-frog-package/1.0.0 
+```
+
+<a name="version-update"/>
+#### The *version-update* (vu) command
+
+##### Function
+Used for updating versions in Bintray
+
+##### Command options
+The command uses the same option as the *version-create* command
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package/version.
+
+##### Examples
+Update the labels of version 1.0.0 in package *super-frog-package* 
+```console
+bt vu my-org/swamp-repo/super-frog-package/1.0.0 --labels=jump,jumping,frog
+```
+
+<a name="version-delete"/>
+#### The *version-delete* (vd) command
+
+##### Function
+Used for deleting versions in Bintray
+
+##### Command options
+The command uses the global options, in addition to the following command option.
+```console
+   --q      [Default: false]       Set to true to skip the delete confirmation message.
+```
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package/version.
+
+##### Examples
+Create version 1.0.0 in package *super-frog-package* 
+```console
+bt vd my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
 <a name="entitlement-keys"/>

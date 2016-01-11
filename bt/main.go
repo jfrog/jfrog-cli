@@ -3,6 +3,7 @@ package main
 import (
     "os"
     "fmt"
+    "strings"
     "strconv"
     "github.com/codegangsta/cli"
     "github.com/JFrogDev/bintray-cli-go/utils"
@@ -54,7 +55,7 @@ func main() {
         },
         {
             Name: "package-create",
-            Usage: "Create a package",
+            Usage: "Create package",
             Aliases: []string{"pc"},
             Flags: getCreateAndUpdatePackageFlags(),
             Action: func(c *cli.Context) {
@@ -63,7 +64,7 @@ func main() {
         },
         {
             Name: "package-update",
-            Usage: "Update a package",
+            Usage: "Update package",
             Aliases: []string{"pu"},
             Flags: getCreateAndUpdatePackageFlags(),
             Action: func(c *cli.Context) {
@@ -72,11 +73,38 @@ func main() {
         },
         {
             Name: "package-delete",
-            Usage: "Delete a package",
+            Usage: "Delete package",
             Aliases: []string{"pd"},
-            Flags: getDeletePackageFlags(),
+            Flags: getDeletePackageAndVersionFlags(),
             Action: func(c *cli.Context) {
                 deletePackage(c)
+            },
+        },
+        {
+            Name: "version-create",
+            Usage: "Create version",
+            Aliases: []string{"vc"},
+            Flags: getCreateAndUpdateVersionFlags(),
+            Action: func(c *cli.Context) {
+                createVersion(c)
+            },
+        },
+        {
+            Name: "version-update",
+            Usage: "Update version",
+            Aliases: []string{"vu"},
+            Flags: getCreateAndUpdateVersionFlags(),
+            Action: func(c *cli.Context) {
+                updateVersion(c)
+            },
+        },
+        {
+            Name: "version-delete",
+            Usage: "Delete version",
+            Aliases: []string{"vd"},
+            Flags: getDeletePackageAndVersionFlags(),
+            Action: func(c *cli.Context) {
+                deleteVersion(c)
             },
         },
         {
@@ -176,19 +204,53 @@ func getCreateAndUpdatePackageFlags() []cli.Flag {
          Value:  "",
          Usage: "[Optional] Github release notes file.",
     }
-    flags[13] = cli.BoolFlag{
+    flags[13] = cli.StringFlag{
          Name:  "pub-dn",
+         Value:  "",
          Usage: "[Default: false] Public download numbers.",
     }
-    flags[14] = cli.BoolFlag{
+    flags[14] = cli.StringFlag{
          Name:  "pub-stats",
+         Value:  "",
          Usage: "[Default: false] Public statistics",
     }
-
     return flags
 }
 
-func getDeletePackageFlags() []cli.Flag {
+func getCreateAndUpdateVersionFlags() []cli.Flag {
+   flags := []cli.Flag{
+       nil,nil,nil,nil,nil,nil,nil,nil,nil,
+   }
+   copy(flags[0:4], getFlags())
+   flags[4] = cli.StringFlag{
+       Name:  "desc",
+       Value:  "",
+       Usage: "[Optional] Version description.",
+   }
+   flags[5] = cli.StringFlag{
+       Name:  "released",
+       Value:  "",
+       Usage: "[Optional] Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)",
+   }
+   flags[6] = cli.StringFlag{
+        Name:  "github-rel-notes",
+        Value:  "",
+        Usage: "[Optional] Github release notes file.",
+   }
+   flags[7] = cli.StringFlag{
+        Name:  "github-tag-rel-notes",
+        Value:  "",
+        Usage: "[Default: false] Set to true if you wish to use a Github tag release notes.",
+   }
+   flags[8] = cli.StringFlag{
+        Name:  "vcs-tag",
+        Value:  "",
+        Usage: "[Optional] VCS tag.",
+   }
+   return flags
+}
+
+func getDeletePackageAndVersionFlags() []cli.Flag {
     flags := []cli.Flag{
         nil,nil,nil,nil,nil,
     }
@@ -311,6 +373,30 @@ func createPackage(c *cli.Context) {
     commands.CreatePackage(packageDetails, packageFlags)
 }
 
+func createVersion(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt version-create --help'.")
+    }
+    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    versionFlags := createAndUpdateVersionFlags(c)
+    if versionFlags.BintrayDetails.User == "" {
+        versionFlags.BintrayDetails.User = versionDetails.Subject
+    }
+    commands.CreateVersion(versionDetails, versionFlags)
+}
+
+func updateVersion(c *cli.Context) {
+  if len(c.Args()) != 1 {
+      utils.Exit("Wrong number of arguments. Try 'bt version-update --help'.")
+  }
+  versionDetails := utils.CreateVersionDetails(c.Args()[0])
+  versionFlags := createAndUpdateVersionFlags(c)
+  if versionFlags.BintrayDetails.User == "" {
+      versionFlags.BintrayDetails.User = versionDetails.Subject
+  }
+  commands.UpdateVersion(versionDetails, versionFlags)
+}
+
 func updatePackage(c *cli.Context) {
   if len(c.Args()) != 1 {
       utils.Exit("Wrong number of arguments. Try 'bt package-update --help'.")
@@ -342,6 +428,27 @@ func deletePackage(c *cli.Context) {
         }
     }
     commands.DeletePackage(packageDetails, bintrayDetails)
+}
+
+func deleteVersion(c *cli.Context) {
+  if len(c.Args()) != 1 {
+      utils.Exit("Wrong number of arguments. Try 'bt version-delete --help'.")
+  }
+  versionDetails := utils.CreateVersionDetails(c.Args()[0])
+  bintrayDetails := createBintrayDetails(c)
+  if bintrayDetails.User == "" {
+      bintrayDetails.User = versionDetails.Subject
+  }
+
+  if !c.Bool("q") {
+      var confirm string
+      fmt.Print("Delete version " + versionDetails.Package + "? (y/n): ")
+      fmt.Scanln(&confirm)
+      if !utils.ConfirmAnswer(confirm) {
+          return
+      }
+  }
+  commands.DeleteVersion(versionDetails, bintrayDetails)
 }
 
 func downloadVersion(c *cli.Context) {
@@ -441,6 +548,23 @@ func entitlements(c *cli.Context) {
 }
 
 func createPackageFlags(c *cli.Context) *utils.PackageFlags {
+    var publicDownloadNumbers string
+    var publicStats string
+    if c.String("pub-dn") != "" {
+        publicDownloadNumbers = c.String("pub-dn")
+        publicDownloadNumbers = strings.ToLower(publicDownloadNumbers)
+        if publicDownloadNumbers != "true" && publicDownloadNumbers != "false" {
+            utils.Exit("The --pub-dn option should have a boolean value.")
+        }
+    }
+    if c.String("pub-stats") != "" {
+        publicStats = c.String("pub-stats")
+        publicStats = strings.ToLower(publicStats)
+        if publicStats != "true" && publicStats != "false" {
+            utils.Exit("The --pub-stats option should have a boolean value.")
+        }
+    }
+
     return &utils.PackageFlags {
         BintrayDetails: createBintrayDetails(c),
         Desc: c.String("desc"),
@@ -452,8 +576,26 @@ func createPackageFlags(c *cli.Context) *utils.PackageFlags {
         IssueTrackerUrl: c.String("i-tracker-url"),
         GithubRepo: c.String("github-repo"),
         GithubReleaseNotesFile: c.String("github-rel-notes"),
-        PublicDownloadNumbers: c.Bool("pub-dn"),
-        PublicStats: c.Bool("pub-stats") }
+        PublicDownloadNumbers: publicDownloadNumbers,
+        PublicStats: publicStats }
+}
+
+func createAndUpdateVersionFlags(c *cli.Context) *utils.VersionFlags {
+    var githubTagReleaseNotes string
+    if c.String("github-tag-rel-notes") != "" {
+        githubTagReleaseNotes = c.String("github-tag-rel-notes")
+        githubTagReleaseNotes = strings.ToLower(githubTagReleaseNotes)
+        if githubTagReleaseNotes != "true" && githubTagReleaseNotes != "false" {
+            utils.Exit("The --github-tag-rel-notes option should have a boolean value.")
+        }
+    }
+   return &utils.VersionFlags {
+       BintrayDetails: createBintrayDetails(c),
+       Desc: c.String("desc"),
+       VcsTag: c.String("vcs-tag"),
+       Released: c.String("released"),
+       GithubReleaseNotesFile: c.String("github-rel-notes"),
+       GithubUseTagReleaseNotes: githubTagReleaseNotes }
 }
 
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
