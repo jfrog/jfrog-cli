@@ -232,7 +232,7 @@ The command expects one argument in the form of *subject/repository/package.
 
 ##### Examples
 Delete the *froger-package* package 
-` ``console
+```console
 bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
