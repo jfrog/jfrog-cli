@@ -67,6 +67,7 @@ Global options are used for all commands.
 - [version-create (vc)](#version-create)
 - [version-update (vu)](#version-update)
 - [version-delete (vd)](#version-delete)
+- [version-publish (vd)](#version-publish)
 - [entitlements (ent)](#entitlements)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
 
@@ -326,6 +327,24 @@ The command expects one argument in the form of *subject/repository/package/vers
 Create version 1.0.0 in package *super-frog-package* 
 ```console
 bt vd my-org/swamp-repo/super-frog-package/1.0.0 
+```
+
+<a name="version-publish"/>
+#### The *version-publish* (vp) command
+
+##### Function
+Used for publishing versions in Bintray
+
+##### Command options
+This command has no command options. It uses however the global options.
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package/version.
+
+##### Examples
+Publish version 1.0.0 in package *super-frog-package* 
+```console
+bt vp my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
 <a name="entitlement-keys"/>

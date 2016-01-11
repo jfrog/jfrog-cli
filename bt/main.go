@@ -117,6 +117,15 @@ func main() {
             },
         },
         {
+            Name: "version-piblish",
+            Usage: "Publish version",
+            Aliases: []string{"vp"},
+            Flags: getFlags(),
+            Action: func(c *cli.Context) {
+                publishVersion(c)
+            },
+        },
+        {
             Name: "entitlements",
             Usage: "Entitlements",
             Aliases: []string{"ent"},
@@ -470,6 +479,18 @@ func deleteVersion(c *cli.Context) {
       }
   }
   commands.DeleteVersion(versionDetails, bintrayDetails)
+}
+
+func publishVersion(c *cli.Context) {
+     if len(c.Args()) != 1 {
+         utils.Exit("Wrong number of arguments. Try 'bt version-publish --help'.")
+     }
+     versionDetails := utils.CreateVersionDetails(c.Args()[0])
+     bintrayDetails := createBintrayDetails(c)
+     if bintrayDetails.User == "" {
+         bintrayDetails.User = versionDetails.Subject
+     }
+     commands.PublishVersion(versionDetails, bintrayDetails)
 }
 
 func downloadVersion(c *cli.Context) {
