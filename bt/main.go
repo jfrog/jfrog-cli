@@ -44,6 +44,15 @@ func main() {
             },
         },
         {
+            Name: "package-show",
+            Usage: "Show package details",
+            Aliases: []string{"ps"},
+            Flags: getFlags(),
+            Action: func(c *cli.Context) {
+                showPackage(c)
+            },
+        },
+        {
             Name: "package-create",
             Usage: "Create a package",
             Aliases: []string{"pc"},
@@ -276,6 +285,18 @@ func getEntitlementKeysFlags() []cli.Flag {
          Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
     }
     return flags
+}
+
+func showPackage(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt package-show --help'.")
+    }
+    packageDetails := utils.CreatePackageDetails(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c)
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = packageDetails.Subject
+    }
+    commands.ShowPackage(packageDetails, bintrayDetails)
 }
 
 func createPackage(c *cli.Context) {

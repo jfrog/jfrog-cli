@@ -59,6 +59,7 @@ Global options are used for all commands.
 - [upload (u)](#upload)
 - [download-file (dlf)](#download-file)
 - [download-ver (dlv)](#download-ver)
+- [package-show (ps)](#package-show)
 - [package-create (pc)](#package-create)
 - [package-update (pc)](#package-update)
 - [package-delete (pd)](#package-delete)
@@ -115,7 +116,6 @@ bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=
 Used to download a specific file from Bintray.
 
 ##### Command options
-
 This command has no command options. It uses however the global options.
 
 ##### Arguments
@@ -143,6 +143,24 @@ The command expects one argument in the form of *subject/repository/package/vers
 ```console
 bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
+```
+
+<a name="package-show"/>
+#### The *package-show* (ps) command
+
+##### Function
+Used for show package details.
+
+##### Command options
+This command has no command options. It uses however the global options.
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package.
+
+##### Examples
+Create the *super-frog-package* package 
+```console
+bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
 <a name="package-create"/>
