@@ -79,10 +79,32 @@ Used to upload files to Bintray
 
 ##### Command options
 ```console
-   --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
-   --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
-   --regexp       [Default: false] Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
-   --dry-run      [Default: false] Set to true to disable communication with Bintray.
+   --flat                        [Default: true]   If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
+   --recursive                   [Default: true]   Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
+   --regexp                      [Default: false]  Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
+   --dry-run                     [Default: false]  Set to true to disable communication with Bintray.
+```
+If you with the command to create a Bintray package in case it does not exist, please also send the following options.
+```console
+   --pkg-desc                    [Optional]        Package description.
+   --pkg-labels                  [Optional]        Package lables in the form of "lable11","lable2"...
+   --pkg-licenses                [Mandatory]       Package licenses in the form of "Apache-2.0","GPL-3.0"...
+   --pkg-cust-licenses           [Optional]        Package custom licenses in the form of "my-license-1","my-license-2"...
+   --pkg-vcs-url                 [Mandatory]       Package VCS URL.
+   --pkg-website-url             [Optional]        Package web site URL.
+   --pkg-i-tracker-url           [Optional]        Package Issues Tracker URL.
+   --pkg-github-repo             [Optional]        Package Github repository.
+   --pkg-github-rel-notes        [Optional]        Github release notes file.
+   --pkg-pub-dn                  [Default: false]  Public download numbers.
+   --pkg-pub-stats               [Default: false]  Public statistics
+```
+If you with the command to create a Bintray package version in case it does not exist, please also send the following options.
+```console
+   --ver-desc                    [Optional]   Version description.
+   --ver-vcs-tag                 [Optional]   VCS tag.
+   --ver-released                [Optional]   Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ).
+   --ver-github-rel-notes        [Optional]   Github release notes file.
+   --ver-github-tag-rel-notes    [Optional]   Set to true if you wish to use a Github tag release notes.
 ```
 
 ##### Arguments

@@ -8,23 +8,45 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string, flags *UploadFlags) {
+func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
+    uploadFlags *UploadFlags, packageFlags *utils.PackageFlags, versionFlags *utils.VersionFlags) {
+
+    createPackageIfNeeded(versionDetails, uploadFlags, packageFlags)
 
     // Get the list of artifacts to be uploaded to:
-    artifacts := getFilesToUpload(localPath, uploadPath, flags)
+    artifacts := getFilesToUpload(localPath, uploadPath, uploadFlags)
 
-    baseUrl := flags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
+    baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
            versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/";
 
     for _, artifact := range artifacts {
         url := baseUrl + artifact.TargetPath
-        if !flags.DryRun {
+        if !uploadFlags.DryRun {
             fmt.Println("Uploading artifact: " + url)
-            resp := utils.UploadFile(artifact.LocalPath, url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+            resp := utils.UploadFile(artifact.LocalPath, url, uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key)
             fmt.Println("Bintray response: " + resp.Status)
         } else {
             fmt.Println("[Dry Run] Uploading artifact: " + url)
         }
+    }
+}
+
+func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags,
+    packageFlags *utils.PackageFlags) {
+
+    fmt.Println("Checking if package " + versionDetails.Package + " exists...")
+    resp := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
+    if resp.StatusCode == 404 {
+        fmt.Println("Creating package " + versionDetails.Package + "...")
+        resp, body := DoCreatePackage(versionDetails, packageFlags)
+        if resp.StatusCode != 201 {
+            fmt.Println("Bintray response: " + resp.Status)
+            utils.Exit(utils.IndentJson(body))
+        }
+        fmt.Println("Bintray response: " + resp.Status)
+    } else
+    if resp.StatusCode != 200 {
+        utils.Exit("Bintray response: " + resp.Status)
     }
 }
 

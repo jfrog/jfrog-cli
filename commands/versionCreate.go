@@ -2,19 +2,24 @@ package commands
 
 import (
     "fmt"
+    "net/http"
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
 func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
-    data := utils.CreateVersionJson(versionDetails.Version, flags)
-    url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
-        versionDetails.Repo + "/" + versionDetails.Package + "/versions"
-
     fmt.Println("Creating version: " + versionDetails.Version)
-    resp, body := utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := DoCreateVersion(versionDetails, flags)
     if resp.StatusCode != 201 {
         utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(utils.IndentJson(body))
+}
+
+func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) (*http.Response, []byte) {
+    data := utils.CreateVersionJson(versionDetails.Version, flags)
+    url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+        versionDetails.Repo + "/" + versionDetails.Package + "/versions"
+
+    return utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 }

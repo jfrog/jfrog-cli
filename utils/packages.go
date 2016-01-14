@@ -1,5 +1,16 @@
 package utils
 
+import (
+ 	"net/http"
+ )
+
+func HeadPackage(packageDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
+    url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
+        packageDetails.Repo + "/" + packageDetails.Package
+
+    return SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+}
+
 func CreatePackageJson(packageName string, flags *PackageFlags) string {
     json := "{" +
         "\"name\": \"" + packageName + "\""

@@ -105,8 +105,13 @@ func SendPatch(url string, content []byte, user string, password string) (*http.
     return Send("PATCH", url, content, nil, user, password)
 }
 
-func SendDelete(url string, user string, password string) (*http.Response, []byte) {
+func SendDelete(url string, user, password string) (*http.Response, []byte) {
     return Send("DELETE", url, nil, nil, user, password)
+}
+
+func SendHead(url string, user, password string) *http.Response {
+    resp, _ := Send("HEAD", url, nil, nil, user, password)
+    return resp
 }
 
 func Send(method string, url string, content []byte, headers map[string]string, user, password string) (*http.Response, []byte) {
