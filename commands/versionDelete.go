@@ -6,6 +6,9 @@ import (
 )
 
 func DeleteVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
     url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 

@@ -6,6 +6,9 @@ import (
 )
 
 func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
     var message string
     if versionDetails.Version == "" {
         versionDetails.Version = "_latest"

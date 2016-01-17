@@ -14,6 +14,9 @@ func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 }
 
 func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) (*http.Response, []byte) {
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = packageDetails.Subject
+    }
     data := utils.CreatePackageJson(packageDetails.Package, flags)
     url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo

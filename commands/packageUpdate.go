@@ -6,6 +6,9 @@ import (
 )
 
 func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = packageDetails.Subject
+    }
     data := utils.CreatePackageJson(packageDetails.Package, flags)
     url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo + "/" + packageDetails.Package

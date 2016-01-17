@@ -388,9 +388,6 @@ func showPackage(c *cli.Context) {
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = packageDetails.Subject
-    }
     commands.ShowPackage(packageDetails, bintrayDetails)
 }
 
@@ -400,9 +397,6 @@ func showVersion(c *cli.Context) {
     }
     versionDetails := utils.CreateVersionDetails(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
-    }
     commands.ShowVersion(versionDetails, bintrayDetails)
 }
 
@@ -412,9 +406,6 @@ func createPackage(c *cli.Context) {
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
     packageFlags := createPackageFlags(c, "")
-    if packageFlags.BintrayDetails.User == "" {
-        packageFlags.BintrayDetails.User = packageDetails.Subject
-    }
     commands.CreatePackage(packageDetails, packageFlags)
 }
 
@@ -423,10 +414,7 @@ func createVersion(c *cli.Context) {
         utils.Exit("Wrong number of arguments. Try 'bt version-create --help'.")
     }
     versionDetails := utils.CreateVersionDetails(c.Args()[0])
-    versionFlags := createVersionFlags(c)
-    if versionFlags.BintrayDetails.User == "" {
-        versionFlags.BintrayDetails.User = versionDetails.Subject
-    }
+    versionFlags := createVersionFlags(c, "")
     commands.CreateVersion(versionDetails, versionFlags)
 }
 
@@ -435,10 +423,7 @@ func updateVersion(c *cli.Context) {
       utils.Exit("Wrong number of arguments. Try 'bt version-update --help'.")
   }
   versionDetails := utils.CreateVersionDetails(c.Args()[0])
-  versionFlags := createVersionFlags(c)
-  if versionFlags.BintrayDetails.User == "" {
-      versionFlags.BintrayDetails.User = versionDetails.Subject
-  }
+  versionFlags := createVersionFlags(c, "")
   commands.UpdateVersion(versionDetails, versionFlags)
 }
 
@@ -448,9 +433,6 @@ func updatePackage(c *cli.Context) {
   }
   packageDetails := utils.CreatePackageDetails(c.Args()[0])
   packageFlags := createPackageFlags(c, "")
-  if packageFlags.BintrayDetails.User == "" {
-      packageFlags.BintrayDetails.User = packageDetails.Subject
-  }
   commands.UpdatePackage(packageDetails, packageFlags)
 }
 
@@ -460,9 +442,6 @@ func deletePackage(c *cli.Context) {
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = packageDetails.Subject
-    }
 
     if !c.Bool("q") {
         var confirm string
@@ -481,9 +460,6 @@ func deleteVersion(c *cli.Context) {
   }
   versionDetails := utils.CreateVersionDetails(c.Args()[0])
   bintrayDetails := createBintrayDetails(c)
-  if bintrayDetails.User == "" {
-      bintrayDetails.User = versionDetails.Subject
-  }
 
   if !c.Bool("q") {
       var confirm string
@@ -502,9 +478,6 @@ func publishVersion(c *cli.Context) {
      }
      versionDetails := utils.CreateVersionDetails(c.Args()[0])
      bintrayDetails := createBintrayDetails(c)
-     if bintrayDetails.User == "" {
-         bintrayDetails.User = versionDetails.Subject
-     }
      commands.PublishVersion(versionDetails, bintrayDetails)
 }
 
@@ -514,9 +487,6 @@ func downloadVersion(c *cli.Context) {
     }
     versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
-    }
     commands.DownloadVersion(versionDetails, bintrayDetails)
 }
 
@@ -528,11 +498,7 @@ func upload(c *cli.Context) {
     versionDetails, uploadPath := utils.CreateVersionDetailsAndPath(c.Args()[1])
     uploadFlags := createUploadFlags(c)
     packageFlags := createPackageFlags(c, "pkg-")
-    versionFlags := createVersionFlags(c)
-
-    if uploadFlags.BintrayDetails.User == "" {
-        uploadFlags.BintrayDetails.User = versionDetails.Subject
-    }
+    versionFlags := createVersionFlags(c, "ver-")
     commands.Upload(versionDetails, localPath, uploadPath, uploadFlags, packageFlags, versionFlags)
 }
 
@@ -640,21 +606,21 @@ func createPackageFlags(c *cli.Context, prefix string) *utils.PackageFlags {
         PublicStats: publicStats }
 }
 
-func createVersionFlags(c *cli.Context) *utils.VersionFlags {
+func createVersionFlags(c *cli.Context, prefix string) *utils.VersionFlags {
     var githubTagReleaseNotes string
-    if c.String("github-tag-rel-notes") != "" {
-        githubTagReleaseNotes = c.String("github-tag-rel-notes")
+    if c.String(prefix + "github-tag-rel-notes") != "" {
+        githubTagReleaseNotes = c.String(prefix + "github-tag-rel-notes")
         githubTagReleaseNotes = strings.ToLower(githubTagReleaseNotes)
         if githubTagReleaseNotes != "true" && githubTagReleaseNotes != "false" {
             utils.Exit("The --github-tag-rel-notes option should have a boolean value.")
         }
     }
-   return &utils.VersionFlags {
+    return &utils.VersionFlags {
        BintrayDetails: createBintrayDetails(c),
-       Desc: c.String("desc"),
-       VcsTag: c.String("vcs-tag"),
-       Released: c.String("released"),
-       GithubReleaseNotesFile: c.String("github-rel-notes"),
+       Desc: c.String(prefix + "desc"),
+       VcsTag: c.String(prefix + "vcs-tag"),
+       Released: c.String(prefix + "released"),
+       GithubReleaseNotesFile: c.String(prefix + "github-rel-notes"),
        GithubUseTagReleaseNotes: githubTagReleaseNotes }
 }
 

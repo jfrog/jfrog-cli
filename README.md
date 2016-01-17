@@ -84,7 +84,8 @@ Used to upload files to Bintray
    --regexp                      [Default: false]  Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
    --dry-run                     [Default: false]  Set to true to disable communication with Bintray.
 ```
-If you with the command to create a Bintray package in case it does not exist, please also send the following options.
+If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.
+Please send the following command options for the package creation.
 ```console
    --pkg-desc                    [Optional]        Package description.
    --pkg-labels                  [Optional]        Package lables in the form of "lable11","lable2"...
@@ -98,7 +99,8 @@ If you with the command to create a Bintray package in case it does not exist, p
    --pkg-pub-dn                  [Default: false]  Public download numbers.
    --pkg-pub-stats               [Default: false]  Public statistics
 ```
-If you with the command to create a Bintray package version in case it does not exist, please also send the following options.
+If the Package Version to which you're uploading does not exist, the CLI will try to create it.
+Please send the following command options for the version creation.   
 ```console
    --ver-desc                    [Optional]   Version description.
    --ver-vcs-tag                 [Optional]   VCS tag.

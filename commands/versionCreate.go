@@ -17,7 +17,11 @@ func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
 }
 
 func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) (*http.Response, []byte) {
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = versionDetails.Subject
+    }
     data := utils.CreateVersionJson(versionDetails.Version, flags)
+
     url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions"
 

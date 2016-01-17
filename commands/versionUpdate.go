@@ -6,6 +6,9 @@ import (
 )
 
 func UpdateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
+  if flags.BintrayDetails.User == "" {
+      flags.BintrayDetails.User = versionDetails.Subject
+  }
     data := utils.CreateVersionJson(versionDetails.Version, flags)
     url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version

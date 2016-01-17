@@ -6,6 +6,9 @@ import (
 )
 
 func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = versionDetails.Subject
+    }
     url := bintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/" +
         versionDetails.Version + "/publish"

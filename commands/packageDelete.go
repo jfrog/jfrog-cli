@@ -6,6 +6,9 @@ import (
 )
 
 func DeletePackage(packageDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+    if bintrayDetails.User == "" {
+        bintrayDetails.User = packageDetails.Subject
+    }
     url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo + "/" + packageDetails.Package
 

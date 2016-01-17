@@ -1,5 +1,16 @@
 package utils
 
+import (
+ 	"net/http"
+)
+
+func HeadVersion(versionDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
+    url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+        versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
+
+    return SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+}
+
 func CreateVersionJson(versionName string, flags *VersionFlags) string {
     json := "{" +
         "\"name\": \"" + versionName + "\""

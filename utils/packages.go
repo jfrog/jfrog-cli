@@ -2,7 +2,7 @@ package utils
 
 import (
  	"net/http"
- )
+)
 
 func HeadPackage(packageDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
     url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +

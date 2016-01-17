@@ -11,7 +11,11 @@ import (
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
     uploadFlags *UploadFlags, packageFlags *utils.PackageFlags, versionFlags *utils.VersionFlags) {
 
+    if uploadFlags.BintrayDetails.User == "" {
+        uploadFlags.BintrayDetails.User = versionDetails.Subject
+    }
     createPackageIfNeeded(versionDetails, uploadFlags, packageFlags)
+    createVersionIfNeeded(versionDetails, uploadFlags, versionFlags)
 
     // Get the list of artifacts to be uploaded to:
     artifacts := getFilesToUpload(localPath, uploadPath, uploadFlags)
@@ -39,6 +43,25 @@ func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
     if resp.StatusCode == 404 {
         fmt.Println("Creating package " + versionDetails.Package + "...")
         resp, body := DoCreatePackage(versionDetails, packageFlags)
+        if resp.StatusCode != 201 {
+            fmt.Println("Bintray response: " + resp.Status)
+            utils.Exit(utils.IndentJson(body))
+        }
+        fmt.Println("Bintray response: " + resp.Status)
+    } else
+    if resp.StatusCode != 200 {
+        utils.Exit("Bintray response: " + resp.Status)
+    }
+}
+
+func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags,
+    versionFlags *utils.VersionFlags) {
+
+    fmt.Println("Checking if version " + versionDetails.Version + " exists...")
+    resp := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
+    if resp.StatusCode == 404 {
+        fmt.Println("Creating version " + versionDetails.Version + "...")
+        resp, body := DoCreateVersion(versionDetails, versionFlags)
         if resp.StatusCode != 201 {
             fmt.Println("Bintray response: " + resp.Status)
             utils.Exit(utils.IndentJson(body))
