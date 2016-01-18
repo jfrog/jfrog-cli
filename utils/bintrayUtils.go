@@ -77,7 +77,7 @@ func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDeta
     return
 }
 
-func CreateUrlSigningDetails(str string) *UrlSigningDetails {
+func CreatePathDetails(str string) *PathDetails {
     parts := strings.Split(str, "/")
     size := len(parts)
     if size < 3 {
@@ -85,7 +85,7 @@ func CreateUrlSigningDetails(str string) *UrlSigningDetails {
     }
     path := strings.Join(parts[2:],"/")
 
-    return &UrlSigningDetails {
+    return &PathDetails {
         Subject: parts[0],
         Repo: parts[1],
         Path: path}
@@ -95,7 +95,7 @@ type bintrayResponse struct {
     Message string
 }
 
-type UrlSigningDetails struct {
+type PathDetails struct {
     Subject string
     Repo string
     Path string

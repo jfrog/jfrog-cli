@@ -5,7 +5,7 @@ import (
     "github.com/JFrogDev/bintray-cli-go/utils"
 )
 
-func SignVersion(urlSigningDetails *utils.UrlSigningDetails, flags *UrlSigningFlags) {
+func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = urlSigningDetails.Subject
     }

@@ -70,7 +70,8 @@ Global options are used for all commands.
 - [version-publish (vd)](#version-publish)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
 - [entitlements (ent)](#entitlements)
-- [sign-url (su)](#entitlement-keys)
+- [gpg-sign-file (gsf)](#gpg-sign-file)
+- [gpg-sign-ver (gsv)](#gpg-sign-ver)
 
 <a name="upload"/>
 #### The *upload* (u) command
@@ -197,7 +198,7 @@ bt ps my-org/swamp-repo/super-frog-package
 #### The *package-create* (pc) command
 
 ##### Function
-Used for creating packages in Bintray
+Used for creating a package in Bintray
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
@@ -228,7 +229,7 @@ bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-u
 #### The *package-update* (pu) command
 
 ##### Function
-Used for updating packages in Bintray
+Used for updating package details in Bintray
 
 ##### Command options
 The command uses the same option as the *package-create* command
@@ -246,7 +247,7 @@ bt pu my-org/swamp-repo/super-frog-package --labels=label1,label2,label3
 #### The *package-delete* (pd) command
 
 ##### Function
-Used for deleting packages in Bintray
+Used for deleting a packages in Bintray
 
 ##### Command options
 The command uses the global options, in addition to the following command option.
@@ -294,7 +295,7 @@ bt vs my-org/swamp-repo/super-frog-package
 #### The *version-create* (vc) command
 
 ##### Function
-Used for creating versions in Bintray
+Used for creating a version in Bintray
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
@@ -319,7 +320,7 @@ bt vc my-org/swamp-repo/super-frog-package/1.0.0
 #### The *version-update* (vu) command
 
 ##### Function
-Used for updating versions in Bintray
+Used for updating version details in Bintray
 
 ##### Command options
 The command uses the same option as the *version-create* command
@@ -337,7 +338,7 @@ bt vu my-org/swamp-repo/super-frog-package/1.0.0 --labels=jump,jumping,frog
 #### The *version-delete* (vd) command
 
 ##### Function
-Used for deleting versions in Bintray
+Used for deleting a version in Bintray
 
 ##### Command options
 The command uses the global options, in addition to the following command option.
@@ -358,7 +359,7 @@ bt vd my-org/swamp-repo/super-frog-package/1.0.0
 #### The *version-publish* (vp) command
 
 ##### Function
-Used for publishing versions in Bintray
+Used for publishing a version in Bintray
 
 ##### Command options
 This command has no command options. It uses however the global options.
@@ -376,7 +377,7 @@ bt vp my-org/swamp-repo/super-frog-package/1.0.0
 #### The *entitlement-keys* (ent-keys) command
 
 ##### Function
-Used for managing Download Keys.
+Used for managing Entitlement Download Keys.
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
@@ -424,10 +425,10 @@ bt ent key delete key1
 #### The *entitlements* (ent) command
 
 ##### Function
-Used to manage Entitlements.
+Used for managing Entitlements.
 
 ##### Command options
-The command uses the global options, in addition to the following command.
+The command uses the global options, in addition to the following command options.
 ```console
    --id              Entitlement ID. Used for Entitlements update.
    --access          Entitlement access. Used for Entitlements creation and update.
@@ -480,10 +481,10 @@ bt ent delete my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
 #### The *sign-url* (su) command
 
 ##### Function
-Generates an anonymous, signed download URL with an expiry date.
+Used for Generating an anonymous, signed download URL with an expiry date.
 
 ##### Command options
-The command uses the global options, in addition to the following command.
+The command uses the global options, in addition to the following command options.
 ```console
    --expiry            [Optional]    An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.
    --valid-for         [Optional]    The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.
@@ -500,4 +501,54 @@ The command expects one argument in the form of *subject/repository/file-path*.
 Create a download URL for *froggy-file*, located under *froggy-folder* in the *swamp-repo* repository.
  ```console
 bt us my-org/swamp-repo/froggy-folder/froggy-file
+```
+
+<a name="gpg-sign-file"/>
+#### The *gpg-sign-file* (gsf) command
+
+##### Function
+GPG sign a file in Bintray.
+
+##### Command options
+The command uses the global options, in addition to the following command option.
+```console
+   --passphrase      [Optional]    GPG passphrase.
+```
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/file-path*.
+
+##### Examples
+GPG sign the *froggy-file* file, located under *froggy-folder* in the *swamp-repo* repository.
+ ```console
+bt gsf my-org/swamp-repo/froggy-folder/froggy-file
+```
+or with a passphrase
+```console
+bt gsf my-org/swamp-repo/froggy-folder/froggy-file --passphrase=gpgX***yH8eKw
+```
+
+<a name="gpg-sign-ver"/>
+#### The *gpg-sign-ver* (gsv) command
+
+##### Function
+GPS sign all files of a specific version in Bintray.
+
+##### Command options
+The command uses the global options, in addition to the following command option.
+```console
+   --passphrase      [Optional]    GPG passphrase.
+```
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/package/version*.
+
+##### Examples
+GPG sign all files of version *1.0* of the *froggy-package* package in the *swamp-repo* repository.
+ ```console
+bt gsv my-org/swamp-repo/froggy-package/1.0
+```
+or with a passphrase
+```console
+bt gsv my-org/swamp-repo/froggy-package/1.0 --passphrase=gpgX***yH8eKw
 ```

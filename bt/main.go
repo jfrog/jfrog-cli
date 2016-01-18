@@ -37,7 +37,7 @@ func main() {
         },
         {
             Name: "download-ver",
-            Usage: "Download version files",
+            Usage: "Download Version files",
             Aliases: []string{"dlv"},
             Flags: getFlags(),
             Action: func(c *cli.Context) {
@@ -46,7 +46,7 @@ func main() {
         },
         {
             Name: "package-show",
-            Usage: "Show package details",
+            Usage: "Show Package details",
             Aliases: []string{"ps"},
             Flags: getFlags(),
             Action: func(c *cli.Context) {
@@ -55,7 +55,7 @@ func main() {
         },
         {
             Name: "package-create",
-            Usage: "Create package",
+            Usage: "Create Package",
             Aliases: []string{"pc"},
             Flags: getCreateAndUpdatePackageFlags(),
             Action: func(c *cli.Context) {
@@ -64,7 +64,7 @@ func main() {
         },
         {
             Name: "package-update",
-            Usage: "Update package",
+            Usage: "Update Package",
             Aliases: []string{"pu"},
             Flags: getCreateAndUpdatePackageFlags(),
             Action: func(c *cli.Context) {
@@ -73,7 +73,7 @@ func main() {
         },
         {
             Name: "package-delete",
-            Usage: "Delete package",
+            Usage: "Delete Package",
             Aliases: []string{"pd"},
             Flags: getDeletePackageAndVersionFlags(),
             Action: func(c *cli.Context) {
@@ -82,7 +82,7 @@ func main() {
         },
         {
             Name: "version-show",
-            Usage: "Show version",
+            Usage: "Show Version",
             Aliases: []string{"vs"},
             Flags: getFlags(),
             Action: func(c *cli.Context) {
@@ -91,7 +91,7 @@ func main() {
         },
         {
             Name: "version-create",
-            Usage: "Create version",
+            Usage: "Create Version",
             Aliases: []string{"vc"},
             Flags: getCreateAndUpdateVersionFlags(),
             Action: func(c *cli.Context) {
@@ -100,7 +100,7 @@ func main() {
         },
         {
             Name: "version-update",
-            Usage: "Update version",
+            Usage: "Update Version",
             Aliases: []string{"vu"},
             Flags: getCreateAndUpdateVersionFlags(),
             Action: func(c *cli.Context) {
@@ -109,7 +109,7 @@ func main() {
         },
         {
             Name: "version-delete",
-            Usage: "Delete version",
+            Usage: "Delete Version",
             Aliases: []string{"vd"},
             Flags: getDeletePackageAndVersionFlags(),
             Action: func(c *cli.Context) {
@@ -118,7 +118,7 @@ func main() {
         },
         {
             Name: "version-piblish",
-            Usage: "Publish version",
+            Usage: "Publish Version",
             Aliases: []string{"vp"},
             Flags: getFlags(),
             Action: func(c *cli.Context) {
@@ -127,7 +127,7 @@ func main() {
         },
         {
             Name: "entitlements",
-            Usage: "Entitlements",
+            Usage: "Manage Entitlements",
             Aliases: []string{"ent"},
             Flags: getEntitlementsFlags(),
             Action: func(c *cli.Context) {
@@ -136,7 +136,7 @@ func main() {
         },
         {
             Name: "entitlement-keys",
-            Usage: "Entitlement keys",
+            Usage: "Manage Entitlement Keys",
             Aliases: []string{"ent-keys"},
             Flags: getEntitlementKeysFlags(),
             Action: func(c *cli.Context) {
@@ -145,11 +145,29 @@ func main() {
         },
         {
             Name: "url-sign",
-            Usage: "URL Signing",
+            Usage: "Create Signed Download URL",
             Aliases: []string{"us"},
             Flags: getUrlSigningFlags(),
             Action: func(c *cli.Context) {
                 signUrl(c)
+            },
+        },
+        {
+            Name: "gpg-sign-file",
+            Usage: "GPF Sign file",
+            Aliases: []string{"gsf"},
+            Flags: getGpgSigningFlags(),
+            Action: func(c *cli.Context) {
+                gpgSignFile(c)
+            },
+        },
+        {
+            Name: "gpg-sign-ver",
+            Usage: "GPF Sign Version",
+            Aliases: []string{"gsv"},
+            Flags: getGpgSigningFlags(),
+            Action: func(c *cli.Context) {
+                gpgSignVersion(c)
             },
         },
     }
@@ -420,8 +438,19 @@ func getUrlSigningFlags() []cli.Flag {
          Name:  "callback-method",
          Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.",
     }
-
     return flags
+}
+
+func getGpgSigningFlags() []cli.Flag {
+   flags := []cli.Flag{
+       nil,nil,nil,nil,nil,
+   }
+   copy(flags[0:4], getFlags())
+   flags[4] = cli.StringFlag{
+        Name:  "passphrase",
+        Usage: "[Optional] GPG passphrase.",
+   }
+   return flags
 }
 
 func showPackage(c *cli.Context) {
@@ -557,9 +586,25 @@ func signUrl(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt url-sign --help'.")
     }
-    urlSigningDetails := utils.CreateUrlSigningDetails(c.Args()[0])
+    urlSigningDetails := utils.CreatePathDetails(c.Args()[0])
     urlSigningFlags := createUrlSigningFlags(c)
     commands.SignVersion(urlSigningDetails, urlSigningFlags)
+}
+
+func gpgSignFile(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt url-sign --help'.")
+    }
+    pathDetails := utils.CreatePathDetails(c.Args()[0])
+    commands.GpgSignFile(pathDetails, c.String("passphrase"), createBintrayDetails(c))
+}
+
+func gpgSignVersion(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt url-sign --help'.")
+    }
+    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    commands.GpgSignVersion(versionDetails, c.String("passphrase"), createBintrayDetails(c))
 }
 
 func entitlementKeys(c *cli.Context) {
