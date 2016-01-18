@@ -2,7 +2,8 @@ package commands
 
 import (
     "fmt"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
@@ -14,9 +15,9 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
     data := builJson(flags)
 
     fmt.Println("Signing URL for: " + path)
-    resp, body := utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func builJson(flags *UrlSigningFlags) string {
@@ -28,7 +29,7 @@ func builJson(flags *UrlSigningFlags) string {
        "callback_url": flags.CallbackUrl,
        "callback_method": flags.CallbackMethod,
     }
-    return utils.MapToJson(m)
+    return cliutils.MapToJson(m)
 }
 
 type UrlSigningFlags struct {

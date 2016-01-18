@@ -3,51 +3,52 @@ package commands
 import (
 	"fmt"
     "strconv"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {
     path := getDownloadKeysPath(bintrayDetails, org)
-    resp, body := utils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
     url := getDownloadKeysPath(flags.BintrayDetails, org)
     url += "/" + flags.Id
-    resp, body := utils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
     data := buildDownloadKeyJson(flags, true)
     url := getDownloadKeysPath(flags.BintrayDetails, org)
-    resp, body := utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
     data := buildDownloadKeyJson(flags, false)
     url := getDownloadKeysPath(flags.BintrayDetails, org)
     url += "/" + flags.Id
-    resp, body := utils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
@@ -62,10 +63,10 @@ func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
     }
 
     if flags.WhiteCidrs != "" {
-        whiteCidrs = "\"white_cidrs\": " + utils.BuildListString(flags.WhiteCidrs)
+        whiteCidrs = "\"white_cidrs\": " + cliutils.BuildListString(flags.WhiteCidrs)
     }
     if flags.BlackCidrs != "" {
-        blackCidrs = "\"black_cidrs\": " + utils.BuildListString(flags.BlackCidrs)
+        blackCidrs = "\"black_cidrs\": " + cliutils.BuildListString(flags.BlackCidrs)
     }
 
     data := "{"
@@ -91,9 +92,9 @@ func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
 func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
     url := getDownloadKeysPath(flags.BintrayDetails, org)
     url += "/" + flags.Id
-    resp, body := utils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
 }

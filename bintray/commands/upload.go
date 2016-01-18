@@ -5,7 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"strconv"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+	"github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
@@ -27,7 +28,7 @@ func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
         url := baseUrl + artifact.TargetPath
         if !uploadFlags.DryRun {
             fmt.Println("Uploading artifact to: " + artifact.TargetPath)
-            resp := utils.UploadFile(artifact.LocalPath, url, uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key)
+            resp := cliutils.UploadFile(artifact.LocalPath, url, uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key)
             fmt.Println("Bintray response: " + resp.Status)
         } else {
             fmt.Println("[Dry Run] Uploading artifact: " + url)
@@ -45,12 +46,12 @@ func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
         resp, body := DoCreatePackage(versionDetails, packageFlags)
         if resp.StatusCode != 201 {
             fmt.Println("Bintray response: " + resp.Status)
-            utils.Exit(utils.IndentJson(body))
+            cliutils.Exit(cliutils.IndentJson(body))
         }
         fmt.Println("Bintray response: " + resp.Status)
     } else
     if resp.StatusCode != 200 {
-        utils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit("Bintray response: " + resp.Status)
     }
 }
 
@@ -64,42 +65,42 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
         resp, body := DoCreateVersion(versionDetails, versionFlags)
         if resp.StatusCode != 201 {
             fmt.Println("Bintray response: " + resp.Status)
-            utils.Exit(utils.IndentJson(body))
+            cliutils.Exit(cliutils.IndentJson(body))
         }
         fmt.Println("Bintray response: " + resp.Status)
     } else
     if resp.StatusCode != 200 {
-        utils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit("Bintray response: " + resp.Status)
     }
 }
 
 func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) []Artifact {
     rootPath := getRootPath(localpath, flags.UseRegExp)
-    if !utils.IsPathExists(rootPath) {
-        utils.Exit("Path does not exist: " + rootPath)
+    if !cliutils.IsPathExists(rootPath) {
+        cliutils.Exit("Path does not exist: " + rootPath)
     }
     localpath = prepareLocalPath(localpath, flags.UseRegExp)
 
     artifacts := []Artifact{}
     // If the path is a single file then return it
-    if !utils.IsDir(rootPath) {
+    if !cliutils.IsDir(rootPath) {
         targetPath := prepareUploadPath(targetPath + rootPath)
         artifacts = append(artifacts, Artifact{rootPath, targetPath})
         return artifacts
     }
 
     r, err := regexp.Compile(localpath)
-    utils.CheckError(err)
+    cliutils.CheckError(err)
 
     var paths []string
     if flags.Recursive {
-        paths = utils.ListFilesRecursive(rootPath)
+        paths = cliutils.ListFilesRecursive(rootPath)
     } else {
-        paths = utils.ListFiles(rootPath)
+        paths = cliutils.ListFiles(rootPath)
     }
 
     for _, path := range paths {
-        if utils.IsDir(path) {
+        if cliutils.IsDir(path) {
             continue
         }
 
@@ -114,7 +115,7 @@ func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) [
 
             if target == "" || strings.HasSuffix(target, "/") {
                 if flags.Flat {
-                    target += utils.GetFileNameFromPath(path)
+                    target += cliutils.GetFileNameFromPath(path)
                 } else {
                     uploadPath := prepareUploadPath(path)
                     target += uploadPath

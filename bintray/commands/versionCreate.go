@@ -3,17 +3,18 @@ package commands
 import (
     "fmt"
     "net/http"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
     fmt.Println("Creating version: " + versionDetails.Version)
     resp, body := DoCreateVersion(versionDetails, flags)
     if resp.StatusCode != 201 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) (*http.Response, []byte) {
@@ -25,5 +26,5 @@ func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionF
     url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions"
 
-    return utils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    return cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 }

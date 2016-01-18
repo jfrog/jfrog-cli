@@ -70,6 +70,7 @@ Global options are used for all commands.
 - [version-publish (vd)](#version-publish)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
 - [entitlements (ent)](#entitlements)
+- [sign-url (su)](#sign-url)
 - [gpg-sign-file (gsf)](#gpg-sign-file)
 - [gpg-sign-ver (gsv)](#gpg-sign-ver)
 

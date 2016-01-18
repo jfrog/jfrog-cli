@@ -2,7 +2,8 @@ package commands
 
 import (
     "fmt"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func GpgSignVersion(versionDetails *utils.VersionDetails, passphrase string, bintrayDetails *utils.BintrayDetails) {
@@ -19,10 +20,10 @@ func GpgSignVersion(versionDetails *utils.VersionDetails, passphrase string, bin
     }
 
     fmt.Println("GPG signing version: " + versionDetails.Version)
-    resp, body := utils.SendPost(url, []byte(data), bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, []byte(data), bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }

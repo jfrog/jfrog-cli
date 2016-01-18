@@ -3,7 +3,8 @@ package commands
 import (
 	"fmt"
     "strings"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.VersionDetails) {
@@ -11,12 +12,12 @@ func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.Versi
     if bintrayDetails.User == "" {
         bintrayDetails.User = details.Subject
     }
-    resp, body := utils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -25,12 +26,12 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
     }
-    resp, body := utils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -39,9 +40,9 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
     }
-    resp, body := utils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
 }
@@ -52,12 +53,12 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
         flags.BintrayDetails.User = details.Subject
     }
     data := buildEntitlementJson(flags, true)
-    resp, body := utils.SendPost(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
@@ -67,18 +68,18 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
         flags.BintrayDetails.User = details.Subject
     }
     data := buildEntitlementJson(flags, true)
-    resp, body := utils.SendPatch(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPatch(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
-    fmt.Println(utils.IndentJson(body))
+    fmt.Println(cliutils.IndentJson(body))
 }
 
 func CreateVersionDetailsForEntitlements(versionStr string) *utils.VersionDetails {
     parts := strings.Split(versionStr, "/")
     if len(parts) == 1 {
-        utils.Exit("Argument format should be subject/repository or subject/repository/package or subject/repository/package/version. Got " + versionStr)
+        cliutils.Exit("Argument format should be subject/repository or subject/repository/package or subject/repository/package/version. Got " + versionStr)
     }
     return utils.CreateVersionDetails(versionStr)
 }
@@ -86,10 +87,10 @@ func CreateVersionDetailsForEntitlements(versionStr string) *utils.VersionDetail
 func buildEntitlementJson(flags *EntitlementFlags, create bool) string {
     m := map[string]string {
        "access": flags.Access,
-       "download_keys": utils.BuildListString(flags.Keys),
+       "download_keys": cliutils.BuildListString(flags.Keys),
        "path": flags.Path,
     }
-    return utils.MapToJson(m)
+    return cliutils.MapToJson(m)
 }
 
 func createBintrayPath(details *utils.VersionDetails) string {

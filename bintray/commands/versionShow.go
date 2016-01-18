@@ -2,7 +2,8 @@ package commands
 
 import (
     "fmt"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
@@ -20,10 +21,10 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.Bin
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
     fmt.Println(message)
-    resp, body := utils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode == 200 {
-        fmt.Println(utils.IndentJson(body))
+        fmt.Println(cliutils.IndentJson(body))
     } else {
-        utils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit("Bintray response: " + resp.Status)
     }
 }

@@ -2,22 +2,23 @@ package utils
 
 import (
  	"net/http"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
 )
 
 func HeadPackage(packageDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
     url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo + "/" + packageDetails.Package
 
-    return SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+    return cliutils.SendHead(url, bintrayDetails.User, bintrayDetails.Key)
 }
 
 func CreatePackageJson(packageName string, flags *PackageFlags) string {
     m := map[string]string {
        "name": packageName,
        "desc": flags.Desc,
-       "labels": BuildListString(flags.Labels),
-       "licenses": BuildListString(flags.Licenses),
-       "custom_licenses": BuildListString(flags.CustomLicenses),
+       "labels": cliutils.BuildListString(flags.Labels),
+       "licenses": cliutils.BuildListString(flags.Licenses),
+       "custom_licenses": cliutils.BuildListString(flags.CustomLicenses),
        "vcs_url": flags.VcsUrl,
        "website_url": flags.WebsiteUrl,
        "issue_tracker_url": flags.IssueTrackerUrl,
@@ -27,7 +28,7 @@ func CreatePackageJson(packageName string, flags *PackageFlags) string {
        "public_stats": flags.PublicStats,
     }
 
-    return MapToJson(m)
+    return cliutils.MapToJson(m)
 }
 
 type PackageFlags struct {

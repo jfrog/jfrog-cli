@@ -2,13 +2,14 @@ package utils
 
 import (
  	"net/http"
+ 	"github.com/JFrogDev/bintray-cli-go/cliutils"
 )
 
 func HeadVersion(versionDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
     url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
-    return SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+    return cliutils.SendHead(url, bintrayDetails.User, bintrayDetails.Key)
 }
 
 func CreateVersionJson(versionName string, flags *VersionFlags) string {
@@ -20,7 +21,7 @@ func CreateVersionJson(versionName string, flags *VersionFlags) string {
        "released": flags.Released,
        "github_use_tag_release_notes": flags.GithubUseTagReleaseNotes,
     }
-    return MapToJson(m)
+    return cliutils.MapToJson(m)
 }
 
 type VersionFlags struct {

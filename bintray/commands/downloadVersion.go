@@ -3,7 +3,8 @@ package commands
 import (
     "strings"
     "encoding/json"
-    "github.com/JFrogDev/bintray-cli-go/utils"
+    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
 func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
@@ -12,13 +13,13 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
     }
     path := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
-    resp, body := utils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        utils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     var results []VersionFilesResult
     err := json.Unmarshal(body, &results)
-    utils.CheckError(err)
+    cliutils.CheckError(err)
 
     for _, result := range results {
         utils.DownloadBintrayFile(bintrayDetails, versionDetails, result.Path)
@@ -28,7 +29,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
 func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDetails {
     parts := strings.Split(versionStr, "/")
     if len(parts) != 4 {
-        utils.Exit("Argument format should be subject/repository/package/version. Got " + versionStr)
+        cliutils.Exit("Argument format should be subject/repository/package/version. Got " + versionStr)
     }
     return utils.CreateVersionDetails(versionStr)
 }
