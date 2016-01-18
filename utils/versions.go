@@ -12,27 +12,15 @@ func HeadVersion(versionDetails *VersionDetails, bintrayDetails *BintrayDetails)
 }
 
 func CreateVersionJson(versionName string, flags *VersionFlags) string {
-    json := "{" +
-        "\"name\": \"" + versionName + "\""
-        if flags.Desc != "" {
-            json += "," + "\"desc\": \"" + flags.Desc + "\""
-        }
-        if flags.GithubReleaseNotesFile != "" {
-            json += "," + "\"github_release_notes_file\": \"" + flags.GithubReleaseNotesFile + "\""
-        }
-        if flags.VcsTag != "" {
-            json += "," + "\"vcs_tag\": \"" + flags.VcsTag + "\""
-        }
-        if flags.Released != "" {
-            json += "," + "\"released\": \"" + flags.Released + "\""
-        }
-        if flags.GithubUseTagReleaseNotes != "" {
-            json += "," + "\"github_use_tag_release_notes\": " + flags.GithubUseTagReleaseNotes
-        }
-        json +=
-    "}"
-
-    return json
+    m := map[string]string {
+       "name": versionName,
+       "desc": flags.Desc,
+       "github_release_notes_file": flags.GithubReleaseNotesFile,
+       "VcsTag": flags.VcsTag,
+       "released": flags.Released,
+       "github_use_tag_release_notes": flags.GithubUseTagReleaseNotes,
+    }
+    return MapToJson(m)
 }
 
 type VersionFlags struct {

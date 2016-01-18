@@ -63,6 +63,30 @@ func BuildListString(listStr string) string {
     return str
 }
 
+func MapToJson(m map[string]string) string {
+    first := true
+    json := "{"
+
+    for key := range m {
+        val := m[key]
+        if val != "" {
+            if !first {
+                json += ","
+            }
+            first = false
+            if !strings.HasPrefix(val, "[") || !strings.HasSuffix(val, "]") {
+                val = "\"" + val + "\""
+            }
+            json += "\"" + key + "\": " + val
+        }
+    }
+    if first {
+        return ""
+    }
+    json += "}"
+    return json
+}
+
 func ConfirmAnswer(answer string) bool {
     answer = strings.ToLower(answer)
     return answer == "y" || answer == "yes"

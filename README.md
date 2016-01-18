@@ -68,8 +68,9 @@ Global options are used for all commands.
 - [version-update (vu)](#version-update)
 - [version-delete (vd)](#version-delete)
 - [version-publish (vd)](#version-publish)
-- [entitlements (ent)](#entitlements)
 - [entitlement-keys (ent-keys)](#entitlement-keys)
+- [entitlements (ent)](#entitlements)
+- [sign-url (su)](#entitlement-keys)
 
 <a name="upload"/>
 #### The *upload* (u) command
@@ -473,4 +474,30 @@ bt ent update my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc --
 Delete an Entitlement on the my-org/swamp-repo.
 ```console 
 bt ent delete my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
+```
+
+<a name="sign-url"/>
+#### The *sign-url* (su) command
+
+##### Function
+Generates an anonymous, signed download URL with an expiry date.
+
+##### Command options
+The command uses the global options, in addition to the following command.
+```console
+   --expiry            [Optional]    An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.
+   --valid-for         [Optional]    The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.
+   --callback-id       [Optional]    An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.
+   --callback-email    [Optional]    An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.
+   --callback-url      [Optional]    A webhook URL to call when a user has used the download URL.
+   --callback-method   [Optional]    HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.
+```
+
+##### Arguments
+The command expects one argument in the form of *subject/repository/file-path*.
+
+##### Examples
+Create a download URL for *froggy-file*, located under *froggy-folder* in the *swamp-repo* repository.
+ ```console
+bt us my-org/swamp-repo/froggy-folder/froggy-file
 ```

@@ -26,7 +26,7 @@ func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
     for _, artifact := range artifacts {
         url := baseUrl + artifact.TargetPath
         if !uploadFlags.DryRun {
-            fmt.Println("Uploading artifact: " + url)
+            fmt.Println("Uploading artifact to: " + artifact.TargetPath)
             resp := utils.UploadFile(artifact.LocalPath, url, uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key)
             fmt.Println("Bintray response: " + resp.Status)
         } else {

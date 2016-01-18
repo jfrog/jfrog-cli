@@ -7,8 +7,9 @@ import (
 )
 
 func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string) {
-    url := bintrayDetails.DownloadServerUrl + versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
-    fmt.Println("Downloading " + url)
+    uploadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
+    url := bintrayDetails.DownloadServerUrl + uploadPath
+    fmt.Println("Downloading " + uploadPath)
     resp := DownloadFile(url, bintrayDetails.User, bintrayDetails.Key)
     fmt.Println("Bintray response: " + resp.Status)
 }
@@ -70,17 +71,34 @@ func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDeta
         Package: parts[2],
         Version: parts[3]}
 
-    for i := 4; i < size; i++ {
-        path += parts[i]
-        if i+1 < size {
-            path += "/"
-        }
+    if size > 3 {
+        path = strings.Join(parts[4:],"/")
     }
     return
 }
 
+func CreateUrlSigningDetails(str string) *UrlSigningDetails {
+    parts := strings.Split(str, "/")
+    size := len(parts)
+    if size < 3 {
+        Exit("Expecting an argument in the form of subject/repository/file-path")
+    }
+    path := strings.Join(parts[2:],"/")
+
+    return &UrlSigningDetails {
+        Subject: parts[0],
+        Repo: parts[1],
+        Path: path}
+}
+
 type bintrayResponse struct {
     Message string
+}
+
+type UrlSigningDetails struct {
+    Subject string
+    Repo string
+    Path string
 }
 
 type VersionDetails struct {

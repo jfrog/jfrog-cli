@@ -84,17 +84,12 @@ func CreateVersionDetailsForEntitlements(versionStr string) *utils.VersionDetail
 }
 
 func buildEntitlementJson(flags *EntitlementFlags, create bool) string {
-    data := "{" +
-        "\"access\": \"" + flags.Access + "\""
-
-    if flags.Keys != "" {
-        data += ",\"download_keys\": " + utils.BuildListString(flags.Keys)
+    m := map[string]string {
+       "access": flags.Access,
+       "download_keys": utils.BuildListString(flags.Keys),
+       "path": flags.Path,
     }
-    if flags.Path != "" {
-        data += ",\"path\": \"" + flags.Path + "\""
-    }
-    data += "}"
-    return data
+    return utils.MapToJson(m)
 }
 
 func createBintrayPath(details *utils.VersionDetails) string {

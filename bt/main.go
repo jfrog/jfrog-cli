@@ -143,6 +143,15 @@ func main() {
                 entitlementKeys(c)
             },
         },
+        {
+            Name: "url-sign",
+            Usage: "URL Signing",
+            Aliases: []string{"us"},
+            Flags: getUrlSigningFlags(),
+            Action: func(c *cli.Context) {
+                signUrl(c)
+            },
+        },
     }
     app.Run(os.Args)
 }
@@ -382,6 +391,39 @@ func getEntitlementKeysFlags() []cli.Flag {
     return flags
 }
 
+func getUrlSigningFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+         Name:  "expiry",
+         Usage: "[Optional] An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.",
+    }
+    flags[5] = cli.StringFlag{
+         Name:  "valid-for",
+         Usage: "[Optional] The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.",
+    }
+    flags[6] = cli.StringFlag{
+         Name:  "callback-id",
+         Usage: "[Optional] An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.",
+    }
+    flags[7] = cli.StringFlag{
+         Name:  "callback-email",
+         Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.",
+    }
+    flags[8] = cli.StringFlag{
+         Name:  "callback-url",
+         Usage: "[Optional] A webhook URL to call when a user has used the download URL.",
+    }
+    flags[9] = cli.StringFlag{
+         Name:  "callback-method",
+         Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.",
+    }
+
+    return flags
+}
+
 func showPackage(c *cli.Context) {
     if len(c.Args()) != 1 {
         utils.Exit("Wrong number of arguments. Try 'bt package-show --help'.")
@@ -504,14 +546,20 @@ func upload(c *cli.Context) {
 
 func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
-        utils.Exit("Wrong number of arguments. Try 'bt download-ver --help'.")
+        utils.Exit("Wrong number of arguments. Try 'bt download-file --help'.")
     }
     versionDetails, path := utils.CreateVersionDetailsAndPath(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
-    }
     commands.DownloadFile(versionDetails, path, bintrayDetails)
+}
+
+func signUrl(c *cli.Context) {
+    if len(c.Args()) != 1 {
+        utils.Exit("Wrong number of arguments. Try 'bt url-sign --help'.")
+    }
+    urlSigningDetails := utils.CreateUrlSigningDetails(c.Args()[0])
+    urlSigningFlags := createUrlSigningFlags(c)
+    commands.SignVersion(urlSigningDetails, urlSigningFlags)
 }
 
 func entitlementKeys(c *cli.Context) {
@@ -622,6 +670,24 @@ func createVersionFlags(c *cli.Context, prefix string) *utils.VersionFlags {
        Released: c.String(prefix + "released"),
        GithubReleaseNotesFile: c.String(prefix + "github-rel-notes"),
        GithubUseTagReleaseNotes: githubTagReleaseNotes }
+}
+
+func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
+    if c.String("valid-for") != "" {
+        _, err := strconv.ParseInt(c.String("valid-for"), 10, 64)
+        if err != nil {
+            utils.Exit("The '--valid-for' option should have a numeric value.")
+        }
+    }
+
+    return &commands.UrlSigningFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Expiry: c.String("expiry"),
+        ValidFor: c.String("valid-for"),
+        CallbackId: c.String("callback-id"),
+        CallbackEmail: c.String("callback-email"),
+        CallbackUrl: c.String("callback-url"),
+        CallbackMethod: c.String("callback-method") }
 }
 
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
