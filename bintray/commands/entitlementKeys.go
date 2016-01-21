@@ -31,7 +31,7 @@ func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
 func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
     data := buildDownloadKeyJson(flags, true)
     url := getDownloadKeysPath(flags.BintrayDetails, org)
-    resp, body := cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

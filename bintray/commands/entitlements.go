@@ -53,7 +53,7 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
         flags.BintrayDetails.User = details.Subject
     }
     data := buildEntitlementJson(flags, true)
-    resp, body := cliutils.SendPost(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(path, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

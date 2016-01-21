@@ -253,6 +253,7 @@ func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.R
     if flags.DryRun {
         return nil, details
     }
+    utils.AddAuthHeaders(headers, flags.ArtDetails)
     resp, _ := cliutils.SendPut(targetPath, nil, headers, flags.ArtDetails.User, flags.ArtDetails.Password)
     return resp, details
 }

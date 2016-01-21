@@ -131,17 +131,21 @@ func UploadFile(f *os.File, url string, artifactoryDetails *ArtifactoryDetails, 
        "X-Checksum-Sha1": details.Sha1,
        "X-Checksum-Md5": details.Md5,
     }
-    addAuthHeaders(headers, artifactoryDetails)
+    AddAuthHeaders(headers, artifactoryDetails)
 
     return cliutils.UploadFile(f, url, artifactoryDetails.User, artifactoryDetails.Password, headers)
 }
 
-func addAuthHeaders(headers map[string]string, artifactoryDetails *ArtifactoryDetails) {
+func AddAuthHeaders(headers map[string]string, artifactoryDetails *ArtifactoryDetails) map[string]string {
+    if headers == nil {
+        headers = make(map[string]string)
+    }
     if artifactoryDetails.SshAuthHeaders != nil {
         for name := range artifactoryDetails.SshAuthHeaders {
             headers[name] = artifactoryDetails.SshAuthHeaders[name]
         }
     }
+    return headers
 }
 
 func createFileWithContent(filePath string, content []byte) {

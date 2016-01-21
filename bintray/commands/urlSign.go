@@ -15,7 +15,7 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
     data := builJson(flags)
 
     fmt.Println("Signing URL for: " + path)
-    resp, body := cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))
 }

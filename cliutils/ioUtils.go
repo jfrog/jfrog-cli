@@ -91,8 +91,8 @@ func SendGet(url string, headers map[string]string, user, password string) (*htt
     return Send("GET", url, nil, headers, user, password)
 }
 
-func SendPost(url string, content []byte, user string, password string) (*http.Response, []byte) {
-    return Send("POST", url, content, nil, user, password)
+func SendPost(url string, headers map[string]string, content []byte, user string, password string) (*http.Response, []byte) {
+    return Send("POST", url, content, headers, user, password)
 }
 
 func SendPatch(url string, content []byte, user string, password string) (*http.Response, []byte) {

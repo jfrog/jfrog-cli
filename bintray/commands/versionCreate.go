@@ -26,5 +26,5 @@ func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionF
     url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions"
 
-    return cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    return cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 }

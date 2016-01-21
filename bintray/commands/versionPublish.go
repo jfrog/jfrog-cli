@@ -15,7 +15,7 @@ func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.
         versionDetails.Version + "/publish"
 
     fmt.Println("Publishing version: " + versionDetails.Version)
-    resp, body := cliutils.SendPost(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, nil, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

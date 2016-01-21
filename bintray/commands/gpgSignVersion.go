@@ -20,7 +20,7 @@ func GpgSignVersion(versionDetails *utils.VersionDetails, passphrase string, bin
     }
 
     fmt.Println("GPG signing version: " + versionDetails.Version)
-    resp, body := cliutils.SendPost(url, []byte(data), bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendPost(url, nil, []byte(data), bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

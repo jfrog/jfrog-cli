@@ -21,7 +21,8 @@ func Download(downloadPattern string, flags *utils.Flags) string {
     fmt.Println("Searching Artifactory using AQL query: " + data)
 
     if !flags.DryRun {
-        resp, json := cliutils.SendPost(aqlUrl, []byte(data), flags.ArtDetails.User, flags.ArtDetails.Password)
+        headers := utils.AddAuthHeaders(nil, flags.ArtDetails)
+        resp, json := cliutils.SendPost(aqlUrl, headers, []byte(data), flags.ArtDetails.User, flags.ArtDetails.Password)
         fmt.Println("Artifactory response:", resp.Status)
 
         if resp.StatusCode == 200 {

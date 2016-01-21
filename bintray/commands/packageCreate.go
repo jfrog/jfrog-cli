@@ -22,5 +22,5 @@ func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageF
     url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo
 
-    return cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    return cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 }
