@@ -15,7 +15,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
     resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     var results []VersionFilesResult
     err := json.Unmarshal(body, &results)
@@ -29,7 +29,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
 func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDetails {
     parts := strings.Split(versionStr, "/")
     if len(parts) != 4 {
-        cliutils.Exit("Argument format should be subject/repository/package/version. Got " + versionStr)
+        cliutils.Exit(cliutils.ExitCodeError, "Argument format should be subject/repository/package/version. Got " + versionStr)
     }
     return utils.CreateVersionDetails(versionStr)
 }

@@ -17,7 +17,7 @@ func UpdateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
     fmt.Println("Updating version: " + versionDetails.Version)
     resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))

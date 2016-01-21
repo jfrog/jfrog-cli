@@ -1,8 +1,11 @@
 package cliutils
 
 import (
+    "io"
  	"os"
  	"bytes"
+ 	"bufio"
+ 	"os/user"
  	"strings"
  	"runtime"
  	"strconv"
@@ -10,6 +13,8 @@ import (
  	"io/ioutil"
     "path/filepath"
  )
+
+var tempDirPath string
 
 func GetFileSeperator() string {
     if runtime.GOOS == "windows" {
@@ -82,17 +87,6 @@ func ListFiles(path string) []string {
     return fileList
 }
 
-func DownloadFile(url, user, password string) *http.Response {
-    fileName := GetFileNameFromUrl(url)
-    out, err := os.Create(fileName)
-    CheckError(err)
-    defer out.Close()
-    resp, body := SendGet(url, nil, user, password)
-    out.Write(body)
-    CheckError(err)
-    return resp
-}
-
 func SendGet(url string, headers map[string]string, user, password string) (*http.Response, []byte) {
     return Send("GET", url, nil, headers, user, password)
 }
@@ -112,6 +106,10 @@ func SendDelete(url string, user, password string) (*http.Response, []byte) {
 func SendHead(url string, user, password string) *http.Response {
     resp, _ := Send("HEAD", url, nil, nil, user, password)
     return resp
+}
+
+func SendPut(url string, content []byte, headers map[string]string, user, password string) (*http.Response, []byte) {
+    return Send("PUT", url, content, headers, user, password)
 }
 
 func Send(method string, url string, content []byte, headers map[string]string, user, password string) (*http.Response, []byte) {
@@ -141,28 +139,123 @@ func Send(method string, url string, content []byte, headers map[string]string, 
     return resp, body
 }
 
-func UploadFile(filePath, url, user, password string) *http.Response {
-    file, err := os.Open(filePath)
+func UploadFile(f *os.File, url, user, password string, headers map[string]string) *http.Response {
+    fileInfo, err := f.Stat()
     CheckError(err)
-    defer file.Close()
+    size := fileInfo.Size()
 
-    fileInfo, err := file.Stat()
+    req, err := http.NewRequest("PUT", url, f)
     CheckError(err)
-    fileSize := fileInfo.Size()
-
-    req, err := http.NewRequest("PUT", url, file)
-    CheckError(err)
-    req.ContentLength = fileSize
+    req.ContentLength = size
     req.Close = true
+
+    if headers != nil {
+        for name := range headers {
+            req.Header.Set(name, headers[name])
+        }
+    }
     if user != "" && password != "" {
 	    req.SetBasicAuth(user, password)
     }
-    size := strconv.FormatInt(fileSize, 10)
-    req.Header.Set("Content-Length", size)
+    addUserAgentHeader(req)
+
+    length := strconv.FormatInt(size, 10)
+    req.Header.Set("Content-Length", length)
 
     client := &http.Client{}
     resp, err := client.Do(req)
     CheckError(err)
     defer resp.Body.Close()
     return resp
+}
+
+func GetTempDirPath() string {
+    if tempDirPath == "" {
+        Exit(ExitCodeError, "Function cannot be used before 'tempDirPath' is created.")
+    }
+    return tempDirPath
+}
+
+func CreateTempDirPath() {
+    if tempDirPath != "" {
+        Exit(ExitCodeError, "'tempDirPath' has already been initialized.")
+    }
+    path, err := ioutil.TempDir("", "artifactory.cli.")
+    CheckError(err)
+    tempDirPath = path
+}
+
+func RemoveTempDir() {
+    if IsDirExists(tempDirPath) {
+        os.RemoveAll(tempDirPath)
+    }
+}
+
+func IsDirExists(path string) bool {
+    if !IsPathExists(path) {
+        return false
+    }
+    f, err := os.Stat(path)
+    CheckError(err)
+    return f.IsDir()
+}
+
+// Reads the content of the file in the source path and appends it to
+// the file in the destination path.
+func AppendFile(srcPath string, destFile *os.File) {
+    srcFile, err := os.Open(srcPath)
+    CheckError(err)
+
+    defer func() {
+        err := srcFile.Close();
+        CheckError(err)
+    }()
+
+    reader := bufio.NewReader(srcFile)
+
+    writer := bufio.NewWriter(destFile)
+    buf := make([]byte, 1024000)
+    for {
+        n, err := reader.Read(buf)
+        if err != io.EOF {
+            CheckError(err)
+        }
+        if n == 0 {
+            break
+        }
+        _, err = writer.Write(buf[:n])
+        CheckError(err)
+    }
+    err = writer.Flush()
+    CheckError(err)
+}
+
+func GetFileNameFromUrl(url string) string {
+    parts := strings.Split(url, "/")
+    size := len(parts)
+    if size == 0 {
+        return url
+    }
+    return parts[size-1]
+}
+
+func GetHomeDir() string {
+    user, err := user.Current()
+    if err == nil {
+        return user.HomeDir
+    }
+    home := os.Getenv("HOME")
+    if home != "" {
+        return home
+    }
+    return "";
+}
+
+func ReadFile(filePath string) []byte {
+	content, err := ioutil.ReadFile(filePath)
+	CheckError(err)
+	return content
+}
+func addUserAgentHeader(req *http.Request) {
+    req.Header.Set("User-Agent", "jfrog-cli-go/" + GetVersion())
 }

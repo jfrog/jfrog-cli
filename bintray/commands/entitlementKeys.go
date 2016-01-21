@@ -11,7 +11,7 @@ func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {
     path := getDownloadKeysPath(bintrayDetails, org)
     resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))
@@ -22,7 +22,7 @@ func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
     url += "/" + flags.Id
     resp, body := cliutils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))
@@ -33,7 +33,7 @@ func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
     url := getDownloadKeysPath(flags.BintrayDetails, org)
     resp, body := cliutils.SendPost(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 201 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))
@@ -45,7 +45,7 @@ func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
     url += "/" + flags.Id
     resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))
@@ -94,7 +94,7 @@ func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
     url += "/" + flags.Id
     resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
 }

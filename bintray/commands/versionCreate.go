@@ -11,7 +11,7 @@ func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
     fmt.Println("Creating version: " + versionDetails.Version)
     resp, body := DoCreateVersion(versionDetails, flags)
     if resp.StatusCode != 201 {
-        cliutils.Exit(resp.Status + ". " + utils.ReadBintrayMessage(body))
+        cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
     fmt.Println("Bintray response: " + resp.Status)
     fmt.Println(cliutils.IndentJson(body))

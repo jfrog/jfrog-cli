@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"os"
 	"fmt"
 	"regexp"
 	"strings"
@@ -28,7 +29,14 @@ func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
         url := baseUrl + artifact.TargetPath
         if !uploadFlags.DryRun {
             fmt.Println("Uploading artifact to: " + artifact.TargetPath)
-            resp := cliutils.UploadFile(artifact.LocalPath, url, uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key)
+
+            f, err := os.Open(artifact.LocalPath)
+            cliutils.CheckError(err)
+            defer f.Close()
+
+            resp := cliutils.UploadFile(f, url,
+                uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key, nil)
+
             fmt.Println("Bintray response: " + resp.Status)
         } else {
             fmt.Println("[Dry Run] Uploading artifact: " + url)
@@ -46,12 +54,12 @@ func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
         resp, body := DoCreatePackage(versionDetails, packageFlags)
         if resp.StatusCode != 201 {
             fmt.Println("Bintray response: " + resp.Status)
-            cliutils.Exit(cliutils.IndentJson(body))
+            cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))
         }
         fmt.Println("Bintray response: " + resp.Status)
     } else
     if resp.StatusCode != 200 {
-        cliutils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit(cliutils.ExitCodeError, "Bintray response: " + resp.Status)
     }
 }
 
@@ -65,19 +73,19 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
         resp, body := DoCreateVersion(versionDetails, versionFlags)
         if resp.StatusCode != 201 {
             fmt.Println("Bintray response: " + resp.Status)
-            cliutils.Exit(cliutils.IndentJson(body))
+            cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))
         }
         fmt.Println("Bintray response: " + resp.Status)
     } else
     if resp.StatusCode != 200 {
-        cliutils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit(cliutils.ExitCodeError, "Bintray response: " + resp.Status)
     }
 }
 
 func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) []Artifact {
     rootPath := getRootPath(localpath, flags.UseRegExp)
     if !cliutils.IsPathExists(rootPath) {
-        cliutils.Exit("Path does not exist: " + rootPath)
+        cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: " + rootPath)
     }
     localpath = prepareLocalPath(localpath, flags.UseRegExp)
 

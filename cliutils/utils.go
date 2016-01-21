@@ -4,9 +4,18 @@ import (
     "os"
     "fmt"
     "bytes"
+    "strconv"
     "strings"
+    "net/http"
     "encoding/json"
 )
+
+var ExitCodeError ExitCode = ExitCode{1}
+var ExitCodeWarning ExitCode = ExitCode{2}
+
+type ExitCode struct {
+    Code int
+}
 
 func CheckError(err error) {
     if err != nil {
@@ -14,9 +23,11 @@ func CheckError(err error) {
     }
 }
 
-func Exit(msg string) {
-    fmt.Println(msg)
-    os.Exit(1)
+func Exit(exitCode ExitCode, msg string) {
+    if msg != "" {
+        fmt.Println(msg)
+    }
+    os.Exit(exitCode.Code)
 }
 
 func AddTrailingSlashIfNeeded(url string) string {
@@ -24,15 +35,6 @@ func AddTrailingSlashIfNeeded(url string) string {
         url += "/"
     }
     return url
-}
-
-func GetFileNameFromUrl(url string) string {
-    parts := strings.Split(url, "/")
-    size := len(parts)
-    if size == 0 {
-        return url
-    }
-    return parts[size-1]
 }
 
 func IndentJson(jsonStr []byte) string {
@@ -90,4 +92,34 @@ func MapToJson(m map[string]string) string {
 func ConfirmAnswer(answer string) bool {
     answer = strings.ToLower(answer)
     return answer == "y" || answer == "yes"
+}
+
+func GetLogMsgPrefix(threadId int, dryRun bool) string {
+    var strDryRun string
+    if dryRun {
+        strDryRun = " [Dry run]"
+    } else {
+        strDryRun = ""
+    }
+    return "[Thread " + strconv.Itoa(threadId) + "]" + strDryRun
+}
+
+func DownloadFile(downloadPath, localPath, fileName string, flat bool,
+    user, password string) *http.Response {
+    if !flat && localPath != "" {
+        os.MkdirAll(localPath ,0777)
+        fileName = localPath + "/" + fileName
+    }
+
+    out, err := os.Create(fileName)
+    CheckError(err)
+    defer out.Close()
+    resp, body := SendGet(downloadPath, nil, user, password)
+    out.Write(body)
+    CheckError(err)
+    return resp
+}
+
+func GetVersion() string {
+    return "1.0.0"
 }

@@ -25,6 +25,6 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.Bin
     if resp.StatusCode == 200 {
         fmt.Println(cliutils.IndentJson(body))
     } else {
-        cliutils.Exit("Bintray response: " + resp.Status)
+        cliutils.Exit(cliutils.ExitCodeError, "Bintray response: " + resp.Status)
     }
 }

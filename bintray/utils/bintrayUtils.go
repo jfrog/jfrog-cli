@@ -8,10 +8,11 @@ import (
 )
 
 func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string) {
-    uploadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
-    url := bintrayDetails.DownloadServerUrl + uploadPath
-    fmt.Println("Downloading " + uploadPath)
-    resp := cliutils.DownloadFile(url, bintrayDetails.User, bintrayDetails.Key)
+    downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
+    url := bintrayDetails.DownloadServerUrl + downloadPath
+    fmt.Println("Downloading " + downloadPath)
+    fileName := cliutils.GetFileNameFromUrl(url)
+    resp := cliutils.DownloadFile(url, "", fileName, true, bintrayDetails.User, bintrayDetails.Key)
     fmt.Println("Bintray response: " + resp.Status)
 }
 
@@ -28,7 +29,7 @@ func CreateVersionDetails(versionStr string) *VersionDetails {
     parts := strings.Split(versionStr, "/")
     size := len(parts)
     if size < 1 || size > 4 {
-        cliutils.Exit("Unexpected format for argument: " + versionStr)
+        cliutils.Exit(cliutils.ExitCodeError, "Unexpected format for argument: " + versionStr)
     }
     var subject, repo, pkg, version string
     if size >= 2 {
@@ -52,7 +53,7 @@ func CreatePackageDetails(packageStr string) *VersionDetails {
     parts := strings.Split(packageStr, "/")
     size := len(parts)
     if size != 3 {
-        cliutils.Exit("Expecting an argument in the form of subject/repository/package")
+        cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/package")
     }
     return &VersionDetails {
         Subject: parts[0],
@@ -64,7 +65,7 @@ func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDeta
     parts := strings.Split(versionStr, "/")
     size := len(parts)
     if size < 4 {
-        cliutils.Exit("Expecting an argument in the form of subject/repository/package/version/path")
+        cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/package/version/path")
     }
     versionDetails = &VersionDetails {
         Subject: parts[0],
@@ -82,7 +83,7 @@ func CreatePathDetails(str string) *PathDetails {
     parts := strings.Split(str, "/")
     size := len(parts)
     if size < 3 {
-        cliutils.Exit("Expecting an argument in the form of subject/repository/file-path")
+        cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/file-path")
     }
     path := strings.Join(parts[2:],"/")
 

@@ -1,7 +1,6 @@
-# Bintray CLI
-Bintray CLI
+# JFrog CLI
 
-Bintray CLI provides a command line interface for invoking actions on Bintray.
+*JFrog CLI* provides a command line interface for invoking actions on *JFrog Artifactory* and *JFrog Bintray*.
 
 ## Getting Started
 
@@ -19,7 +18,7 @@ If you prefer, you may instead build the client in go.
 * Navigate to the directory where you want to create the *bintray-cli-go* project.
 * Set the value of the GOPATH environment variable to the full path of this directory.
 
-#### Download Bintray CLI from GitHub
+#### Download JFrog CLI from GitHub
 
 Run the following command to create the *bintray-cli-go* project:
 ```console
@@ -30,20 +29,175 @@ Navigate to the following directory
 ```console
 $ cd $GOPATH/bin
 ```
-### Usage
+### JFrog CLI Usage
 
-You can copy the *bt* executable to any location on your file-system as long as you add it to your *PATH* environment variable,
+You can copy the *frog* executable to any location on your file-system as long as you add it to your *PATH* environment variable,
 so that you can access it from any path.
 
-#### Command syntax
-
+#### Commands structure
+JFrog CLI Commands have the following structure:
+1. *frog* followed by either *art* for *JFrog Artifactory* commands or *bt* for *JFrog Bintray* commands.
+2. The command name.
+3. Global options.
+4. Command options.    
 ```console
-$ bt command-name global-options command-options arguments
+$ frog [art | bt] command-name global-options command-options arguments
+```
+To display the list of available commands, run *frog art* or *frog bt*.
+
+The sections below describe the available commands, their arguments and respective options.
+- [JFrog Artifactory commands](#jfrog-artifactory-commands)
+- [JFrog Bintray commands](#jfrog-bintray-commands)
+
+<a name="jfrog-artifactory-commands"/>
+### JFrog Artifactory commands
+
+#### Global options
+
+Global options are used for all commands.
+```console
+   --url          [Mandatory] Artifactory URL.
+   --user         [Optional] Artifactory user.
+   --password     [Optional] Artifactory password.
+```   
+
+#### Commands list
+- [upload (u)](#a-upload)
+- [download (d)](#a-download)
+- [config (c)](#a-config)
+
+<a name="a-upload"/>
+##### The *upload* (u) command
+
+###### Function
+Used to upload artifacts to Artifactory.
+
+###### Command options
+The command uses the global options, in addition to the following command options.
+```console
+   --props        [Optional] List of properties in the form of "key1=value1;key2=value2,..." to be attached to the uploaded artifacts.
+   --deb          [Optional] Used for Debian packages in the form of distribution/component/architecture.
+   --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
+   --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.
+   --regexp       [Default: false] Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
+   --threads      [Default: 3] Number of artifacts to upload in parallel.
+   --dry-run      [Default: false] Set to true to disable communication with Artifactory.
+```
+###### Arguments
+* The first argument is the local file-system path to the artifacts to be uploaded to Artifactory.
+The path can include a single file or multiple artifacts, by using the * wildcard.
+**Important:** If the path is provided as a regular expression (with the --regexp=true option) then
+the first regular expression appearing as part of the argument must be enclosed in parenthesis.
+
+* The second argument is the upload path in Artifactory.
+The argument should have the following format: [repository name]/[repository path]
+The path can include symbols in the form of {1}, {2}, ...
+These symbols are replaced with the sections enclosed with parenthesis in the first argument.
+
+###### Examples
+
+This example uploads the *froggy.tgz* file to the root of the *my-local-repo* repository
+```console
+$ art upload "froggy.tgz" "my-local-repo/" --url=http://domain/artifactory --user=admin --password=password
 ```
 
-The sections below specify the available commands, their respective options and additional arguments that may be needed.
-*bt* should be followed by a command name (for example, download-ver), a list of options (for example, --repo=my-bintray-repo)
-and the list of arguments for the command.
+This example collects all the zip artifacts located under the build directory (including sub-directories).
+and uploads them to the *my-local-repo* repository, under the zipFiles folder, while keeping the artifacts original names.
+```console
+$ art upload build/*.zip libs-release-local/zipFiles/ --url=http://domain/artifactory --user=admin --password=password
+```
+And on Windows:
+```console
+$ art upload "build\\*.zip" "libs-release-local/zipFiles/" --url=http://domain/artifactory --user=admin --password=password
+```
+
+<a name="a-download"/>
+##### The *download* (d) command
+
+###### Function
+Used to download artifacts from Artifactory.
+
+###### Command options
+The command uses the global options, in addition to the following command options.
+```console
+   --props        [Optional] List of properties in the form of "key1=value1;key2=value2,..." Only artifacts with these properties will be downloaded.
+   --flat         [Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded artifacts
+   --recursive    [Default: true] Set to false if you do not wish to include the download of artifacts inside sub-directories in Artifactory.
+   --min-split    [Default: 5120] Minimum file size in KB to split into ranges. Set to -1 for no splits.
+   --split-count  [Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.
+   --threads      [Default: 3] Number of artifacts to download in parallel.
+```
+
+###### Arguments
+The command expects one argument - the path of artifacts to be downloaded from Artifactory.
+The argument should have the following format: [repository name]/[repository path]
+The path can include a single artifact or multiple artifacts, by using the * wildcard.
+The artifacts are downloaded and saved to the current directory, while saving their folder structure.
+
+###### Examples
+
+This example downloads the *cool-froggy.zip* artifact located at the root of the *my-local-repo* repository to current directory.
+```console
+$ art download "my-local-repo/cool-froggy.zip" --url=http://domain/artifactory --user=admin --password=password
+```
+
+This example downloads all artifacts located in the *my-local-repo* repository under the *all-my-frogs* folder to the *all-my-frog* directory located unde the current directory.
+```console
+$ art download "my-local-repo/all-my-frogs/" --url=http://domain/artifactory --user=admin --password=password
+```
+
+<a name="a-config"/>
+##### The *config* (c) command
+
+###### Function
+Used to configure the Artifactory URL and authentication details, so that you don't have to send them as options
+for the *upload* and *download* commands.
+The configuration is saved at ~/.jfrog/art-cli.conf
+
+###### Command options
+```console
+   --interactive  [Default: true] Set to false if you do not wish the config command to be interactive. If true, the --url option becomes optional.
+   --enc-password [Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.
+   --url          [Optional] Artifactory URL.
+   --user         [Optional] Artifactory user.
+   --password     [Optional] Artifactory password.
+```
+
+###### Arguments
+* If no arguments are sent, the command will configure the Artifactory URL, user and password sent through the command options
+or through the command's interactive prompt.
+* The *show* argument will make the command show the stored configuration.
+* The *clear* argument will make the command clear the stored configuration.
+
+###### Important Note
+
+if your Artifactory server has [encrypted password set to required](https://www.jfrog.com/confluence/display/RTF/Configuring+Security#ConfiguringSecurity-PasswordEncryptionPolicy) you should use your API Key as your password.
+
+###### Examples
+
+Configure the Artifactory details through an interactive propmp.
+```console
+$ frog art config
+```
+
+Configure the Artifactory details through the command options.
+
+```console
+$ frog art config --url=http://domain/artifactory --user=admin --password=password
+```
+
+Show the configured Artifactory details.
+```console
+$ frog art config show
+```
+
+Clear the configured Artifactory details.
+```console
+$ frog art config clear
+```
+
+<a name="jfrog-bintray-commands"/>
+### JFrog Bintray commands
 
 #### Global options
 
@@ -81,6 +235,7 @@ Global options are used for all commands.
 Used to upload files to Bintray
 
 ##### Command options
+The command uses the global options, in addition to the following command options.
 ```console
    --flat                        [Default: true]   If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
    --recursive                   [Default: true]   Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
@@ -127,19 +282,19 @@ These symbols are replaced with the sections enclosed with parenthesis in the fi
 Upload all files located under *dir/sub-dir*, with names that start with *frog*, to the root path under version *1.0* 
 of the *froggy-package* package 
 ```console
-bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
+frog btu "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
 ```
 
 Upload all files located under *dir/sub-dir*, with names that start with *frog* to the /frog-files folder, under version *1.0* 
 of the *froggy-package* package 
 ```console
-bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
+frog bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
 ```
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0*, 
 while adding the *-up* suffix to their names in Bintray.  
 ```console
-bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
+frog bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
 ```
 <a name="download-file"/>
 #### The *download-file* (dlf) command
@@ -155,8 +310,8 @@ The command expects one argument in the form of *subject/repository/package/vers
 
 ##### Examples
 ```console
-bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
-bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
+frog bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
+frog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
 ```
 
 <a name="download-ver"/>
@@ -173,8 +328,8 @@ The command expects one argument in the form of *subject/repository/package/vers
 
 ##### Examples
 ```console
-bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
-bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
+frog bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
+frog bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
 ```
 
 <a name="package-show"/>
@@ -192,7 +347,7 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Show package *super-frog-package* 
 ```console
-bt ps my-org/swamp-repo/super-frog-package 
+frog bt ps my-org/swamp-repo/super-frog-package 
 ```
 
 <a name="package-create"/>
@@ -223,7 +378,7 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Create the *super-frog-package* package 
 ```console
-bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+frog bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
 <a name="package-update"/>
@@ -241,7 +396,7 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Create the *super-frog-package* package 
 ```console
-bt pu my-org/swamp-repo/super-frog-package --labels=label1,label2,label3 
+frog bt pu my-org/swamp-repo/super-frog-package --labels=label1,label2,label3 
 ```
 
 <a name="package-delete"/>
@@ -262,7 +417,7 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Delete the *froger-package* package 
 ```console
-bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+frog bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
 ```
 
 
@@ -284,12 +439,12 @@ The command expects one argument in one of the forms
 ##### Examples
 Show version 1.0.0 of package *super-frog-package* 
 ```console
-bt vs my-org/swamp-repo/super-frog-package/1.0 
+frog bt vs my-org/swamp-repo/super-frog-package/1.0 
 ```
 
 Show the latest published version of package *super-frog-package* 
 ```console
-bt vs my-org/swamp-repo/super-frog-package 
+frog bt vs my-org/swamp-repo/super-frog-package 
 ```
 
 <a name="version-create"/>
@@ -314,7 +469,7 @@ The command expects one argument in the form of *subject/repository/package/vers
 ##### Examples
 Create version 1.0.0 in package *super-frog-package* 
 ```console
-bt vc my-org/swamp-repo/super-frog-package/1.0.0 
+frog bt vc my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
 <a name="version-update"/>
@@ -332,7 +487,7 @@ The command expects one argument in the form of *subject/repository/package/vers
 ##### Examples
 Update the labels of version 1.0.0 in package *super-frog-package* 
 ```console
-bt vu my-org/swamp-repo/super-frog-package/1.0.0 --labels=jump,jumping,frog
+frog bt vu my-org/swamp-repo/super-frog-package/1.0.0 --labels=jump,jumping,frog
 ```
 
 <a name="version-delete"/>
@@ -353,7 +508,7 @@ The command expects one argument in the form of *subject/repository/package/vers
 ##### Examples
 Create version 1.0.0 in package *super-frog-package* 
 ```console
-bt vd my-org/swamp-repo/super-frog-package/1.0.0 
+frog bt vd my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
 <a name="version-publish"/>
@@ -371,7 +526,7 @@ The command expects one argument in the form of *subject/repository/package/vers
 ##### Examples
 Publish version 1.0.0 in package *super-frog-package* 
 ```console
-bt vp my-org/swamp-repo/super-frog-package/1.0.0 
+frog bt vp my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
 <a name="entitlement-keys"/>
@@ -384,7 +539,7 @@ Used for managing Entitlement Download Keys.
 The command uses the global options, in addition to the following command options.
 ```console
    --org             Bintray organization.
-   --expiry          Download Key expiry (required for 'bt ent-keys show/create/update/delete'
+   --expiry          Download Key expiry (required for 'frog bt ent-keys show/create/update/delete'
    --ex-check-url    Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.
    --ex-check-cache  Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.
    --white-cidrs     Used for Download Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/22 will allow access only for those IPs that exist in that address range.
@@ -398,28 +553,28 @@ The command uses the global options, in addition to the following command option
 ##### Examples
 Show all Download Keys
 ```console
-bt ent-keys
+frog bt ent-keys
 ```
 Create a Download Key
 ```console
-bt ent-keys create key1 
-bt ent-keys create key1 --expiry=7956915742000 
+frog bt ent-keys create key1 
+frog bt ent-keys create key1 --expiry=7956915742000 
 ```
 
 Show a specific Download Key
 ```console
-bt ent-keys show key1
+frog bt ent-keys show key1
 ```
 
 Update a Download Key
 ```console
-bt ent-keys update key1 --ex-check-url=http://new-callback.com --white-cidrs=127.0.0.1/22,193.5.0.1/92 --black-cidrs=127.0.0.1/22,193.5.0.1/92
-bt ent-keys update key1 --expiry=7956915752000
+frog bt ent-keys update key1 --ex-check-url=http://new-callback.com --white-cidrs=127.0.0.1/22,193.5.0.1/92 --black-cidrs=127.0.0.1/22,193.5.0.1/92
+frog bt ent-keys update key1 --expiry=7956915752000
 ```
 
 Delete a Download Key
 ```console
-bt ent key delete key1
+frog bt ent key delete key1
 ```
 
 <a name="entitlements"/>
@@ -445,37 +600,37 @@ The command uses the global options, in addition to the following command option
 
 Show all Entitlements of the swamp-repo repository.
 ```console
-bt ent my-org/swamp-repo
+frog bt ent my-org/swamp-repo
 ```
 
 Show all Entitlements of the green-frog package.
 ```console
-bt ent my-org/swamp-repo/green-frog
+frog bt ent my-org/swamp-repo/green-frog
 ```
 
 Show all Entitlements of version 1.0 of the green-frog package.
 ```console
-bt ent my-org/swamp-repo/green-frog/1.0
+frog bt ent my-org/swamp-repo/green-frog/1.0
 ```
 
 Create an Entitlement for the green-frog package, with rw access, the key1 and key2 Download Keys and the a/b/c path.
 ```console
-bt ent create my-org/swamp-repo/green-frog --access=rw --keys=key1,key2 --path=a/b/c
+frog bt ent create my-org/swamp-repo/green-frog --access=rw --keys=key1,key2 --path=a/b/c
 ```
 
 Show a specific Entitlement on the swamp-repo repository.
 ```console
-bt ent show my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
+frog bt ent show my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
 ```
 
 Update the download keys and access of an Entitlement on the swamp-repo repository.
 ```console
-bt ent update my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc --keys=key1,key2 --access=r
+frog bt ent update my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc --keys=key1,key2 --access=r
 ```
 
 Delete an Entitlement on the my-org/swamp-repo.
 ```console 
-bt ent delete my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
+frog bt ent delete my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
 ```
 
 <a name="sign-url"/>
@@ -501,7 +656,7 @@ The command expects one argument in the form of *subject/repository/file-path*.
 ##### Examples
 Create a download URL for *froggy-file*, located under *froggy-folder* in the *swamp-repo* repository.
  ```console
-bt us my-org/swamp-repo/froggy-folder/froggy-file
+frog bt us my-org/swamp-repo/froggy-folder/froggy-file
 ```
 
 <a name="gpg-sign-file"/>
@@ -522,11 +677,11 @@ The command expects one argument in the form of *subject/repository/file-path*.
 ##### Examples
 GPG sign the *froggy-file* file, located under *froggy-folder* in the *swamp-repo* repository.
  ```console
-bt gsf my-org/swamp-repo/froggy-folder/froggy-file
+frog bt gsf my-org/swamp-repo/froggy-folder/froggy-file
 ```
 or with a passphrase
 ```console
-bt gsf my-org/swamp-repo/froggy-folder/froggy-file --passphrase=gpgX***yH8eKw
+frog bt gsf my-org/swamp-repo/froggy-folder/froggy-file --passphrase=gpgX***yH8eKw
 ```
 
 <a name="gpg-sign-ver"/>
@@ -547,9 +702,9 @@ The command expects one argument in the form of *subject/repository/package/vers
 ##### Examples
 GPG sign all files of version *1.0* of the *froggy-package* package in the *swamp-repo* repository.
  ```console
-bt gsv my-org/swamp-repo/froggy-package/1.0
+frog bt gsv my-org/swamp-repo/froggy-package/1.0
 ```
 or with a passphrase
 ```console
-bt gsv my-org/swamp-repo/froggy-package/1.0 --passphrase=gpgX***yH8eKw
+frog bt gsv my-org/swamp-repo/froggy-package/1.0 --passphrase=gpgX***yH8eKw
 ```
