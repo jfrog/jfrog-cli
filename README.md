@@ -49,6 +49,21 @@ The sections below describe the available commands, their arguments and respecti
 - [JFrog Artifactory commands](#jfrog-artifactory-commands)
 - [JFrog Bintray commands](#jfrog-bintray-commands)
 
+### Security - JFrog Artifactory
+JFrog CLI lets you authenticate yourself to Artifactory either using your Artifactory user and password, or using RSA public and private keys.
+
+#### Authentication with user and password
+To use your Artifactory user and password, simply use the *--user* and *--password* command options 
+as described below or configure your user and password using the [config](#a-config) command.
+
+#### Authentication using RSA public and private keys
+Artifactory supports SSH authentication using RSA public and private keys from version 4.4. 
+To authenticate yourself to Artifactory using RSA keys, execute the following instructions:
+
+* Enable SSH authentication in Artifactory as described in the [Artifactory Documentation](https://www.jfrog.com/confluence/display/RTF/SSH+Integration).
+* Configure your Artifactory URL to have the following format: *ssh://[host]:[port]* using the *--url* command option or the [config](#a-config) command. Please make sure the [host] URL section does not include your Artifactory context URL, but only the host name or IP.
+* Configure the path to your private SSH key file using the *--ssh-key-path* command option or the [config](#a-config) command.
+
 <a name="jfrog-artifactory-commands"/>
 ### JFrog Artifactory commands
 
@@ -240,6 +255,7 @@ The command uses the global options, in addition to the following command option
    --flat                        [Default: true]   If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
    --recursive                   [Default: true]   Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
    --regexp                      [Default: false]  Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
+   --threads                     [Default: 3] Number of artifacts to upload in parallel.   
    --dry-run                     [Default: false]  Set to true to disable communication with Bintray.
 ```
 If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.

@@ -317,7 +317,7 @@ func getDeletePackageAndVersionFlags() []cli.Flag {
 func getUploadFlags() []cli.Flag {
     flags := []cli.Flag{
         nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
+        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
     }
     copy(flags[0:4], getFlags())
     flags[4] = cli.StringFlag{
@@ -334,12 +334,17 @@ func getUploadFlags() []cli.Flag {
          Name:  "regexp",
          Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
     }
-    flags[7] = cli.BoolFlag{
+    flags[7] = cli.StringFlag{
+         Name:  "threads",
+         Value:  "",
+         Usage: "[Default: 3] Number of artifacts to upload in parallel.",
+    }
+    flags[8] = cli.BoolFlag{
          Name:  "dry-run",
          Usage: "[Default: false] Set to true to disable communication with Artifactory.",
     }
-    copy(flags[8:19], getPackageFlags("pkg-"))
-    copy(flags[19:24], getVersionFlags("ver-"))
+    copy(flags[9:20], getPackageFlags("pkg-"))
+    copy(flags[20:25], getVersionFlags("ver-"))
     return flags
 }
 
@@ -732,6 +737,7 @@ func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
     var recursive bool
     var flat bool
+    var threads int
 
     if c.String("recursive") == "" {
         recursive = true
@@ -743,12 +749,22 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
     } else {
         flat = c.Bool("flat")
     }
+    if c.String("threads") == "" {
+        threads = 3
+    } else {
+        var err error
+        threads, err = strconv.Atoi(c.String("threads"))
+        if err != nil || threads < 1 {
+            cliutils.Exit(cliutils.ExitCodeError, "The '--threads' option should have a numeric positive value.")
+        }
+    }
 
     return &commands.UploadFlags {
         BintrayDetails: createBintrayDetails(c),
         Recursive: recursive,
         Flat: flat,
         UseRegExp: c.Bool("regexp"),
+        Threads: threads,
         DryRun: c.Bool("dry-run") }
 }
 

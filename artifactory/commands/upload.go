@@ -23,7 +23,6 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
     artifacts := getFilesToUpload(localPath, targetPath, flags)
     size := len(artifacts)
 
-    // Start a thread for each channel and start uploading:
     var wg sync.WaitGroup
 
     // Create an array of integers, to store the total file that were uploaded successfully.

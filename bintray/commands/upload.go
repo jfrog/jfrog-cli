@@ -3,6 +3,7 @@ package commands
 import (
 	"os"
 	"fmt"
+	"sync"
 	"regexp"
 	"strings"
 	"strconv"
@@ -25,23 +26,61 @@ func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
     baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
            versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/";
 
-    for _, artifact := range artifacts {
-        url := baseUrl + artifact.TargetPath
-        if !uploadFlags.DryRun {
-            fmt.Println("Uploading artifact to: " + artifact.TargetPath)
+    uploadFiles(artifacts, baseUrl, uploadFlags)
+}
 
-            f, err := os.Open(artifact.LocalPath)
-            cliutils.CheckError(err)
-            defer f.Close()
+func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (totalUploaded, totalFailed int) {
+    size := len(artifacts)
+    var wg sync.WaitGroup
 
-            resp := cliutils.UploadFile(f, url,
-                uploadFlags.BintrayDetails.User, uploadFlags.BintrayDetails.Key, nil)
+    // Create an array of integers, to store the total file that were uploaded successfully.
+    // Each array item is used by a single thread.
+    uploadCount := make([]int, flags.Threads, flags.Threads)
 
-            fmt.Println("Bintray response: " + resp.Status)
-        } else {
-            fmt.Println("[Dry Run] Uploading artifact: " + url)
-        }
+    for i := 0; i < flags.Threads; i++ {
+        wg.Add(1)
+        go func(threadId int) {
+            logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
+            for j := threadId; j < size; j += flags.Threads {
+                url := baseUrl + artifacts[j].TargetPath
+                if !flags.DryRun {
+                    if uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails) {
+                        uploadCount[threadId]++
+                    }
+                } else {
+                    fmt.Println("[Dry Run] Uploading artifact: " + url)
+                    uploadCount[threadId]++
+                }
+            }
+            wg.Done()
+        }(i)
     }
+    wg.Wait()
+
+    totalUploaded = 0
+    for _, i := range uploadCount {
+        totalUploaded += i
+    }
+    fmt.Println("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Bintray.")
+    totalFailed = size-totalUploaded
+    if totalFailed > 0 {
+        fmt.Println("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Bintray.")
+    }
+    return
+}
+
+func uploadFile(artifact Artifact, url, logMsgPrefix string, bintrayDetails *utils.BintrayDetails) bool {
+    fmt.Println(logMsgPrefix + " Uploading artifact to: " + url)
+
+    f, err := os.Open(artifact.LocalPath)
+    cliutils.CheckError(err)
+    defer f.Close()
+
+    resp := cliutils.UploadFile(f, url,
+        bintrayDetails.User, bintrayDetails.Key, nil)
+
+    fmt.Println(logMsgPrefix + " Bintray response: " + resp.Status)
+    return resp.StatusCode == 201 || resp.StatusCode == 200
 }
 
 func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags,
@@ -227,5 +266,6 @@ type UploadFlags struct {
     DryRun bool
     Recursive bool
     Flat bool
+    Threads int
     UseRegExp bool
 }
