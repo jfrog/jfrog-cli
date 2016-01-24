@@ -337,7 +337,10 @@ frog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zi
 Used to download the files of a specific version from Bintray.
 
 ##### Command options
-This command has no command options. It uses however the global options.
+The command uses the global options, in addition to the following command option.
+```console
+   --threads                     [Default: 3] Number of artifacts to upload in parallel.   
+```
 
 ##### Arguments
 The command expects one argument in the form of *subject/repository/package/version*.
