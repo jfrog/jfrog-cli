@@ -34,7 +34,7 @@ func GetCommands() []cli.Command {
             Name: "download-ver",
             Usage: "Download Version files",
             Aliases: []string{"dlv"},
-            Flags: getFlags(),
+            Flags: getDownloadVersionFlags(),
             Action: func(c *cli.Context) {
                 downloadVersion(c)
             },
@@ -314,6 +314,19 @@ func getDeletePackageAndVersionFlags() []cli.Flag {
     return flags
 }
 
+func getDownloadVersionFlags() []cli.Flag {
+    flags := []cli.Flag{
+        nil,nil,nil,nil,nil,
+    }
+    copy(flags[0:4], getFlags())
+    flags[4] = cli.StringFlag{
+        Name:  "threads",
+        Value:  "",
+        Usage: "[Default: 3] Number of artifacts to download in parallel.",
+    }
+    return flags
+}
+
 func getUploadFlags() []cli.Flag {
     flags := []cli.Flag{
         nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
@@ -557,7 +570,7 @@ func downloadVersion(c *cli.Context) {
     }
     versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
     bintrayDetails := createBintrayDetails(c)
-    commands.DownloadVersion(versionDetails, bintrayDetails)
+    commands.DownloadVersion(versionDetails, bintrayDetails, getThreadsOptionValue(c))
 }
 
 func upload(c *cli.Context) {
@@ -737,7 +750,6 @@ func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
     var recursive bool
     var flat bool
-    var threads int
 
     if c.String("recursive") == "" {
         recursive = true
@@ -749,6 +761,17 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
     } else {
         flat = c.Bool("flat")
     }
+
+    return &commands.UploadFlags {
+        BintrayDetails: createBintrayDetails(c),
+        Recursive: recursive,
+        Flat: flat,
+        UseRegExp: c.Bool("regexp"),
+        Threads: getThreadsOptionValue(c),
+        DryRun: c.Bool("dry-run") }
+}
+
+func getThreadsOptionValue(c *cli.Context) (threads int) {
     if c.String("threads") == "" {
         threads = 3
     } else {
@@ -758,14 +781,7 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
             cliutils.Exit(cliutils.ExitCodeError, "The '--threads' option should have a numeric positive value.")
         }
     }
-
-    return &commands.UploadFlags {
-        BintrayDetails: createBintrayDetails(c),
-        Recursive: recursive,
-        Flat: flat,
-        UseRegExp: c.Bool("regexp"),
-        Threads: threads,
-        DryRun: c.Bool("dry-run") }
+    return
 }
 
 func createEntitlementFlagsForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {

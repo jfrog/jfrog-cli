@@ -40,9 +40,9 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags) {
     for i := 0; i < flags.Threads; i++ {
         wg.Add(1)
         go func(threadId int) {
+            logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
             for j := threadId; j < size; j += flags.Threads {
                 downloadPath := buildDownloadUrl(flags.ArtDetails.Url, resultItems[j])
-                logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
                 fmt.Println(logMsgPrefix + " Downloading " + downloadPath)
                 if !flags.DryRun {
                     downloadFile(downloadPath, resultItems[j].Path, resultItems[j].Name, logMsgPrefix, flags)

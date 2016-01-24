@@ -7,13 +7,18 @@ import (
     "github.com/JFrogDev/bintray-cli-go/cliutils"
 )
 
-func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string) {
+func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string,
+    logMsgPrefix string) {
+
+    if logMsgPrefix != "" {
+        logMsgPrefix += " "
+    }
     downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
     url := bintrayDetails.DownloadServerUrl + downloadPath
-    fmt.Println("Downloading " + downloadPath)
+    fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
     fileName := cliutils.GetFileNameFromUrl(url)
     resp := cliutils.DownloadFile(url, "", fileName, true, bintrayDetails.User, bintrayDetails.Key)
-    fmt.Println("Bintray response: " + resp.Status)
+    fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
 }
 
 func ReadBintrayMessage(resp []byte) string {

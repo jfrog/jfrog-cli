@@ -1,13 +1,16 @@
 package commands
 
 import (
+    "sync"
     "strings"
     "encoding/json"
     "github.com/JFrogDev/bintray-cli-go/cliutils"
     "github.com/JFrogDev/bintray-cli-go/bintray/utils"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails,
+    threads int) {
+
     if bintrayDetails.User == "" {
         bintrayDetails.User = versionDetails.Subject
     }
@@ -21,9 +24,25 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
     err := json.Unmarshal(body, &results)
     cliutils.CheckError(err)
 
-    for _, result := range results {
-        utils.DownloadBintrayFile(bintrayDetails, versionDetails, result.Path)
+    downloadFiles(results, versionDetails, bintrayDetails, threads)
+}
+
+func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
+    bintrayDetails *utils.BintrayDetails, threads int) {
+
+    size := len(results)
+    var wg sync.WaitGroup
+    for i := 0; i < threads; i++ {
+        wg.Add(1)
+        go func(threadId int) {
+            logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, false)
+            for j := threadId; j < size; j += threads {
+                utils.DownloadBintrayFile(bintrayDetails, versionDetails, results[j].Path, logMsgPrefix)
+            }
+            wg.Done()
+        }(i)
     }
+    wg.Wait()
 }
 
 func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDetails {

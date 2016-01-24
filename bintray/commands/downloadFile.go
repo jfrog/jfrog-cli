@@ -8,5 +8,5 @@ func DownloadFile(versionDetails *utils.VersionDetails, path string, bintrayDeta
     if bintrayDetails.User == "" {
         bintrayDetails.User = versionDetails.Subject
     }
-    utils.DownloadBintrayFile(bintrayDetails, versionDetails, path)
+    utils.DownloadBintrayFile(bintrayDetails, versionDetails, path, "")
 }
