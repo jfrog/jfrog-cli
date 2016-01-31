@@ -3,8 +3,8 @@ package commands
 import (
     "fmt"
     "net/http"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
-    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
 )
 
 func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {

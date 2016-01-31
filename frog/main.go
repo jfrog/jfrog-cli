@@ -3,15 +3,15 @@ package main
 import (
     "os"
     "github.com/codegangsta/cli"
-    "github.com/JFrogDev/bintray-cli-go/artifactory"
-    "github.com/JFrogDev/bintray-cli-go/bintray"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/artifactory"
+    "github.com/JFrogDev/jfrog-cli-go/bintray"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
 )
 
 func main() {
     app := cli.NewApp()
     app.Name = "frog"
-    app.Usage = "See https://github.com/JFrogDev/bintray-cli-go for usage instructions."
+    app.Usage = "See https://github.com/JFrogDev/jfrog-cli-go for usage instructions."
     app.Version = "0.0.1"
 
     args := os.Args

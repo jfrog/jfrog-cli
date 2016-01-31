@@ -5,8 +5,8 @@ import (
   "sync"
   "strconv"
   "encoding/json"
-  "github.com/JFrogDev/bintray-cli-go/cliutils"
-  "github.com/JFrogDev/bintray-cli-go/artifactory/utils"
+  "github.com/JFrogDev/jfrog-cli-go/cliutils"
+  "github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
 )
 
 // Downloads the artifacts using the specified download pattern.

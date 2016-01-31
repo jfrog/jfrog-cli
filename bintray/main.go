@@ -5,9 +5,9 @@ import (
     "strings"
     "strconv"
     "github.com/codegangsta/cli"
-    "github.com/JFrogDev/bintray-cli-go/bintray/commands"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
-    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
+    "github.com/JFrogDev/jfrog-cli-go/bintray/commands"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
 )
 
 func GetCommands() []cli.Command {
@@ -248,7 +248,7 @@ func getPackageFlags(prefix string) []cli.Flag {
         cli.StringFlag{
              Name:  prefix + "pub-stats",
              Value:  "",
-             Usage: "[Default: false] Public statistics",
+             Usage: "[Default: true] Public statistics",
         },
     }
 }

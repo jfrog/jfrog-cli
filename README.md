@@ -22,7 +22,7 @@ If you prefer, you may instead build the client in go.
 
 Run the following command to create the *bintray-cli-go* project:
 ```console
-$ go get github.com/JFrogDev/bintray-cli-go/...
+$ go get github.com/JFrogDev/jfrog-cli-go/...
 ```
 
 Navigate to the following directory
@@ -339,7 +339,7 @@ Used to download the files of a specific version from Bintray.
 ##### Command options
 The command uses the global options, in addition to the following command option.
 ```console
-   --threads                     [Default: 3] Number of artifacts to upload in parallel.   
+   --threads           [Default: 3] Number of artifacts to download in parallel.   
 ```
 
 ##### Arguments
@@ -388,7 +388,7 @@ The command uses the global options, in addition to the following command option
    --github-repo        [Optional]        Package Github repository.
    --github-rel-notes   [Optional]        Github release notes file.
    --pub-dn             [Default: false]  Public download numbers.
-   --pub-stats          [Default: false]  Public statistics
+   --pub-stats          [Default: true]   Public statistics
 ```
 
 ##### Arguments
@@ -525,7 +525,7 @@ The command uses the global options, in addition to the following command option
 The command expects one argument in the form of *subject/repository/package/version.
 
 ##### Examples
-Create version 1.0.0 in package *super-frog-package* 
+Delete version 1.0.0 in package *super-frog-package* 
 ```console
 frog bt vd my-org/swamp-repo/super-frog-package/1.0.0 
 ```
@@ -593,7 +593,7 @@ frog bt ent-keys update key1 --expiry=7956915752000
 
 Delete a Download Key
 ```console
-frog bt ent key delete key1
+frog bt ent-keys delete key1
 ```
 
 <a name="entitlements"/>

@@ -2,7 +2,7 @@ package utils
 
 import (
     "strings"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
 )
 
 func BuildAqlSearchQuery(searchPattern string, recursive bool, props string) string {

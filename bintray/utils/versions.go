@@ -2,7 +2,7 @@ package utils
 
 import (
  	"net/http"
- 	"github.com/JFrogDev/bintray-cli-go/cliutils"
+ 	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 )
 
 func HeadVersion(versionDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {

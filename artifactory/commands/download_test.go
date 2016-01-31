@@ -2,7 +2,7 @@ package commands
 
 import (
     "testing"
-    "github.com/JFrogDev/bintray-cli-go/tests"
+    "github.com/JFrogDev/jfrog-cli-go/tests"
 )
 
 func TestRecursiveDownload(t *testing.T) {

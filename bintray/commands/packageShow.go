@@ -2,8 +2,8 @@ package commands
 
 import (
     "fmt"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
-    "github.com/JFrogDev/bintray-cli-go/bintray/utils"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
 )
 
 func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {

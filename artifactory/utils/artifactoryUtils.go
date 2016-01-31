@@ -10,7 +10,7 @@ import (
     "crypto/md5"
     "crypto/sha1"
     "encoding/hex"
-    "github.com/JFrogDev/bintray-cli-go/cliutils"
+    "github.com/JFrogDev/jfrog-cli-go/cliutils"
 )
 
 func GetFileDetails(filePath string) *FileDetails {
