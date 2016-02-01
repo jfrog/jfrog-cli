@@ -169,6 +169,22 @@ func UploadFile(f *os.File, url, user, password string, headers map[string]strin
     return resp
 }
 
+func DownloadFile(downloadPath, localPath, fileName string, flat bool,
+    user, password string) *http.Response {
+    if !flat && localPath != "" {
+        os.MkdirAll(localPath ,0777)
+        fileName = localPath + "/" + fileName
+    }
+
+    out, err := os.Create(fileName)
+    CheckError(err)
+    defer out.Close()
+    resp, body := SendGet(downloadPath, nil, user, password)
+    out.Write(body)
+    CheckError(err)
+    return resp
+}
+
 func GetTempDirPath() string {
     if tempDirPath == "" {
         Exit(ExitCodeError, "Function cannot be used before 'tempDirPath' is created.")

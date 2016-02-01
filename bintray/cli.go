@@ -284,185 +284,147 @@ func getVersionFlags(prefix string) []cli.Flag {
 }
 
 func getCreateAndUpdatePackageFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    copy(flags[4:15], getPackageFlags(""))
-    return flags
+    return append(getFlags(), getPackageFlags("")...)
 }
 
 func getCreateAndUpdateVersionFlags() []cli.Flag {
-    flags := []cli.Flag{
-       nil,nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    copy(flags[4:9], getVersionFlags(""))
-    return flags
+    return append(getFlags(), getVersionFlags("")...)
 }
 
 func getDeletePackageAndVersionFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
+    return append(getFlags(), cli.StringFlag{
         Name:  "q",
         Value:  "",
         Usage: "[Default: false] Set to true to skip the delete confirmation message.",
-    }
-    return flags
+    })
 }
 
 func getDownloadVersionFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
+    return append(getFlags(), cli.StringFlag{
         Name:  "threads",
         Value:  "",
         Usage: "[Default: 3] Number of artifacts to download in parallel.",
-    }
-    return flags
+    })
 }
 
 func getUploadFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
-        Name:  "recursive",
-        Value:  "",
-        Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
-    }
-    flags[5] = cli.StringFlag{
-        Name:  "flat",
-        Value:  "",
-        Usage: "[Default: true] If not set to true, and the upload path ends with a slash, files are uploaded according to their file system hierarchy.",
-    }
-    flags[6] = cli.BoolFlag{
-         Name:  "regexp",
-         Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
-    }
-    flags[7] = cli.StringFlag{
-         Name:  "threads",
-         Value:  "",
-         Usage: "[Default: 3] Number of artifacts to upload in parallel.",
-    }
-    flags[8] = cli.BoolFlag{
-         Name:  "dry-run",
-         Usage: "[Default: false] Set to true to disable communication with Artifactory.",
-    }
-    copy(flags[9:20], getPackageFlags("pkg-"))
-    copy(flags[20:25], getVersionFlags("ver-"))
-    return flags
+    flags := append(getFlags(), []cli.Flag{
+        cli.StringFlag{
+            Name:  "recursive",
+            Value:  "",
+            Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
+        },
+        cli.StringFlag{
+            Name:  "flat",
+            Value:  "",
+            Usage: "[Default: true] If not set to true, and the upload path ends with a slash, files are uploaded according to their file system hierarchy.",
+        },
+        cli.BoolFlag{
+             Name:  "regexp",
+             Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
+        },
+        cli.StringFlag{
+             Name:  "threads",
+             Value:  "",
+             Usage: "[Default: 3] Number of artifacts to upload in parallel.",
+        },
+        cli.BoolFlag{
+             Name:  "dry-run",
+             Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+        },
+    }...)
+    flags = append(flags, getPackageFlags("pkg-")...)
+    return append(flags, getVersionFlags("ver-")...)
 }
 
 func getEntitlementsFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
-         Name:  "id",
-         Usage: "[Optional] Entitlement ID. Used for Entitlements update.",
-    }
-    flags[5] = cli.StringFlag{
-         Name:  "access",
-         Usage: "[Optional] Entitlement access. Used for Entitlements creation and update.",
-    }
-    flags[6] = cli.StringFlag{
-         Name:  "keys",
-         Usage: "[Optional] Used for Entitlements creation and update. List of Download Keys in the form of \"key1\",\"key2\"...",
-    }
-    flags[7] = cli.StringFlag{
-         Name:  "path",
-         Usage: "[Optional] Entitlement path. Used for Entitlements creating and update.",
-    }
-    return flags
+    return append(getFlags(), []cli.Flag{
+        cli.StringFlag{
+             Name:  "id",
+             Usage: "[Optional] Entitlement ID. Used for Entitlements update.",
+        },
+        cli.StringFlag{
+             Name:  "access",
+             Usage: "[Optional] Entitlement access. Used for Entitlements creation and update.",
+        },
+        cli.StringFlag{
+             Name:  "keys",
+             Usage: "[Optional] Used for Entitlements creation and update. List of Download Keys in the form of \"key1\",\"key2\"...",
+        },
+        cli.StringFlag{
+             Name:  "path",
+             Usage: "[Optional] Entitlement path. Used for Entitlements creating and update.",
+        },
+    }...)
 }
 
 func getEntitlementKeysFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
-         Name:  "org",
-         Usage: "[Optional] Bintray organization",
-    }
-    flags[5] = cli.StringFlag{
-         Name:  "id",
-         Usage: "[Optional] Download Key ID (required for 'bt ent-keys show/create/update/delete'",
-    }
-    flags[6] = cli.StringFlag{
-         Name:  "expiry",
-         Usage: "[Optional] Download Key expiry (required for 'bt ent-keys show/create/update/delete'",
-    }
-    flags[7] = cli.StringFlag{
-         Name:  "ex-check-url",
-         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
-    }
-    flags[8] = cli.StringFlag{
-         Name:  "ex-check-cache",
-         Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
-    }
-    flags[9] = cli.StringFlag{
-         Name:  "white-cidrs",
-         Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\",\"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
-    }
-    flags[10] = cli.StringFlag{
-         Name:  "black-cidrs",
-         Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
-    }
-    return flags
+    return append(getFlags(), []cli.Flag{
+        cli.StringFlag{
+             Name:  "org",
+             Usage: "[Optional] Bintray organization",
+        },
+        cli.StringFlag{
+             Name:  "id",
+             Usage: "[Optional] Download Key ID (required for 'bt ent-keys show/create/update/delete'",
+        },
+        cli.StringFlag{
+             Name:  "expiry",
+             Usage: "[Optional] Download Key expiry (required for 'bt ent-keys show/create/update/delete'",
+        },
+        cli.StringFlag{
+             Name:  "ex-check-url",
+             Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
+        },
+        cli.StringFlag{
+             Name:  "ex-check-cache",
+             Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
+        },
+        cli.StringFlag{
+             Name:  "white-cidrs",
+             Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\",\"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
+        },
+        cli.StringFlag{
+             Name:  "black-cidrs",
+             Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
+        },
+    }...)
 }
 
 func getUrlSigningFlags() []cli.Flag {
-    flags := []cli.Flag{
-        nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,
-    }
-    copy(flags[0:4], getFlags())
-    flags[4] = cli.StringFlag{
-         Name:  "expiry",
-         Usage: "[Optional] An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.",
-    }
-    flags[5] = cli.StringFlag{
-         Name:  "valid-for",
-         Usage: "[Optional] The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.",
-    }
-    flags[6] = cli.StringFlag{
-         Name:  "callback-id",
-         Usage: "[Optional] An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.",
-    }
-    flags[7] = cli.StringFlag{
-         Name:  "callback-email",
-         Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.",
-    }
-    flags[8] = cli.StringFlag{
-         Name:  "callback-url",
-         Usage: "[Optional] A webhook URL to call when a user has used the download URL.",
-    }
-    flags[9] = cli.StringFlag{
-         Name:  "callback-method",
-         Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.",
-    }
-    return flags
+    return append(getFlags(), []cli.Flag{
+        cli.StringFlag{
+             Name:  "expiry",
+             Usage: "[Optional] An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.",
+        },
+        cli.StringFlag{
+             Name:  "valid-for",
+             Usage: "[Optional] The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.",
+        },
+        cli.StringFlag{
+             Name:  "callback-id",
+             Usage: "[Optional] An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.",
+        },
+        cli.StringFlag{
+             Name:  "callback-email",
+             Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.",
+        },
+        cli.StringFlag{
+             Name:  "callback-url",
+             Usage: "[Optional] A webhook URL to call when a user has used the download URL.",
+        },
+        cli.StringFlag{
+             Name:  "callback-method",
+             Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.",
+        },
+    }...)
 }
 
 func getGpgSigningFlags() []cli.Flag {
-   flags := []cli.Flag{
-       nil,nil,nil,nil,nil,
-   }
-   copy(flags[0:4], getFlags())
-   flags[4] = cli.StringFlag{
+    return append(getFlags(), cli.StringFlag{
         Name:  "passphrase",
         Usage: "[Optional] GPG passphrase.",
-   }
-   return flags
+    })
 }
 
 func showPackage(c *cli.Context) {
