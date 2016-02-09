@@ -3,8 +3,8 @@ package commands
 import (
     "testing"
     "strconv"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
-    "github.com/JFrogDev/jfrog-cli-go/tests"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/tests"
 )
 
 func TestSingleFileUpload(t *testing.T) {

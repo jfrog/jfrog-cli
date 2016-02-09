@@ -4,7 +4,7 @@ import (
 	"fmt"
     "strings"
     "encoding/json"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
 )
 
 func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string,

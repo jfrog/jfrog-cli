@@ -5,8 +5,8 @@ import (
   "sync"
   "strconv"
   "encoding/json"
-  "github.com/JFrogDev/jfrog-cli-go/cliutils"
-  "github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
+  "github.com/jFrogdev/jfrog-cli-go/cliutils"
+  "github.com/jFrogdev/jfrog-cli-go/artifactory/utils"
 )
 
 // Downloads the artifacts using the specified download pattern.

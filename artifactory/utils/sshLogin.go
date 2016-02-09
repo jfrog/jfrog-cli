@@ -9,7 +9,7 @@ import (
     "io/ioutil"
     "encoding/json"
     "golang.org/x/crypto/ssh"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
 )
 
 func SshAuthentication(details *ArtifactoryDetails) {

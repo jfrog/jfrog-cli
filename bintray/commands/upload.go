@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"strconv"
-	"github.com/JFrogDev/jfrog-cli-go/cliutils"
-    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
+	"github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,

@@ -9,8 +9,8 @@ import (
     "io/ioutil"
     "encoding/json"
     "golang.org/x/crypto/ssh/terminal"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
-    "github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/artifactory/utils"
 )
 
 func Config(details *utils.ArtifactoryDetails, interactive, shouldEncPassword bool) {

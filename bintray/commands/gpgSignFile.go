@@ -2,8 +2,8 @@ package commands
 
 import (
     "fmt"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
-    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetails *utils.BintrayDetails) {

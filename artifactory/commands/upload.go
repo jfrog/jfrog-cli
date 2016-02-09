@@ -8,8 +8,8 @@ import (
   "regexp"
   "strconv"
   "net/http"
-  "github.com/JFrogDev/jfrog-cli-go/cliutils"
-  "github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
+  "github.com/jFrogdev/jfrog-cli-go/cliutils"
+  "github.com/jFrogdev/jfrog-cli-go/artifactory/utils"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.

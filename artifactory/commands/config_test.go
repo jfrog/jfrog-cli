@@ -5,7 +5,7 @@ import (
     "testing"
     "reflect"
     "encoding/json"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
 )
 
 func TestConfig(t *testing.T){

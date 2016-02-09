@@ -22,7 +22,7 @@ If you prefer, you may instead build the client in go.
 
 Run the following command to create the *bintray-cli-go* project:
 ```console
-$ go get github.com/JFrogDev/jfrog-cli-go/...
+$ go get github.com/jFrogdev/jfrog-cli-go/...
 ```
 
 Navigate to the following directory
@@ -397,7 +397,7 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Create the *super-frog-package* package 
 ```console
-frog bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+frog bt pc my-org/swamp-repo/super-frog-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jFrogdev/coolfrog.git 
 ```
 
 <a name="package-update"/>
@@ -436,10 +436,8 @@ The command expects one argument in the form of *subject/repository/package.
 ##### Examples
 Delete the *froger-package* package 
 ```console
-frog bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jfrogdev/coolfrog.git 
+frog bt pc my-org/swamp-repo/froger-package --licenses=Apache-2.0,GPL-3.0 --vcs-url=http://github.com/jFrogdev/coolfrog.git 
 ```
-
-
 
 <a name="version-show"/>
 #### The *version-show* (vs) command

@@ -2,7 +2,7 @@ package utils
 
 import (
     "strings"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
 )
 
 func BuildAqlSearchQuery(searchPattern string, recursive bool, props string) string {

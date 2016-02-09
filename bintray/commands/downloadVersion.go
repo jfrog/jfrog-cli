@@ -4,8 +4,8 @@ import (
     "sync"
     "strings"
     "encoding/json"
-    "github.com/JFrogDev/jfrog-cli-go/cliutils"
-    "github.com/JFrogDev/jfrog-cli-go/bintray/utils"
+    "github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails,
