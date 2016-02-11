@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
     "strconv"
-    "github.com/jFrogdev/jfrog-cli-go/cliutils"
-    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+    "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {

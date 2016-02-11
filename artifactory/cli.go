@@ -3,9 +3,9 @@ package artifactory
 import (
 	"strings"
 	"strconv"
-	"github.com/jFrogdev/jfrog-cli-go/cliutils"
-	"github.com/jFrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jFrogdev/jfrog-cli-go/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
 	"github.com/codegangsta/cli"
 )
 

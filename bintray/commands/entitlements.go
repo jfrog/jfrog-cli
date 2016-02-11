@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
     "strings"
-    "github.com/jFrogdev/jfrog-cli-go/cliutils"
-    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+    "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.VersionDetails) {

@@ -22,7 +22,7 @@ If you prefer, you may instead build the client in go.
 
 Run the following command to create the *bintray-cli-go* project:
 ```console
-$ go get github.com/jFrogdev/jfrog-cli-go/...
+$ go get github.com/jfrogdev/jfrog-cli-go/...
 ```
 
 Navigate to the following directory

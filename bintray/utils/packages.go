@@ -2,7 +2,7 @@ package utils
 
 import (
  	"net/http"
-    "github.com/jFrogdev/jfrog-cli-go/cliutils"
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
 func HeadPackage(packageDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {

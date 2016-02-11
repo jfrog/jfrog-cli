@@ -5,9 +5,9 @@ import (
     "strings"
     "strconv"
     "github.com/codegangsta/cli"
-    "github.com/jFrogdev/jfrog-cli-go/bintray/commands"
-    "github.com/jFrogdev/jfrog-cli-go/cliutils"
-    "github.com/jFrogdev/jfrog-cli-go/bintray/utils"
+    "github.com/jfrogdev/jfrog-cli-go/bintray/commands"
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+    "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
 func GetCommands() []cli.Command {

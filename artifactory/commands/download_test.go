@@ -2,7 +2,7 @@ package commands
 
 import (
     "testing"
-    "github.com/jFrogdev/jfrog-cli-go/tests"
+    "github.com/jfrogdev/jfrog-cli-go/tests"
 )
 
 func TestRecursiveDownload(t *testing.T) {
