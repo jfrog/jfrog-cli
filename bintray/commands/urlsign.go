@@ -33,7 +33,7 @@ func builJson(flags *UrlSigningFlags) string {
 }
 
 type UrlSigningFlags struct {
-    BintrayDetails *utils.BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     Expiry string
     ValidFor string
     CallbackId string

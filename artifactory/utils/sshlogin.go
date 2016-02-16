@@ -12,7 +12,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func SshAuthentication(details *ArtifactoryDetails) {
+func SshAuthentication(details *cliutils.ArtifactoryDetails) {
     _, host, port := parseUrl(details.Url)
 
     fmt.Println("Performing SSH authentication...")

@@ -3,6 +3,7 @@ package cliutils
 import (
     "io"
  	"os"
+ 	"fmt"
  	"bytes"
  	"bufio"
  	"os/user"
@@ -18,7 +19,7 @@ var tempDirPath string
 
 func GetFileSeperator() string {
     if runtime.GOOS == "windows" {
-        return "\\\\"
+        return "\\"
     }
     return "/"
 }
@@ -126,6 +127,7 @@ func Send(method string, url string, content []byte, headers map[string]string, 
     if user != "" && password != "" {
 	    req.SetBasicAuth(user, password)
     }
+    addUserAgentHeader(req)
     if headers != nil {
         for name := range headers {
             req.Header.Set(name, headers[name])
@@ -272,6 +274,14 @@ func ReadFile(filePath string) []byte {
 	CheckError(err)
 	return content
 }
+
+func ScanFromConsole(scanInto *string, defaultValue string) {
+    fmt.Scanln(scanInto)
+    if *scanInto == "" {
+        *scanInto = defaultValue
+    }
+}
+
 func addUserAgentHeader(req *http.Request) {
     req.Header.Set("User-Agent", "jfrog-cli-go/" + GetVersion())
 }

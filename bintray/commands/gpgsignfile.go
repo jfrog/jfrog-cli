@@ -6,7 +6,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetails *utils.BintrayDetails) {
+func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetails *cliutils.BintrayDetails) {
     if bintrayDetails.User == "" {
         bintrayDetails.User = pathDetails.Subject
     }

@@ -167,7 +167,7 @@ $ frog art download "my-local-repo/all-my-frogs/" --url=http://domain/artifactor
 ###### Function
 Used to configure the Artifactory URL and authentication details, so that you don't have to send them as options
 for the *upload* and *download* commands.
-The configuration is saved at ~/.jfrog/art-cli.conf
+The configuration is saved at ~/.jfrog/jfrog-cli.conf
 
 ###### Command options
 ```console
@@ -220,11 +220,10 @@ Global options are used for all commands.
 ```console
    --user            [Optional] Bintray username. It can be also set using the BINTRAY_USER environment variable. If not set, the subject sent as part of the command argument is used for authentication.
    --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
-   --api-url         [Default: https://api.bintray.com] Bintray API URL. It can be also set using the BINTRAY_API_URL environment variable.
-   --download-url    [Default: https://dl.bintray.com] Bintray download server URL. It can be also set using the BINTRAY_DOWNLOAD_URL environment variable.
 ```
 
 #### Commands list
+- [config (c)](#config)
 - [upload (u)](#upload)
 - [download-file (dlf)](#download-file)
 - [download-ver (dlv)](#download-ver)
@@ -242,6 +241,48 @@ Global options are used for all commands.
 - [sign-url (su)](#sign-url)
 - [gpg-sign-file (gsf)](#gpg-sign-file)
 - [gpg-sign-ver (gsv)](#gpg-sign-ver)
+
+<a name="config"/>
+##### The *config* (c) command
+
+###### Function
+Used to configure your Bintray user and API key, so that you don't have to send them as command options.
+The configuration is saved at ~/.jfrog/jfrog-cli.conf
+
+###### Command options
+```console
+   --interactive  [Default: true] Set to false if you do not wish the config command to be interactive.
+   --user         [Optional] Bintray user.
+   --key          [Optional] Bintray key.
+```
+
+###### Arguments
+* If no arguments are sent, the command will configure your user and API Key sent through the command options
+or through the command's interactive prompt.
+* The *show* argument will make the command show the stored configuration.
+* The *clear* argument will make the command clear the stored configuration.
+
+###### Examples
+
+Configure user and API Key through an interactive propmp.
+```console
+$ frog bt config
+```
+
+Configure user and API Key through the command options.
+```console
+$ frog bt config --user=my-user --key=mybintrayapikey
+```
+
+Show the configured user and API Key.
+```console
+$ frog bt config show
+```
+
+Clear the configured user and API Key.
+```console
+$ frog bt config clear
+```
 
 <a name="upload"/>
 #### The *upload* (u) command

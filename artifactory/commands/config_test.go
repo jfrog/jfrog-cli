@@ -5,11 +5,11 @@ import (
     "testing"
     "reflect"
     "encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
 func TestConfig(t *testing.T){
-    inputDetails := utils.ArtifactoryDetails { "http://localhost:8080/artifactory", "admin", "password", "", nil }
+    inputDetails := cliutils.ArtifactoryDetails { "http://localhost:8080/artifactory", "admin", "password", "", nil }
     Config(&inputDetails, false, false)
     outputConfig := GetConfig()
     printConfigStruct(&inputDetails)
@@ -19,12 +19,12 @@ func TestConfig(t *testing.T){
     }
 }
 
-func configStructToString(artConfig *utils.ArtifactoryDetails) string {
+func configStructToString(artConfig *cliutils.ArtifactoryDetails) string {
     marshaledStruct, _ := json.Marshal(*artConfig)
     return string(marshaledStruct)
 }
 
-func printConfigStruct(artConfig *utils.ArtifactoryDetails){
+func printConfigStruct(artConfig *cliutils.ArtifactoryDetails){
     stringSturct := configStructToString(artConfig)
     fmt.Println(stringSturct)
 }

@@ -5,7 +5,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func HeadPackage(packageDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
+func HeadPackage(packageDetails *VersionDetails, bintrayDetails *cliutils.BintrayDetails) *http.Response {
     url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
         packageDetails.Repo + "/" + packageDetails.Package
 
@@ -32,7 +32,7 @@ func CreatePackageJson(packageName string, flags *PackageFlags) string {
 }
 
 type PackageFlags struct {
-    BintrayDetails *BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     Desc string
     Labels string
     Licenses string

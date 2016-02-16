@@ -8,7 +8,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails,
+func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails,
     threads int) {
 
     if bintrayDetails.User == "" {
@@ -28,7 +28,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
-    bintrayDetails *utils.BintrayDetails, threads int) {
+    bintrayDetails *cliutils.BintrayDetails, threads int) {
 
     size := len(results)
     var wg sync.WaitGroup

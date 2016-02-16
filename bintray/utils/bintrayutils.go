@@ -7,7 +7,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func DownloadBintrayFile(bintrayDetails *BintrayDetails, versionDetails *VersionDetails, path string,
+func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails, path string,
     logMsgPrefix string) {
 
     if logMsgPrefix != "" {
@@ -113,11 +113,4 @@ type VersionDetails struct {
     Repo string
     Package string
     Version string
-}
-
-type BintrayDetails struct {
-    ApiUrl string
-    DownloadServerUrl string
-    User string
-    Key string
 }

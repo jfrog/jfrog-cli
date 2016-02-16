@@ -7,7 +7,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func ShowDownloadKeys(bintrayDetails *utils.BintrayDetails, org string) {
+func ShowDownloadKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
     path := getDownloadKeysPath(bintrayDetails, org)
     resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
@@ -99,7 +99,7 @@ func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
     fmt.Println("Bintray response: " + resp.Status)
 }
 
-func getDownloadKeysPath(bintrayDetails *utils.BintrayDetails, org string) string {
+func getDownloadKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
     if org == "" {
         return bintrayDetails.ApiUrl + "users/" + bintrayDetails.User + "/download_keys"
     }
@@ -107,7 +107,7 @@ func getDownloadKeysPath(bintrayDetails *utils.BintrayDetails, org string) strin
 }
 
 type DownloadKeyFlags struct {
-    BintrayDetails *utils.BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     Id string
     Expiry string
     ExistenceCheckUrl string

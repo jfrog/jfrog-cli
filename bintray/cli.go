@@ -1,6 +1,7 @@
 package bintray
 
 import (
+    "os"
     "fmt"
     "strings"
     "strconv"
@@ -12,6 +13,15 @@ import (
 
 func GetCommands() []cli.Command {
     return []cli.Command{
+        {
+            Name: "config",
+            Usage: "Configure Bintray details",
+            Aliases: []string{"c"},
+            Flags: getConfigFlags(),
+            Action: func(c *cli.Context) {
+                config(c)
+            },
+        },
         {
             Name: "upload",
             Usage: "Upload files",
@@ -180,17 +190,17 @@ func getFlags() []cli.Flag {
             EnvVar: "BINTRAY_KEY",
             Usage: "[Mandatory] Bintray API key",
         },
+    }
+}
+
+func getConfigFlags() []cli.Flag {
+    flags := []cli.Flag{
         cli.StringFlag{
-            Name: "api-url",
-            EnvVar: "BINTRAY_API_URL",
-            Usage: "[Default: https://api.bintray.com] Bintray API URL",
-        },
-        cli.StringFlag{
-            Name: "download-url",
-            EnvVar: "BINTRAY_DOWNLOAD_URL",
-            Usage: "[Default: https://dl.bintray.com] Bintray download server URL",
+             Name:  "interactive",
+             Usage: "[Default: true] Set to false if you do not want the config command to be interactive.",
         },
     }
+    return append(flags, getFlags()...)
 }
 
 func getPackageFlags(prefix string) []cli.Flag {
@@ -427,12 +437,40 @@ func getGpgSigningFlags() []cli.Flag {
     })
 }
 
+func config(c *cli.Context) {
+    if len(c.Args()) > 1 {
+        cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt config --help'.")
+    } else
+    if len(c.Args()) == 1 {
+        if c.Args()[0] == "show" {
+            commands.ShowConfig()
+        } else
+        if c.Args()[0] == "clear" {
+            commands.ClearConfig()
+        } else {
+            cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
+        }
+    } else {
+        interactive := true
+        if c.String("interactive") != "" {
+            interactive = c.Bool("interactive")
+        }
+        if !interactive {
+            if c.String("user") == "" || c.String("key") == "" {
+                cliutils.Exit(cliutils.ExitCodeError, "The --url and --key options are mandatory when the --interactive option is set to false")
+            }
+        }
+        bintrayDetails := createBintrayDetails(c, false)
+        commands.Config(bintrayDetails, interactive)
+    }
+}
+
 func showPackage(c *cli.Context) {
     if len(c.Args()) != 1 {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-show --help'.")
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c)
+    bintrayDetails := createBintrayDetails(c, true)
     commands.ShowPackage(packageDetails, bintrayDetails)
 }
 
@@ -441,7 +479,7 @@ func showVersion(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-show --help'.")
     }
     versionDetails := utils.CreateVersionDetails(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c)
+    bintrayDetails := createBintrayDetails(c, true)
     commands.ShowVersion(versionDetails, bintrayDetails)
 }
 
@@ -486,7 +524,7 @@ func deletePackage(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-delete --help'.")
     }
     packageDetails := utils.CreatePackageDetails(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c)
+    bintrayDetails := createBintrayDetails(c, true)
 
     if !c.Bool("q") {
         var confirm string
@@ -504,7 +542,7 @@ func deleteVersion(c *cli.Context) {
       cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-delete --help'.")
   }
   versionDetails := utils.CreateVersionDetails(c.Args()[0])
-  bintrayDetails := createBintrayDetails(c)
+  bintrayDetails := createBintrayDetails(c, true)
 
   if !c.Bool("q") {
       var confirm string
@@ -522,7 +560,7 @@ func publishVersion(c *cli.Context) {
          cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-publish --help'.")
      }
      versionDetails := utils.CreateVersionDetails(c.Args()[0])
-     bintrayDetails := createBintrayDetails(c)
+     bintrayDetails := createBintrayDetails(c, true)
      commands.PublishVersion(versionDetails, bintrayDetails)
 }
 
@@ -531,7 +569,7 @@ func downloadVersion(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-ver --help'.")
     }
     versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c)
+    bintrayDetails := createBintrayDetails(c, true)
     commands.DownloadVersion(versionDetails, bintrayDetails, getThreadsOptionValue(c))
 }
 
@@ -552,7 +590,7 @@ func downloadFile(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-file --help'.")
     }
     versionDetails, path := utils.CreateVersionDetailsAndPath(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c)
+    bintrayDetails := createBintrayDetails(c, true)
     commands.DownloadFile(versionDetails, path, bintrayDetails)
 }
 
@@ -570,7 +608,7 @@ func gpgSignFile(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
     }
     pathDetails := utils.CreatePathDetails(c.Args()[0])
-    commands.GpgSignFile(pathDetails, c.String("passphrase"), createBintrayDetails(c))
+    commands.GpgSignFile(pathDetails, c.String("passphrase"), createBintrayDetails(c, true))
 }
 
 func gpgSignVersion(c *cli.Context) {
@@ -578,14 +616,14 @@ func gpgSignVersion(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
     }
     versionDetails := utils.CreateVersionDetails(c.Args()[0])
-    commands.GpgSignVersion(versionDetails, c.String("passphrase"), createBintrayDetails(c))
+    commands.GpgSignVersion(versionDetails, c.String("passphrase"), createBintrayDetails(c, true))
 }
 
 func entitlementKeys(c *cli.Context) {
     org := c.String("org")
     argsSize := len(c.Args())
     if argsSize == 0 {
-        bintrayDetails := createBintrayDetails(c)
+        bintrayDetails := createBintrayDetails(c, true)
         commands.ShowDownloadKeys(bintrayDetails, org)
         return
     }
@@ -615,7 +653,7 @@ func entitlements(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt ent --help'.")
     }
     if argsSize == 1 {
-        bintrayDetails := createBintrayDetails(c)
+        bintrayDetails := createBintrayDetails(c, true)
         details := commands.CreateVersionDetailsForEntitlements(c.Args()[0])
         commands.ShowEntitlements(bintrayDetails, details)
         return
@@ -659,7 +697,7 @@ func createPackageFlags(c *cli.Context, prefix string) *utils.PackageFlags {
     }
 
     return &utils.PackageFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Desc: c.String(prefix + "desc"),
         Labels: c.String(prefix + "labels"),
         Licenses: c.String(prefix + "licenses"),
@@ -683,7 +721,7 @@ func createVersionFlags(c *cli.Context, prefix string) *utils.VersionFlags {
         }
     }
     return &utils.VersionFlags {
-       BintrayDetails: createBintrayDetails(c),
+       BintrayDetails: createBintrayDetails(c, true),
        Desc: c.String(prefix + "desc"),
        VcsTag: c.String(prefix + "vcs-tag"),
        Released: c.String(prefix + "released"),
@@ -700,7 +738,7 @@ func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
     }
 
     return &commands.UrlSigningFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Expiry: c.String("expiry"),
         ValidFor: c.String("valid-for"),
         CallbackId: c.String("callback-id"),
@@ -725,7 +763,7 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
     }
 
     return &commands.UploadFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Recursive: recursive,
         Flat: flat,
         UseRegExp: c.Bool("regexp"),
@@ -751,7 +789,7 @@ func createEntitlementFlagsForShowAndDelete(c *cli.Context) *commands.Entitlemen
         cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
     }
     return &commands.EntitlementFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Id: c.String("id") }
 }
 
@@ -760,7 +798,7 @@ func createEntitlementFlagsForCreate(c *cli.Context) *commands.EntitlementFlags 
         cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
     }
     return &commands.EntitlementFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Path: c.String("path"),
         Access: c.String("access"),
         Keys: c.String("keys") }
@@ -774,7 +812,7 @@ func createEntitlementFlagsForUpdate(c *cli.Context) *commands.EntitlementFlags 
         cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
     }
     return &commands.EntitlementFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Id: c.String("id"),
         Path: c.String("path"),
         Access: c.String("access"),
@@ -783,7 +821,7 @@ func createEntitlementFlagsForUpdate(c *cli.Context) *commands.EntitlementFlags 
 
 func createDownloadKeyFlagsForShowAndDelete(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
     return &commands.DownloadKeyFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Id: keyId }
 }
 
@@ -797,7 +835,7 @@ func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *com
         }
     }
     return &commands.DownloadKeyFlags {
-        BintrayDetails: createBintrayDetails(c),
+        BintrayDetails: createBintrayDetails(c, true),
         Id: keyId,
         Expiry: c.String("expiry"),
         ExistenceCheckUrl: c.String("ex-check-url"),
@@ -806,24 +844,34 @@ func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *com
         BlackCidrs: c.String("black-cidrs") }
 }
 
-func createBintrayDetails(c *cli.Context) *utils.BintrayDetails {
-    if c.String("key") == "" {
-        cliutils.Exit(cliutils.ExitCodeError, "Please add the --key option or set the BINTRAY_KEY envrionemt variable")
+func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {
+    user := c.String("user")
+    key := c.String("key")
+    if includeConfig && (user == "" || key == "") {
+        confDetails := commands.GetConfig()
+        if user == "" {
+            user = confDetails.User
+        }
+        if key == "" {
+            key = confDetails.Key
+        }
+        if key == "" {
+            cliutils.Exit(cliutils.ExitCodeError, "Please set your Bintray API key using config command, --key option or the BINTRAY_KEY envrionemt variable")
+        }
     }
-    apiUrl := c.String("api-url")
+    apiUrl := os.Getenv("BINTRAY_API_URL")
     if apiUrl == "" {
         apiUrl = "https://api.bintray.com/"
     }
-    downloadServerUrl := c.String("download-url")
+    downloadServerUrl := os.Getenv("BINTRAY_DOWNLOAD_URL")
     if downloadServerUrl == "" {
         downloadServerUrl = "https://dl.bintray.com/"
     }
-
     apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
     downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)
-    return &utils.BintrayDetails {
+    return &cliutils.BintrayDetails {
         ApiUrl: apiUrl,
         DownloadServerUrl: downloadServerUrl,
-        User: c.String("user"),
-        Key: c.String("key") }
+        User: user,
+        Key: key }
 }

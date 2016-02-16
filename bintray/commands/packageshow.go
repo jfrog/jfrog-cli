@@ -6,7 +6,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) {
     if bintrayDetails.User == "" {
         bintrayDetails.User = packageDetails.Subject
     }

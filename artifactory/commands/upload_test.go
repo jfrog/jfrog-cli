@@ -3,7 +3,7 @@ package commands
 import (
     "testing"
     "strconv"
-    "github.com/jfrogdev/jfrog-cli-go/tests"
+    "github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
     "github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 )
 

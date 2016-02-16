@@ -6,7 +6,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) {
     if bintrayDetails.User == "" {
         bintrayDetails.User = versionDetails.Subject
     }

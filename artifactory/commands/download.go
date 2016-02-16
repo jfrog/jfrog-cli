@@ -12,8 +12,10 @@ import (
 // Downloads the artifacts using the specified download pattern.
 // Returns the AQL query used for the download.
 func Download(downloadPattern string, flags *utils.Flags) string {
-    cliutils.CreateTempDirPath()
-    defer cliutils.RemoveTempDir()
+    if !flags.DryRun {
+        cliutils.CreateTempDirPath()
+        defer cliutils.RemoveTempDir()
+    }
 
     if flags.ArtDetails.SshKeyPath != "" {
         utils.SshAuthentication(flags.ArtDetails)

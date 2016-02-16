@@ -268,7 +268,7 @@ func upload(c *cli.Context) {
     }
     localPath := c.Args()[0]
     targetPath := c.Args()[1]
-    uploaded , failed := commands.Upload(localPath, targetPath, flags)
+    uploaded, failed := commands.Upload(localPath, targetPath, flags)
     if failed > 0 {
         if uploaded > 0 {
             cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -277,8 +277,8 @@ func upload(c *cli.Context) {
     }
 }
 
-func getArtifactoryDetails(c *cli.Context, includeConfig bool) *utils.ArtifactoryDetails {
-    details := new(utils.ArtifactoryDetails)
+func getArtifactoryDetails(c *cli.Context, includeConfig bool) *cliutils.ArtifactoryDetails {
+    details := new(cliutils.ArtifactoryDetails)
     details.Url = c.String("url")
     details.User = c.String("user")
     details.Password = c.String("password")

@@ -5,7 +5,7 @@ import (
  	"github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func HeadVersion(versionDetails *VersionDetails, bintrayDetails *BintrayDetails) *http.Response {
+func HeadVersion(versionDetails *VersionDetails, bintrayDetails *cliutils.BintrayDetails) *http.Response {
     url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
@@ -25,7 +25,7 @@ func CreateVersionJson(versionName string, flags *VersionFlags) string {
 }
 
 type VersionFlags struct {
-    BintrayDetails *BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     Desc string
     VcsTag string
     Released string

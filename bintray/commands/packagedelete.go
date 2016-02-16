@@ -6,7 +6,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func DeletePackage(packageDetails *utils.VersionDetails, bintrayDetails *utils.BintrayDetails) {
+func DeletePackage(packageDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) {
     if bintrayDetails.User == "" {
         bintrayDetails.User = packageDetails.Subject
     }

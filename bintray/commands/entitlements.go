@@ -7,7 +7,7 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func ShowEntitlements(bintrayDetails *utils.BintrayDetails, details *utils.VersionDetails) {
+func ShowEntitlements(bintrayDetails *cliutils.BintrayDetails, details *utils.VersionDetails) {
     url := bintrayDetails.ApiUrl + createBintrayPath(details) + "/entitlements"
     if bintrayDetails.User == "" {
         bintrayDetails.User = details.Subject
@@ -106,7 +106,7 @@ func createBintrayPath(details *utils.VersionDetails) string {
 }
 
 type EntitlementFlags struct {
-    BintrayDetails *utils.BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     Id string
     Path string
     Access string

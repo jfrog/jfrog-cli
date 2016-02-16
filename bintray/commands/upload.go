@@ -69,7 +69,7 @@ func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (tota
     return
 }
 
-func uploadFile(artifact Artifact, url, logMsgPrefix string, bintrayDetails *utils.BintrayDetails) bool {
+func uploadFile(artifact Artifact, url, logMsgPrefix string, bintrayDetails *cliutils.BintrayDetails) bool {
     fmt.Println(logMsgPrefix + " Uploading artifact to: " + url)
 
     f, err := os.Open(artifact.LocalPath)
@@ -262,7 +262,7 @@ type Artifact struct {
 }
 
 type UploadFlags struct {
-    BintrayDetails *utils.BintrayDetails
+    BintrayDetails *cliutils.BintrayDetails
     DryRun bool
     Recursive bool
     Flat bool

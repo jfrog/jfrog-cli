@@ -53,7 +53,7 @@ func calcMd5(filePath string) string {
     return hex.EncodeToString(hashMd5.Sum(resMd5))
 }
 
-func GetFileDetailsFromArtifactory(downloadUrl string, artifactoryDetails ArtifactoryDetails) *FileDetails {
+func GetFileDetailsFromArtifactory(downloadUrl string, artifactoryDetails cliutils.ArtifactoryDetails) *FileDetails {
     resp := cliutils.SendHead(downloadUrl, artifactoryDetails.User, artifactoryDetails.Password)
     fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
     cliutils.CheckError(err)
@@ -67,7 +67,7 @@ func GetFileDetailsFromArtifactory(downloadUrl string, artifactoryDetails Artifa
     return fileDetails
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryDetails *ArtifactoryDetails) (*http.Response, string) {
+func GetEncryptedPasswordFromArtifactory(artifactoryDetails *cliutils.ArtifactoryDetails) (*http.Response, string) {
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
 	resp, body := cliutils.SendGet(apiUrl, nil, artifactoryDetails.User, artifactoryDetails.Password)
 	return resp, string(body)
@@ -123,7 +123,8 @@ func DownloadFileConcurrently(downloadPath, localPath, fileName, logMsgPrefix st
     fmt.Println(logMsgPrefix + " Done downloading.")
 }
 
-func UploadFile(f *os.File, url string, artifactoryDetails *ArtifactoryDetails, details *FileDetails) *http.Response {
+func UploadFile(f *os.File, url string, artifactoryDetails *cliutils.ArtifactoryDetails,
+    details *FileDetails) *http.Response {
     if details == nil {
         details = GetFileDetails(f.Name())
     }
@@ -136,7 +137,7 @@ func UploadFile(f *os.File, url string, artifactoryDetails *ArtifactoryDetails, 
     return cliutils.UploadFile(f, url, artifactoryDetails.User, artifactoryDetails.Password, headers)
 }
 
-func AddAuthHeaders(headers map[string]string, artifactoryDetails *ArtifactoryDetails) map[string]string {
+func AddAuthHeaders(headers map[string]string, artifactoryDetails *cliutils.ArtifactoryDetails) map[string]string {
     if headers == nil {
         headers = make(map[string]string)
     }
@@ -163,7 +164,7 @@ type FileDetails struct {
 }
 
 type Flags struct {
-    ArtDetails *ArtifactoryDetails
+    ArtDetails *cliutils.ArtifactoryDetails
     DryRun bool
     Props string
     Deb string
@@ -175,12 +176,4 @@ type Flags struct {
     SplitCount int
     Interactive bool
     EncPassword bool
-}
-
-type ArtifactoryDetails struct {
-    Url string
-    User string
-    Password string
-    SshKeyPath string
-    SshAuthHeaders map[string]string
 }
