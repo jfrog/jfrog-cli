@@ -4,6 +4,7 @@ import (
     "io"
  	"os"
  	"fmt"
+    "sync"
  	"bytes"
  	"bufio"
  	"os/user"
@@ -12,6 +13,9 @@ import (
  	"strconv"
  	"net/http"
  	"io/ioutil"
+    "crypto/md5"
+    "crypto/sha1"
+    "encoding/hex"
     "path/filepath"
  )
 
@@ -47,16 +51,19 @@ func IsDir(path string) bool {
     return f.IsDir()
 }
 
-func GetFileNameFromPath(path string) string {
+func GetFileAndDirFromPath(path string) (fileName, dir string) {
     index := strings.LastIndex(path, "/")
-    if index != -1 {
-        return path[index+1:]
+    if index == -1 {
+        index = strings.LastIndex(path, "\\")
     }
-    index = strings.LastIndex(path, "\\")
     if index != -1 {
-        return path[index+1:]
+        fileName = path[index+1:]
+        dir = path[:index]
+        return
     }
-    return path
+    fileName = path
+    dir = ""
+    return
 }
 
 // Return the recursive list of files and directories in the specified path
@@ -187,6 +194,56 @@ func DownloadFile(downloadPath, localPath, fileName string, flat bool,
     return resp
 }
 
+func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string) {
+    tempLoclPath := GetTempDirPath() + "/" + flags.LocalPath
+
+    var wg sync.WaitGroup
+    chunkSize := flags.FileSize / int64(flags.SplitCount)
+    mod := flags.FileSize % int64(flags.SplitCount)
+
+    for i := 0; i < flags.SplitCount ; i++ {
+        wg.Add(1)
+        start := chunkSize * int64(i)
+        end := chunkSize * (int64(i) + 1)
+        if i == flags.SplitCount-1 {
+            end += mod
+        }
+        go func(start, end int64, i int) {
+            headers := make(map[string]string)
+            headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) +"-" + strconv.FormatInt(end-1, 10)
+            resp, body := SendGet(flags.DownloadPath, headers, flags.User, flags.Password)
+
+            fmt.Println(logMsgPrefix + " [" + strconv.Itoa(i) + "]:", resp.Status + "...")
+
+            os.MkdirAll(tempLoclPath ,0777)
+            filePath := tempLoclPath + "/" + flags.FileName + "_" + strconv.Itoa(i)
+
+            createFileWithContent(filePath, body)
+            wg.Done()
+        }(start, end, i)
+    }
+    wg.Wait()
+
+    if !flags.Flat && flags.LocalPath != "" {
+        os.MkdirAll(flags.LocalPath ,0777)
+        flags.FileName = flags.LocalPath + "/" + flags.FileName
+    }
+
+    if IsPathExists(flags.FileName) {
+        err := os.Remove(flags.FileName)
+        CheckError(err)
+    }
+
+    destFile, err := os.Create(flags.FileName)
+    CheckError(err)
+    defer destFile.Close()
+    for i := 0; i < flags.SplitCount; i++ {
+        tempFilePath := GetTempDirPath() + "/" + flags.FileName + "_" + strconv.Itoa(i)
+        AppendFile(tempFilePath, destFile)
+    }
+    fmt.Println(logMsgPrefix + " Done downloading.")
+}
+
 func GetTempDirPath() string {
     if tempDirPath == "" {
         Exit(ExitCodeError, "Function cannot be used before 'tempDirPath' is created.")
@@ -248,15 +305,6 @@ func AppendFile(srcPath string, destFile *os.File) {
     CheckError(err)
 }
 
-func GetFileNameFromUrl(url string) string {
-    parts := strings.Split(url, "/")
-    size := len(parts)
-    if size == 0 {
-        return url
-    }
-    return parts[size-1]
-}
-
 func GetHomeDir() string {
     user, err := user.Current()
     if err == nil {
@@ -282,6 +330,85 @@ func ScanFromConsole(scanInto *string, defaultValue string) {
     }
 }
 
+func GetFileDetails(filePath string) *FileDetails {
+    details := new(FileDetails)
+    details.Md5 = calcMd5(filePath)
+    details.Sha1 = calcSha1(filePath)
+
+    file, err := os.Open(filePath)
+    CheckError(err)
+    defer file.Close()
+
+    fileInfo, err := file.Stat()
+    CheckError(err)
+    details.Size = fileInfo.Size()
+
+    return details
+}
+
+func GetRemoteFileDetails(downloadUrl, user, password string) *FileDetails {
+    resp := SendHead(downloadUrl, user, password)
+    fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+    CheckError(err)
+
+    fileDetails := new(FileDetails)
+
+    fileDetails.Md5 = resp.Header.Get("X-Checksum-Md5")
+    fileDetails.Sha1 = resp.Header.Get("X-Checksum-Sha1")
+    fileDetails.Size = fileSize
+    fileDetails.AcceptRanges = resp.Header.Get("Accept-Ranges") == "bytes"
+    return fileDetails
+}
+
+func createFileWithContent(filePath string, content []byte) {
+    out, err := os.Create(filePath)
+    CheckError(err)
+    defer out.Close()
+    out.Write(content)
+}
+
 func addUserAgentHeader(req *http.Request) {
     req.Header.Set("User-Agent", "jfrog-cli-go/" + GetVersion())
 }
+
+func calcSha1(filePath string) string {
+    file, err := os.Open(filePath)
+    CheckError(err)
+    defer file.Close()
+
+    var resSha1 []byte
+    hashSha1 := sha1.New()
+    _, err = io.Copy(hashSha1, file)
+    CheckError(err)
+    return hex.EncodeToString(hashSha1.Sum(resSha1))
+}
+
+func calcMd5(filePath string) string {
+    file, err := os.Open(filePath)
+    CheckError(err)
+    defer file.Close()
+
+    var resMd5 []byte
+    hashMd5 := md5.New()
+    _, err = io.Copy(hashMd5, file)
+    CheckError(err)
+    return hex.EncodeToString(hashMd5.Sum(resMd5))
+}
+
+type ConcurrentDownloadFlags struct {
+     DownloadPath string
+     FileName string
+     LocalPath string
+     FileSize int64
+     SplitCount int
+     Flat bool
+     User string
+     Password string
+ }
+
+ type FileDetails struct {
+     Md5 string
+     Sha1 string
+     Size int64
+     AcceptRanges bool
+ }
