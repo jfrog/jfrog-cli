@@ -8,15 +8,13 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails,
-    threads int) {
-
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
+func DownloadVersion(versionDetails *utils.VersionDetails, flags *DownloadVersionFlags) {
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = versionDetails.Subject
     }
-    path := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+    path := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
-    resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body := cliutils.SendGet(path, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
@@ -24,20 +22,21 @@ func DownloadVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliut
     err := json.Unmarshal(body, &results)
     cliutils.CheckError(err)
 
-    downloadFiles(results, versionDetails, bintrayDetails, threads)
+    downloadFiles(results, versionDetails, flags)
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
-    bintrayDetails *cliutils.BintrayDetails, threads int) {
+    flags *DownloadVersionFlags) {
 
     size := len(results)
     var wg sync.WaitGroup
-    for i := 0; i < threads; i++ {
+    for i := 0; i < flags.Threads; i++ {
         wg.Add(1)
         go func(threadId int) {
             logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, false)
-            for j := threadId; j < size; j += threads {
-                utils.DownloadBintrayFile(bintrayDetails, versionDetails, results[j].Path, logMsgPrefix)
+            for j := threadId; j < size; j += flags.Threads {
+                utils.DownloadBintrayFile(flags.BintrayDetails, versionDetails, results[j].Path,
+                    flags.Flat, logMsgPrefix)
             }
             wg.Done()
         }(i)
@@ -55,4 +54,10 @@ func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDet
 
 type VersionFilesResult struct {
     Path string
+}
+
+type DownloadVersionFlags struct {
+    BintrayDetails *cliutils.BintrayDetails
+    Threads int
+    Flat bool
 }

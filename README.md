@@ -360,7 +360,10 @@ frog bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --
 Used to download a specific file from Bintray.
 
 ##### Command options
-This command has no command options. It uses however the global options.
+The command uses the global options, in addition to the following command option.
+```console   
+   --flat       [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded file.   
+```
 
 ##### Arguments
 The command expects one argument in the form of *subject/repository/package/version/path*.
@@ -378,9 +381,10 @@ frog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zi
 Used to download the files of a specific version from Bintray.
 
 ##### Command options
-The command uses the global options, in addition to the following command option.
+The command uses the global options, in addition to the following command options.
 ```console
-   --threads           [Default: 3] Number of artifacts to download in parallel.   
+   --threads    [Default: 3]      Number of artifacts to download in parallel.   
+   --flat       [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.   
 ```
 
 ##### Arguments

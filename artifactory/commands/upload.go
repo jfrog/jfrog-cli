@@ -141,7 +141,8 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
             }
             if strings.HasSuffix(target, "/") {
                 if flags.Flat {
-                    target += cliutils.GetFileNameFromPath(path)
+                    fileName, _ := cliutils.GetFileAndDirFromPath(path)
+                    target += fileName
                 } else {
                     uploadPath := prepareUploadPath(path)
                     target += uploadPath

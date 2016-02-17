@@ -35,7 +35,7 @@ func GetCommands() []cli.Command {
             Name: "download-file",
             Usage: "Download file",
             Aliases: []string{"dlf"},
-            Flags: getFlags(),
+            Flags: getDownloadFileFlags(),
             Action: func(c *cli.Context) {
                 downloadFile(c)
             },
@@ -309,11 +309,24 @@ func getDeletePackageAndVersionFlags() []cli.Flag {
     })
 }
 
+func getDownloadFileFlags() []cli.Flag {
+    return append(getFlags(), cli.StringFlag{
+        Name:  "flat",
+        Value:  "",
+        Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
+    })
+}
+
 func getDownloadVersionFlags() []cli.Flag {
     return append(getFlags(), cli.StringFlag{
         Name:  "threads",
         Value:  "",
         Usage: "[Default: 3] Number of artifacts to download in parallel.",
+    },
+    cli.StringFlag{
+        Name:  "flat",
+        Value:  "",
+        Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
     })
 }
 
@@ -538,21 +551,22 @@ func deletePackage(c *cli.Context) {
 }
 
 func deleteVersion(c *cli.Context) {
-  if len(c.Args()) != 1 {
-      cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-delete --help'.")
-  }
-  versionDetails := utils.CreateVersionDetails(c.Args()[0])
-  bintrayDetails := createBintrayDetails(c, true)
+    if len(c.Args()) != 1 {
+        cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-delete --help'.")
+    }
+    versionDetails := utils.CreateVersionDetails(c.Args()[0])
+    bintrayDetails := createBintrayDetails(c, true)
 
-  if !c.Bool("q") {
-      var confirm string
-      fmt.Print("Delete version " + versionDetails.Package + "? (y/n): ")
-      fmt.Scanln(&confirm)
-      if !cliutils.ConfirmAnswer(confirm) {
-          return
-      }
-  }
-  commands.DeleteVersion(versionDetails, bintrayDetails)
+    if !c.Bool("q") {
+        var confirm string
+        fmt.Print("Delete version " + versionDetails.Version +
+            " of package " + versionDetails.Package + "? (y/n): ")
+        fmt.Scanln(&confirm)
+        if !cliutils.ConfirmAnswer(confirm) {
+            return
+        }
+    }
+    commands.DeleteVersion(versionDetails, bintrayDetails)
 }
 
 func publishVersion(c *cli.Context) {
@@ -569,8 +583,8 @@ func downloadVersion(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-ver --help'.")
     }
     versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c, true)
-    commands.DownloadVersion(versionDetails, bintrayDetails, getThreadsOptionValue(c))
+    flags := createDownloadVersionFlags(c)
+    commands.DownloadVersion(versionDetails, flags)
 }
 
 func upload(c *cli.Context) {
@@ -589,9 +603,13 @@ func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-file --help'.")
     }
-    versionDetails, path := utils.CreateVersionDetailsAndPath(c.Args()[0])
+    flat := false
+    if c.String("flat") != "" {
+        flat = c.Bool("flat")
+    }
+    versionDetails, path := utils.CreatePackageDetailsAndPath(c.Args()[0])
     bintrayDetails := createBintrayDetails(c, true)
-    commands.DownloadFile(versionDetails, path, bintrayDetails)
+    commands.DownloadFile(versionDetails, path, flat, bintrayDetails)
 }
 
 func signUrl(c *cli.Context) {
@@ -782,6 +800,17 @@ func getThreadsOptionValue(c *cli.Context) (threads int) {
         }
     }
     return
+}
+
+func createDownloadVersionFlags(c *cli.Context) *commands.DownloadVersionFlags {
+    flat := false
+    if c.String("flat") != "" {
+        flat = c.Bool("flat")
+    }
+    return &commands.DownloadVersionFlags {
+        BintrayDetails: createBintrayDetails(c, true),
+        Threads: getThreadsOptionValue(c),
+        Flat: flat }
 }
 
 func createEntitlementFlagsForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {
