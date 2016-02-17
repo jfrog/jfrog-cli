@@ -5,11 +5,12 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func DownloadFile(versionDetails *utils.VersionDetails, path string,
-    flat bool, bintrayDetails *cliutils.BintrayDetails) {
+func DownloadFile(versionDetails *utils.VersionDetails, path string, flags *utils.DownloadFlags) {
+    cliutils.CreateTempDirPath()
+    defer cliutils.RemoveTempDir()
 
-    if bintrayDetails.User == "" {
-        bintrayDetails.User = versionDetails.Subject
+    if flags.BintrayDetails.User == "" {
+        flags.BintrayDetails.User = versionDetails.Subject
     }
-    utils.DownloadBintrayFile(bintrayDetails, versionDetails, path, flat, "")
+    utils.DownloadBintrayFile(flags.BintrayDetails, versionDetails, path, flags, "")
 }

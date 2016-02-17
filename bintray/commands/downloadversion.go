@@ -8,7 +8,10 @@ import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, flags *DownloadVersionFlags) {
+func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.DownloadFlags) {
+    cliutils.CreateTempDirPath()
+    defer cliutils.RemoveTempDir()
+
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = versionDetails.Subject
     }
@@ -26,7 +29,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *DownloadVersio
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
-    flags *DownloadVersionFlags) {
+    flags *utils.DownloadFlags) {
 
     size := len(results)
     var wg sync.WaitGroup
@@ -36,7 +39,7 @@ func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDe
             logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, false)
             for j := threadId; j < size; j += flags.Threads {
                 utils.DownloadBintrayFile(flags.BintrayDetails, versionDetails, results[j].Path,
-                    flags.Flat, logMsgPrefix)
+                    flags, logMsgPrefix)
             }
             wg.Done()
         }(i)
@@ -54,10 +57,4 @@ func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDet
 
 type VersionFilesResult struct {
     Path string
-}
-
-type DownloadVersionFlags struct {
-    BintrayDetails *cliutils.BintrayDetails
-    Threads int
-    Flat bool
 }

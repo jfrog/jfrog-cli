@@ -60,16 +60,25 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags) {
 }
 
 func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, flags *utils.Flags) {
-    details := utils.GetFileDetailsFromArtifactory(downloadPath, *flags.ArtDetails)
+    details := cliutils.GetRemoteFileDetails(downloadPath, flags.ArtDetails.User, flags.ArtDetails.Password)
     localFilePath := localPath + "/" + localFileName
-    if shouldDownloadFile(localFilePath, details, flags.ArtDetails.User, flags.ArtDetails.Password) {
+    if shouldDownloadFile(localFilePath, details) {
         if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size || !details.AcceptRanges {
             resp := cliutils.DownloadFile(downloadPath, localPath, localFileName, flags.Flat,
                 flags.ArtDetails.User, flags.ArtDetails.Password)
             fmt.Println(logMsgPrefix + " Artifactory response:", resp.Status)
         } else {
-            utils.DownloadFileConcurrently(
-                downloadPath, localPath, localFileName, logMsgPrefix, details.Size, flags)
+            concurrentDownloadFlags := cliutils.ConcurrentDownloadFlags {
+                DownloadPath: downloadPath,
+                FileName: localFileName,
+                LocalPath: localPath,
+                FileSize: details.Size,
+                SplitCount: flags.SplitCount,
+                Flat: flags.Flat,
+                User: flags.ArtDetails.User,
+                Password: flags.ArtDetails.Password }
+
+            cliutils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix)
         }
     } else {
         fmt.Println(logMsgPrefix + " File already exists locally.")
@@ -83,11 +92,11 @@ func buildDownloadUrl(baseUrl string, resultItem AqlSearchResultItem) string {
     return baseUrl + resultItem.Repo + "/" + resultItem.Path + "/" + resultItem.Name
 }
 
-func shouldDownloadFile(localFilePath string, artifactoryFileDetails *utils.FileDetails, user string, password string) bool {
+func shouldDownloadFile(localFilePath string, artifactoryFileDetails *cliutils.FileDetails) bool {
     if !cliutils.IsFileExists(localFilePath) {
         return true
     }
-    localFileDetails := utils.GetFileDetails(localFilePath)
+    localFileDetails := cliutils.GetFileDetails(localFilePath)
     if localFileDetails.Md5 != artifactoryFileDetails.Md5 || localFileDetails.Sha1 != artifactoryFileDetails.Sha1 {
        return true
     }

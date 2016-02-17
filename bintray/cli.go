@@ -309,25 +309,37 @@ func getDeletePackageAndVersionFlags() []cli.Flag {
     })
 }
 
+func getDownloadFlags() []cli.Flag {
+    return []cli.Flag{
+        cli.StringFlag{
+            Name:  "flat",
+            Value:  "",
+            Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
+        },
+        cli.StringFlag{
+            Name:  "min-split",
+            Value:  "",
+            Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+        },
+        cli.StringFlag{
+            Name:  "split-count",
+            Value:  "",
+            Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
+        },
+    }
+}
+
 func getDownloadFileFlags() []cli.Flag {
-    return append(getFlags(), cli.StringFlag{
-        Name:  "flat",
-        Value:  "",
-        Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
-    })
+    return append(getFlags(), getDownloadFlags()...)
 }
 
 func getDownloadVersionFlags() []cli.Flag {
-    return append(getFlags(), cli.StringFlag{
+    flags := append(getFlags(), cli.StringFlag{
         Name:  "threads",
         Value:  "",
         Usage: "[Default: 3] Number of artifacts to download in parallel.",
-    },
-    cli.StringFlag{
-        Name:  "flat",
-        Value:  "",
-        Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
     })
+    return append(flags, getDownloadFlags()...)
 }
 
 func getUploadFlags() []cli.Flag {
@@ -583,7 +595,7 @@ func downloadVersion(c *cli.Context) {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-ver --help'.")
     }
     versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
-    flags := createDownloadVersionFlags(c)
+    flags := createDownloadFlags(c)
     commands.DownloadVersion(versionDetails, flags)
 }
 
@@ -603,13 +615,9 @@ func downloadFile(c *cli.Context) {
     if len(c.Args()) != 1 {
         cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-file --help'.")
     }
-    flat := false
-    if c.String("flat") != "" {
-        flat = c.Bool("flat")
-    }
     versionDetails, path := utils.CreatePackageDetailsAndPath(c.Args()[0])
-    bintrayDetails := createBintrayDetails(c, true)
-    commands.DownloadFile(versionDetails, path, flat, bintrayDetails)
+    flags := createDownloadFlags(c)
+    commands.DownloadFile(versionDetails, path, flags)
 }
 
 func signUrl(c *cli.Context) {
@@ -802,14 +810,16 @@ func getThreadsOptionValue(c *cli.Context) (threads int) {
     return
 }
 
-func createDownloadVersionFlags(c *cli.Context) *commands.DownloadVersionFlags {
+func createDownloadFlags(c *cli.Context) *utils.DownloadFlags {
     flat := false
     if c.String("flat") != "" {
         flat = c.Bool("flat")
     }
-    return &commands.DownloadVersionFlags {
+    return &utils.DownloadFlags {
         BintrayDetails: createBintrayDetails(c, true),
         Threads: getThreadsOptionValue(c),
+        MinSplitSize: getMinSplitFlag(c),
+        SplitCount: getSplitCountFlag(c),
         Flat: flat }
 }
 
@@ -903,4 +913,32 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
         DownloadServerUrl: downloadServerUrl,
         User: user,
         Key: key }
+}
+
+func getMinSplitFlag(c *cli.Context) int64 {
+    if c.String("min-split") == "" {
+        return 5120
+    }
+    minSplit, err := strconv.ParseInt(c.String("min-split"), 10, 64)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. Try 'art download --help'.")
+    }
+    return minSplit
+}
+
+func getSplitCountFlag(c *cli.Context) int {
+    if c.String("split-count") == "" {
+        return 3
+    }
+    splitCount, err := strconv.Atoi(c.String("split-count"))
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. Try 'art download --help'.")
+    }
+    if splitCount > 15 {
+        cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
+    }
+    if splitCount < 0 {
+        cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
+    }
+    return splitCount
 }

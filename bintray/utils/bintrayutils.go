@@ -2,39 +2,57 @@ package utils
 
 import (
 	"fmt"
-    "strconv"
     "strings"
     "encoding/json"
     "github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func getFileDetailsFromBintray(downloadUrl string, bintrayDetails *cliutils.BintrayDetails) *FileDetails {
-    resp := cliutils.SendHead(downloadUrl, bintrayDetails.User, bintrayDetails.Key)
-    fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
-    cliutils.CheckError(err)
-
-    fileDetails := new(FileDetails)
-    fileDetails.Sha1 = resp.Header.Get("X-Checksum-Sha1")
-    fileDetails.Size = fileSize
-    return fileDetails
-}
-
 func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails, path string,
-    flat bool, logMsgPrefix string) {
+    flags *DownloadFlags, logMsgPrefix string) {
 
     if logMsgPrefix != "" {
         logMsgPrefix += " "
     }
     downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
     url := bintrayDetails.DownloadServerUrl + downloadPath
-    fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
+    fmt.Println(logMsgPrefix + "Downloading " + url)
 
     fileName, dir := cliutils.GetFileAndDirFromPath(path)
-    if flat {
+    details := cliutils.GetRemoteFileDetails(url, bintrayDetails.User, bintrayDetails.Key)
+    if !shouldDownloadFile(path, details) {
+        return
+    }
+    if flags.Flat {
         dir = ""
     }
-    resp := cliutils.DownloadFile(url, dir, fileName, false, bintrayDetails.User, bintrayDetails.Key)
-    fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
+
+    if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size || !details.AcceptRanges {
+        resp := cliutils.DownloadFile(url, dir, fileName, false, bintrayDetails.User, bintrayDetails.Key)
+        fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
+    } else {
+        concurrentDownloadFlags := cliutils.ConcurrentDownloadFlags {
+            DownloadPath: url,
+            FileName: fileName,
+            LocalPath: dir,
+            FileSize: details.Size,
+            SplitCount: flags.SplitCount,
+            Flat: flags.Flat,
+            User: flags.BintrayDetails.User,
+            Password: flags.BintrayDetails.Key }
+
+        cliutils.DownloadFileConcurrently(concurrentDownloadFlags, "")
+    }
+}
+
+func shouldDownloadFile(localFilePath string, remoteFileDetails *cliutils.FileDetails) bool {
+    if !cliutils.IsFileExists(localFilePath) {
+        return true
+    }
+    localFileDetails := cliutils.GetFileDetails(localFilePath)
+    if localFileDetails.Sha1 != remoteFileDetails.Sha1 {
+       return true
+    }
+    return false
 }
 
 func ReadBintrayMessage(resp []byte) string {
@@ -151,4 +169,12 @@ type VersionDetails struct {
     Repo string
     Package string
     Version string
+}
+
+type DownloadFlags struct {
+    BintrayDetails *cliutils.BintrayDetails
+    Threads int
+    MinSplitSize int64
+    SplitCount int
+    Flat bool
 }

@@ -223,7 +223,7 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 
     var checksumDeployed bool = false
     var resp *http.Response
-    var details *utils.FileDetails
+    var details *cliutils.FileDetails
     if fileInfo.Size() >= 10240 {
         resp, details = tryChecksumDeploy(localPath, targetPath, flags)
         checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
@@ -244,8 +244,8 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
     return flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200
 }
 
-func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.Response, *utils.FileDetails) {
-    details := utils.GetFileDetails(filePath)
+func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.Response, *cliutils.FileDetails) {
+    details := cliutils.GetFileDetails(filePath)
     headers := make(map[string]string)
     headers["X-Checksum-Deploy"] = "true"
     headers["X-Checksum-Sha1"] = details.Sha1

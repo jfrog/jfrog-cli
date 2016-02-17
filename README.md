@@ -362,7 +362,9 @@ Used to download a specific file from Bintray.
 ##### Command options
 The command uses the global options, in addition to the following command option.
 ```console   
-   --flat       [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded file.   
+   --flat         [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded file.
+   --min-split    [Default: 5120]   Minimum file size in KB to split into ranges. Set to -1 for no splits.
+   --split-count  [Default: 3]      Number of parts to split a file when downloading. Set to 0 for no splits.      
 ```
 
 ##### Arguments
@@ -383,8 +385,10 @@ Used to download the files of a specific version from Bintray.
 ##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --threads    [Default: 3]      Number of artifacts to download in parallel.   
-   --flat       [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.   
+   --flat         [Default: false]  Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.   
+   --min-split    [Default: 5120] Minimum file size in KB to split into ranges. Set to -1 for no splits.
+   --split-count  [Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.
+   --threads      [Default: 3] Number of artifacts to download in parallel.   
 ```
 
 ##### Arguments
