@@ -12,7 +12,7 @@ func ShowEntitlements(bintrayDetails *cliutils.BintrayDetails, details *utils.Ve
     if bintrayDetails.User == "" {
         bintrayDetails.User = details.Subject
     }
-    resp, body := cliutils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(url, nil, true, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
@@ -26,7 +26,7 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
     if flags.BintrayDetails.User == "" {
         flags.BintrayDetails.User = details.Subject
     }
-    resp, body := cliutils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

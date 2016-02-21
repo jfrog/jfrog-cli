@@ -9,7 +9,7 @@ import (
 
 func ShowDownloadKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
     path := getDownloadKeysPath(bintrayDetails, org)
-    resp, body := cliutils.SendGet(path, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(path, nil, true, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
@@ -20,7 +20,7 @@ func ShowDownloadKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
 func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
     url := getDownloadKeysPath(flags.BintrayDetails, org)
     url += "/" + flags.Id
-    resp, body := cliutils.SendGet(url, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }

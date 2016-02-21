@@ -21,7 +21,7 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
     fmt.Println(message)
-    resp, body := cliutils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(url, nil, true, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode == 200 {
         fmt.Println(cliutils.IndentJson(body))
     } else {

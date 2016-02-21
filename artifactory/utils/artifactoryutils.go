@@ -8,7 +8,7 @@ import (
 
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *cliutils.ArtifactoryDetails) (*http.Response, string) {
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
-	resp, body := cliutils.SendGet(apiUrl, nil, artifactoryDetails.User, artifactoryDetails.Password)
+	resp, body, _, _ := cliutils.SendGet(apiUrl, nil, true, artifactoryDetails.User, artifactoryDetails.Password)
 	return resp, string(body)
 }
 

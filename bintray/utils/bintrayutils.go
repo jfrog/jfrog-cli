@@ -26,7 +26,7 @@ func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, versionDetails
         dir = ""
     }
 
-    if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size || !details.AcceptRanges {
+    if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size {
         resp := cliutils.DownloadFile(url, dir, fileName, false, bintrayDetails.User, bintrayDetails.Key)
         fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
     } else {

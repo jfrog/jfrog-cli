@@ -14,7 +14,7 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *cliutils.
         packageDetails.Repo + "/" + packageDetails.Package
 
     fmt.Println("Getting package: " + packageDetails.Package)
-    resp, body := cliutils.SendGet(url, nil, bintrayDetails.User, bintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(url, nil, true, bintrayDetails.User, bintrayDetails.Key)
     if resp.StatusCode == 200 {
         fmt.Println(cliutils.IndentJson(body))
     } else {

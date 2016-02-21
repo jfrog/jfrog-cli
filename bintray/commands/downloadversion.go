@@ -17,7 +17,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.Download
     }
     path := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
         versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
-    resp, body := cliutils.SendGet(path, nil, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+    resp, body, _, _ := cliutils.SendGet(path, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
     if resp.StatusCode != 200 {
         cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
     }
