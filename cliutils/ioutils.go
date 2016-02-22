@@ -203,6 +203,19 @@ func UploadFile(f *os.File, url, user, password string, headers map[string]strin
 
 func DownloadFile(downloadPath, localPath, fileName string, flat bool,
 	user, password string) *http.Response {
+
+	resp, _, _ := downloadFile(downloadPath, localPath, fileName, flat, true, user, password)
+	return resp
+}
+
+func DownloadFileNoRedirect(downloadPath, localPath, fileName string, flat bool,
+	user, password string) (*http.Response, string, error) {
+
+    return downloadFile(downloadPath, localPath, fileName, flat, false, user, password)
+}
+
+func downloadFile(downloadPath, localPath, fileName string, flat, allowRedirect bool,
+	user, password string) (resp *http.Response, redirectUrl string, err error) {
 	if !flat && localPath != "" {
 		os.MkdirAll(localPath, 0777)
 		fileName = localPath + "/" + fileName
@@ -211,9 +224,11 @@ func DownloadFile(downloadPath, localPath, fileName string, flat bool,
 	out, err := os.Create(fileName)
 	CheckError(err)
 	defer out.Close()
-	resp, body, _, _ := SendGet(downloadPath, nil, true, user, password)
-	out.Write(body)
-	return resp
+	resp, body, redirectUrl, err := SendGet(downloadPath, nil, allowRedirect, user, password)
+	if err == nil {
+        out.Write(body)
+	}
+	return
 }
 
 func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string) {
@@ -259,22 +274,9 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	headers := make(map[string]string)
 	headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
 
-	var err error
-	var resp *http.Response
-	var respBody []byte
-	// Send a GET request to download the file, with allowRedirect set to false.
-	// In case the server returns a redirect HTTP code, we will trigger a second GET request,
-	// this time to the redirected URL.
-	resp, respBody, redirectUrl, err :=
+	resp, respBody, _, err :=
 		SendGet(flags.DownloadPath, headers, false, flags.User, flags.Password)
-	// If we got a redirectUrl from the first GET request, we trigger a second GET request,
-	// this time to the redirected URL.
-	if redirectUrl != "" {
-		resp, respBody, _, err =
-			SendGet(redirectUrl, headers, true, flags.User, flags.Password)
-	} else {
-		CheckError(err)
-	}
+    CheckError(err)
 
 	fmt.Println(logMsgPrefix+" ["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLoclPath, 0777)

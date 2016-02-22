@@ -122,7 +122,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-piblish",
+			Name:    "version-publish",
 			Usage:   "Publish Version",
 			Aliases: []string{"vp"},
 			Flags:   getFlags(),
@@ -206,6 +206,26 @@ func getConfigFlags() []cli.Flag {
 func getPackageFlags(prefix string) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
+			Name:  prefix + "licenses",
+			Value: "",
+			Usage: "[Mandatory for OSS] Package licenses in the form of \"Apache-2.0\",\"GPL-3.0\"...",
+		},
+		cli.StringFlag{
+			Name:  prefix + "vcs-url",
+			Value: "",
+			Usage: "[Mandatory for OSS] Package VCS URL.",
+		},
+		cli.StringFlag{
+			Name:  prefix + "pub-dn",
+			Value: "",
+			Usage: "[Default: false] Public download numbers.",
+		},
+		cli.StringFlag{
+			Name:  prefix + "pub-stats",
+			Value: "",
+			Usage: "[Default: true] Public statistics",
+		},
+		cli.StringFlag{
 			Name:  prefix + "desc",
 			Value: "",
 			Usage: "[Optional] Package description.",
@@ -216,19 +236,9 @@ func getPackageFlags(prefix string) []cli.Flag {
 			Usage: "[Optional] Package lables in the form of \"lable11\",\"lable2\"...",
 		},
 		cli.StringFlag{
-			Name:  prefix + "licenses",
-			Value: "",
-			Usage: "[Mandatory] Package licenses in the form of \"Apache-2.0\",\"GPL-3.0\"...",
-		},
-		cli.StringFlag{
 			Name:  prefix + "cust-licenses",
 			Value: "",
 			Usage: "[Optional] Package custom licenses in the form of \"my-license-1\",\"my-license-2\"...",
-		},
-		cli.StringFlag{
-			Name:  prefix + "vcs-url",
-			Value: "",
-			Usage: "[Mandatory] Package VCS URL.",
 		},
 		cli.StringFlag{
 			Name:  prefix + "website-url",
@@ -236,7 +246,7 @@ func getPackageFlags(prefix string) []cli.Flag {
 			Usage: "[Optional] Package web site URL.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "i-tracker-url",
+			Name:  prefix + "issuetracker-url",
 			Value: "",
 			Usage: "[Optional] Package Issues Tracker URL.",
 		},
@@ -250,21 +260,16 @@ func getPackageFlags(prefix string) []cli.Flag {
 			Value: "",
 			Usage: "[Optional] Github release notes file.",
 		},
-		cli.StringFlag{
-			Name:  prefix + "pub-dn",
-			Value: "",
-			Usage: "[Default: false] Public download numbers.",
-		},
-		cli.StringFlag{
-			Name:  prefix + "pub-stats",
-			Value: "",
-			Usage: "[Default: true] Public statistics",
-		},
 	}
 }
 
 func getVersionFlags(prefix string) []cli.Flag {
 	return []cli.Flag{
+		cli.StringFlag{
+			Name:  prefix + "github-tag-rel-notes",
+			Value: "",
+			Usage: "[Default: false] Set to true if you wish to use a Github tag release notes.",
+		},
 		cli.StringFlag{
 			Name:  prefix + "desc",
 			Value: "",
@@ -279,11 +284,6 @@ func getVersionFlags(prefix string) []cli.Flag {
 			Name:  prefix + "github-rel-notes",
 			Value: "",
 			Usage: "[Optional] Github release notes file.",
-		},
-		cli.StringFlag{
-			Name:  prefix + "github-tag-rel-notes",
-			Value: "",
-			Usage: "[Default: false] Set to true if you wish to use a Github tag release notes.",
 		},
 		cli.StringFlag{
 			Name:  prefix + "vcs-tag",
@@ -303,7 +303,7 @@ func getCreateAndUpdateVersionFlags() []cli.Flag {
 
 func getDeletePackageAndVersionFlags() []cli.Flag {
 	return append(getFlags(), cli.StringFlag{
-		Name:  "q",
+		Name:  "quiet",
 		Value: "",
 		Usage: "[Default: false] Set to true to skip the delete confirmation message.",
 	})
@@ -549,7 +549,7 @@ func deletePackage(c *cli.Context) {
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
 
-	if !c.Bool("q") {
+	if !c.Bool("quiet") {
 		var confirm string
 		fmt.Print("Delete package " + packageDetails.Package + "? (y/n): ")
 		fmt.Scanln(&confirm)
@@ -567,7 +567,7 @@ func deleteVersion(c *cli.Context) {
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
 
-	if !c.Bool("q") {
+	if !c.Bool("quiet") {
 		var confirm string
 		fmt.Print("Delete version " + versionDetails.Version +
 			" of package " + versionDetails.Package + "? (y/n): ")
@@ -722,7 +722,7 @@ func createPackageFlags(c *cli.Context, prefix string) *utils.PackageFlags {
 		CustomLicenses:         c.String(prefix + "cust-licenses"),
 		VcsUrl:                 c.String(prefix + "vcs-url"),
 		WebsiteUrl:             c.String(prefix + "website-url"),
-		IssueTrackerUrl:        c.String(prefix + "i-tracker-url"),
+		IssueTrackerUrl:        c.String(prefix + "issuetracker-url"),
 		GithubRepo:             c.String(prefix + "github-repo"),
 		GithubReleaseNotesFile: c.String(prefix + "github-rel-notes"),
 		PublicDownloadNumbers:  publicDownloadNumbers,
