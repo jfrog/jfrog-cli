@@ -41,7 +41,7 @@ JFrog CLI Commands have the following structure:
 3. Global options.
 4. Command options.    
 ```console
-$ frog [art | bt] command-name global-options command-options arguments
+$ jfrog [art | bt] command-name global-options command-options arguments
 ```
 To display the list of available commands, run *jfrog artii* or *frog bt*.
 
@@ -293,11 +293,14 @@ Used to upload files to Bintray
 ##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --flat                        [Default: true]   If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
-   --recursive                   [Default: true]   Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
-   --regexp                      [Default: false]  Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
-   --threads                     [Default: 3] Number of artifacts to upload in parallel.   
-   --dry-run                     [Default: false]  Set to true to disable communication with Bintray.
+   --flat              [Default: true]   If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
+   --recursive         [Default: true]   Set to false if you do not wish to collect artifacts in sub-directories to be uploaded to Bintray.
+   --regexp            [Default: false]  Set to true to use a regular expression instead of wildcards expression to collect artifacts to upload.
+   --publish           [Default: false]  Set to true to publish the uploaded files.
+   --override          [Default: false]  Set to true to enable overriding existing published files.
+   --explode           [Default: false]  Set to true to explode archived files after upload.
+   --threads           [Default: 3]      Number of artifacts to upload in parallel.   
+   --dry-run           [Default: false]  Set to true to disable communication with Bintray.
 ```
 If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.
 Please send the following command options for the package creation.

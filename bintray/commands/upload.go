@@ -36,13 +36,13 @@ func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (tota
 	// Create an array of integers, to store the total file that were uploaded successfully.
 	// Each array item is used by a single thread.
 	uploadCount := make([]int, flags.Threads, flags.Threads)
-
+    queryParams := getQueryParams(flags)
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				url := baseUrl + artifacts[j].TargetPath
+				url := baseUrl + artifacts[j].TargetPath + queryParams
 				if !flags.DryRun {
 					if uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails) {
 						uploadCount[threadId]++
@@ -67,6 +67,29 @@ func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (tota
 		fmt.Println("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Bintray.")
 	}
 	return
+}
+
+func getQueryParams(flags *UploadFlags) string {
+    queryParams := ""
+    if flags.Publish {
+        queryParams += "publish=1"
+    }
+    if flags.Override {
+        if queryParams != "" {
+            queryParams += "&"
+        }
+        queryParams += "override=1"
+    }
+    if flags.Explode {
+        if queryParams != "" {
+            queryParams += "&"
+        }
+        queryParams += "explode=1"
+    }
+    if queryParams != "" {
+        queryParams = "?" + queryParams
+    }
+    return queryParams
 }
 
 func uploadFile(artifact Artifact, url, logMsgPrefix string, bintrayDetails *cliutils.BintrayDetails) bool {
@@ -263,6 +286,9 @@ type UploadFlags struct {
 	DryRun         bool
 	Recursive      bool
 	Flat           bool
+	Publish        bool
+	Override       bool
+	Explode        bool
 	Threads        int
 	UseRegExp      bool
 }

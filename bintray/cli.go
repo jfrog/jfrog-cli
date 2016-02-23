@@ -347,7 +347,7 @@ func getUploadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
-			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to collect files in sub-folders to be uploaded to Bintray.",
 		},
 		cli.StringFlag{
 			Name:  "flat",
@@ -359,13 +359,28 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
 		},
 		cli.StringFlag{
+			Name:  "publish",
+			Value: "",
+			Usage: "[Default: false] Set to true to publish the uploaded files.",
+		},
+		cli.StringFlag{
+			Name:  "override",
+			Value: "",
+			Usage: "[Default: false] Set to true to enable overriding existing published files.",
+		},
+		cli.StringFlag{
+			Name:  "explode",
+			Value: "",
+			Usage: "[Default: false] Set to true to explode archived files after upload.",
+		},
+		cli.StringFlag{
 			Name:  "threads",
 			Value: "",
 			Usage: "[Default: 3] Number of artifacts to upload in parallel.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Bintray.",
 		},
 	}...)
 	flags = append(flags, getPackageFlags("pkg-")...)
@@ -766,24 +781,13 @@ func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
 }
 
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
-	var recursive bool
-	var flat bool
-
-	if c.String("recursive") == "" {
-		recursive = true
-	} else {
-		recursive = c.Bool("recursive")
-	}
-	if c.String("flat") == "" {
-		flat = true
-	} else {
-		flat = c.Bool("flat")
-	}
-
 	return &commands.UploadFlags{
 		BintrayDetails: createBintrayDetails(c, true),
-		Recursive:      recursive,
-		Flat:           flat,
+		Recursive:      getBoolFlagValue(c, "recursive", true),
+		Flat:           getBoolFlagValue(c, "flat", true),
+        Publish:        getBoolFlagValue(c, "publish", false),
+        Override:       getBoolFlagValue(c, "override", false),
+        Explode:        getBoolFlagValue(c, "explode", false),
 		UseRegExp:      c.Bool("regexp"),
 		Threads:        getThreadsOptionValue(c),
 		DryRun:         c.Bool("dry-run")}
@@ -933,4 +937,11 @@ func getSplitCountFlag(c *cli.Context) int {
 		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
 	}
 	return splitCount
+}
+
+func getBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
+	if c.String(flagName) == "" {
+		return defValue
+	}
+    return c.Bool(flagName)
 }
