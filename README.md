@@ -254,6 +254,7 @@ The configuration is saved at ~/.jfrog/jfrog-cli.conf
    --interactive  [Default: true] Set to false if you do not wish the config command to be interactive.
    --user         [Optional] Bintray user.
    --key          [Optional] Bintray key.
+   --licenses     [Optional] Default package licenses in the form of Apache-2.0,GPL-3.0...
 ```
 
 ###### Arguments
@@ -436,7 +437,7 @@ The command uses the global options, in addition to the following command option
    --cust-licenses      [Optional]        Package custom licenses in the form of "my-license-1","my-license-2"...
    --vcs-url            [Mandatory]       Package VCS URL.
    --website-url        [Optional]        Package web site URL.
-   --issuetracker-url      [Optional]        Package Issues Tracker URL.
+   --issuetracker-url   [Optional]        Package Issues Tracker URL.
    --github-repo        [Optional]        Package Github repository.
    --github-rel-notes   [Optional]        Github release notes file.
    --pub-dn             [Default: false]  Public download numbers.

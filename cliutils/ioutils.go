@@ -364,7 +364,12 @@ func ReadFile(filePath string) []byte {
 	return content
 }
 
-func ScanFromConsole(scanInto *string, defaultValue string) {
+func ScanFromConsole(caption string, scanInto *string, defaultValue string) {
+    if defaultValue != "" {
+        print(caption + " [" + defaultValue + "]: ")
+    } else {
+        print(caption + ": ")
+    }
 	fmt.Scanln(scanInto)
 	if *scanInto == "" {
 		*scanInto = defaultValue

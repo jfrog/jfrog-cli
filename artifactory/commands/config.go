@@ -14,10 +14,8 @@ func Config(details *cliutils.ArtifactoryDetails, interactive, shouldEncPassword
 		savedDetails := cliutils.ReadArtifactoryConf()
 
 		if details.Url == "" {
-			print("Artifactory URL [" + savedDetails.Url + "]: ")
-			cliutils.ScanFromConsole(&details.Url, savedDetails.Url)
+			cliutils.ScanFromConsole("Artifactory URL", &details.Url, savedDetails.Url)
 		}
-
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			readSshKeyPathFromConsole(details, savedDetails)
 		} else {
@@ -33,8 +31,7 @@ func Config(details *cliutils.ArtifactoryDetails, interactive, shouldEncPassword
 
 func readSshKeyPathFromConsole(details, savedDetails *cliutils.ArtifactoryDetails) {
 	if details.SshKeyPath == "" {
-		print("SSH key file path [" + savedDetails.SshKeyPath + "]: ")
-		cliutils.ScanFromConsole(&details.SshKeyPath, savedDetails.SshKeyPath)
+		cliutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
 	}
 	if !cliutils.IsFileExists(details.SshKeyPath) {
 		fmt.Println("Warning: Could not find SSH key file at: " + details.SshKeyPath)
@@ -43,8 +40,7 @@ func readSshKeyPathFromConsole(details, savedDetails *cliutils.ArtifactoryDetail
 
 func readCredentialsFromConsole(details, savedDetails *cliutils.ArtifactoryDetails) {
 	if details.User == "" {
-		print("User: [" + savedDetails.User + "]: ")
-		cliutils.ScanFromConsole(&details.User, savedDetails.User)
+		cliutils.ScanFromConsole("User", &details.User, savedDetails.User)
 	}
 	if details.Password == "" {
 		print("Password: ")
@@ -66,7 +62,7 @@ func ShowConfig() {
 		fmt.Println("User: " + details.User)
 	}
 	if details.Password != "" {
-		fmt.Println("Password: " + details.Password)
+		fmt.Println("Password: ***")
 	}
 	if details.SshKeyPath != "" {
 		fmt.Println("SSH key file path: " + details.SshKeyPath)

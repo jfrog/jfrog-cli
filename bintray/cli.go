@@ -197,10 +197,16 @@ func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "interactive",
+            Value: "",
 			Usage: "[Default: true] Set to false if you do not want the config command to be interactive.",
 		},
 	}
-	return append(flags, getFlags()...)
+	flags = append(flags, getFlags()...)
+    return append(flags, cli.StringFlag{
+        Name:  "licenses",
+        Value: "",
+        Usage: "[Optional] Default package licenses in the form of Apache-2.0,GPL-3.0...",
+    })
 }
 
 func getPackageFlags(prefix string) []cli.Flag {
@@ -208,7 +214,7 @@ func getPackageFlags(prefix string) []cli.Flag {
 		cli.StringFlag{
 			Name:  prefix + "licenses",
 			Value: "",
-			Usage: "[Mandatory for OSS] Package licenses in the form of \"Apache-2.0\",\"GPL-3.0\"...",
+			Usage: "[Mandatory for OSS] Package licenses in the form of Apache-2.0,GPL-3.0...",
 		},
 		cli.StringFlag{
 			Name:  prefix + "vcs-url",
@@ -489,15 +495,12 @@ func config(c *cli.Context) {
 			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
-		interactive := true
-		if c.String("interactive") != "" {
-			interactive = c.Bool("interactive")
-		}
-		if !interactive {
-			if c.String("user") == "" || c.String("key") == "" {
-				cliutils.Exit(cliutils.ExitCodeError, "The --url and --key options are mandatory when the --interactive option is set to false")
-			}
-		}
+        interactive := getBoolFlagValue(c, "interactive", true)
+        if !interactive {
+            if c.String("user") == "" || c.String("key") == "" {
+                cliutils.Exit(cliutils.ExitCodeError, "The --user and --key options are mandatory when the --interactive option is set to false")
+            }
+        }
 		bintrayDetails := createBintrayDetails(c, false)
 		commands.Config(bintrayDetails, interactive)
 	}
@@ -728,12 +731,16 @@ func createPackageFlags(c *cli.Context, prefix string) *utils.PackageFlags {
 			cliutils.Exit(cliutils.ExitCodeError, "The --"+prefix+"pub-stats option should have a boolean value.")
 		}
 	}
-
+    licenses := c.String(prefix + "licenses")
+    if licenses == "" {
+        confDetails := commands.GetConfig()
+        licenses = confDetails.DefPackageLicenses
+    }
 	return &utils.PackageFlags{
 		BintrayDetails:         createBintrayDetails(c, true),
 		Desc:                   c.String(prefix + "desc"),
 		Labels:                 c.String(prefix + "labels"),
-		Licenses:               c.String(prefix + "licenses"),
+		Licenses:               licenses,
 		CustomLicenses:         c.String(prefix + "cust-licenses"),
 		VcsUrl:                 c.String(prefix + "vcs-url"),
 		WebsiteUrl:             c.String(prefix + "website-url"),
@@ -882,6 +889,7 @@ func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *com
 func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {
 	user := c.String("user")
 	key := c.String("key")
+	defaultPackageLicenses := c.String("licenses")
 	if includeConfig && (user == "" || key == "") {
 		confDetails := commands.GetConfig()
 		if user == "" {
@@ -905,10 +913,11 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
 	apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
 	downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)
 	return &cliutils.BintrayDetails{
-		ApiUrl:            apiUrl,
-		DownloadServerUrl: downloadServerUrl,
-		User:              user,
-		Key:               key}
+		ApiUrl:             apiUrl,
+		DownloadServerUrl:  downloadServerUrl,
+		User:               user,
+		Key:                key,
+		DefPackageLicenses: defaultPackageLicenses}
 }
 
 func getMinSplitFlag(c *cli.Context) int64 {

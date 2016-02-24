@@ -80,8 +80,9 @@ type ArtifactoryDetails struct {
 }
 
 type BintrayDetails struct {
-	ApiUrl            string `json:"-"`
-	DownloadServerUrl string `json:"-"`
-	User              string `json:"user,omitempty"`
-	Key               string `json:"key,omitempty"`
+	ApiUrl             string `json:"-"`
+	DownloadServerUrl  string `json:"-"`
+	User               string `json:"user,omitempty"`
+	Key                string `json:"key,omitempty"`
+	DefPackageLicenses string `json:"defPackageLicense,omitempty"`
 }

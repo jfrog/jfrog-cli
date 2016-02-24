@@ -12,8 +12,7 @@ func Config(details *cliutils.BintrayDetails, interactive bool) {
 		savedDetails := cliutils.ReadBintrayConf()
 
 		if details.User == "" {
-			print("User: [" + savedDetails.User + "]: ")
-			cliutils.ScanFromConsole(&details.User, savedDetails.User)
+			cliutils.ScanFromConsole("User", &details.User, savedDetails.User)
 		}
 		if details.Key == "" {
 			print("Key: ")
@@ -23,6 +22,10 @@ func Config(details *cliutils.BintrayDetails, interactive bool) {
 			if details.Key == "" {
 				details.Key = savedDetails.Key
 			}
+		}
+		if details.DefPackageLicenses == "" {
+			cliutils.ScanFromConsole("\nDefault package licenses",
+			    &details.DefPackageLicenses, savedDetails.DefPackageLicenses)
 		}
 	}
 	cliutils.SaveBintrayConf(details)
@@ -34,7 +37,10 @@ func ShowConfig() {
 		fmt.Println("User: " + details.User)
 	}
 	if details.Key != "" {
-		fmt.Println("Key: " + details.Key)
+		fmt.Println("Key: ***")
+	}
+	if details.DefPackageLicenses != "" {
+		fmt.Println("Default package license: " + details.DefPackageLicenses)
 	}
 }
 
