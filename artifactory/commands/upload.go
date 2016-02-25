@@ -192,16 +192,6 @@ func getRootPath(path string, useRegExp bool) string {
 	return rootPath
 }
 
-func getDebianProps(debianPropsStr string) (debianProperties string) {
-	debProps := strings.Split(debianPropsStr, "/")
-	debianProperties =
-		";deb.distribution=" + debProps[0] +
-			";deb.component=" + debProps[1] +
-			";deb.architecture=" + debProps[2]
-
-	return
-}
-
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
 func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgPrefix string) bool {
@@ -209,7 +199,7 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 		targetPath += ";" + flags.Props
 	}
 	if flags.Deb != "" {
-		targetPath += getDebianProps(flags.Deb)
+		targetPath += getDebianMatrixParams(flags.Deb)
 	}
 
 	fmt.Println(logMsgPrefix + " Uploading artifact: " + targetPath)
@@ -255,6 +245,13 @@ func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.R
 	utils.AddAuthHeaders(headers, flags.ArtDetails)
 	resp, _ := cliutils.SendPut(targetPath, nil, headers, flags.ArtDetails.User, flags.ArtDetails.Password)
 	return resp, details
+}
+
+func getDebianMatrixParams(debianPropsStr string) string {
+	debProps := strings.Split(debianPropsStr, "/")
+	return ";deb.distribution=" + debProps[0] +
+        ";deb.component=" + debProps[1] +
+        ";deb.architecture=" + debProps[2]
 }
 
 type Artifact struct {

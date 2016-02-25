@@ -36,13 +36,13 @@ func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (tota
 	// Create an array of integers, to store the total file that were uploaded successfully.
 	// Each array item is used by a single thread.
 	uploadCount := make([]int, flags.Threads, flags.Threads)
-    queryParams := getQueryParams(flags)
+    matrixParams := getMatrixParams(flags)
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				url := baseUrl + artifacts[j].TargetPath + queryParams
+				url := baseUrl + artifacts[j].TargetPath + matrixParams
 				if !flags.DryRun {
 					if uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails) {
 						uploadCount[threadId]++
@@ -69,27 +69,28 @@ func uploadFiles(artifacts []Artifact, baseUrl string, flags *UploadFlags) (tota
 	return
 }
 
-func getQueryParams(flags *UploadFlags) string {
-    queryParams := ""
+func getMatrixParams(flags *UploadFlags) string {
+    params := ""
     if flags.Publish {
-        queryParams += "publish=1"
+        params += ";publish=1"
     }
     if flags.Override {
-        if queryParams != "" {
-            queryParams += "&"
-        }
-        queryParams += "override=1"
+        params += ";override=1"
     }
     if flags.Explode {
-        if queryParams != "" {
-            queryParams += "&"
-        }
-        queryParams += "explode=1"
+        params += ";explode=1"
     }
-    if queryParams != "" {
-        queryParams = "?" + queryParams
+    if flags.Deb != "" {
+        params += getDebianMatrixParams(flags.Deb)
     }
-    return queryParams
+    return params
+}
+
+func getDebianMatrixParams(debianPropsStr string) string {
+	debProps := strings.Split(debianPropsStr, "/")
+	return ";deb_distribution=" + debProps[0] +
+        ";deb_component=" + debProps[1] +
+        ";deb_architecture=" + debProps[2]
 }
 
 func uploadFile(artifact Artifact, url, logMsgPrefix string, bintrayDetails *cliutils.BintrayDetails) bool {
@@ -283,12 +284,13 @@ type Artifact struct {
 
 type UploadFlags struct {
 	BintrayDetails *cliutils.BintrayDetails
-	DryRun         bool
-	Recursive      bool
-	Flat           bool
-	Publish        bool
-	Override       bool
-	Explode        bool
-	Threads        int
-	UseRegExp      bool
+	Deb         string
+	DryRun      bool
+	Recursive   bool
+	Flat        bool
+	Publish     bool
+	Override    bool
+	Explode     bool
+	Threads     int
+	UseRegExp   bool
 }

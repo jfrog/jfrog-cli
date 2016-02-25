@@ -7,8 +7,8 @@ import (
 	"strconv"
 )
 
-func ShowDownloadKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
-	path := getDownloadKeysPath(bintrayDetails, org)
+func ShowAccessKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
+	path := getAccessKeysPath(bintrayDetails, org)
 	resp, body, _, _ := cliutils.SendGet(path, nil, true, bintrayDetails.User, bintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -17,8 +17,8 @@ func ShowDownloadKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
-	url := getDownloadKeysPath(flags.BintrayDetails, org)
+func ShowAccessKey(flags *AccessKeyFlags, org string) {
+	url := getAccessKeysPath(flags.BintrayDetails, org)
 	url += "/" + flags.Id
 	resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
@@ -28,9 +28,9 @@ func ShowDownloadKey(flags *DownloadKeyFlags, org string) {
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
-	data := buildDownloadKeyJson(flags, true)
-	url := getDownloadKeysPath(flags.BintrayDetails, org)
+func CreateAccessKey(flags *AccessKeyFlags, org string) {
+	data := buildAccessKeyJson(flags, true)
+	url := getAccessKeysPath(flags.BintrayDetails, org)
 	resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -39,9 +39,9 @@ func CreateDownloadKey(flags *DownloadKeyFlags, org string) {
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
-	data := buildDownloadKeyJson(flags, false)
-	url := getDownloadKeysPath(flags.BintrayDetails, org)
+func UpdateAccessKey(flags *AccessKeyFlags, org string) {
+	data := buildAccessKeyJson(flags, false)
+	url := getAccessKeysPath(flags.BintrayDetails, org)
 	url += "/" + flags.Id
 	resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
@@ -51,7 +51,7 @@ func UpdateDownloadKey(flags *DownloadKeyFlags, org string) {
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
+func buildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 	var existenceCheck string
 	var whiteCidrs string
 	var blackCidrs string
@@ -61,17 +61,18 @@ func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
 			"\"cache_for_secs\": \"" + strconv.Itoa(flags.ExistenceCheckCache) + "\"" +
 			"}"
 	}
-
 	if flags.WhiteCidrs != "" {
 		whiteCidrs = "\"white_cidrs\": " + cliutils.BuildListString(flags.WhiteCidrs)
 	}
 	if flags.BlackCidrs != "" {
 		blackCidrs = "\"black_cidrs\": " + cliutils.BuildListString(flags.BlackCidrs)
 	}
-
 	data := "{"
 	if create {
 		data += "\"id\": \"" + flags.Id + "\","
+	}
+	if flags.Password != "" {
+        data += "\"password\": \"" + flags.Password + "\","
 	}
 	data += "\"expiry\": \"" + flags.Expiry + "\""
 
@@ -89,8 +90,8 @@ func buildDownloadKeyJson(flags *DownloadKeyFlags, create bool) string {
 	return data
 }
 
-func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
-	url := getDownloadKeysPath(flags.BintrayDetails, org)
+func DeleteAccessKey(flags *AccessKeyFlags, org string) {
+	url := getAccessKeysPath(flags.BintrayDetails, org)
 	url += "/" + flags.Id
 	resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
@@ -99,16 +100,17 @@ func DeleteDownloadKey(flags *DownloadKeyFlags, org string) {
 	fmt.Println("Bintray response: " + resp.Status)
 }
 
-func getDownloadKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
+func getAccessKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
 	if org == "" {
 		return bintrayDetails.ApiUrl + "users/" + bintrayDetails.User + "/download_keys"
 	}
 	return bintrayDetails.ApiUrl + "orgs/" + org + "/download_keys"
 }
 
-type DownloadKeyFlags struct {
+type AccessKeyFlags struct {
 	BintrayDetails      *cliutils.BintrayDetails
 	Id                  string
+	Password            string
 	Expiry              string
 	ExistenceCheckUrl   string
 	ExistenceCheckCache int

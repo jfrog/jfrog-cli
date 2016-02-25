@@ -17,7 +17,7 @@ func GetCommands() []cli.Command {
 			Name:    "config",
 			Flags:   getConfigFlags(),
 			Aliases: []string{"c"},
-			Usage:   "config",
+			Usage:   "Configure Artifactory details",
 			Action: func(c *cli.Context) {
 				config(c)
 			},
@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 			Name:    "upload",
 			Flags:   getUploadFlags(),
 			Aliases: []string{"u"},
-			Usage:   "upload <local path> <repo path>",
+			Usage:   "Upload files",
 			Action: func(c *cli.Context) {
 				upload(c)
 			},
@@ -34,8 +34,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:    "download",
 			Flags:   getDownloadFlags(),
-			Aliases: []string{"d"},
-			Usage:   "download <repo path>",
+			Aliases: []string{"dl"},
+			Usage:   "Download files",
 			Action: func(c *cli.Context) {
 				download(c)
 			},

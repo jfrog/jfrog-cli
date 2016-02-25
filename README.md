@@ -70,27 +70,78 @@ To authenticate yourself to Artifactory using RSA keys, execute the following in
 #### Global options
 
 Global options are used for all commands.
+It is recommended to use the [config](#a-config) command, so that you don't have to add the --url, --user and --password for each command. 
 ```console
    --url          [Mandatory] Artifactory URL.
-   --user         [Optional] Artifactory user.
-   --password     [Optional] Artifactory password.
+   --user         [Mandatory] Artifactory user.
+   --password     [Mandatory] Artifactory password.
 ```   
 
 #### Commands list
-- [upload (u)](#a-upload)
-- [download (d)](#a-download)
 - [config (c)](#a-config)
+- [upload (u)](#a-upload)
+- [download (dl)](#a-download)
+
+<a name="a-config"/>
+#### *config* (c) command
+
+##### Function
+Used to configure the Artifactory URL and authentication details, so that you don't have to send them as options
+for the *upload* and *download* commands.
+The configuration is saved at ~/.jfrog/jfrog-cli.conf
+
+##### Command options
+```console
+   --interactive  [Default: true] Set to false if you do not wish the config command to be interactive. If true, the --url option becomes optional.
+   --enc-password [Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.
+   --url          [Optional] Artifactory URL.
+   --user         [Optional] Artifactory user.
+   --password     [Optional] Artifactory password.
+```
+
+##### Arguments
+* If no arguments are sent, the command will configure the Artifactory URL, user and password sent through the command options
+or through the command's interactive prompt.
+* The *show* argument will make the command show the stored configuration.
+* The *clear* argument will make the command clear the stored configuration.
+
+###### Important Note
+
+if your Artifactory server has [encrypted password set to required](https://www.jfrog.com/confluence/display/RTF/Configuring+Security#ConfiguringSecurity-PasswordEncryptionPolicy) you should use your API Key as your password.
+
+##### Examples
+
+Configure the Artifactory details through an interactive propmp.
+```console
+$  jfrog arti c
+```
+
+Configure the Artifactory details through the command options.
+
+```console
+$  jfrog arti c 
+```
+
+Show the configured Artifactory details.
+```console
+$  jfrog arti c show
+```
+
+Clear the configured Artifactory details.
+```console
+$  jfrog arti c clear
+```
 
 <a name="a-upload"/>
-##### The *upload* (u) command
+#### *upload* (u) command
 
-###### Function
+##### Function
 Used to upload artifacts to Artifactory.
 
-###### Command options
+##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --props        [Optional] List of properties in the form of "key1=value1;key2=value2,..." to be attached to the uploaded artifacts.
+   --props        [Optional] List of properties in the form of key1=value1;key2=value2,... to be attached to the uploaded artifacts.
    --deb          [Optional] Used for Debian packages in the form of distribution/component/architecture.
    --flat         [Default: true] If not set to true, and the upload path ends with a slash, artifacts are uploaded according to their file system hierarchy.
    --recursive    [Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.
@@ -98,7 +149,7 @@ The command uses the global options, in addition to the following command option
    --threads      [Default: 3] Number of artifacts to upload in parallel.
    --dry-run      [Default: false] Set to true to disable communication with Artifactory.
 ```
-###### Arguments
+##### Arguments
 * The first argument is the local file-system path to the artifacts to be uploaded to Artifactory.
 The path can include a single file or multiple artifacts, by using the * wildcard.
 **Important:** If the path is provided as a regular expression (with the --regexp=true option) then
@@ -109,33 +160,33 @@ The argument should have the following format: [repository name]/[repository pat
 The path can include symbols in the form of {1}, {2}, ...
 These symbols are replaced with the sections enclosed with parenthesis in the first argument.
 
-###### Examples
+##### Examples
 
 This example uploads the *froggy.tgz* file to the root of the *my-local-repo* repository
 ```console
-$  jfrog arti upload "froggy.tgz" "my-local-repo/" --url=http://domain/artifactory --user=admin --password=password
+$  jfrog arti u froggy.tgz my-local-repo/
 ```
 
 This example collects all the zip artifacts located under the build directory (including sub-directories).
 and uploads them to the *my-local-repo* repository, under the zipFiles folder, while keeping the artifacts original names.
 ```console
-$  jfrog arti upload build/*.zip libs-release-local/zipFiles/ --url=http://domain/artifactory --user=admin --password=password
+$  jfrog arti u build/*.zip libs-release-local/zipFiles/ 
 ```
 And on Windows:
 ```console
-$  jfrog arti upload "build\\*.zip" "libs-release-local/zipFiles/" --url=http://domain/artifactory --user=admin --password=password
+$  jfrog arti u build\\*.zip libs-release-local/zipFiles/ 
 ```
 
 <a name="a-download"/>
-##### The *download* (d) command
+##### *download* (dl) command
 
-###### Function
+##### Function
 Used to download artifacts from Artifactory.
 
-###### Command options
+##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --props        [Optional] List of properties in the form of "key1=value1;key2=value2,..." Only artifacts with these properties will be downloaded.
+   --props        [Optional] List of properties in the form of key1=value1;key2=value2,... Only artifacts with these properties will be downloaded.
    --flat         [Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded artifacts
    --recursive    [Default: true] Set to false if you do not wish to include the download of artifacts inside sub-directories in Artifactory.
    --min-split    [Default: 5120] Minimum file size in KB to split into ranges. Set to -1 for no splits.
@@ -143,72 +194,22 @@ The command uses the global options, in addition to the following command option
    --threads      [Default: 3] Number of artifacts to download in parallel.
 ```
 
-###### Arguments
+##### Arguments
 The command expects one argument - the path of artifacts to be downloaded from Artifactory.
 The argument should have the following format: [repository name]/[repository path]
 The path can include a single artifact or multiple artifacts, by using the * wildcard.
 The artifacts are downloaded and saved to the current directory, while saving their folder structure.
 
-###### Examples
+##### Examples
 
 This example downloads the *cool-froggy.zip* artifact located at the root of the *my-local-repo* repository to current directory.
 ```console
-$  jfrog arti download "my-local-repo/cool-froggy.zip" --url=http://domain/artifactory --user=admin --password=password
+$  jfrog arti dl my-local-repo/cool-froggy.zip 
 ```
 
 This example downloads all artifacts located in the *my-local-repo* repository under the *all-my-frogs* folder to the *all-my-frog* directory located unde the current directory.
 ```console
-$  jfrog arti download "my-local-repo/all-my-frogs/" --url=http://domain/artifactory --user=admin --password=password
-```
-
-<a name="a-config"/>
-##### The *config* (c) command
-
-###### Function
-Used to configure the Artifactory URL and authentication details, so that you don't have to send them as options
-for the *upload* and *download* commands.
-The configuration is saved at ~/.jfrog/jfrog-cli.conf
-
-###### Command options
-```console
-   --interactive  [Default: true] Set to false if you do not wish the config command to be interactive. If true, the --url option becomes optional.
-   --enc-password [Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.
-   --url          [Optional] Artifactory URL.
-   --user         [Optional] Artifactory user.
-   --password     [Optional] Artifactory password.
-```
-
-###### Arguments
-* If no arguments are sent, the command will configure the Artifactory URL, user and password sent through the command options
-or through the command's interactive prompt.
-* The *show* argument will make the command show the stored configuration.
-* The *clear* argument will make the command clear the stored configuration.
-
-###### Important Note
-
-if your Artifactory server has [encrypted password set to required](https://www.jfrog.com/confluence/display/RTF/Configuring+Security#ConfiguringSecurity-PasswordEncryptionPolicy) you should use your API Key as your password.
-
-###### Examples
-
-Configure the Artifactory details through an interactive propmp.
-```console
-$  jfrog arti config
-```
-
-Configure the Artifactory details through the command options.
-
-```console
-$  jfrog arti config --url=http://domain/artifactory --user=admin --password=password
-```
-
-Show the configured Artifactory details.
-```console
-$  jfrog arti config show
-```
-
-Clear the configured Artifactory details.
-```console
-$  jfrog arti config clear
+$  jfrog arti dl my-local-repo/all-my-frogs/ 
 ```
 
 <a name="jfrog-bintray-commands"/>
@@ -217,6 +218,7 @@ $  jfrog arti config clear
 #### Global options
 
 Global options are used for all commands.
+It is recommended to use the [config](#config) command, so that you don't have to add the --user and --key for each command.
 ```console
    --user            [Optional] Bintray username. It can be also set using the BINTRAY_USER environment variable. If not set, the subject sent as part of the command argument is used for authentication.
    --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
@@ -236,20 +238,20 @@ Global options are used for all commands.
 - [version-update (vu)](#version-update)
 - [version-delete (vd)](#version-delete)
 - [version-publish (vd)](#version-publish)
-- [entitlement-keys (ent-keys)](#entitlement-keys)
+- [access-keys (acc-keys)](#access-keys)
 - [entitlements (ent)](#entitlements)
 - [sign-url (su)](#sign-url)
 - [gpg-sign-file (gsf)](#gpg-sign-file)
 - [gpg-sign-ver (gsv)](#gpg-sign-ver)
 
 <a name="config"/>
-##### The *config* (c) command
+#### *config* (c) command
 
-###### Function
+##### Function
 Used to configure your Bintray user and API key, so that you don't have to send them as command options.
 The configuration is saved at ~/.jfrog/jfrog-cli.conf
 
-###### Command options
+##### Command options
 ```console
    --interactive  [Default: true] Set to false if you do not wish the config command to be interactive.
    --user         [Optional] Bintray user.
@@ -257,36 +259,36 @@ The configuration is saved at ~/.jfrog/jfrog-cli.conf
    --licenses     [Optional] Default package licenses in the form of Apache-2.0,GPL-3.0...
 ```
 
-###### Arguments
+##### Arguments
 * If no arguments are sent, the command will configure your user and API Key sent through the command options
 or through the command's interactive prompt.
 * The *show* argument will make the command show the stored configuration.
 * The *clear* argument will make the command clear the stored configuration.
 
-###### Examples
+##### Examples
 
 Configure user and API Key through an interactive propmp.
 ```console
-$  jfrog bt config
+$  jfrog bt c
 ```
 
 Configure user and API Key through the command options.
 ```console
-$  jfrog bt config --user=my-user --key=mybintrayapikey
+$  jfrog bt c --user=my-user --key=mybintrayapikey
 ```
 
 Show the configured user and API Key.
 ```console
-$  jfrog bt config show
+$  jfrog bt c show
 ```
 
 Clear the configured user and API Key.
 ```console
-$  jfrog bt config clear
+$  jfrog bt c clear
 ```
 
 <a name="upload"/>
-#### The *upload* (u) command
+#### *upload* (u) command
 
 ##### Function
 Used to upload files to Bintray
@@ -302,14 +304,15 @@ The command uses the global options, in addition to the following command option
    --explode           [Default: false]  Set to true to explode archived files after upload.
    --threads           [Default: 3]      Number of artifacts to upload in parallel.   
    --dry-run           [Default: false]  Set to true to disable communication with Bintray.
+   --deb               [Optional] Used for Debian packages in the form of distribution/component/architecture.   
 ```
 If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.
 Please send the following command options for the package creation.
 ```console
    --pkg-desc                    [Optional]        Package description.
-   --pkg-labels                  [Optional]        Package lables in the form of "lable11","lable2"...
-   --pkg-licenses                [Mandatory]       Package licenses in the form of "Apache-2.0","GPL-3.0"...
-   --pkg-cust-licenses           [Optional]        Package custom licenses in the form of "my-license-1","my-license-2"...
+   --pkg-labels                  [Optional]        Package lables in the form of lable11,lable2...
+   --pkg-licenses                [Mandatory]       Package licenses in the form of Apache-2.0,GPL-3.0...
+   --pkg-cust-licenses           [Optional]        Package custom licenses in the form of my-license-1,my-license-2...
    --pkg-vcs-url                 [Mandatory]       Package VCS URL.
    --pkg-website-url             [Optional]        Package web site URL.
    --pkg-issuetracker-url           [Optional]        Package Issues Tracker URL.
@@ -343,22 +346,22 @@ These symbols are replaced with the sections enclosed with parenthesis in the fi
 Upload all files located under *dir/sub-dir*, with names that start with *frog*, to the root path under version *1.0* 
 of the *froggy-package* package 
 ```console
-frog btu "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/" --user=my-user --key=my-api-key
+frog bt u dir/sub-dir/frog* my-org/swamp-repo/froggy-package/1.0/ 
 ```
 
 Upload all files located under *dir/sub-dir*, with names that start with *frog* to the /frog-files folder, under version *1.0* 
 of the *froggy-package* package 
 ```console
- jfrog bt u "dir/sub-dir/frog*" "my-org/swamp-repo/froggy-package/1.0/frog-files/" --user=my-user --key=my-api-key
+ jfrog bt u dir/sub-dir/frog* my-org/swamp-repo/froggy-package/1.0/frog-files/ 
 ```
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0*, 
 while adding the *-up* suffix to their names in Bintray.  
 ```console
- jfrog bt u "dir/sub-dir/(frog*)" "my-org/swamp-repo/froggy-package/1.0/{1}-up" --user=my-user --key=my-api-key
+ jfrog bt u dir/sub-dir/(frog*) my-org/swamp-repo/froggy-package/1.0/{1}-up 
 ```
 <a name="download-file"/>
-#### The *download-file* (dlf) command
+#### *download-file* (dlf) command
 
 ##### Function
 Used to download a specific file from Bintray.
@@ -374,14 +377,13 @@ The command uses the global options, in addition to the following command option
 ##### Arguments
 The command expects one argument in the form of *subject/repository/package/version/path*.
 
-##### Examples
-```console
- jfrog bt download-file my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
- jfrog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip --user=my-user --key=my-api-key
+##### Example
+```console 
+ jfrog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip 
 ```
 
 <a name="download-ver"/>
-#### The *download-ver* (dlv) command
+#### *download-ver* (dlv) command
 
 ##### Function
 Used to download the files of a specific version from Bintray.
@@ -398,14 +400,13 @@ The command uses the global options, in addition to the following command option
 ##### Arguments
 The command expects one argument in the form of *subject/repository/package/version*.
 
-##### Examples
-```console
- jfrog bt download-ver my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
- jfrog bt dlv my-org/swamp-repo/froggy-package/1.0 --user=my-user --key=my-api-key
+##### Example
+```console 
+ jfrog bt dlv my-org/swamp-repo/froggy-package/1.0 
 ```
 
 <a name="package-show"/>
-#### The *package-show* (ps) command
+#### *package-show* (ps) command
 
 ##### Function
 Used for showing package details.
@@ -423,7 +424,7 @@ Show package *super-frog-package*
 ```
 
 <a name="package-create"/>
-#### The *package-create* (pc) command
+#### *package-create* (pc) command
 
 ##### Function
 Used for creating a package in Bintray
@@ -432,9 +433,9 @@ Used for creating a package in Bintray
 The command uses the global options, in addition to the following command options.
 ```console
    --desc               [Optional]        Package description.
-   --labels             [Optional]        Package lables in the form of "lable11","lable2"...
-   --licenses           [Mandatory]       Package licenses in the form of "Apache-2.0","GPL-3.0"...
-   --cust-licenses      [Optional]        Package custom licenses in the form of "my-license-1","my-license-2"...
+   --labels             [Optional]        Package lables in the form of lable11,lable2...
+   --licenses           [Mandatory]       Package licenses in the form of Apache-2.0,GPL-3.0...
+   --cust-licenses      [Optional]        Package custom licenses in the form of my-license-1,my-license-2...
    --vcs-url            [Mandatory]       Package VCS URL.
    --website-url        [Optional]        Package web site URL.
    --issuetracker-url   [Optional]        Package Issues Tracker URL.
@@ -454,7 +455,7 @@ Create the *super-frog-package* package
 ```
 
 <a name="package-update"/>
-#### The *package-update* (pu) command
+#### *package-update* (pu) command
 
 ##### Function
 Used for updating package details in Bintray
@@ -472,7 +473,7 @@ Create the *super-frog-package* package
 ```
 
 <a name="package-delete"/>
-#### The *package-delete* (pd) command
+#### *package-delete* (pd) command
 
 ##### Function
 Used for deleting a packages in Bintray
@@ -493,7 +494,7 @@ Delete the *froger-package* package
 ```
 
 <a name="version-show"/>
-#### The *version-show* (vs) command
+#### *version-show* (vs) command
 
 ##### Function
 Used for showing version details.
@@ -518,7 +519,7 @@ Show the latest published version of package *super-frog-package*
 ```
 
 <a name="version-create"/>
-#### The *version-create* (vc) command
+#### *version-create* (vc) command
 
 ##### Function
 Used for creating a version in Bintray
@@ -543,7 +544,7 @@ Create version 1.0.0 in package *super-frog-package*
 ```
 
 <a name="version-update"/>
-#### The *version-update* (vu) command
+#### *version-update* (vu) command
 
 ##### Function
 Used for updating version details in Bintray
@@ -561,7 +562,7 @@ Update the labels of version 1.0.0 in package *super-frog-package*
 ```
 
 <a name="version-delete"/>
-#### The *version-delete* (vd) command
+#### *version-delete* (vd) command
 
 ##### Function
 Used for deleting a version in Bintray
@@ -582,7 +583,7 @@ Delete version 1.0.0 in package *super-frog-package*
 ```
 
 <a name="version-publish"/>
-#### The *version-publish* (vp) command
+#### *version-publish* (vp) command
 
 ##### Function
 Used for publishing a version in Bintray
@@ -599,66 +600,67 @@ Publish version 1.0.0 in package *super-frog-package*
  jfrog bt vp my-org/swamp-repo/super-frog-package/1.0.0 
 ```
 
-<a name="entitlement-keys"/>
-#### The *entitlement-keys* (ent-keys) command
+<a name="access-keys"/>
+#### *access-keys* (acc-keys) command
 
 ##### Function
-Used for managing Entitlement Download Keys.
+Used for managing Entitlement Access Keys.
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --org             Bintray organization.
-   --expiry          Download Key expiry (required for ' jfrog bt ent-keys show/create/update/delete'
-   --ex-check-url    Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.
-   --ex-check-cache  Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.
-   --white-cidrs     Used for Download Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/22 will allow access only for those IPs that exist in that address range.
-   --black-cidrs     Used for Download Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/22 will block access for all IPs that exist in the specified range.
+   --password        [Optional]     Access Key password..
+   --org             [Optional]     Bintray organization.
+   --expiry          [Optional]     Access Key expiry in milliseconds, in the form of Unix epoch time (required for 'jfrog bt acc-keys show/create/update/delete'
+   --ex-check-url    [Optional]     Used for Access Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.
+   --ex-check-cache  [Optional]     Used for Access Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.
+   --white-cidrs     [Optional]     Used for Access Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/22 will allow access only for those IPs that exist in that address range.
+   --black-cidrs     [Optional]     Used for Access Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/22 will block access for all IPs that exist in the specified range.
 ```
 
 ##### Arguments
-* With no arguments, a list of all download keys is displayed.
-* When sending the show, create, update or delete argument, it should be followed by an argument indicating the download key ID to show, create, update or delete the download key.
+* With no arguments, a list of all Access Keys is displayed.
+* When sending the show, create, update or delete argument, it should be followed by an argument indicating the Access Key ID to show, create, update or delete the Access Key.
 
 ##### Examples
-Show all Download Keys
+Show all Access Keys
 ```console
- jfrog bt ent-keys
+ jfrog bt acc-keys
 ```
-Create a Download Key
+Create a Access Key
 ```console
- jfrog bt ent-keys create key1 
- jfrog bt ent-keys create key1 --expiry=7956915742000 
-```
-
-Show a specific Download Key
-```console
- jfrog bt ent-keys show key1
+ jfrog bt acc-keys create key1 
+ jfrog bt acc-keys create key1 --expiry=7956915742000 
 ```
 
-Update a Download Key
+Show a specific Access Key
 ```console
- jfrog bt ent-keys update key1 --ex-check-url=http://new-callback.com --white-cidrs=127.0.0.1/22,193.5.0.1/92 --black-cidrs=127.0.0.1/22,193.5.0.1/92
- jfrog bt ent-keys update key1 --expiry=7956915752000
+ jfrog bt acc-keys show key1
 ```
 
-Delete a Download Key
+Update a Access Key
 ```console
- jfrog bt ent-keys delete key1
+ jfrog bt acc-keys update key1 --ex-check-url=http://new-callback.com --white-cidrs=127.0.0.1/22,193.5.0.1/92 --black-cidrs=127.0.0.1/22,193.5.0.1/92
+ jfrog bt acc-keys update key1 --expiry=7956915752000
+```
+
+Delete a Access Key
+```console
+ jfrog bt acc-keys delete key1
 ```
 
 <a name="entitlements"/>
-#### The *entitlements* (ent) command
+#### *entitlements* (ent) command
 
 ##### Function
 Used for managing Entitlements.
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
-```console
+` ``console
    --id              Entitlement ID. Used for Entitlements update.
    --access          Entitlement access. Used for Entitlements creation and update.
-   --keys            Used for Entitlements creation and update. List of Download Keys in the form of \"key1\",\"key2\"...
+   --keys            Used for Entitlements creation and update. List of Access Keys in the form of key1,key2...
    --path            Entitlement path. Used for Entitlements creating and update.
 ```
 
@@ -683,7 +685,7 @@ Show all Entitlements of version 1.0 of the green-frog package.
  jfrog bt ent my-org/swamp-repo/green-frog/1.0
 ```
 
-Create an Entitlement for the green-frog package, with rw access, the key1 and key2 Download Keys and the a/b/c path.
+Create an Entitlement for the green-frog package, with rw access, the key1 and key2 Access Keys and the a/b/c path.
 ```console
  jfrog bt ent create my-org/swamp-repo/green-frog --access=rw --keys=key1,key2 --path=a/b/c
 ```
@@ -693,7 +695,7 @@ Show a specific Entitlement on the swamp-repo repository.
  jfrog bt ent show my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc
 ```
 
-Update the download keys and access of an Entitlement on the swamp-repo repository.
+Update the Access Keys and access of an Entitlement on the swamp-repo repository.
 ```console
  jfrog bt ent update my-org/swamp-repo --id=451433e7b3ec3f18110ba770c77b9a3cb5534cfc --keys=key1,key2 --access=r
 ```
@@ -704,7 +706,7 @@ Delete an Entitlement on the my-org/swamp-repo.
 ```
 
 <a name="sign-url"/>
-#### The *sign-url* (su) command
+#### *sign-url* (su) command
 
 ##### Function
 Used for Generating an anonymous, signed download URL with an expiry date.
@@ -730,7 +732,7 @@ Create a download URL for *froggy-file*, located under *froggy-folder* in the *s
 ```
 
 <a name="gpg-sign-file"/>
-#### The *gpg-sign-file* (gsf) command
+#### *gpg-sign-file* (gsf) command
 
 ##### Function
 GPG sign a file in Bintray.
@@ -755,7 +757,7 @@ frog bt gsf my-org/swamp-repo/froggy-folder/froggy-file --passphrase=gpgX***yH8e
 ```
 
 <a name="gpg-sign-ver"/>
-#### The *gpg-sign-ver* (gsv) command
+#### *gpg-sign-ver* (gsv) command
 
 ##### Function
 GPS sign all files of a specific version in Bintray.

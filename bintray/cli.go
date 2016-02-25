@@ -140,12 +140,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "entitlement-keys",
-			Usage:   "Manage Entitlement Keys",
-			Aliases: []string{"ent-keys"},
-			Flags:   getEntitlementKeysFlags(),
+			Name:    "access-keys",
+			Usage:   "Manage Access Keys",
+			Aliases: []string{"acc-keys"},
+			Flags:   getAccessKeysFlags(),
 			Action: func(c *cli.Context) {
-				entitlementKeys(c)
+				accessKeys(c)
 			},
 		},
 		{
@@ -388,6 +388,11 @@ func getUploadFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Bintray.",
 		},
+		cli.StringFlag{
+			Name:  "deb",
+            Value: "",
+			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture.",
+		},
 	}...)
 	flags = append(flags, getPackageFlags("pkg-")...)
 	return append(flags, getVersionFlags("ver-")...)
@@ -405,7 +410,7 @@ func getEntitlementsFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "keys",
-			Usage: "[Optional] Used for Entitlements creation and update. List of Download Keys in the form of \"key1\",\"key2\"...",
+			Usage: "[Optional] Used for Entitlements creation and update. List of Access Keys in the form of \"key1\",\"key2\"...",
 		},
 		cli.StringFlag{
 			Name:  "path",
@@ -414,35 +419,35 @@ func getEntitlementsFlags() []cli.Flag {
 	}...)
 }
 
-func getEntitlementKeysFlags() []cli.Flag {
+func getAccessKeysFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "org",
 			Usage: "[Optional] Bintray organization",
 		},
 		cli.StringFlag{
-			Name:  "id",
-			Usage: "[Optional] Download Key ID (required for 'bt ent-keys show/create/update/delete'",
+			Name:  "password",
+			Usage: "[Optional] Access Key password.",
 		},
 		cli.StringFlag{
 			Name:  "expiry",
-			Usage: "[Optional] Download Key expiry (required for 'bt ent-keys show/create/update/delete'",
+			Usage: "[Optional] Access Key expiry (required for 'jfrog bt ent-keys show/create/update/delete'",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-url",
-			Usage: "[Optional] Used for Download Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Download Key still exists.",
+			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-cache",
-			Usage: "[Optional] Used for Download Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
+			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
 		},
 		cli.StringFlag{
 			Name:  "white-cidrs",
-			Usage: "[Optional] Used for Download Key creation and update. Specifying white CIDRs in the form of \"127.0.0.1/22\",\"193.5.0.1/92\" will allow access only for those IPs that exist in that address range.",
+			Usage: "[Optional] Used for Access Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will allow access only for those IPs that exist in that address range.",
 		},
 		cli.StringFlag{
 			Name:  "black-cidrs",
-			Usage: "[Optional] Used for Download Key creation and update. Specifying black CIDRs in the foem of \"127.0.0.1/22\",\"193.5.0.1/92\" will block access for all IPs that exist in the specified range.",
+			Usage: "[Optional] Used for Access Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
 		},
 	}...)
 }
@@ -661,12 +666,12 @@ func gpgSignVersion(c *cli.Context) {
 	commands.GpgSignVersion(versionDetails, c.String("passphrase"), createBintrayDetails(c, true))
 }
 
-func entitlementKeys(c *cli.Context) {
+func accessKeys(c *cli.Context) {
 	org := c.String("org")
 	argsSize := len(c.Args())
 	if argsSize == 0 {
 		bintrayDetails := createBintrayDetails(c, true)
-		commands.ShowDownloadKeys(bintrayDetails, org)
+		commands.ShowAccessKeys(bintrayDetails, org)
 		return
 	}
 	if argsSize != 2 {
@@ -674,13 +679,13 @@ func entitlementKeys(c *cli.Context) {
 	}
 	keyId := c.Args()[1]
 	if c.Args()[0] == "show" {
-		commands.ShowDownloadKey(createDownloadKeyFlagsForShowAndDelete(keyId, c), org)
+		commands.ShowAccessKey(createAccessKeyFlagsForShowAndDelete(keyId, c), org)
 	} else if c.Args()[0] == "create" {
-		commands.CreateDownloadKey(createDownloadKeyFlagsForCreateAndUpdate(keyId, c), org)
+		commands.CreateAccessKey(createAccessKeyFlagsForCreateAndUpdate(keyId, c), org)
 	} else if c.Args()[0] == "update" {
-		commands.UpdateDownloadKey(createDownloadKeyFlagsForCreateAndUpdate(keyId, c), org)
+		commands.UpdateAccessKey(createAccessKeyFlagsForCreateAndUpdate(keyId, c), org)
 	} else if c.Args()[0] == "delete" {
-		commands.DeleteDownloadKey(createDownloadKeyFlagsForShowAndDelete(keyId, c), org)
+		commands.DeleteAccessKey(createAccessKeyFlagsForShowAndDelete(keyId, c), org)
 	} else {
 		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete after the key argument. Got "+c.Args()[0])
 	}
@@ -788,6 +793,10 @@ func createUrlSigningFlags(c *cli.Context) *commands.UrlSigningFlags {
 }
 
 func createUploadFlags(c *cli.Context) *commands.UploadFlags {
+	deb := c.String("deb")
+	if deb != "" && len(strings.Split(deb, "/")) != 3 {
+		cliutils.Exit(cliutils.ExitCodeError, "The --deb option should be in the form of distribution/component/architecture")
+	}
 	return &commands.UploadFlags{
 		BintrayDetails: createBintrayDetails(c, true),
 		Recursive:      getBoolFlagValue(c, "recursive", true),
@@ -797,6 +806,7 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
         Explode:        getBoolFlagValue(c, "explode", false),
 		UseRegExp:      c.Bool("regexp"),
 		Threads:        getThreadsOptionValue(c),
+		Deb:            deb,
 		DryRun:         c.Bool("dry-run")}
 }
 
@@ -861,13 +871,13 @@ func createEntitlementFlagsForUpdate(c *cli.Context) *commands.EntitlementFlags 
 		Keys:           c.String("keys")}
 }
 
-func createDownloadKeyFlagsForShowAndDelete(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
-	return &commands.DownloadKeyFlags{
+func createAccessKeyFlagsForShowAndDelete(keyId string, c *cli.Context) *commands.AccessKeyFlags {
+	return &commands.AccessKeyFlags{
 		BintrayDetails: createBintrayDetails(c, true),
 		Id:             keyId}
 }
 
-func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *commands.DownloadKeyFlags {
+func createAccessKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *commands.AccessKeyFlags {
 	var cachePeriod int
 	if c.String("ex-check-cache") != "" {
 		var err error
@@ -876,9 +886,10 @@ func createDownloadKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *com
 			cliutils.Exit(cliutils.ExitCodeError, "The --ex-check-cache option should have a numeric value.")
 		}
 	}
-	return &commands.DownloadKeyFlags{
+	return &commands.AccessKeyFlags{
 		BintrayDetails:      createBintrayDetails(c, true),
 		Id:                  keyId,
+		Password:            c.String("password"),
 		Expiry:              c.String("expiry"),
 		ExistenceCheckUrl:   c.String("ex-check-url"),
 		ExistenceCheckCache: cachePeriod,

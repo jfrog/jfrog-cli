@@ -15,7 +15,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "frog"
 	app.Usage = "See https://github.com/jfrogdev/jfrog-cli-go for usage instructions."
-	app.Version = "0.0.1"
+	app.Version = cliutils.GetVersion()
 
 	args := os.Args
 
