@@ -56,61 +56,21 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
 	return
 }
 
-func prepareUploadPath(path string) string {
-	path = strings.Replace(path, "\\", "/", -1)
-	path = strings.Replace(path, "../", "", -1)
-	path = strings.Replace(path, "./", "", -1)
-	return path
-}
-
-func prepareLocalPath(localpath string, useRegExp bool) string {
-	if localpath == "./" || localpath == ".\\" {
-		return "^.*$"
-	}
-	if strings.HasPrefix(localpath, "./") {
-		localpath = localpath[2:]
-	} else if strings.HasPrefix(localpath, ".\\") {
-		localpath = localpath[3:]
-	}
-	if !useRegExp {
-		localpath = localPathToRegExp(localpath)
-	}
-	return localpath
-}
-
-func localPathToRegExp(localpath string) string {
-	var wildcard = ".*"
-
-	localpath = strings.Replace(localpath, ".", "\\.", -1)
-	localpath = strings.Replace(localpath, "*", wildcard, -1)
-	if strings.HasSuffix(localpath, "/") {
-		localpath += wildcard
-	} else if strings.HasSuffix(localpath, "\\") {
-		size := len(localpath)
-		if size > 1 && localpath[size-2:size-1] != "\\" {
-			localpath += "\\"
-		}
-		localpath += wildcard
-	}
-	localpath = "^" + localpath + "$"
-	return localpath
-}
-
-func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) []Artifact {
+func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) []cliutils.Artifact {
 	if strings.Index(targetPath, "/") < 0 {
 		targetPath += "/"
 	}
-	rootPath := getRootPath(localpath, flags.UseRegExp)
+	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
 	if !cliutils.IsPathExists(rootPath) {
 		cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: "+rootPath)
 	}
-	localpath = prepareLocalPath(localpath, flags.UseRegExp)
+	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
-	artifacts := []Artifact{}
+	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	if !cliutils.IsDir(rootPath) {
-		targetPath := prepareUploadPath(targetPath + rootPath)
-		artifacts = append(artifacts, Artifact{rootPath, targetPath})
+		targetPath := cliutils.PrepareUploadPath(targetPath + rootPath)
+		artifacts = append(artifacts, cliutils.Artifact{rootPath, targetPath})
 		return artifacts
 	}
 
@@ -142,54 +102,15 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 					fileName, _ := cliutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
-					uploadPath := prepareUploadPath(path)
+					uploadPath := cliutils.PrepareUploadPath(path)
 					target += uploadPath
 				}
 			}
 
-			artifacts = append(artifacts, Artifact{path, target})
+			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}
 	return artifacts
-}
-
-// Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
-func getRootPath(path string, useRegExp bool) string {
-	// The first step is to split the local path pattern into sections, by the file seperator.
-	seperator := "/"
-	sections := strings.Split(path, seperator)
-	if len(sections) == 1 {
-		seperator = "\\"
-		sections = strings.Split(path, seperator)
-	}
-
-	// Now we start building the root path, making sure to leave out the sub-directory that includes the pattern.
-	rootPath := ""
-	for _, section := range sections {
-		if section == "" {
-			continue
-		}
-		if useRegExp {
-			if strings.Index(section, "(") != -1 {
-				break
-			}
-		} else {
-			if strings.Index(section, "*") != -1 {
-				break
-			}
-		}
-		if rootPath != "" {
-			rootPath += seperator
-		}
-		rootPath += section
-	}
-	if len(sections) > 0 && sections[0] == "" {
-		rootPath = seperator + rootPath
-	}
-	if rootPath == "" {
-		return "."
-	}
-	return rootPath
 }
 
 // Uploads the file in the specified local path to the specified target path.
@@ -252,9 +173,4 @@ func getDebianMatrixParams(debianPropsStr string) string {
 	return ";deb.distribution=" + debProps[0] +
         ";deb.component=" + debProps[1] +
         ";deb.architecture=" + debProps[2]
-}
-
-type Artifact struct {
-	LocalPath  string
-	TargetPath string
 }
