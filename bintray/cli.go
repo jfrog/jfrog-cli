@@ -175,6 +175,15 @@ func GetCommands() []cli.Command {
 				gpgSignVersion(c)
 			},
 		},
+		{
+			Name:    "logs",
+			Usage:   "Download available log files for a package",
+			Aliases: []string{"l"},
+			Flags:   getFlags(),
+			Action: func(c *cli.Context) {
+				logs(c)
+			},
+		},
 	}
 }
 
@@ -182,12 +191,12 @@ func getFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   "user",
-			EnvVar: "BINTRAY_USER",
+			Value: "",
 			Usage:  "[Optional] Bintray username. If not set, the subject sent as part of the command argument is used for authentication.",
 		},
 		cli.StringFlag{
 			Name:   "key",
-			EnvVar: "BINTRAY_KEY",
+			Value: "",
 			Usage:  "[Mandatory] Bintray API key",
 		},
 	}
@@ -658,6 +667,24 @@ func gpgSignFile(c *cli.Context) {
 	commands.GpgSignFile(pathDetails, c.String("passphrase"), createBintrayDetails(c, true))
 }
 
+func logs(c *cli.Context) {
+	bintrayDetails := createBintrayDetails(c, true)
+	if len(c.Args()) == 1 {
+	    packageDetails := utils.CreatePackageDetails(c.Args()[0])
+        commands.LogsList(packageDetails, bintrayDetails)
+	} else
+	if len(c.Args()) == 3 {
+        if c.Args()[0] == "download" {
+            packageDetails := utils.CreatePackageDetails(c.Args()[1])
+            commands.DownloadLog(packageDetails, c.Args()[2], bintrayDetails)
+        } else {
+	        cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args()[0] + ". Try 'bt logs --help'.")
+        }
+	} else {
+	    cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt logs --help'.")
+	}
+}
+
 func gpgSignVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
@@ -687,7 +714,7 @@ func accessKeys(c *cli.Context) {
 	} else if c.Args()[0] == "delete" {
 		commands.DeleteAccessKey(createAccessKeyFlagsForShowAndDelete(keyId, c), org)
 	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete after the key argument. Got "+c.Args()[0])
+		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before the key argument. Got "+c.Args()[0])
 	}
 }
 

@@ -131,6 +131,10 @@ func getDownloadFlags() []cli.Flag {
 			Value: "",
 			Usage: "[Default: 3] Number of artifacts to download in parallel.",
 		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
 	}...)
 }
 

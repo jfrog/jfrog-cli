@@ -220,8 +220,8 @@ $  jfrog arti dl my-local-repo/all-my-frogs/
 Global options are used for all commands.
 It is recommended to use the [config](#config) command, so that you don't have to add the --user and --key for each command.
 ```console
-   --user            [Optional] Bintray username. It can be also set using the BINTRAY_USER environment variable. If not set, the subject sent as part of the command argument is used for authentication.
-   --key             [Mandatory] Bintray API key. It can be also set using the BINTRAY_KEY environment variable.
+   --user            [Optional] Bintray username. If not set, the subject sent as part of the command argument is used for authentication.
+   --key             [Mandatory] Bintray API key.
 ```
 
 #### Commands list
@@ -243,6 +243,7 @@ It is recommended to use the [config](#config) command, so that you don't have t
 - [sign-url (su)](#sign-url)
 - [gpg-sign-file (gsf)](#gpg-sign-file)
 - [gpg-sign-ver (gsv)](#gpg-sign-ver)
+- [logs (l)](#logs)
 
 <a name="config"/>
 #### *config* (c) command
@@ -304,7 +305,7 @@ The command uses the global options, in addition to the following command option
    --explode           [Default: false]  Set to true to explode archived files after upload.
    --threads           [Default: 3]      Number of artifacts to upload in parallel.   
    --dry-run           [Default: false]  Set to true to disable communication with Bintray.
-   --deb               [Optional] Used for Debian packages in the form of distribution/component/architecture.   
+   --deb               [Optional]        Used for Debian packages in the form of distribution/component/architecture.   
 ```
 If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.
 Please send the following command options for the package creation.
@@ -360,6 +361,14 @@ while adding the *-up* suffix to their names in Bintray.
 ```console
  jfrog bt u dir/sub-dir/(frog*) my-org/swamp-repo/froggy-package/1.0/{1}-up 
 ```
+
+Upload a Debian package named *my-deb-pkg* to version 1.0 of a Debian repository named *swamp-deb-repo* with the 
+following Debian distribution information: 
+distribution is *wheezy*, component is *main* and the architectures are *i386* and *amd64*.     
+```console
+ jfrog bt u my-deb-pkg my-org/swamp-deb-repo/1.0 --deb=wheezy/main/i386,amd64 
+```
+
 <a name="download-file"/>
 #### *download-file* (dlf) command
 
@@ -657,9 +666,9 @@ Used for managing Entitlements.
 
 ##### Command options
 The command uses the global options, in addition to the following command options.
-` ``console
+```console
    --id              Entitlement ID. Used for Entitlements update.
-   --access          Entitlement access. Used for Entitlements creation and update.
+   --access          Entitlement access. Used for Entitlements creation and update. The expected values are *r* for read or *rw* for read-write.
    --keys            Used for Entitlements creation and update. List of Access Keys in the form of key1,key2...
    --path            Entitlement path. Used for Entitlements creating and update.
 ```
@@ -780,3 +789,29 @@ or with a passphrase
 ```console
  jfrog bt gsv my-org/swamp-repo/froggy-package/1.0 --passphrase=gpgX***yH8eKw
 ```
+
+<a name="logs"/>
+#### *logs* (l) command
+
+##### Function
+Download available log files for a package.
+
+##### Command options
+This command has no command options. It uses however the global options.
+
+##### Arguments
+* If one argument in the form of *subject/repo/package* is sent, then the command displays the list of available log files from the package.
+* If the first argument sent is *download*, then it should be followed by 2 arguments.
+The first one in the form of *subject/repo/package* and the next one should be the log file name. 
+The command downloads the specified log file to the current directory.
+
+##### Examples
+
+Display the list of available log files from the *froggy-package* package.
+```console
+jfrog bt l my-org/swamp-repo/froggy-package
+```
+Download the *log1* log file for the *froggy-package* package.
+```console
+jfrog bt l download my-org/swamp-repo/froggy-package log1
+```   
