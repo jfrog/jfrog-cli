@@ -943,7 +943,10 @@ func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
         return nil
     }
     bintrayDetails := createBintrayDetails(c, false)
-    return commands.Config(nil, bintrayDetails, true)
+    details := commands.Config(nil, bintrayDetails, true)
+    details.ApiUrl = bintrayDetails.ApiUrl
+    details.DownloadServerUrl = bintrayDetails.DownloadServerUrl
+    return details
 }
 
 func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {
