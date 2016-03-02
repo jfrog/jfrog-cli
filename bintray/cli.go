@@ -943,8 +943,7 @@ func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
         return nil
     }
     bintrayDetails := createBintrayDetails(c, false)
-    commands.Config(nil, bintrayDetails, true)
-    return bintrayDetails
+    return commands.Config(nil, bintrayDetails, true)
 }
 
 func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {

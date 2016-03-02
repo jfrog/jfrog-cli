@@ -9,7 +9,9 @@ import (
 	"syscall"
 )
 
-func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive, shouldEncPassword bool) {
+func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive,
+    shouldEncPassword bool) *cliutils.ArtifactoryDetails {
+
     if details == nil {
         details = new(cliutils.ArtifactoryDetails)
     }
@@ -31,6 +33,7 @@ func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive, s
 		details = encryptPassword(details)
 	}
 	cliutils.SaveArtifactoryConf(details)
+	return details
 }
 
 func readSshKeyPathFromConsole(details, savedDetails *cliutils.ArtifactoryDetails) {

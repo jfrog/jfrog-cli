@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) {
+func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) *cliutils.BintrayDetails {
     if details == nil {
         details = new(cliutils.BintrayDetails)
     }
@@ -33,6 +33,7 @@ func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) 
 		}
 	}
 	cliutils.SaveBintrayConf(details)
+	return details
 }
 
 func ShowConfig() {

@@ -277,8 +277,7 @@ func offerConfig(c *cli.Context) *cliutils.ArtifactoryDetails {
     details := createArtifactoryDetails(c, false)
 
     encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
-    commands.Config(nil, details, true, encPassword)
-    return details
+    return commands.Config(nil, details, true, encPassword)
 }
 
 func createArtifactoryDetails(c *cli.Context, includeConfig bool) *cliutils.ArtifactoryDetails {
