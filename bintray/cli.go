@@ -630,11 +630,19 @@ func downloadVersion(c *cli.Context) {
 }
 
 func upload(c *cli.Context) {
-	if len(c.Args()) != 2 {
+	len := len(c.Args())
+	if len < 2 || len > 3 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt upload --help'.")
 	}
 	localPath := c.Args()[0]
-	versionDetails, uploadPath := utils.CreateVersionDetailsAndPath(c.Args()[1])
+	versionDetails := utils.CreateVersionDetails(c.Args()[1])
+	var uploadPath string
+	if len > 2 {
+        uploadPath = c.Args()[2]
+        if strings.HasPrefix(uploadPath, "/") {
+            uploadPath = uploadPath[1:]
+        }
+	}
 	uploadFlags := createUploadFlags(c)
 	packageFlags := createPackageFlags(c, "pkg-")
 	versionFlags := createVersionFlags(c, "ver-")
@@ -642,10 +650,18 @@ func upload(c *cli.Context) {
 }
 
 func downloadFile(c *cli.Context) {
-	if len(c.Args()) != 1 {
+    len := len(c.Args())
+	if len < 1 || len > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-file --help'.")
 	}
-	versionDetails, path := utils.CreatePackageDetailsAndPath(c.Args()[0])
+	versionDetails := utils.CreatePackageDetails(c.Args()[0])
+	var path string
+	if len > 1 {
+        path = c.Args()[1]
+        if strings.HasPrefix(path, "/") {
+            path = path[1:]
+        }
+	}
 	flags := createDownloadFlags(c)
 	commands.DownloadFile(versionDetails, path, flags)
 }

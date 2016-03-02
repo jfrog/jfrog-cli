@@ -117,41 +117,6 @@ func CreatePackageDetails(packageStr string) *VersionDetails {
 		Package: parts[2]}
 }
 
-func CreatePackageDetailsAndPath(packageStr string) (versionDetails *VersionDetails, path string) {
-	parts := strings.Split(packageStr, "/")
-	size := len(parts)
-	if size < 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/package/path")
-	}
-	versionDetails = &VersionDetails{
-		Subject: parts[0],
-		Repo:    parts[1],
-		Package: parts[2]}
-
-	if size > 3 {
-		path = strings.Join(parts[3:], "/")
-	}
-	return
-}
-
-func CreateVersionDetailsAndPath(versionStr string) (versionDetails *VersionDetails, path string) {
-	parts := strings.Split(versionStr, "/")
-	size := len(parts)
-	if size < 4 {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/package/version/path")
-	}
-	versionDetails = &VersionDetails{
-		Subject: parts[0],
-		Repo:    parts[1],
-		Package: parts[2],
-		Version: parts[3]}
-
-	if size > 4 {
-		path = strings.Join(parts[4:], "/")
-	}
-	return
-}
-
 func CreatePathDetails(str string) *PathDetails {
 	parts := strings.Split(str, "/")
 	size := len(parts)
