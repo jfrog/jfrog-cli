@@ -7,12 +7,16 @@ import (
 	"syscall"
 )
 
-func Config(details *cliutils.BintrayDetails, interactive bool) {
+func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) {
+    if details == nil {
+        details = new(cliutils.BintrayDetails)
+    }
 	if interactive {
-		savedDetails := cliutils.ReadBintrayConf()
-
+	    if defaultDetails == nil {
+            defaultDetails = cliutils.ReadBintrayConf()
+	    }
 		if details.User == "" {
-			cliutils.ScanFromConsole("User", &details.User, savedDetails.User)
+			cliutils.ScanFromConsole("User", &details.User, defaultDetails.User)
 		}
 		if details.Key == "" {
 			print("Key: ")
@@ -20,12 +24,12 @@ func Config(details *cliutils.BintrayDetails, interactive bool) {
 			cliutils.CheckError(err)
 			details.Key = string(byteKey)
 			if details.Key == "" {
-				details.Key = savedDetails.Key
+				details.Key = defaultDetails.Key
 			}
 		}
 		if details.DefPackageLicenses == "" {
 			cliutils.ScanFromConsole("\nDefault package licenses",
-			    &details.DefPackageLicenses, savedDetails.DefPackageLicenses)
+			    &details.DefPackageLicenses, defaultDetails.DefPackageLicenses)
 		}
 	}
 	cliutils.SaveBintrayConf(details)

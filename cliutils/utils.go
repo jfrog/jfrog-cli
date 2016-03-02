@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"bytes"
+	"github.com/codegangsta/cli"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -166,6 +167,13 @@ func PrepareUploadPath(path string) string {
 	path = strings.Replace(path, "../", "", -1)
 	path = strings.Replace(path, "./", "", -1)
 	return path
+}
+
+func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
+	if c.String(flagName) == "" {
+		return defValue
+	}
+    return c.Bool(flagName)
 }
 
 func localPathToRegExp(localpath string) string {

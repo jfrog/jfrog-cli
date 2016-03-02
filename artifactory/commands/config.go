@@ -9,17 +9,21 @@ import (
 	"syscall"
 )
 
-func Config(details *cliutils.ArtifactoryDetails, interactive, shouldEncPassword bool) {
+func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive, shouldEncPassword bool) {
+    if details == nil {
+        details = new(cliutils.ArtifactoryDetails)
+    }
 	if interactive {
-		savedDetails := cliutils.ReadArtifactoryConf()
-
+	    if defaultDetails == nil {
+            defaultDetails = cliutils.ReadArtifactoryConf()
+	    }
 		if details.Url == "" {
-			cliutils.ScanFromConsole("Artifactory URL", &details.Url, savedDetails.Url)
+			cliutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		}
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
-			readSshKeyPathFromConsole(details, savedDetails)
+			readSshKeyPathFromConsole(details, defaultDetails)
 		} else {
-			readCredentialsFromConsole(details, savedDetails)
+			readCredentialsFromConsole(details, defaultDetails)
 		}
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)

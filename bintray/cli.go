@@ -509,14 +509,14 @@ func config(c *cli.Context) {
 			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
-        interactive := getBoolFlagValue(c, "interactive", true)
+        interactive := cliutils.GetBoolFlagValue(c, "interactive", true)
         if !interactive {
             if c.String("user") == "" || c.String("key") == "" {
                 cliutils.Exit(cliutils.ExitCodeError, "The --user and --key options are mandatory when the --interactive option is set to false")
             }
         }
 		bintrayDetails := createBintrayDetails(c, false)
-		commands.Config(bintrayDetails, interactive)
+		commands.Config(bintrayDetails, nil, interactive)
 	}
 }
 
@@ -826,11 +826,11 @@ func createUploadFlags(c *cli.Context) *commands.UploadFlags {
 	}
 	return &commands.UploadFlags{
 		BintrayDetails: createBintrayDetails(c, true),
-		Recursive:      getBoolFlagValue(c, "recursive", true),
-		Flat:           getBoolFlagValue(c, "flat", true),
-        Publish:        getBoolFlagValue(c, "publish", false),
-        Override:       getBoolFlagValue(c, "override", false),
-        Explode:        getBoolFlagValue(c, "explode", false),
+		Recursive:      cliutils.GetBoolFlagValue(c, "recursive", true),
+		Flat:           cliutils.GetBoolFlagValue(c, "flat", true),
+        Publish:        cliutils.GetBoolFlagValue(c, "publish", false),
+        Override:       cliutils.GetBoolFlagValue(c, "override", false),
+        Explode:        cliutils.GetBoolFlagValue(c, "explode", false),
 		UseRegExp:      c.Bool("regexp"),
 		Threads:        getThreadsOptionValue(c),
 		Deb:            deb,
@@ -924,11 +924,40 @@ func createAccessKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *comma
 		BlackCidrs:          c.String("black-cidrs")}
 }
 
+func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
+    if cliutils.IsBintrayConfExists() {
+        return nil
+    }
+    msg := "Some CLI commands require the following common options:\n" +
+        "- User\n" +
+        "- API Key\n" +
+        "- Default Package Licenses\n" +
+        "Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
+        "You can also configure these parameters later using the 'config' command.\n" +
+        "Configure now? (y/n): "
+    fmt.Print(msg)
+    var confirm string
+    fmt.Scanln(&confirm)
+    if !cliutils.ConfirmAnswer(confirm) {
+        cliutils.SaveBintrayConf(new(cliutils.BintrayDetails))
+        return nil
+    }
+    bintrayDetails := createBintrayDetails(c, false)
+    commands.Config(nil, bintrayDetails, true)
+    return bintrayDetails
+}
+
 func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {
+	if includeConfig {
+        bintrayDetails := offerConfig(c)
+        if bintrayDetails != nil {
+            return bintrayDetails
+        }
+	}
 	user := c.String("user")
 	key := c.String("key")
 	defaultPackageLicenses := c.String("licenses")
-	if includeConfig && (user == "" || key == "") {
+	if includeConfig && (user == "" || key == "" || defaultPackageLicenses == "") {
 		confDetails := commands.GetConfig()
 		if user == "" {
 			user = confDetails.User
@@ -937,7 +966,10 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
 			key = confDetails.Key
 		}
 		if key == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "Please set your Bintray API key using config command, --key option or the BINTRAY_KEY envrionemt variable")
+			cliutils.Exit(cliutils.ExitCodeError, "Please set your Bintray API key using the config command or send it as the --key option.")
+		}
+		if defaultPackageLicenses == "" {
+			defaultPackageLicenses = confDetails.DefPackageLicenses
 		}
 	}
 	apiUrl := os.Getenv("BINTRAY_API_URL")
@@ -984,11 +1016,4 @@ func getSplitCountFlag(c *cli.Context) int {
 		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
 	}
 	return splitCount
-}
-
-func getBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
-	if c.String(flagName) == "" {
-		return defValue
-	}
-    return c.Bool(flagName)
 }

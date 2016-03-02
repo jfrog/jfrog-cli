@@ -618,7 +618,7 @@ Used for managing Entitlement Access Keys.
 ##### Command options
 The command uses the global options, in addition to the following command options.
 ```console
-   --password        [Optional]     Access Key password..
+   --password        [Optional]     Access Key password.
    --org             [Optional]     Bintray organization.
    --expiry          [Optional]     Access Key expiry in milliseconds, in the form of Unix epoch time (required for 'jfrog bt acc-keys show/create/update/delete'
    --ex-check-url    [Optional]     Used for Access Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.

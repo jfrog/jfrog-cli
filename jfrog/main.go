@@ -13,7 +13,7 @@ const cmdBintray = "bt"
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "frog"
+	app.Name = "jfrog"
 	app.Usage = "See https://github.com/jfrogdev/jfrog-cli-go for usage instructions."
 	app.Version = cliutils.GetVersion()
 

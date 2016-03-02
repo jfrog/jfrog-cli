@@ -1,6 +1,7 @@
 package artifactory
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
@@ -47,7 +48,7 @@ func getFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Mandatory] Artifactory URL",
+			Usage: "[Optional] Artifactory URL",
 		},
 		cli.StringFlag{
 			Name:  "user",
@@ -153,47 +154,26 @@ func getConfigFlags() []cli.Flag {
 }
 
 func initFlags(c *cli.Context, cmd string) {
-	if c.String("recursive") == "" {
-		flags.Recursive = true
-	} else {
-		flags.Recursive = c.Bool("recursive")
-	}
-	if c.String("interactive") == "" {
-		flags.Interactive = true
-	} else {
-		flags.Interactive = c.Bool("interactive")
-	}
-	if c.String("enc-password") == "" {
-		flags.EncPassword = true
-	} else {
-		flags.EncPassword = c.Bool("enc-password")
-	}
+    flags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+    flags.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
+    flags.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
 
 	if cmd == "config" {
-		flags.ArtDetails = getArtifactoryDetails(c, false)
+		flags.ArtDetails = createArtifactoryDetails(c, false)
 		if !flags.Interactive && flags.ArtDetails.Url == "" {
 			cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
 		}
 	} else {
-		flags.ArtDetails = getArtifactoryDetails(c, true)
+		flags.ArtDetails = createArtifactoryDetails(c, true)
 		if flags.ArtDetails.Url == "" {
 			cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
 		}
 	}
 
-	strFlat := c.String("flat")
 	if cmd == "upload" {
-		if strFlat == "" {
-			flags.Flat = true
-		} else {
-			flags.Flat, _ = strconv.ParseBool(strFlat)
-		}
+	    flags.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
 	} else {
-		if strFlat == "" {
-			flags.Flat = false
-		} else {
-			flags.Flat, _ = strconv.ParseBool(strFlat)
-		}
+		flags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
 	}
 
 	flags.Deb = c.String("deb")
@@ -249,7 +229,7 @@ func config(c *cli.Context) {
 		}
 	} else {
 		initFlags(c, "config")
-		commands.Config(flags.ArtDetails, flags.Interactive, flags.EncPassword)
+		commands.Config(flags.ArtDetails, nil, flags.Interactive, flags.EncPassword)
 	}
 }
 
@@ -279,7 +259,35 @@ func upload(c *cli.Context) {
 	}
 }
 
-func getArtifactoryDetails(c *cli.Context, includeConfig bool) *cliutils.ArtifactoryDetails {
+func offerConfig(c *cli.Context) *cliutils.ArtifactoryDetails {
+    if cliutils.IsArtifactoryConfExists() {
+        return nil
+    }
+    msg := "The CLI commands require the Artifactory URL and authentication details\n" +
+        "Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
+        "You can also configure these parameters later using the 'config' command.\n" +
+        "Configure now? (y/n): "
+    fmt.Print(msg)
+    var confirm string
+    fmt.Scanln(&confirm)
+    if !cliutils.ConfirmAnswer(confirm) {
+        cliutils.SaveArtifactoryConf(new(cliutils.ArtifactoryDetails))
+        return nil
+    }
+    details := createArtifactoryDetails(c, false)
+
+    encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
+    commands.Config(nil, details, true, encPassword)
+    return details
+}
+
+func createArtifactoryDetails(c *cli.Context, includeConfig bool) *cliutils.ArtifactoryDetails {
+	if includeConfig {
+        details := offerConfig(c)
+        if details != nil {
+            return details
+        }
+	}
 	details := new(cliutils.ArtifactoryDetails)
 	details.Url = c.String("url")
 	details.User = c.String("user")

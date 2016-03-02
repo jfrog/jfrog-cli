@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+func IsArtifactoryConfExists() bool {
+	return readConf().Artifactory != nil
+}
+
+func IsBintrayConfExists() bool {
+	return readConf().Bintray != nil
+}
+
 func ReadArtifactoryConf() *ArtifactoryDetails {
 	details := readConf().Artifactory
 	if details == nil {
