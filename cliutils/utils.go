@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+const CmdArtifactory = "arti"
+const CmdBintray = "bt"
+
 var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
 

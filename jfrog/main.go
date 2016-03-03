@@ -8,9 +8,6 @@ import (
 	"os"
 )
 
-const cmdArtifactory = "arti"
-const cmdBintray = "bt"
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "jfrog"
@@ -22,7 +19,7 @@ func main() {
 	if showFrogCommands(args) {
 		app.Commands = getCommands()
 		app.Run(args)
-	} else if args[1] == cmdArtifactory {
+	} else if args[1] == cliutils.CmdArtifactory {
 		app.Commands = artifactory.GetCommands()
 		app.Run(args[1:])
 	} else if args[1] == "bt" {
@@ -30,7 +27,7 @@ func main() {
 		app.Run(args[1:])
 	} else {
 		cliutils.Exit(cliutils.ExitCodeError, "Unknown command " + args[1] +
-		    ". Expecting " + cmdArtifactory + " or " + cmdBintray + ".")
+		    ". Expecting " + cliutils.CmdArtifactory + " or " + cliutils.CmdBintray + ".")
 	}
 }
 
@@ -38,7 +35,7 @@ func showFrogCommands(args []string) bool {
 	if len(args) == 1 {
 		return true
 	}
-	if args[1] != cmdArtifactory && args[1] != cmdBintray {
+	if args[1] != cliutils.CmdArtifactory && args[1] != cliutils.CmdBintray {
 		return true
 	}
 	return false
@@ -47,11 +44,11 @@ func showFrogCommands(args []string) bool {
 func getCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:  cmdArtifactory,
+			Name:  cliutils.CmdArtifactory,
 			Usage: "Artifactory commands",
 		},
 		{
-			Name:  cmdBintray,
+			Name:  cliutils.CmdBintray,
 			Usage: "Bintray commands",
 		},
 	}

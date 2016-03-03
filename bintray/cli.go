@@ -14,7 +14,7 @@ import (
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    "config",
+			Name:    cliutils.CmdBintray + " config",
 			Usage:   "Configure Bintray details",
 			Aliases: []string{"c"},
 			Flags:   getConfigFlags(),
@@ -23,7 +23,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "upload",
+			Name:    cliutils.CmdBintray + " upload",
 			Usage:   "Upload files",
 			Aliases: []string{"u"},
 			Flags:   getUploadFlags(),
@@ -32,7 +32,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "download-file",
+			Name:    cliutils.CmdBintray + " download-file",
 			Usage:   "Download file",
 			Aliases: []string{"dlf"},
 			Flags:   getDownloadFileFlags(),
@@ -41,7 +41,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "download-ver",
+			Name:    cliutils.CmdBintray + " download-ver",
 			Usage:   "Download Version files",
 			Aliases: []string{"dlv"},
 			Flags:   getDownloadVersionFlags(),
@@ -50,7 +50,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "package-show",
+			Name:    cliutils.CmdBintray + " package-show",
 			Usage:   "Show Package details",
 			Aliases: []string{"ps"},
 			Flags:   getFlags(),
@@ -59,7 +59,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "package-create",
+			Name:    cliutils.CmdBintray + " package-create",
 			Usage:   "Create Package",
 			Aliases: []string{"pc"},
 			Flags:   getCreateAndUpdatePackageFlags(),
@@ -68,7 +68,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "package-update",
+			Name:    cliutils.CmdBintray + " package-update",
 			Usage:   "Update Package",
 			Aliases: []string{"pu"},
 			Flags:   getCreateAndUpdatePackageFlags(),
@@ -77,7 +77,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "package-delete",
+			Name:    cliutils.CmdBintray + " package-delete",
 			Usage:   "Delete Package",
 			Aliases: []string{"pd"},
 			Flags:   getDeletePackageAndVersionFlags(),
@@ -86,7 +86,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-show",
+			Name:    cliutils.CmdBintray + " version-show",
 			Usage:   "Show Version",
 			Aliases: []string{"vs"},
 			Flags:   getFlags(),
@@ -95,7 +95,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-create",
+			Name:    cliutils.CmdBintray + " version-create",
 			Usage:   "Create Version",
 			Aliases: []string{"vc"},
 			Flags:   getCreateAndUpdateVersionFlags(),
@@ -104,7 +104,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-update",
+			Name:    cliutils.CmdBintray + " version-update",
 			Usage:   "Update Version",
 			Aliases: []string{"vu"},
 			Flags:   getCreateAndUpdateVersionFlags(),
@@ -113,7 +113,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-delete",
+			Name:    cliutils.CmdBintray + " version-delete",
 			Usage:   "Delete Version",
 			Aliases: []string{"vd"},
 			Flags:   getDeletePackageAndVersionFlags(),
@@ -122,7 +122,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "version-publish",
+			Name:    cliutils.CmdBintray + " version-publish",
 			Usage:   "Publish Version",
 			Aliases: []string{"vp"},
 			Flags:   getFlags(),
@@ -131,7 +131,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "entitlements",
+			Name:    cliutils.CmdBintray + " entitlements",
 			Usage:   "Manage Entitlements",
 			Aliases: []string{"ent"},
 			Flags:   getEntitlementsFlags(),
@@ -140,7 +140,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "access-keys",
+			Name:    cliutils.CmdBintray + " access-keys",
 			Usage:   "Manage Access Keys",
 			Aliases: []string{"acc-keys"},
 			Flags:   getAccessKeysFlags(),
@@ -149,7 +149,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "url-sign",
+			Name:    cliutils.CmdBintray + " url-sign",
 			Usage:   "Create Signed Download URL",
 			Aliases: []string{"us"},
 			Flags:   getUrlSigningFlags(),
@@ -158,7 +158,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "gpg-sign-file",
+			Name:    cliutils.CmdBintray + " gpg-sign-file",
 			Usage:   "GPF Sign file",
 			Aliases: []string{"gsf"},
 			Flags:   getGpgSigningFlags(),
@@ -167,7 +167,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "gpg-sign-ver",
+			Name:    cliutils.CmdBintray + " gpg-sign-ver",
 			Usage:   "GPF Sign Version",
 			Aliases: []string{"gsv"},
 			Flags:   getGpgSigningFlags(),
@@ -176,7 +176,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "logs",
+			Name:    cliutils.CmdBintray + " logs",
 			Usage:   "Download available log files for a package",
 			Aliases: []string{"l"},
 			Flags:   getFlags(),
@@ -221,87 +221,87 @@ func getConfigFlags() []cli.Flag {
 func getPackageFlags(prefix string) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  prefix + "licenses",
+			Name:  "licenses",
 			Value: "",
 			Usage: "[Mandatory for OSS] Package licenses in the form of Apache-2.0,GPL-3.0...",
 		},
 		cli.StringFlag{
-			Name:  prefix + "vcs-url",
+			Name:  "vcs-url",
 			Value: "",
 			Usage: "[Mandatory for OSS] Package VCS URL.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "pub-dn",
+			Name:  "pub-dn",
 			Value: "",
 			Usage: "[Default: false] Public download numbers.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "pub-stats",
+			Name:  "pub-stats",
 			Value: "",
 			Usage: "[Default: true] Public statistics",
 		},
 		cli.StringFlag{
-			Name:  prefix + "desc",
+			Name:  "desc",
 			Value: "",
 			Usage: "[Optional] Package description.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "labels",
+			Name:  "labels",
 			Value: "",
 			Usage: "[Optional] Package lables in the form of \"lable11\",\"lable2\"...",
 		},
 		cli.StringFlag{
-			Name:  prefix + "cust-licenses",
+			Name:  "cust-licenses",
 			Value: "",
 			Usage: "[Optional] Package custom licenses in the form of \"my-license-1\",\"my-license-2\"...",
 		},
 		cli.StringFlag{
-			Name:  prefix + "website-url",
+			Name:  "website-url",
 			Value: "",
 			Usage: "[Optional] Package web site URL.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "issuetracker-url",
+			Name:  "issuetracker-url",
 			Value: "",
 			Usage: "[Optional] Package Issues Tracker URL.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "github-repo",
+			Name:  "github-repo",
 			Value: "",
 			Usage: "[Optional] Package Github repository.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "github-rel-notes",
+			Name:  "github-rel-notes",
 			Value: "",
 			Usage: "[Optional] Github release notes file.",
 		},
 	}
 }
 
-func getVersionFlags(prefix string) []cli.Flag {
+func getVersionFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  prefix + "github-tag-rel-notes",
+			Name:  "github-tag-rel-notes",
 			Value: "",
 			Usage: "[Default: false] Set to true if you wish to use a Github tag release notes.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "desc",
+			Name:  "desc",
 			Value: "",
 			Usage: "[Optional] Version description.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "released",
+			Name:  "released",
 			Value: "",
 			Usage: "[Optional] Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)",
 		},
 		cli.StringFlag{
-			Name:  prefix + "github-rel-notes",
+			Name:  "github-rel-notes",
 			Value: "",
 			Usage: "[Optional] Github release notes file.",
 		},
 		cli.StringFlag{
-			Name:  prefix + "vcs-tag",
+			Name:  "vcs-tag",
 			Value: "",
 			Usage: "[Optional] VCS tag.",
 		},
@@ -313,7 +313,7 @@ func getCreateAndUpdatePackageFlags() []cli.Flag {
 }
 
 func getCreateAndUpdateVersionFlags() []cli.Flag {
-	return append(getFlags(), getVersionFlags("")...)
+	return append(getFlags(), getVersionFlags()...)
 }
 
 func getDeletePackageAndVersionFlags() []cli.Flag {
@@ -358,7 +358,7 @@ func getDownloadVersionFlags() []cli.Flag {
 }
 
 func getUploadFlags() []cli.Flag {
-	flags := append(getFlags(), []cli.Flag{
+	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
@@ -403,8 +403,6 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture.",
 		},
 	}...)
-	flags = append(flags, getPackageFlags("pkg-")...)
-	return append(flags, getVersionFlags("ver-")...)
 }
 
 func getEntitlementsFlags() []cli.Flag {
@@ -543,7 +541,7 @@ func createPackage(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-create --help'.")
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
-	packageFlags := createPackageFlags(c, "")
+	packageFlags := createPackageFlags(c)
 	commands.CreatePackage(packageDetails, packageFlags)
 }
 
@@ -570,7 +568,7 @@ func updatePackage(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-update --help'.")
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
-	packageFlags := createPackageFlags(c, "")
+	packageFlags := createPackageFlags(c)
 	commands.UpdatePackage(packageDetails, packageFlags)
 }
 
@@ -644,9 +642,7 @@ func upload(c *cli.Context) {
         }
 	}
 	uploadFlags := createUploadFlags(c)
-	packageFlags := createPackageFlags(c, "pkg-")
-	versionFlags := createVersionFlags(c, "ver-")
-	commands.Upload(versionDetails, localPath, uploadPath, uploadFlags, packageFlags, versionFlags)
+	commands.Upload(versionDetails, localPath, uploadPath, uploadFlags)
 }
 
 func downloadFile(c *cli.Context) {
@@ -762,47 +758,47 @@ func entitlements(c *cli.Context) {
 	}
 }
 
-func createPackageFlags(c *cli.Context, prefix string) *utils.PackageFlags {
+func createPackageFlags(c *cli.Context) *utils.PackageFlags {
 	var publicDownloadNumbers string
 	var publicStats string
-	if c.String(prefix+"pub-dn") != "" {
-		publicDownloadNumbers = c.String(prefix + "pub-dn")
+	if c.String("pub-dn") != "" {
+		publicDownloadNumbers = c.String("pub-dn")
 		publicDownloadNumbers = strings.ToLower(publicDownloadNumbers)
 		if publicDownloadNumbers != "true" && publicDownloadNumbers != "false" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --"+prefix+"pub-dn option should have a boolean value.")
+			cliutils.Exit(cliutils.ExitCodeError, "The --pub-dn option should have a boolean value.")
 		}
 	}
-	if c.String(prefix+"pub-stats") != "" {
-		publicStats = c.String(prefix + "pub-stats")
+	if c.String("pub-stats") != "" {
+		publicStats = c.String("pub-stats")
 		publicStats = strings.ToLower(publicStats)
 		if publicStats != "true" && publicStats != "false" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --"+prefix+"pub-stats option should have a boolean value.")
+			cliutils.Exit(cliutils.ExitCodeError, "The --pub-stats option should have a boolean value.")
 		}
 	}
-    licenses := c.String(prefix + "licenses")
+    licenses := c.String("licenses")
     if licenses == "" {
         confDetails := commands.GetConfig()
         licenses = confDetails.DefPackageLicenses
     }
 	return &utils.PackageFlags{
 		BintrayDetails:         createBintrayDetails(c, true),
-		Desc:                   c.String(prefix + "desc"),
-		Labels:                 c.String(prefix + "labels"),
+		Desc:                   c.String("desc"),
+		Labels:                 c.String("labels"),
 		Licenses:               licenses,
-		CustomLicenses:         c.String(prefix + "cust-licenses"),
-		VcsUrl:                 c.String(prefix + "vcs-url"),
-		WebsiteUrl:             c.String(prefix + "website-url"),
-		IssueTrackerUrl:        c.String(prefix + "issuetracker-url"),
-		GithubRepo:             c.String(prefix + "github-repo"),
-		GithubReleaseNotesFile: c.String(prefix + "github-rel-notes"),
+		CustomLicenses:         c.String("cust-licenses"),
+		VcsUrl:                 c.String("vcs-url"),
+		WebsiteUrl:             c.String("website-url"),
+		IssueTrackerUrl:        c.String("issuetracker-url"),
+		GithubRepo:             c.String("github-repo"),
+		GithubReleaseNotesFile: c.String("github-rel-notes"),
 		PublicDownloadNumbers:  publicDownloadNumbers,
 		PublicStats:            publicStats}
 }
 
 func createVersionFlags(c *cli.Context, prefix string) *utils.VersionFlags {
 	var githubTagReleaseNotes string
-	if c.String(prefix+"github-tag-rel-notes") != "" {
-		githubTagReleaseNotes = c.String(prefix + "github-tag-rel-notes")
+	if c.String("github-tag-rel-notes") != "" {
+		githubTagReleaseNotes = c.String("github-tag-rel-notes")
 		githubTagReleaseNotes = strings.ToLower(githubTagReleaseNotes)
 		if githubTagReleaseNotes != "true" && githubTagReleaseNotes != "false" {
 			cliutils.Exit(cliutils.ExitCodeError, "The --github-tag-rel-notes option should have a boolean value.")
@@ -810,10 +806,10 @@ func createVersionFlags(c *cli.Context, prefix string) *utils.VersionFlags {
 	}
 	return &utils.VersionFlags{
 		BintrayDetails:           createBintrayDetails(c, true),
-		Desc:                     c.String(prefix + "desc"),
-		VcsTag:                   c.String(prefix + "vcs-tag"),
-		Released:                 c.String(prefix + "released"),
-		GithubReleaseNotesFile:   c.String(prefix + "github-rel-notes"),
+		Desc:                     c.String("desc"),
+		VcsTag:                   c.String("vcs-tag"),
+		Released:                 c.String("released"),
+		GithubReleaseNotesFile:   c.String("github-rel-notes"),
 		GithubUseTagReleaseNotes: githubTagReleaseNotes}
 }
 

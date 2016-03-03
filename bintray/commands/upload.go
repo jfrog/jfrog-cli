@@ -12,13 +12,13 @@ import (
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
-	uploadFlags *UploadFlags, packageFlags *utils.PackageFlags, versionFlags *utils.VersionFlags) {
+	uploadFlags *UploadFlags) {
 
 	if uploadFlags.BintrayDetails.User == "" {
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
 	}
-	createPackageIfNeeded(versionDetails, uploadFlags, packageFlags)
-	createVersionIfNeeded(versionDetails, uploadFlags, versionFlags)
+	verifyPackageExists(versionDetails, uploadFlags)
+	createVersionIfNeeded(versionDetails, uploadFlags)
 
 	// Get the list of artifacts to be uploaded to:
 	artifacts := getFilesToUpload(localPath, uploadPath, versionDetails.Package, uploadFlags)
@@ -115,32 +115,35 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	return resp.StatusCode == 201 || resp.StatusCode == 200
 }
 
-func createPackageIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags,
-	packageFlags *utils.PackageFlags) {
-
-	fmt.Println("Checking if package " + versionDetails.Package + " exists...")
+func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
+	fmt.Println("Verifying package " + versionDetails.Package + " exists...")
 	resp := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
 	if resp.StatusCode == 404 {
-		fmt.Println("Creating package " + versionDetails.Package + "...")
-		resp, body := DoCreatePackage(versionDetails, packageFlags)
-		if resp.StatusCode != 201 {
-			fmt.Println("Bintray response: " + resp.Status)
-			cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))
-		}
-		fmt.Println("Bintray response: " + resp.Status)
+        promptPackageNotExist(versionDetails)
 	} else if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: "+resp.Status)
 	}
 }
 
-func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags,
-	versionFlags *utils.VersionFlags) {
+func promptPackageNotExist(versionDetails *utils.VersionDetails) {
+    msg := "It looks like '" + versionDetails.Package +
+       "' package does not exist in the '" + versionDetails.Repo + "' repository.\n" +
+       "You can create the package by running the package-create command. For example:\n" +
+       "jfrog bt pc " +
+       versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
+       " --vcs-url=https://github.com/example"
+    if cliutils.ReadBintrayConf().DefPackageLicenses == "" {
+        msg += " --licenses=Apache-2.0-example"
+    }
+    cliutils.Exit(cliutils.ExitCodeError, msg)
+}
 
+func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
 	fmt.Println("Checking if version " + versionDetails.Version + " exists...")
 	resp := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
 	if resp.StatusCode == 404 {
 		fmt.Println("Creating version " + versionDetails.Version + "...")
-		resp, body := DoCreateVersion(versionDetails, versionFlags)
+		resp, body := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
 		if resp.StatusCode != 201 {
 			fmt.Println("Bintray response: " + resp.Status)
 			cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))

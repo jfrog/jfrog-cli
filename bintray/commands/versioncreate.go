@@ -9,7 +9,7 @@ import (
 
 func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
 	fmt.Println("Creating version: " + versionDetails.Version)
-	resp, body := DoCreateVersion(versionDetails, flags)
+	resp, body := doCreateVersion(versionDetails, flags, flags.BintrayDetails)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -17,14 +17,27 @@ func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func DoCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) (*http.Response, []byte) {
-	if flags.BintrayDetails.User == "" {
-		flags.BintrayDetails.User = versionDetails.Subject
-	}
-	data := utils.CreateVersionJson(versionDetails.Version, flags)
+func DoCreateVersion(versionDetails *utils.VersionDetails,
+    bintrayDetails *cliutils.BintrayDetails) (*http.Response, []byte) {
+    return doCreateVersion(versionDetails, nil, bintrayDetails)
+}
 
-	url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+func doCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags,
+    bintrayDetails *cliutils.BintrayDetails) (*http.Response, []byte) {
+	if bintrayDetails.User == "" {
+		bintrayDetails.User = versionDetails.Subject
+	}
+	var data string
+	if flags != nil {
+        data = utils.CreateVersionJson(versionDetails.Version, flags)
+	} else {
+		m := map[string]string{
+    		"name": versionDetails.Version}
+        data = cliutils.MapToJson(m)
+	}
+
+	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions"
 
-	return cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	return cliutils.SendPost(url, nil, []byte(data), bintrayDetails.User, bintrayDetails.Key)
 }

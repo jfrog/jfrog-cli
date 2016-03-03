@@ -307,38 +307,14 @@ The command uses the global options, in addition to the following command option
    --dry-run           [Default: false]  Set to true to disable communication with Bintray.
    --deb               [Optional]        Used for Debian packages in the form of distribution/component/architecture.   
 ```
-If the Bintray Package to which you're uploading does not exist, the CLI will try to create it.
-Please send the following command options for the package creation.
-```console
-   --pkg-desc                    [Optional]        Package description.
-   --pkg-labels                  [Optional]        Package lables in the form of lable11,lable2...
-   --pkg-licenses                [Mandatory]       Package licenses in the form of Apache-2.0,GPL-3.0...
-   --pkg-cust-licenses           [Optional]        Package custom licenses in the form of my-license-1,my-license-2...
-   --pkg-vcs-url                 [Mandatory]       Package VCS URL.
-   --pkg-website-url             [Optional]        Package web site URL.
-   --pkg-issuetracker-url           [Optional]        Package Issues Tracker URL.
-   --pkg-github-repo             [Optional]        Package Github repository.
-   --pkg-github-rel-notes        [Optional]        Github release notes file.
-   --pkg-pub-dn                  [Default: false]  Public download numbers.
-   --pkg-pub-stats               [Default: false]  Public statistics
-```
-If the Package Version to which you're uploading does not exist, the CLI will try to create it.
-Please send the following command options for the version creation.   
-```console
-   --ver-desc                    [Optional]   Version description.
-   --ver-vcs-tag                 [Optional]   VCS tag.
-   --ver-released                [Optional]   Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ).
-   --ver-github-rel-notes        [Optional]   Github release notes file.
-   --ver-github-tag-rel-notes    [Optional]   Set to true if you wish to use a Github tag release notes.
-```
 
 ##### Arguments
 * The first argument is the local file-system path to the artifacts to be uploaded to Bintray.
 The path can include a single file or multiple artifacts, by using the * wildcard.
 **Important:** If the path is provided as a regular expression (with the --regexp=true option) then
 the first regular expression appearing as part of the argument must be enclosed in parenthesis.
-
-* The second argument is the upload path in Bintray.
+* The second argument should have a form of *subject/repository/package/version*
+* The third argument is optional and should indicate upload path in Bintray.
 The path can include symbols in the form of {1}, {2}, ...
 These symbols are replaced with the sections enclosed with parenthesis in the first argument.
 
@@ -353,13 +329,13 @@ frog bt u dir/sub-dir/frog* my-org/swamp-repo/froggy-package/1.0/
 Upload all files located under *dir/sub-dir*, with names that start with *frog* to the /frog-files folder, under version *1.0* 
 of the *froggy-package* package 
 ```console
- jfrog bt u dir/sub-dir/frog* my-org/swamp-repo/froggy-package/1.0/frog-files/ 
+ jfrog bt u dir/sub-dir/frog* my-org/swamp-repo/froggy-package/1.0 frog-files/ 
 ```
 
 Upload all files located under *dir/sub-dir* with names that start with *frog* to the root path under version *1.0*, 
 while adding the *-up* suffix to their names in Bintray.  
 ```console
- jfrog bt u dir/sub-dir/(frog*) my-org/swamp-repo/froggy-package/1.0/{1}-up 
+ jfrog bt u dir/sub-dir/(frog*) my-org/swamp-repo/froggy-package/1.0 {1}-up 
 ```
 
 Upload a Debian package named *my-deb-pkg* to version 1.0 of a Debian repository named *swamp-deb-repo* with the 
@@ -384,11 +360,12 @@ The command uses the global options, in addition to the following command option
 ```
 
 ##### Arguments
-The command expects one argument in the form of *subject/repository/package/version/path*.
+* The first argument is in the form of *subject/repository/package/version*.
+* The second argument should contain the file (with its Bintray path) to be downloaded.
 
 ##### Example
 ```console 
- jfrog bt dlf my-org/swamp-repo/froggy-package/1.0/com/jfrog/bintray/crazy-frog.zip 
+ jfrog bt dlf my-org/swamp-repo/froggy-package/1.0 com/jfrog/bintray/crazy-frog.zip 
 ```
 
 <a name="download-ver"/>
