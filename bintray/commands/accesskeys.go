@@ -8,7 +8,7 @@ import (
 )
 
 func ShowAccessKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
-	path := getAccessKeysPath(bintrayDetails, org)
+	path := GetAccessKeysPath(bintrayDetails, org)
 	resp, body, _, _ := cliutils.SendGet(path, nil, true, bintrayDetails.User, bintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -18,8 +18,7 @@ func ShowAccessKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
 }
 
 func ShowAccessKey(flags *AccessKeyFlags, org string) {
-	url := getAccessKeysPath(flags.BintrayDetails, org)
-	url += "/" + flags.Id
+	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -29,8 +28,8 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) {
 }
 
 func CreateAccessKey(flags *AccessKeyFlags, org string) {
-	data := buildAccessKeyJson(flags, true)
-	url := getAccessKeysPath(flags.BintrayDetails, org)
+	data := BuildAccessKeyJson(flags, true)
+	url := GetAccessKeysPath(flags.BintrayDetails, org)
 	resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -40,9 +39,8 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) {
 }
 
 func UpdateAccessKey(flags *AccessKeyFlags, org string) {
-	data := buildAccessKeyJson(flags, false)
-	url := getAccessKeysPath(flags.BintrayDetails, org)
-	url += "/" + flags.Id
+	data := BuildAccessKeyJson(flags, false)
+	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -51,7 +49,7 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) {
 	fmt.Println(cliutils.IndentJson(body))
 }
 
-func buildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
+func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 	var existenceCheck string
 	var whiteCidrs string
 	var blackCidrs string
@@ -91,8 +89,7 @@ func buildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 }
 
 func DeleteAccessKey(flags *AccessKeyFlags, org string) {
-	url := getAccessKeysPath(flags.BintrayDetails, org)
-	url += "/" + flags.Id
+	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -100,7 +97,11 @@ func DeleteAccessKey(flags *AccessKeyFlags, org string) {
 	fmt.Println("Bintray response: " + resp.Status)
 }
 
-func getAccessKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
+func GetAccessKeyPath(bintrayDetails *cliutils.BintrayDetails, id, org string) string {
+	return GetAccessKeysPath(bintrayDetails, org) + "/" + id
+}
+
+func GetAccessKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
 	if org == "" {
 		return bintrayDetails.ApiUrl + "users/" + bintrayDetails.User + "/download_keys"
 	}

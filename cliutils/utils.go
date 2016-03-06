@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+    "runtime"
 )
 
 const CmdArtifactory = "arti"
@@ -199,6 +200,13 @@ func localPathToRegExp(localpath string) string {
 	}
 	localpath = "^" + localpath + "$"
 	return localpath
+}
+
+func GetTestsFileSeperator() string {
+	if runtime.GOOS == "windows" {
+		return "\\\\"
+	}
+	return "/"
 }
 
 type Artifact struct {

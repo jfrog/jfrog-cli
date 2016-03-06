@@ -988,7 +988,7 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
 	}
 	apiUrl := os.Getenv("BINTRAY_API_URL")
 	if apiUrl == "" {
-		apiUrl = "https://api.bintray.com/"
+		apiUrl = "https://bintray.com/api/v1/"
 	}
 	downloadServerUrl := os.Getenv("BINTRAY_DOWNLOAD_URL")
 	if downloadServerUrl == "" {
@@ -1021,7 +1021,7 @@ func getSplitCountFlag(c *cli.Context) int {
 	}
 	splitCount, err := strconv.Atoi(c.String("split-count"))
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. Try 'art download --help'.")
 	}
 	if splitCount > 15 {
 		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")

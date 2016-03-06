@@ -15,8 +15,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.Download
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = versionDetails.Subject
 	}
-	path := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
+	path := BuildDownloadVersionUrl(versionDetails, flags.BintrayDetails)
 	resp, body, _, _ := cliutils.SendGet(path, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
@@ -26,6 +25,11 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.Download
 	cliutils.CheckError(err)
 
 	downloadFiles(results, versionDetails, flags)
+}
+
+func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) string {
+    return bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,

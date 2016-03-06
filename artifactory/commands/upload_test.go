@@ -1,6 +1,7 @@
 package commands
 
 import (
+    "github.com/jfrogdev/jfrog-cli-go/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"strconv"
@@ -36,7 +37,7 @@ func TestPatternNonRecursiveUpload(t *testing.T) {
 }
 
 func testPatternUpload(t *testing.T, flags *utils.Flags) {
-	sep := tests.GetFileSeperator()
+	sep := cliutils.GetTestsFileSeperator()
 	uploaded1, _ := Upload("testdata"+sep+"*", "repo-local", flags)
 	uploaded2, _ := Upload("testdata"+sep+"a*", "repo-local", flags)
 	uploaded3, _ := Upload("testdata"+sep+"b*", "repo-local", flags)

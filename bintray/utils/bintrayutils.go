@@ -7,14 +7,21 @@ import (
 	"strings"
 )
 
+func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails,
+    path string) string {
+
+	downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
+	return bintrayDetails.DownloadServerUrl + downloadPath
+}
+
 func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails, path string,
 	flags *DownloadFlags, logMsgPrefix string) {
 
 	if logMsgPrefix != "" {
 		logMsgPrefix += " "
 	}
-	downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
-	url := bintrayDetails.DownloadServerUrl + downloadPath
+
+	url := BuildDownloadBintrayFileUrl(bintrayDetails, versionDetails, path)
 	fmt.Println(logMsgPrefix + "Downloading " + url)
 
 	fileName, dir := cliutils.GetFileAndDirFromPath(path)

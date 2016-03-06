@@ -12,21 +12,23 @@ import (
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
-	uploadFlags *UploadFlags) {
+	uploadFlags *UploadFlags) (totalUploaded, totalFailed int) {
 
 	if uploadFlags.BintrayDetails.User == "" {
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
 	}
-	verifyPackageExists(versionDetails, uploadFlags)
-	createVersionIfNeeded(versionDetails, uploadFlags)
-
+	if !uploadFlags.DryRun {
+        verifyPackageExists(versionDetails, uploadFlags)
+        createVersionIfNeeded(versionDetails, uploadFlags)
+	}
 	// Get the list of artifacts to be uploaded to:
 	artifacts := getFilesToUpload(localPath, uploadPath, versionDetails.Package, uploadFlags)
 
 	baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
 
-	uploadFiles(artifacts, baseUrl, uploadFlags)
+	totalUploaded, totalFailed = uploadFiles(artifacts, baseUrl, uploadFlags)
+	return
 }
 
 func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFlags) (totalUploaded,
@@ -126,8 +128,8 @@ func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *Uplo
 }
 
 func promptPackageNotExist(versionDetails *utils.VersionDetails) {
-    msg := "It looks like '" + versionDetails.Package +
-       "' package does not exist in the '" + versionDetails.Repo + "' repository.\n" +
+    msg := "It looks like package '" + versionDetails.Package +
+       "' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
        "You can create the package by running the package-create command. For example:\n" +
        "jfrog bt pc " +
        versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
