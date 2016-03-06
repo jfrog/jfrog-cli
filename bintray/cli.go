@@ -438,7 +438,7 @@ func getAccessKeysFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "expiry",
-			Usage: "[Optional] Access Key expiry (required for 'jfrog bt ent-keys show/create/update/delete'",
+			Usage: "[Optional] Access Key expiry (required for 'jfrog bt acc-keys show/create/update/delete'",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-url",
@@ -446,7 +446,7 @@ func getAccessKeysFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "ex-check-cache",
-			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide the period in seconds for the callback URK results cache.",
+			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide the period in seconds for the callback URL results cache.",
 		},
 		cli.StringFlag{
 			Name:  "white-cidrs",
@@ -454,7 +454,7 @@ func getAccessKeysFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "black-cidrs",
-			Usage: "[Optional] Used for Access Key creation and update. Specifying black CIDRs in the foem of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
+			Usage: "[Optional] Used for Access Key creation and update. Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
 		},
 	}...)
 }

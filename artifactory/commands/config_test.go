@@ -10,7 +10,7 @@ import (
 
 func TestConfig(t *testing.T) {
 	inputDetails := cliutils.ArtifactoryDetails{"http://localhost:8080/artifactory", "admin", "password", "", nil}
-	Config(&inputDetails, false, false)
+	Config(&inputDetails, nil, false, false)
 	outputConfig := GetConfig()
 	printConfigStruct(&inputDetails)
 	printConfigStruct(outputConfig)
