@@ -197,7 +197,7 @@ func initFlags(c *cli.Context, cmd string) {
 	} else {
 		flags.MinSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. Try 'art download --help'.")
+			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
 	}
 	if c.String("split-count") == "" {
@@ -205,7 +205,7 @@ func initFlags(c *cli.Context, cmd string) {
 	} else {
 		flags.SplitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. Try 'art download --help'.")
+			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
 		if flags.SplitCount > 15 {
 			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
@@ -218,7 +218,7 @@ func initFlags(c *cli.Context, cmd string) {
 
 func config(c *cli.Context) {
 	if len(c.Args()) > 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'art config --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	} else if len(c.Args()) == 1 {
 		if c.Args()[0] == "show" {
 			commands.ShowConfig()
@@ -236,7 +236,7 @@ func config(c *cli.Context) {
 func download(c *cli.Context) {
 	initFlags(c, "download")
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'art download --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	pattern := c.Args()[0]
 	commands.Download(pattern, flags)
@@ -246,7 +246,7 @@ func upload(c *cli.Context) {
 	initFlags(c, "upload")
 	size := len(c.Args())
 	if size != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'art upload --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	localPath := c.Args()[0]
 	targetPath := c.Args()[1]

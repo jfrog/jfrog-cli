@@ -497,7 +497,7 @@ func getGpgSigningFlags() []cli.Flag {
 
 func config(c *cli.Context) {
 	if len(c.Args()) > 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt config --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	} else if len(c.Args()) == 1 {
 		if c.Args()[0] == "show" {
 			commands.ShowConfig()
@@ -520,7 +520,7 @@ func config(c *cli.Context) {
 
 func showPackage(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-show --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
@@ -529,7 +529,7 @@ func showPackage(c *cli.Context) {
 
 func showVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-show --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
@@ -538,7 +538,7 @@ func showVersion(c *cli.Context) {
 
 func createPackage(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-create --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
 	packageFlags := createPackageFlags(c)
@@ -547,7 +547,7 @@ func createPackage(c *cli.Context) {
 
 func createVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-create --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	versionFlags := createVersionFlags(c, "")
@@ -556,7 +556,7 @@ func createVersion(c *cli.Context) {
 
 func updateVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-update --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	versionFlags := createVersionFlags(c, "")
@@ -565,7 +565,7 @@ func updateVersion(c *cli.Context) {
 
 func updatePackage(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-update --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
 	packageFlags := createPackageFlags(c)
@@ -574,7 +574,7 @@ func updatePackage(c *cli.Context) {
 
 func deletePackage(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt package-delete --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	packageDetails := utils.CreatePackageDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
@@ -592,7 +592,7 @@ func deletePackage(c *cli.Context) {
 
 func deleteVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-delete --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
@@ -611,7 +611,7 @@ func deleteVersion(c *cli.Context) {
 
 func publishVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt version-publish --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	bintrayDetails := createBintrayDetails(c, true)
@@ -620,7 +620,7 @@ func publishVersion(c *cli.Context) {
 
 func downloadVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-ver --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
 	flags := createDownloadFlags(c)
@@ -630,7 +630,7 @@ func downloadVersion(c *cli.Context) {
 func upload(c *cli.Context) {
 	len := len(c.Args())
 	if len < 2 || len > 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt upload --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	localPath := c.Args()[0]
 	versionDetails := utils.CreateVersionDetails(c.Args()[1])
@@ -648,7 +648,7 @@ func upload(c *cli.Context) {
 func downloadFile(c *cli.Context) {
     len := len(c.Args())
 	if len < 1 || len > 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt download-file --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreatePackageDetails(c.Args()[0])
 	var path string
@@ -664,7 +664,7 @@ func downloadFile(c *cli.Context) {
 
 func signUrl(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	urlSigningDetails := utils.CreatePathDetails(c.Args()[0])
 	urlSigningFlags := createUrlSigningFlags(c)
@@ -673,7 +673,7 @@ func signUrl(c *cli.Context) {
 
 func gpgSignFile(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	pathDetails := utils.CreatePathDetails(c.Args()[0])
 	commands.GpgSignFile(pathDetails, c.String("passphrase"), createBintrayDetails(c, true))
@@ -690,16 +690,16 @@ func logs(c *cli.Context) {
             packageDetails := utils.CreatePackageDetails(c.Args()[1])
             commands.DownloadLog(packageDetails, c.Args()[2], bintrayDetails)
         } else {
-	        cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args()[0] + ". Try 'bt logs --help'.")
+	        cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args()[0] + ". " + cliutils.GetDocumentationMessage())
         }
 	} else {
-	    cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt logs --help'.")
+	    cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 }
 
 func gpgSignVersion(c *cli.Context) {
 	if len(c.Args()) != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt url-sign --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails := utils.CreateVersionDetails(c.Args()[0])
 	commands.GpgSignVersion(versionDetails, c.String("passphrase"), createBintrayDetails(c, true))
@@ -714,7 +714,7 @@ func accessKeys(c *cli.Context) {
 		return
 	}
 	if argsSize != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt ent-keys --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	keyId := c.Args()[1]
 	if c.Args()[0] == "show" {
@@ -733,7 +733,7 @@ func accessKeys(c *cli.Context) {
 func entitlements(c *cli.Context) {
 	argsSize := len(c.Args())
 	if argsSize == 0 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt ent --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	if argsSize == 1 {
 		bintrayDetails := createBintrayDetails(c, true)
@@ -742,7 +742,7 @@ func entitlements(c *cli.Context) {
 		return
 	}
 	if argsSize != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. Try 'bt ent --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	details := commands.CreateVersionDetailsForEntitlements(c.Args()[1])
 	if c.Args()[0] == "show" {
@@ -1010,7 +1010,7 @@ func getMinSplitFlag(c *cli.Context) int64 {
 	}
 	minSplit, err := strconv.ParseInt(c.String("min-split"), 10, 64)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. Try 'art download --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 	}
 	return minSplit
 }
@@ -1021,7 +1021,7 @@ func getSplitCountFlag(c *cli.Context) int {
 	}
 	splitCount, err := strconv.Atoi(c.String("split-count"))
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. Try 'art download --help'.")
+		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 	}
 	if splitCount > 15 {
 		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")

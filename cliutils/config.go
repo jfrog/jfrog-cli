@@ -49,6 +49,11 @@ func saveConfig(config *Config) {
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
 	CheckError(err)
+	path := getConFilePath()
+	if IsFileExists(path) {
+        err := os.Remove(path)
+	    CheckError(err)
+	}
 	ioutil.WriteFile(getConFilePath(), []byte(content.String()), 0x777)
 }
 

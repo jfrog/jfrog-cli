@@ -179,6 +179,10 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
     return c.Bool(flagName)
 }
 
+func GetDocumentationMessage() string {
+    return "You can read the documentation at https://github.com/JFrogDev/jfrog-cli-go/blob/master/README.md"
+}
+
 func localPathToRegExp(localpath string) string {
 	var wildcard = ".*"
 
