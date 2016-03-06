@@ -14,7 +14,7 @@ import (
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    cliutils.CmdBintray + " config",
+			Name:    "config",
 			Usage:   "Configure Bintray details",
 			Aliases: []string{"c"},
 			Flags:   getConfigFlags(),
@@ -23,7 +23,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " upload",
+			Name:    "upload",
 			Usage:   "Upload files",
 			Aliases: []string{"u"},
 			Flags:   getUploadFlags(),
@@ -32,7 +32,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " download-file",
+			Name:    "download-file",
 			Usage:   "Download file",
 			Aliases: []string{"dlf"},
 			Flags:   getDownloadFileFlags(),
@@ -41,7 +41,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " download-ver",
+			Name:    "download-ver",
 			Usage:   "Download Version files",
 			Aliases: []string{"dlv"},
 			Flags:   getDownloadVersionFlags(),
@@ -50,7 +50,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " package-show",
+			Name:    "package-show",
 			Usage:   "Show Package details",
 			Aliases: []string{"ps"},
 			Flags:   getFlags(),
@@ -59,7 +59,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " package-create",
+			Name:    "package-create",
 			Usage:   "Create Package",
 			Aliases: []string{"pc"},
 			Flags:   getCreateAndUpdatePackageFlags(),
@@ -68,7 +68,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " package-update",
+			Name:    "package-update",
 			Usage:   "Update Package",
 			Aliases: []string{"pu"},
 			Flags:   getCreateAndUpdatePackageFlags(),
@@ -77,7 +77,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " package-delete",
+			Name:    "package-delete",
 			Usage:   "Delete Package",
 			Aliases: []string{"pd"},
 			Flags:   getDeletePackageAndVersionFlags(),
@@ -86,7 +86,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " version-show",
+			Name:    "version-show",
 			Usage:   "Show Version",
 			Aliases: []string{"vs"},
 			Flags:   getFlags(),
@@ -95,7 +95,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " version-create",
+			Name:    "version-create",
 			Usage:   "Create Version",
 			Aliases: []string{"vc"},
 			Flags:   getCreateAndUpdateVersionFlags(),
@@ -104,7 +104,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " version-update",
+			Name:    "version-update",
 			Usage:   "Update Version",
 			Aliases: []string{"vu"},
 			Flags:   getCreateAndUpdateVersionFlags(),
@@ -113,7 +113,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " version-delete",
+			Name:    "version-delete",
 			Usage:   "Delete Version",
 			Aliases: []string{"vd"},
 			Flags:   getDeletePackageAndVersionFlags(),
@@ -122,7 +122,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " version-publish",
+			Name:    "version-publish",
 			Usage:   "Publish Version",
 			Aliases: []string{"vp"},
 			Flags:   getFlags(),
@@ -131,7 +131,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " entitlements",
+			Name:    "entitlements",
 			Usage:   "Manage Entitlements",
 			Aliases: []string{"ent"},
 			Flags:   getEntitlementsFlags(),
@@ -140,7 +140,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " access-keys",
+			Name:    "access-keys",
 			Usage:   "Manage Access Keys",
 			Aliases: []string{"acc-keys"},
 			Flags:   getAccessKeysFlags(),
@@ -149,7 +149,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " url-sign",
+			Name:    "url-sign",
 			Usage:   "Create Signed Download URL",
 			Aliases: []string{"us"},
 			Flags:   getUrlSigningFlags(),
@@ -158,7 +158,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " gpg-sign-file",
+			Name:    "gpg-sign-file",
 			Usage:   "GPF Sign file",
 			Aliases: []string{"gsf"},
 			Flags:   getGpgSigningFlags(),
@@ -167,7 +167,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " gpg-sign-ver",
+			Name:    "gpg-sign-ver",
 			Usage:   "GPF Sign Version",
 			Aliases: []string{"gsv"},
 			Flags:   getGpgSigningFlags(),
@@ -176,7 +176,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdBintray + " logs",
+			Name:    "logs",
 			Usage:   "Download available log files for a package",
 			Aliases: []string{"l"},
 			Flags:   getFlags(),

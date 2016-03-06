@@ -15,7 +15,7 @@ var flags = new(utils.Flags)
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    cliutils.CmdArtifactory + " config",
+			Name:    "config",
 			Flags:   getConfigFlags(),
 			Aliases: []string{"c"},
 			Usage:   "Configure Artifactory details",
@@ -24,7 +24,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdArtifactory + " upload",
+			Name:    "upload",
 			Flags:   getUploadFlags(),
 			Aliases: []string{"u"},
 			Usage:   "Upload files",
@@ -33,7 +33,7 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    cliutils.CmdArtifactory + " download",
+			Name:    "download",
 			Flags:   getDownloadFlags(),
 			Aliases: []string{"dl"},
 			Usage:   "Download files",

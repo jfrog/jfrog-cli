@@ -270,7 +270,11 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 }
 
 func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string) {
-	tempLoclPath := GetTempDirPath() + "/" + flags.LocalPath
+	tempLoclPath := GetTempDirPath()
+    if !flags.Flat {
+        tempLoclPath += "/" + flags.LocalPath
+    }
+
 	headers := make(map[string]string)
 	headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
 
@@ -281,7 +285,6 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	fmt.Println(logMsgPrefix+" ["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLoclPath, 0777)
 	filePath := tempLoclPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
-
 	createFileWithContent(filePath, respBody)
 }
 

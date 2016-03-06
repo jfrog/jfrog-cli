@@ -61,7 +61,11 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags) {
 
 func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, flags *utils.Flags) {
 	details := cliutils.GetRemoteFileDetails(downloadPath, flags.ArtDetails.User, flags.ArtDetails.Password)
-	localFilePath := localPath + "/" + localFileName
+	localFilePath := localFileName
+	if !flags.Flat {
+        localFilePath = localPath + "/" + localFileName
+	}
+
 	if shouldDownloadFile(localFilePath, details) {
 		if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size || !details.AcceptRanges {
 			resp := cliutils.DownloadFile(downloadPath, localPath, localFileName, flags.Flat,
