@@ -17,7 +17,7 @@ Navigate to the directory where you want to create the jfrog-cli-go **<TBD Link>
 
 To download the jfrog-cli-go project, execute the following command:
 ````
-$ go get github.com/JFrogDev/jfrog-cli-go/...
+$ go get github.com/jfrogdev/jfrog-cli-go/...
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
