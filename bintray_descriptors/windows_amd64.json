@@ -12,6 +12,6 @@
         "gpgSign": false
     },
     "files":
-        [{"includePattern": "../../../../bin/windows_amd64/jfrog.exe", "uploadPattern": "1.0.0/windows_amd64/art.exe"}],
+        [{"includePattern": "../../../../bin/windows_amd64/jfrog.exe", "uploadPattern": "1.0.0/windows_amd64/jfrog.exe"}],
     "publish": false
 }

@@ -12,6 +12,6 @@
         "gpgSign": false
     },
     "files":
-        [{"includePattern": "../../../../bin/darwin_amd64/jfrog", "uploadPattern": "1.0.0/jfrog-cli-mac-386/art"}],
+        [{"includePattern": "../../../../bin/darwin_amd64/jfrog", "uploadPattern": "1.0.0/jfrog-cli-mac-386/jfrog"}],
     "publish": false
 }

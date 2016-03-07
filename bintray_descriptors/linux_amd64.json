@@ -12,6 +12,6 @@
         "gpgSign": false
     },
     "files":
-    [{"includePattern": "../../../../bin/jfrog", "uploadPattern": "1.0.0/jfrog-cli-linux-amd64/art"}],
+    [{"includePattern": "../../../../bin/jfrog", "uploadPattern": "1.0.0/jfrog-cli-linux-amd64/jfrog"}],
     "publish": false
 }
