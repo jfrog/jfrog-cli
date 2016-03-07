@@ -9,7 +9,7 @@
     "version": {
         "name": "1.0.0",
         "vcs_tag": "1.0.0",
-        "gpgSign": true
+        "gpgSign": false
     },
     "files":
         [{"includePattern": "../../../../bin/windows_amd64/jfrog.exe", "uploadPattern": "1.0.0/windows_amd64/art.exe"}],
