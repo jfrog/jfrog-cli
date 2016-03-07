@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/jfrogdev/jfrog-cli-go/artifactory"
-	"github.com/jfrogdev/jfrog-cli-go/bintray"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/artifactory"
+	"github.com/JFrogDev/jfrog-cli-go/bintray"
+	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 	"os"
 )
 
