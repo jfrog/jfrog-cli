@@ -1,0 +1,17 @@
+{
+    "package": {
+        "name": "jfrog-cli-linux-386",
+        "repo": "jfrog-cli-go",
+        "licenses": ["Apache-2.0"],
+        "vcs_url": "https://github.com/jfrogdev/jfrog-cli-go.git",
+        "subject": "jfrog"
+    },
+    "version": {
+        "name": "1.0.0",
+        "vcs_tag": "1.0.0",
+        "gpgSign": true
+    },
+    "files":
+    [{"includePattern": "../../../../bin/jfrog", "uploadPattern": "1.0.0/jfrog-cli-linux-386/art"}],
+    "publish": false
+}
