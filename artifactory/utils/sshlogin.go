@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"

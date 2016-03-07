@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/bintray/utils"
+	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 )
 
 func DownloadFile(versionDetails *utils.VersionDetails, path string, flags *utils.DownloadFlags) {

@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 	"strings"
 )
 

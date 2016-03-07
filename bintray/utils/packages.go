@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/cliutils"
 	"net/http"
 )
 

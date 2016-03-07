@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
+	"github.com/JFrogDev/jfrog-cli-go/artifactory/tests"
 	"testing"
 )
 

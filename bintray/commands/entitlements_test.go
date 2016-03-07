@@ -1,7 +1,7 @@
 package commands
 
 import (
-    "github.com/jfrogdev/jfrog-cli-go/bintray/tests"
+    "github.com/JFrogDev/jfrog-cli-go/bintray/tests"
 	"testing"
 )
 
