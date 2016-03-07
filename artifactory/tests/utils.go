@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
-	"github.com/JFrogDev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
 func GetFlags() *utils.Flags {

@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"github.com/JFrogDev/jfrog-cli-go/cliutils"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )
 

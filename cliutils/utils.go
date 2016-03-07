@@ -2,7 +2,7 @@ package cliutils
 
 import (
 	"bytes"
-	"github.com/codegangsta/cli"
+	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"encoding/json"
 	"fmt"
 	"os"

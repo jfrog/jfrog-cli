@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"github.com/JFrogDev/jfrog-cli-go/bintray/utils"
-	"github.com/JFrogDev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
+	"github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
 func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {

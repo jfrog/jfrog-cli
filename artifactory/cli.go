@@ -2,10 +2,10 @@ package artifactory
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
-	"github.com/JFrogDev/jfrog-cli-go/artifactory/commands"
-	"github.com/JFrogDev/jfrog-cli-go/artifactory/utils"
-	"github.com/JFrogDev/jfrog-cli-go/cliutils"
+	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/cliutils"
 	"strconv"
 	"strings"
 )
