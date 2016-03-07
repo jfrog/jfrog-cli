@@ -1,7 +1,7 @@
 
 # Download and Installation
 
-You will soon be able to download the executable directly from Bintray, or you can download the source files and build it yourself.
+You can download the [executable](https://bintray.com/jfrog/jfrog-cli-go) directly from Bintray, or you can download the source files and build it yourself.
 
 ## Building the Executable
 
@@ -22,5 +22,6 @@ $ go get github.com/JFrogDev/jfrog-cli-go/...
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
 # Using JFrog CLI with Artifactory and Bintray
-JFrog CLI can be used for quick and easy file management with both Artifactory and Bintray, and has a dedicated set of commands for each product.
-The full documentation will soon be available here.
+JFrog CLI can be used for quick and easy file management with both Artifactory and Bintray, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please refer to the relevant documentation through the corresponding link below: 
+* [Using JFrog CLI with Artifactory](https://www.jfrog.com/confluence/display/RTF/JFrog+CLI)
+* [Using JFrog CLI with Bintray](https://bintray.com/docs/usermanual/cli/cli_jfrogcli.html)
