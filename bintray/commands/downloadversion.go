@@ -42,7 +42,12 @@ func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDe
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, false)
 			for j := threadId; j < size; j += flags.Threads {
-				utils.DownloadBintrayFile(flags.BintrayDetails, versionDetails, results[j].Path,
+                pathDetails := &utils.PathDetails{
+                    Subject: versionDetails.Subject,
+                    Repo:    versionDetails.Repo,
+                    Path:    results[j].Path}
+
+				utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails,
 					flags, logMsgPrefix)
 			}
 			wg.Done()

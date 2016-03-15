@@ -650,7 +650,7 @@ func downloadFile(c *cli.Context) {
 	if len < 1 || len > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails := utils.CreatePackageDetails(c.Args()[0])
+	pathDetails := utils.CreatePathDetails(c.Args()[0])
 	var path string
 	if len > 1 {
         path = c.Args()[1]
@@ -659,7 +659,7 @@ func downloadFile(c *cli.Context) {
         }
 	}
 	flags := createDownloadFlags(c)
-	commands.DownloadFile(versionDetails, path, flags)
+	commands.DownloadFile(pathDetails, path, flags)
 }
 
 func signUrl(c *cli.Context) {

@@ -5,12 +5,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/cliutils"
 )
 
-func DownloadFile(versionDetails *utils.VersionDetails, path string, flags *utils.DownloadFlags) {
+func DownloadFile(pathDetails *utils.PathDetails, path string, flags *utils.DownloadFlags) {
 	cliutils.CreateTempDirPath()
 	defer cliutils.RemoveTempDir()
 
 	if flags.BintrayDetails.User == "" {
-		flags.BintrayDetails.User = versionDetails.Subject
+		flags.BintrayDetails.User = pathDetails.Subject
 	}
-	utils.DownloadBintrayFile(flags.BintrayDetails, versionDetails, path, flags, "")
+	utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails, flags, "")
 }

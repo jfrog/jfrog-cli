@@ -22,7 +22,7 @@ func main() {
 	} else if args[1] == cliutils.CmdArtifactory {
 		app.Commands = artifactory.GetCommands()
 		app.Run(args[1:])
-	} else if args[1] == "bt" {
+	} else if args[1] == cliutils.CmdBintray {
 		app.Commands = bintray.GetCommands()
 		app.Run(args[1:])
 	} else {

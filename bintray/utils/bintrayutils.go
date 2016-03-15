@@ -7,25 +7,30 @@ import (
 	"strings"
 )
 
-func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails,
-    path string) string {
+func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails,
+    pathDetails *PathDetails) string {
 
-	downloadPath := versionDetails.Subject + "/" + versionDetails.Repo + "/" + path
+	downloadPath := pathDetails.Subject + "/" + pathDetails.Repo + "/" +
+	    pathDetails.Path
 	return bintrayDetails.DownloadServerUrl + downloadPath
 }
 
-func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, versionDetails *VersionDetails, path string,
+func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *PathDetails,
 	flags *DownloadFlags, logMsgPrefix string) {
 
 	if logMsgPrefix != "" {
 		logMsgPrefix += " "
 	}
 
-	url := BuildDownloadBintrayFileUrl(bintrayDetails, versionDetails, path)
+	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
 	fmt.Println(logMsgPrefix + "Downloading " + url)
 
-	fileName, dir := cliutils.GetFileAndDirFromPath(path)
+	fileName, dir := cliutils.GetFileAndDirFromPath(pathDetails.Path)
 	details := cliutils.GetRemoteFileDetails(url, bintrayDetails.User, bintrayDetails.Key)
+	path := pathDetails.Path
+	if flags.Flat {
+	    path, _ = cliutils.GetFileAndDirFromPath(path)
+	}
 	if !shouldDownloadFile(path, details) {
 	    fmt.Println(logMsgPrefix + " File already exists locally.")
 		return

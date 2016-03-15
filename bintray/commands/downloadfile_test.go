@@ -8,15 +8,18 @@ import (
 
 func TestDownloadFile(t *testing.T) {
     bintrayDetails := tests.CreateBintrayDetails()
-    versionDetails := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
-    expected := "https://dl.bintray.com/test-subject/test-repo/a/b/c/file.zip"
-    url := utils.BuildDownloadBintrayFileUrl(bintrayDetails, versionDetails, "a/b/c/file.zip")
+    pathStr := "test-subject/test-repo/a/b/c/file.zip"
+    pathDetails := utils.CreatePathDetails(pathStr)
+    expected := "https://dl.bintray.com/" + pathStr
+    url := utils.BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
     if expected != url {
         t.Error("Got unexpected url from BuildDownloadBintrayFileUrl. Expected: " + expected + " Got " + url)
     }
 
+    pathStr = "test-subject/test-repo/file.zip"
+    pathDetails = utils.CreatePathDetails(pathStr)
     expected = "https://dl.bintray.com/test-subject/test-repo/file.zip"
-    url = utils.BuildDownloadBintrayFileUrl(bintrayDetails, versionDetails, "file.zip")
+    url = utils.BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
     if expected != url {
         t.Error("Got unexpected url from BuildDownloadBintrayFileUrl. Expected: " + expected + " Got " + url)
     }
