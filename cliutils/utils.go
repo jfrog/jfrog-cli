@@ -11,7 +11,7 @@ import (
     "runtime"
 )
 
-const CmdArtifactory = "arti"
+const CmdArtifactory = "rt"
 const CmdBintray = "bt"
 
 var ExitCodeError ExitCode = ExitCode{1}
@@ -109,7 +109,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.0.0"
+	return "1.0.1"
 }
 
 // Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
