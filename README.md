@@ -8,7 +8,7 @@ JFrog CLI is a compact and smart client that provides a simple interface that au
 
 # Download and Installation
 
-You can download the [executable](https://bintray.com/jfrog/jfrog-cli-go) directly from Bintray, or you can download the source files and build it yourself.
+You can get the executable directly from the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or you can download the source files from this GitHub project and build it yourself.
 
 ## Building the Executable
 
