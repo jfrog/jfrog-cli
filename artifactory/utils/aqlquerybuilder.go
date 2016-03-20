@@ -76,7 +76,7 @@ func buildPropsQuery(props string) string {
 	return query
 }
 
-func buildInnerQuery(repo string, path string, name string) string {
+func buildInnerQuery(repo, path, name string) string {
 	query :=
 		"\"$and\": [{" +
 			"\"path\": {" +
@@ -100,13 +100,16 @@ func buildInnerQuery(repo string, path string, name string) string {
 // The end result is a list of PathFilePair structs.
 // Each struct represent a possible path and file name pair to be included in AQL query with an "or" relationship.
 func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
+	var defaultPath string
+	if recursive {
+        defaultPath = "*"
+	} else {
+	    defaultPath = "."
+	}
+
 	pairs := []PathFilePair{}
 	if pattern == "*" {
-		if recursive {
-			pairs = append(pairs, PathFilePair{"*", "*"})
-		} else {
-			pairs = append(pairs, PathFilePair{".", "*"})
-		}
+        pairs = append(pairs, PathFilePair{defaultPath, "*"})
 		return pairs
 	}
 
@@ -114,7 +117,7 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 	var path string
 	var name string
 	if index < 0 {
-		pairs = append(pairs, PathFilePair{".", pattern})
+		pairs = append(pairs, PathFilePair{defaultPath, pattern})
 		path = ""
 		name = pattern
 	} else {
@@ -140,11 +143,8 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 			continue
 		}
 		options := []string{}
-		if i > 0 {
-			options = append(options, "/"+sections[i])
-		}
 		if i+1 < size {
-			options = append(options, sections[i]+"/")
+			options = append(options, sections[i]+"*/")
 		}
 		for _, option := range options {
 			str := ""
@@ -163,6 +163,9 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 			fileName := split[1]
 			if fileName == "" {
 				fileName = "*"
+			}
+			if path != "" {
+			    path += "/"
 			}
 			pairs = append(pairs, PathFilePair{path + filePath, fileName})
 		}
