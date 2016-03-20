@@ -104,7 +104,7 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
 }
 
 func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *cliutils.BintrayDetails) bool {
-	fmt.Println(logMsgPrefix + " Uploading artifact to: " + url)
+	fmt.Println(logMsgPrefix + "Uploading artifact to: " + url)
 
 	f, err := os.Open(artifact.LocalPath)
 	cliutils.CheckError(err)
@@ -113,7 +113,7 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	resp := cliutils.UploadFile(f, url,
 		bintrayDetails.User, bintrayDetails.Key, nil)
 
-	fmt.Println(logMsgPrefix + " Bintray response: " + resp.Status)
+	fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
 	return resp.StatusCode == 201 || resp.StatusCode == 200
 }
 

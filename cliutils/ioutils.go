@@ -96,43 +96,49 @@ func ListFiles(path string) []string {
 	return fileList
 }
 
-func SendGet(url string, headers map[string]string, allowRedirect bool, user,
-	password string) (*http.Response, []byte, string, error) {
-	return Send("GET", url, nil, headers, allowRedirect, user, password)
+func sendGetForFileDownload(url string, headers map[string]string, allowRedirect bool, user,
+	password string) (*http.Response, string, error) {
+	resp, _, redirectUrl, err := Send("GET", url, nil, headers, allowRedirect, user, password, false)
+	return resp, redirectUrl, err
 }
 
-func SendPost(url string, headers map[string]string, content []byte, user string, password string) (*http.Response, []byte) {
-	resp, body, _, err := Send("POST", url, content, headers, true, user, password)
+func SendGet(url string, headers map[string]string, allowRedirect bool, user,
+	password string) (*http.Response, []byte, string, error) {
+	return Send("GET", url, nil, headers, allowRedirect, user, password, true)
+}
+
+func SendPost(url string, headers map[string]string, content []byte, user, password string) (*http.Response, []byte) {
+	resp, body, _, err := Send("POST", url, content, headers, true, user, password, true)
 	CheckError(err)
 	return resp, body
 }
 
 func SendPatch(url string, content []byte, user string, password string) (*http.Response, []byte) {
-	resp, body, _, err := Send("PATCH", url, content, nil, true, user, password)
+	resp, body, _, err := Send("PATCH", url, content, nil, true, user, password, true)
 	CheckError(err)
 	return resp, body
 }
 
 func SendDelete(url string, user, password string) (*http.Response, []byte) {
-	resp, body, _, err := Send("DELETE", url, nil, nil, true, user, password)
+	resp, body, _, err := Send("DELETE", url, nil, nil, true, user, password, true)
 	CheckError(err)
 	return resp, body
 }
 
 func SendHead(url string, user, password string) *http.Response {
-	resp, _, _, err := Send("HEAD", url, nil, nil, true, user, password)
+	resp, _, _, err := Send("HEAD", url, nil, nil, true, user, password, true)
 	CheckError(err)
 	return resp
 }
 
 func SendPut(url string, content []byte, headers map[string]string, user, password string) (*http.Response, []byte) {
-	resp, body, _, err := Send("PUT", url, content, headers, true, user, password)
+	resp, body, _, err := Send("PUT", url, content, headers, true, user, password, true)
 	CheckError(err)
 	return resp, body
 }
 
 func Send(method string, url string, content []byte, headers map[string]string, allowRedirect bool,
-	user, password string) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+	user, password string, closeBody bool) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 
 	var req *http.Request
 	if content != nil {
@@ -165,9 +171,10 @@ func Send(method string, url string, content []byte, headers map[string]string, 
 	}
 
 	CheckError(err)
-	defer resp.Body.Close()
-
-	respBody, _ = ioutil.ReadAll(resp.Body)
+	if closeBody {
+	    defer resp.Body.Close()
+	    respBody, _ = ioutil.ReadAll(resp.Body)
+	}
 	return
 }
 
@@ -224,9 +231,12 @@ func downloadFile(downloadPath, localPath, fileName string, flat, allowRedirect 
 	out, err := os.Create(fileName)
 	CheckError(err)
 	defer out.Close()
-	resp, body, redirectUrl, err := SendGet(downloadPath, nil, allowRedirect, user, password)
+	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, nil, allowRedirect,
+	    user, password)
+    defer resp.Body.Close()
 	if err == nil {
-        out.Write(body)
+        _, err = io.Copy(out, resp.Body)
+        CheckError(err)
 	}
 	return
 }
@@ -266,7 +276,7 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		tempFilePath := GetTempDirPath() + "/" + flags.FileName + "_" + strconv.Itoa(i)
 		AppendFile(tempFilePath, destFile)
 	}
-	fmt.Println(logMsgPrefix + " Done downloading.")
+	fmt.Println(logMsgPrefix + "Done downloading.")
 }
 
 func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string) {
@@ -278,14 +288,20 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	headers := make(map[string]string)
 	headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
 
-	resp, respBody, _, err :=
-		SendGet(flags.DownloadPath, headers, false, flags.User, flags.Password)
+	resp, _, err :=
+		sendGetForFileDownload(flags.DownloadPath, headers, false, flags.User, flags.Password)
+    defer resp.Body.Close()
     CheckError(err)
 
-	fmt.Println(logMsgPrefix+" ["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
+	fmt.Println(logMsgPrefix + "[" + strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLoclPath, 0777)
 	filePath := tempLoclPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
-	createFileWithContent(filePath, respBody)
+
+	out, err := os.Create(filePath)
+	CheckError(err)
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+    CheckError(err)
 }
 
 func GetTempDirPath() string {
@@ -406,13 +422,6 @@ func GetRemoteFileDetails(downloadUrl, user, password string) *FileDetails {
 	fileDetails.Size = fileSize
 	fileDetails.AcceptRanges = resp.Header.Get("Accept-Ranges") == "bytes"
 	return fileDetails
-}
-
-func createFileWithContent(filePath string, content []byte) {
-	out, err := os.Create(filePath)
-	CheckError(err)
-	defer out.Close()
-	out.Write(content)
 }
 
 func addUserAgentHeader(req *http.Request) {

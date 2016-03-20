@@ -101,9 +101,9 @@ func ConfirmAnswer(answer string) bool {
 func GetLogMsgPrefix(threadId int, dryRun bool) string {
 	var strDryRun string
 	if dryRun {
-		strDryRun = " [Dry run]"
+		strDryRun = " [Dry run] "
 	} else {
-		strDryRun = ""
+		strDryRun = " "
 	}
 	return "[Thread " + strconv.Itoa(threadId) + "]" + strDryRun
 }

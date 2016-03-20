@@ -123,7 +123,7 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 		targetPath += getDebianMatrixParams(flags.Deb)
 	}
 
-	fmt.Println(logMsgPrefix + " Uploading artifact: " + targetPath)
+	fmt.Println(logMsgPrefix + "Uploading artifact: " + targetPath)
 	file, err := os.Open(localPath)
 	cliutils.CheckError(err)
 	defer file.Close()
@@ -147,7 +147,7 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 		} else {
 			strChecksumDeployed = ""
 		}
-		fmt.Println(logMsgPrefix + " Artifactory response: " + resp.Status + strChecksumDeployed)
+		fmt.Println(logMsgPrefix + "Artifactory response: " + resp.Status + strChecksumDeployed)
 	}
 
 	return flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200

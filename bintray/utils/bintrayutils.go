@@ -18,10 +18,6 @@ func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails,
 func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *PathDetails,
 	flags *DownloadFlags, logMsgPrefix string) {
 
-	if logMsgPrefix != "" {
-		logMsgPrefix += " "
-	}
-
 	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
 	fmt.Println(logMsgPrefix + "Downloading " + url)
 
@@ -32,7 +28,7 @@ func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *P
 	    path, _ = cliutils.GetFileAndDirFromPath(path)
 	}
 	if !shouldDownloadFile(path, details) {
-	    fmt.Println(logMsgPrefix + " File already exists locally.")
+	    fmt.Println(logMsgPrefix + "File already exists locally.")
 		return
 	}
 	if flags.Flat {

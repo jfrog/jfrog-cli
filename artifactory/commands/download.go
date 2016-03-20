@@ -48,7 +48,7 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
 				downloadPath := buildDownloadUrl(flags.ArtDetails.Url, resultItems[j])
-				fmt.Println(logMsgPrefix + " Downloading " + downloadPath)
+				fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
 				if !flags.DryRun {
 					downloadFile(downloadPath, resultItems[j].Path, resultItems[j].Name, logMsgPrefix, flags)
 				}
@@ -70,7 +70,7 @@ func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, f
 		if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size || !details.AcceptRanges {
 			resp := cliutils.DownloadFile(downloadPath, localPath, localFileName, flags.Flat,
 				flags.ArtDetails.User, flags.ArtDetails.Password)
-			fmt.Println(logMsgPrefix+" Artifactory response:", resp.Status)
+			fmt.Println(logMsgPrefix + "Artifactory response:", resp.Status)
 		} else {
 			concurrentDownloadFlags := cliutils.ConcurrentDownloadFlags{
 				DownloadPath: downloadPath,
@@ -85,7 +85,7 @@ func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, f
 			cliutils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix)
 		}
 	} else {
-		fmt.Println(logMsgPrefix + " File already exists locally.")
+		fmt.Println(logMsgPrefix + "File already exists locally.")
 	}
 }
 
