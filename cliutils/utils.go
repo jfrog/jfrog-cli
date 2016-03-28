@@ -2,7 +2,7 @@ package cliutils
 
 import (
 	"bytes"
-	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -181,7 +181,7 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
 }
 
 func GetDocumentationMessage() string {
-    return "You can read the documentation at https://github.com/JFrogDev/jfrog-cli-go/blob/master/README.md"
+    return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }
 
 func localPathToRegExp(localpath string) string {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/bintray"
 	"github.com/jfrogdev/jfrog-cli-go/cliutils"

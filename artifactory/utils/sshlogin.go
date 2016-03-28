@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/cliutils"
-	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh"
+	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"regexp"

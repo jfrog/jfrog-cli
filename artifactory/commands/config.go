@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/cliutils"
-	"github.com/JFrogDev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
+	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
 	"strings"
 	"syscall"
 )
