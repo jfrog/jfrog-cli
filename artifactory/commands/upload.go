@@ -56,6 +56,22 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
 	return
 }
 
+func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Artifact {
+    var uploadPath string
+    if !strings.HasSuffix(targetPath, "/") {
+        uploadPath = targetPath
+    } else {
+        if flat {
+            uploadPath, _ = cliutils.GetFileAndDirFromPath(rootPath)
+            uploadPath = targetPath + uploadPath
+        } else {
+            uploadPath = targetPath + rootPath
+            uploadPath = cliutils.PrepareUploadPath(uploadPath)
+        }
+    }
+    return cliutils.Artifact{rootPath, uploadPath}
+}
+
 func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) []cliutils.Artifact {
 	if strings.Index(targetPath, "/") < 0 {
 		targetPath += "/"
@@ -69,9 +85,8 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	if !cliutils.IsDir(rootPath) {
-		targetPath := cliutils.PrepareUploadPath(targetPath + rootPath)
-		artifacts = append(artifacts, cliutils.Artifact{rootPath, targetPath})
-		return artifacts
+        artifact := getSingleFileToUpload(rootPath, targetPath, flags.Flat)
+        return append(artifacts, artifact)
 	}
 
 	r, err := regexp.Compile(localpath)
@@ -88,7 +103,6 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 		if cliutils.IsDir(path) {
 			continue
 		}
-
 		groups := r.FindStringSubmatch(path)
 		size := len(groups)
 		target := targetPath
@@ -98,15 +112,14 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 				target = strings.Replace(target, "{"+strconv.Itoa(i)+"}", group, -1)
 			}
 			if strings.HasSuffix(target, "/") {
-				if flags.Flat {
-					fileName, _ := cliutils.GetFileAndDirFromPath(path)
-					target += fileName
-				} else {
-					uploadPath := cliutils.PrepareUploadPath(path)
-					target += uploadPath
-				}
-			}
-
+                if flags.Flat {
+                    fileName, _ := cliutils.GetFileAndDirFromPath(path)
+                    target += fileName
+                } else {
+                    uploadPath := cliutils.PrepareUploadPath(path)
+                    target += uploadPath
+                }
+            }
 			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}

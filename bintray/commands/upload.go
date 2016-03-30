@@ -156,6 +156,22 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
 	}
 }
 
+func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat bool) cliutils.Artifact {
+    var uploadPath string
+    if targetPath != "" && !strings.HasSuffix(targetPath, "/") {
+        rootPath = targetPath
+        targetPath = ""
+    }
+    if flat {
+        uploadPath, _ = cliutils.GetFileAndDirFromPath(rootPath)
+        uploadPath = targetPath + uploadPath
+    } else {
+        uploadPath = targetPath + rootPath
+        uploadPath = cliutils.PrepareUploadPath(uploadPath)
+    }
+    return cliutils.Artifact{rootPath, uploadPath}
+}
+
 func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFlags) []cliutils.Artifact {
     var debianDefaultPath string
     if targetPath == "" && flags.Deb != "" {
@@ -171,13 +187,8 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	if !cliutils.IsDir(rootPath) {
-	    targetPath := cliutils.PrepareUploadPath(targetPath)
-	    if targetPath == "" || strings.HasSuffix(targetPath, "/") {
-            targetPath += debianDefaultPath + rootPath
-	    }
-
-		artifacts = append(artifacts, cliutils.Artifact{rootPath, targetPath})
-		return artifacts
+        artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
+		return append(artifacts, artifact)
 	}
 
 	r, err := regexp.Compile(localpath)

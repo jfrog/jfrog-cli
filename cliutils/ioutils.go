@@ -53,9 +53,13 @@ func IsDir(path string) bool {
 }
 
 func GetFileAndDirFromPath(path string) (fileName, dir string) {
-	index := strings.LastIndex(path, "/")
-	if index == -1 {
-		index = strings.LastIndex(path, "\\")
+	index1 := strings.LastIndex(path, "/")
+	index2 := strings.LastIndex(path, "\\")
+	var index int
+	if index1 >= index2 {
+        index = index1
+	} else {
+	    index = index2
 	}
 	if index != -1 {
 		fileName = path[index+1:]

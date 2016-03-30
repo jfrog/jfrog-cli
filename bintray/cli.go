@@ -367,7 +367,7 @@ func getUploadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "flat",
 			Value: "",
-			Usage: "[Default: true] If not set to true, and the upload path ends with a slash, files are uploaded according to their file system hierarchy.",
+			Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.",
 		},
 		cli.BoolFlag{
 			Name:  "regexp",
