@@ -18,6 +18,7 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
 	if flags.ArtDetails.SshKeyPath != "" {
 		utils.SshAuthentication(flags.ArtDetails)
 	}
+	minChecksumDeploySize := getMinChecksumDeploySize()
 
 	// Get the list of artifacts to be uploaded to Artifactory:
 	artifacts := getFilesToUpload(localPath, targetPath, flags)
@@ -35,8 +36,9 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
 				target := flags.ArtDetails.Url + artifacts[j].TargetPath
-				if uploadFile(artifacts[j].LocalPath, target, flags, logMsgPrefix) {
-					uploadCount[threadId]++
+				if uploadFile(artifacts[j].LocalPath, target, flags,
+				    minChecksumDeploySize, logMsgPrefix) {
+					    uploadCount[threadId]++
 				}
 			}
 			wg.Done()
@@ -128,7 +130,8 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
-func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgPrefix string) bool {
+func uploadFile(localPath string, targetPath string, flags *utils.Flags,
+    minChecksumDeploySize int64, logMsgPrefix string) bool {
 	if flags.Props != "" {
 		targetPath += ";" + flags.Props
 	}
@@ -146,7 +149,7 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 	var checksumDeployed bool = false
 	var resp *http.Response
 	var details *cliutils.FileDetails
-	if fileInfo.Size() >= 10240 {
+	if fileInfo.Size() >= minChecksumDeploySize {
 		resp, details = tryChecksumDeploy(localPath, targetPath, flags)
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
@@ -164,6 +167,16 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags, logMsgP
 	}
 
 	return flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200
+}
+
+func getMinChecksumDeploySize() int64 {
+    minChecksumDeploySize := os.Getenv("JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB")
+    if minChecksumDeploySize == "" {
+        return 10240
+    }
+    minSize, err := strconv.ParseInt(minChecksumDeploySize, 10, 64)
+    cliutils.CheckError(err)
+    return minSize * 1000
 }
 
 func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.Response, *cliutils.FileDetails) {

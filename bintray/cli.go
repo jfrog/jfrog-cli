@@ -986,11 +986,11 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
 			defaultPackageLicenses = confDetails.DefPackageLicenses
 		}
 	}
-	apiUrl := os.Getenv("BINTRAY_API_URL")
+	apiUrl := os.Getenv("JFROG_CLI_BINTRAY_API_URL")
 	if apiUrl == "" {
 		apiUrl = "https://bintray.com/api/v1/"
 	}
-	downloadServerUrl := os.Getenv("BINTRAY_DOWNLOAD_URL")
+	downloadServerUrl := os.Getenv("JFROG_CLI_BINTRAY_DOWNLOAD_URL")
 	if downloadServerUrl == "" {
 		downloadServerUrl = "https://dl.bintray.com/"
 	}
