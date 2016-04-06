@@ -57,7 +57,7 @@ func saveConfig(config *Config) {
         err := os.Remove(path)
 		cliutils.CheckError(err)
 	}
-	ioutil.WriteFile(getConFilePath(), []byte(content.String()), 0x777)
+	ioutil.WriteFile(getConFilePath(), []byte(content.String()), 0x600)
 }
 
 func readConf() *Config {
