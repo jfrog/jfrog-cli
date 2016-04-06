@@ -91,6 +91,7 @@ func ListFiles(path string) []string {
 	}
 	fileList := []string{}
 	files, _ := ioutil.ReadDir(path)
+	path = strings.TrimPrefix(path, "." + sep)
 
 	for _, f := range files {
 		filePath := path + f.Name()
