@@ -3,10 +3,12 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
-func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) {
+func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}
@@ -15,7 +17,8 @@ func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *cliuti
 		versionDetails.Version + "/publish"
 
 	fmt.Println("Publishing version: " + versionDetails.Version)
-	resp, body := cliutils.SendPost(url, nil, nil, bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	resp, body := ioutils.SendPost(url, nil, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}

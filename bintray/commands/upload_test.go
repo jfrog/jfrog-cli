@@ -1,7 +1,7 @@
 package commands
 
 import (
-    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+    "github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
     "github.com/jfrogdev/jfrog-cli-go/bintray/utils"
     "github.com/jfrogdev/jfrog-cli-go/bintray/tests"
     "strconv"
@@ -65,9 +65,9 @@ func createUploadFlags() *UploadFlags {
 		BintrayDetails: tests.CreateBintrayDetails(),
 		Recursive:      true,
 		Flat:           true,
-        Publish:        false,
-        Override:       false,
-        Explode:        false,
+		Publish:        false,
+		Override:       false,
+		Explode:        false,
 		UseRegExp:      false,
 		Threads:        3,
 		Deb:            "",

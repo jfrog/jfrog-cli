@@ -3,24 +3,27 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
 )
 
-func BuildEntitlementsUrl(bintrayDetails *cliutils.BintrayDetails, details *utils.VersionDetails) string {
+func BuildEntitlementsUrl(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails) string {
     return bintrayDetails.ApiUrl + createBintrayPath(details) + "/entitlements"
 }
 
-func BuildEntitlementUrl(bintrayDetails *cliutils.BintrayDetails, details *utils.VersionDetails, entId string) string {
+func BuildEntitlementUrl(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails, entId string) string {
 	return BuildEntitlementsUrl(bintrayDetails, details) + "/" + entId
 }
 
-func ShowEntitlements(bintrayDetails *cliutils.BintrayDetails, details *utils.VersionDetails) {
+func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails) {
 	url := BuildEntitlementsUrl(bintrayDetails, details)
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = details.Subject
 	}
-	resp, body, _, _ := cliutils.SendGet(url, nil, true, bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -33,7 +36,8 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = details.Subject
 	}
-	resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -46,7 +50,8 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = details.Subject
 	}
-	resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendDelete(url, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -60,7 +65,8 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 		flags.BintrayDetails.User = details.Subject
 	}
 	data := buildEntitlementJson(flags, true)
-	resp, body := cliutils.SendPost(path, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPost(path, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -74,7 +80,8 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 		flags.BintrayDetails.User = details.Subject
 	}
 	data := buildEntitlementJson(flags, true)
-	resp, body := cliutils.SendPatch(path, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPatch(path, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -112,7 +119,7 @@ func createBintrayPath(details *utils.VersionDetails) string {
 }
 
 type EntitlementFlags struct {
-	BintrayDetails *cliutils.BintrayDetails
+	BintrayDetails *config.BintrayDetails
 	Id             string
 	Path           string
 	Access         string

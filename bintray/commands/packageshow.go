@@ -3,10 +3,12 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
-func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) {
+func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = packageDetails.Subject
 	}
@@ -14,7 +16,8 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *cliutils.
 		packageDetails.Repo + "/" + packageDetails.Package
 
 	fmt.Println("Getting package: " + packageDetails.Package)
-	resp, body, _, _ := cliutils.SendGet(url, nil, true, bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode == 200 {
 		fmt.Println(cliutils.IndentJson(body))
 	} else {

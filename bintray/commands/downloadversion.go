@@ -3,20 +3,23 @@ package commands
 import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
 	"sync"
 )
 
 func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.DownloadFlags) {
-	cliutils.CreateTempDirPath()
-	defer cliutils.RemoveTempDir()
+	ioutils.CreateTempDirPath()
+	defer ioutils.RemoveTempDir()
 
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = versionDetails.Subject
 	}
 	path := BuildDownloadVersionUrl(versionDetails, flags.BintrayDetails)
-	resp, body, _, _ := cliutils.SendGet(path, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -27,7 +30,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.Download
 	downloadFiles(results, versionDetails, flags)
 }
 
-func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *cliutils.BintrayDetails) string {
+func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) string {
     return bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
 }

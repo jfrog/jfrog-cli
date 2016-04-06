@@ -3,11 +3,13 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
 )
 
-func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails,
+func BuildDownloadBintrayFileUrl(bintrayDetails *config.BintrayDetails,
     pathDetails *PathDetails) string {
 
 	downloadPath := pathDetails.Subject + "/" + pathDetails.Repo + "/" +
@@ -15,17 +17,18 @@ func BuildDownloadBintrayFileUrl(bintrayDetails *cliutils.BintrayDetails,
 	return bintrayDetails.DownloadServerUrl + downloadPath
 }
 
-func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *PathDetails,
+func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *PathDetails,
 	flags *DownloadFlags, logMsgPrefix string) {
 
 	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
 	fmt.Println(logMsgPrefix + "Downloading " + url)
 
-	fileName, dir := cliutils.GetFileAndDirFromPath(pathDetails.Path)
-	details := cliutils.GetRemoteFileDetails(url, bintrayDetails.User, bintrayDetails.Key)
+	fileName, dir := ioutils.GetFileAndDirFromPath(pathDetails.Path)
+	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
+	details := ioutils.GetRemoteFileDetails(url, httpClientsDetails)
 	path := pathDetails.Path
 	if flags.Flat {
-	    path, _ = cliutils.GetFileAndDirFromPath(path)
+	    path, _ = ioutils.GetFileAndDirFromPath(path)
 	}
 	if !shouldDownloadFile(path, details) {
 	    fmt.Println(logMsgPrefix + "File already exists locally.")
@@ -38,30 +41,28 @@ func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *P
     // Check if the file should be downloaded concurrently.
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size {
 	    // File should not be downloaded concurrently. Download it as one block.
-		resp := cliutils.DownloadFile(url, dir, fileName, false, bintrayDetails.User, bintrayDetails.Key)
+		resp := ioutils.DownloadFile(url, dir, fileName, false, httpClientsDetails)
 		fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
 	} else {
 	    // We should attempt to download the file concurrently, but only if it is provided through the DSN.
 	    // To check if the file is provided through the DSN, we first attempt to download the file
 	    // with 'follow redirect' disabled.
 	    resp, redirectUrl, err :=
-	        cliutils.DownloadFileNoRedirect(url, dir, fileName, false, bintrayDetails.User, bintrayDetails.Key)
+	    ioutils.DownloadFileNoRedirect(url, dir, fileName, false, httpClientsDetails)
         // There are two options now. Either the file has just been downloaded as one block, or
         // we got a redirect to DSN download URL. In case of the later, we should download the file
         // concurrently from the DSN URL.
         // 'err' is not nil in case 'redirectUrl' was returned.
         if redirectUrl != "" {
-            concurrentDownloadFlags := cliutils.ConcurrentDownloadFlags{
+            concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
                 DownloadPath: redirectUrl,
                 FileName:     fileName,
                 LocalPath:    dir,
                 FileSize:     details.Size,
                 SplitCount:   flags.SplitCount,
-                Flat:         flags.Flat,
-                User:         flags.BintrayDetails.User,
-                Password:     flags.BintrayDetails.Key}
+                Flat:         flags.Flat}
 
-            cliutils.DownloadFileConcurrently(concurrentDownloadFlags, "")
+		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
         } else {
             cliutils.CheckError(err)
             fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
@@ -69,11 +70,11 @@ func DownloadBintrayFile(bintrayDetails *cliutils.BintrayDetails, pathDetails *P
 	}
 }
 
-func shouldDownloadFile(localFilePath string, remoteFileDetails *cliutils.FileDetails) bool {
-	if !cliutils.IsFileExists(localFilePath) {
+func shouldDownloadFile(localFilePath string, remoteFileDetails *ioutils.FileDetails) bool {
+	if !ioutils.IsFileExists(localFilePath) {
 		return true
 	}
-	localFileDetails := cliutils.GetFileDetails(localFilePath)
+	localFileDetails := ioutils.GetFileDetails(localFilePath)
 	if localFileDetails.Sha1 != remoteFileDetails.Sha1 {
 		return true
 	}
@@ -139,6 +140,12 @@ func CreatePathDetails(str string) *PathDetails {
 		Path:    path}
 }
 
+func GetBintrayHttpClientDetails (bintrayDetails *config.BintrayDetails) ioutils.HttpClientDetails{
+	return ioutils.HttpClientDetails{
+		User:     bintrayDetails.User,
+		Password: bintrayDetails.Key}
+}
+
 type bintrayResponse struct {
 	Message string
 }
@@ -162,7 +169,7 @@ type VersionDetails struct {
 }
 
 type DownloadFlags struct {
-	BintrayDetails *cliutils.BintrayDetails
+	BintrayDetails *config.BintrayDetails
 	Threads        int
 	MinSplitSize   int64
 	SplitCount     int

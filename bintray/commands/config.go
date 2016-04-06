@@ -2,21 +2,23 @@ package commands
 
 import (
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )
 
-func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) *cliutils.BintrayDetails {
+func Config(details, defaultDetails *config.BintrayDetails, interactive bool) *config.BintrayDetails {
     if details == nil {
-        details = new(cliutils.BintrayDetails)
+        details = new(config.BintrayDetails)
     }
 	if interactive {
 	    if defaultDetails == nil {
-            defaultDetails = cliutils.ReadBintrayConf()
+            defaultDetails = config.ReadBintrayConf()
 	    }
 		if details.User == "" {
-			cliutils.ScanFromConsole("User", &details.User, defaultDetails.User)
+			ioutils.ScanFromConsole("User", &details.User, defaultDetails.User)
 		}
 		if details.Key == "" {
 			print("Key: ")
@@ -28,16 +30,16 @@ func Config(details, defaultDetails *cliutils.BintrayDetails, interactive bool) 
 			}
 		}
 		if details.DefPackageLicenses == "" {
-			cliutils.ScanFromConsole("\nDefault package licenses",
+			ioutils.ScanFromConsole("\nDefault package licenses",
 			    &details.DefPackageLicenses, defaultDetails.DefPackageLicenses)
 		}
 	}
-	cliutils.SaveBintrayConf(details)
+	config.SaveBintrayConf(details)
 	return details
 }
 
 func ShowConfig() {
-	details := cliutils.ReadBintrayConf()
+	details := config.ReadBintrayConf()
 	if details.User != "" {
 		fmt.Println("User: " + details.User)
 	}
@@ -50,9 +52,9 @@ func ShowConfig() {
 }
 
 func ClearConfig() {
-	cliutils.SaveBintrayConf(new(cliutils.BintrayDetails))
+	config.SaveBintrayConf(new(config.BintrayDetails))
 }
 
-func GetConfig() *cliutils.BintrayDetails {
-	return cliutils.ReadBintrayConf()
+func GetConfig() *config.BintrayDetails {
+	return config.ReadBintrayConf()
 }

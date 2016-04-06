@@ -3,7 +3,9 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
 )
 
@@ -18,12 +20,12 @@ func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
 }
 
 func DoCreateVersion(versionDetails *utils.VersionDetails,
-    bintrayDetails *cliutils.BintrayDetails) (*http.Response, []byte) {
+    bintrayDetails *config.BintrayDetails) (*http.Response, []byte) {
     return doCreateVersion(versionDetails, nil, bintrayDetails)
 }
 
 func doCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags,
-    bintrayDetails *cliutils.BintrayDetails) (*http.Response, []byte) {
+    bintrayDetails *config.BintrayDetails) (*http.Response, []byte) {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}
@@ -38,6 +40,6 @@ func doCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionF
 
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions"
-
-	return cliutils.SendPost(url, nil, []byte(data), bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	return ioutils.SendPost(url, []byte(data), httpClientsDetails)
 }

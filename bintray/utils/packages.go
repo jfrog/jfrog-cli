@@ -1,15 +1,18 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
 )
 
-func HeadPackage(packageDetails *VersionDetails, bintrayDetails *cliutils.BintrayDetails) *http.Response {
+func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
 	url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package
+	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
 
-	return cliutils.SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+	return ioutils.SendHead(url, httpClientsDetails)
 }
 
 func CreatePackageJson(packageName string, flags *PackageFlags) string {
@@ -32,7 +35,7 @@ func CreatePackageJson(packageName string, flags *PackageFlags) string {
 }
 
 type PackageFlags struct {
-	BintrayDetails         *cliutils.BintrayDetails
+	BintrayDetails         *config.BintrayDetails
 	Desc                   string
 	Labels                 string
 	Licenses               string

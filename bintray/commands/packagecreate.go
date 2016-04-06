@@ -3,7 +3,8 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
 )
 
@@ -21,6 +22,6 @@ func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageF
 	data := utils.CreatePackageJson(packageDetails.Package, flags)
 	url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo
-
-	return cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	return ioutils.SendPost(url, []byte(data), httpClientsDetails)
 }

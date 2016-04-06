@@ -3,7 +3,8 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
 	"os"
 	"regexp"
@@ -17,6 +18,9 @@ import (
 func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, totalFailed int) {
 	if flags.ArtDetails.SshKeyPath != "" {
 		utils.SshAuthentication(flags.ArtDetails)
+	}
+	if !flags.DryRun {
+		utils.PingArtifactory(flags.ArtDetails)
 	}
 	minChecksumDeploySize := getMinChecksumDeploySize()
 
@@ -64,7 +68,7 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
         uploadPath = targetPath
     } else {
         if flat {
-            uploadPath, _ = cliutils.GetFileAndDirFromPath(rootPath)
+            uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
             uploadPath = targetPath + uploadPath
         } else {
             uploadPath = targetPath + rootPath
@@ -79,14 +83,14 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 		targetPath += "/"
 	}
 	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
-	if !cliutils.IsPathExists(rootPath) {
+	if !ioutils.IsPathExists(rootPath) {
 		cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: "+rootPath)
 	}
 	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
-	if !cliutils.IsDir(rootPath) {
+	if !ioutils.IsDir(rootPath) {
         artifact := getSingleFileToUpload(rootPath, targetPath, flags.Flat)
         return append(artifacts, artifact)
 	}
@@ -96,13 +100,13 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 
 	var paths []string
 	if flags.Recursive {
-		paths = cliutils.ListFilesRecursive(rootPath)
+		paths = ioutils.ListFilesRecursive(rootPath)
 	} else {
-		paths = cliutils.ListFiles(rootPath)
+		paths = ioutils.ListFiles(rootPath)
 	}
 
 	for _, path := range paths {
-		if cliutils.IsDir(path) {
+		if ioutils.IsDir(path) {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
@@ -115,7 +119,7 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 			}
 			if strings.HasSuffix(target, "/") {
                 if flags.Flat {
-                    fileName, _ := cliutils.GetFileAndDirFromPath(path)
+                    fileName, _ := ioutils.GetFileAndDirFromPath(path)
                     target += fileName
                 } else {
                     uploadPath := cliutils.PrepareUploadPath(path)
@@ -148,13 +152,14 @@ func uploadFile(localPath string, targetPath string, flags *utils.Flags,
 
 	var checksumDeployed bool = false
 	var resp *http.Response
-	var details *cliutils.FileDetails
+	var details *ioutils.FileDetails
+	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	if fileInfo.Size() >= minChecksumDeploySize {
-		resp, details = tryChecksumDeploy(localPath, targetPath, flags)
+		resp, details = tryChecksumDeploy(localPath, targetPath, flags, httpClientsDetails)
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
 	if !flags.DryRun && !checksumDeployed {
-		resp = utils.UploadFile(file, targetPath, flags.ArtDetails, details)
+		resp = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
 	}
 	if !flags.DryRun {
 		var strChecksumDeployed string
@@ -179,18 +184,20 @@ func getMinChecksumDeploySize() int64 {
     return minSize * 1000
 }
 
-func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags) (*http.Response, *cliutils.FileDetails) {
-	details := cliutils.GetFileDetails(filePath)
+func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, *ioutils.FileDetails) {
+	details := ioutils.GetFileDetails(filePath)
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
 	headers["X-Checksum-Sha1"] = details.Sha1
 	headers["X-Checksum-Md5"] = details.Md5
-
+	requestClientDetails := httpClientsDetails.Clone()
+	cliutils.MergeMaps(headers, requestClientDetails.Headers)
 	if flags.DryRun {
 		return nil, details
 	}
 	utils.AddAuthHeaders(headers, flags.ArtDetails)
-	resp, _ := cliutils.SendPut(targetPath, nil, headers, flags.ArtDetails.User, flags.ArtDetails.Password)
+	cliutils.MergeMaps(headers, requestClientDetails.Headers)
+	resp, _ := ioutils.SendPut(targetPath, nil, *requestClientDetails)
 	return resp, details
 }
 

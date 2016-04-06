@@ -1,15 +1,17 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
 )
 
-func HeadVersion(versionDetails *VersionDetails, bintrayDetails *cliutils.BintrayDetails) *http.Response {
+func HeadVersion(versionDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
-
-	return cliutils.SendHead(url, bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
+	return ioutils.SendHead(url, httpClientsDetails)
 }
 
 func CreateVersionJson(versionName string, flags *VersionFlags) string {
@@ -25,7 +27,7 @@ func CreateVersionJson(versionName string, flags *VersionFlags) string {
 }
 
 type VersionFlags struct {
-	BintrayDetails           *cliutils.BintrayDetails
+	BintrayDetails           *config.BintrayDetails
 	Desc                     string
 	VcsTag                   string
 	Released                 string

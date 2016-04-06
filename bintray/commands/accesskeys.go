@@ -3,13 +3,16 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strconv"
 )
 
-func ShowAccessKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
+func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) {
 	path := GetAccessKeysPath(bintrayDetails, org)
-	resp, body, _, _ := cliutils.SendGet(path, nil, true, bintrayDetails.User, bintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -19,7 +22,8 @@ func ShowAccessKeys(bintrayDetails *cliutils.BintrayDetails, org string) {
 
 func ShowAccessKey(flags *AccessKeyFlags, org string) {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
-	resp, body, _, _ := cliutils.SendGet(url, nil, true, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -30,7 +34,8 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) {
 func CreateAccessKey(flags *AccessKeyFlags, org string) {
 	data := BuildAccessKeyJson(flags, true)
 	url := GetAccessKeysPath(flags.BintrayDetails, org)
-	resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -41,7 +46,8 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) {
 func UpdateAccessKey(flags *AccessKeyFlags, org string) {
 	data := BuildAccessKeyJson(flags, false)
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
-	resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
@@ -90,18 +96,19 @@ func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 
 func DeleteAccessKey(flags *AccessKeyFlags, org string) {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
-	resp, body := cliutils.SendDelete(url, flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendDelete(url, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
 	fmt.Println("Bintray response: " + resp.Status)
 }
 
-func GetAccessKeyPath(bintrayDetails *cliutils.BintrayDetails, id, org string) string {
+func GetAccessKeyPath(bintrayDetails *config.BintrayDetails, id, org string) string {
 	return GetAccessKeysPath(bintrayDetails, org) + "/" + id
 }
 
-func GetAccessKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) string {
+func GetAccessKeysPath(bintrayDetails *config.BintrayDetails, org string) string {
 	if org == "" {
 		return bintrayDetails.ApiUrl + "users/" + bintrayDetails.User + "/download_keys"
 	}
@@ -109,7 +116,7 @@ func GetAccessKeysPath(bintrayDetails *cliutils.BintrayDetails, org string) stri
 }
 
 type AccessKeyFlags struct {
-	BintrayDetails      *cliutils.BintrayDetails
+	BintrayDetails      *config.BintrayDetails
 	Id                  string
 	Password            string
 	Expiry              string

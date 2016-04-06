@@ -3,7 +3,9 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
 func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
@@ -15,7 +17,8 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
 	data := builJson(flags)
 
 	fmt.Println("Signing URL for: " + path)
-	resp, body := cliutils.SendPost(url, nil, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	fmt.Println("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 }
@@ -33,7 +36,7 @@ func builJson(flags *UrlSigningFlags) string {
 }
 
 type UrlSigningFlags struct {
-	BintrayDetails *cliutils.BintrayDetails
+	BintrayDetails *config.BintrayDetails
 	Expiry         string
 	ValidFor       string
 	CallbackId     string

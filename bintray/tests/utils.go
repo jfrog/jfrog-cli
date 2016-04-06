@@ -1,11 +1,11 @@
 package tests
 
 import (
-    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
-func CreateBintrayDetails() *cliutils.BintrayDetails {
-	return &cliutils.BintrayDetails{
+func CreateBintrayDetails() *config.BintrayDetails {
+	return &config.BintrayDetails{
 		ApiUrl:             "https://api.bintray.com/",
 		DownloadServerUrl:  "https://dl.bintray.com/",
 		User:               "user",

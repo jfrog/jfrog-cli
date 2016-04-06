@@ -5,7 +5,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"strconv"
 	"strings"
 )
@@ -20,7 +21,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"c"},
 			Usage:   "Configure Artifactory details",
 			Action: func(c *cli.Context) {
-				config(c)
+				configure(c)
 			},
 		},
 		{
@@ -216,7 +217,7 @@ func initFlags(c *cli.Context, cmd string) {
 	}
 }
 
-func config(c *cli.Context) {
+func configure(c *cli.Context) {
 	if len(c.Args()) > 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	} else if len(c.Args()) == 1 {
@@ -259,8 +260,8 @@ func upload(c *cli.Context) {
 	}
 }
 
-func offerConfig(c *cli.Context) *cliutils.ArtifactoryDetails {
-    if cliutils.IsArtifactoryConfExists() {
+func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
+    if config.IsArtifactoryConfExists() {
         return nil
     }
     msg := "The CLI commands require the Artifactory URL and authentication details\n" +
@@ -271,7 +272,7 @@ func offerConfig(c *cli.Context) *cliutils.ArtifactoryDetails {
     var confirm string
     fmt.Scanln(&confirm)
     if !cliutils.ConfirmAnswer(confirm) {
-        cliutils.SaveArtifactoryConf(new(cliutils.ArtifactoryDetails))
+	    config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
         return nil
     }
     details := createArtifactoryDetails(c, false)
@@ -280,14 +281,14 @@ func offerConfig(c *cli.Context) *cliutils.ArtifactoryDetails {
     return commands.Config(nil, details, true, encPassword)
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) *cliutils.ArtifactoryDetails {
+func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	if includeConfig {
         details := offerConfig(c)
         if details != nil {
             return details
         }
 	}
-	details := new(cliutils.ArtifactoryDetails)
+	details := new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
 	details.User = c.String("user")
 	details.Password = c.String("password")

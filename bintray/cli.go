@@ -5,7 +5,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/commands"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"os"
 	"strconv"
 	"strings"
@@ -19,7 +20,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"c"},
 			Flags:   getConfigFlags(),
 			Action: func(c *cli.Context) {
-				config(c)
+				configure(c)
 			},
 		},
 		{
@@ -495,7 +496,7 @@ func getGpgSigningFlags() []cli.Flag {
 	})
 }
 
-func config(c *cli.Context) {
+func configure(c *cli.Context) {
 	if len(c.Args()) > 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	} else if len(c.Args()) == 1 {
@@ -936,8 +937,8 @@ func createAccessKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) *comma
 		BlackCidrs:          c.String("black-cidrs")}
 }
 
-func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
-    if cliutils.IsBintrayConfExists() {
+func offerConfig(c *cli.Context) *config.BintrayDetails {
+    if config.IsBintrayConfExists() {
         return nil
     }
     msg := "Some CLI commands require the following common options:\n" +
@@ -951,7 +952,7 @@ func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
     var confirm string
     fmt.Scanln(&confirm)
     if !cliutils.ConfirmAnswer(confirm) {
-        cliutils.SaveBintrayConf(new(cliutils.BintrayDetails))
+	    config.SaveBintrayConf(new(config.BintrayDetails))
         return nil
     }
     bintrayDetails := createBintrayDetails(c, false)
@@ -961,7 +962,7 @@ func offerConfig(c *cli.Context) *cliutils.BintrayDetails {
     return details
 }
 
-func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayDetails {
+func createBintrayDetails(c *cli.Context, includeConfig bool) *config.BintrayDetails {
 	if includeConfig {
         bintrayDetails := offerConfig(c)
         if bintrayDetails != nil {
@@ -996,7 +997,7 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) *cliutils.BintrayD
 	}
 	apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
 	downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)
-	return &cliutils.BintrayDetails{
+	return &config.BintrayDetails{
 		ApiUrl:             apiUrl,
 		DownloadServerUrl:  downloadServerUrl,
 		User:               user,

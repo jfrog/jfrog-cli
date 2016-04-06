@@ -1,7 +1,7 @@
 package commands
 
 import (
-    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"strconv"

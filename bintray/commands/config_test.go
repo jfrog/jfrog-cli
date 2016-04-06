@@ -2,7 +2,7 @@ package commands
 
 import (
     "encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
     "github.com/jfrogdev/jfrog-cli-go/bintray/tests"
 	"testing"
 )
@@ -16,7 +16,7 @@ func TestConfig(t *testing.T) {
 	}
 }
 
-func configStructToString(config *cliutils.BintrayDetails) string {
+func configStructToString(config *config.BintrayDetails) string {
 	marshaledStruct, _ := json.Marshal(*config)
 	return string(marshaledStruct)
 }

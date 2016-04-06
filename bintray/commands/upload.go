@@ -3,7 +3,9 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"os"
 	"regexp"
 	"strconv"
@@ -103,15 +105,14 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
     return "pool/" + component + "/" + packageName[0:1] + "/" + packageName + "/"
 }
 
-func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *cliutils.BintrayDetails) bool {
+func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) bool {
 	fmt.Println(logMsgPrefix + "Uploading artifact to: " + url)
 
 	f, err := os.Open(artifact.LocalPath)
 	cliutils.CheckError(err)
 	defer f.Close()
-
-	resp := cliutils.UploadFile(f, url,
-		bintrayDetails.User, bintrayDetails.Key, nil)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	resp := ioutils.UploadFile(f, url, httpClientsDetails)
 
 	fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
 	return resp.StatusCode == 201 || resp.StatusCode == 200
@@ -134,7 +135,7 @@ func promptPackageNotExist(versionDetails *utils.VersionDetails) {
        "jfrog bt pc " +
        versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
        " --vcs-url=https://github.com/example"
-    if cliutils.ReadBintrayConf().DefPackageLicenses == "" {
+    if config.ReadBintrayConf().DefPackageLicenses == "" {
         msg += " --licenses=Apache-2.0-example"
     }
     cliutils.Exit(cliutils.ExitCodeError, msg)
@@ -163,7 +164,7 @@ func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat 
         targetPath = ""
     }
     if flat {
-        uploadPath, _ = cliutils.GetFileAndDirFromPath(rootPath)
+        uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
         uploadPath = targetPath + uploadPath
     } else {
         uploadPath = targetPath + rootPath
@@ -179,14 +180,14 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
     }
 
 	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
-	if !cliutils.IsPathExists(rootPath) {
+	if !ioutils.IsPathExists(rootPath) {
 		cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: "+rootPath)
 	}
 	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
-	if !cliutils.IsDir(rootPath) {
+	if !ioutils.IsDir(rootPath) {
         artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
 		return append(artifacts, artifact)
 	}
@@ -196,13 +197,13 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 
 	var paths []string
 	if flags.Recursive {
-		paths = cliutils.ListFilesRecursive(rootPath)
+		paths = ioutils.ListFilesRecursive(rootPath)
 	} else {
-		paths = cliutils.ListFiles(rootPath)
+		paths = ioutils.ListFiles(rootPath)
 	}
 
 	for _, path := range paths {
-		if cliutils.IsDir(path) {
+		if ioutils.IsDir(path) {
 			continue
 		}
 
@@ -221,7 +222,7 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 				    target = debianDefaultPath
 				}
 				if flags.Flat {
-					fileName, _ := cliutils.GetFileAndDirFromPath(path)
+					fileName, _ := ioutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
 					uploadPath := cliutils.PrepareUploadPath(path)
@@ -236,7 +237,7 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 }
 
 type UploadFlags struct {
-	BintrayDetails *cliutils.BintrayDetails
+	BintrayDetails *config.BintrayDetails
 	Deb         string
 	DryRun      bool
 	Recursive   bool

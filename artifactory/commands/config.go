@@ -3,24 +3,26 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
 	"strings"
 	"syscall"
 )
 
-func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive,
-    shouldEncPassword bool) *cliutils.ArtifactoryDetails {
+func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
+    shouldEncPassword bool) *config.ArtifactoryDetails {
 
     if details == nil {
-        details = new(cliutils.ArtifactoryDetails)
+        details = new(config.ArtifactoryDetails)
     }
 	if interactive {
 	    if defaultDetails == nil {
-            defaultDetails = cliutils.ReadArtifactoryConf()
+            defaultDetails = config.ReadArtifactoryConf()
 	    }
 		if details.Url == "" {
-			cliutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+			ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		}
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			readSshKeyPathFromConsole(details, defaultDetails)
@@ -32,22 +34,22 @@ func Config(details, defaultDetails *cliutils.ArtifactoryDetails, interactive,
 	if shouldEncPassword {
 		details = encryptPassword(details)
 	}
-	cliutils.SaveArtifactoryConf(details)
+	config.SaveArtifactoryConf(details)
 	return details
 }
 
-func readSshKeyPathFromConsole(details, savedDetails *cliutils.ArtifactoryDetails) {
+func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) {
 	if details.SshKeyPath == "" {
-		cliutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
+		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
 	}
-	if !cliutils.IsFileExists(details.SshKeyPath) {
+	if !ioutils.IsFileExists(details.SshKeyPath) {
 		fmt.Println("Warning: Could not find SSH key file at: " + details.SshKeyPath)
 	}
 }
 
-func readCredentialsFromConsole(details, savedDetails *cliutils.ArtifactoryDetails) {
+func readCredentialsFromConsole(details, savedDetails *config.ArtifactoryDetails) {
 	if details.User == "" {
-		cliutils.ScanFromConsole("User", &details.User, savedDetails.User)
+		ioutils.ScanFromConsole("User", &details.User, savedDetails.User)
 	}
 	if details.Password == "" {
 		print("Password: ")
@@ -61,7 +63,7 @@ func readCredentialsFromConsole(details, savedDetails *cliutils.ArtifactoryDetai
 }
 
 func ShowConfig() {
-	details := cliutils.ReadArtifactoryConf()
+	details := config.ReadArtifactoryConf()
 	if details.Url != "" {
 		fmt.Println("Url: " + details.Url)
 	}
@@ -77,14 +79,14 @@ func ShowConfig() {
 }
 
 func ClearConfig() {
-	cliutils.SaveArtifactoryConf(new(cliutils.ArtifactoryDetails))
+	config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
 }
 
-func GetConfig() *cliutils.ArtifactoryDetails {
-	return cliutils.ReadArtifactoryConf()
+func GetConfig() *config.ArtifactoryDetails {
+	return config.ReadArtifactoryConf()
 }
 
-func encryptPassword(details *cliutils.ArtifactoryDetails) *cliutils.ArtifactoryDetails {
+func encryptPassword(details *config.ArtifactoryDetails) *config.ArtifactoryDetails {
 	if details.Password == "" {
 		return details
 	}

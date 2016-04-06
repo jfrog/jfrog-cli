@@ -3,7 +3,8 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
 func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
@@ -15,7 +16,8 @@ func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 		packageDetails.Repo + "/" + packageDetails.Package
 
 	fmt.Println("Updating package: " + packageDetails.Package)
-	resp, body := cliutils.SendPatch(url, []byte(data), flags.BintrayDetails.User, flags.BintrayDetails.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	resp, body := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}

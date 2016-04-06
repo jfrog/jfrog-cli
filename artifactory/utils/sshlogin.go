@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
@@ -12,7 +13,7 @@ import (
 	"strconv"
 )
 
-func SshAuthentication(details *cliutils.ArtifactoryDetails) {
+func SshAuthentication(details *config.ArtifactoryDetails) {
 	_, host, port := parseUrl(details.Url)
 
 	fmt.Println("Performing SSH authentication...")

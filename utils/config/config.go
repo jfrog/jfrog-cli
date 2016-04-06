@@ -1,10 +1,13 @@
-package cliutils
+package config
 
 import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"net/http"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
 func IsArtifactoryConfExists() bool {
@@ -45,14 +48,14 @@ func SaveBintrayConf(details *BintrayDetails) {
 
 func saveConfig(config *Config) {
 	b, err := json.Marshal(&config)
-	CheckError(err)
+	cliutils.CheckError(err)
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
-	CheckError(err)
+	cliutils.CheckError(err)
 	path := getConFilePath()
-	if IsFileExists(path) {
+	if ioutils.IsFileExists(path) {
         err := os.Remove(path)
-	    CheckError(err)
+		cliutils.CheckError(err)
 	}
 	ioutil.WriteFile(getConFilePath(), []byte(content.String()), 0x777)
 }
@@ -60,21 +63,25 @@ func saveConfig(config *Config) {
 func readConf() *Config {
 	confFilePath := getConFilePath()
 	config := new(Config)
-	if !IsFileExists(confFilePath) {
+	if !ioutils.IsFileExists(confFilePath) {
 		return config
 	}
-	content := ReadFile(confFilePath)
+	content := ioutils.ReadFile(confFilePath)
 	json.Unmarshal(content, &config)
 
 	return config
 }
 
-func getConFilePath() string {
-	userDir := GetHomeDir()
+func GetJfrogHomeFolder() string {
+	userDir := ioutils.GetHomeDir()
 	if userDir == "" {
-		Exit(ExitCodeError, "Couldn't find home directory. Make sure your HOME environment variable is set.")
+		cliutils.Exit(cliutils.ExitCodeError, "Couldn't find home directory. Make sure your HOME environment variable is set.")
 	}
-	confPath := userDir + "/.jfrog/"
+	return userDir + "/.jfrog/"
+}
+
+func getConFilePath() string {
+	confPath := GetJfrogHomeFolder()
 	os.MkdirAll(confPath, 0777)
 	return confPath + "jfrog-cli.conf"
 }
@@ -90,6 +97,7 @@ type ArtifactoryDetails struct {
 	Password       string            `json:"password,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	SshAuthHeaders map[string]string `json:"-"`
+	Transport      *http.Transport	 `json:"-"`
 }
 
 type BintrayDetails struct {

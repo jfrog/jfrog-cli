@@ -3,16 +3,19 @@ package commands
 import (
     "fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-    "github.com/jfrogdev/jfrog-cli-go/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
-func LogsList(packageDetails *utils.VersionDetails, details *cliutils.BintrayDetails) {
+func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetails) {
 	if details.User == "" {
 		details.User = packageDetails.Subject
 	}
 	path := details.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package + "/logs/"
-	resp, body, _, _ := cliutils.SendGet(path, nil, true, details.User, details.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
+	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
 	}
@@ -22,13 +25,14 @@ func LogsList(packageDetails *utils.VersionDetails, details *cliutils.BintrayDet
 }
 
 func DownloadLog(packageDetails *utils.VersionDetails, logName string,
-    details *cliutils.BintrayDetails) {
+    details *config.BintrayDetails) {
 	if details.User == "" {
 		details.User = packageDetails.Subject
 	}
 	path := details.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package + "/logs/" + logName
-    resp := cliutils.DownloadFile(path, "", logName, true, details.User, details.Key)
+	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
+	resp := ioutils.DownloadFile(path, "", logName, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status)
 	}

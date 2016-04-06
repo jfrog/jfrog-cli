@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-    "runtime"
+    	"runtime"
 )
 
 const CmdArtifactory = "rt"
@@ -207,6 +207,12 @@ func GetTestsFileSeperator() string {
 		return "\\\\"
 	}
 	return "/"
+}
+
+func MergeMaps(src map[string]string, dst map[string]string) {
+	for k, v := range src {
+		dst[k] = v
+	}
 }
 
 type Artifact struct {
