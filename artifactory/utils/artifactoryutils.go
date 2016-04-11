@@ -77,6 +77,14 @@ func initTransport() *http.Transport {
 	return tempTransport
 }
 
+func PreCommandSetup(flags *Flags) {
+	if flags.ArtDetails.SshKeyPath != "" {
+		SshAuthentication(flags.ArtDetails)
+	}
+	if(!flags.DryRun){
+		PingArtifactory(flags.ArtDetails)
+	}
+}
 
 func PingArtifactory(artDetails *config.ArtifactoryDetails){
 	defer func() {

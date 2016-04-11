@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
@@ -12,39 +11,21 @@ import (
 
 // Downloads the artifacts using the specified download pattern.
 // Returns the AQL query used for the download.
-func Download(downloadPattern string, flags *utils.Flags) string {
+func Download(downloadPattern string, flags *utils.Flags) int {
+	utils.PreCommandSetup(flags)
 	if !flags.DryRun {
 		ioutils.CreateTempDirPath()
 		defer ioutils.RemoveTempDir()
 	}
 
-	if flags.ArtDetails.SshKeyPath != "" {
-		utils.SshAuthentication(flags.ArtDetails)
-	}
-	if !flags.DryRun {
-		utils.PingArtifactory(flags.ArtDetails)
-	}
+	resultItems := utils.AqlSearch(downloadPattern, flags)
+	downloadFiles(resultItems, flags)
 
-	aqlUrl := flags.ArtDetails.Url + "api/search/aql"
-	data := utils.BuildAqlSearchQuery(downloadPattern, flags.Recursive, flags.Props)
-	fmt.Println("Searching Artifactory using AQL query: " + data)
-
-	if !flags.DryRun {
-		utils.AddAuthHeaders(nil, flags.ArtDetails)
-		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, json := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
-		fmt.Println("Artifactory response:", resp.Status)
-
-		if resp.StatusCode == 200 {
-			resultItems := parseAqlSearchResponse(json)
-			downloadFiles(resultItems, flags, httpClientsDetails)
-			fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
-		}
-	}
-	return data
+	fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
+	return len(resultItems)
 }
 
-func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags, httpClientsDetails ioutils.HttpClientDetails) {
+func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) {
 	size := len(resultItems)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
@@ -52,10 +33,10 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags, httpCl
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				downloadPath := buildDownloadUrl(flags.ArtDetails.Url, resultItems[j])
+				downloadPath := flags.ArtDetails.Url + resultItems[j].GetFullUrl()
 				fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
 				if !flags.DryRun {
-					downloadFile(downloadPath, resultItems[j].Path, resultItems[j].Name, logMsgPrefix, flags, httpClientsDetails)
+					downloadFile(downloadPath, resultItems[j].Path, resultItems[j].Name, logMsgPrefix, flags)
 				}
 			}
 			wg.Done()
@@ -64,7 +45,8 @@ func downloadFiles(resultItems []AqlSearchResultItem, flags *utils.Flags, httpCl
 	wg.Wait()
 }
 
-func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, flags *utils.Flags, httpClientsDetails ioutils.HttpClientDetails) {
+func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, flags *utils.Flags) {
+	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	details := ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
 	localFilePath := localFileName
 	if !flags.Flat {
@@ -91,13 +73,6 @@ func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, f
 	}
 }
 
-func buildDownloadUrl(baseUrl string, resultItem AqlSearchResultItem) string {
-	if resultItem.Path == "." {
-		return baseUrl + resultItem.Repo + "/" + resultItem.Name
-	}
-	return baseUrl + resultItem.Repo + "/" + resultItem.Path + "/" + resultItem.Name
-}
-
 func shouldDownloadFile(localFilePath string, artifactoryFileDetails *ioutils.FileDetails) bool {
 	if !ioutils.IsFileExists(localFilePath) {
 		return true
@@ -107,21 +82,4 @@ func shouldDownloadFile(localFilePath string, artifactoryFileDetails *ioutils.Fi
 		return true
 	}
 	return false
-}
-
-func parseAqlSearchResponse(resp []byte) []AqlSearchResultItem {
-	var result AqlSearchResult
-	err := json.Unmarshal(resp, &result)
-	cliutils.CheckError(err)
-	return result.Results
-}
-
-type AqlSearchResult struct {
-	Results []AqlSearchResultItem
-}
-
-type AqlSearchResultItem struct {
-	Repo string
-	Path string
-	Name string
 }

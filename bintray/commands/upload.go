@@ -168,7 +168,7 @@ func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat 
         uploadPath = targetPath + uploadPath
     } else {
         uploadPath = targetPath + rootPath
-        uploadPath = cliutils.PrepareUploadPath(uploadPath)
+        uploadPath = cliutils.TrimPath(uploadPath)
     }
     return cliutils.Artifact{rootPath, uploadPath}
 }
@@ -225,7 +225,7 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 					fileName, _ := ioutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
-					uploadPath := cliutils.PrepareUploadPath(path)
+					uploadPath := cliutils.TrimPath(path)
 					target += uploadPath
 				}
 			}

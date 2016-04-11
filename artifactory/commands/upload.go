@@ -16,12 +16,7 @@ import (
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
 func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, totalFailed int) {
-	if flags.ArtDetails.SshKeyPath != "" {
-		utils.SshAuthentication(flags.ArtDetails)
-	}
-	if !flags.DryRun {
-		utils.PingArtifactory(flags.ArtDetails)
-	}
+	utils.PreCommandSetup(flags)
 	minChecksumDeploySize := getMinChecksumDeploySize()
 
 	// Get the list of artifacts to be uploaded to Artifactory:
@@ -72,7 +67,7 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
             uploadPath = targetPath + uploadPath
         } else {
             uploadPath = targetPath + rootPath
-            uploadPath = cliutils.PrepareUploadPath(uploadPath)
+            uploadPath = cliutils.TrimPath(uploadPath)
         }
     }
     return cliutils.Artifact{rootPath, uploadPath}
@@ -122,7 +117,7 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
                     fileName, _ := ioutils.GetFileAndDirFromPath(path)
                     target += fileName
                 } else {
-                    uploadPath := cliutils.PrepareUploadPath(path)
+                    uploadPath := cliutils.TrimPath(path)
                     target += uploadPath
                 }
             }

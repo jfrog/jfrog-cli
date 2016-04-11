@@ -8,7 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
-    	"runtime"
+	"runtime"
+	"regexp"
 )
 
 const CmdArtifactory = "rt"
@@ -61,7 +62,7 @@ func BuildListString(listStr string) string {
 	str := "[\""
 	for i := 0; i < size; i++ {
 		str += split[i]
-		if i+1 < size {
+		if i + 1 < size {
 			str += "\",\""
 		}
 	}
@@ -161,13 +162,14 @@ func PrepareLocalPathForUpload(localpath string, useRegExp bool) string {
 		localpath = localpath[3:]
 	}
 	if !useRegExp {
-		localpath = localPathToRegExp(localpath)
+		localpath = PathToRegExp(localpath)
 	}
 	return localpath
 }
 
-func PrepareUploadPath(path string) string {
+func TrimPath(path string) string {
 	path = strings.Replace(path, "\\", "/", -1)
+	path = strings.Replace(path, "//", "/", -1)
 	path = strings.Replace(path, "../", "", -1)
 	path = strings.Replace(path, "./", "", -1)
 	return path
@@ -177,14 +179,14 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
 	if c.String(flagName) == "" {
 		return defValue
 	}
-    return c.Bool(flagName)
+	return c.Bool(flagName)
 }
 
 func GetDocumentationMessage() string {
-    return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
+	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }
 
-func localPathToRegExp(localpath string) string {
+func PathToRegExp(localpath string) string {
 	var wildcard = ".*"
 
 	localpath = strings.Replace(localpath, ".", "\\.", -1)
@@ -193,13 +195,33 @@ func localPathToRegExp(localpath string) string {
 		localpath += wildcard
 	} else if strings.HasSuffix(localpath, "\\") {
 		size := len(localpath)
-		if size > 1 && localpath[size-2:size-1] != "\\" {
+		if size > 1 && localpath[size - 2:size - 1] != "\\" {
 			localpath += "\\"
 		}
 		localpath += wildcard
 	}
 	localpath = "^" + localpath + "$"
 	return localpath
+}
+
+// Replaces matched regular expression from sourceString to corresponding {i} at destString.
+// For example:
+//      regexpString = "1(.*)234" ; sourceString = "1hello234" ; destString = "{1}"
+//      returns "hello"
+func ReformatRegexp(regexpString, sourceString, destString string) string {
+	r, err := regexp.Compile(regexpString)
+	CheckError(err)
+
+	groups := r.FindStringSubmatch(sourceString)
+	size := len(groups)
+	target := destString
+	if size > 0 {
+		for i := 1; i < size; i++ {
+			group := strings.Replace(groups[i], "\\", "/", -1)
+			target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
+		}
+	}
+	return target
 }
 
 func GetTestsFileSeperator() string {
@@ -215,7 +237,15 @@ func MergeMaps(src map[string]string, dst map[string]string) {
 	}
 }
 
+func Bool2Int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 type Artifact struct {
 	LocalPath  string
 	TargetPath string
 }
+

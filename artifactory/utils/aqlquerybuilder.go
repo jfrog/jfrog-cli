@@ -54,6 +54,10 @@ func prepareSearchPattern(pattern string) string {
 	if strings.HasSuffix(pattern, "/") {
 		pattern += "*"
 	}
+
+	//remove parenthesis
+	pattern = strings.Replace(pattern, "(", "", -1)
+	pattern = strings.Replace(pattern, ")", "", -1)
 	return pattern
 }
 

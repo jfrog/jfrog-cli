@@ -1,21 +1,16 @@
-package commands
+package utils
 
-import (
-	"github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
-	"testing"
-)
+import "testing"
 
-func TestRecursiveDownload(t *testing.T) {
-	flags := tests.GetFlags()
-	flags.Recursive = true
-	aqlResult := Download("repo-local", flags)
+func TestBuildAqlSearchQueryRecursive(t *testing.T) {
+	aqlResult := BuildAqlSearchQuery("repo-local", true, "")
 	expected := "items.find({\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\":\"*\"},\"name\":{\"$match\":\"*\"}}]}]})"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. Expected: " + expected + " Got " + aqlResult)
 	}
 
-	aqlResult = Download("repo-local2/a*b*c/dd/", flags)
+	aqlResult = BuildAqlSearchQuery("repo-local2/a*b*c/dd/", true, "")
 	expected = "items.find({\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\":\"a*b*c/dd\"},\"name\":{\"$match\":\"*\"}}]},{\"$and\": [{\"path\": {\"$match\":\"a*b*c/dd/*\"},\"name\":{\"$match\":\"*\"}}]}]})"
 
 	if aqlResult != expected {
@@ -23,20 +18,21 @@ func TestRecursiveDownload(t *testing.T) {
 	}
 }
 
-func TestNonRecursiveDownload(t *testing.T) {
-	flags := tests.GetFlags()
-	flags.Recursive = false
-	aqlResult := Download("repo-local", flags)
+func TestBuildAqlSearchQueryNonRecursive(t *testing.T) {
+	aqlResult := BuildAqlSearchQuery("repo-local", false, "")
 	expected := "items.find({\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\":\".\"},\"name\":{\"$match\":\"*\"}}]}]})"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. Expected: " + expected + " Got " + aqlResult)
 	}
 
-	aqlResult = Download("repo-local2/a*b*c/dd/", flags)
+	aqlResult = BuildAqlSearchQuery("repo-local2/a*b*c/dd/", false, "")
 	expected = "items.find({\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\":\"a*b*c/dd\"},\"name\":{\"$match\":\"*\"}}]}]})"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. Expected: " + expected + " Got " + aqlResult)
 	}
 }
+
+
+

@@ -21,7 +21,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"c"},
 			Usage:   "Configure Artifactory details",
 			Action: func(c *cli.Context) {
-				configure(c)
+				configCmd(c)
 			},
 		},
 		{
@@ -30,7 +30,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"u"},
 			Usage:   "Upload files",
 			Action: func(c *cli.Context) {
-				upload(c)
+				uploadCmd(c)
 			},
 		},
 		{
@@ -39,7 +39,34 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"dl"},
 			Usage:   "Download files",
 			Action: func(c *cli.Context) {
-				download(c)
+				downloadCmd(c)
+			},
+		},
+		{
+			Name:    "move",
+			Flags:   getMoveFlags(),
+			Aliases: []string{"mv"},
+			Usage:   "Move files",
+			Action: func(c *cli.Context) {
+				moveCmd(c)
+			},
+		},
+		{
+			Name:    "copy",
+			Flags:   getCopyFlags(),
+			Aliases: []string{"cp"},
+			Usage:   "Copy files",
+			Action: func(c *cli.Context) {
+				copyCmd(c)
+			},
+		},
+		{
+			Name:    "delete",
+			Flags:   getDeleteFlags(),
+			Aliases: []string{"d"},
+			Usage:   "Move files",
+			Action: func(c *cli.Context) {
+				deleteCmd(c)
 			},
 		},
 	}
@@ -140,6 +167,65 @@ func getDownloadFlags() []cli.Flag {
 	}...)
 }
 
+func getMoveFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "recursive",
+			Value: "",
+			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "flat",
+			Value: "",
+			Usage: "[Default: false] If set to false, files are moved according to their file system hierarchy.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
+	}...)
+
+}
+
+func getCopyFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "recursive",
+			Value: "",
+			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "flat",
+			Value: "",
+			Usage: "[Default: false] If set to false, files are copied according to their file system hierarchy.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
+	}...)
+
+}
+
+func getDeleteFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be copied.",
+		},
+		cli.StringFlag{
+			Name:  "recursive",
+			Value: "",
+			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
+	}...)
+
+}
+
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
@@ -217,7 +303,7 @@ func initFlags(c *cli.Context, cmd string) {
 	}
 }
 
-func configure(c *cli.Context) {
+func configCmd(c *cli.Context) {
 	if len(c.Args()) > 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	} else if len(c.Args()) == 1 {
@@ -226,7 +312,7 @@ func configure(c *cli.Context) {
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.")
+			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
 		initFlags(c, "config")
@@ -234,7 +320,7 @@ func configure(c *cli.Context) {
 	}
 }
 
-func download(c *cli.Context) {
+func downloadCmd(c *cli.Context) {
 	initFlags(c, "download")
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
@@ -243,7 +329,7 @@ func download(c *cli.Context) {
 	commands.Download(pattern, flags)
 }
 
-func upload(c *cli.Context) {
+func uploadCmd(c *cli.Context) {
 	initFlags(c, "upload")
 	size := len(c.Args())
 	if size != 2 {
@@ -258,6 +344,35 @@ func upload(c *cli.Context) {
 		}
 		cliutils.Exit(cliutils.ExitCodeError, "")
 	}
+}
+
+func moveCmd(c *cli.Context) {
+	initFlags(c, "move")
+	if len(c.Args()) != 2 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	sourcePattern := c.Args()[0]
+	targetPath := c.Args()[1]
+	commands.Move(sourcePattern, targetPath, flags)
+}
+
+func copyCmd(c *cli.Context) {
+	initFlags(c, "copy")
+	if len(c.Args()) != 2 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	sourcePattern := c.Args()[0]
+	targetPath := c.Args()[1]
+	commands.Copy(sourcePattern, targetPath, flags)
+}
+
+func deleteCmd(c *cli.Context) {
+	initFlags(c, "delete")
+	if len(c.Args()) != 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	path := c.Args()[0]
+	commands.Delete(path, flags)
 }
 
 func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
