@@ -21,7 +21,7 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 }
 
 func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-	details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) *http.Response {
+details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) *http.Response {
 	if details == nil {
 		details = ioutils.GetFileDetails(f.Name())
 	}
@@ -81,12 +81,12 @@ func PreCommandSetup(flags *Flags) {
 	if flags.ArtDetails.SshKeyPath != "" {
 		SshAuthentication(flags.ArtDetails)
 	}
-	if(!flags.DryRun){
+	if !flags.DryRun {
 		PingArtifactory(flags.ArtDetails)
 	}
 }
 
-func PingArtifactory(artDetails *config.ArtifactoryDetails){
+func PingArtifactory(artDetails *config.ArtifactoryDetails) {
 	defer func() {
 		if r := recover(); r != nil {
 			artDetails.Transport = initTransport()
@@ -97,7 +97,7 @@ func PingArtifactory(artDetails *config.ArtifactoryDetails){
 	ioutils.SendGet(artDetails.Url, true, httpClientsDetails)
 }
 
-func GetArtifactoryHttpClientDetails (artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails{
+func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails {
 	return ioutils.HttpClientDetails{
 		User:      artifactoryDetails.User,
 		Password:  artifactoryDetails.Password,
