@@ -7,11 +7,11 @@
         "subject": "jfrog"
     },
     "version": {
-        "name": "1.1.0",
-        "vcs_tag": "1.1.0",
+        "name": "1.2.0-dev",
+        "vcs_tag": "1.2.0-dev",
         "gpgSign": false
     },
     "files":
-        [{"includePattern": "../../../../bin/jfrog", "uploadPattern": "1.1.0/jfrog-cli-linux-amd64/jfrog"}],
+        [{"includePattern": "../../../../bin/jfrog", "uploadPattern": "1.2.0-dev/jfrog-cli-linux-amd64/jfrog"}],
     "publish": false
 }
