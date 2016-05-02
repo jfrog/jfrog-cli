@@ -97,7 +97,7 @@ func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 func DeleteAccessKey(flags *AccessKeyFlags, org string) {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body := ioutils.SendDelete(url, httpClientsDetails)
+	resp, body := ioutils.SendDelete(url, nil, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}

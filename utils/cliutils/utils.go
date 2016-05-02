@@ -14,6 +14,7 @@ import (
 
 const CmdArtifactory = "rt"
 const CmdBintray = "bt"
+const CmdMissionControl = "mc"
 
 var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
@@ -179,11 +180,11 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
 	if c.String(flagName) == "" {
 		return defValue
 	}
-	return c.Bool(flagName)
+    return c.Bool(flagName)
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
+    return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }
 
 func PathToRegExp(localpath string) string {
@@ -242,6 +243,13 @@ func Bool2Int(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+type Credentials interface {
+	SetUser(string)
+	SetPassword(string)
+	GetUser() string
+	GetPassword() string
 }
 
 type Artifact struct {

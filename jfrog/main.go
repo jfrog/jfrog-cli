@@ -4,6 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/bintray"
+	"github.com/jfrogdev/jfrog-cli-go/missioncontrol"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"os"
 )
@@ -29,6 +30,11 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdBintray,
 			Usage: 	     "Bintray commands",
 			Subcommands: bintray.GetCommands(),
+		},
+		{
+			Name:        cliutils.CmdMissionControl,
+			Usage: 	     "Mission Control commands",
+			Subcommands: missioncontrol.GetCommands(),
 		},
 	}
 }

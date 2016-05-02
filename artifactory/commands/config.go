@@ -6,9 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
 	"strings"
-	"syscall"
 )
 
 func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
@@ -27,7 +25,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			readSshKeyPathFromConsole(details, defaultDetails)
 		} else {
-			readCredentialsFromConsole(details, defaultDetails)
+			ioutils.ReadCredentialsFromConsole(details, defaultDetails)
 		}
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
@@ -44,21 +42,6 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	}
 	if !ioutils.IsFileExists(details.SshKeyPath) {
 		fmt.Println("Warning: Could not find SSH key file at: " + details.SshKeyPath)
-	}
-}
-
-func readCredentialsFromConsole(details, savedDetails *config.ArtifactoryDetails) {
-	if details.User == "" {
-		ioutils.ScanFromConsole("User", &details.User, savedDetails.User)
-	}
-	if details.Password == "" {
-		print("Password: ")
-		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-		cliutils.CheckError(err)
-		details.Password = string(bytePassword)
-		if details.Password == "" {
-			details.Password = savedDetails.Password
-		}
 	}
 }
 

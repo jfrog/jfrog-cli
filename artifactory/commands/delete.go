@@ -35,7 +35,7 @@ func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) in
 
 		fmt.Println("Deleting: " + fileUrl)
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, _ := ioutils.SendDelete(fileUrl, httpClientsDetails)
+		resp, _ := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
 		fmt.Println("Artifactory response:", resp.Status)
 
 		deletedCount += cliutils.Bool2Int(resp.StatusCode == 204)

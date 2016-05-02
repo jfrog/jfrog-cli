@@ -140,7 +140,7 @@ func CreatePathDetails(str string) *PathDetails {
 		Path:    path}
 }
 
-func GetBintrayHttpClientDetails (bintrayDetails *config.BintrayDetails) ioutils.HttpClientDetails{
+func GetBintrayHttpClientDetails (bintrayDetails *config.BintrayDetails) ioutils.HttpClientDetails {
 	return ioutils.HttpClientDetails{
 		User:     bintrayDetails.User,
 		Password: bintrayDetails.Key}

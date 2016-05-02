@@ -14,6 +14,10 @@ func IsArtifactoryConfExists() bool {
 	return readConf().Artifactory != nil
 }
 
+func IsMissionControlConfExists() bool {
+	return readConf().MissionControl != nil
+}
+
 func IsBintrayConfExists() bool {
 	return readConf().Bintray != nil
 }
@@ -22,6 +26,14 @@ func ReadArtifactoryConf() *ArtifactoryDetails {
 	details := readConf().Artifactory
 	if details == nil {
 		return new(ArtifactoryDetails)
+	}
+	return details
+}
+
+func ReadMissionControlConf() *MissionControlDetails {
+	details := readConf().MissionControl
+	if details == nil {
+		return new(MissionControlDetails)
 	}
 	return details
 }
@@ -37,6 +49,12 @@ func ReadBintrayConf() *BintrayDetails {
 func SaveArtifactoryConf(details *ArtifactoryDetails) {
 	config := readConf()
 	config.Artifactory = details
+	saveConfig(config)
+}
+
+func SaveMissionControlConf(details *MissionControlDetails) {
+	config := readConf()
+	config.MissionControl = details
 	saveConfig(config)
 }
 
@@ -87,8 +105,9 @@ func getConFilePath() string {
 }
 
 type Config struct {
-	Artifactory *ArtifactoryDetails `json:"artifactory,omitempty"`
-	Bintray     *BintrayDetails     `json:"bintray,omitempty"`
+	Artifactory    *ArtifactoryDetails 		 `json:"artifactory,omitempty"`
+	Bintray        *BintrayDetails     		 `json:"bintray,omitempty"`
+	MissionControl *MissionControlDetails    `json:"MissionControl,omitempty"`
 }
 
 type ArtifactoryDetails struct {
@@ -106,4 +125,42 @@ type BintrayDetails struct {
 	User               string `json:"user,omitempty"`
 	Key                string `json:"key,omitempty"`
 	DefPackageLicenses string `json:"defPackageLicense,omitempty"`
+}
+
+type MissionControlDetails struct {
+	Url            string            `json:"url,omitempty"`
+	User           string            `json:"user,omitempty"`
+	Password       string            `json:"password,omitempty"`
+}
+
+func (artifactoryDetails *ArtifactoryDetails) SetUser(username string){
+	artifactoryDetails.User = username
+}
+
+func (artifactoryDetails *ArtifactoryDetails) SetPassword(password string){
+	artifactoryDetails.Password = password
+}
+
+func (artifactoryDetails *ArtifactoryDetails) GetUser() string{
+	return artifactoryDetails.User
+}
+
+func (artifactoryDetails *ArtifactoryDetails) GetPassword() string{
+	return artifactoryDetails.Password
+}
+
+func (missionControlDetails *MissionControlDetails) SetUser(username string){
+	missionControlDetails.User = username
+}
+
+func (missionControlDetails *MissionControlDetails) SetPassword(password string){
+	missionControlDetails.Password = password
+}
+
+func (missionControlDetails *MissionControlDetails) GetUser() string{
+	return missionControlDetails.User
+}
+
+func (missionControlDetails *MissionControlDetails) GetPassword() string{
+	return missionControlDetails.Password
 }
