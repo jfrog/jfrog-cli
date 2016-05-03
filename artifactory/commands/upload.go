@@ -34,7 +34,7 @@ func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, to
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				target := flags.ArtDetails.Url + artifacts[j].TargetPath
+				target := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].TargetPath, make(map[string]string))
 				if uploadFile(artifacts[j].LocalPath, target, flags,
 				    minChecksumDeploySize, logMsgPrefix) {
 					    uploadCount[threadId]++

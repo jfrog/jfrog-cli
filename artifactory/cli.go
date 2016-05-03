@@ -218,6 +218,11 @@ func getDeleteFlags() []cli.Flag {
 			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
 		},
+		cli.StringFlag{
+			Name:  "quiet",
+			Value: "",
+			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -372,6 +377,14 @@ func deleteCmd(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	path := c.Args()[0]
+	if !c.Bool("quiet") {
+		var confirm string
+		fmt.Print("Delete path " + path + "? (y/n): ")
+		fmt.Scanln(&confirm)
+		if !cliutils.ConfirmAnswer(confirm) {
+			return
+		}
+	}
 	commands.Delete(path, flags)
 }
 

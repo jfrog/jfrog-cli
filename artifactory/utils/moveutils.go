@@ -13,7 +13,7 @@ const (
 	COPY MoveType = "copy"
 )
 
-func MoveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *Flags, moveType MoveType) {
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *Flags, moveType MoveType) {
 	movedCount := 0
 
 	for _, v := range resultItems {
@@ -38,12 +38,24 @@ func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool
 	fmt.Println(moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath)
 
 	moveUrl := flags.ArtDetails.Url
-	restApi := "api/" + string(moveType) + "/" + sourcePath + "?to=" + destPath
+	restApi := "api/" + string(moveType) + "/" + sourcePath
+	requestFullUrl := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to":destPath})
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, _ := ioutils.SendPost(moveUrl + restApi, nil, httpClientsDetails)
+	resp, _ := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
 
 	fmt.Println("Artifactory response:", resp.Status)
 	return resp.StatusCode == 200
+}
+
+func MoveFilesWrapper(sourcePattern, destPath string, flags *Flags, moveType MoveType) {
+	PreCommandSetup(flags)
+	if IsWildcardPattern(sourcePattern) {
+		resultItems := AqlSearch(sourcePattern, flags)
+		regexpPath := cliutils.PathToRegExp(sourcePattern)
+		moveFiles(regexpPath, resultItems, destPath, flags, moveType)
+	} else {
+		moveFile(sourcePattern, destPath, flags, moveType)
+	}
 }
 
 var moveMsgs = map[MoveType]MoveOptions{

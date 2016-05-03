@@ -425,6 +425,9 @@ func GetFileDetails(filePath string) *FileDetails {
 
 func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) *FileDetails {
 	resp := SendHead(downloadUrl, httpClientsDetails)
+	if resp.StatusCode == 404 {
+		cliutils.Exit(cliutils.ExitCodeError, "Artifactory response: " + resp.Status)
+	}
 	fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	cliutils.CheckError(err)
 

@@ -7,22 +7,33 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strconv"
 	"sync"
+	"strings"
 )
 
 // Downloads the artifacts using the specified download pattern.
 // Returns the AQL query used for the download.
-func Download(downloadPattern string, flags *utils.Flags) int {
+func Download(downloadPattern string, flags *utils.Flags) {
 	utils.PreCommandSetup(flags)
 	if !flags.DryRun {
 		ioutils.CreateTempDirPath()
 		defer ioutils.RemoveTempDir()
 	}
-
-	resultItems := utils.AqlSearch(downloadPattern, flags)
-	downloadFiles(resultItems, flags)
-
-	fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
-	return len(resultItems)
+	if utils.IsWildcardPattern(downloadPattern) {
+		resultItems := utils.AqlSearch(downloadPattern, flags)
+		downloadFiles(resultItems, flags)
+		fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
+	} else {
+		props := "";
+		if flags.Props != "" {
+			props = ";" + flags.Props
+		}
+		downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadPattern + props, make(map[string]string))
+		logMsgPrefix := cliutils.GetLogMsgPrefix(0, flags.DryRun)
+		if !flags.DryRun {
+			localPath, localFileName := getDetailsFromDownloadPath(downloadPattern)
+			downloadFile(downloadPath, localPath, localFileName, logMsgPrefix + ": ", flags)
+		}
+	}
 }
 
 func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) {
@@ -33,16 +44,29 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) 
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				downloadPath := flags.ArtDetails.Url + resultItems[j].GetFullUrl()
-				fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
+				downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
 				if !flags.DryRun {
 					downloadFile(downloadPath, resultItems[j].Path, resultItems[j].Name, logMsgPrefix, flags)
+				} else {
+					fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
 				}
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+}
+
+func getDetailsFromDownloadPath(downloadPattern string) (localPath, localFileName string) {
+	firstSeparator := strings.Index(downloadPattern, "/")
+	lastSeparator := strings.LastIndex(downloadPattern, "/")
+	if firstSeparator != lastSeparator {
+		localPath = downloadPattern[firstSeparator + 1:lastSeparator];
+	} else {
+		localPath = "."
+	}
+	localFileName = downloadPattern[lastSeparator + 1:];
+	return
 }
 
 func downloadFile(downloadPath, localPath, localFileName, logMsgPrefix string, flags *utils.Flags) {

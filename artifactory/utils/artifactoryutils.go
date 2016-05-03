@@ -5,11 +5,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
+	"net/url"
 	"os"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
 	"fmt"
+	"strings"
 )
 
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string) {
@@ -103,6 +105,22 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 		Password:  artifactoryDetails.Password,
 		Headers:   artifactoryDetails.SshAuthHeaders,
 		Transport: artifactoryDetails.Transport}
+}
+
+func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) string {
+	escapedUrl, err := url.Parse(baseUrl)
+	cliutils.CheckError(err)
+	escapedUrl.Path += path
+	q := escapedUrl.Query()
+	for k, v := range params {
+		q.Set(k, v)
+	}
+	escapedUrl.RawQuery = q.Encode()
+	return escapedUrl.String()
+}
+
+func IsWildcardPattern(pattern string) bool {
+	return strings.Contains(pattern, "*") || strings.HasSuffix(pattern, "/") || !strings.Contains(pattern, "/")
 }
 
 type Flags struct {

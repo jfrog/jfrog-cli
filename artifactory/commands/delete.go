@@ -13,9 +13,9 @@ func Delete(deletePattern string, flags *utils.Flags) {
 	utils.PreCommandSetup(flags)
 
 	var resultItems []utils.AqlSearchResultItem
-	if isDirectoryPath(deletePattern) {
+	if !utils.IsWildcardPattern(deletePattern) || isDirectoryPath(deletePattern) {
 		simplePathItem := utils.AqlSearchResultItem{Path:deletePattern}
-		resultItems = append(resultItems, simplePathItem)
+		resultItems = []utils.AqlSearchResultItem{simplePathItem}
 	} else {
 		resultItems = utils.AqlSearch(deletePattern, flags)
 	}
@@ -27,9 +27,9 @@ func Delete(deletePattern string, flags *utils.Flags) {
 func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) int {
 	deletedCount := 0
 	for _, v := range resultItems {
-		fileUrl := flags.ArtDetails.Url + v.GetFullUrl()
+		fileUrl := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if flags.DryRun {
-			fmt.Println("deleting: " + fileUrl)
+			fmt.Println("[Dry run] Deleting: " + fileUrl)
 			continue
 		}
 
