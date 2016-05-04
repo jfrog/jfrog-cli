@@ -19,10 +19,14 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath st
 	for _, v := range resultItems {
 		destPathLocal := destPath
 		if !flags.Flat {
-			file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
-			destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
-		}
+			if strings.Contains(destPathLocal, "/") {
+				file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
+				destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
+			} else {
+				destPathLocal = cliutils.TrimPath(destPathLocal + "/" + v.Path + "/")
+			}
 
+		}
 		destFile := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
 		if strings.HasSuffix(destFile, "/") {
 			destFile += v.Name
@@ -39,7 +43,7 @@ func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool
 
 	moveUrl := flags.ArtDetails.Url
 	restApi := "api/" + string(moveType) + "/" + sourcePath
-	requestFullUrl := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to":destPath})
+	requestFullUrl := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	resp, _ := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
 
