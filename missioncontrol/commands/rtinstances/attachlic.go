@@ -33,9 +33,7 @@ func AttachLic(instanceName string, flags *AttachLicFlags) {
 	fmt.Println("Mission Control response: " + resp.Status)
 	if flags.LicensePath == "" {
 		requestContent, err := json.Marshal(extractJsonValue(body))
-		if err != nil{
-			panic(err)
-		}
+		cliutils.CheckError(err)
 		fmt.Println(string(requestContent))
 	} else {
 		licenseKey := getLicenseFromJson(body)
@@ -50,15 +48,17 @@ func getLicenseFromJson(body []byte) (licenseKey [] byte) {
 
 func extractJsonValue(body []byte) Message {
 	data := &Data{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		panic(err)
-	}
+	err := json.Unmarshal(body, &data);
+	cliutils.CheckError(err)
 	return data.Data
 }
 
 func prepareLicenseFile(filepath string, overrideFile bool) {
 	if filepath == "" {
 		return
+	}
+	if ioutils.IsDir(filepath) {
+		cliutils.Exit(cliutils.ExitCodeError, filepath + " is a directory.")
 	}
 	if !overrideFile && ioutils.IsFileExists(filepath) {
 		cliutils.Exit(cliutils.ExitCodeError, "File already exist, in case you wish to override the file use --override flag")

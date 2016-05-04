@@ -140,19 +140,11 @@ func getDetachLicenseFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "bucket-id",
-			Usage: "[Optional] license bucket ID",
+			Usage: "[Mandatory] license bucket ID",
 		},
 		cli.StringFlag{
 			Name:  "node-id",
 			Usage: "[Optional] Unique HA node identifier",
-		},
-		cli.StringFlag{
-			Name:  "license-path",
-			Usage: "[Optional] Full path to the license file",
-		},
-		cli.StringFlag{
-			Name:  "override",
-			Usage: "[Default: false] Set to true to override licence file.",
 		},
 	}...)
 }
