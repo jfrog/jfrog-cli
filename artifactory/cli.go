@@ -63,8 +63,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:    "delete",
 			Flags:   getDeleteFlags(),
-			Aliases: []string{"d"},
-			Usage:   "Move files",
+			Aliases: []string{"del"},
+			Usage:   "Delete files",
 			Action: func(c *cli.Context) {
 				deleteCmd(c)
 			},
@@ -204,14 +204,13 @@ func getCopyFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 	}...)
-
 }
 
 func getDeleteFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be copied.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be deleted.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
