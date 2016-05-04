@@ -63,8 +63,8 @@ func MoveFilesWrapper(sourcePattern, destPath string, flags *Flags, moveType Mov
 }
 
 var moveMsgs = map[MoveType]MoveOptions{
-	MOVE: MoveOptions{MovingMsg: "Moving", MovedMsg: "moved"},
-	COPY: MoveOptions{MovingMsg: "Copying", MovedMsg: "copied"},
+	MOVE: MoveOptions{MovingMsg: "Moving", MovedMsg: "Moved"},
+	COPY: MoveOptions{MovingMsg: "Copying", MovedMsg: "Copied"},
 }
 
 type MoveOptions struct {
