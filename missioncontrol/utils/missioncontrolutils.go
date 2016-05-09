@@ -48,6 +48,7 @@ type LicenseRequestContent struct {
 	Name      string `json:"instanceName,omitempty"`
 	BucketKey string `json:"bucketKey,omitempty"`
 	NodeID 	  string `json:"nodeId,omitempty"`
+	Deploy 	  bool   `json:"deploy,omitempty"`
 }
 
 type ArtifactoryInstanceDetails struct {

@@ -16,7 +16,9 @@ func AttachLic(instanceName string, flags *AttachLicFlags) {
 	postContent := utils.LicenseRequestContent{
 		Name: 	  	 instanceName,
 		BucketKey:	 flags.BucketKey,
-		NodeID:	     flags.NodeId}
+		NodeID:	     flags.NodeId,
+		Deploy:	     flags.Deploy}
+	fmt.Println(postContent)
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, "Failed to marshal json. " + cliutils.GetDocumentationMessage())
@@ -87,6 +89,7 @@ type AttachLicFlags struct {
 	BucketKey 			  string
 	BucketId 			  string
 	Override 			  bool
+	Deploy 			  	  bool
 }
 
 type Message struct {

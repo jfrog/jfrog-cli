@@ -133,6 +133,10 @@ func getAttachLicenseFlags() []cli.Flag {
 			Name:  "override",
 			Usage: "[Default: false] Set to true to override licence file.",
 		},
+		cli.StringFlag{
+			Name:  "deploy",
+			Usage: "[Default: false] Set to true to deploy licence to instace.",
+		},
 	}...)
 }
 
@@ -262,6 +266,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags) {
 		cliutils.Exit(cliutils.ExitCodeError, "The --bucket-key option is mandatory")
 	}
 	flags.Override = cliutils.GetBoolFlagValue(c, "override", false)
+	flags.Deploy = cliutils.GetBoolFlagValue(c, "deploy", false)
 	flags.NodeId = c.String("node-id")
 	return
 }
