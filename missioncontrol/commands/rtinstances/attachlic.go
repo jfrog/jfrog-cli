@@ -18,7 +18,6 @@ func AttachLic(instanceName string, flags *AttachLicFlags) {
 		BucketKey:	 flags.BucketKey,
 		NodeID:	     flags.NodeId,
 		Deploy:	     flags.Deploy}
-	fmt.Println(postContent)
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, "Failed to marshal json. " + cliutils.GetDocumentationMessage())
