@@ -192,13 +192,7 @@ func PathToRegExp(localpath string) string {
 
 	localpath = strings.Replace(localpath, ".", "\\.", -1)
 	localpath = strings.Replace(localpath, "*", wildcard, -1)
-	if strings.HasSuffix(localpath, "/") {
-		localpath += wildcard
-	} else if strings.HasSuffix(localpath, "\\") {
-		size := len(localpath)
-		if size > 1 && localpath[size - 2:size - 1] != "\\" {
-			localpath += "\\"
-		}
+	if strings.HasSuffix(localpath, "/") || strings.HasSuffix(localpath, "\\") {
 		localpath += wildcard
 	}
 	localpath = "^" + localpath + "$"
