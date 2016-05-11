@@ -215,7 +215,7 @@ func getDeleteFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
-			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.",
 		},
 		cli.StringFlag{
 			Name:  "quiet",
