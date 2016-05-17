@@ -7,11 +7,11 @@
         "subject": "jfrog"
     },
     "version": {
-        "name": "1.2.0",
-        "vcs_tag": "1.2.0",
+        "name": "1.2.1",
+        "vcs_tag": "1.2.1",
         "gpgSign": false
     },
     "files":
-        [{"includePattern": "../../../../bin/darwin_amd64/jfrog", "uploadPattern": "1.2.0/jfrog-cli-mac-386/jfrog"}],
+        [{"includePattern": "../../../../bin/darwin_amd64/jfrog", "uploadPattern": "1.2.1/jfrog-cli-mac-386/jfrog"}],
     "publish": false
 }
