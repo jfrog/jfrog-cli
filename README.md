@@ -1,5 +1,5 @@
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to Artifactory and Bintray through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. Several features of the JFrog CLI makes your scripts more efficient and reliable:
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to Artifactory, Bintray, and Mission Control through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
 - Multi-threaded upload and download of artifacts make builds run faster
 - Checksum optimization reduces redundant file transfers
@@ -29,6 +29,7 @@ $ go get github.com/jfrogdev/jfrog-cli-go/...
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
 # Using JFrog CLI with Artifactory and Bintray
-JFrog CLI can be used for quick and easy file management with both Artifactory and Bintray, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please refer to the relevant documentation through the corresponding link below: 
+JFrog CLI can be used for a variety of functions with Artifactory, Bintray and Mission Control, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please refer to the relevant documentation through the corresponding links below: 
 * [Using JFrog CLI with Artifactory](https://www.jfrog.com/confluence/display/RTF/JFrog+CLI)
 * [Using JFrog CLI with Bintray](https://bintray.com/docs/usermanual/cli/cli_jfrogcli.html)
+* [Using JFrog CLI with Mission Control](https://www.jfrog.com/confluence/display/MC/JFrog+CLI)
