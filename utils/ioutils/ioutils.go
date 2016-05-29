@@ -19,7 +19,7 @@ import (
 	"strings"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )
 

@@ -2,7 +2,7 @@ package bintray
 
 import (
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/commands"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"

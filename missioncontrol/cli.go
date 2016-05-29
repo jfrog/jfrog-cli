@@ -1,7 +1,7 @@
 package missioncontrol
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/commands"
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/commands/rtinstances"
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
