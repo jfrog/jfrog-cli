@@ -87,6 +87,10 @@ func getFlags() []cli.Flag {
 			Usage: "[Optional] Artifactory password",
 		},
 		cli.StringFlag{
+			Name:  "apikey",
+			Usage: "[Optional] Artifactory API key",
+		},
+		cli.StringFlag{
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path",
 		},
@@ -417,17 +421,20 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 	}
 	details := new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
+	details.ApiKey = c.String("apikey")
 	details.User = c.String("user")
 	details.Password = c.String("password")
 	details.SshKeyPath = c.String("ssh-key-path")
 
 	if includeConfig {
-		if details.Url == "" ||
-			((details.User == "" || details.Password == "") && details.SshKeyPath == "") {
+		confDetails := commands.GetConfig()
+		if details.Url == "" {
+			details.Url = confDetails.Url
+		}
 
-			confDetails := commands.GetConfig()
-			if details.Url == "" {
-				details.Url = confDetails.Url
+		if (details.User == "" || details.Password == "") && details.SshKeyPath == "" && details.ApiKey == "" {
+			if details.ApiKey == "" {
+				details.ApiKey = confDetails.ApiKey
 			}
 			if details.User == "" {
 				details.User = confDetails.User

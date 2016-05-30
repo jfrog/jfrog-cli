@@ -161,10 +161,10 @@ func Send(method string, url string, content []byte, allowRedirect bool,
 	}
 	cliutils.CheckError(err)
 	req.Close = true
-	if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
-		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
-	}
+
+	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
+
 	if httpClientsDetails.Headers != nil {
 		for name := range httpClientsDetails.Headers {
 			req.Header.Set(name, httpClientsDetails.Headers[name])
@@ -178,6 +178,7 @@ func Send(method string, url string, content []byte, allowRedirect bool,
 			return errors.New("redirect")
 		}
 	}
+
 	resp, err = client.Do(req)
 	if !allowRedirect && err != nil {
 		return
@@ -209,6 +210,8 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) *h
 	if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
 		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
 	}
+
+	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 
 	length := strconv.FormatInt(size, 10)
@@ -437,6 +440,15 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 	fileDetails.Size = fileSize
 	fileDetails.AcceptRanges = resp.Header.Get("Accept-Ranges") == "bytes"
 	return fileDetails
+}
+
+func setAuthentication(req *http.Request, httpClientsDetails HttpClientDetails) {
+	//Set authentication
+	if httpClientsDetails.ApiKey != "" {
+		req.Header.Set("X-JFrog-Art-Api", httpClientsDetails.ApiKey)
+	} else if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
+		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
+	}
 }
 
 func addUserAgentHeader(req *http.Request) {

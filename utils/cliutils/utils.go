@@ -239,6 +239,14 @@ func Bool2Int(b bool) int {
 	return 0
 }
 
+func SumTrueValues(boolArr []bool) int {
+	counter := 0
+	for _, val := range boolArr {
+		counter += Bool2Int(val)
+	}
+	return counter
+}
+
 type Credentials interface {
 	SetUser(string)
 	SetPassword(string)

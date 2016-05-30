@@ -15,6 +15,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
     if details == nil {
         details = new(config.ArtifactoryDetails)
     }
+
 	if interactive {
 	    if defaultDetails == nil {
             defaultDetails = config.ReadArtifactoryConf()
@@ -25,9 +26,19 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			readSshKeyPathFromConsole(details, defaultDetails)
 		} else {
-			ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+			ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+			if details.ApiKey == "" {
+				ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+			}
 		}
 	}
+
+	//Check for only one credential method
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.SshKeyPath != ""}
+	if (cliutils.SumTrueValues(boolArr) > 1) {
+		cliutils.Exit(cliutils.ExitCodeError, "Only one authentication method allowd at a time.")
+	}
+
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
 		details = encryptPassword(details)
@@ -49,6 +60,9 @@ func ShowConfig() {
 	details := config.ReadArtifactoryConf()
 	if details.Url != "" {
 		fmt.Println("Url: " + details.Url)
+	}
+	if details.ApiKey != "" {
+		fmt.Println("API key: " + details.ApiKey)
 	}
 	if details.User != "" {
 		fmt.Println("User: " + details.User)

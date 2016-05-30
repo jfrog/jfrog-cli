@@ -103,6 +103,7 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 	return ioutils.HttpClientDetails{
 		User:      artifactoryDetails.User,
 		Password:  artifactoryDetails.Password,
+		ApiKey:    artifactoryDetails.ApiKey,
 		Headers:   artifactoryDetails.SshAuthHeaders,
 		Transport: artifactoryDetails.Transport}
 }

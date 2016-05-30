@@ -72,7 +72,7 @@ func saveConfig(config *Config) {
 	cliutils.CheckError(err)
 	path := getConFilePath()
 	if ioutils.IsFileExists(path) {
-        err := os.Remove(path)
+		err := os.Remove(path)
 		cliutils.CheckError(err)
 	}
 	ioutil.WriteFile(getConFilePath(), []byte(content.String()), 0600)
@@ -105,18 +105,19 @@ func getConFilePath() string {
 }
 
 type Config struct {
-	Artifactory    *ArtifactoryDetails 		 `json:"artifactory,omitempty"`
-	Bintray        *BintrayDetails     		 `json:"bintray,omitempty"`
-	MissionControl *MissionControlDetails    `json:"MissionControl,omitempty"`
+	Artifactory    *ArtifactoryDetails    `json:"artifactory,omitempty"`
+	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
+	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
 }
 
 type ArtifactoryDetails struct {
 	Url            string            `json:"url,omitempty"`
 	User           string            `json:"user,omitempty"`
 	Password       string            `json:"password,omitempty"`
+	ApiKey         string            `json:"apiKey,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	SshAuthHeaders map[string]string `json:"-"`
-	Transport      *http.Transport	 `json:"-"`
+	Transport      *http.Transport   `json:"-"`
 }
 
 type BintrayDetails struct {
@@ -128,39 +129,47 @@ type BintrayDetails struct {
 }
 
 type MissionControlDetails struct {
-	Url            string            `json:"url,omitempty"`
-	User           string            `json:"user,omitempty"`
-	Password       string            `json:"password,omitempty"`
+	Url      string            `json:"url,omitempty"`
+	User     string            `json:"user,omitempty"`
+	Password string            `json:"password,omitempty"`
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SetUser(username string){
+func (artifactoryDetails *ArtifactoryDetails) SetApiKey(apiKey string) {
+	artifactoryDetails.ApiKey = apiKey
+}
+
+func (artifactoryDetails *ArtifactoryDetails) SetUser(username string) {
 	artifactoryDetails.User = username
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SetPassword(password string){
+func (artifactoryDetails *ArtifactoryDetails) SetPassword(password string) {
 	artifactoryDetails.Password = password
 }
 
-func (artifactoryDetails *ArtifactoryDetails) GetUser() string{
+func (artifactoryDetails *ArtifactoryDetails) GetApiKey() string {
+	return artifactoryDetails.ApiKey
+}
+
+func (artifactoryDetails *ArtifactoryDetails) GetUser() string {
 	return artifactoryDetails.User
 }
 
-func (artifactoryDetails *ArtifactoryDetails) GetPassword() string{
+func (artifactoryDetails *ArtifactoryDetails) GetPassword() string {
 	return artifactoryDetails.Password
 }
 
-func (missionControlDetails *MissionControlDetails) SetUser(username string){
+func (missionControlDetails *MissionControlDetails) SetUser(username string) {
 	missionControlDetails.User = username
 }
 
-func (missionControlDetails *MissionControlDetails) SetPassword(password string){
+func (missionControlDetails *MissionControlDetails) SetPassword(password string) {
 	missionControlDetails.Password = password
 }
 
-func (missionControlDetails *MissionControlDetails) GetUser() string{
+func (missionControlDetails *MissionControlDetails) GetUser() string {
 	return missionControlDetails.User
 }
 
-func (missionControlDetails *MissionControlDetails) GetPassword() string{
+func (missionControlDetails *MissionControlDetails) GetPassword() string {
 	return missionControlDetails.Password
 }
