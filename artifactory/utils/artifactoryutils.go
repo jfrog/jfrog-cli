@@ -108,9 +108,8 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 }
 
 func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) string {
-	escapedUrl, err := url.Parse(baseUrl)
+	escapedUrl, err := url.Parse(baseUrl + path)
 	cliutils.CheckError(err)
-	escapedUrl.Path += path
 	q := escapedUrl.Query()
 	for k, v := range params {
 		q.Set(k, v)

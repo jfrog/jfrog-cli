@@ -23,10 +23,6 @@ func AqlSearch(pattern string, flags *Flags) []AqlSearchResultItem {
 	data := BuildAqlSearchQuery(pattern, flags.Recursive, flags.Props)
 	fmt.Println("Searching Artifactory using AQL query: " + data)
 
-	if flags.DryRun {
-		return []AqlSearchResultItem{}
-	}
-
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	resp, json := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
 	fmt.Println("Artifactory response:", resp.Status)
