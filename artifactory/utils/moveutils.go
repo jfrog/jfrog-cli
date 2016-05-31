@@ -39,7 +39,13 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath st
 }
 
 func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool {
-	fmt.Println(moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath)
+	message := moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath
+	if flags.DryRun == true {
+		fmt.Println("[Dry run] " + message)
+		return true
+	}
+
+	fmt.Println(message)
 
 	moveUrl := flags.ArtDetails.Url
 	restApi := "api/" + string(moveType) + "/" + sourcePath
@@ -53,7 +59,7 @@ func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool
 
 func MoveFilesWrapper(sourcePattern, destPath string, flags *Flags, moveType MoveType) {
 	PreCommandSetup(flags)
-	if IsWildcardPattern(sourcePattern) {
+	if IsWildcardPattern(sourcePattern) || flags.Props != "" {
 		resultItems := AqlSearch(sourcePattern, flags)
 		regexpPath := cliutils.PathToRegExp(sourcePattern)
 		moveFiles(regexpPath, resultItems, destPath, flags, moveType)
