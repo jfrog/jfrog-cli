@@ -183,6 +183,13 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
     return c.Bool(flagName)
 }
 
+func GetGlobalBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
+	if !c.GlobalIsSet(flagName) {
+		return defValue
+	}
+    return c.GlobalBool(flagName)
+}
+
 func GetDocumentationMessage() string {
     return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }

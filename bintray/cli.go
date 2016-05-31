@@ -941,6 +941,10 @@ func offerConfig(c *cli.Context) *config.BintrayDetails {
     if config.IsBintrayConfExists() {
         return nil
     }
+	if !cliutils.GetGlobalBoolFlagValue(c, "offer-config", true) {
+		config.SaveBintrayConf(new(config.BintrayDetails))
+		return nil
+	}
     msg := "Some CLI commands require the following common options:\n" +
         "- User\n" +
         "- API Key\n" +

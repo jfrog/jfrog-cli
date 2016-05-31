@@ -210,6 +210,10 @@ func offerConfig(c *cli.Context) *config.MissionControlDetails {
 	if config.IsMissionControlConfExists() {
 		return nil
 	}
+	if !cliutils.GetGlobalBoolFlagValue(c, "offer-config", true) {
+		config.SaveMissionControlConf(new(config.MissionControlDetails))
+		return nil
+	}
 	msg := "The CLI commands require the Mission Control URL and authentication details\n" +
 	"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 	"You can also configure these parameters later using the 'config' command.\n" +
