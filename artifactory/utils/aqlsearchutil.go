@@ -8,9 +8,12 @@ import (
 )
 
 type AqlSearchResultItem struct {
-	Repo string
-	Path string
-	Name string
+	Repo 	   	string
+	Path 	   	string
+	Name 	   	string
+	Actual_Md5  string
+	Actual_Sha1 string
+	Size 	   	int64
 }
 
 type AqlSearchResult struct {

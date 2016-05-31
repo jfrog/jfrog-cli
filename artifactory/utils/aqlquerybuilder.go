@@ -43,7 +43,7 @@ func BuildAqlSearchQuery(searchPattern string, recursive bool, props string) str
 		"]" +
 			"}"
 
-	return "items.find(" + json + ")"
+	return "items.find(" + json + ").include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
 }
 
 func prepareSearchPattern(pattern string) string {

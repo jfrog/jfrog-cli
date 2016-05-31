@@ -16,6 +16,15 @@ const CmdArtifactory = "rt"
 const CmdBintray = "bt"
 const CmdMissionControl = "mc"
 
+
+type BoolEnum int
+
+const (
+	False BoolEnum = iota
+	True
+	NotDefined
+)
+
 var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
 
