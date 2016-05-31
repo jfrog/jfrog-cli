@@ -432,7 +432,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 			details.Url = confDetails.Url
 		}
 
-		if (!isAuthMethodSet(details) {
+		if !isAuthMethodSet(details) {
 			if details.ApiKey == "" {
 				details.ApiKey = confDetails.ApiKey
 			}
