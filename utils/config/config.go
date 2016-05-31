@@ -129,9 +129,9 @@ type BintrayDetails struct {
 }
 
 type MissionControlDetails struct {
-	Url      string            `json:"url,omitempty"`
-	User     string            `json:"user,omitempty"`
-	Password string            `json:"password,omitempty"`
+	Url      string `json:"url,omitempty"`
+	User     string `json:"user,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 func (artifactoryDetails *ArtifactoryDetails) SetApiKey(apiKey string) {

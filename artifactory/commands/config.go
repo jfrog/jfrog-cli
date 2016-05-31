@@ -32,12 +32,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 			}
 		}
 	}
-
-	//Check for only one credential method
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.SshKeyPath != ""}
-	if (cliutils.SumTrueValues(boolArr) > 1) {
-		cliutils.Exit(cliutils.ExitCodeError, "Only one authentication method allowd at a time.")
-	}
+	checkSingleAuthMethod(details)
 
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
@@ -100,4 +95,11 @@ func encryptPassword(details *config.ArtifactoryDetails) *config.ArtifactoryDeta
 		cliutils.Exit(cliutils.ExitCodeError, "\nArtifactory response: "+response.Status)
 	}
 	return details
+}
+
+func checkSingleAuthMethod(details *config.ArtifactoryDetails) {
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.SshKeyPath != ""}
+	if (cliutils.SumTrueValues(boolArr) > 1) {
+		cliutils.Exit(cliutils.ExitCodeError, "Only one authentication method is allowd: Username/Password, API key or RSA tokens.")
+	}
 }

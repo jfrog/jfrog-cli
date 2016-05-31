@@ -432,7 +432,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 			details.Url = confDetails.Url
 		}
 
-		if (details.User == "" || details.Password == "") && details.SshKeyPath == "" && details.ApiKey == "" {
+		if (!isAuthMethodSet(details) {
 			if details.ApiKey == "" {
 				details.ApiKey = confDetails.ApiKey
 			}
@@ -449,4 +449,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
 	return details
+}
+
+func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
+	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != ""
 }
