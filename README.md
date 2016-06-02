@@ -1,5 +1,7 @@
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to Artifactory and Bintray through their respective REST APIs. By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. Several features of the JFrog CLI makes your scripts more efficient and reliable:
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs. 
+By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain. 
+Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
 - Multi-threaded upload and download of artifacts make builds run faster
 - Checksum optimization reduces redundant file transfers
@@ -17,8 +19,9 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 ### Setup Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
+Please download `Go 1.6` or above.
 
-Navigate to the directory where you want to create the jfrog-cli-go **<TBD Link>** project, and set the value of the GOPATH environment variable to the full path of this directory.
+Navigate to the directory where you want to create the jfrog-cli-go project, and set the value of the GOPATH environment variable to the full path of this directory.
 
 ### Download and Build the CLI
 
@@ -32,3 +35,4 @@ Go will download and build the project on your machine. Once complete, you will 
 JFrog CLI can be used for quick and easy file management with both Artifactory and Bintray, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please refer to the relevant documentation through the corresponding link below: 
 * [Using JFrog CLI with Artifactory](https://www.jfrog.com/confluence/display/RTF/JFrog+CLI)
 * [Using JFrog CLI with Bintray](https://bintray.com/docs/usermanual/cli/cli_jfrogcli.html)
+* [Using JFrog CLI with Mission Control](https://www.jfrog.com/confluence/display/MC/JFrog+CLI)
