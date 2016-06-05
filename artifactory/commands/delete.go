@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"fmt"
-	"strconv"
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
@@ -20,12 +18,10 @@ func Delete(deletePattern string, flags *utils.Flags) {
 		resultItems = utils.AqlSearch(deletePattern, flags)
 	}
 
-	deletedCount := deleteFiles(resultItems, flags)
-	fmt.Println("Deleted " + strconv.Itoa(deletedCount) + " artifacts from Artifactory")
+	deleteFiles(resultItems, flags)
 }
 
-func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) int {
-	deletedCount := 0
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) {
 	for _, v := range resultItems {
 		fileUrl := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if flags.DryRun {
@@ -37,10 +33,7 @@ func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) in
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 		resp, _ := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
 		fmt.Println("Artifactory response:", resp.Status)
-
-		deletedCount += cliutils.Bool2Int(resp.StatusCode == 204)
 	}
-	return deletedCount
 }
 
 // Simple directory path without wildcards.
