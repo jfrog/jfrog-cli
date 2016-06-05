@@ -15,7 +15,6 @@ func AttachLic(instanceName string, flags *AttachLicFlags) {
 	prepareLicenseFile(flags.LicensePath, flags.Override)
 	postContent := utils.LicenseRequestContent{
 		Name: 	  	 instanceName,
-		BucketKey:	 flags.BucketKey,
 		NodeID:	     flags.NodeId,
 		Deploy:	     flags.Deploy}
 	requestContent, err := json.Marshal(postContent)

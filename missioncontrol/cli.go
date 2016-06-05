@@ -118,10 +118,6 @@ func getAttachLicenseFlags() []cli.Flag {
 			Usage: "[Mandatory] license bucket ID",
 		},
 		cli.StringFlag{
-			Name:  "bucket-key",
-			Usage: "[Mandatory] The secret key for decrypting the bucket",
-		},
-		cli.StringFlag{
 			Name:  "node-id",
 			Usage: "[Optional] Unique HA node identifier",
 		},
@@ -265,9 +261,6 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags) {
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --bucket-id option is mandatory")
-	}
-	if flags.BucketKey = c.String("bucket-key"); flags.BucketKey == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --bucket-key option is mandatory")
 	}
 	flags.Override = cliutils.GetBoolFlagValue(c, "override", false)
 	flags.Deploy = cliutils.GetBoolFlagValue(c, "deploy", false)
