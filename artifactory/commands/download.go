@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strconv"
 	"sync"
@@ -58,7 +59,7 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) 
 					continue
 				}
 				if shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1) {
-					downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, cliutils.NotDefined, resultItems[j].Size, flags)
+					downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, nil, resultItems[j].Size, flags)
 					downloadFile(downloadFileDetails, logMsgPrefix, flags)
 				} else {
 					fmt.Println(logMsgPrefix + "File already exists locally.")
@@ -82,7 +83,7 @@ func getDetailsFromDownloadPath(downloadPattern string) (localPath, localFileNam
 	return
 }
 
-func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges cliutils.BoolEnum, size int64, flags *utils.Flags) (details *DownloadFileDetails) {
+func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64, flags *utils.Flags) (details *DownloadFileDetails) {
 	details = &DownloadFileDetails{
 		DownloadPath: downloadPath,
 		LocalPath: localPath,
@@ -125,11 +126,11 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 }
 
 func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *utils.Flags) bool {
-	if downloadFileDetails.AcceptRanges == cliutils.NotDefined {
+	if downloadFileDetails.AcceptRanges == nil {
 		details := getFileRemoteDetails(downloadFileDetails.DownloadPath, flags)
-		return details.AcceptRanges == cliutils.True
+		return details.AcceptRanges.GetValue()
 	}
-	return downloadFileDetails.AcceptRanges == cliutils.True
+	return downloadFileDetails.AcceptRanges.GetValue()
 }
 
 func shouldDownloadFile(localFilePath, md5, sha1 string) bool {
@@ -144,10 +145,10 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) bool {
 }
 
 type DownloadFileDetails struct {
-	DownloadPath  			 string 		     `json:"DownloadPath,omitempty"`
-	LocalPath     			 string 		     `json:"LocalPath,omitempty"`
-	LocalFileName 			 string 		     `json:"LocalFileName,omitempty"`
-	AcceptRanges  			 cliutils.BoolEnum   `json:"AcceptRanges,omitempty"`
-	Size  			 		 int64  		     `json:"Size,omitempty"`
+	DownloadPath  			 string 		 `json:"DownloadPath,omitempty"`
+	LocalPath     			 string 		 `json:"LocalPath,omitempty"`
+	LocalFileName 			 string 		 `json:"LocalFileName,omitempty"`
+	AcceptRanges  			 *types.BoolEnum `json:"AcceptRanges,omitempty"`
+	Size  			 		 int64  		 `json:"Size,omitempty"`
 }
 

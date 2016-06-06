@@ -19,6 +19,7 @@ import (
 	"strings"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )
@@ -438,7 +439,8 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 	fileDetails.Md5 = resp.Header.Get("X-Checksum-Md5")
 	fileDetails.Sha1 = resp.Header.Get("X-Checksum-Sha1")
 	fileDetails.Size = fileSize
-	fileDetails.AcceptRanges = cliutils.BoolEnum(cliutils.Bool2Int(resp.Header.Get("Accept-Ranges") == "bytes"))
+	fileDetails.AcceptRanges = types.CreateBoolEnum()
+	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")
 	return fileDetails
 }
 
@@ -509,6 +511,6 @@ type FileDetails struct {
 	Md5          string
 	Sha1         string
 	Size         int64
-	AcceptRanges cliutils.BoolEnum
+	AcceptRanges *types.BoolEnum
 }
 
