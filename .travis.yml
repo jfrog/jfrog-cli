@@ -14,6 +14,9 @@ env:
 after_script:
 - ls -l ../../../../bin
 before_install:
+- cd $HOME/gopath/src/github.com
+- mv -f JFrogDev jfrogdev
+- cd $HOME/gopath/src/github.com/jfrogdev/jfrog-cli-go
 - curl -o gimme -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 - chmod u+x gimme
 - unset GOROOT GOTOOLDIR
