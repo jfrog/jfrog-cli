@@ -16,7 +16,7 @@ before_install:
 - curl -o gimme -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 - chmod u+x gimme
 - unset GOROOT GOTOOLDIR
-- eval "$(./gimme 1.5)"
+- eval "$(./gimme 1.6)"
 - go version
 - go env
 before_script:
