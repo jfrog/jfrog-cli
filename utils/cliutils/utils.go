@@ -111,7 +111,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.2.1"
+	return "1.3.0"
 }
 
 // Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
