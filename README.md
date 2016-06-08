@@ -12,6 +12,11 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 
 You can get the executable directly from the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or you can download the source files from this GitHub project and build it yourself.
 
+On Mac you can run:
+````
+$ brew install jfrog-cli-go
+````
+
 ## Building the Executable
 
 JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need to have Go installed and configured on your machine.
