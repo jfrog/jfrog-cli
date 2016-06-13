@@ -7,11 +7,11 @@
         "subject": "jfrog"
     },
     "version": {
-        "name": "1.3.1",
-        "vcs_tag": "1.3.1",
+        "name": "1.3.2",
+        "vcs_tag": "1.3.2",
         "gpgSign": false
     },
     "files":
-        [{"includePattern": "../../../../bin/windows_amd64/jfrog.exe", "uploadPattern": "1.3.1/windows_amd64/jfrog.exe"}],
+        [{"includePattern": "../../../../bin/windows_amd64/jfrog.exe", "uploadPattern": "1.3.2/windows_amd64/jfrog.exe"}],
     "publish": false
 }
