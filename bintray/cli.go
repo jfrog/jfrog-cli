@@ -941,7 +941,7 @@ func offerConfig(c *cli.Context) *config.BintrayDetails {
     if config.IsBintrayConfExists() {
         return nil
     }
-	if !cliutils.GetGlobalBoolFlagValue(c, "offer-config", true) {
+	if !cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true) {
 		config.SaveBintrayConf(new(config.BintrayDetails))
 		return nil
 	}

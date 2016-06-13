@@ -29,6 +29,13 @@ func CheckError(err error) {
 	}
 }
 
+func CheckErrorWithMessage(err error, message string) {
+	if err != nil {
+		fmt.Println(message)
+		panic(err)
+	}
+}
+
 func Exit(exitCode ExitCode, msg string) {
 	if msg != "" {
 		fmt.Println(msg)
@@ -183,11 +190,15 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
     return c.Bool(flagName)
 }
 
-func GetGlobalBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
-	if !c.GlobalIsSet(flagName) {
+func GetBoolEnvValue(flagName string, defValue bool) bool {
+	envVarValue := os.Getenv(flagName)
+	if envVarValue == "" {
 		return defValue
 	}
-    return c.GlobalBool(flagName)
+
+	val, err := strconv.ParseBool(envVarValue)
+	CheckErrorWithMessage(err, "can't parse environment variable " + flagName)
+    return val
 }
 
 func GetDocumentationMessage() string {

@@ -403,7 +403,7 @@ func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
     if config.IsArtifactoryConfExists() {
         return nil
     }
-	if !cliutils.GetGlobalBoolFlagValue(c, "offer-config", true) {
+	if !cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true) {
 		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
 		return nil
 	}

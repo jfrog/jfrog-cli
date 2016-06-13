@@ -16,9 +16,6 @@ func main() {
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()
-	app.Flags = []cli.Flag{
-		cli.BoolFlag{Name:"offer-config", Usage: "[Default: true] Offer config at first execution"},
-	}
 	app.Run(args)
 }
 

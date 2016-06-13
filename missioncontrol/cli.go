@@ -206,7 +206,7 @@ func offerConfig(c *cli.Context) *config.MissionControlDetails {
 	if config.IsMissionControlConfExists() {
 		return nil
 	}
-	if !cliutils.GetGlobalBoolFlagValue(c, "offer-config", true) {
+	if !cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true) {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil
 	}
