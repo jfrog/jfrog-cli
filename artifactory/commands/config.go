@@ -26,7 +26,9 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			readSshKeyPathFromConsole(details, defaultDetails)
 		} else {
-			ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+		    if details.ApiKey == "" && details.Password == "" {
+		        ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+		    }
 			if details.ApiKey == "" {
 				ioutils.ReadCredentialsFromConsole(details, defaultDetails)
 			}
