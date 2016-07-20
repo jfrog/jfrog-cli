@@ -1,4 +1,4 @@
-package commands
+package entitlements
 
 import (
     "github.com/jfrogdev/jfrog-cli-go/bintray/tests"
@@ -6,9 +6,9 @@ import (
 )
 
 func TestShowAndCreateEntitlements(t *testing.T) {
-    repo := CreateVersionDetailsForEntitlements("my-subject/my-repo")
-    pkg := CreateVersionDetailsForEntitlements("my-subject/my-repo/my-pkg")
-    version := CreateVersionDetailsForEntitlements("my-subject/my-repo/my-pkg/ver-1.9.1")
+    repo := CreateVersionDetails("my-subject/my-repo")
+    pkg := CreateVersionDetails("my-subject/my-repo/my-pkg")
+    version := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
 
     bintrayDetails := tests.CreateBintrayDetails()
 
@@ -32,9 +32,9 @@ func TestShowAndCreateEntitlements(t *testing.T) {
 }
 
 func TestShowUpdateAndDeleteEntitlement(t *testing.T) {
-    repo := CreateVersionDetailsForEntitlements("my-subject/my-repo")
-    pkg := CreateVersionDetailsForEntitlements("my-subject/my-repo/my-pkg")
-    version := CreateVersionDetailsForEntitlements("my-subject/my-repo/my-pkg/ver-1.9.1")
+    repo := CreateVersionDetails("my-subject/my-repo")
+    pkg := CreateVersionDetails("my-subject/my-repo/my-pkg")
+    version := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
 
     bintrayDetails := tests.CreateBintrayDetails()
 
