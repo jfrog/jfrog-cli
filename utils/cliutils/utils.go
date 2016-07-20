@@ -121,6 +121,24 @@ func GetVersion() string {
 	return "1.3.2"
 }
 
+func GetUserHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
+func ReplaceTildeWithUserHome(path string) string {
+	if len(path) > 1 && path[0:1] == "~"{
+		return GetUserHomeDir() + path[1:len(path)]
+	}
+	return path
+}
+
 // Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
 func GetRootPathForUpload(path string, useRegExp bool) string {
 	// The first step is to split the local path pattern into sections, by the file seperator.
@@ -149,7 +167,11 @@ func GetRootPathForUpload(path string, useRegExp bool) string {
 		if rootPath != "" {
 			rootPath += seperator
 		}
-		rootPath += section
+		if section == "~" {
+			rootPath += GetUserHomeDir()
+		} else {
+			rootPath += section
+		}
 	}
 	if len(sections) > 0 && sections[0] == "" {
 		rootPath = seperator + rootPath
