@@ -20,6 +20,7 @@ func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
 	}
 	if !uploadFlags.DryRun {
+        verifyRepoExists(versionDetails, uploadFlags)
         verifyPackageExists(versionDetails, uploadFlags)
         createVersionIfNeeded(versionDetails, uploadFlags)
 	}
@@ -128,6 +129,16 @@ func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *Uplo
 	}
 }
 
+func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
+	fmt.Println("Verifying repository " + versionDetails.Repo + " exists...")
+	resp := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
+	if resp.StatusCode == 404 {
+		promptRepoNotExist(versionDetails)
+	} else if resp.StatusCode != 200 {
+		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: " + resp.Status)
+	}
+}
+
 func promptPackageNotExist(versionDetails *utils.VersionDetails) {
     msg := "It looks like package '" + versionDetails.Package +
        "' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
@@ -138,6 +149,11 @@ func promptPackageNotExist(versionDetails *utils.VersionDetails) {
     if config.ReadBintrayConf().DefPackageLicenses == "" {
         msg += " --licenses=Apache-2.0-example"
     }
+    cliutils.Exit(cliutils.ExitCodeError, msg)
+}
+
+func promptRepoNotExist(versionDetails *utils.VersionDetails) {
+    msg := "It looks like repository '" + versionDetails.Repo + "' does not exist.\n"
     cliutils.Exit(cliutils.ExitCodeError, msg)
 }
 

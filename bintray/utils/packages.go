@@ -15,6 +15,14 @@ func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayD
 	return ioutils.SendHead(url, httpClientsDetails)
 }
 
+func HeadRepo(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
+	url := bintrayDetails.ApiUrl + "repos/" + packageDetails.Subject + "/" +
+		packageDetails.Repo
+	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
+
+	return ioutils.SendHead(url, httpClientsDetails)
+}
+
 func CreatePackageJson(packageName string, flags *PackageFlags) string {
 	m := map[string]string{
 		"name":                      packageName,
