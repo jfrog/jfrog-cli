@@ -427,10 +427,10 @@ func GetFileDetails(filePath string) *FileDetails {
 	return details
 }
 
-func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) *FileDetails {
+func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) (*FileDetails, error) {
 	resp := SendHead(downloadUrl, httpClientsDetails)
 	if resp.StatusCode == 404 {
-		cliutils.Exit(cliutils.ExitCodeError, "Artifactory response: " + resp.Status)
+		return nil, errors.New("response: " + resp.Status)
 	}
 	fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	cliutils.CheckError(err)
@@ -441,7 +441,7 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 	fileDetails.Size = fileSize
 	fileDetails.AcceptRanges = types.CreateBoolEnum()
 	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")
-	return fileDetails
+	return fileDetails, nil
 }
 
 func setAuthentication(req *http.Request, httpClientsDetails HttpClientDetails) {
