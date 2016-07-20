@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/commands"
+	"github.com/jfrogdev/jfrog-cli-go/bintray/commands/entitlements"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -137,7 +138,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"ent"},
 			Flags:   getEntitlementsFlags(),
 			Action: func(c *cli.Context) {
-				entitlements(c)
+				handleEntitlements(c)
 			},
 		},
 		{
@@ -731,29 +732,29 @@ func accessKeys(c *cli.Context) {
 	}
 }
 
-func entitlements(c *cli.Context) {
+func handleEntitlements(c *cli.Context) {
 	argsSize := len(c.Args())
 	if argsSize == 0 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	if argsSize == 1 {
 		bintrayDetails := createBintrayDetails(c, true)
-		details := commands.CreateVersionDetailsForEntitlements(c.Args()[0])
-		commands.ShowEntitlements(bintrayDetails, details)
+		details := entitlements.CreateVersionDetails(c.Args()[0])
+		entitlements.ShowEntitlements(bintrayDetails, details)
 		return
 	}
 	if argsSize != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	details := commands.CreateVersionDetailsForEntitlements(c.Args()[1])
+	details := entitlements.CreateVersionDetails(c.Args()[1])
 	if c.Args()[0] == "show" {
-		commands.ShowEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
+		entitlements.ShowEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
 	} else if c.Args()[0] == "create" {
-		commands.CreateEntitlement(createEntitlementFlagsForCreate(c), details)
+		entitlements.CreateEntitlement(createEntitlementFlagsForCreate(c), details)
 	} else if c.Args()[0] == "update" {
-		commands.UpdateEntitlement(createEntitlementFlagsForUpdate(c), details)
+		entitlements.UpdateEntitlement(createEntitlementFlagsForUpdate(c), details)
 	} else if c.Args()[0] == "delete" {
-		commands.DeleteEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
+		entitlements.DeleteEntitlement(createEntitlementFlagsForShowAndDelete(c), details)
 	} else {
 		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before "+c.Args()[1]+". Got "+c.Args()[0])
 	}
@@ -876,34 +877,34 @@ func createDownloadFlags(c *cli.Context) *utils.DownloadFlags {
 		Flat:           flat}
 }
 
-func createEntitlementFlagsForShowAndDelete(c *cli.Context) *commands.EntitlementFlags {
+func createEntitlementFlagsForShowAndDelete(c *cli.Context) *entitlements.EntitlementFlags {
 	if c.String("id") == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
 	}
-	return &commands.EntitlementFlags{
+	return &entitlements.EntitlementFlags{
 		BintrayDetails: createBintrayDetails(c, true),
 		Id:             c.String("id")}
 }
 
-func createEntitlementFlagsForCreate(c *cli.Context) *commands.EntitlementFlags {
+func createEntitlementFlagsForCreate(c *cli.Context) *entitlements.EntitlementFlags {
 	if c.String("access") == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
 	}
-	return &commands.EntitlementFlags{
+	return &entitlements.EntitlementFlags{
 		BintrayDetails: createBintrayDetails(c, true),
 		Path:           c.String("path"),
 		Access:         c.String("access"),
 		Keys:           c.String("keys")}
 }
 
-func createEntitlementFlagsForUpdate(c *cli.Context) *commands.EntitlementFlags {
+func createEntitlementFlagsForUpdate(c *cli.Context) *entitlements.EntitlementFlags {
 	if c.String("id") == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
 	}
 	if c.String("access") == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
 	}
-	return &commands.EntitlementFlags{
+	return &entitlements.EntitlementFlags{
 		BintrayDetails: createBintrayDetails(c, true),
 		Id:             c.String("id"),
 		Path:           c.String("path"),
