@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-var flags = new(utils.Flags)
-
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
@@ -256,67 +254,54 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getFlags()...)
 }
 
-func initFlags(c *cli.Context, cmd string) {
-    flags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-    flags.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
-    flags.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
-
-	if cmd == "config" {
-		flags.ArtDetails = createArtifactoryDetails(c, false)
-		if !flags.Interactive && flags.ArtDetails.Url == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
-		}
-	} else {
-		flags.ArtDetails = createArtifactoryDetails(c, true)
-		if flags.ArtDetails.Url == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
-		}
+func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
+	artDetails := createArtifactoryDetails(c, includeConfig)
+	if artDetails.Url == "" {
+		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
 	}
+	return artDetails
+}
 
-	if cmd == "upload" {
-	    flags.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
-	} else {
-		flags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
-	}
-
-	flags.Deb = c.String("deb")
-	if flags.Deb != "" && len(strings.Split(flags.Deb, "/")) != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --deb option should be in the form of distribution/component/architecture")
-	}
-	flags.Props = c.String("props")
-	flags.DryRun = c.Bool("dry-run")
-	flags.UseRegExp = c.Bool("regexp")
+func getSplitCount(c *cli.Context) (splitCount int) {
 	var err error
-	if c.String("threads") == "" {
-		flags.Threads = 3
-	} else {
-		flags.Threads, err = strconv.Atoi(c.String("threads"))
-		if err != nil || flags.Threads < 1 {
+	splitCount = 3
+	if c.String("split-count") != "" {
+		splitCount, err = strconv.Atoi(c.String("split-count"))
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+		}
+		if splitCount > 15 {
+			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
+		}
+		if splitCount < 0 {
+			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
+		}
+	}
+	return
+}
+
+func getThreadsCount(c *cli.Context) (threads int) {
+	threads = 3
+	var err error
+	if c.String("threads") != "" {
+		threads, err = strconv.Atoi(c.String("threads"))
+		if err != nil || threads < 1 {
 			cliutils.Exit(cliutils.ExitCodeError, "The '--threads' option should have a numeric positive value.")
 		}
 	}
-	if c.String("min-split") == "" {
-		flags.MinSplitSize = 5120
-	} else {
-		flags.MinSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
+	return
+}
+
+func getMinSplit(c *cli.Context) (minSplitSize int64) {
+	minSplitSize = 5120
+	var err error
+	if c.String("min-split") != "" {
+		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
 			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
 	}
-	if c.String("split-count") == "" {
-		flags.SplitCount = 3
-	} else {
-		flags.SplitCount, err = strconv.Atoi(c.String("split-count"))
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
-		}
-		if flags.SplitCount > 15 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
-		}
-		if flags.SplitCount < 0 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
-		}
-	}
+	return
 }
 
 func configCmd(c *cli.Context) {
@@ -331,29 +316,27 @@ func configCmd(c *cli.Context) {
 			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
-		initFlags(c, "config")
-		commands.Config(flags.ArtDetails, nil, flags.Interactive, flags.EncPassword)
+		configFlags := createConfigFlags(c)
+		commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
 	}
 }
 
 func downloadCmd(c *cli.Context) {
-	initFlags(c, "download")
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pattern := c.Args()[0]
-	commands.Download(pattern, flags)
+	pattern := strings.TrimPrefix(c.Args()[0], "/")
+	commands.Download(pattern, createDownloadFlags(c))
 }
 
 func uploadCmd(c *cli.Context) {
-	initFlags(c, "upload")
 	size := len(c.Args())
 	if size != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	localPath := c.Args()[0]
 	targetPath := c.Args()[1]
-	uploaded, failed := commands.Upload(localPath, targetPath, flags)
+	uploaded, failed := commands.Upload(localPath, targetPath, createUploadFlags(c))
 	if failed > 0 {
 		if uploaded > 0 {
 			cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -363,27 +346,24 @@ func uploadCmd(c *cli.Context) {
 }
 
 func moveCmd(c *cli.Context) {
-	initFlags(c, "move")
 	if len(c.Args()) != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	sourcePattern := c.Args()[0]
 	targetPath := c.Args()[1]
-	commands.Move(sourcePattern, targetPath, flags)
+	commands.Move(sourcePattern, targetPath, createMoveFlags(c))
 }
 
 func copyCmd(c *cli.Context) {
-	initFlags(c, "copy")
 	if len(c.Args()) != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	sourcePattern := c.Args()[0]
 	targetPath := c.Args()[1]
-	commands.Copy(sourcePattern, targetPath, flags)
+	commands.Copy(sourcePattern, targetPath, createMoveFlags(c))
 }
 
 func deleteCmd(c *cli.Context) {
-	initFlags(c, "delete")
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
@@ -396,7 +376,7 @@ func deleteCmd(c *cli.Context) {
 			return
 		}
 	}
-	commands.Delete(path, flags)
+	commands.Delete(path, createDeleteFlags(c))
 }
 
 func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
@@ -465,4 +445,68 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
 	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != ""
+}
+
+func getDebFlag(c *cli.Context) (deb string) {
+	deb = c.String("deb")
+	if deb != "" && len(strings.Split(deb, "/")) != 3 {
+		cliutils.Exit(cliutils.ExitCodeError, "The --deb option should be in the form of distribution/component/architecture")
+	}
+	return deb
+}
+
+func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags) {
+	moveFlags = new(utils.MoveFlags)
+	moveFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	moveFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+	moveFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
+	moveFlags.DryRun = c.Bool("dry-run")
+	moveFlags.Props = c.String("props")
+	return
+}
+
+func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags) {
+	deleteFlags = new(commands.DeleteFlags)
+	deleteFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	deleteFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+	deleteFlags.DryRun = c.Bool("dry-run")
+	deleteFlags.Props = c.String("props")
+	return
+}
+
+func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags) {
+	downloadFlags = new(commands.DownloadFlags)
+	downloadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	downloadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+	downloadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
+	downloadFlags.Props = c.String("props")
+	downloadFlags.DryRun = c.Bool("dry-run")
+	downloadFlags.MinSplitSize = getMinSplit(c)
+	downloadFlags.SplitCount = getSplitCount(c)
+	downloadFlags.Threads = getThreadsCount(c);
+	return
+}
+
+func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags) {
+	uploadFlags = new(commands.UploadFlags)
+	uploadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	uploadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+	uploadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
+	uploadFlags.Props = c.String("props")
+	uploadFlags.DryRun = c.Bool("dry-run")
+	uploadFlags.Threads = getThreadsCount(c);
+	uploadFlags.Deb = getDebFlag(c);
+	uploadFlags.UseRegExp = c.Bool("regexp")
+	return
+}
+
+func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags) {
+	configFlag = new(commands.ConfigFlags)
+	configFlag.ArtDetails = createArtifactoryDetails(c, false)
+	configFlag.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
+	configFlag.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
+	if !configFlag.Interactive && configFlag.ArtDetails.Url == "" {
+		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
+	}
+	return
 }

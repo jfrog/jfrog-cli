@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 	COPY MoveType = "copy"
 )
 
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *Flags, moveType MoveType) {
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *MoveFlags, moveType MoveType) {
 	movedCount := 0
 
 	for _, v := range resultItems {
@@ -38,7 +39,7 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath st
 	fmt.Println(moveMsgs[moveType].MovedMsg + " " + strconv.Itoa(movedCount) + " artifacts in Artifactory")
 }
 
-func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool {
+func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) bool {
 	message := moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath
 	if flags.DryRun == true {
 		fmt.Println("[Dry run] " + message)
@@ -57,7 +58,7 @@ func moveFile(sourcePath, destPath string, flags *Flags, moveType MoveType) bool
 	return resp.StatusCode == 200
 }
 
-func MoveFilesWrapper(sourcePattern, destPath string, flags *Flags, moveType MoveType) {
+func MoveFilesWrapper(sourcePattern, destPath string, flags *MoveFlags, moveType MoveType) {
 	PreCommandSetup(flags)
 	if IsWildcardPattern(sourcePattern) || flags.Props != "" {
 		resultItems := AqlSearch(sourcePattern, flags)
@@ -79,3 +80,27 @@ type MoveOptions struct {
 }
 
 type MoveType string
+
+type MoveFlags struct {
+	Recursive    bool
+	Flat         bool
+	DryRun       bool
+	Props        string
+	ArtDetails   *config.ArtifactoryDetails
+}
+
+func (flags *MoveFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *MoveFlags) IsRecursive() bool {
+	return flags.Recursive
+}
+
+func (flags *MoveFlags) GetProps() string {
+	return flags.Props
+}
+
+func (flags *MoveFlags) IsDryRun() bool {
+	return flags.DryRun
+}

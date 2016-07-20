@@ -48,6 +48,8 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	if details.SshKeyPath == "" {
 		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
 	}
+
+	details.SshKeyPath = cliutils.ReplaceTildeWithUserHome(details.SshKeyPath)
 	if !ioutils.IsFileExists(details.SshKeyPath) {
 		fmt.Println("Warning: Could not find SSH key file at: " + details.SshKeyPath)
 	}
@@ -104,4 +106,10 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) {
 	if (cliutils.SumTrueValues(boolArr) > 1) {
 		cliutils.Exit(cliutils.ExitCodeError, "Only one authentication method is allowd: Username/Password, API key or RSA tokens.")
 	}
+}
+
+type ConfigFlags struct {
+	ArtDetails   *config.ArtifactoryDetails
+	Interactive  bool
+	EncPassword  bool
 }

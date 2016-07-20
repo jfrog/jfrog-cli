@@ -11,11 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(localPath, targetPath string, flags *utils.Flags) (totalUploaded, totalFailed int) {
+func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, totalFailed int) {
 	utils.PreCommandSetup(flags)
 	minChecksumDeploySize := getMinChecksumDeploySize()
 
@@ -73,7 +74,7 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
     return cliutils.Artifact{rootPath, uploadPath}
 }
 
-func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) []cliutils.Artifact {
+func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) []cliutils.Artifact {
 	if strings.Index(targetPath, "/") < 0 {
 		targetPath += "/"
 	}
@@ -129,7 +130,7 @@ func getFilesToUpload(localpath string, targetPath string, flags *utils.Flags) [
 
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
-func uploadFile(localPath string, targetPath string, flags *utils.Flags,
+func uploadFile(localPath string, targetPath string, flags *UploadFlags,
     minChecksumDeploySize int64, logMsgPrefix string) bool {
 	if flags.Props != "" {
 		targetPath += ";" + flags.Props
@@ -179,7 +180,7 @@ func getMinChecksumDeploySize() int64 {
     return minSize * 1000
 }
 
-func tryChecksumDeploy(filePath, targetPath string, flags *utils.Flags, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, *ioutils.FileDetails) {
+func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, *ioutils.FileDetails) {
 	details := ioutils.GetFileDetails(filePath)
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
@@ -201,4 +202,31 @@ func getDebianMatrixParams(debianPropsStr string) string {
 	return ";deb.distribution=" + debProps[0] +
         ";deb.component=" + debProps[1] +
         ";deb.architecture=" + debProps[2]
+}
+
+type UploadFlags struct {
+	ArtDetails   *config.ArtifactoryDetails
+	DryRun       bool
+	Props        string
+	Deb          string
+	Recursive    bool
+	Flat         bool
+	UseRegExp    bool
+	Threads      int
+}
+
+func (flags *UploadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *UploadFlags) IsRecursive() bool {
+	return flags.Recursive
+}
+
+func (flags *UploadFlags) GetProps() string {
+	return flags.Props
+}
+
+func (flags *UploadFlags) IsDryRun() bool {
+	return flags.DryRun
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
 type AqlSearchResultItem struct {
@@ -20,13 +21,13 @@ type AqlSearchResult struct {
 	Results []AqlSearchResultItem
 }
 
-func AqlSearch(pattern string, flags *Flags) []AqlSearchResultItem {
-	aqlUrl := flags.ArtDetails.Url + "api/search/aql"
+func AqlSearch(pattern string, flags AqlSearchFlag) []AqlSearchResultItem {
+	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
 
-	data := BuildAqlSearchQuery(pattern, flags.Recursive, flags.Props)
+	data := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps())
 	fmt.Println("Searching Artifactory using AQL query: " + data)
 
-	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
+	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 	resp, json := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
 	fmt.Println("Artifactory response:", resp.Status)
 
@@ -60,4 +61,10 @@ func addSeparator(str1, separator, str2 string) string {
 	}
 
 	return str1 + separator + str2
+}
+
+type AqlSearchFlag interface {
+	GetArtifactoryDetails() *config.ArtifactoryDetails
+	IsRecursive() bool
+	GetProps() string
 }

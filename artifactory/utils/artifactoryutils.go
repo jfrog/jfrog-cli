@@ -79,12 +79,12 @@ func initTransport() *http.Transport {
 	return tempTransport
 }
 
-func PreCommandSetup(flags *Flags) {
-	if flags.ArtDetails.SshKeyPath != "" {
-		SshAuthentication(flags.ArtDetails)
+func PreCommandSetup(flags CommonFlag) {
+	if flags.GetArtifactoryDetails().SshKeyPath != "" {
+		SshAuthentication(flags.GetArtifactoryDetails())
 	}
-	if !flags.DryRun {
-		PingArtifactory(flags.ArtDetails)
+	if !flags.IsDryRun() {
+		PingArtifactory(flags.GetArtifactoryDetails())
 	}
 }
 
@@ -123,17 +123,7 @@ func IsWildcardPattern(pattern string) bool {
 	return strings.Contains(pattern, "*") || strings.HasSuffix(pattern, "/") || !strings.Contains(pattern, "/")
 }
 
-type Flags struct {
-	ArtDetails   *config.ArtifactoryDetails
-	DryRun       bool
-	Props        string
-	Deb          string
-	Recursive    bool
-	Flat         bool
-	UseRegExp    bool
-	Threads      int
-	MinSplitSize int64
-	SplitCount   int
-	Interactive  bool
-	EncPassword  bool
+type CommonFlag interface {
+	GetArtifactoryDetails() *config.ArtifactoryDetails
+	IsDryRun() bool
 }

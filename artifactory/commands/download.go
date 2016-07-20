@@ -9,11 +9,12 @@ import (
 	"strconv"
 	"sync"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
 // Downloads the artifacts using the specified download pattern.
 // Returns the AQL query used for the download.
-func Download(downloadPattern string, flags *utils.Flags) {
+func Download(downloadPattern string, flags *DownloadFlags) {
 	utils.PreCommandSetup(flags)
 	if !flags.DryRun {
 		ioutils.CreateTempDirPath()
@@ -45,7 +46,7 @@ func Download(downloadPattern string, flags *utils.Flags) {
 	}
 }
 
-func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *utils.Flags) {
+func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags) {
 	size := len(resultItems)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
@@ -83,7 +84,7 @@ func getDetailsFromDownloadPath(downloadPattern string) (localPath, localFileNam
 	return
 }
 
-func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64, flags *utils.Flags) (details *DownloadFileDetails) {
+func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64, flags *DownloadFlags) (details *DownloadFileDetails) {
 	details = &DownloadFileDetails{
 		DownloadPath: downloadPath,
 		LocalPath: localPath,
@@ -93,13 +94,16 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, ac
 	return
 }
 
-func getFileRemoteDetails(downloadPath string, flags *utils.Flags) (details *ioutils.FileDetails) {
+func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (details *ioutils.FileDetails) {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	details = ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
+	details, err := ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, "Artifactory " + err.Error())
+	}
 	return
 }
 
-func getFileLocalPath(localPath, localFileName string, flags *utils.Flags) (localFilePath string){
+func getFileLocalPath(localPath, localFileName string, flags *DownloadFlags) (localFilePath string) {
 	localFilePath = localFileName
 	if !flags.Flat {
 		localFilePath = localPath + "/" + localFileName
@@ -107,7 +111,7 @@ func getFileLocalPath(localPath, localFileName string, flags *utils.Flags) (loca
 	return
 }
 
-func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, flags *utils.Flags) {
+func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, flags *DownloadFlags) {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > downloadFileDetails.Size || !isFileAcceptRange(downloadFileDetails, flags) {
 		resp := ioutils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, flags.Flat, httpClientsDetails)
@@ -125,7 +129,7 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 	}
 }
 
-func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *utils.Flags) bool {
+func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *DownloadFlags) bool {
 	if downloadFileDetails.AcceptRanges == nil {
 		details := getFileRemoteDetails(downloadFileDetails.DownloadPath, flags)
 		return details.AcceptRanges.GetValue()
@@ -152,3 +156,29 @@ type DownloadFileDetails struct {
 	Size  			 		 int64  		 `json:"Size,omitempty"`
 }
 
+type DownloadFlags struct {
+	ArtDetails   *config.ArtifactoryDetails
+	DryRun       bool
+	Props        string
+	Recursive    bool
+	Flat         bool
+	Threads      int
+	MinSplitSize int64
+	SplitCount   int
+}
+
+func (flags *DownloadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *DownloadFlags) IsRecursive() bool {
+	return flags.Recursive
+}
+
+func (flags *DownloadFlags) GetProps() string {
+	return flags.Props
+}
+
+func (flags *DownloadFlags) IsDryRun() bool {
+	return flags.DryRun
+}
