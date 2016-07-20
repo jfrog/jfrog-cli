@@ -25,7 +25,10 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 
 	fileName, dir := ioutils.GetFileAndDirFromPath(pathDetails.Path)
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
-	details := ioutils.GetRemoteFileDetails(url, httpClientsDetails)
+	details, err := ioutils.GetRemoteFileDetails(url, httpClientsDetails)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, "Bintray " + err.Error())
+	}
 	path := pathDetails.Path
 	if flags.Flat {
 	    path, _ = ioutils.GetFileAndDirFromPath(path)
