@@ -2,14 +2,13 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/artifactory/tests"
-	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"strconv"
 	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 )
 
 func TestSingleFileUpload(t *testing.T) {
-	flags := tests.GetFlags()
+	flags := getUploadFlags()
 	uploaded1, _ := Upload("testdata/a.txt", "repo-local", flags)
 	uploaded2, _ := Upload("testdata/aa.txt", "repo-local", flags)
 	uploaded3, _ := Upload("testdata/aa1*.txt", "repo-local", flags)
@@ -25,18 +24,18 @@ func TestSingleFileUpload(t *testing.T) {
 }
 
 func TestPatternRecursiveUpload(t *testing.T) {
-	flags := tests.GetFlags()
+	flags := getUploadFlags()
 	flags.Recursive = true
 	testPatternUpload(t, flags)
 }
 
 func TestPatternNonRecursiveUpload(t *testing.T) {
-	flags := tests.GetFlags()
+	flags := getUploadFlags()
 	flags.Recursive = false
 	testPatternUpload(t, flags)
 }
 
-func testPatternUpload(t *testing.T, flags *utils.Flags) {
+func testPatternUpload(t *testing.T, flags *UploadFlags) {
 	sep := cliutils.GetTestsFileSeperator()
 	uploaded1, _ := Upload("testdata"+sep+"*", "repo-local", flags)
 	uploaded2, _ := Upload("testdata"+sep+"a*", "repo-local", flags)
@@ -51,4 +50,14 @@ func testPatternUpload(t *testing.T, flags *utils.Flags) {
 	if uploaded3 != 1 {
 		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded3) + ".")
 	}
+}
+
+
+func getUploadFlags() *UploadFlags {
+	flags := new(UploadFlags)
+	flags.ArtDetails = new(config.ArtifactoryDetails)
+	flags.DryRun = true
+	flags.Threads = 3
+
+	return flags
 }
