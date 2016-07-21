@@ -325,7 +325,7 @@ func downloadCmd(c *cli.Context) {
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pattern := strings.TrimPrefix(c.Args()[0], "/")
+	pattern := c.Args()[0]
 	commands.Download(pattern, createDownloadFlags(c))
 }
 
@@ -335,7 +335,7 @@ func uploadCmd(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	localPath := c.Args()[0]
-	targetPath := c.Args()[1]
+	targetPath := strings.TrimPrefix(c.Args()[1], "/")
 	uploaded, failed := commands.Upload(localPath, targetPath, createUploadFlags(c))
 	if failed > 0 {
 		if uploaded > 0 {
