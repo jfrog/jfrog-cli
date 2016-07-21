@@ -325,7 +325,7 @@ func downloadCmd(c *cli.Context) {
 	if len(c.Args()) != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pattern := c.Args()[0]
+	pattern := strings.TrimPrefix(c.Args()[0], "/")
 	commands.Download(pattern, createDownloadFlags(c))
 }
 
