@@ -55,15 +55,14 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
 				downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
-				if flags.DryRun {
-					fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
-					continue
-				}
-				if shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1) {
-					downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, nil, resultItems[j].Size, flags)
-					downloadFile(downloadFileDetails, logMsgPrefix, flags)
-				} else {
-					fmt.Println(logMsgPrefix + "File already exists locally.")
+				fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
+				if !flags.DryRun {
+                    if shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1) {
+                        downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, nil, resultItems[j].Size, flags)
+                        downloadFile(downloadFileDetails, logMsgPrefix, flags)
+                    } else {
+                        fmt.Println(logMsgPrefix + "File already exists locally.")
+                    }
 				}
 			}
 			wg.Done()
