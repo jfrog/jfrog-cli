@@ -92,11 +92,13 @@ func PingArtifactory(artDetails *config.ArtifactoryDetails) {
 	defer func() {
 		if r := recover(); r != nil {
 			artDetails.Transport = initTransport()
+			fmt.Println("Done Pinging Artifactory.")
 		}
 	}()
 	httpClientsDetails := GetArtifactoryHttpClientDetails(artDetails)
 	fmt.Println("Pinging Artifactory...")
 	ioutils.SendGet(artDetails.Url, true, httpClientsDetails)
+	fmt.Println("Done Pinging Artifactory.")
 }
 
 func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails {
