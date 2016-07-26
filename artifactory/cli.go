@@ -67,6 +67,15 @@ func GetCommands() []cli.Command {
 				deleteCmd(c)
 			},
 		},
+		{
+			Name:    "search",
+			Flags:   getSearchFlags(),
+			Aliases: []string{"s"},
+			Usage:   "Search files",
+			Action: func(c *cli.Context) {
+				searchCmd(c)
+			},
+		},
 	}
 }
 
@@ -240,6 +249,20 @@ func getDeleteFlags() []cli.Flag {
 
 }
 
+func getSearchFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be returned.",
+		},
+		cli.StringFlag{
+			Name:  "recursive",
+			Value: "",
+			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+		},
+	}...)
+}
+
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
@@ -379,6 +402,14 @@ func deleteCmd(c *cli.Context) {
 	commands.Delete(path, createDeleteFlags(c))
 }
 
+func searchCmd(c *cli.Context) {
+	if len(c.Args()) != 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	path := c.Args()[0]
+	commands.Search(path, createSearchFlags(c))
+}
+
 func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
     if config.IsArtifactoryConfExists() {
         return nil
@@ -471,6 +502,14 @@ func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags) {
 	deleteFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	deleteFlags.DryRun = c.Bool("dry-run")
 	deleteFlags.Props = c.String("props")
+	return
+}
+
+func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags) {
+	searchFlags = new(commands.SearchFlags)
+	searchFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	searchFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
+	searchFlags.Props = c.String("props")
 	return
 }
 

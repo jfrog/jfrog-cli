@@ -21,7 +21,7 @@ func Download(downloadPattern string, flags *DownloadFlags) {
 		defer ioutils.RemoveTempDir()
 	}
 	if utils.IsWildcardPattern(downloadPattern) {
-		resultItems := utils.AqlSearch(downloadPattern, flags)
+		resultItems := utils.AqlSearchDefaultReturnFields(downloadPattern, flags)
 		downloadFiles(resultItems, flags)
 		fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
 	} else {

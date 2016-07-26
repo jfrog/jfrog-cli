@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func BuildAqlSearchQuery(searchPattern string, recursive bool, props string) string {
+func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aqlReturnFields []string) string {
 	searchPattern = prepareSearchPattern(searchPattern)
 	index := strings.Index(searchPattern, "/")
 
@@ -43,7 +43,17 @@ func BuildAqlSearchQuery(searchPattern string, recursive bool, props string) str
 		"]" +
 			"}"
 
-	return "items.find(" + json + ").include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
+	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")"
+}
+
+func buildAqlReturnFieldsString(returnFields []string) (fieldsString string) {
+	for i, value := range returnFields {
+		fieldsString += value
+		if i < len(returnFields) - 1 {
+			fieldsString += ","
+		}
+	}
+	return fieldsString
 }
 
 func prepareSearchPattern(pattern string) string {

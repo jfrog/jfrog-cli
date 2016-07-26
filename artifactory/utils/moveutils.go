@@ -61,7 +61,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 func MoveFilesWrapper(sourcePattern, destPath string, flags *MoveFlags, moveType MoveType) {
 	PreCommandSetup(flags)
 	if IsWildcardPattern(sourcePattern) || flags.Props != "" {
-		resultItems := AqlSearch(sourcePattern, flags)
+		resultItems := AqlSearchDefaultReturnFields(sourcePattern, flags)
 		regexpPath := cliutils.PathToRegExp(sourcePattern)
 		moveFiles(regexpPath, resultItems, destPath, flags, moveType)
 	} else {

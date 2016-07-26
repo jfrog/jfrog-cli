@@ -21,10 +21,15 @@ type AqlSearchResult struct {
 	Results []AqlSearchResultItem
 }
 
-func AqlSearch(pattern string, flags AqlSearchFlag) []AqlSearchResultItem {
+func AqlSearchDefaultReturnFields(pattern string, flags AqlSearchFlag) []AqlSearchResultItem {
+	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
+	return AqlSearch(pattern, flags, returnFields)
+}
+
+func AqlSearch(pattern string, flags AqlSearchFlag, aqlReturnFields []string) []AqlSearchResultItem {
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
 
-	data := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps())
+	data := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps(), aqlReturnFields)
 	fmt.Println("Searching Artifactory using AQL query: " + data)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())

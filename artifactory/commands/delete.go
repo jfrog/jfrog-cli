@@ -16,7 +16,7 @@ func Delete(deletePattern string, flags *DeleteFlags) {
 		simplePathItem := utils.AqlSearchResultItem{Path:deletePattern}
 		resultItems = []utils.AqlSearchResultItem{simplePathItem}
 	} else {
-		resultItems = utils.AqlSearch(deletePattern, flags)
+		resultItems = utils.AqlSearchDefaultReturnFields(deletePattern, flags)
 	}
 
 	deleteFiles(resultItems, flags)
