@@ -94,7 +94,7 @@ func encryptPassword(details *config.ArtifactoryDetails) *config.ArtifactoryDeta
 			"You may use \"art config --enc-password=false\"")
 	case 200:
 		details.Password = encPassword
-		fmt.Println("Done encrypting.")
+		fmt.Println("Done encrypting password.")
 	default:
 		cliutils.Exit(cliutils.ExitCodeError, "\nArtifactory response: "+response.Status)
 	}
