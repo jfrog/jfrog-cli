@@ -10,7 +10,7 @@ node {
     def subject = 'jfrog'
     def repo = 'jfrog-cli'
     def workspace = pwd()
-    withEnv(["GOPATH=${workspace}"]) {
+    withEnv(["PATH+GOROOT=${tool 'go-1.6.2'}/bin","GOPATH=${workspace}"]) {
         stage 'Go get'
         sh 'go get github.com/jfrogdev/jfrog-cli-go/...'
         sh 'bin/jfrog --version > version'
