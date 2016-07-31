@@ -118,7 +118,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.4.0"
+	return "1.4.1"
 }
 
 func GetUserHomeDir() string {
