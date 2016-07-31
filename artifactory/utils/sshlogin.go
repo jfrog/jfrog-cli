@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"golang.org/x/crypto/ssh"
@@ -11,12 +10,13 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func SshAuthentication(details *config.ArtifactoryDetails) {
 	_, host, port := parseUrl(details.Url)
 
-	fmt.Println("Performing SSH authentication...")
+	logger.Logger.Info("Performing SSH authentication...")
 	if details.SshKeyPath == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "Cannot invoke the SshAuthentication function with no SSH key path. ")
 	}
@@ -54,7 +54,7 @@ func SshAuthentication(details *config.ArtifactoryDetails) {
 	cliutils.CheckError(err)
 	details.Url = cliutils.AddTrailingSlashIfNeeded(result.Href)
 	details.SshAuthHeaders = result.Headers
-	fmt.Println("SSH authentication successful.")
+	logger.Logger.Info("SSH authentication successful.")
 }
 
 func parseUrl(url string) (protocol, host string, port int) {

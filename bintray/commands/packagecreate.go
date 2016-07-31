@@ -6,12 +6,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
-	fmt.Println("Creating package: " + packageDetails.Package)
+	logger.Logger.Info("Creating package: " + packageDetails.Package)
 	resp, body := DoCreatePackage(packageDetails, flags)
-	fmt.Println("Bintray response: " + resp.Status)
+	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 }
 

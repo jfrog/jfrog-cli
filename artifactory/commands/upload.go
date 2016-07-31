@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -50,10 +50,10 @@ func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, to
 		totalUploaded += i
 	}
 
-	fmt.Println("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Artifactory.")
+	logger.Logger.Info("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Artifactory.")
 	totalFailed = size - totalUploaded
 	if totalFailed > 0 {
-		fmt.Println("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Artifactory.")
+		logger.Logger.Info("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Artifactory.")
 	}
 	return
 }
@@ -139,7 +139,7 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 		targetPath += getDebianMatrixParams(flags.Deb)
 	}
 
-	fmt.Println(logMsgPrefix + "Uploading artifact: " + targetPath)
+	logger.Logger.Info(logMsgPrefix + "Uploading artifact: " + targetPath)
 	file, err := os.Open(localPath)
 	cliutils.CheckError(err)
 	defer file.Close()
@@ -164,7 +164,7 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 		} else {
 			strChecksumDeployed = ""
 		}
-		fmt.Println(logMsgPrefix + "Artifactory response: " + resp.Status + strChecksumDeployed)
+		logger.Logger.Info(logMsgPrefix + "Artifactory response: " + resp.Status + strChecksumDeployed)
 	}
 
 	return flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200

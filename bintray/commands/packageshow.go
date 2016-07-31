@@ -6,6 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) {
@@ -15,7 +16,7 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package
 
-	fmt.Println("Getting package: " + packageDetails.Package)
+	logger.Logger.Info("Getting package: " + packageDetails.Package)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode == 200 {

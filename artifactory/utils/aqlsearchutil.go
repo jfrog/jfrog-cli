@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 type AqlSearchResultItem struct {
@@ -30,11 +30,11 @@ func AqlSearch(pattern string, flags AqlSearchFlag, aqlReturnFields []string) []
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
 
 	data := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps(), aqlReturnFields)
-	fmt.Println("Searching Artifactory using AQL query: " + data)
+	logger.Logger.Info("Searching Artifactory using AQL query: " + data)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 	resp, json := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
-	fmt.Println("Artifactory response:", resp.Status)
+	logger.Logger.Info("Artifactory response:", resp.Status)
 
 	return parseAqlSearchResponse(json)
 }

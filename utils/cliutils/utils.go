@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"github.com/codegangsta/cli"
 	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"runtime"
 	"regexp"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 const CmdArtifactory = "rt"
@@ -31,14 +31,14 @@ func CheckError(err error) {
 
 func CheckErrorWithMessage(err error, message string) {
 	if err != nil {
-		fmt.Println(message)
+		logger.Logger.Error(message)
 		panic(err)
 	}
 }
 
 func Exit(exitCode ExitCode, msg string) {
 	if msg != "" {
-		fmt.Println(msg)
+		logger.Logger.Error(msg)
 	}
 	os.Exit(exitCode.Code)
 }

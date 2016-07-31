@@ -6,6 +6,7 @@ import (
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func Delete(deletePattern string, flags *DeleteFlags) {
@@ -30,10 +31,10 @@ func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) {
 			continue
 		}
 
-		fmt.Println("Deleting: " + fileUrl)
+		logger.Logger.Info("Deleting: " + fileUrl)
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 		resp, _ := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
-		fmt.Println("Artifactory response:", resp.Status)
+		logger.Logger.Info("Artifactory response:", resp.Status)
 	}
 }
 

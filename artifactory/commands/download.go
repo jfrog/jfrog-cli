@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
@@ -10,6 +9,7 @@ import (
 	"sync"
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 // Downloads the artifacts using the specified download pattern.
@@ -23,7 +23,7 @@ func Download(downloadPattern string, flags *DownloadFlags) {
 	if utils.IsWildcardPattern(downloadPattern) {
 		resultItems := utils.AqlSearchDefaultReturnFields(downloadPattern, flags)
 		downloadFiles(resultItems, flags)
-		fmt.Println("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
+		logger.Logger.Info("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
 	} else {
 		props := "";
 		if flags.Props != "" {
@@ -38,10 +38,10 @@ func Download(downloadPattern string, flags *DownloadFlags) {
 				downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, details.AcceptRanges, details.Size, flags)
 				downloadFile(downloadFileDetails, logMsgPrefix + ": ", flags)
 			} else {
-				fmt.Println(logMsgPrefix + "File already exists locally.")
+				logger.Logger.Info(logMsgPrefix + "File already exists locally.")
 			}
 		} else {
-			fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
+			logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
 		}
 	}
 }
@@ -55,13 +55,13 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
 				downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
-				fmt.Println(logMsgPrefix + "Downloading " + downloadPath)
+				logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
 				if !flags.DryRun {
                     if shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1) {
                         downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, nil, resultItems[j].Size, flags)
                         downloadFile(downloadFileDetails, logMsgPrefix, flags)
                     } else {
-                        fmt.Println(logMsgPrefix + "File already exists locally.")
+						logger.Logger.Info(logMsgPrefix + "File already exists locally.")
                     }
 				}
 			}
@@ -114,7 +114,7 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > downloadFileDetails.Size || !isFileAcceptRange(downloadFileDetails, flags) {
 		resp := ioutils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, flags.Flat, httpClientsDetails)
-		fmt.Println(logMsgPrefix + "Artifactory response:", resp.Status)
+		logger.Logger.Info(logMsgPrefix + "Artifactory response:", resp.Status)
 	} else {
 		concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
 			DownloadPath: downloadFileDetails.DownloadPath,

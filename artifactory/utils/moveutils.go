@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 const (
@@ -36,7 +37,7 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath st
 		movedCount += cliutils.Bool2Int(success)
 	}
 
-	fmt.Println(moveMsgs[moveType].MovedMsg + " " + strconv.Itoa(movedCount) + " artifacts in Artifactory")
+	logger.Logger.Info(moveMsgs[moveType].MovedMsg + " " + strconv.Itoa(movedCount) + " artifacts in Artifactory")
 }
 
 func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) bool {
@@ -46,7 +47,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 		return true
 	}
 
-	fmt.Println(message)
+	logger.Logger.Info(message)
 
 	moveUrl := flags.ArtDetails.Url
 	restApi := "api/" + string(moveType) + "/" + sourcePath
@@ -54,7 +55,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	resp, _ := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
 
-	fmt.Println("Artifactory response:", resp.Status)
+	logger.Logger.Info("Artifactory response:", resp.Status)
 	return resp.StatusCode == 200
 }
 

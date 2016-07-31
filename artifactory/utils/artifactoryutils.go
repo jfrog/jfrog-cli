@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"fmt"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string) {
@@ -92,13 +93,13 @@ func PingArtifactory(artDetails *config.ArtifactoryDetails) {
 	defer func() {
 		if r := recover(); r != nil {
 			artDetails.Transport = initTransport()
-			fmt.Println("Done pinging Artifactory.")
+			logger.Logger.Info("Done pinging Artifactory.")
 		}
 	}()
 	httpClientsDetails := GetArtifactoryHttpClientDetails(artDetails)
-	fmt.Println("Pinging Artifactory...")
+	logger.Logger.Info("Pinging Artifactory...")
 	ioutils.SendGet(artDetails.Url, true, httpClientsDetails)
-	fmt.Println("Done pinging Artifactory.")
+	logger.Logger.Info("Done pinging Artifactory.")
 }
 
 func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails {

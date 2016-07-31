@@ -2,11 +2,11 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func BuildDownloadBintrayFileUrl(bintrayDetails *config.BintrayDetails,
@@ -21,7 +21,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	flags *DownloadFlags, logMsgPrefix string) {
 
 	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
-	fmt.Println(logMsgPrefix + "Downloading " + url)
+	logger.Logger.Info(logMsgPrefix + "Downloading " + url)
 
 	fileName, dir := ioutils.GetFileAndDirFromPath(pathDetails.Path)
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
@@ -34,7 +34,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	    path, _ = ioutils.GetFileAndDirFromPath(path)
 	}
 	if !shouldDownloadFile(path, details) {
-	    fmt.Println(logMsgPrefix + "File already exists locally.")
+		logger.Logger.Info(logMsgPrefix + "File already exists locally.")
 		return
 	}
 	if flags.Flat {
@@ -45,7 +45,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size {
 	    // File should not be downloaded concurrently. Download it as one block.
 		resp := ioutils.DownloadFile(url, dir, fileName, false, httpClientsDetails)
-		fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
+		logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
 	} else {
 	    // We should attempt to download the file concurrently, but only if it is provided through the DSN.
 	    // To check if the file is provided through the DSN, we first attempt to download the file
@@ -68,7 +68,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
         } else {
             cliutils.CheckError(err)
-            fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
+			logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
         }
 	}
 }

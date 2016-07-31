@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
@@ -86,7 +87,7 @@ func encryptPassword(details *config.ArtifactoryDetails) *config.ArtifactoryDeta
 	if details.Password == "" {
 		return details
 	}
-	fmt.Println("\nEncrypting password...")
+	logger.Logger.Info("\nEncrypting password...")
 	response, encPassword := utils.GetEncryptedPasswordFromArtifactory(details)
 	switch response.StatusCode {
 	case 409:
@@ -94,7 +95,7 @@ func encryptPassword(details *config.ArtifactoryDetails) *config.ArtifactoryDeta
 			"You may use \"art config --enc-password=false\"")
 	case 200:
 		details.Password = encPassword
-		fmt.Println("Done encrypting password.")
+		logger.Logger.Info("Done encrypting password.")
 	default:
 		cliutils.Exit(cliutils.ExitCodeError, "\nArtifactory response: "+response.Status)
 	}

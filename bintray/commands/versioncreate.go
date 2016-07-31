@@ -7,15 +7,16 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
-	fmt.Println("Creating version: " + versionDetails.Version)
+	logger.Logger.Info("Creating version: " + versionDetails.Version)
 	resp, body := doCreateVersion(versionDetails, flags, flags.BintrayDetails)
 	if resp.StatusCode != 201 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetails *config.BintrayDetails) {
@@ -20,12 +21,12 @@ func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetai
 		data = "{ \"passphrase\": \"" + passphrase + "\" }"
 	}
 
-	fmt.Println("GPG signing file: " + pathDetails.Path)
+	logger.Logger.Info("GPG signing file: " + pathDetails.Path)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 }

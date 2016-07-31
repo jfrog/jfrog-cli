@@ -5,6 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
@@ -15,12 +16,12 @@ func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 	url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package
 
-	fmt.Println("Updating package: " + packageDetails.Package)
+	logger.Logger.Info("Updating package: " + packageDetails.Package)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
 	if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 }

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
@@ -68,10 +69,10 @@ func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFla
 	for _, i := range uploadCount {
 		totalUploaded += i
 	}
-	fmt.Println("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Bintray.")
+	logger.Logger.Info("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Bintray.")
 	totalFailed = size - totalUploaded
 	if totalFailed > 0 {
-		fmt.Println("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Bintray.")
+		logger.Logger.Info("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Bintray.")
 	}
 	return
 }
@@ -107,7 +108,7 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
 }
 
 func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) bool {
-	fmt.Println(logMsgPrefix + "Uploading artifact to: " + url)
+	logger.Logger.Info(logMsgPrefix + "Uploading artifact to: " + url)
 
 	f, err := os.Open(artifact.LocalPath)
 	cliutils.CheckError(err)
@@ -115,12 +116,12 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp := ioutils.UploadFile(f, url, httpClientsDetails)
 
-	fmt.Println(logMsgPrefix + "Bintray response: " + resp.Status)
+	logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
 	return resp.StatusCode == 201 || resp.StatusCode == 200
 }
 
 func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
-	fmt.Println("Verifying package " + versionDetails.Package + " exists...")
+	logger.Logger.Info("Verifying package " + versionDetails.Package + " exists...")
 	resp := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
 	if resp.StatusCode == 404 {
         promptPackageNotExist(versionDetails)
@@ -130,7 +131,7 @@ func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *Uplo
 }
 
 func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
-	fmt.Println("Verifying repository " + versionDetails.Repo + " exists...")
+	logger.Logger.Info("Verifying repository " + versionDetails.Repo + " exists...")
 	resp := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
 	if resp.StatusCode == 404 {
 		promptRepoNotExist(versionDetails)
@@ -158,16 +159,16 @@ func promptRepoNotExist(versionDetails *utils.VersionDetails) {
 }
 
 func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
-	fmt.Println("Checking if version " + versionDetails.Version + " exists...")
+	logger.Logger.Info("Checking if version " + versionDetails.Version + " exists...")
 	resp := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
 	if resp.StatusCode == 404 {
-		fmt.Println("Creating version " + versionDetails.Version + "...")
+		logger.Logger.Info("Creating version " + versionDetails.Version + "...")
 		resp, body := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
 		if resp.StatusCode != 201 {
-			fmt.Println("Bintray response: " + resp.Status)
+			logger.Logger.Info("Bintray response: " + resp.Status)
 			cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))
 		}
-		fmt.Println("Bintray response: " + resp.Status)
+		logger.Logger.Info("Bintray response: " + resp.Status)
 	} else if resp.StatusCode != 200 {
 		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: "+resp.Status)
 	}
