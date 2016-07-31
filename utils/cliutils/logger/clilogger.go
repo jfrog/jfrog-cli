@@ -13,14 +13,14 @@ const (
 var Logger Log
 
 func init() {
-	Logger = CreateLogger()
+	Logger = createLogger()
 }
 
 type CliLogger struct {
 	logLevel string
 }
 
-func CreateLogger() (logger *CliLogger) {
+func createLogger() (logger *CliLogger) {
 	logger = new(CliLogger)
 	logger.setLevel()
 	return
