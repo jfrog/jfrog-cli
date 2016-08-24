@@ -12,7 +12,11 @@ func TestReformatRegexp(t *testing.T) {
 }
 
 func assertReformatRegexp(regexp, source, dest, expected string, t *testing.T) {
-	if ( expected != ReformatRegexp(regexp, source, dest)) {
-		t.Error("Unexpected string built. Expected: `" + expected + "` Got `" + ReformatRegexp(regexp, source, dest) + "`")
+    result, err := ReformatRegexp(regexp, source, dest)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if expected != result {
+		t.Error("Unexpected string built. Expected: `" + expected + "` Got `" + result + "`")
 	}
 }

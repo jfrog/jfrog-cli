@@ -9,7 +9,10 @@ import (
 func TestConfig(t *testing.T) {
 	inputDetails := config.ArtifactoryDetails{"http://localhost:8080/artifactory", "admin", "password", "", "", nil, nil}
 	Config(&inputDetails, nil, false, false)
-	outputConfig := GetConfig()
+	outputConfig, err := GetConfig()
+	if err != nil {
+	    t.Error(err.Error())
+	}
 	if configStructToString(&inputDetails) != configStructToString(outputConfig) {
 		t.Error("Unexpected configuration was saved to file. Expected: " + configStructToString(&inputDetails) + " Got " + configStructToString(outputConfig))
 	}

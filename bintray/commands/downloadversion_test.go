@@ -7,7 +7,10 @@ import (
 )
 
 func TestDownloadVersion(t *testing.T) {
-    versionDetails := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+    versionDetails, err := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+	if err != nil {
+		t.Error(err.Error())
+	}
     url := BuildDownloadVersionUrl(versionDetails, tests.CreateBintrayDetails())
     expected := "https://api.bintray.com/packages/test-subject/test-repo/test-package/versions/ver-1.2/files"
     if expected != url {

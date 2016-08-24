@@ -10,7 +10,10 @@ import (
 func TestConfig(t *testing.T) {
     expected := tests.CreateBintrayDetails()
     Config(expected, nil, false)
-    details := GetConfig()
+    details, err := GetConfig()
+	if err != nil {
+		t.Error(err.Error())
+	}
 	if configStructToString(expected) != configStructToString(details) {
 		t.Error("Unexpected configuration was saved to file. Expected: " + configStructToString(expected) + " Got " + configStructToString(details))
 	}

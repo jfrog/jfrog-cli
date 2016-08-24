@@ -9,9 +9,18 @@ import (
 
 func TestSingleFileUpload(t *testing.T) {
 	flags := getUploadFlags()
-	uploaded1, _ := Upload("testdata/a.txt", "repo-local", flags)
-	uploaded2, _ := Upload("testdata/aa.txt", "repo-local", flags)
-	uploaded3, _ := Upload("testdata/aa1*.txt", "repo-local", flags)
+	uploaded1, _, err := Upload("testdata/a.txt", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded2, _, err := Upload("testdata/aa.txt", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded3, _, err := Upload("testdata/aa1*.txt", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	if uploaded1 != 1 {
 		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
 	}
@@ -37,10 +46,18 @@ func TestPatternNonRecursiveUpload(t *testing.T) {
 
 func testPatternUpload(t *testing.T, flags *UploadFlags) {
 	sep := cliutils.GetTestsFileSeperator()
-	uploaded1, _ := Upload("testdata"+sep+"*", "repo-local", flags)
-	uploaded2, _ := Upload("testdata"+sep+"a*", "repo-local", flags)
-	uploaded3, _ := Upload("testdata"+sep+"b*", "repo-local", flags)
-
+	uploaded1, _, err := Upload("testdata"+sep+"*", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded2, _, err := Upload("testdata"+sep+"a*", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded3, _, err := Upload("testdata"+sep+"b*", "repo-local", flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	if uploaded1 != 3 {
 		t.Error("Expected 3 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
 	}

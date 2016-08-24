@@ -9,14 +9,25 @@ import (
 )
 
 func TestSingleFileUpload(t *testing.T) {
-    versionDetails := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+    versionDetails, err := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+	if err != nil {
+		t.Error(err.Error())
+	}
     uploadPath := "/a/b/"
     flags := createUploadFlags()
 
-	uploaded1, _ := Upload(versionDetails, "testdata/a.txt", uploadPath, flags)
-	uploaded2, _ := Upload(versionDetails, "testdata/aa.txt", uploadPath, flags)
-	uploaded3, _ := Upload(versionDetails, "testdata/aa1*.txt", uploadPath, flags)
-
+	uploaded1, _, err := Upload(versionDetails, "testdata/a.txt", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded2, _, err := Upload(versionDetails, "testdata/aa.txt", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded3, _, err := Upload(versionDetails, "testdata/aa1*.txt", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	if uploaded1 != 1 {
 		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
 	}
@@ -41,13 +52,25 @@ func TestPatternNonRecursiveUpload(t *testing.T) {
 }
 
 func testPatternUpload(t *testing.T, flags *UploadFlags) {
-    versionDetails := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+    versionDetails, err := utils.CreateVersionDetails("test-subject/test-repo/test-package/ver-1.2")
+	if err != nil {
+		t.Error(err.Error())
+	}
     uploadPath := "/a/b/"
 
 	sep := cliutils.GetTestsFileSeperator()
-	uploaded1, _ := Upload(versionDetails, "testdata"+sep+"*", uploadPath, flags)
-	uploaded2, _ := Upload(versionDetails, "testdata"+sep+"a*", uploadPath, flags)
-	uploaded3, _ := Upload(versionDetails, "testdata"+sep+"b*", uploadPath, flags)
+	uploaded1, _, err := Upload(versionDetails, "testdata"+sep+"*", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded2, _, err := Upload(versionDetails, "testdata"+sep+"a*", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	uploaded3, _, err := Upload(versionDetails, "testdata"+sep+"b*", uploadPath, flags)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	if uploaded1 != 3 {
 		t.Error("Expected 3 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
