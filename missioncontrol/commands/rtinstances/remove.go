@@ -5,17 +5,25 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"errors"
 	"fmt"
 )
 
-func Remove(instanceName string, flags *RemoveFlags) {
+func Remove(instanceName string, flags *RemoveFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances/" + instanceName;
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body := ioutils.SendDelete(missionControlUrl, nil, httpClientDetails)
+	resp, body, err := ioutils.SendDelete(missionControlUrl, nil, httpClientDetails)
+	if err != nil {
+	    return err
+	}
 	if resp.StatusCode != 204 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadMissionControlHttpMessage(body))
+		err := cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
+        if err != nil {
+            return err
+        }
 	}
 	fmt.Println("Mission Control response: " + resp.Status)
+	return nil
 }
 
 type RemoveFlags struct {

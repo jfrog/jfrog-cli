@@ -1,6 +1,7 @@
 package commands
 
 import (
+    "errors"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
@@ -9,7 +10,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) {
+func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) error {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}
@@ -19,10 +20,17 @@ func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config
 
 	logger.Logger.Info("Publishing version: " + versionDetails.Version)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body := ioutils.SendPost(url, nil, httpClientsDetails)
+	resp, body, err := ioutils.SendPost(url, nil, httpClientsDetails)
+	if err != nil {
+	    return err
+	}
 	if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
+		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
+        if err != nil {
+            return err
+        }
 	}
 	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return nil
 }

@@ -9,13 +9,17 @@ import (
 	"syscall"
 )
 
-func Config(details, defaultDetails *config.BintrayDetails, interactive bool) *config.BintrayDetails {
+func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*config.BintrayDetails, error) {
     if details == nil {
         details = new(config.BintrayDetails)
     }
 	if interactive {
 	    if defaultDetails == nil {
-            defaultDetails = config.ReadBintrayConf()
+	        var err error
+            defaultDetails, err = config.ReadBintrayConf()
+			if err != nil {
+			    return nil, err
+			}
 	    }
 		if details.User == "" {
 			ioutils.ScanFromConsole("User", &details.User, defaultDetails.User)
@@ -23,7 +27,10 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) *c
 		if details.Key == "" {
 			print("Key: ")
 			byteKey, err := terminal.ReadPassword(int(syscall.Stdin))
-			cliutils.CheckError(err)
+			err = cliutils.CheckError(err)
+			if err != nil {
+			    return nil, err
+			}
 			details.Key = string(byteKey)
 			if details.Key == "" {
 				details.Key = defaultDetails.Key
@@ -35,11 +42,17 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) *c
 		}
 	}
 	config.SaveBintrayConf(details)
-	return details
+	return details, nil
 }
 
-func ShowConfig() {
-	details := config.ReadBintrayConf()
+func ShowConfig() error {
+	details, err := config.ReadBintrayConf()
+	if err != nil {
+		return err
+	}
+	if details.User != "" {
+		fmt.Println("User: " + details.User)
+	}
 	if details.User != "" {
 		fmt.Println("User: " + details.User)
 	}
@@ -49,12 +62,13 @@ func ShowConfig() {
 	if details.DefPackageLicenses != "" {
 		fmt.Println("Default package license: " + details.DefPackageLicenses)
 	}
+	return nil
 }
 
 func ClearConfig() {
 	config.SaveBintrayConf(new(config.BintrayDetails))
 }
 
-func GetConfig() *config.BintrayDetails {
+func GetConfig() (*config.BintrayDetails, error) {
 	return config.ReadBintrayConf()
 }

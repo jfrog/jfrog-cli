@@ -9,7 +9,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
+func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) error {
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = urlSigningDetails.Subject
 	}
@@ -19,9 +19,13 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) {
 
 	logger.Logger.Info("Signing URL for: " + path)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body := ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	if err != nil {
+	    return err
+	}
 	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return nil
 }
 
 func builJson(flags *UrlSigningFlags) string {

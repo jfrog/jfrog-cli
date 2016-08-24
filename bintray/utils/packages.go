@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
+func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (*http.Response, error) {
 	url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
@@ -15,7 +15,7 @@ func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayD
 	return ioutils.SendHead(url, httpClientsDetails)
 }
 
-func HeadRepo(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
+func HeadRepo(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (*http.Response, error) {
 	url := bintrayDetails.ApiUrl + "repos/" + packageDetails.Subject + "/" +
 		packageDetails.Repo
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)

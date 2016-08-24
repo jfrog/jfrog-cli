@@ -2,13 +2,14 @@ package commands
 
 import (
 	"fmt"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
+func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) error {
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = packageDetails.Subject
 	}
@@ -18,10 +19,17 @@ func UpdatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 
 	logger.Logger.Info("Updating package: " + packageDetails.Package)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
+	resp, body, err := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
+	if err != nil {
+	    return err
+	}
 	if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
+		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
+        if err != nil {
+            return err
+        }
 	}
 	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return nil
 }

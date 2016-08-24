@@ -12,28 +12,50 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
+// CLI base commands constants:
 const CmdArtifactory = "rt"
 const CmdBintray = "bt"
 const CmdMissionControl = "mc"
 
-var ExitCodeError ExitCode = ExitCode{1}
-var ExitCodeWarning ExitCode = ExitCode{2}
+// Error modes (how should the application behave when the CheckError function is invoked):
+type OnError string
+const (
+    OnErrorPanic OnError = "panic"
+    OnErrorReturnError OnError = "return"
+)
+var onError = OnErrorReturnError
 
+// Exit codes:
 type ExitCode struct {
 	Code int
 }
+var ExitCodeError ExitCode = ExitCode{1}
+var ExitCodeWarning ExitCode = ExitCode{2}
 
-func CheckError(err error) {
-	if err != nil {
-		panic(err)
-	}
+func CheckError(err error) error {
+    return handleError(err, ExitCodeError)
 }
 
-func CheckErrorWithMessage(err error, message string) {
+func CheckWarning(err error) error {
+    return handleError(err, ExitCodeWarning)
+}
+
+func handleError(err error, exitCode ExitCode) error {
+    if err != nil {
+        if onError == OnErrorPanic {
+            panic(err)
+        }
+        logger.Logger.Error(err.Error())
+    }
+    return err
+}
+
+func CheckErrorWithMessage(err error, message string) error {
 	if err != nil {
 		logger.Logger.Error(message)
-		panic(err)
+		err = CheckError(err)
 	}
+	return err
 }
 
 func Exit(exitCode ExitCode, msg string) {
@@ -118,7 +140,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.4.1"
+	return "1.5.0-dev"
 }
 
 func GetUserHomeDir() string {
@@ -212,15 +234,14 @@ func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
     return c.Bool(flagName)
 }
 
-func GetBoolEnvValue(flagName string, defValue bool) bool {
+func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
 	envVarValue := os.Getenv(flagName)
 	if envVarValue == "" {
-		return defValue
+		return defValue, nil
 	}
-
 	val, err := strconv.ParseBool(envVarValue)
-	CheckErrorWithMessage(err, "can't parse environment variable " + flagName)
-    return val
+	err = CheckErrorWithMessage(err, "can't parse environment variable " + flagName)
+    return val, err
 }
 
 func GetDocumentationMessage() string {
@@ -243,9 +264,12 @@ func PathToRegExp(localpath string) string {
 // For example:
 //      regexpString = "1(.*)234" ; sourceString = "1hello234" ; destString = "{1}"
 //      returns "hello"
-func ReformatRegexp(regexpString, sourceString, destString string) string {
+func ReformatRegexp(regexpString, sourceString, destString string) (string, error) {
 	r, err := regexp.Compile(regexpString)
-	CheckError(err)
+	err = CheckError(err)
+	if err != nil {
+	    return "", err
+	}
 
 	groups := r.FindStringSubmatch(sourceString)
 	size := len(groups)
@@ -256,7 +280,7 @@ func ReformatRegexp(regexpString, sourceString, destString string) string {
 			target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
 		}
 	}
-	return target
+	return target, nil
 }
 
 func GetTestsFileSeperator() string {

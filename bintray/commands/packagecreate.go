@@ -9,14 +9,18 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) {
+func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) error {
 	logger.Logger.Info("Creating package: " + packageDetails.Package)
-	resp, body := DoCreatePackage(packageDetails, flags)
+	resp, body, err := DoCreatePackage(packageDetails, flags)
+	if err != nil {
+	    return err
+	}
 	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return nil
 }
 
-func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) (*http.Response, []byte) {
+func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) (*http.Response, []byte, error) {
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = packageDetails.Subject
 	}

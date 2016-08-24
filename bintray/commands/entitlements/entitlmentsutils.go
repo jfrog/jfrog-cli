@@ -1,6 +1,7 @@
 package entitlements
 
 import (
+    "errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -15,10 +16,13 @@ func BuildEntitlementUrl(bintrayDetails *config.BintrayDetails, details *utils.V
 	return BuildEntitlementsUrl(bintrayDetails, details) + "/" + entId
 }
 
-func CreateVersionDetails(versionStr string) *utils.VersionDetails {
+func CreateVersionDetails(versionStr string) (*utils.VersionDetails, error) {
 	parts := strings.Split(versionStr, "/")
 	if len(parts) == 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Argument format should be subject/repository or subject/repository/package or subject/repository/package/version. Got " + versionStr)
+		err := cliutils.CheckError(errors.New("Argument format should be subject/repository or subject/repository/package or subject/repository/package/version. Got " + versionStr))
+        if err != nil {
+            return nil, err
+        }
 	}
 	return utils.CreateVersionDetails(versionStr)
 }

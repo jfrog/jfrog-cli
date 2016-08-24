@@ -21,29 +21,39 @@ type AqlSearchResult struct {
 	Results []AqlSearchResultItem
 }
 
-func AqlSearchDefaultReturnFields(pattern string, flags AqlSearchFlag) []AqlSearchResultItem {
+func AqlSearchDefaultReturnFields(pattern string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
 	return AqlSearch(pattern, flags, returnFields)
 }
 
-func AqlSearch(pattern string, flags AqlSearchFlag, aqlReturnFields []string) []AqlSearchResultItem {
+func AqlSearch(pattern string, flags AqlSearchFlag, aqlReturnFields []string) ([]AqlSearchResultItem, error) {
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
 
-	data := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps(), aqlReturnFields)
+	data, err := BuildAqlSearchQuery(pattern, flags.IsRecursive(), flags.GetProps(), aqlReturnFields)
+	if err != nil {
+	    return nil, err
+	}
 	logger.Logger.Info("Searching Artifactory using AQL query: " + data)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
-	resp, json := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
+	resp, json, err := ioutils.SendPost(aqlUrl, []byte(data), httpClientsDetails)
+	if err != nil {
+	    return nil, err
+	}
 	logger.Logger.Info("Artifactory response:", resp.Status)
 
-	return parseAqlSearchResponse(json)
+    resultItems, err := parseAqlSearchResponse(json)
+	return resultItems, err
 }
 
-func parseAqlSearchResponse(resp []byte) []AqlSearchResultItem {
+func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {
 	var result AqlSearchResult
 	err := json.Unmarshal(resp, &result)
-	cliutils.CheckError(err)
-	return result.Results
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return nil, err
+	}
+	return result.Results, nil
 }
 
 func (item AqlSearchResultItem) GetFullUrl() string {

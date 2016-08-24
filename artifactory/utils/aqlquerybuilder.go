@@ -2,10 +2,11 @@ package utils
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"errors"
 	"strings"
 )
 
-func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aqlReturnFields []string) string {
+func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aqlReturnFields []string) (string, error) {
 	searchPattern = prepareSearchPattern(searchPattern)
 	index := strings.Index(searchPattern, "/")
 
@@ -14,11 +15,15 @@ func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aql
 
 	pairs := createPathFilePairs(searchPattern, recursive)
 	size := len(pairs)
+	propsQuery, err := buildPropsQuery(props)
+	if err != nil {
+	    return "", err
+	}
 
 	json :=
 		"{" +
 			"\"repo\": \"" + repo + "\"," +
-			buildPropsQuery(props) +
+			    propsQuery +
 			"\"$or\": ["
 
 	if size == 0 {
@@ -43,7 +48,7 @@ func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aql
 		"]" +
 			"}"
 
-	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")"
+	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
 }
 
 func buildAqlReturnFieldsString(returnFields []string) (fieldsString string) {
@@ -71,23 +76,26 @@ func prepareSearchPattern(pattern string) string {
 	return pattern
 }
 
-func buildPropsQuery(props string) string {
+func buildPropsQuery(props string) (string, error) {
 	if props == "" {
-		return ""
+		return "", nil
 	}
 	propList := strings.Split(props, ";")
 	query := ""
 	for _, prop := range propList {
 		keyVal := strings.Split(prop, "=")
 		if len(keyVal) != 2 {
-			cliutils.Exit(cliutils.ExitCodeError, "Invalid props pattern: "+props)
+			err := cliutils.CheckError(errors.New("Invalid props pattern: " + props))
+			if err != nil {
+			    return "", err
+			}
 		}
 		key := keyVal[0]
 		value := keyVal[1]
 		query +=
 			"\"@" + key + "\": {\"$match\" : \"" + value + "\"},"
 	}
-	return query
+	return query, nil
 }
 
 func buildInnerQuery(repo, path, name string) string {

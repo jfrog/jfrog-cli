@@ -11,32 +11,40 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
-	uploadFlags *UploadFlags) (totalUploaded, totalFailed int) {
+	uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 
 	if uploadFlags.BintrayDetails.User == "" {
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
 	}
 	if !uploadFlags.DryRun {
         verifyRepoExists(versionDetails, uploadFlags)
-        verifyPackageExists(versionDetails, uploadFlags)
+        err = verifyPackageExists(versionDetails, uploadFlags)
+        if err != nil {
+            return
+        }
         createVersionIfNeeded(versionDetails, uploadFlags)
 	}
 	// Get the list of artifacts to be uploaded to:
-	artifacts := getFilesToUpload(localPath, uploadPath, versionDetails.Package, uploadFlags)
+	var artifacts []cliutils.Artifact
+	artifacts, err = getFilesToUpload(localPath, uploadPath, versionDetails.Package, uploadFlags)
+	if err != nil {
+	    return
+	}
 
 	baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
 
-	totalUploaded, totalFailed = uploadFiles(artifacts, baseUrl, uploadFlags)
+	totalUploaded, totalFailed, err = uploadFiles(artifacts, baseUrl, uploadFlags)
 	return
 }
 
 func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFlags) (totalUploaded,
-    totalFailed int) {
+    totalFailed int, err error) {
 
 	size := len(artifacts)
 	var wg sync.WaitGroup
@@ -50,9 +58,17 @@ func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFla
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
+				if err != nil {
+				    break
+				}
 				url := baseUrl + artifacts[j].TargetPath + matrixParams
 				if !flags.DryRun {
-					if uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails) {
+					uploaded, e := uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails)
+                    if e != nil {
+                        err = e
+                        break;
+                    }
+					if uploaded {
 						uploadCount[threadId]++
 					}
 				} else {
@@ -107,71 +123,104 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
     return "pool/" + component + "/" + packageName[0:1] + "/" + packageName + "/"
 }
 
-func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) bool {
+func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) (bool, error) {
 	logger.Logger.Info(logMsgPrefix + "Uploading artifact to: " + url)
 
 	f, err := os.Open(artifact.LocalPath)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return false, err
+	}
 	defer f.Close()
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp := ioutils.UploadFile(f, url, httpClientsDetails)
+	resp, err := ioutils.UploadFile(f, url, httpClientsDetails)
+	if err != nil {
+	    return false, err
+	}
 
 	logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
-	return resp.StatusCode == 201 || resp.StatusCode == 200
+	return resp.StatusCode == 201 || resp.StatusCode == 200, nil
 }
 
-func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
+func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	logger.Logger.Info("Verifying package " + versionDetails.Package + " exists...")
-	resp := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
-	if resp.StatusCode == 404 {
-        promptPackageNotExist(versionDetails)
-	} else if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: "+resp.Status)
+	resp, err := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
+	if err != nil {
+	    return err
 	}
+	if resp.StatusCode == 404 {
+        err = promptPackageNotExist(versionDetails)
+        if err != nil {
+            return err
+        }
+	} else if resp.StatusCode != 200 {
+		err = cliutils.CheckError(errors.New("Bintray response: "+resp.Status))
+	}
+	return err
 }
 
-func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
+func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	logger.Logger.Info("Verifying repository " + versionDetails.Repo + " exists...")
-	resp := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
+	resp, err := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
+    if err != nil {
+        return err
+    }
 	if resp.StatusCode == 404 {
-		promptRepoNotExist(versionDetails)
+		err = promptRepoNotExist(versionDetails)
 	} else if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: " + resp.Status)
+		err = cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
+	return err
 }
 
-func promptPackageNotExist(versionDetails *utils.VersionDetails) {
+func promptPackageNotExist(versionDetails *utils.VersionDetails) error {
     msg := "It looks like package '" + versionDetails.Package +
        "' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
        "You can create the package by running the package-create command. For example:\n" +
        "jfrog bt pc " +
        versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
        " --vcs-url=https://github.com/example"
-    if config.ReadBintrayConf().DefPackageLicenses == "" {
+
+    conf, err := config.ReadBintrayConf()
+    if err != nil {
+        return err
+    }
+    if conf.DefPackageLicenses == "" {
         msg += " --licenses=Apache-2.0-example"
     }
-    cliutils.Exit(cliutils.ExitCodeError, msg)
+    err = cliutils.CheckError(errors.New(msg))
+    return err
 }
 
-func promptRepoNotExist(versionDetails *utils.VersionDetails) {
+func promptRepoNotExist(versionDetails *utils.VersionDetails) error {
     msg := "It looks like repository '" + versionDetails.Repo + "' does not exist.\n"
-    cliutils.Exit(cliutils.ExitCodeError, msg)
+    return cliutils.CheckError(errors.New(msg))
 }
 
-func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) {
+func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	logger.Logger.Info("Checking if version " + versionDetails.Version + " exists...")
-	resp := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
+	resp, err := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
+    if err != nil {
+        return err
+    }
 	if resp.StatusCode == 404 {
 		logger.Logger.Info("Creating version " + versionDetails.Version + "...")
-		resp, body := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
+		resp, body, err := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
+		if err != nil {
+		    return err
+		}
 		if resp.StatusCode != 201 {
 			logger.Logger.Info("Bintray response: " + resp.Status)
-			cliutils.Exit(cliutils.ExitCodeError, cliutils.IndentJson(body))
+			err = cliutils.CheckError(errors.New(cliutils.IndentJson(body)))
+            if err != nil {
+                return err
+            }
 		}
 		logger.Logger.Info("Bintray response: " + resp.Status)
 	} else if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: "+resp.Status)
+		err = cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
+	return err
 }
 
 func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat bool) cliutils.Artifact {
@@ -190,7 +239,7 @@ func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat 
     return cliutils.Artifact{rootPath, uploadPath}
 }
 
-func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFlags) []cliutils.Artifact {
+func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFlags) ([]cliutils.Artifact, error) {
     var debianDefaultPath string
     if targetPath == "" && flags.Deb != "" {
         debianDefaultPath = getDebianDefaultPath(flags.Deb, packageName)
@@ -198,29 +247,46 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 
 	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
 	if !ioutils.IsPathExists(rootPath) {
-		cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: "+rootPath)
+		err := cliutils.CheckError(errors.New("Path does not exist: "+rootPath))
+        if err != nil {
+            return nil, err
+        }
 	}
 	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
-	if !ioutils.IsDir(rootPath) {
+	dir, err := ioutils.IsDir(rootPath)
+	if err != nil {
+	    return nil, err
+	}
+	if !dir {
         artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
-		return append(artifacts, artifact)
+		return append(artifacts, artifact), nil
 	}
 
 	r, err := regexp.Compile(localpath)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return nil, err
+	}
 
 	var paths []string
 	if flags.Recursive {
-		paths = ioutils.ListFilesRecursive(rootPath)
+		paths, err = ioutils.ListFilesRecursive(rootPath)
 	} else {
-		paths = ioutils.ListFiles(rootPath)
+		paths, err = ioutils.ListFiles(rootPath)
 	}
+    if err != nil {
+        return nil, err
+    }
 
 	for _, path := range paths {
-		if ioutils.IsDir(path) {
+		dir, err := ioutils.IsDir(path)
+        if err != nil {
+            return nil, err
+        }
+		if dir {
 			continue
 		}
 
@@ -250,7 +316,7 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}
-	return artifacts
+	return artifacts, nil
 }
 
 type UploadFlags struct {

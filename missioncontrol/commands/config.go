@@ -5,16 +5,20 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"errors"
 	"fmt"
 	"net/url"
 )
 
-func GetConfig() *config.MissionControlDetails {
+func GetConfig() (*config.MissionControlDetails, error) {
 	return config.ReadMissionControlConf()
 }
 
-func ShowConfig() {
-	details := config.ReadMissionControlConf()
+func ShowConfig() error {
+	details, err := config.ReadMissionControlConf()
+	if err != nil {
+	    return err
+	}
 	if details.Url != "" {
 		fmt.Println("Url: " + details.Url)
 	}
@@ -24,33 +28,45 @@ func ShowConfig() {
 	if details.Password != "" {
 		fmt.Println("Password: ***")
 	}
+	return nil
 }
 
 func ClearConfig() {
 	config.SaveMissionControlConf(new(config.MissionControlDetails))
 }
 
-func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) *config.MissionControlDetails {
-	if details == nil {
-		details = new(config.MissionControlDetails)
+func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) (conf *config.MissionControlDetails, err error) {
+	conf = details
+	if conf == nil {
+		conf = new(config.MissionControlDetails)
 	}
 	if interactive {
 		if defaultDetails == nil {
-			defaultDetails = config.ReadMissionControlConf()
-		}
-		if details.Url == "" {
-			ioutils.ScanFromConsole("Mission Control URL", &details.Url, defaultDetails.Url)
-			u, err := url.Parse(details.Url);
-			cliutils.CheckError(err)
-			if u.Scheme != "http" && u.Scheme != "https" {
-				cliutils.Exit(cliutils.ExitCodeError, "URL scheme is not valid " + u.Scheme)
+			defaultDetails, err = config.ReadMissionControlConf()
+			if err != nil {
+			    return
 			}
 		}
-		ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+		if conf.Url == "" {
+			ioutils.ScanFromConsole("Mission Control URL", &conf.Url, defaultDetails.Url)
+			var u *url.URL
+			u, err = url.Parse(conf.Url);
+			err = cliutils.CheckError(err)
+			if err != nil {
+			    return
+			}
+			if u.Scheme != "http" && u.Scheme != "https" {
+				err = cliutils.CheckError(errors.New("URL scheme is not valid " + u.Scheme))
+                if err != nil {
+                    return
+                }
+			}
+		}
+		ioutils.ReadCredentialsFromConsole(conf, defaultDetails)
 	}
-	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
-	config.SaveMissionControlConf(details)
-	return details
+	conf.Url = cliutils.AddTrailingSlashIfNeeded(conf.Url)
+	config.SaveMissionControlConf(conf)
+	return
 }
 
 type ConfigFlags struct {

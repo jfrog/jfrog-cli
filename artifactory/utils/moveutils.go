@@ -15,7 +15,7 @@ const (
 	COPY MoveType = "copy"
 )
 
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *MoveFlags, moveType MoveType) {
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *MoveFlags, moveType MoveType) error {
 	movedCount := 0
 
 	for _, v := range resultItems {
@@ -29,45 +29,63 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath st
 			}
 
 		}
-		destFile := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
+		destFile, err := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
+		if err != nil {
+		    return err
+		}
 		if strings.HasSuffix(destFile, "/") {
 			destFile += v.Name
 		}
-		success := moveFile(v.GetFullUrl(), destFile, flags, moveType)
+		success, err := moveFile(v.GetFullUrl(), destFile, flags, moveType)
+		if err != nil {
+		    return err
+		}
 		movedCount += cliutils.Bool2Int(success)
 	}
 
 	logger.Logger.Info(moveMsgs[moveType].MovedMsg + " " + strconv.Itoa(movedCount) + " artifacts in Artifactory")
+	return nil
 }
 
-func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) bool {
+func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) (bool, error) {
 	message := moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath
 	if flags.DryRun == true {
 		fmt.Println("[Dry run] " + message)
-		return true
+		return true, nil
 	}
 
 	logger.Logger.Info(message)
 
 	moveUrl := flags.ArtDetails.Url
 	restApi := "api/" + string(moveType) + "/" + sourcePath
-	requestFullUrl := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
+	requestFullUrl, err := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
+	if err != nil {
+        return false, err
+	}
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, _ := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	resp, _, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	if err != nil {
+	    return false, err
+	}
 
 	logger.Logger.Info("Artifactory response:", resp.Status)
-	return resp.StatusCode == 200
+	return resp.StatusCode == 200, nil
 }
 
-func MoveFilesWrapper(sourcePattern, destPath string, flags *MoveFlags, moveType MoveType) {
+func MoveFilesWrapper(sourcePattern, destPath string, flags *MoveFlags, moveType MoveType) (err error) {
 	PreCommandSetup(flags)
 	if IsWildcardPattern(sourcePattern) || flags.Props != "" {
-		resultItems := AqlSearchDefaultReturnFields(sourcePattern, flags)
+	    var resultItems []AqlSearchResultItem
+		resultItems, err = AqlSearchDefaultReturnFields(sourcePattern, flags)
+		if err != nil {
+		    return
+		}
 		regexpPath := cliutils.PathToRegExp(sourcePattern)
-		moveFiles(regexpPath, resultItems, destPath, flags, moveType)
+		err = moveFiles(regexpPath, resultItems, destPath, flags, moveType)
 	} else {
-		moveFile(sourcePattern, destPath, flags, moveType)
+		_, err = moveFile(sourcePattern, destPath, flags, moveType)
 	}
+	return
 }
 
 var moveMsgs = map[MoveType]MoveOptions{

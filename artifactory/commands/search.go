@@ -12,12 +12,16 @@ type SearchResult struct {
 	Path string `json:"path,omitempty"`
 }
 
-func Search(search string, flags *SearchFlags) {
+func Search(search string, flags *SearchFlags) error {
 	utils.PreCommandSetup(flags)
 	returnFields := []string{"\"name\"", "\"repo\"", "\"path\""}
-	resultItems := utils.AqlSearch(search, flags, returnFields)
+	resultItems, err := utils.AqlSearch(search, flags, returnFields)
+	if err != nil {
+	    return err
+	}
 	result, _ := json.Marshal(aqlResultToSearchResult(resultItems))
 	fmt.Println(string(cliutils.IndentJson(result)))
+	return nil
 }
 
 func aqlResultToSearchResult(aqlResult []utils.AqlSearchResultItem) (result []SearchResult) {

@@ -10,18 +10,26 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, totalFailed int) {
+func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 	utils.PreCommandSetup(flags)
-	minChecksumDeploySize := getMinChecksumDeploySize()
+	minChecksumDeploySize, err := getMinChecksumDeploySize()
+    if err != nil {
+        return
+    }
 
 	// Get the list of artifacts to be uploaded to Artifactory:
-	artifacts := getFilesToUpload(localPath, targetPath, flags)
+	var artifacts []cliutils.Artifact
+	artifacts, err = getFilesToUpload(localPath, targetPath, flags)
+	if err != nil {
+	    return
+	}
 	size := len(artifacts)
 
 	var wg sync.WaitGroup
@@ -35,16 +43,32 @@ func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, to
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				target := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].TargetPath, make(map[string]string))
-				if uploadFile(artifacts[j].LocalPath, target, flags,
-				    minChecksumDeploySize, logMsgPrefix) {
-					    uploadCount[threadId]++
+                if err != nil {
+                    break;
+                }
+                var e error
+                var uploaded bool
+                var target string
+				target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].TargetPath, make(map[string]string))
+                if e != nil {
+                    err = e
+                    break
+                }
+				uploaded, e = uploadFile(artifacts[j].LocalPath, target, flags,
+                    minChecksumDeploySize, logMsgPrefix)
+                if e != nil {
+                    err = e
+                    break
+                }
+				if uploaded {
+                    uploadCount[threadId]++
 				}
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+
 	totalUploaded = 0
 	for _, i := range uploadCount {
 		totalUploaded += i
@@ -74,35 +98,52 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
     return cliutils.Artifact{rootPath, uploadPath}
 }
 
-func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) []cliutils.Artifact {
+func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) ([]cliutils.Artifact, error) {
 	if strings.Index(targetPath, "/") < 0 {
 		targetPath += "/"
 	}
 	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
 	if !ioutils.IsPathExists(rootPath) {
-		cliutils.Exit(cliutils.ExitCodeError, "Path does not exist: "+rootPath)
+		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
+        if err != nil {
+            return nil, err
+        }
 	}
 	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
-	if !ioutils.IsDir(rootPath) {
+	dir, err := ioutils.IsDir(rootPath)
+	if err != nil {
+	    return nil, err
+	}
+	if !dir {
         artifact := getSingleFileToUpload(rootPath, targetPath, flags.Flat)
-        return append(artifacts, artifact)
+        return append(artifacts, artifact), nil
 	}
 
 	r, err := regexp.Compile(localpath)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return nil, err
+	}
 
 	var paths []string
 	if flags.Recursive {
-		paths = ioutils.ListFilesRecursive(rootPath)
+		paths, err = ioutils.ListFilesRecursive(rootPath)
 	} else {
-		paths = ioutils.ListFiles(rootPath)
+		paths, err = ioutils.ListFiles(rootPath)
 	}
+    if err != nil {
+        return nil, err
+    }
 
 	for _, path := range paths {
-		if ioutils.IsDir(path) {
+		dir, err := ioutils.IsDir(path)
+        if err != nil {
+            return nil, err
+        }
+		if dir {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
@@ -125,13 +166,13 @@ func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) [
 			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}
-	return artifacts
+	return artifacts, nil
 }
 
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
 func uploadFile(localPath string, targetPath string, flags *UploadFlags,
-    minChecksumDeploySize int64, logMsgPrefix string) bool {
+    minChecksumDeploySize int64, logMsgPrefix string) (bool, error) {
 	if flags.Props != "" {
 		targetPath += ";" + flags.Props
 	}
@@ -141,21 +182,33 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 
 	logger.Logger.Info(logMsgPrefix + "Uploading artifact: " + targetPath)
 	file, err := os.Open(localPath)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return false, err
+	}
 	defer file.Close()
 	fileInfo, err := file.Stat()
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return false, err
+	}
 
 	var checksumDeployed bool = false
 	var resp *http.Response
 	var details *ioutils.FileDetails
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	if fileInfo.Size() >= minChecksumDeploySize {
-		resp, details = tryChecksumDeploy(localPath, targetPath, flags, httpClientsDetails)
+		resp, details, err = tryChecksumDeploy(localPath, targetPath, flags, httpClientsDetails)
+        if err != nil {
+            return false, err
+        }
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
 	if !flags.DryRun && !checksumDeployed {
-		resp = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
+		resp, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
+        if err != nil {
+            return false, err
+        }
 	}
 	if !flags.DryRun {
 		var strChecksumDeployed string
@@ -167,21 +220,29 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 		logger.Logger.Info(logMsgPrefix + "Artifactory response: " + resp.Status + strChecksumDeployed)
 	}
 
-	return flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200
+	return (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func getMinChecksumDeploySize() int64 {
+func getMinChecksumDeploySize() (int64, error) {
     minChecksumDeploySize := os.Getenv("JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB")
     if minChecksumDeploySize == "" {
-        return 10240
+        return 10240, nil
     }
     minSize, err := strconv.ParseInt(minChecksumDeploySize, 10, 64)
-    cliutils.CheckError(err)
-    return minSize * 1000
+    err = cliutils.CheckError(err)
+	if err != nil {
+	    return 0, err
+	}
+    return minSize * 1000, nil
 }
 
-func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, *ioutils.FileDetails) {
-	details := ioutils.GetFileDetails(filePath)
+func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
+    httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, err error) {
+
+	details, err = ioutils.GetFileDetails(filePath)
+	if err != nil {
+	    return
+	}
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
 	headers["X-Checksum-Sha1"] = details.Sha1
@@ -189,12 +250,12 @@ func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags, httpClie
 	requestClientDetails := httpClientsDetails.Clone()
 	cliutils.MergeMaps(headers, requestClientDetails.Headers)
 	if flags.DryRun {
-		return nil, details
+		return
 	}
 	utils.AddAuthHeaders(headers, flags.ArtDetails)
 	cliutils.MergeMaps(headers, requestClientDetails.Headers)
-	resp, _ := ioutils.SendPut(targetPath, nil, *requestClientDetails)
-	return resp, details
+	resp, _, err = ioutils.SendPut(targetPath, nil, *requestClientDetails)
+	return
 }
 
 func getDebianMatrixParams(debianPropsStr string) string {

@@ -1,13 +1,14 @@
 package entitlements
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
-func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
+func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) (err error) {
 	var path = BuildEntitlementsUrl(flags.BintrayDetails, details)
 
 	if flags.BintrayDetails.User == "" {
@@ -15,11 +16,18 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) {
 	}
 	data := buildEntitlementJson(flags, true)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body := ioutils.SendPost(path, []byte(data), httpClientsDetails)
+	resp, body, err := ioutils.SendPost(path, []byte(data), httpClientsDetails)
+	if err != nil {
+	    return
+	}
 	if resp.StatusCode != 201 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadBintrayMessage(body))
+		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
+        if err != nil {
+            return
+        }
 	}
 	fmt.Println("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return
 }
 

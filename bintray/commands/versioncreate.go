@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
@@ -10,23 +11,30 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) {
+func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) error {
 	logger.Logger.Info("Creating version: " + versionDetails.Version)
-	resp, body := doCreateVersion(versionDetails, flags, flags.BintrayDetails)
+	resp, body, err := doCreateVersion(versionDetails, flags, flags.BintrayDetails)
+	if err != nil {
+	    return err
+	}
 	if resp.StatusCode != 201 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
+		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
+        if err != nil {
+            return err
+        }
 	}
 	logger.Logger.Info("Bintray response: " + resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
+	return nil
 }
 
 func DoCreateVersion(versionDetails *utils.VersionDetails,
-    bintrayDetails *config.BintrayDetails) (*http.Response, []byte) {
+    bintrayDetails *config.BintrayDetails) (*http.Response, []byte, error) {
     return doCreateVersion(versionDetails, nil, bintrayDetails)
 }
 
 func doCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags,
-    bintrayDetails *config.BintrayDetails) (*http.Response, []byte) {
+    bintrayDetails *config.BintrayDetails) (*http.Response, []byte, error) {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}

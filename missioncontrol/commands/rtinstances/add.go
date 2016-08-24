@@ -6,10 +6,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
-func AddInstance(instanceName string, flags *AddInstanceFlags) {
+func AddInstance(instanceName string, flags *AddInstanceFlags) (err error) {
 	data := AddInstanceRequestContent{
 		Name: 	  	 instanceName,
 		Url : 	  	 flags.ArtifactoryInstanceDetails.Url,
@@ -19,16 +20,26 @@ func AddInstance(instanceName string, flags *AddInstanceFlags) {
 		Location: 	 flags.Location}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "Failed to execute request. " + cliutils.GetDocumentationMessage())
+		err = cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
+        if err != nil {
+            return
+        }
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	resp, body, err := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	if err != nil {
+	    return
+	}
 	if resp.StatusCode == 201 || resp.StatusCode == 204 {
 		fmt.Println("Mission Control response: " + resp.Status)
 	} else {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status + ". " + utils.ReadMissionControlHttpMessage(body))
+		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
+        if err != nil {
+            return
+        }
 	}
+	return
 }
 
 type AddInstanceFlags struct {

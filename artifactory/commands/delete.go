@@ -9,7 +9,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func Delete(deletePattern string, flags *DeleteFlags) {
+func Delete(deletePattern string, flags *DeleteFlags) (err error) {
 	utils.PreCommandSetup(flags)
 
 	var resultItems []utils.AqlSearchResultItem
@@ -17,15 +17,22 @@ func Delete(deletePattern string, flags *DeleteFlags) {
 		simplePathItem := utils.AqlSearchResultItem{Path:deletePattern}
 		resultItems = []utils.AqlSearchResultItem{simplePathItem}
 	} else {
-		resultItems = utils.AqlSearchDefaultReturnFields(deletePattern, flags)
+		resultItems, err = utils.AqlSearchDefaultReturnFields(deletePattern, flags)
+		if err != nil {
+		    return
+		}
 	}
 
-	deleteFiles(resultItems, flags)
+	err = deleteFiles(resultItems, flags)
+	return
 }
 
-func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) {
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
 	for _, v := range resultItems {
-		fileUrl := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
+		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
+		if err != nil {
+		    return err
+		}
 		if flags.DryRun {
 			fmt.Println("[Dry run] Deleting: " + fileUrl)
 			continue
@@ -33,9 +40,13 @@ func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) {
 
 		logger.Logger.Info("Deleting: " + fileUrl)
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, _ := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
+		resp, _, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
+		if err != nil {
+		    return err
+		}
 		logger.Logger.Info("Artifactory response:", resp.Status)
 	}
+	return nil
 }
 
 // Simple directory path without wildcards.

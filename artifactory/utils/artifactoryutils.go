@@ -24,9 +24,13 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 }
 
 func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) *http.Response {
+details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, error) {
+	var err error
 	if details == nil {
-		details = ioutils.GetFileDetails(f.Name())
+		details, err = ioutils.GetFileDetails(f.Name())
+	}
+	if err != nil {
+	    return nil, err
 	}
 	headers := map[string]string{
 		"X-Checksum-Sha1": details.Sha1,
@@ -49,35 +53,52 @@ func AddAuthHeaders(headers map[string]string, artifactoryDetails *config.Artifa
 	return headers
 }
 
-func loadCertificates(caCertPool *x509.CertPool) {
-	securityDir := getJfrogSecurityFolder()
+func loadCertificates(caCertPool *x509.CertPool) error {
+	securityDir, err := getJfrogSecurityDir()
+	if err != nil {
+	    return err
+	}
 	if !ioutils.IsPathExists(securityDir) {
-		return
+		return nil
 	}
 	files, err := ioutil.ReadDir(securityDir)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return err
+	}
 	fmt.Println("Loading certificates...")
 	for _, file := range files {
 		caCert, err := ioutil.ReadFile(securityDir + file.Name())
-		cliutils.CheckError(err)
+		err = cliutils.CheckError(err)
+        if err != nil {
+            return err
+        }
 		caCertPool.AppendCertsFromPEM(caCert)
 	}
+	return nil
 }
 
-func getJfrogSecurityFolder() string {
-	return config.GetJfrogHomeFolder() + "security/"
+func getJfrogSecurityDir() (string, error) {
+	confPath, err := config.GetJfrogHomeDir()
+    if err != nil {
+        return "", err
+    }
+	return confPath + "security/", nil
 }
 
-func initTransport() *http.Transport {
+func initTransport() (*http.Transport, error) {
 	caCertPool := x509.NewCertPool()
-	loadCertificates(caCertPool)
+	err := loadCertificates(caCertPool)
+	if err != nil {
+	    return nil, err
+	}
 	// Setup HTTPS client
 	tlsConfig := &tls.Config{
 		RootCAs: caCertPool,
 		ClientSessionCache: tls.NewLRUClientSessionCache(1)}
 	tlsConfig.BuildNameToCertificate()
 	tempTransport := &http.Transport{TLSClientConfig: tlsConfig}
-	return tempTransport
+	return tempTransport, nil
 }
 
 func PreCommandSetup(flags CommonFlag) {
@@ -89,10 +110,13 @@ func PreCommandSetup(flags CommonFlag) {
 	}
 }
 
-func PingArtifactory(artDetails *config.ArtifactoryDetails) {
+func PingArtifactory(artDetails *config.ArtifactoryDetails) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			artDetails.Transport = initTransport()
+			artDetails.Transport, err = initTransport()
+			if err != nil {
+			    return
+			}
 			logger.Logger.Info("Done pinging Artifactory.")
 		}
 	}()
@@ -100,6 +124,7 @@ func PingArtifactory(artDetails *config.ArtifactoryDetails) {
 	logger.Logger.Info("Pinging Artifactory...")
 	ioutils.SendGet(artDetails.Url, true, httpClientsDetails)
 	logger.Logger.Info("Done pinging Artifactory.")
+	return
 }
 
 func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails {
@@ -111,15 +136,18 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 		Transport: artifactoryDetails.Transport}
 }
 
-func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) string {
+func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) (string, error) {
 	escapedUrl, err := url.Parse(baseUrl + path)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return "", nil
+	}
 	q := escapedUrl.Query()
 	for k, v := range params {
 		q.Set(k, v)
 	}
 	escapedUrl.RawQuery = q.Encode()
-	return escapedUrl.String()
+	return escapedUrl.String(), nil
 }
 
 func IsWildcardPattern(pattern string) bool {

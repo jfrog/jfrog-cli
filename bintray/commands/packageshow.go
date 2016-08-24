@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
@@ -9,7 +10,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) {
+func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) (err error) {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = packageDetails.Subject
 	}
@@ -22,6 +23,7 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	if resp.StatusCode == 200 {
 		fmt.Println(cliutils.IndentJson(body))
 	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Bintray response: "+resp.Status)
+		err = cliutils.CheckError(errors.New("Bintray response: "+resp.Status))
 	}
+	return
 }

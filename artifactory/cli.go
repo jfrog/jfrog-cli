@@ -277,12 +277,15 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getFlags()...)
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
-	artDetails := createArtifactoryDetails(c, includeConfig)
+func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
+	artDetails, err := createArtifactoryDetails(c, includeConfig)
+	if err != nil {
+	    return nil, err
+	}
 	if artDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
 	}
-	return artDetails
+	return artDetails, nil
 }
 
 func getSplitCount(c *cli.Context) (splitCount int) {
@@ -339,7 +342,10 @@ func configCmd(c *cli.Context) {
 			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
-		configFlags := createConfigFlags(c)
+		configFlags, err := createConfigFlags(c)
+		if err != nil {
+		    cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
 		commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
 	}
 }
@@ -349,7 +355,11 @@ func downloadCmd(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	pattern := strings.TrimPrefix(c.Args()[0], "/")
-	commands.Download(pattern, createDownloadFlags(c))
+	flags, err := createDownloadFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	commands.Download(pattern, flags)
 }
 
 func uploadCmd(c *cli.Context) {
@@ -359,7 +369,14 @@ func uploadCmd(c *cli.Context) {
 	}
 	localPath := c.Args()[0]
 	targetPath := strings.TrimPrefix(c.Args()[1], "/")
-	uploaded, failed := commands.Upload(localPath, targetPath, createUploadFlags(c))
+	flags, err := createUploadFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	uploaded, failed, err := commands.Upload(localPath, targetPath, flags)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
 	if failed > 0 {
 		if uploaded > 0 {
 			cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -374,7 +391,11 @@ func moveCmd(c *cli.Context) {
 	}
 	sourcePattern := c.Args()[0]
 	targetPath := c.Args()[1]
-	commands.Move(sourcePattern, targetPath, createMoveFlags(c))
+	flags, err := createMoveFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	commands.Move(sourcePattern, targetPath, flags)
 }
 
 func copyCmd(c *cli.Context) {
@@ -383,7 +404,11 @@ func copyCmd(c *cli.Context) {
 	}
 	sourcePattern := c.Args()[0]
 	targetPath := c.Args()[1]
-	commands.Copy(sourcePattern, targetPath, createMoveFlags(c))
+	flags, err := createMoveFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	commands.Copy(sourcePattern, targetPath, flags)
 }
 
 func deleteCmd(c *cli.Context) {
@@ -399,7 +424,11 @@ func deleteCmd(c *cli.Context) {
 			return
 		}
 	}
-	commands.Delete(path, createDeleteFlags(c))
+	flags, err := createDeleteFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	commands.Delete(path, flags)
 }
 
 func searchCmd(c *cli.Context) {
@@ -407,16 +436,30 @@ func searchCmd(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	path := c.Args()[0]
-	commands.Search(path, createSearchFlags(c))
+	flags, err := createSearchFlags(c)
+    if err != nil {
+        cliutils.Exit(cliutils.ExitCodeError, err.Error())
+    }
+	commands.Search(path, flags)
 }
 
-func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
-    if config.IsArtifactoryConfExists() {
-        return nil
+func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error) {
+    var exists bool
+    exists, err = config.IsArtifactoryConfExists()
+	if err != nil {
+	    return
+	}
+    if exists {
+        return
     }
-	if !cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true) {
+    var val bool
+    val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	if err != nil {
+	    return
+	}
+	if !val {
 		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
-		return nil
+		return
 	}
     msg := "The CLI commands require the Artifactory URL and authentication details\n" +
         "Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
@@ -427,19 +470,25 @@ func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
     fmt.Scanln(&confirm)
     if !cliutils.ConfirmAnswer(confirm) {
 	    config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
-        return nil
+        return
     }
-    details := createArtifactoryDetails(c, false)
-
+    details, err = createArtifactoryDetails(c, false)
+	if err != nil {
+	    return
+	}
     encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
-    return commands.Config(nil, details, true, encPassword)
+    details, err = commands.Config(nil, details, true, encPassword)
+    return
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
+func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
 	if includeConfig {
-        details := offerConfig(c)
+        details, err := offerConfig(c)
+        if err != nil {
+            return nil, err
+        }
         if details != nil {
-            return details
+            return details, nil
         }
 	}
 	details := new(config.ArtifactoryDetails)
@@ -450,7 +499,10 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 	details.SshKeyPath = c.String("ssh-key-path")
 
 	if includeConfig {
-		confDetails := commands.GetConfig()
+		confDetails, err := commands.GetConfig()
+        if err != nil {
+            return nil, err
+        }
 		if details.Url == "" {
 			details.Url = confDetails.Url
 		}
@@ -471,7 +523,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) *config.Artifa
 		}
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
-	return details
+	return details, nil
 }
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
@@ -486,9 +538,12 @@ func getDebFlag(c *cli.Context) (deb string) {
 	return deb
 }
 
-func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags) {
+func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags, err error) {
 	moveFlags = new(utils.MoveFlags)
-	moveFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	moveFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+	    return
+	}
 	moveFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	moveFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
 	moveFlags.DryRun = c.Bool("dry-run")
@@ -496,26 +551,35 @@ func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags) {
 	return
 }
 
-func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags) {
+func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err error) {
 	deleteFlags = new(commands.DeleteFlags)
-	deleteFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	deleteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+	    return
+	}
 	deleteFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	deleteFlags.DryRun = c.Bool("dry-run")
 	deleteFlags.Props = c.String("props")
 	return
 }
 
-func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags) {
+func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags, err error) {
 	searchFlags = new(commands.SearchFlags)
-	searchFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	searchFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+	    return
+	}
 	searchFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	searchFlags.Props = c.String("props")
 	return
 }
 
-func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags) {
+func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags, err error) {
 	downloadFlags = new(commands.DownloadFlags)
-	downloadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	downloadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+	    return
+	}
 	downloadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	downloadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
 	downloadFlags.Props = c.String("props")
@@ -526,9 +590,12 @@ func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags)
 	return
 }
 
-func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags) {
+func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err error) {
 	uploadFlags = new(commands.UploadFlags)
-	uploadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+	    return
+	}
 	uploadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	uploadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
 	uploadFlags.Props = c.String("props")
@@ -539,9 +606,12 @@ func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags) {
 	return
 }
 
-func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags) {
+func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err error) {
 	configFlag = new(commands.ConfigFlags)
-	configFlag.ArtDetails = createArtifactoryDetails(c, false)
+	configFlag.ArtDetails, err = createArtifactoryDetails(c, false)
+	if err != nil {
+	    return
+	}
 	configFlag.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
 	configFlag.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
 	if !configFlag.Interactive && configFlag.ArtDetails.Url == "" {

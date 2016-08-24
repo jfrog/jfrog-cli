@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"errors"
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
+	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
@@ -18,22 +20,31 @@ func BuildDownloadBintrayFileUrl(bintrayDetails *config.BintrayDetails,
 }
 
 func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *PathDetails,
-	flags *DownloadFlags, logMsgPrefix string) {
+	flags *DownloadFlags, logMsgPrefix string) (err error) {
 
 	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
 	logger.Logger.Info(logMsgPrefix + "Downloading " + url)
 
 	fileName, dir := ioutils.GetFileAndDirFromPath(pathDetails.Path)
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
-	details, err := ioutils.GetRemoteFileDetails(url, httpClientsDetails)
+	var details *ioutils.FileDetails
+	details, err = ioutils.GetRemoteFileDetails(url, httpClientsDetails)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "Bintray " + err.Error())
+		err = cliutils.CheckError(errors.New("Bintray " + err.Error()))
+        if err != nil {
+            return
+        }
 	}
 	path := pathDetails.Path
 	if flags.Flat {
 	    path, _ = ioutils.GetFileAndDirFromPath(path)
 	}
-	if !shouldDownloadFile(path, details) {
+	var shouldDownload bool
+    shouldDownload, err = shouldDownloadFile(path, details)
+	if err != nil {
+		return
+	}
+	if !shouldDownload {
 		logger.Logger.Info(logMsgPrefix + "File already exists locally.")
 		return
 	}
@@ -50,8 +61,11 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	    // We should attempt to download the file concurrently, but only if it is provided through the DSN.
 	    // To check if the file is provided through the DSN, we first attempt to download the file
 	    // with 'follow redirect' disabled.
-	    resp, redirectUrl, err :=
-	    ioutils.DownloadFileNoRedirect(url, dir, fileName, false, httpClientsDetails)
+
+	    var resp *http.Response
+	    var redirectUrl string
+	    resp, redirectUrl, err =
+	        ioutils.DownloadFileNoRedirect(url, dir, fileName, false, httpClientsDetails)
         // There are two options now. Either the file has just been downloaded as one block, or
         // we got a redirect to DSN download URL. In case of the later, we should download the file
         // concurrently from the DSN URL.
@@ -65,23 +79,34 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
                 SplitCount:   flags.SplitCount,
                 Flat:         flags.Flat}
 
-		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
+		    ioutils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
         } else {
-            cliutils.CheckError(err)
+            err = cliutils.CheckError(err)
+            if err != nil {
+                return
+            }
 			logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
         }
 	}
+	return
 }
 
-func shouldDownloadFile(localFilePath string, remoteFileDetails *ioutils.FileDetails) bool {
-	if !ioutils.IsFileExists(localFilePath) {
-		return true
+func shouldDownloadFile(localFilePath string, remoteFileDetails *ioutils.FileDetails) (bool, error) {
+    exists, err := ioutils.IsFileExists(localFilePath)
+    if err != nil {
+        return false, err
+    }
+	if !exists {
+		return true, nil
 	}
-	localFileDetails := ioutils.GetFileDetails(localFilePath)
+	localFileDetails, err := ioutils.GetFileDetails(localFilePath)
+	if err != nil {
+	    return false, err
+	}
 	if localFileDetails.Sha1 != remoteFileDetails.Sha1 {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 func ReadBintrayMessage(resp []byte) string {
@@ -93,11 +118,14 @@ func ReadBintrayMessage(resp []byte) string {
 	return response.Message
 }
 
-func CreateVersionDetails(versionStr string) *VersionDetails {
+func CreateVersionDetails(versionStr string) (*VersionDetails, error) {
 	parts := strings.Split(versionStr, "/")
 	size := len(parts)
 	if size < 1 || size > 4 {
-		cliutils.Exit(cliutils.ExitCodeError, "Unexpected format for argument: "+versionStr)
+		err := cliutils.CheckError(errors.New("Unexpected format for argument: "+versionStr))
+        if err != nil {
+            return nil, err
+        }
 	}
 	var subject, repo, pkg, version string
 	if size >= 2 {
@@ -114,33 +142,39 @@ func CreateVersionDetails(versionStr string) *VersionDetails {
 		Subject: subject,
 		Repo:    repo,
 		Package: pkg,
-		Version: version}
+		Version: version}, nil
 }
 
-func CreatePackageDetails(packageStr string) *VersionDetails {
+func CreatePackageDetails(packageStr string) (*VersionDetails, error) {
 	parts := strings.Split(packageStr, "/")
 	size := len(parts)
 	if size != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/package")
+		err := cliutils.CheckError(errors.New("Expecting an argument in the form of subject/repository/package"))
+        if err != nil {
+            return nil, err
+        }
 	}
 	return &VersionDetails{
 		Subject: parts[0],
 		Repo:    parts[1],
-		Package: parts[2]}
+		Package: parts[2]}, nil
 }
 
-func CreatePathDetails(str string) *PathDetails {
+func CreatePathDetails(str string) (*PathDetails, error) {
 	parts := strings.Split(str, "/")
 	size := len(parts)
 	if size < 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting an argument in the form of subject/repository/file-path")
+		err := cliutils.CheckError(errors.New("Expecting an argument in the form of subject/repository/file-path"))
+        if err != nil {
+            return nil, err
+        }
 	}
 	path := strings.Join(parts[2:], "/")
 
 	return &PathDetails{
 		Subject: parts[0],
 		Repo:    parts[1],
-		Path:    path}
+		Path:    path}, nil
 }
 
 func GetBintrayHttpClientDetails (bintrayDetails *config.BintrayDetails) ioutils.HttpClientDetails {

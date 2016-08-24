@@ -8,20 +8,24 @@ import (
 	"strconv"
 	"sync"
 	"strings"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
 // Downloads the artifacts using the specified download pattern.
 // Returns the AQL query used for the download.
-func Download(downloadPattern string, flags *DownloadFlags) {
+func Download(downloadPattern string, flags *DownloadFlags) error {
 	utils.PreCommandSetup(flags)
 	if !flags.DryRun {
 		ioutils.CreateTempDirPath()
 		defer ioutils.RemoveTempDir()
 	}
 	if utils.IsWildcardPattern(downloadPattern) {
-		resultItems := utils.AqlSearchDefaultReturnFields(downloadPattern, flags)
+		resultItems, err := utils.AqlSearchDefaultReturnFields(downloadPattern, flags)
+		if err != nil {
+		    return err
+		}
 		downloadFiles(resultItems, flags)
 		logger.Logger.Info("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
 	} else {
@@ -29,12 +33,22 @@ func Download(downloadPattern string, flags *DownloadFlags) {
 		if flags.Props != "" {
 			props = ";" + flags.Props
 		}
-		downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadPattern + props, make(map[string]string))
+		downloadPath, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadPattern + props, make(map[string]string))
+		if err != nil {
+		    return err
+		}
 		logMsgPrefix := cliutils.GetLogMsgPrefix(0, flags.DryRun)
 		if !flags.DryRun {
 			localPath, localFileName := getDetailsFromDownloadPath(downloadPattern)
-			details := getFileRemoteDetails(downloadPath, flags)
-			if shouldDownloadFile(getFileLocalPath(localPath, localFileName, flags), details.Md5, details.Sha1) {
+			details, err := getFileRemoteDetails(downloadPath, flags)
+            if err != nil {
+                return err
+            }
+			shouldDownload, err := shouldDownloadFile(getFileLocalPath(localPath, localFileName, flags), details.Md5, details.Sha1)
+            if err != nil {
+                return err
+            }
+			if shouldDownload {
 				downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, details.AcceptRanges, details.Size, flags)
 				downloadFile(downloadFileDetails, logMsgPrefix + ": ", flags)
 			} else {
@@ -44,9 +58,10 @@ func Download(downloadPattern string, flags *DownloadFlags) {
 			logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
 		}
 	}
+	return nil
 }
 
-func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags) {
+func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags) (err error) {
 	size := len(resultItems)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
@@ -54,10 +69,23 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-				downloadPath := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
+				if err != nil {
+				    break
+				}
+				downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
+				if e != nil {
+				    err = e
+				    break
+				}
 				logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
 				if !flags.DryRun {
-                    if shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1) {
+                    shouldDownload, e := shouldDownloadFile(getFileLocalPath(resultItems[j].Path, resultItems[j].Name, flags),
+                        resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1)
+                    if e != nil {
+                        err = e
+                        break
+                    }
+                    if shouldDownload {
                         downloadFileDetails := createDownloadFileDetails(downloadPath, resultItems[j].Path, resultItems[j].Name, nil, resultItems[j].Size, flags)
                         downloadFile(downloadFileDetails, logMsgPrefix, flags)
                     } else {
@@ -69,6 +97,7 @@ func downloadFiles(resultItems []utils.AqlSearchResultItem, flags *DownloadFlags
 		}(i)
 	}
 	wg.Wait()
+	return
 }
 
 func getDetailsFromDownloadPath(downloadPattern string) (localPath, localFileName string) {
@@ -93,13 +122,16 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, ac
 	return
 }
 
-func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (details *ioutils.FileDetails) {
+func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (*ioutils.FileDetails, error) {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	details, err := ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "Artifactory " + err.Error())
+		err = cliutils.CheckError(errors.New("Artifactory " + err.Error()))
+		if err != nil {
+		    return details, err
+		}
 	}
-	return
+	return details, nil
 }
 
 func getFileLocalPath(localPath, localFileName string, flags *DownloadFlags) (localFilePath string) {
@@ -110,9 +142,17 @@ func getFileLocalPath(localPath, localFileName string, flags *DownloadFlags) (lo
 	return
 }
 
-func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, flags *DownloadFlags) {
+func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, flags *DownloadFlags) error {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > downloadFileDetails.Size || !isFileAcceptRange(downloadFileDetails, flags) {
+	bulkDownload := flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > downloadFileDetails.Size
+	if !bulkDownload {
+	    acceptRange, err := isFileAcceptRange(downloadFileDetails, flags)
+	    if err != nil {
+	        return err
+	    }
+	    bulkDownload = !acceptRange
+	}
+	if bulkDownload {
 		resp := ioutils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, flags.Flat, httpClientsDetails)
 		logger.Logger.Info(logMsgPrefix + "Artifactory response:", resp.Status)
 	} else {
@@ -126,25 +166,36 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 
 		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 	}
+	return nil
 }
 
-func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *DownloadFlags) bool {
+func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *DownloadFlags) (bool, error) {
 	if downloadFileDetails.AcceptRanges == nil {
-		details := getFileRemoteDetails(downloadFileDetails.DownloadPath, flags)
-		return details.AcceptRanges.GetValue()
+		details, err := getFileRemoteDetails(downloadFileDetails.DownloadPath, flags)
+        if err != nil {
+            return false, err
+        }
+		return details.AcceptRanges.GetValue(), nil
 	}
-	return downloadFileDetails.AcceptRanges.GetValue()
+	return downloadFileDetails.AcceptRanges.GetValue(), nil
 }
 
-func shouldDownloadFile(localFilePath, md5, sha1 string) bool {
-	if !ioutils.IsFileExists(localFilePath) {
-		return true
+func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
+	exists, err := ioutils.IsFileExists(localFilePath)
+	if err != nil {
+	    return false, err
 	}
-	localFileDetails := ioutils.GetFileDetails(localFilePath)
+	if !exists {
+		return true, nil
+	}
+	localFileDetails, err := ioutils.GetFileDetails(localFilePath)
+	if err != nil {
+	    return false, err
+	}
 	if localFileDetails.Md5 != md5 || localFileDetails.Sha1 != sha1 {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 type DownloadFileDetails struct {

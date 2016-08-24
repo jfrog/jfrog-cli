@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func HeadVersion(versionDetails *VersionDetails, bintrayDetails *config.BintrayDetails) *http.Response {
+func HeadVersion(versionDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (*http.Response, error) {
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)

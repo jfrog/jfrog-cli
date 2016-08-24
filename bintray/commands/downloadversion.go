@@ -7,10 +7,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
+	"errors"
 	"sync"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.DownloadFlags) {
+func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.DownloadFlags) error {
 	ioutils.CreateTempDirPath()
 	defer ioutils.RemoveTempDir()
 
@@ -21,13 +22,20 @@ func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.Download
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
-		cliutils.Exit(cliutils.ExitCodeError, resp.Status+". "+utils.ReadBintrayMessage(body))
+		err := cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
+        if err != nil {
+            return err
+        }
 	}
 	var results []VersionFilesResult
 	err := json.Unmarshal(body, &results)
-	cliutils.CheckError(err)
+	err = cliutils.CheckError(err)
+	if err != nil {
+	    return err
+	}
 
 	downloadFiles(results, versionDetails, flags)
+	return nil
 }
 
 func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) string {
@@ -36,7 +44,7 @@ func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetail
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
-	flags *utils.DownloadFlags) {
+	flags *utils.DownloadFlags) (err error) {
 
 	size := len(results)
 	var wg sync.WaitGroup
@@ -50,19 +58,26 @@ func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDe
                     Repo:    versionDetails.Repo,
                     Path:    results[j].Path}
 
-				utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails,
+				e := utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails,
 					flags, logMsgPrefix)
+                if e != nil {
+                    err = e
+                }
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+	return
 }
 
-func CreateVersionDetailsForDownloadVersion(versionStr string) *utils.VersionDetails {
+func CreateVersionDetailsForDownloadVersion(versionStr string) (*utils.VersionDetails, error) {
 	parts := strings.Split(versionStr, "/")
 	if len(parts) != 4 {
-		cliutils.Exit(cliutils.ExitCodeError, "Argument format should be subject/repository/package/version. Got "+versionStr)
+		err := cliutils.CheckError(errors.New("Argument format should be subject/repository/package/version. Got " + versionStr))
+        if err != nil {
+            return nil, err
+        }
 	}
 	return utils.CreateVersionDetails(versionStr)
 }
