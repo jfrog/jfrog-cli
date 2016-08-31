@@ -5,6 +5,6 @@ import (
 )
 
 // Copies the artifacts using the specified move pattern.
-func Copy(sourcePattern, destPath string, flags *utils.MoveFlags) {
-	utils.MoveFilesWrapper(sourcePattern, destPath, flags, utils.COPY)
+func Copy(copySpec *utils.SpecFiles, flags *utils.MoveFlags) error {
+	return utils.MoveFilesWrapper(copySpec, flags, utils.COPY)
 }

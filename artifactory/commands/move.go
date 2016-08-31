@@ -5,6 +5,6 @@ import (
 )
 
 // Moves the artifacts using the specified move pattern.
-func Move(sourcePattern, destPath string, flags *utils.MoveFlags) {
-	utils.MoveFilesWrapper(sourcePattern, destPath, flags, utils.MOVE)
+func Move(moveSpec *utils.SpecFiles, flags *utils.MoveFlags) error {
+	return utils.MoveFilesWrapper(moveSpec, flags, utils.MOVE)
 }

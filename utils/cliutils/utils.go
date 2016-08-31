@@ -155,7 +155,7 @@ func GetUserHomeDir() string {
 }
 
 func ReplaceTildeWithUserHome(path string) string {
-	if len(path) > 1 && path[0:1] == "~"{
+	if len(path) > 1 && path[0:1] == "~" {
 		return GetUserHomeDir() + path[1:len(path)]
 	}
 	return path
@@ -228,10 +228,10 @@ func TrimPath(path string) string {
 }
 
 func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
-	if c.String(flagName) == "" {
-		return defValue
+	if c.IsSet(flagName) {
+		return c.Bool(flagName)
 	}
-    return c.Bool(flagName)
+	return defValue
 }
 
 func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
@@ -245,7 +245,7 @@ func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
 }
 
 func GetDocumentationMessage() string {
-    return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
+	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }
 
 func PathToRegExp(localpath string) string {
@@ -288,6 +288,17 @@ func GetTestsFileSeperator() string {
 		return "\\\\"
 	}
 	return "/"
+}
+
+
+// Remove all chars from the given string.
+func StripChars(str, chr string) string {
+	return strings.Map(func(r rune) rune {
+		if strings.IndexRune(chr, r) < 0 {
+			return r
+		}
+		return -1
+	}, str)
 }
 
 func MergeMaps(src map[string]string, dst map[string]string) {

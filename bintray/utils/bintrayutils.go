@@ -55,7 +55,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
     // Check if the file should be downloaded concurrently.
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize*1000 > details.Size {
 	    // File should not be downloaded concurrently. Download it as one block.
-		resp := ioutils.DownloadFile(url, dir, fileName, false, httpClientsDetails)
+		resp := ioutils.DownloadFile(url, dir, fileName, httpClientsDetails)
 		logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
 	} else {
 	    // We should attempt to download the file concurrently, but only if it is provided through the DSN.
@@ -65,7 +65,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	    var resp *http.Response
 	    var redirectUrl string
 	    resp, redirectUrl, err =
-	        ioutils.DownloadFileNoRedirect(url, dir, fileName, false, httpClientsDetails)
+	        ioutils.DownloadFileNoRedirect(url, dir, fileName, httpClientsDetails)
         // There are two options now. Either the file has just been downloaded as one block, or
         // we got a redirect to DSN download URL. In case of the later, we should download the file
         // concurrently from the DSN URL.

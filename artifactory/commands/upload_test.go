@@ -5,70 +5,49 @@ import (
 	"strconv"
 	"testing"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 )
 
 func TestSingleFileUpload(t *testing.T) {
 	flags := getUploadFlags()
-	uploaded1, _, err := Upload("testdata/a.txt", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	uploaded2, _, err := Upload("testdata/aa.txt", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	uploaded3, _, err := Upload("testdata/aa1*.txt", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if uploaded1 != 1 {
-		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
-	}
-	if uploaded2 != 1 {
-		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded2) + ".")
-	}
-	if uploaded3 != 0 {
-		t.Error("Expected 0 file to be uploaded. Got " + strconv.Itoa(uploaded3) + ".")
-	}
+	spec := utils.CreateSpec("testdata/a.txt", "repo-local", "", false, true, false)
+	uploaded1, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded1, err, 1)
+
+	spec = utils.CreateSpec("testdata/aa.txt", "repo-local", "", false, true, false)
+	uploaded2, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded2, err, 1)
+
+	spec = utils.CreateSpec("testdata/aa1*.txt", "repo-local", "", false, true, false)
+	uploaded3, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded3, err, 0)
+
 }
 
 func TestPatternRecursiveUpload(t *testing.T) {
 	flags := getUploadFlags()
-	flags.Recursive = true
-	testPatternUpload(t, flags)
+	testPatternUpload(t, true, flags)
 }
 
 func TestPatternNonRecursiveUpload(t *testing.T) {
 	flags := getUploadFlags()
-	flags.Recursive = false
-	testPatternUpload(t, flags)
+	testPatternUpload(t, false, flags)
 }
 
-func testPatternUpload(t *testing.T, flags *UploadFlags) {
+func testPatternUpload(t *testing.T, recursive bool, flags *UploadFlags) {
 	sep := cliutils.GetTestsFileSeperator()
-	uploaded1, _, err := Upload("testdata"+sep+"*", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	uploaded2, _, err := Upload("testdata"+sep+"a*", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	uploaded3, _, err := Upload("testdata"+sep+"b*", "repo-local", flags)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if uploaded1 != 3 {
-		t.Error("Expected 3 file to be uploaded. Got " + strconv.Itoa(uploaded1) + ".")
-	}
-	if uploaded2 != 2 {
-		t.Error("Expected 2 file to be uploaded. Got " + strconv.Itoa(uploaded2) + ".")
-	}
-	if uploaded3 != 1 {
-		t.Error("Expected 1 file to be uploaded. Got " + strconv.Itoa(uploaded3) + ".")
-	}
-}
+	spec := utils.CreateSpec("testdata" + sep + "*", "repo-local", "", recursive, true, false)
+	uploaded1, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded1, err, 3)
 
+	spec = utils.CreateSpec("testdata" + sep + "a*", "repo-local", "", recursive, true, false)
+	uploaded2, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded2, err, 2)
+
+	spec = utils.CreateSpec("testdata" + sep + "b*", "repo-local", "", recursive, true, false)
+	uploaded3, _, err := Upload(spec, flags)
+	checkUploaded(t, uploaded3, err, 1)
+}
 
 func getUploadFlags() *UploadFlags {
 	flags := new(UploadFlags)
@@ -77,4 +56,13 @@ func getUploadFlags() *UploadFlags {
 	flags.Threads = 3
 
 	return flags
+}
+
+func checkUploaded(t *testing.T, expected int, err error, actual int) {
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if expected != actual {
+		t.Error("Expected ", actual, " file to be uploaded. Got ", strconv.Itoa(actual), ".")
+	}
 }

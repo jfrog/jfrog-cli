@@ -107,6 +107,10 @@ func getFlags() []cli.Flag {
 func getUploadFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.",
 		},
@@ -142,6 +146,10 @@ func getUploadFlags() []cli.Flag {
 
 func getDownloadFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
 		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be downloaded.",
@@ -181,6 +189,10 @@ func getDownloadFlags() []cli.Flag {
 func getMoveFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.",
@@ -204,6 +216,10 @@ func getMoveFlags() []cli.Flag {
 
 func getCopyFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
 		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
@@ -252,6 +268,10 @@ func getDeleteFlags() []cli.Flag {
 func getSearchFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be returned.",
 		},
@@ -280,7 +300,7 @@ func getConfigFlags() []cli.Flag {
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
 	artDetails, err := createArtifactoryDetails(c, includeConfig)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if artDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
@@ -344,39 +364,65 @@ func configCmd(c *cli.Context) {
 	} else {
 		configFlags, err := createConfigFlags(c)
 		if err != nil {
-		    cliutils.Exit(cliutils.ExitCodeError, err.Error())
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
 		}
 		commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
 	}
 }
 
 func downloadCmd(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pattern := strings.TrimPrefix(c.Args()[0], "/")
+
+	var downloadSpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		downloadSpec, err = getDownloadSpec(c)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
+	} else {
+		downloadSpec = createDefaultDownloadSpec(c)
+	}
+
 	flags, err := createDownloadFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
-	commands.Download(pattern, flags)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	commands.Download(downloadSpec, flags)
 }
 
 func uploadCmd(c *cli.Context) {
-	size := len(c.Args())
-	if size != 2 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	localPath := c.Args()[0]
-	targetPath := strings.TrimPrefix(c.Args()[1], "/")
+
+	var uploadSpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		uploadSpec, err = getUploadSpec(c)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
+	} else {
+		uploadSpec = createDefaultUploadSpec(c)
+	}
+
 	flags, err := createUploadFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
-	uploaded, failed, err := commands.Upload(localPath, targetPath, flags)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	uploaded, failed, err := commands.Upload(uploadSpec, flags)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	if failed > 0 {
 		if uploaded > 0 {
 			cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -386,29 +432,55 @@ func uploadCmd(c *cli.Context) {
 }
 
 func moveCmd(c *cli.Context) {
-	if len(c.Args()) != 2 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	sourcePattern := c.Args()[0]
-	targetPath := c.Args()[1]
+
+	var moveSpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		moveSpec, err = getMoveSpec(c)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
+	} else {
+		moveSpec = createDefaultMoveSpec(c)
+	}
+
 	flags, err := createMoveFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
-	commands.Move(sourcePattern, targetPath, flags)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	commands.Move(moveSpec, flags)
 }
 
 func copyCmd(c *cli.Context) {
-	if len(c.Args()) != 2 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	sourcePattern := c.Args()[0]
-	targetPath := c.Args()[1]
+
+	var copySpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		copySpec, err = getMoveSpec(c)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
+	} else {
+		copySpec = createDefaultMoveSpec(c)
+	}
+
 	flags, err := createMoveFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
-	commands.Copy(sourcePattern, targetPath, flags)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	commands.Copy(copySpec, flags)
 }
 
 func deleteCmd(c *cli.Context) {
@@ -425,71 +497,85 @@ func deleteCmd(c *cli.Context) {
 		}
 	}
 	flags, err := createDeleteFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	commands.Delete(path, flags)
 }
 
 func searchCmd(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	path := c.Args()[0]
+
+	var searchSpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		searchSpec, err = getSearchSpec(c)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		}
+	} else {
+		searchSpec = createDefaultSearchSpec(c)
+	}
+
 	flags, err := createSearchFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
-	commands.Search(path, flags)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	commands.Search(searchSpec, flags)
 }
 
 func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error) {
-    var exists bool
-    exists, err = config.IsArtifactoryConfExists()
+	var exists bool
+	exists, err = config.IsArtifactoryConfExists()
 	if err != nil {
-	    return
+		return
 	}
-    if exists {
-        return
-    }
-    var val bool
-    val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	if exists {
+		return
+	}
+	var val bool
+	val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	if err != nil {
-	    return
+		return
 	}
 	if !val {
 		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
 		return
 	}
-    msg := "The CLI commands require the Artifactory URL and authentication details\n" +
-        "Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-        "You can also configure these parameters later using the 'config' command.\n" +
-        "Configure now? (y/n): "
-    fmt.Print(msg)
-    var confirm string
-    fmt.Scanln(&confirm)
-    if !cliutils.ConfirmAnswer(confirm) {
-	    config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
-        return
-    }
-    details, err = createArtifactoryDetails(c, false)
-	if err != nil {
-	    return
+	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
+			"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
+			"You can also configure these parameters later using the 'config' command.\n" +
+			"Configure now? (y/n): "
+	fmt.Print(msg)
+	var confirm string
+	fmt.Scanln(&confirm)
+	if !cliutils.ConfirmAnswer(confirm) {
+		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+		return
 	}
-    encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
-    details, err = commands.Config(nil, details, true, encPassword)
-    return
+	details, err = createArtifactoryDetails(c, false)
+	if err != nil {
+		return
+	}
+	encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
+	details, err = commands.Config(nil, details, true, encPassword)
+	return
 }
 
 func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
 	if includeConfig {
-        details, err := offerConfig(c)
-        if err != nil {
-            return nil, err
-        }
-        if details != nil {
-            return details, nil
-        }
+		details, err := offerConfig(c)
+		if err != nil {
+			return nil, err
+		}
+		if details != nil {
+			return details, nil
+		}
 	}
 	details := new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
@@ -500,9 +586,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 
 	if includeConfig {
 		confDetails, err := commands.GetConfig()
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 		if details.Url == "" {
 			details.Url = confDetails.Url
 		}
@@ -538,16 +624,34 @@ func getDebFlag(c *cli.Context) (deb string) {
 	return deb
 }
 
+func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := c.Args().Get(0)
+	target := c.Args().Get(1)
+	props := c.String("props")
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	flat := cliutils.GetBoolFlagValue(c, "flat", false)
+
+	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+}
+
+func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	if err != nil {
+		return
+	}
+	// Override options from user
+	for i := 0; i < len(searchSpec.Files); i++ {
+		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideBoolIfSet(&searchSpec.Get(i).Flat, c, "flat")
+	}
+	return
+}
+
 func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags, err error) {
 	moveFlags = new(utils.MoveFlags)
-	moveFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-	if err != nil {
-	    return
-	}
-	moveFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-	moveFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
 	moveFlags.DryRun = c.Bool("dry-run")
-	moveFlags.Props = c.String("props")
+	moveFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
@@ -555,7 +659,7 @@ func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err e
 	deleteFlags = new(commands.DeleteFlags)
 	deleteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
-	    return
+		return
 	}
 	deleteFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	deleteFlags.DryRun = c.Bool("dry-run")
@@ -563,46 +667,101 @@ func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err e
 	return
 }
 
+func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := c.Args().Get(0)
+	props := c.String("props")
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+
+	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+}
+
+func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	if err != nil {
+		return
+	}
+	// Override options from user
+	for i := 0; i < len(searchSpec.Files); i++ {
+		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+	}
+	return
+}
+
 func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags, err error) {
 	searchFlags = new(commands.SearchFlags)
 	searchFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := strings.TrimPrefix(c.Args().Get(0), "/")
+	target := c.Args().Get(1)
+	props := c.String("props")
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	flat := cliutils.GetBoolFlagValue(c, "flat", false)
+
+	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+}
+
+func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
+	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"))
 	if err != nil {
-	    return
+		return
 	}
-	searchFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-	searchFlags.Props = c.String("props")
+	// Override options from user
+	for i := 0; i < len(downloadSpec.Files); i++ {
+		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
+		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
+		overrideBoolIfSet(&downloadSpec.Get(i).Flat, c, "flat")
+		overrideBoolIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
+	}
 	return
 }
 
 func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags, err error) {
 	downloadFlags = new(commands.DownloadFlags)
-	downloadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-	if err != nil {
-	    return
-	}
-	downloadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-	downloadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
-	downloadFlags.Props = c.String("props")
 	downloadFlags.DryRun = c.Bool("dry-run")
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
 	downloadFlags.Threads = getThreadsCount(c);
+	downloadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := c.Args().Get(0)
+	target := strings.TrimPrefix(c.Args().Get(1), "/")
+	props := c.String("props")
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	flat := cliutils.GetBoolFlagValue(c, "flat", true)
+	regexp := c.Bool("regexp")
+
+	return utils.CreateSpec(pattern, target, props, recursive, flat, regexp)
+}
+
+func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
+	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	if err != nil {
+		return
+	}
+	// Override options from user
+	for i := 0; i < len(uploadSpec.Files); i++ {
+		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
+		overrideStringIfSet(&uploadSpec.Get(i).Props, c, "props")
+		overrideBoolIfSet(&uploadSpec.Get(i).Flat, c, "flat")
+		overrideBoolIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
+		overrideBoolIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
+	}
 	return
 }
 
 func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err error) {
 	uploadFlags = new(commands.UploadFlags)
-	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-	if err != nil {
-	    return
-	}
-	uploadFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-	uploadFlags.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
-	uploadFlags.Props = c.String("props")
 	uploadFlags.DryRun = c.Bool("dry-run")
 	uploadFlags.Threads = getThreadsCount(c);
 	uploadFlags.Deb = getDebFlag(c);
-	uploadFlags.UseRegExp = c.Bool("regexp")
+	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
@@ -610,7 +769,7 @@ func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err er
 	configFlag = new(commands.ConfigFlags)
 	configFlag.ArtDetails, err = createArtifactoryDetails(c, false)
 	if err != nil {
-	    return
+		return
 	}
 	configFlag.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
 	configFlag.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
@@ -618,4 +777,16 @@ func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err er
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
 	}
 	return
+}
+
+func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.String(fieldName)
+	}
+}
+
+func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.Bool(fieldName)
+	}
 }

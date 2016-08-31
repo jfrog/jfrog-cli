@@ -15,30 +15,82 @@ const (
 	COPY MoveType = "copy"
 )
 
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, destPath string, flags *MoveFlags, moveType MoveType) error {
+func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) (err error) {
+	PreCommandSetup(flags)
+	for i := 0; i < len(moveSpec.Files); i++ {
+		switch moveSpec.Get(i).GetSpecType() {
+		case WILDCARD:
+			err = moveWildcard(moveSpec.Get(i), flags, moveType)
+		case SIMPLE:
+			err = moveSimple(moveSpec.Get(i), flags, moveType)
+		case AQL:
+			err = moveAql(moveSpec.Get(i), flags, moveType)
+		}
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+	resultItems, err := AqlSearchBySpec(fileSpec.Aql, flags)
+	if err != nil {
+		return err
+	}
+	return moveFiles("", resultItems, fileSpec, flags, moveType)
+}
+
+func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, fileSpec.Recursive, fileSpec.Props, flags)
+	if err != nil {
+		return err
+	}
+	regexpPath := cliutils.PathToRegExp(fileSpec.Pattern)
+	return moveFiles(regexpPath, resultItems, fileSpec, flags, moveType)
+}
+
+func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+
+	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
+	patternFileName, _ := ioutils.GetFileAndDirFromPath(fileSpec.Pattern)
+
+	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
+	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
+	if err != nil {
+		return err
+	}
+
+	if strings.HasSuffix(placeHolderTarget, "/") {
+		placeHolderTarget += patternFileName
+	}
+	_, err = moveFile(cleanPattern, placeHolderTarget, flags, moveType)
+	return err
+}
+
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
 	movedCount := 0
 
 	for _, v := range resultItems {
-		destPathLocal := destPath
-		if !flags.Flat {
+		destPathLocal := fileSpec.Target
+		if !fileSpec.Flat {
 			if strings.Contains(destPathLocal, "/") {
 				file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
 				destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
 			} else {
 				destPathLocal = cliutils.TrimPath(destPathLocal + "/" + v.Path + "/")
 			}
-
 		}
 		destFile, err := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
 		if err != nil {
-		    return err
+			return err
 		}
 		if strings.HasSuffix(destFile, "/") {
 			destFile += v.Name
 		}
 		success, err := moveFile(v.GetFullUrl(), destFile, flags, moveType)
 		if err != nil {
-		    return err
+			return err
 		}
 		movedCount += cliutils.Bool2Int(success)
 	}
@@ -60,32 +112,16 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 	restApi := "api/" + string(moveType) + "/" + sourcePath
 	requestFullUrl, err := BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
 	if err != nil {
-        return false, err
+		return false, err
 	}
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	resp, _, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	logger.Logger.Info("Artifactory response:", resp.Status)
 	return resp.StatusCode == 200, nil
-}
-
-func MoveFilesWrapper(sourcePattern, destPath string, flags *MoveFlags, moveType MoveType) (err error) {
-	PreCommandSetup(flags)
-	if IsWildcardPattern(sourcePattern) || flags.Props != "" {
-	    var resultItems []AqlSearchResultItem
-		resultItems, err = AqlSearchDefaultReturnFields(sourcePattern, flags)
-		if err != nil {
-		    return
-		}
-		regexpPath := cliutils.PathToRegExp(sourcePattern)
-		err = moveFiles(regexpPath, resultItems, destPath, flags, moveType)
-	} else {
-		_, err = moveFile(sourcePattern, destPath, flags, moveType)
-	}
-	return
 }
 
 var moveMsgs = map[MoveType]MoveOptions{
@@ -101,23 +137,12 @@ type MoveOptions struct {
 type MoveType string
 
 type MoveFlags struct {
-	Recursive    bool
-	Flat         bool
-	DryRun       bool
-	Props        string
-	ArtDetails   *config.ArtifactoryDetails
+	DryRun     bool
+	ArtDetails *config.ArtifactoryDetails
 }
 
 func (flags *MoveFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
-}
-
-func (flags *MoveFlags) IsRecursive() bool {
-	return flags.Recursive
-}
-
-func (flags *MoveFlags) GetProps() string {
-	return flags.Props
 }
 
 func (flags *MoveFlags) IsDryRun() bool {

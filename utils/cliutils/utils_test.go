@@ -9,6 +9,7 @@ func TestReformatRegexp(t *testing.T) {
 	assertReformatRegexp("(.*) somthing", "doing somthing", "{1} somthing else", "doing somthing else", t)
 	assertReformatRegexp("(switch) (this)", "switch this", "{2} {1}", "this switch", t)
 	assertReformatRegexp("before(.*)middle(.*)after", "before123middle456after", "{2}{1}{2}", "456123456", t)
+	assertReformatRegexp("", "nothing should change", "nothing should change", "nothing should change", t)
 }
 
 func assertReformatRegexp(regexp, source, dest, expected string, t *testing.T) {

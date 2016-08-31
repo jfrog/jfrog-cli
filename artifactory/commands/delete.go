@@ -17,9 +17,9 @@ func Delete(deletePattern string, flags *DeleteFlags) (err error) {
 		simplePathItem := utils.AqlSearchResultItem{Path:deletePattern}
 		resultItems = []utils.AqlSearchResultItem{simplePathItem}
 	} else {
-		resultItems, err = utils.AqlSearchDefaultReturnFields(deletePattern, flags)
+		resultItems, err = utils.AqlSearchDefaultReturnFields(deletePattern, flags.Recursive, flags.Props, flags)
 		if err != nil {
-		    return
+			return
 		}
 	}
 
@@ -58,10 +58,10 @@ func isDirectoryPath(path string) bool {
 }
 
 type DeleteFlags struct {
-	ArtDetails   *config.ArtifactoryDetails
-	DryRun       bool
-	Props        string
-	Recursive    bool
+	ArtDetails *config.ArtifactoryDetails
+	DryRun     bool
+	Props      string
+	Recursive  bool
 }
 
 func (flags *DeleteFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {

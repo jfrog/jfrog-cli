@@ -12,16 +12,35 @@ type SearchResult struct {
 	Path string `json:"path,omitempty"`
 }
 
-func Search(search string, flags *SearchFlags) error {
+func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (err error) {
 	utils.PreCommandSetup(flags)
-	returnFields := []string{"\"name\"", "\"repo\"", "\"path\""}
-	resultItems, err := utils.AqlSearch(search, flags, returnFields)
-	if err != nil {
-	    return err
+	var resultItems []utils.AqlSearchResultItem
+	var itemsFound []utils.AqlSearchResultItem
+	for i := 0; i < len(searchSpec.Files); i++ {
+		switch searchSpec.Get(i).GetSpecType() {
+		case utils.WILDCARD, utils.SIMPLE:
+			itemsFound, err = utils.AqlSearchDefaultReturnFields(searchSpec.Get(i).Pattern,
+				searchSpec.Get(i).Recursive, searchSpec.Get(i).Props, flags)
+			if err != nil {
+				return
+			}
+			resultItems = append(resultItems, itemsFound...)
+		case utils.AQL:
+			itemsFound, err = utils.AqlSearchBySpec(searchSpec.Get(i).Aql, flags)
+			if err != nil {
+				return
+			}
+			resultItems = append(resultItems, itemsFound...)
+		}
 	}
-	result, _ := json.Marshal(aqlResultToSearchResult(resultItems))
+
+	result, e := json.Marshal(aqlResultToSearchResult(resultItems))
+	if e != nil {
+		err = e
+		return
+	}
 	fmt.Println(string(cliutils.IndentJson(result)))
-	return nil
+	return
 }
 
 func aqlResultToSearchResult(aqlResult []utils.AqlSearchResultItem) (result []SearchResult) {
@@ -40,21 +59,11 @@ func aqlResultToSearchResult(aqlResult []utils.AqlSearchResultItem) (result []Se
 
 type SearchFlags struct {
 	ArtDetails *config.ArtifactoryDetails
-	Props      string
-	Recursive  bool
 	DryRun     bool
 }
 
 func (flags *SearchFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
-}
-
-func (flags *SearchFlags) IsRecursive() bool {
-	return flags.Recursive
-}
-
-func (flags *SearchFlags) GetProps() string {
-	return flags.Props
 }
 
 func (flags *SearchFlags) IsDryRun() bool {

@@ -250,20 +250,20 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	return resp, nil
 }
 
-func DownloadFile(downloadPath, localPath, fileName string, flat bool, httpClientsDetails HttpClientDetails) *http.Response {
-	resp, _, _ := downloadFile(downloadPath, localPath, fileName, flat, true, httpClientsDetails)
+func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) *http.Response {
+	resp, _, _ := downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails)
 	return resp
 }
 
-func DownloadFileNoRedirect(downloadPath, localPath, fileName string, flat bool,
+func DownloadFileNoRedirect(downloadPath, localPath, fileName string,
 	httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
 
-    return downloadFile(downloadPath, localPath, fileName, flat, false, httpClientsDetails)
+    return downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails)
 }
 
-func downloadFile(downloadPath, localPath, fileName string, flat, allowRedirect bool,
+func downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
 	httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
-	if !flat && localPath != "" {
+	if localPath != "" {
 		os.MkdirAll(localPath, 0777)
 		fileName = localPath + "/" + fileName
 	}

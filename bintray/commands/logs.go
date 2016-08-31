@@ -37,7 +37,7 @@ func DownloadLog(packageDetails *utils.VersionDetails, logName string,
 	path := details.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 		packageDetails.Repo + "/" + packageDetails.Package + "/logs/" + logName
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
-	resp := ioutils.DownloadFile(path, "", logName, true, httpClientsDetails)
+	resp := ioutils.DownloadFile(path, "", logName, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		err = cliutils.CheckError(errors.New(resp.Status))
         if err != nil {

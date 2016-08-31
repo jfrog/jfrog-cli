@@ -17,19 +17,29 @@ import (
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
+func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 	utils.PreCommandSetup(flags)
-	minChecksumDeploySize, err := getMinChecksumDeploySize()
-    if err != nil {
-        return
-    }
-
-	// Get the list of artifacts to be uploaded to Artifactory:
-	var artifacts []cliutils.Artifact
-	artifacts, err = getFilesToUpload(localPath, targetPath, flags)
-	if err != nil {
-	    return
+	for i := 0; i < len(uploadSpec.Files); i++ {
+		uploaded, failed, e := uploadWildcard(uploadSpec.Get(i), flags)
+		if e != nil {
+			err = e
+			return
+		}
+		totalUploaded += uploaded
+		totalFailed += failed
 	}
+	return
+}
+
+func uploadWildcard(uploadFiles *utils.Files, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
+	minChecksumDeploySize, e := getMinChecksumDeploySize()
+	if e != nil {
+		err = e
+		return
+	}
+
+	var artifacts []cliutils.Artifact
+	artifacts, err = getFilesToUpload(uploadFiles)
 	size := len(artifacts)
 
 	var wg sync.WaitGroup
@@ -43,32 +53,30 @@ func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, to
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
-                if err != nil {
-                    break;
-                }
-                var e error
-                var uploaded bool
-                var target string
+				if err != nil {
+					break;
+				}
+				var e error
+				var uploaded bool
+				var target string
 				target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].TargetPath, make(map[string]string))
-                if e != nil {
-                    err = e
-                    break
-                }
-				uploaded, e = uploadFile(artifacts[j].LocalPath, target, flags,
-                    minChecksumDeploySize, logMsgPrefix)
-                if e != nil {
-                    err = e
-                    break
-                }
+				if e != nil {
+					err = e
+					break
+				}
+				uploaded, e = uploadFile(artifacts[j].LocalPath, target, uploadFiles.Props, flags, minChecksumDeploySize, logMsgPrefix)
+				if e != nil {
+					err = e
+					break
+				}
 				if uploaded {
-                    uploadCount[threadId]++
+					uploadCount[threadId]++
 				}
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
-
 	totalUploaded = 0
 	for _, i := range uploadCount {
 		totalUploaded += i
@@ -83,86 +91,86 @@ func Upload(localPath, targetPath string, flags *UploadFlags) (totalUploaded, to
 }
 
 func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Artifact {
-    var uploadPath string
-    if !strings.HasSuffix(targetPath, "/") {
-        uploadPath = targetPath
-    } else {
-        if flat {
-            uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
-            uploadPath = targetPath + uploadPath
-        } else {
-            uploadPath = targetPath + rootPath
-            uploadPath = cliutils.TrimPath(uploadPath)
-        }
-    }
-    return cliutils.Artifact{rootPath, uploadPath}
+	var uploadPath string
+	if !strings.HasSuffix(targetPath, "/") {
+		uploadPath = targetPath
+	} else {
+		if flat {
+			uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
+			uploadPath = targetPath + uploadPath
+		} else {
+			uploadPath = targetPath + rootPath
+			uploadPath = cliutils.TrimPath(uploadPath)
+		}
+	}
+	return cliutils.Artifact{LocalPath: rootPath, TargetPath: uploadPath}
 }
 
-func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) ([]cliutils.Artifact, error) {
-	if strings.Index(targetPath, "/") < 0 {
-		targetPath += "/"
+func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
+	if strings.Index(uploadFiles.Target, "/") < 0 {
+		uploadFiles.Target += "/"
 	}
-	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
+	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, uploadFiles.Regexp)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 	}
-	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
+	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, uploadFiles.Regexp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	dir, err := ioutils.IsDir(rootPath)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if !dir {
-        artifact := getSingleFileToUpload(rootPath, targetPath, flags.Flat)
-        return append(artifacts, artifact), nil
+		artifact := getSingleFileToUpload(rootPath, uploadFiles.Target, uploadFiles.Flat)
+		return append(artifacts, artifact), nil
 	}
 
-	r, err := regexp.Compile(localpath)
-	err = cliutils.CheckError(err)
+	r, err := regexp.Compile(uploadFiles.Pattern)
+	cliutils.CheckError(err)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 
 	var paths []string
-	if flags.Recursive {
+	if uploadFiles.Recursive {
 		paths, err = ioutils.ListFilesRecursive(rootPath)
 	} else {
 		paths, err = ioutils.ListFiles(rootPath)
 	}
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	for _, path := range paths {
 		dir, err := ioutils.IsDir(path)
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 		if dir {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
 		size := len(groups)
-		target := targetPath
+		target := uploadFiles.Target
 		if size > 0 {
 			for i := 1; i < size; i++ {
 				group := strings.Replace(groups[i], "\\", "/", -1)
-				target = strings.Replace(target, "{"+strconv.Itoa(i)+"}", group, -1)
+				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
 			}
 			if strings.HasSuffix(target, "/") {
-                if flags.Flat {
-                    fileName, _ := ioutils.GetFileAndDirFromPath(path)
-                    target += fileName
-                } else {
-                    uploadPath := cliutils.TrimPath(path)
-                    target += uploadPath
-                }
-            }
+				if uploadFiles.Flat {
+					fileName, _ := ioutils.GetFileAndDirFromPath(path)
+					target += fileName
+				} else {
+					uploadPath := cliutils.TrimPath(path)
+					target += uploadPath
+				}
+			}
 			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}
@@ -171,10 +179,9 @@ func getFilesToUpload(localpath string, targetPath string, flags *UploadFlags) (
 
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
-func uploadFile(localPath string, targetPath string, flags *UploadFlags,
-    minChecksumDeploySize int64, logMsgPrefix string) (bool, error) {
-	if flags.Props != "" {
-		targetPath += ";" + flags.Props
+func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChecksumDeploySize int64, logMsgPrefix string) (bool, error) {
+	if props != "" {
+		targetPath += ";" + props
 	}
 	if flags.Deb != "" {
 		targetPath += getDebianMatrixParams(flags.Deb)
@@ -184,13 +191,13 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 	file, err := os.Open(localPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 	defer file.Close()
 	fileInfo, err := file.Stat()
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	var checksumDeployed bool = false
@@ -199,16 +206,16 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	if fileInfo.Size() >= minChecksumDeploySize {
 		resp, details, err = tryChecksumDeploy(localPath, targetPath, flags, httpClientsDetails)
-        if err != nil {
-            return false, err
-        }
+		if err != nil {
+			return false, err
+		}
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
 	if !flags.DryRun && !checksumDeployed {
 		resp, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
-        if err != nil {
-            return false, err
-        }
+		if err != nil {
+			return false, err
+		}
 	}
 	if !flags.DryRun {
 		var strChecksumDeployed string
@@ -224,24 +231,24 @@ func uploadFile(localPath string, targetPath string, flags *UploadFlags,
 }
 
 func getMinChecksumDeploySize() (int64, error) {
-    minChecksumDeploySize := os.Getenv("JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB")
-    if minChecksumDeploySize == "" {
-        return 10240, nil
-    }
-    minSize, err := strconv.ParseInt(minChecksumDeploySize, 10, 64)
-    err = cliutils.CheckError(err)
-	if err != nil {
-	    return 0, err
+	minChecksumDeploySize := os.Getenv("JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB")
+	if minChecksumDeploySize == "" {
+		return 10240, nil
 	}
-    return minSize * 1000, nil
+	minSize, err := strconv.ParseInt(minChecksumDeploySize, 10, 64)
+	err = cliutils.CheckError(err)
+	if err != nil {
+		return 0, err
+	}
+	return minSize * 1000, nil
 }
 
 func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
-    httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, err error) {
+	httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, err error) {
 
 	details, err = ioutils.GetFileDetails(filePath)
 	if err != nil {
-	    return
+		return
 	}
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
@@ -261,31 +268,19 @@ func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
 func getDebianMatrixParams(debianPropsStr string) string {
 	debProps := strings.Split(debianPropsStr, "/")
 	return ";deb.distribution=" + debProps[0] +
-        ";deb.component=" + debProps[1] +
-        ";deb.architecture=" + debProps[2]
+			";deb.component=" + debProps[1] +
+			";deb.architecture=" + debProps[2]
 }
 
 type UploadFlags struct {
-	ArtDetails   *config.ArtifactoryDetails
-	DryRun       bool
-	Props        string
-	Deb          string
-	Recursive    bool
-	Flat         bool
-	UseRegExp    bool
-	Threads      int
+	ArtDetails *config.ArtifactoryDetails
+	DryRun     bool
+	Deb        string
+	Threads    int
 }
 
 func (flags *UploadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
-}
-
-func (flags *UploadFlags) IsRecursive() bool {
-	return flags.Recursive
-}
-
-func (flags *UploadFlags) GetProps() string {
-	return flags.Props
 }
 
 func (flags *UploadFlags) IsDryRun() bool {
