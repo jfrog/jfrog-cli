@@ -18,6 +18,12 @@ node {
 
             stage 'Go get'
             sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/...'
+            if (BRANCH?.trim()) {
+                dir("src/github.com/jfrogdev/jfrog-cli-go/jfrog") {
+                    sh "git checkout $BRANCH"
+                    sh 'go install'
+                }
+            }
             sh 'bin/jfrog --version > version'
             version = readFile('version').trim().split(" ")[2]
             print "publishing version: $version"
