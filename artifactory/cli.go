@@ -9,6 +9,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"strconv"
 	"strings"
+	"runtime"
 )
 
 func GetCommands() []cli.Command {
@@ -76,6 +77,33 @@ func GetCommands() []cli.Command {
 				searchCmd(c)
 			},
 		},
+		{
+			Name:    "build-publish",
+			Flags:   getBuildPublishFlags(),
+			Aliases: []string{"bp"},
+			Usage:   "Publish build info.",
+			Action: func(c *cli.Context) {
+				buildPublishCmd(c)
+			},
+		},
+		{
+			Name:    "build-collect-env",
+			Flags:    []cli.Flag{},
+			Aliases: []string{"bce"},
+			Usage:   "Capture environment varaibles.",
+			Action: func(c *cli.Context) {
+				buildCollectEnvCmd(c)
+			},
+		},
+		{
+			Name:    "build-clean",
+			Flags:    []cli.Flag{},
+			Aliases: []string{"bc"},
+			Usage:   "Clean build.",
+			Action: func(c *cli.Context) {
+				buildCleanCmd(c)
+			},
+		},
 	}
 }
 
@@ -109,6 +137,14 @@ func getUploadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
+			Name:  "build-name",
+			Usage: "[Optional] Build name.",
+		},
+		cli.StringFlag{
+			Name:  "build-number",
+			Usage: "[Optional] Build number.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -149,6 +185,14 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
+			Name:  "build-name",
+			Usage: "[Optional] Build name.",
+		},
+		cli.StringFlag{
+			Name:  "build-number",
+			Usage: "[Optional] Build number.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -283,6 +327,23 @@ func getSearchFlags() []cli.Flag {
 	}...)
 }
 
+func getBuildPublishFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "env-include",
+			Usage: "[Default: *] List of patterns in the form of \"value1;value2;...\" Only environment variables match those patterns will be included.",
+		},
+		cli.StringFlag{
+			Name:  "env-exclude",
+			Usage: "[Default: *password*;*secret*;*key*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be eccluded.",
+		},
+	}...)
+}
+
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
@@ -338,6 +399,22 @@ func getThreadsCount(c *cli.Context) (threads int) {
 	return
 }
 
+func getBuildName(c *cli.Context) (buildName string) {
+	buildName = ""
+	if c.String("build-name") != "" {
+		buildName = c.String("build-name")
+	}
+	return
+}
+
+func getBuildNumber(c *cli.Context) (buildNumber string) {
+	buildNumber = ""
+	if c.String("build-number") != "" {
+		buildNumber = c.String("build-number")
+	}
+	return
+}
+
 func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	minSplitSize = 5120
 	var err error
@@ -363,10 +440,9 @@ func configCmd(c *cli.Context) {
 		}
 	} else {
 		configFlags, err := createConfigFlags(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
-		commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
+		exitOnErr(err)
+		_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
+		exitOnErr(err)
 	}
 }
 
@@ -382,18 +458,15 @@ func downloadCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		downloadSpec, err = getDownloadSpec(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
+		exitOnErr(err)
 	} else {
 		downloadSpec = createDefaultDownloadSpec(c)
 	}
 
 	flags, err := createDownloadFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
-	commands.Download(downloadSpec, flags)
+	exitOnErr(err)
+	err = commands.Download(downloadSpec, flags)
+	exitOnErr(err)
 }
 
 func uploadCmd(c *cli.Context) {
@@ -408,21 +481,15 @@ func uploadCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		uploadSpec, err = getUploadSpec(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
+		exitOnErr(err)
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
 
 	flags, err := createUploadFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	exitOnErr(err)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	exitOnErr(err)
 	if failed > 0 {
 		if uploaded > 0 {
 			cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -451,10 +518,9 @@ func moveCmd(c *cli.Context) {
 	}
 
 	flags, err := createMoveFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
-	commands.Move(moveSpec, flags)
+	exitOnErr(err)
+	err = commands.Move(moveSpec, flags)
+	exitOnErr(err)
 }
 
 func copyCmd(c *cli.Context) {
@@ -477,10 +543,9 @@ func copyCmd(c *cli.Context) {
 	}
 
 	flags, err := createMoveFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
-	commands.Copy(copySpec, flags)
+	exitOnErr(err)
+	err = commands.Copy(copySpec, flags)
+	exitOnErr(err)
 }
 
 func deleteCmd(c *cli.Context) {
@@ -497,10 +562,9 @@ func deleteCmd(c *cli.Context) {
 		}
 	}
 	flags, err := createDeleteFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
-	commands.Delete(path, flags)
+	exitOnErr(err)
+	err = commands.Delete(path, flags)
+	exitOnErr(err)
 }
 
 func searchCmd(c *cli.Context) {
@@ -523,10 +587,35 @@ func searchCmd(c *cli.Context) {
 	}
 
 	flags, err := createSearchFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	exitOnErr(err)
+	err = commands.Search(searchSpec, flags)
+	exitOnErr(err)
+}
+
+func buildPublishCmd(c *cli.Context) {
+	vlidateBuildInfoArgument(c)
+	buildInfoFlags, err := createBuildInfoFlags(c)
+	exitOnErrWithMsg(err)
+	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags)
+	exitOnErr(err)
+}
+
+func buildCollectEnvCmd(c *cli.Context) {
+	vlidateBuildInfoArgument(c)
+	err := commands.BuildCollectEnv(c.Args().Get(0), c.Args().Get(1))
+	exitOnErr(err)
+}
+
+func buildCleanCmd(c *cli.Context) {
+	vlidateBuildInfoArgument(c)
+	err := commands.BuildClean(c.Args().Get(0), c.Args().Get(1))
+	exitOnErr(err)
+}
+
+func vlidateBuildInfoArgument(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	commands.Search(searchSpec, flags)
 }
 
 func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error) {
@@ -694,6 +783,21 @@ func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags, err e
 	return
 }
 
+func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, err error) {
+	flags = new(utils.BuildInfoFlags)
+	flags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	flags.DryRun = c.Bool("dry-run")
+	flags.EnvInclude = c.String("env-include")
+	flags.EnvExclude = c.String("env-exclude")
+	if len(flags.EnvInclude) == 0 {
+		flags.EnvInclude = "*"
+	}
+	if len(flags.EnvExclude) == 0 {
+		flags.EnvExclude = "*password*;*secret*;*key*"
+	}
+	return
+}
+
 func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := strings.TrimPrefix(c.Args().Get(0), "/")
 	target := c.Args().Get(1)
@@ -709,6 +813,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 	if err != nil {
 		return
 	}
+	fixWinDownloadFilesPath(downloadSpec)
 	// Override options from user
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
@@ -725,6 +830,11 @@ func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags,
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
 	downloadFlags.Threads = getThreadsCount(c);
+	downloadFlags.BuildName = getBuildName(c);
+	downloadFlags.BuildNumber = getBuildNumber(c);
+	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
+		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
+	}
 	downloadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
@@ -745,6 +855,7 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 	if err != nil {
 		return
 	}
+	fixWinUploadFilesPath(uploadSpec)
 	// Override options from user
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
@@ -756,10 +867,31 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 	return
 }
 
+func fixWinUploadFilesPath(uploadSpec *utils.SpecFiles) {
+	if runtime.GOOS == "windows" {
+		for i, file := range uploadSpec.Files {
+			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
+		}
+	}
+}
+
+func fixWinDownloadFilesPath(uploadSpec *utils.SpecFiles) {
+	if runtime.GOOS == "windows" {
+		for i, file := range uploadSpec.Files {
+			uploadSpec.Files[i].Target = strings.Replace(file.Target, "\\", "\\\\", -1)
+		}
+	}
+}
+
 func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err error) {
 	uploadFlags = new(commands.UploadFlags)
 	uploadFlags.DryRun = c.Bool("dry-run")
 	uploadFlags.Threads = getThreadsCount(c);
+	uploadFlags.BuildName = getBuildName(c);
+	uploadFlags.BuildNumber = getBuildNumber(c);
+	if (uploadFlags.BuildName == "" && uploadFlags.BuildNumber != "") || (uploadFlags.BuildName != "" && uploadFlags.BuildNumber == "") {
+		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
+	}
 	uploadFlags.Deb = getDebFlag(c);
 	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
@@ -788,5 +920,17 @@ func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
 		*field = c.Bool(fieldName)
+	}
+}
+
+func exitOnErr(err error) {
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, "")
+	}
+}
+
+func exitOnErrWithMsg(err error) {
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
 }

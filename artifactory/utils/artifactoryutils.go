@@ -154,6 +154,17 @@ func IsWildcardPattern(pattern string) bool {
 	return strings.Contains(pattern, "*") || strings.HasSuffix(pattern, "/") || !strings.Contains(pattern, "/")
 }
 
+func EncodeParams(props string) string {
+	propList := strings.Split(props, ";")
+	result := []string{}
+	for _, prop := range propList {
+		keyVal := strings.Split(prop, "=")
+		result = append(result, url.QueryEscape(keyVal[0]) + "=" + url.QueryEscape(keyVal[1]))
+	}
+
+	return strings.Join(result, ";")
+}
+
 type CommonFlag interface {
 	GetArtifactoryDetails() *config.ArtifactoryDetails
 	IsDryRun() bool

@@ -7,6 +7,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"strings"
+	"strconv"
+	"errors"
 )
 
 type AqlSearchResultItem struct {
@@ -33,7 +35,7 @@ func AqlSearchDefaultReturnFields(pattern string, recursive bool, props string, 
 
 func AqlSearchBySpec(aql Aql, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	aqlString := aql.ItemsFind
-	returnFields := []string{"\"name\"", "\"repo\"", "\"path\""}
+	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
 	query := "items.find(" + aqlString + ").include(" + strings.Join(returnFields, ",") + ")"
 	return AqlSearch(query, flags)
 }
@@ -47,10 +49,25 @@ func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, err
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != 200 {
+		return nil, cliutils.CheckError(errors.New("Artifactory response: " + resp.Status))
+	}
 	logger.Logger.Info("Artifactory response:", resp.Status)
 
     resultItems, err := parseAqlSearchResponse(json)
+	logResultItems(resultItems)
 	return resultItems, err
+}
+
+func logResultItems(resultItems []AqlSearchResultItem) {
+	if resultItems != nil {
+		numOfArtifacts := len(resultItems)
+		var msgSuffix = " artifacts."
+		if numOfArtifacts == 1 {
+			msgSuffix = " artifact."
+		}
+		logger.Logger.Info("Found " + strconv.Itoa(numOfArtifacts) + msgSuffix)
+	}
 }
 
 func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {

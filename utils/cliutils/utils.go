@@ -12,6 +12,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
+const CliAgent = "jfrog-cli-go"
+
 // CLI base commands constants:
 const CmdArtifactory = "rt"
 const CmdBintray = "bt"

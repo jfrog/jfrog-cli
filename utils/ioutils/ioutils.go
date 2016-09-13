@@ -250,9 +250,9 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	return resp, nil
 }
 
-func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) *http.Response {
-	resp, _, _ := downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails)
-	return resp
+func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) (*http.Response, error) {
+	resp, _, err := downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails)
+	return resp, err
 }
 
 func DownloadFileNoRedirect(downloadPath, localPath, fileName string,
@@ -417,7 +417,7 @@ func RemoveTempDir() error {
         return err
     }
 	if exists {
-		os.RemoveAll(tempDirPath)
+		return os.RemoveAll(tempDirPath)
 	}
 	return nil
 }
@@ -564,7 +564,7 @@ func setAuthentication(req *http.Request, httpClientsDetails HttpClientDetails) 
 }
 
 func addUserAgentHeader(req *http.Request) {
-	req.Header.Set("User-Agent", "jfrog-cli-go/" + cliutils.GetVersion())
+	req.Header.Set("User-Agent", cliutils.CliAgent + "/" + cliutils.GetVersion())
 }
 
 func calcSha1(filePath string) (string, error) {

@@ -2,7 +2,7 @@ package logger
 
 import (
 	"os"
-	"fmt"
+	"log"
 )
 
 const (
@@ -18,6 +18,8 @@ func init() {
 
 type CliLogger struct {
 	logLevel string
+	InfoLog  *log.Logger
+	ErrorLog *log.Logger
 }
 
 func createLogger() (logger *CliLogger) {
@@ -32,16 +34,18 @@ func (logger *CliLogger) setLevel() {
 	} else {
 		logger.logLevel = INFO
 	}
+	logger.InfoLog = log.New(os.Stdout, "[Info:] ", 0)
+	logger.ErrorLog = log.New(os.Stdout, "[Error:] ", 0)
 }
 
 func (logger CliLogger) Info(a ...interface{}) {
 	if logger.logLevel != ERROR {
-		fmt.Println(a...)
+		logger.InfoLog.Println(a...)
 	}
 }
 
 func (logger CliLogger) Error(a ...interface{}) {
-	fmt.Println(a...)
+	logger.ErrorLog.Println(a...)
 }
 
 type Log interface {
