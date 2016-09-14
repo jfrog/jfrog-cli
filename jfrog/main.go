@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"os"
+	"github.com/jfrogdev/jfrog-cli-go/xray"
 )
 
 func main() {
@@ -35,6 +36,11 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdMissionControl,
 			Usage: 	     "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
+		},
+		{
+			Name:        cliutils.CmdXray,
+			Usage: 	     "Xray commands",
+			Subcommands: xray.GetCommands(),
 		},
 	}
 }

@@ -18,6 +18,7 @@ const CliAgent = "jfrog-cli-go"
 const CmdArtifactory = "rt"
 const CmdBintray = "bt"
 const CmdMissionControl = "mc"
+const CmdXray = "xr"
 
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
