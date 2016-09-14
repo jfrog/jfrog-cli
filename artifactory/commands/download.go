@@ -5,13 +5,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"strconv"
 	"sync"
-	"strings"
+	"strconv"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"path"
+	"fmt"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -31,24 +31,25 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 	}
 
 	buildDependecies := make(map[int][]utils.DependenciesBuildInfo)
+	var downloadData []DownloadData
 	for i := 0; i < len(downloadSpec.Files); i++ {
-		var tempBuildDependecies map[int][]utils.DependenciesBuildInfo
+		var partialDownloadData []DownloadData
 		switch downloadSpec.Get(i).GetSpecType() {
-		case utils.WILDCARD:
-			tempBuildDependecies, err = downloadWildcard(downloadSpec.Get(i), flags)
-		case utils.SIMPLE:
-			tempBuildDependecies, err = downloadSimple(downloadSpec.Get(i), flags)
+		case utils.WILDCARD, utils.SIMPLE:
+			partialDownloadData = collectWildcardDependecies(downloadSpec.Get(i), flags)
 		case utils.AQL:
-			tempBuildDependecies, err = downloadAql(downloadSpec.Get(i), flags)
+			partialDownloadData = collectAqlDependecies(downloadSpec.Get(i), flags)
 		}
 		if err != nil {
 			return
 		}
-		for k, v := range tempBuildDependecies {
-			buildDependecies[k] = append(buildDependecies[k], v...)
-		}
+		downloadData = append(downloadData, partialDownloadData...)
 	}
-	if isCollectBuildInfo && err == nil {
+	buildDependecies, err = downloadAqlResult(downloadData, flags)
+	if err != nil {
+		return
+	}
+	if isCollectBuildInfo {
 		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 			tempWrapper.Dependencies = stripThreadIdFromBuildInfoDependencies(buildDependecies)
 		}
@@ -65,95 +66,36 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo map[int][]util
 	return buildInfo
 }
 
-func downloadAql(fileSpec *utils.Files, flags *DownloadFlags) (map[int][]utils.DependenciesBuildInfo, error) {
-	resultItems, err := utils.AqlSearchBySpec(fileSpec.Aql, flags)
-	if err != nil {
-		return nil, err
-	}
-	buildDependencies, err := downloadAqlResult("", resultItems, fileSpec.Target, fileSpec.Flat, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Logger.Info("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
-	return buildDependencies, nil
-}
-
-func downloadWildcard(fileSpec *utils.Files, flags *DownloadFlags) (map[int][]utils.DependenciesBuildInfo, error) {
+func collectWildcardDependecies(fileSpec *utils.Files, flags *DownloadFlags) []DownloadData {
 	resultItems, err := utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, fileSpec.Recursive, fileSpec.Props, flags)
 	if err != nil {
-		return nil, err
-	}
-	buildDependencies, err := downloadAqlResult(fileSpec.Pattern, resultItems, fileSpec.Target, fileSpec.Flat, flags)
-	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	logger.Logger.Info("Downloaded " + strconv.Itoa(len(resultItems)) + " artifacts from Artifactory.")
-	return buildDependencies, nil
+	return createDownloadDataList(resultItems, fileSpec)
 }
 
-func downloadSimple(fileSpec *utils.Files, flags *DownloadFlags) (map[int][]utils.DependenciesBuildInfo, error) {
-	props := "";
-	if fileSpec.Props != "" {
-		props = ";" + utils.EncodeParams(fileSpec.Props)
-	}
-	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
-	downloadPath, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, cleanPattern + props, make(map[string]string))
+func collectAqlDependecies(fileSpec *utils.Files, flags *DownloadFlags) []DownloadData {
+	resultItems, err := utils.AqlSearchBySpec(fileSpec.Aql, flags)
 	if err != nil {
-		return nil, err
-	}
-	logMsgPrefix := cliutils.GetLogMsgPrefix(0, flags.DryRun)
-	logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
-	if flags.DryRun {
-		return nil, nil
+		return nil
 	}
 
-	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
-	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
-	if err != nil {
-		return nil, err
-	}
-
-	patternFileName, patternFilePath := ioutils.GetFileAndDirFromPath(trimRepo(fileSpec.Pattern))
-	localPath, localFileName := getLocalPathAndFile(patternFileName, patternFilePath, placeHolderTarget, fileSpec.Flat)
-
-	details, err := getFileRemoteDetails(downloadPath, flags)
-	if err != nil {
-		return nil, err
-	}
-	shouldDownload, err := shouldDownloadFile(path.Join(localPath, localFileName), details.Md5, details.Sha1)
-	dependency := utils.DependenciesBuildInfo{
-		Id: localFileName,
-		BuildInfoCommon : &utils.BuildInfoCommon{
-			Sha1: details.Sha1,
-			Md5: details.Md5,
-		},
-	}
-	if err != nil {
-		return nil, err
-	}
-	if shouldDownload {
-		downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName,
-			details.AcceptRanges, details.Size, flags)
-		err = downloadFile(downloadFileDetails, logMsgPrefix + ": ", flags)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		logger.Logger.Info(logMsgPrefix + "File already exists locally.")
-	}
-	buildDependencies := make(map[int][]utils.DependenciesBuildInfo)
-	buildDependencies[0] = append(buildDependencies[0], dependency)
-	return buildDependencies, nil
+	return createDownloadDataList(resultItems, fileSpec)
 }
 
-func trimRepo(path string) string {
-	index := strings.Index(path, "/")
-	if (index != -1) {
-		return path[index + 1:]
+func createDownloadDataList(items []utils.AqlSearchResultItem, fileSpec *utils.Files) []DownloadData {
+	var dependencies []DownloadData
+	for _, v := range items {
+		fmt.Println(fileSpec.Pattern)
+		dependencies = append(dependencies, DownloadData{
+			Dependency: v,
+			DownloadPath: fileSpec.Pattern,
+			Target: fileSpec.Target,
+			Flat: fileSpec.Flat,
+		})
 	}
-	return path
+	return dependencies
 }
 
 func getLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {
@@ -171,8 +113,8 @@ func getLocalPathAndFile(originalFileName, relativePath, targetPath string, flat
 	return
 }
 
-func downloadAqlResult(downloadPattern string, resultItems []utils.AqlSearchResultItem, targetPath string, flat bool, flags *DownloadFlags) (buildDependencies map[int][]utils.DependenciesBuildInfo, err error) {
-	size := len(resultItems)
+func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildDependencies map[int][]utils.DependenciesBuildInfo, err error) {
+	size := len(dependecies)
 	buildDependencies = make(map[int][]utils.DependenciesBuildInfo)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
@@ -180,36 +122,36 @@ func downloadAqlResult(downloadPattern string, resultItems []utils.AqlSearchResu
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size && err == nil; j += flags.Threads {
-				downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, resultItems[j].GetFullUrl(), make(map[string]string))
+				downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, dependecies[j].Dependency.GetFullUrl(), make(map[string]string))
 				if e != nil {
 					err = e
 					break
 				}
-				logger.Logger.Info(logMsgPrefix + "Downloading " + downloadPath)
+				logger.Logger.Info(logMsgPrefix + "Downloading " + dependecies[j].Dependency.GetFullUrl())
 				if flags.DryRun {
 					continue
 				}
 
-				regexpPattern := cliutils.PathToRegExp(downloadPattern)
-				placeHolderTarget, e := cliutils.ReformatRegexp(regexpPattern, resultItems[j].GetFullUrl(), targetPath)
+				regexpPattern := cliutils.PathToRegExp(dependecies[j].DownloadPath)
+				placeHolderTarget, e := cliutils.ReformatRegexp(regexpPattern, dependecies[j].Dependency.GetFullUrl(), dependecies[j].Target)
 				if e != nil {
 					err = e
 					break
 				}
-				localPath, localFileName := getLocalPathAndFile(resultItems[j].Name, resultItems[j].Path, placeHolderTarget, flat)
-				shouldDownload, e := shouldDownloadFile(path.Join(localPath, resultItems[j].Name), resultItems[j].Actual_Md5, resultItems[j].Actual_Sha1)
+				localPath, localFileName := getLocalPathAndFile(dependecies[j].Dependency.Name, dependecies[j].Dependency.Path, placeHolderTarget, dependecies[j].Flat)
+				shouldDownload, e := shouldDownloadFile(path.Join(localPath, dependecies[j].Dependency.Name), dependecies[j].Dependency.Actual_Md5, dependecies[j].Dependency.Actual_Sha1)
 				if e != nil {
 					err = e
 					break
 				}
-				dependency := createBuildDependencyItem(resultItems[j])
+				dependency := createBuildDependencyItem(dependecies[j].Dependency)
 				if !shouldDownload {
 					buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
 					logger.Logger.Info(logMsgPrefix + "File already exists locally.")
 					continue
 				}
 
-				downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, resultItems[j].Size, flags)
+				downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, dependecies[j].Dependency.Size)
 				e = downloadFile(downloadFileDetails, logMsgPrefix, flags)
 				if e != nil {
 					err = e
@@ -221,7 +163,16 @@ func downloadAqlResult(downloadPattern string, resultItems []utils.AqlSearchResu
 		}(i)
 	}
 	wg.Wait()
+	logDownloadTotals(buildDependencies)
 	return
+}
+
+func logDownloadTotals(buildDependencies map[int][]utils.DependenciesBuildInfo) {
+	var totalDownloded int
+	for _, v := range buildDependencies {
+		totalDownloded += len(v)
+	}
+	logger.Logger.Info("Downloaded " + strconv.Itoa(totalDownloded) + " artifacts from Artifactory.")
 }
 
 func createBuildDependencyItem(resultItem utils.AqlSearchResultItem) utils.DependenciesBuildInfo {
@@ -234,7 +185,7 @@ func createBuildDependencyItem(resultItem utils.AqlSearchResultItem) utils.Depen
 	}
 }
 
-func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64, flags *DownloadFlags) (details *DownloadFileDetails) {
+func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64) (details *DownloadFileDetails) {
 	details = &DownloadFileDetails{
 		DownloadPath: downloadPath,
 		LocalPath: localPath,
@@ -332,6 +283,13 @@ type DownloadFlags struct {
 	BuildNumber  string
 }
 
+type DownloadData struct {
+	Dependency   utils.AqlSearchResultItem
+	DownloadPath string
+	Target       string
+	Flat         bool
+}
+
 func (flags *DownloadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
 }
@@ -339,3 +297,4 @@ func (flags *DownloadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 func (flags *DownloadFlags) IsDryRun() bool {
 	return flags.DryRun
 }
+

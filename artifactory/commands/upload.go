@@ -28,27 +28,40 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, tot
 			return 0, 0, err
 		}
 	}
-	buildArtifacts := make(map[int][]utils.ArtifactBuildInfo)
-	for i := 0; i < len(uploadSpec.Files); i++ {
-		tempBuildArtifacts, uploaded, failed, e := uploadWildcard(uploadSpec.Get(i), flags)
-		if e != nil {
-			err = e
-			return
-		}
-		totalUploaded += uploaded
-		totalFailed += failed
-		for k, v := range tempBuildArtifacts {
-			buildArtifacts[k] = append(buildArtifacts[k], v...)
-		}
+	uploadData, err := buildUploadData(uploadSpec, flags)
+	if err != nil {
+		return 0, 0, err
 	}
 
-	if isCollectBuildInfo && err == nil {
+	buildArtifacts, totalUploaded, totalFailed, err := uploadWildcard(uploadData, flags)
+	if err != nil {
+		return 0, 0, err
+	}
+	if isCollectBuildInfo{
 		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 			tempWrapper.Artifacts = toBuildInfoArtifacts(buildArtifacts)
 		}
 		err = utils.PrepareBuildInfoForSave(flags.BuildName, flags.BuildNumber, populateFunc)
 	}
 	return
+}
+
+func buildUploadData(uploadSpec *utils.SpecFiles, flags *UploadFlags) ([]UploadData, error) {
+	var result []UploadData
+	for _, v := range uploadSpec.Files {
+		artifacts, err := getFilesToUpload(&v)
+		if err != nil {
+			return nil, err
+		}
+		addBuildProps(&v, flags)
+		for _, artifact := range artifacts {
+			result = append(result, UploadData{
+				Artifact: artifact,
+				Props: v.Props,
+			})
+		}
+	}
+	return result, nil
 }
 
 func toBuildInfoArtifacts(artifactsBuildInfo interface{}) []utils.ArtifactBuildInfo {
@@ -59,45 +72,35 @@ func toBuildInfoArtifacts(artifactsBuildInfo interface{}) []utils.ArtifactBuildI
 	return buildInfo
 }
 
-func uploadWildcard(uploadFiles *utils.Files, flags *UploadFlags) (buildInfoDependencies map[int][]utils.ArtifactBuildInfo, totalUploaded, totalFailed int, err error) {
+func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoDependencies map[int][]utils.ArtifactBuildInfo, totalUploaded, totalFailed int, err error) {
 	minChecksumDeploySize, e := getMinChecksumDeploySize()
 	if e != nil {
 		err = e
 		return
 	}
 
-	var artifacts []cliutils.Artifact
-	artifacts, err = getFilesToUpload(uploadFiles)
-	if err != nil {
-		return
-	}
 	size := len(artifacts)
-
 	var wg sync.WaitGroup
 
 	// Create an array of integers, to store the total file that were uploaded successfully.
 	// Each array item is used by a single thread.
 	uploadCount := make([]int, flags.Threads, flags.Threads)
 	buildInfoDependencies = make(map[int][]utils.ArtifactBuildInfo)
-	setBuildProps(uploadFiles, flags)
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
-			for j := threadId; j < size; j += flags.Threads {
-				if err != nil {
-					break;
-				}
+			for j := threadId; j < size && err == nil; j += flags.Threads {
 				var e error
 				var uploaded bool
 				var target string
 				var buildInfoArtifact utils.ArtifactBuildInfo
-				target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].TargetPath, make(map[string]string))
+				target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].Artifact.TargetPath, make(map[string]string))
 				if e != nil {
 					err = e
 					break
 				}
-				buildInfoArtifact, uploaded, e = uploadFile(artifacts[j].LocalPath, target, uploadFiles.Props, flags, minChecksumDeploySize, logMsgPrefix)
+				buildInfoArtifact, uploaded, e = uploadFile(artifacts[j].Artifact.LocalPath, target, artifacts[j].Props, flags, minChecksumDeploySize, logMsgPrefix)
 				if e != nil {
 					err = e
 					break
@@ -111,6 +114,9 @@ func uploadWildcard(uploadFiles *utils.Files, flags *UploadFlags) (buildInfoDepe
 		}(i)
 	}
 	wg.Wait()
+	if err != nil {
+		return
+	}
 	totalUploaded = 0
 	for _, i := range uploadCount {
 		totalUploaded += i
@@ -124,7 +130,7 @@ func uploadWildcard(uploadFiles *utils.Files, flags *UploadFlags) (buildInfoDepe
 	return
 }
 
-func setBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
+func addBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
 	if flags.BuildName == "" || flags.BuildNumber == "" {
 		return
 	}
@@ -363,4 +369,9 @@ func (flags *UploadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 
 func (flags *UploadFlags) IsDryRun() bool {
 	return flags.DryRun
+}
+
+type UploadData struct {
+	Artifact cliutils.Artifact
+	Props    string
 }

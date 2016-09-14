@@ -26,7 +26,14 @@ const (
     OnErrorPanic OnError = "panic"
     OnErrorReturnError OnError = "return"
 )
-var onError = OnErrorReturnError
+var onError OnError
+
+func init() {
+	onError = OnErrorReturnError
+	if os.Getenv("JFROG_CLI_ERROR_HANDLING") == string(OnErrorPanic) {
+		onError = OnErrorPanic
+	}
+}
 
 // Exit codes:
 type ExitCode struct {

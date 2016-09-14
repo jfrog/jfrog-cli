@@ -11,19 +11,6 @@ import (
 	"errors"
 )
 
-type AqlSearchResultItem struct {
-	Repo        string
-	Path        string
-	Name        string
-	Actual_Md5  string
-	Actual_Sha1 string
-	Size        int64
-}
-
-type AqlSearchResult struct {
-	Results []AqlSearchResultItem
-}
-
 func AqlSearchDefaultReturnFields(pattern string, recursive bool, props string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
 	query, err := BuildAqlSearchQuery(pattern, recursive, props, returnFields)
@@ -78,6 +65,19 @@ func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {
 	    return nil, err
 	}
 	return result.Results, nil
+}
+
+type AqlSearchResult struct {
+	Results []AqlSearchResultItem
+}
+
+type AqlSearchResultItem struct {
+	Repo        string
+	Path        string
+	Name        string
+	Actual_Md5  string
+	Actual_Sha1 string
+	Size        int64
 }
 
 func (item AqlSearchResultItem) GetFullUrl() string {
