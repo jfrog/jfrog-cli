@@ -17,7 +17,7 @@ const BUILD_INFO_DETAILS = "details"
 
 func GetBuildDir(buildName, buildNumber string) (string, error) {
 	tempDir := os.TempDir()
-	buildsDir := tempDir + "/jfrog/builds/" + buildName + "/" + buildNumber + "/"
+	buildsDir := tempDir + "/jfrog/builds/" + buildName + "_" + buildNumber + "/"
 	err := os.MkdirAll(buildsDir, 0777)
 	if cliutils.CheckError(err) != nil {
 		return "", err
