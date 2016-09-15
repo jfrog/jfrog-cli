@@ -47,14 +47,15 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, e error) {
+func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
-	content, e := ioutils.ReadFile(specFilePath)
-	if e != nil {
+	content, err := ioutils.ReadFile(specFilePath)
+	if cliutils.CheckError(err) != nil {
 		return
 	}
-	e = json.Unmarshal(content, spec)
-	if e != nil {
+
+	err = json.Unmarshal(content, spec)
+	if cliutils.CheckError(err) != nil {
 		return
 	}
 	return

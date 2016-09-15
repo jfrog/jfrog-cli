@@ -1,18 +1,15 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
 type SearchResult struct {
 	Path string `json:"path,omitempty"`
 }
 
-func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (err error) {
+func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchResult, err error) {
 	utils.PreCommandSetup(flags)
 	var resultItems []utils.AqlSearchResultItem
 	var itemsFound []utils.AqlSearchResultItem
@@ -33,13 +30,7 @@ func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (err error) {
 			resultItems = append(resultItems, itemsFound...)
 		}
 	}
-
-	result, e := json.Marshal(aqlResultToSearchResult(resultItems))
-	if e != nil {
-		err = e
-		return
-	}
-	fmt.Println(string(cliutils.IndentJson(result)))
+	result = aqlResultToSearchResult(resultItems)
 	return
 }
 

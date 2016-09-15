@@ -16,12 +16,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string) {
+func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string, error) {
 	PingArtifactory(artifactoryDetails)
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
 	httpClientsDetails := GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, body, _, _ := ioutils.SendGet(apiUrl, true, httpClientsDetails)
-	return resp, string(body)
+	resp, body, _, err := ioutils.SendGet(apiUrl, true, httpClientsDetails)
+	return resp, string(body), err
 }
 
 func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
@@ -169,6 +169,11 @@ func EncodeParams(props string) (string, error) {
 	}
 
 	return strings.Join(result, ";"), nil
+}
+
+// Simple directory path without wildcards.
+func IsSimpleDirectoryPath(path string) bool {
+	return path != "" && !strings.Contains(path, "*") && strings.HasSuffix(path, "/")
 }
 
 type CommonFlag interface {

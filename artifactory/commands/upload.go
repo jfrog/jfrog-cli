@@ -276,7 +276,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	if !flags.DryRun && !checksumDeployed {
 		resp, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
 		if err != nil {
-			return  utils.ArtifactBuildInfo{}, false, err
+			return utils.ArtifactBuildInfo{}, false, err
 		}
 	}
 	if !flags.DryRun {
@@ -295,7 +295,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func createBuildArtifactItem(file *os.File, details *ioutils.FileDetails) utils.ArtifactBuildInfo{
+func createBuildArtifactItem(file *os.File, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
 	fileName, _ := ioutils.GetFileAndDirFromPath(file.Name())
 	return utils.ArtifactBuildInfo{
 		Name: fileName,
@@ -330,7 +330,7 @@ func extractOnlyFileNameFromPath(file string) string {
 }
 
 func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
-	httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, err error) {
+httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, err error) {
 
 	details, err = ioutils.GetFileDetails(filePath)
 	if err != nil {

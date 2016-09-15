@@ -297,4 +297,3 @@ func (flags *DownloadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 func (flags *DownloadFlags) IsDryRun() bool {
 	return flags.DryRun
 }
-

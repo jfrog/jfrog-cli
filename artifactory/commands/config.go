@@ -110,8 +110,10 @@ func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 		return details, nil
 	}
 	logger.Logger.Info("\nEncrypting password...")
-	response, encPassword := utils.GetEncryptedPasswordFromArtifactory(details)
-	var err error
+	response, encPassword, err := utils.GetEncryptedPasswordFromArtifactory(details)
+	if err != nil {
+		return nil, err
+	}
 	switch response.StatusCode {
         case 409:
             message := "\nYour Artifactory server is not configured to encrypt passwords.\n" +

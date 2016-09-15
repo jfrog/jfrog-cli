@@ -9,6 +9,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"strconv"
 	"strings"
+	"encoding/json"
 	"runtime"
 )
 
@@ -288,6 +289,10 @@ func getCopyFlags() []cli.Flag {
 func getDeleteFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
+			Name:  "spec",
+			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be deleted.",
 		},
@@ -510,9 +515,7 @@ func moveCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		moveSpec, err = getMoveSpec(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
+		exitOnErr(err)
 	} else {
 		moveSpec = createDefaultMoveSpec(c)
 	}
@@ -535,9 +538,7 @@ func copyCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		copySpec, err = getMoveSpec(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
+		exitOnErr(err)
 	} else {
 		copySpec = createDefaultMoveSpec(c)
 	}
@@ -549,21 +550,41 @@ func copyCmd(c *cli.Context) {
 }
 
 func deleteCmd(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() > 0 && c.IsSet("spec") {
+		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+	}
+	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	path := c.Args()[0]
+
+	var deleteSpec *utils.SpecFiles
+	if c.IsSet("spec") {
+		var err error
+		deleteSpec, err = getDeleteSpec(c)
+		exitOnErr(err)
+	} else {
+		deleteSpec = createDefaultDeleteSpec(c)
+	}
+
 	if !c.Bool("quiet") {
+		searchFlags, err := createSearchFlags(c)
+		exitOnErr(err)
+		SearchResult, err := commands.Search(deleteSpec, searchFlags)
+		for _, v := range SearchResult {
+			fmt.Println("  " + v.Path)
+		}
+
 		var confirm string
-		fmt.Print("Delete path " + path + "? (y/n): ")
+		fmt.Print("Are you sure you want to delete the above files? (y/n): ")
 		fmt.Scanln(&confirm)
 		if !cliutils.ConfirmAnswer(confirm) {
 			return
 		}
 	}
+
 	flags, err := createDeleteFlags(c)
 	exitOnErr(err)
-	err = commands.Delete(path, flags)
+	err = commands.Delete(deleteSpec, flags)
 	exitOnErr(err)
 }
 
@@ -579,17 +600,19 @@ func searchCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		searchSpec, err = getSearchSpec(c)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, err.Error())
-		}
+		exitOnErr(err)
 	} else {
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
 	flags, err := createSearchFlags(c)
 	exitOnErr(err)
-	err = commands.Search(searchSpec, flags)
+	SearchResult, err := commands.Search(searchSpec, flags)
 	exitOnErr(err)
+	result, err := json.Marshal(SearchResult)
+	exitOnErr(err)
+
+	fmt.Println(string(cliutils.IndentJson(result)))
 }
 
 func buildPublishCmd(c *cli.Context) {
@@ -728,7 +751,7 @@ func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	if err != nil {
 		return
 	}
-	// Override options from user
+	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
 		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
@@ -744,15 +767,35 @@ func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags, err error) {
 	return
 }
 
+func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := c.Args().Get(0)
+	props := c.String("props")
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+
+	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+}
+
+func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	if err != nil {
+		return
+	}
+
+	//Override spec with CLI options
+	for i := 0; i < len(searchSpec.Files); i++ {
+		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+	}
+	return
+}
+
 func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err error) {
 	deleteFlags = new(commands.DeleteFlags)
 	deleteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return
 	}
-	deleteFlags.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
 	deleteFlags.DryRun = c.Bool("dry-run")
-	deleteFlags.Props = c.String("props")
 	return
 }
 
@@ -769,7 +812,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	if err != nil {
 		return
 	}
-	// Override options from user
+	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
 		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
@@ -814,7 +857,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 		return
 	}
 	fixWinDownloadFilesPath(downloadSpec)
-	// Override options from user
+	//Override spec with CLI options
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
@@ -856,7 +899,7 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 		return
 	}
 	fixWinUploadFilesPath(uploadSpec)
-	// Override options from user
+	//Override spec with CLI options
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
 		overrideStringIfSet(&uploadSpec.Get(i).Props, c, "props")

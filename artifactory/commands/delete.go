@@ -2,39 +2,52 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"fmt"
-	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
-func Delete(deletePattern string, flags *DeleteFlags) (err error) {
+func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	utils.PreCommandSetup(flags)
 
 	var resultItems []utils.AqlSearchResultItem
-	if !utils.IsWildcardPattern(deletePattern) || isDirectoryPath(deletePattern) {
-		simplePathItem := utils.AqlSearchResultItem{Path:deletePattern}
-		resultItems = []utils.AqlSearchResultItem{simplePathItem}
-	} else {
-		resultItems, err = utils.AqlSearchDefaultReturnFields(deletePattern, flags.Recursive, flags.Props, flags)
+	for i := 0; i < len(deleteSpec.Files); i++ {
+		switch {
+		case deleteSpec.Get(i).GetSpecType() == utils.AQL:
+			resultItems, err = utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags)
+
+		case isDirectoryDelete(deleteSpec.Get(i)):
+			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
+			resultItems = []utils.AqlSearchResultItem{simplePathItem}
+
+		default:
+			resultItems, err = utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern,
+				deleteSpec.Get(i).Recursive, deleteSpec.Get(i).Props, flags)
+		}
+
 		if err != nil {
 			return
 		}
-	}
 
-	err = deleteFiles(resultItems, flags)
+		if err = deleteFiles(resultItems, flags); err != nil {
+			return
+		}
+	}
 	return
+}
+
+func isDirectoryDelete(deleteFile *utils.Files) bool {
+	return utils.IsSimpleDirectoryPath(deleteFile.Pattern) && deleteFile.Recursive == true && deleteFile.Props == ""
 }
 
 func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
 	for _, v := range resultItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {
-		    return err
+			return err
 		}
 		if flags.DryRun {
-			fmt.Println("[Dry run] Deleting: " + fileUrl)
+			logger.Logger.Info("[Dry run] Deleting: " + fileUrl)
 			continue
 		}
 
@@ -42,38 +55,20 @@ func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 		resp, _, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
-		    return err
+			return err
 		}
 		logger.Logger.Info("Artifactory response:", resp.Status)
 	}
 	return nil
 }
 
-// Simple directory path without wildcards.
-func isDirectoryPath(path string) bool {
-	if !strings.Contains(path, "*") && strings.HasSuffix(path, "/") {
-		return true
-	}
-	return false
-}
-
 type DeleteFlags struct {
 	ArtDetails *config.ArtifactoryDetails
 	DryRun     bool
-	Props      string
-	Recursive  bool
 }
 
 func (flags *DeleteFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
-}
-
-func (flags *DeleteFlags) IsRecursive() bool {
-	return flags.Recursive
-}
-
-func (flags *DeleteFlags) GetProps() string {
-	return flags.Props
 }
 
 func (flags *DeleteFlags) IsDryRun() bool {
