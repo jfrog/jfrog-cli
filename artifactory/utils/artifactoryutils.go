@@ -159,13 +159,11 @@ func EncodeParams(props string) (string, error) {
 	propList := strings.Split(props, ";")
 	result := []string{}
 	for _, prop := range propList {
-		splitIndex := strings.Index(prop, "=")
-		if splitIndex < 0 {
-			err := errors.New("Invalid props format")
-			cliutils.CheckError(err)
+		key, value, err := SplitProp(prop)
+		if err != nil {
 			return "", err
 		}
-		result = append(result, url.QueryEscape(prop[:splitIndex]) + "=" + url.QueryEscape(prop[splitIndex + 1:]))
+		result = append(result, url.QueryEscape(key) + "=" + url.QueryEscape(value))
 	}
 
 	return strings.Join(result, ";"), nil
@@ -179,4 +177,15 @@ func IsSimpleDirectoryPath(path string) bool {
 type CommonFlag interface {
 	GetArtifactoryDetails() *config.ArtifactoryDetails
 	IsDryRun() bool
+}
+
+func SplitProp(prop string) (string, string, error) {
+	fmt.Println(prop)
+	splitIndex := strings.Index(prop, "=")
+	if splitIndex < 1 || len(prop[splitIndex + 1:]) < 1 {
+		err := cliutils.CheckError(errors.New("Invalid property: " + prop))
+		return "", "", err
+	}
+	return prop[:splitIndex], prop[splitIndex + 1:], nil
+
 }

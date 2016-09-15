@@ -569,11 +569,14 @@ func deleteCmd(c *cli.Context) {
 	if !c.Bool("quiet") {
 		searchFlags, err := createSearchFlags(c)
 		exitOnErr(err)
-		SearchResult, err := commands.Search(deleteSpec, searchFlags)
-		for _, v := range SearchResult {
+		searchResult, err := commands.Search(deleteSpec, searchFlags)
+		exitOnErr(err)
+		if len(searchResult) < 1 {
+			return
+		}
+		for _, v := range searchResult {
 			fmt.Println("  " + v.Path)
 		}
-
 		var confirm string
 		fmt.Print("Are you sure you want to delete the above files? (y/n): ")
 		fmt.Scanln(&confirm)

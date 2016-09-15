@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"errors"
 	"strings"
 )
 
@@ -83,15 +81,10 @@ func buildPropsQuery(props string) (string, error) {
 	propList := strings.Split(props, ";")
 	query := ""
 	for _, prop := range propList {
-		keyVal := strings.Split(prop, "=")
-		if len(keyVal) != 2 {
-			err := cliutils.CheckError(errors.New("Invalid props pattern: " + props))
-			if err != nil {
-			    return "", err
-			}
+		key, value, err := SplitProp(prop)
+		if err != nil {
+			return "", err
 		}
-		key := keyVal[0]
-		value := keyVal[1]
 		query +=
 			"\"@" + key + "\": {\"$match\" : \"" + value + "\"},"
 	}
