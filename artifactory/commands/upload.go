@@ -239,7 +239,11 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 // Returns true if the file was successfully uploaded.
 func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChecksumDeploySize int64, logMsgPrefix string) (utils.ArtifactBuildInfo, bool, error) {
 	if props != "" {
-		targetPath += ";" + utils.EncodeParams(props)
+		encodedProp, err := utils.EncodeParams(props)
+		if err != nil {
+			return utils.ArtifactBuildInfo{}, false, err
+		}
+		targetPath += ";" + encodedProp
 	}
 	if flags.Deb != "" {
 		targetPath += getDebianMatrixParams(flags.Deb)

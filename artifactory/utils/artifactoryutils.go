@@ -11,6 +11,7 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"fmt"
+	"errors"
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
@@ -154,15 +155,20 @@ func IsWildcardPattern(pattern string) bool {
 	return strings.Contains(pattern, "*") || strings.HasSuffix(pattern, "/") || !strings.Contains(pattern, "/")
 }
 
-func EncodeParams(props string) string {
+func EncodeParams(props string) (string, error) {
 	propList := strings.Split(props, ";")
 	result := []string{}
 	for _, prop := range propList {
-		keyVal := strings.Split(prop, "=")
-		result = append(result, url.QueryEscape(keyVal[0]) + "=" + url.QueryEscape(keyVal[1]))
+		splitIndex := strings.Index(prop, "=")
+		if splitIndex < 0 {
+			err := errors.New("Invalid props format")
+			cliutils.CheckError(err)
+			return "", err
+		}
+		result = append(result, url.QueryEscape(prop[:splitIndex]) + "=" + url.QueryEscape(prop[splitIndex + 1:]))
 	}
 
-	return strings.Join(result, ";")
+	return strings.Join(result, ";"), nil
 }
 
 type CommonFlag interface {
