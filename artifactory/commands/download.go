@@ -11,7 +11,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"path"
-	"fmt"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -30,7 +29,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 		defer ioutils.RemoveTempDir()
 	}
 
-	buildDependecies := make(map[int][]utils.DependenciesBuildInfo)
+	buildDependecies := make([][]utils.DependenciesBuildInfo, flags.Threads)
 	var downloadData []DownloadData
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		var partialDownloadData []DownloadData
@@ -49,7 +48,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 	if err != nil {
 		return
 	}
-	if isCollectBuildInfo {
+	if isCollectBuildInfo && !flags.DryRun {
 		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 			tempWrapper.Dependencies = stripThreadIdFromBuildInfoDependencies(buildDependecies)
 		}
@@ -58,7 +57,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 	return
 }
 
-func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo map[int][]utils.DependenciesBuildInfo) []utils.DependenciesBuildInfo {
+func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.DependenciesBuildInfo) []utils.DependenciesBuildInfo {
 	var buildInfo []utils.DependenciesBuildInfo
 	for _, v := range dependenciesBuildInfo {
 		buildInfo = append(buildInfo, v...)
@@ -87,7 +86,6 @@ func collectAqlDependecies(fileSpec *utils.Files, flags *DownloadFlags) []Downlo
 func createDownloadDataList(items []utils.AqlSearchResultItem, fileSpec *utils.Files) []DownloadData {
 	var dependencies []DownloadData
 	for _, v := range items {
-		fmt.Println(fileSpec.Pattern)
 		dependencies = append(dependencies, DownloadData{
 			Dependency: v,
 			DownloadPath: fileSpec.Pattern,
@@ -113,9 +111,9 @@ func getLocalPathAndFile(originalFileName, relativePath, targetPath string, flat
 	return
 }
 
-func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildDependencies map[int][]utils.DependenciesBuildInfo, err error) {
+func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildDependencies [][]utils.DependenciesBuildInfo, err error) {
 	size := len(dependecies)
-	buildDependencies = make(map[int][]utils.DependenciesBuildInfo)
+	buildDependencies = make([][]utils.DependenciesBuildInfo, flags.Threads)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
@@ -167,7 +165,7 @@ func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildD
 	return
 }
 
-func logDownloadTotals(buildDependencies map[int][]utils.DependenciesBuildInfo) {
+func logDownloadTotals(buildDependencies [][]utils.DependenciesBuildInfo) {
 	var totalDownloded int
 	for _, v := range buildDependencies {
 		totalDownloded += len(v)

@@ -30,7 +30,7 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 	if err != nil {
 		return err
 	}
-	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-07:00")
+	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
 	artifactsSet, dependenciesSet, env, err := prepareBuildInfoData(buildData, createIncludeFilter(flags), createExcludeFilter(flags))
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 		return nil
 	}
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	setContentType("application/json", &httpClientsDetails.Headers)
+	setContentType("application/vnd.org.jfrog.artifactory+json", &httpClientsDetails.Headers)
 	resp, body, err := utils.PublishBuildInfo(flags.ArtDetails.Url, marshaledBuildInfo, httpClientsDetails)
 	if err != nil {
 		return err

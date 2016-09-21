@@ -37,7 +37,7 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, tot
 	if err != nil {
 		return 0, 0, err
 	}
-	if isCollectBuildInfo{
+	if isCollectBuildInfo && !flags.DryRun {
 		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 			tempWrapper.Artifacts = toBuildInfoArtifacts(buildArtifacts)
 		}
@@ -64,15 +64,15 @@ func buildUploadData(uploadSpec *utils.SpecFiles, flags *UploadFlags) ([]UploadD
 	return result, nil
 }
 
-func toBuildInfoArtifacts(artifactsBuildInfo interface{}) []utils.ArtifactBuildInfo {
+func toBuildInfoArtifacts(artifactsBuildInfo [][]utils.ArtifactBuildInfo) []utils.ArtifactBuildInfo {
 	var buildInfo []utils.ArtifactBuildInfo
-	for _, v := range artifactsBuildInfo.(map[int][]utils.ArtifactBuildInfo) {
+	for _, v := range artifactsBuildInfo {
 		buildInfo = append(buildInfo, v...)
 	}
 	return buildInfo
 }
 
-func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoDependencies map[int][]utils.ArtifactBuildInfo, totalUploaded, totalFailed int, err error) {
+func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoArtifacts [][]utils.ArtifactBuildInfo, totalUploaded, totalFailed int, err error) {
 	minChecksumDeploySize, e := getMinChecksumDeploySize()
 	if e != nil {
 		err = e
@@ -85,7 +85,7 @@ func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoDepend
 	// Create an array of integers, to store the total file that were uploaded successfully.
 	// Each array item is used by a single thread.
 	uploadCount := make([]int, flags.Threads, flags.Threads)
-	buildInfoDependencies = make(map[int][]utils.ArtifactBuildInfo)
+	buildInfoArtifacts = make([][]utils.ArtifactBuildInfo, flags.Threads)
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
 		go func(threadId int) {
@@ -107,7 +107,7 @@ func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoDepend
 				}
 				if uploaded {
 					uploadCount[threadId]++
-					buildInfoDependencies[threadId] = append(buildInfoDependencies[threadId], buildInfoArtifact)
+					buildInfoArtifacts[threadId] = append(buildInfoArtifacts[threadId], buildInfoArtifact)
 				}
 			}
 			wg.Done()

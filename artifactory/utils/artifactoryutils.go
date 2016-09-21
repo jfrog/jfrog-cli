@@ -180,7 +180,6 @@ type CommonFlag interface {
 }
 
 func SplitProp(prop string) (string, string, error) {
-	fmt.Println(prop)
 	splitIndex := strings.Index(prop, "=")
 	if splitIndex < 1 || len(prop[splitIndex + 1:]) < 1 {
 		err := cliutils.CheckError(errors.New("Invalid property: " + prop))
