@@ -23,7 +23,7 @@ import (
 func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 	utils.PreCommandSetup(flags)
 	isCollectBuildInfo := len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0
-	if isCollectBuildInfo {
+	if isCollectBuildInfo && !flags.DryRun {
 		if err := utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {
 			return 0, 0, err
 		}
