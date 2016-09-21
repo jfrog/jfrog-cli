@@ -254,6 +254,15 @@ func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
     return val, err
 }
 
+func StringToBool(boolVal string, defaultValue bool) (bool, error) {
+	if len(boolVal) > 0 {
+		result, err := strconv.ParseBool(boolVal)
+		CheckError(err)
+		return result, err
+	}
+	return defaultValue, nil
+}
+
 func GetDocumentationMessage() string {
 	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }

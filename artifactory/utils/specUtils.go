@@ -5,6 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"strings"
+	"strconv"
 )
 
 const (
@@ -21,9 +22,9 @@ type Files struct {
 	Pattern   string
 	Target    string
 	Props     string
-	Recursive bool `json:"recursive,string"`
-	Flat      bool `json:"flat,string"`
-	Regexp    bool `json:"regexp,string"`
+	Recursive string
+	Flat      string
+	Regexp    string
 	Aql       Aql
 }
 
@@ -68,9 +69,9 @@ func CreateSpec(pattern, target, props string, recursive, flat, regexp bool) (sp
 				Pattern:   pattern,
 				Target:    target,
 				Props:     props,
-				Recursive: recursive,
-				Flat:      flat,
-				Regexp:    regexp,
+				Recursive: strconv.FormatBool(recursive),
+				Flat:      strconv.FormatBool(flat),
+				Regexp:    strconv.FormatBool(regexp),
 			},
 		},
 	}

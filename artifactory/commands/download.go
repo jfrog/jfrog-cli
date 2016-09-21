@@ -35,9 +35,9 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 		var partialDownloadData []DownloadData
 		switch downloadSpec.Get(i).GetSpecType() {
 		case utils.WILDCARD, utils.SIMPLE:
-			partialDownloadData = collectWildcardDependecies(downloadSpec.Get(i), flags)
+			partialDownloadData, err = collectWildcardDependecies(downloadSpec.Get(i), flags)
 		case utils.AQL:
-			partialDownloadData = collectAqlDependecies(downloadSpec.Get(i), flags)
+			partialDownloadData, err = collectAqlDependecies(downloadSpec.Get(i), flags)
 		}
 		if err != nil {
 			return
@@ -65,35 +65,43 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.Depe
 	return buildInfo
 }
 
-func collectWildcardDependecies(fileSpec *utils.Files, flags *DownloadFlags) []DownloadData {
-	resultItems, err := utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, fileSpec.Recursive, fileSpec.Props, flags)
+func collectWildcardDependecies(fileSpec *utils.Files, flags *DownloadFlags) ([]DownloadData, error) {
+	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
 	if err != nil {
-		return nil
+		return nil, err
+	}
+
+	resultItems, err := utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
+	if err != nil {
+		return nil, err
 	}
 
 	return createDownloadDataList(resultItems, fileSpec)
 }
 
-func collectAqlDependecies(fileSpec *utils.Files, flags *DownloadFlags) []DownloadData {
+func collectAqlDependecies(fileSpec *utils.Files, flags *DownloadFlags) ([]DownloadData, error) {
 	resultItems, err := utils.AqlSearchBySpec(fileSpec.Aql, flags)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-
 	return createDownloadDataList(resultItems, fileSpec)
 }
 
-func createDownloadDataList(items []utils.AqlSearchResultItem, fileSpec *utils.Files) []DownloadData {
+func createDownloadDataList(items []utils.AqlSearchResultItem, fileSpec *utils.Files) ([]DownloadData, error) {
 	var dependencies []DownloadData
 	for _, v := range items {
+		flat, err := cliutils.StringToBool(fileSpec.Flat, false)
+		if err != nil {
+			return dependencies, err
+		}
 		dependencies = append(dependencies, DownloadData{
 			Dependency: v,
 			DownloadPath: fileSpec.Pattern,
 			Target: fileSpec.Target,
-			Flat: fileSpec.Flat,
+			Flat: flat,
 		})
 	}
-	return dependencies
+	return dependencies, nil
 }
 
 func getLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {

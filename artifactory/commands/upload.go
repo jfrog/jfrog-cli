@@ -169,22 +169,30 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 	if strings.Index(uploadFiles.Target, "/") < 0 {
 		uploadFiles.Target += "/"
 	}
-	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, uploadFiles.Regexp)
+	isRegexpe, err := cliutils.StringToBool(uploadFiles.Regexp, false)
+	if err != nil {
+		return nil, err
+	}
+	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, isRegexpe)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
 			return nil, err
 		}
 	}
-	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, uploadFiles.Regexp)
+	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, isRegexpe)
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	dir, err := ioutils.IsDir(rootPath)
 	if err != nil {
 		return nil, err
 	}
+	isFlat, err := cliutils.StringToBool(uploadFiles.Flat, true)
+	if err != nil {
+		return nil, err
+	}
 	if !dir {
-		artifact := getSingleFileToUpload(rootPath, uploadFiles.Target, uploadFiles.Flat)
+		artifact := getSingleFileToUpload(rootPath, uploadFiles.Target, isFlat)
 		return append(artifacts, artifact), nil
 	}
 
@@ -195,7 +203,11 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 	}
 
 	var paths []string
-	if uploadFiles.Recursive {
+	isRecursive, err := cliutils.StringToBool(uploadFiles.Recursive, true)
+	if err != nil {
+		return nil, err
+	}
+	if isRecursive {
 		paths, err = ioutils.ListFilesRecursive(rootPath)
 	} else {
 		paths, err = ioutils.ListFiles(rootPath)
@@ -221,7 +233,7 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
 			}
 			if strings.HasSuffix(target, "/") {
-				if uploadFiles.Flat {
+				if isFlat {
 					fileName, _ := ioutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {

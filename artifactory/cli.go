@@ -757,8 +757,8 @@ func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
-		overrideBoolIfSet(&searchSpec.Get(i).Flat, c, "flat")
+		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&searchSpec.Get(i).Flat, c, "flat")
 	}
 	return
 }
@@ -787,7 +787,7 @@ func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
 }
@@ -818,7 +818,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideBoolIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
 }
@@ -864,8 +864,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
-		overrideBoolIfSet(&downloadSpec.Get(i).Flat, c, "flat")
-		overrideBoolIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
+		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
 }
@@ -906,9 +906,9 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
 		overrideStringIfSet(&uploadSpec.Get(i).Props, c, "props")
-		overrideBoolIfSet(&uploadSpec.Get(i).Flat, c, "flat")
-		overrideBoolIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
-		overrideBoolIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
+		overrideStringIfSet(&uploadSpec.Get(i).Flat, c, "flat")
+		overrideStringIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
 	}
 	return
 }

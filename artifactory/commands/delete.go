@@ -4,6 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 )
 
@@ -12,17 +13,27 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 
 	var resultItems []utils.AqlSearchResultItem
 	for i := 0; i < len(deleteSpec.Files); i++ {
+		isDirectoryDelete, e := isDirectoryDelete(deleteSpec.Get(i))
+		if e != nil {
+			err = e
+			return
+		}
 		switch {
 		case deleteSpec.Get(i).GetSpecType() == utils.AQL:
 			resultItems, err = utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags)
 
-		case isDirectoryDelete(deleteSpec.Get(i)):
+		case isDirectoryDelete:
 			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
 			resultItems = []utils.AqlSearchResultItem{simplePathItem}
 
 		default:
+			isRecursive, e := cliutils.StringToBool(deleteSpec.Get(i).Recursive, true)
+			if e != nil {
+				err = e
+				return
+			}
 			resultItems, err = utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern,
-				deleteSpec.Get(i).Recursive, deleteSpec.Get(i).Props, flags)
+				isRecursive, deleteSpec.Get(i).Props, flags)
 		}
 
 		if err != nil {
@@ -36,8 +47,12 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	return
 }
 
-func isDirectoryDelete(deleteFile *utils.Files) bool {
-	return utils.IsSimpleDirectoryPath(deleteFile.Pattern) && deleteFile.Recursive == true && deleteFile.Props == ""
+func isDirectoryDelete(deleteFile *utils.Files) (bool, error) {
+	isRecursive, err := cliutils.StringToBool(deleteFile.Recursive, true)
+	if err != nil {
+		return false, err
+	}
+	return utils.IsSimpleDirectoryPath(deleteFile.Pattern) && isRecursive == true && deleteFile.Props == "", nil
 }
 
 func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {

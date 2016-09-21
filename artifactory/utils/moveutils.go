@@ -42,7 +42,11 @@ func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
 }
 
 func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
-	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, fileSpec.Recursive, fileSpec.Props, flags)
+	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
+	if err != nil {
+		return err
+	}
+	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
 	if err != nil {
 		return err
 	}
@@ -73,7 +77,11 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *F
 
 	for _, v := range resultItems {
 		destPathLocal := fileSpec.Target
-		if !fileSpec.Flat {
+		isFlat, err := cliutils.StringToBool(fileSpec.Recursive, true)
+		if err != nil {
+			return err
+		}
+		if !isFlat {
 			if strings.Contains(destPathLocal, "/") {
 				file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
 				destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
