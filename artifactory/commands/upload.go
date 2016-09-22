@@ -250,6 +250,7 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
 func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChecksumDeploySize int64, logMsgPrefix string) (utils.ArtifactBuildInfo, bool, error) {
+	fileName, _ := ioutils.GetFileAndDirFromPath(targetPath)
 	if props != "" {
 		encodedProp, err := utils.EncodeParams(props)
 		if err != nil {
@@ -303,13 +304,11 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	if (details == nil) {
 		details, err = ioutils.GetFileDetails(localPath)
 	}
-	artifact := createBuildArtifactItem(targetPath, details)
+	artifact := createBuildArtifactItem(fileName, details)
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func createBuildArtifactItem(targetPath string, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
-	fileName, _ := ioutils.GetFileAndDirFromPath(targetPath)
-	fileName = strings.Split(fileName, ";")[0]
+func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
 	return utils.ArtifactBuildInfo{
 		Name: fileName,
 		BuildInfoCommon : &utils.BuildInfoCommon{
