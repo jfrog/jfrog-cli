@@ -150,7 +150,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.5.0-dev"
+	return "1.5.0"
 }
 
 func GetUserHomeDir() string {
