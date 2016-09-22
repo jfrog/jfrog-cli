@@ -77,7 +77,7 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *F
 
 	for _, v := range resultItems {
 		destPathLocal := fileSpec.Target
-		isFlat, err := cliutils.StringToBool(fileSpec.Flat, true)
+		isFlat, err := cliutils.StringToBool(fileSpec.Flat, false)
 		if err != nil {
 			return err
 		}
