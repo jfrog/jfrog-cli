@@ -303,12 +303,13 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	if (details == nil) {
 		details, err = ioutils.GetFileDetails(localPath)
 	}
-	artifact := createBuildArtifactItem(file, details)
+	artifact := createBuildArtifactItem(targetPath, details)
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func createBuildArtifactItem(file *os.File, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
-	fileName, _ := ioutils.GetFileAndDirFromPath(file.Name())
+func createBuildArtifactItem(targetPath string, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
+	fileName, _ := ioutils.GetFileAndDirFromPath(targetPath)
+	fileName = strings.Split(fileName, ";")[0]
 	return utils.ArtifactBuildInfo{
 		Name: fileName,
 		BuildInfoCommon : &utils.BuildInfoCommon{
