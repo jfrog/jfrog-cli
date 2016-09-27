@@ -37,5 +37,5 @@ $ go get github.com/jfrogdev/jfrog-cli-go/...
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
 # Using JFrog CLI with Artifactory, Bintray and Mission Control
-JFrog CLI can be used for a variety of functions with Artifactory, Bintray and Mission Control, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please visit the [JFrog CLI documentation site](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+JFrog CLI can be used for a variety of functions with Artifactory, Bintray and Mission Control, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
