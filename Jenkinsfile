@@ -11,7 +11,7 @@ node {
     repo = 'jfrog-cli-go'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-    def goRoot = tool 'go-1.6.2'
+    def goRoot = tool 'go-1.7.1'
     dir('temp'){
         workspace = pwd()
         withEnv(["GOROOT=$goRoot","GOPATH=${workspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {

@@ -13,7 +13,11 @@ import (
 )
 
 func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) error {
-	utils.PreCommandSetup(flags)
+	err := utils.PreCommandSetup(flags)
+	if err != nil {
+		return err
+	}
+
 	buildData, err := utils.ReadBuildInfoFiles(buildName, buildNumber)
 	if err != nil {
 		return err

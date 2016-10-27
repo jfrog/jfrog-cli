@@ -7,17 +7,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
-	"fmt"
 	"errors"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"crypto/tls"
 )
 
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string, error) {
-	PingArtifactory(artifactoryDetails)
+	err := initTransport(artifactoryDetails)
+	if(err != nil){
+		return nil, "", err
+	}
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
 	httpClientsDetails := GetArtifactoryHttpClientDetails(artifactoryDetails)
 	resp, body, _, err := ioutils.SendGet(apiUrl, true, httpClientsDetails)
@@ -67,7 +68,6 @@ func loadCertificates(caCertPool *x509.CertPool) error {
 	if err != nil {
 	    return err
 	}
-	fmt.Println("Loading certificates...")
 	for _, file := range files {
 		caCert, err := ioutil.ReadFile(securityDir + file.Name())
 		err = cliutils.CheckError(err)
@@ -87,44 +87,35 @@ func getJfrogSecurityDir() (string, error) {
 	return confPath + "security/", nil
 }
 
-func initTransport() (*http.Transport, error) {
-	caCertPool := x509.NewCertPool()
-	err := loadCertificates(caCertPool)
+func initTransport(artDetails *config.ArtifactoryDetails) error {
+	caCertPool, err := x509.SystemCertPool()
+	err = cliutils.CheckError(err)
 	if err != nil {
-	    return nil, err
+		return err
+	}
+	err = loadCertificates(caCertPool)
+	if err != nil {
+	    return err
 	}
 	// Setup HTTPS client
 	tlsConfig := &tls.Config{
 		RootCAs: caCertPool,
 		ClientSessionCache: tls.NewLRUClientSessionCache(1)}
 	tlsConfig.BuildNameToCertificate()
-	tempTransport := &http.Transport{TLSClientConfig: tlsConfig}
-	return tempTransport, nil
+	artDetails.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	return nil
 }
 
-func PreCommandSetup(flags CommonFlag) {
+func PreCommandSetup(flags CommonFlag) (err error) {
 	if flags.GetArtifactoryDetails().SshKeyPath != "" {
 		SshAuthentication(flags.GetArtifactoryDetails())
 	}
 	if !flags.IsDryRun() {
-		PingArtifactory(flags.GetArtifactoryDetails())
-	}
-}
-
-func PingArtifactory(artDetails *config.ArtifactoryDetails) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			artDetails.Transport, err = initTransport()
-			if err != nil {
-			    return
-			}
-			logger.Logger.Info("Done pinging Artifactory.")
+		err = initTransport(flags.GetArtifactoryDetails())
+		if(err != nil){
+			return
 		}
-	}()
-	httpClientsDetails := GetArtifactoryHttpClientDetails(artDetails)
-	logger.Logger.Info("Pinging Artifactory...")
-	ioutils.SendGet(artDetails.Url, true, httpClientsDetails)
-	logger.Logger.Info("Done pinging Artifactory.")
+	}
 	return
 }
 

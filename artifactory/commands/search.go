@@ -11,7 +11,11 @@ type SearchResult struct {
 }
 
 func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchResult, err error) {
-	utils.PreCommandSetup(flags)
+	err = utils.PreCommandSetup(flags)
+	if err != nil {
+		return
+	}
+
 	var resultItems []utils.AqlSearchResultItem
 	var itemsFound []utils.AqlSearchResultItem
 	for i := 0; i < len(searchSpec.Files); i++ {

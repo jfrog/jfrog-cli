@@ -155,7 +155,7 @@ func SendPut(url string, content []byte, httpClientsDetails HttpClientDetails) (
 
 func getHttpClient(transport *http.Transport) *http.Client {
 	client := &http.Client{}
-	if transport != nil{
+	if transport != nil {
 		client.Transport = transport
 	}
 	return client

@@ -21,7 +21,11 @@ import (
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
 func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, totalFailed int, err error) {
-	utils.PreCommandSetup(flags)
+	err = utils.PreCommandSetup(flags)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	isCollectBuildInfo := len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0
 	if isCollectBuildInfo && !flags.DryRun {
 		if err := utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {

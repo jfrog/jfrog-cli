@@ -16,7 +16,11 @@ const (
 )
 
 func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) (err error) {
-	PreCommandSetup(flags)
+	err = PreCommandSetup(flags)
+	if err != nil {
+		return
+	}
+
 	for i := 0; i < len(moveSpec.Files); i++ {
 		switch moveSpec.Get(i).GetSpecType() {
 		case WILDCARD:
