@@ -13,8 +13,8 @@ node {
     sh 'mkdir temp'
     def goRoot = tool 'go-1.7.1'
     dir('temp'){
-        workspace = pwd()
-        withEnv(["GOROOT=$goRoot","GOPATH=${workspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+        cliWorkspace = pwd()
+        withEnv(["GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
 
             stage 'Go get'
             sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/...'
@@ -38,7 +38,7 @@ node {
 
 def uploadToBintray(pkg, fileExtension) {
      sh """#!/bin/bash
-           bin/jfrog bt u $workspace/jfrog$fileExtension $subject/$repo/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
+           bin/jfrog bt u $cliWorkspace/jfrog$fileExtension $subject/$repo/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
         """
 }
 
