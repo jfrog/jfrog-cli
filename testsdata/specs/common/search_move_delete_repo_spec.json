@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/*_target/*.in",
+      "recursive": "true"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "..\\testsdata\\a\\*",
+      "target": "jfrog-cli-tests-repo/flat_recursive/",
+      "flat": "true"
+    }
+  ]
+}

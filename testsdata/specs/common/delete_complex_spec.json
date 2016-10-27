@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/3_only_flat_recursive_source/a/*",
+      "recursive": "false"
+    },
+    {
+      "pattern": "jfrog-cli-tests-repo1/flat_recursive_source/a/*/",
+      "recursive": "false"
+    },
+    {
+      "pattern": "jfrog-cli-tests-repo1/defaults_recursive_nonFlat_source/a/*",
+      "recursive": "true"
+    },
+    {
+      "pattern": "jfrog-cli-tests-repo1/flat_nonrecursive_source/a/*/",
+      "recursive": "true"
+    }
+  ]
+}
