@@ -19,7 +19,7 @@ func GetCommands() []cli.Command {
 			Name:    "config",
 			Flags:   getConfigFlags(),
 			Aliases: []string{"c"},
-			Usage:   "Configure Artifactory details",
+			Usage:   "Configure Artifactory details.",
 			Action: func(c *cli.Context) {
 				configCmd(c)
 			},
@@ -28,7 +28,7 @@ func GetCommands() []cli.Command {
 			Name:    "upload",
 			Flags:   getUploadFlags(),
 			Aliases: []string{"u"},
-			Usage:   "Upload files",
+			Usage:   "Upload files.",
 			Action: func(c *cli.Context) {
 				uploadCmd(c)
 			},
@@ -37,7 +37,7 @@ func GetCommands() []cli.Command {
 			Name:    "download",
 			Flags:   getDownloadFlags(),
 			Aliases: []string{"dl"},
-			Usage:   "Download files",
+			Usage:   "Download files.",
 			Action: func(c *cli.Context) {
 				downloadCmd(c)
 			},
@@ -46,7 +46,7 @@ func GetCommands() []cli.Command {
 			Name:    "move",
 			Flags:   getMoveFlags(),
 			Aliases: []string{"mv"},
-			Usage:   "Move files",
+			Usage:   "Move files.",
 			Action: func(c *cli.Context) {
 				moveCmd(c)
 			},
@@ -55,7 +55,7 @@ func GetCommands() []cli.Command {
 			Name:    "copy",
 			Flags:   getCopyFlags(),
 			Aliases: []string{"cp"},
-			Usage:   "Copy files",
+			Usage:   "Copy files.",
 			Action: func(c *cli.Context) {
 				copyCmd(c)
 			},
@@ -64,7 +64,7 @@ func GetCommands() []cli.Command {
 			Name:    "delete",
 			Flags:   getDeleteFlags(),
 			Aliases: []string{"del"},
-			Usage:   "Delete files",
+			Usage:   "Delete files.",
 			Action: func(c *cli.Context) {
 				deleteCmd(c)
 			},
@@ -73,7 +73,7 @@ func GetCommands() []cli.Command {
 			Name:    "search",
 			Flags:   getSearchFlags(),
 			Aliases: []string{"s"},
-			Usage:   "Search files",
+			Usage:   "Search files.",
 			Action: func(c *cli.Context) {
 				searchCmd(c)
 			},
@@ -112,23 +112,23 @@ func getFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Optional] Artifactory URL",
+			Usage: "[Optional] Artifactory URL.",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Optional] Artifactory username",
+			Usage: "[Optional] Artifactory username.",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Optional] Artifactory password",
+			Usage: "[Optional] Artifactory password.",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[Optional] Artifactory API key",
+			Usage: "[Optional] Artifactory API key.",
 		},
 		cli.StringFlag{
 			Name:  "ssh-key-path",
-			Usage: "[Optional] SSH key file path",
+			Usage: "[Optional] SSH key file path.",
 		},
 	}
 }
@@ -566,29 +566,29 @@ func deleteCmd(c *cli.Context) {
 		deleteSpec = createDefaultDeleteSpec(c)
 	}
 
+	flags, err := createDeleteFlags(c)
+	exitOnErr(err)
 	if !c.Bool("quiet") {
-		searchFlags, err := createSearchFlags(c)
+		pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
 		exitOnErr(err)
-		searchResult, err := commands.Search(deleteSpec, searchFlags)
-		exitOnErr(err)
-		if len(searchResult) < 1 {
+		if len(pathsToDelete) < 1 {
 			return
 		}
-		for _, v := range searchResult {
-			fmt.Println("  " + v.Path)
+		for _, v := range pathsToDelete {
+			fmt.Println("  " + v.GetFullUrl())
 		}
 		var confirm string
-		fmt.Print("Are you sure you want to delete the above files? (y/n): ")
+		fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
 		fmt.Scanln(&confirm)
 		if !cliutils.ConfirmAnswer(confirm) {
 			return
 		}
+		err = commands.DeleteFiles(pathsToDelete, flags)
+		exitOnErr(err)
+	} else {
+		err = commands.Delete(deleteSpec, flags)
+		exitOnErr(err)
 	}
-
-	flags, err := createDeleteFlags(c)
-	exitOnErr(err)
-	err = commands.Delete(deleteSpec, flags)
-	exitOnErr(err)
 }
 
 func searchCmd(c *cli.Context) {

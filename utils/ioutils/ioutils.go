@@ -81,6 +81,20 @@ func GetFileAndDirFromPath(path string) (fileName, dir string) {
 	return
 }
 
+func SplitArtifactPathToRepoPathName(filePath string) (repo, path, fileName string) {
+	index1 := strings.Index(filePath, "/")
+	index2 := strings.LastIndex(filePath, "/")
+	repo = filePath[:index1]
+
+	if index1 != index2 {
+		path = filePath[index1+1:index2]
+	}
+	if index2 != len(filePath) {
+		fileName = filePath[index2+1:]
+	}
+	return
+}
+
 // Return the recursive list of files and directories in the specified path
 func ListFilesRecursive(path string) (fileList []string, err error) {
 	fileList = []string{}

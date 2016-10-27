@@ -160,9 +160,13 @@ func EncodeParams(props string) (string, error) {
 	return strings.Join(result, ";"), nil
 }
 
-// Simple directory path without wildcards.
+// Simple directory path - dir path without wildcards.
 func IsSimpleDirectoryPath(path string) bool {
-	return path != "" && !strings.Contains(path, "*") && strings.HasSuffix(path, "/")
+	return IsDirectoryPath(path) && !strings.Contains(path, "*")
+}
+
+func IsDirectoryPath(path string) bool {
+	return path != "" && strings.HasSuffix(path, "/")
 }
 
 type CommonFlag interface {
