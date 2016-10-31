@@ -41,11 +41,16 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultIt
 		}
 		switch {
 		case deleteSpec.Get(i).GetSpecType() == utils.AQL:
-			resultItems, err = utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags)
+			resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags)
+			if e != nil {
+				err = e
+				return
+			}
+			resultItems = append(resultItems, resultItemsTemp...)
 
 		case isSimpleDirectoryDeleteBool:
 			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
-			resultItems = []utils.AqlSearchResultItem{simplePathItem}
+			resultItems = append(resultItems, []utils.AqlSearchResultItem{simplePathItem}...)
 
 		case isDirectoryDeleteBool:
 			tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern, true, "", flags)

@@ -16,7 +16,7 @@ import (
 
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string, error) {
 	err := initTransport(artifactoryDetails)
-	if(err != nil){
+	if err != nil {
 		return nil, "", err
 	}
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
@@ -32,7 +32,7 @@ details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*ht
 		details, err = ioutils.GetFileDetails(f.Name())
 	}
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	headers := map[string]string{
 		"X-Checksum-Sha1": details.Sha1,
@@ -58,7 +58,7 @@ func AddAuthHeaders(headers map[string]string, artifactoryDetails *config.Artifa
 func loadCertificates(caCertPool *x509.CertPool) error {
 	securityDir, err := getJfrogSecurityDir()
 	if err != nil {
-	    return err
+		return err
 	}
 	if !ioutils.IsPathExists(securityDir) {
 		return nil
@@ -66,14 +66,14 @@ func loadCertificates(caCertPool *x509.CertPool) error {
 	files, err := ioutil.ReadDir(securityDir)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return err
+		return err
 	}
 	for _, file := range files {
 		caCert, err := ioutil.ReadFile(securityDir + file.Name())
 		err = cliutils.CheckError(err)
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 		caCertPool.AppendCertsFromPEM(caCert)
 	}
 	return nil
@@ -81,21 +81,23 @@ func loadCertificates(caCertPool *x509.CertPool) error {
 
 func getJfrogSecurityDir() (string, error) {
 	confPath, err := config.GetJfrogHomeDir()
-    if err != nil {
-        return "", err
-    }
+	if err != nil {
+		return "", err
+	}
 	return confPath + "security/", nil
 }
 
-func initTransport(artDetails *config.ArtifactoryDetails) error {
-	caCertPool, err := x509.SystemCertPool()
+func initTransport(artDetails *config.ArtifactoryDetails) (error) {
+	// Remove once SystemCertPool supports windows
+	caCertPool, err := LoadSystemRoots()
+
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return err
 	}
 	err = loadCertificates(caCertPool)
 	if err != nil {
-	    return err
+		return err
 	}
 	// Setup HTTPS client
 	tlsConfig := &tls.Config{
@@ -108,11 +110,14 @@ func initTransport(artDetails *config.ArtifactoryDetails) error {
 
 func PreCommandSetup(flags CommonFlag) (err error) {
 	if flags.GetArtifactoryDetails().SshKeyPath != "" {
-		SshAuthentication(flags.GetArtifactoryDetails())
+		err = SshAuthentication(flags.GetArtifactoryDetails())
+		if err != nil {
+			return
+		}
 	}
 	if !flags.IsDryRun() {
 		err = initTransport(flags.GetArtifactoryDetails())
-		if(err != nil){
+		if err != nil {
 			return
 		}
 	}
@@ -132,7 +137,7 @@ func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) (string
 	escapedUrl, err := url.Parse(baseUrl + path)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return "", nil
+		return "", nil
 	}
 	q := escapedUrl.Query()
 	for k, v := range params {

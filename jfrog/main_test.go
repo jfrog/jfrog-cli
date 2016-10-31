@@ -89,6 +89,24 @@ func TestDeleteFolder(t *testing.T) {
 	}
 }
 
+func TestDeleteFoldersBySpec(t *testing.T) {
+	tests.CleanUp()
+	prepUploadFiles()
+	prepCopyFiles()
+
+	os.Args = []string{"jfrog", "rt", "del", "--spec=" + tests.GetFile(tests.DeleteSpec), "--quiet=true", "--url=" + *tests.Url, "--user=" + *tests.User, "--password=" + *tests.Password}
+	fmt.Println(os.Args)
+	main()
+	resp, body, _, err := ioutils.SendGet(*tests.Url + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, ioutils.HttpClientDetails{User:*tests.User, Password:*tests.Password})
+	if err != nil || resp.StatusCode != 404 {
+		t.Error("Coudln't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
+	}
+	resp, body, _, err = ioutils.SendGet(*tests.Url + "api/storage/" + tests.Repo2 + "/downloadTestResources", true, ioutils.HttpClientDetails{User:*tests.User, Password:*tests.Password})
+	if err != nil || resp.StatusCode != 404 {
+		t.Error("Coudln't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
+	}
+}
+
 func TestDisplyedPathToDelete(t *testing.T) {
 	tests.CleanUp()
 	prepUploadFiles()
