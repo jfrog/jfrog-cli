@@ -20,8 +20,13 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 	// Patterns like a/*/*/ should be threated as a/*/
 	if splitedLen > 1 && splitedDeletePattern[splitedLen - 2] == "*" && splitedDeletePattern[splitedLen - 3] == "*" {
 		newDeletePattern := strings.Join(splitedDeletePattern[:splitedLen - 2], "/") + "/"
-		return WilcardToDirsPath(newDeletePattern, searchResult)
+		del, e := WilcardToDirsPath(newDeletePattern, searchResult)
+		if e != nil {
+			return "", e
+		}
+		return WilcardToDirsPath(del + "*/", searchResult)
 	}
+
 	regexpPattern := cliutils.PathToRegExp(deletePattern)
 	regexpPattern = strings.Replace(regexpPattern, ".*", "(.*)", -1)
 	r, err := regexp.Compile(regexpPattern)
