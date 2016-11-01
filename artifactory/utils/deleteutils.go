@@ -17,8 +17,7 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 	splitedDeletePattern := strings.Split(deletePattern, "/")
 	splitedLen := len(splitedDeletePattern)
 
-	// Patterns like a/*/*/ should be threated as a/*/
-	if splitedLen > 1 && splitedDeletePattern[splitedLen - 2] == "*" && splitedDeletePattern[splitedLen - 3] == "*" {
+	if splitedLen > 1 && strings.Contains(splitedDeletePattern[splitedLen - 2], "*") && strings.Contains(splitedDeletePattern[splitedLen - 3], "*") {
 		newDeletePattern := strings.Join(splitedDeletePattern[:splitedLen - 2], "/") + "/"
 		del, e := WilcardToDirsPath(newDeletePattern, searchResult)
 		if e != nil {
@@ -42,7 +41,7 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 		// for example: if the matching result is b/c/d/e/ the c/d/e/ path is redundant.
 		if i == (len(groups) - 2) {
 			splited := strings.Split(result, "/")
-			if splited[len(splited) - 2] == "*" {
+			if strings.Contains(splited[len(splited) - 2], "*") {
 				forReplace := strings.Split(groups[i], "/")
 				result = strings.Replace(result, "*", forReplace[0], 1)
 				continue
