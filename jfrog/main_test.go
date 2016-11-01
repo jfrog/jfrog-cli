@@ -27,7 +27,7 @@ func TestSimpleUploadSpec(t *testing.T) {
 	tests.CleanUp()
 	specFile := tests.GetFile(tests.SimpleUploadSpec)
 	resultSpecFile := tests.GetFile(tests.Search)
-	os.Args = tests.GetCommandAsArray("u", specFile)
+	os.Args = tests.GetSpecCommandAsArray("u", specFile)
 	main()
 	tests.IsExistInArtifactory(tests.SimpleUploadExpected, resultSpecFile, t)
 }
@@ -37,7 +37,7 @@ func TestMoveSpec(t *testing.T) {
 	prepUploadFiles()
 	prepCopyFiles()
 	specFile := tests.GetFile(tests.MoveCopyDeleteSpec)
-	os.Args = tests.GetCommandAsArray("cp", specFile)
+	os.Args = tests.GetSpecCommandAsArray("cp", specFile)
 	main()
 	tests.IsExistInArtifactory(tests.MassiveMoveExpected, tests.GetFile(tests.SearchMoveDeleteRepoSpec), t)
 }
@@ -47,7 +47,7 @@ func TestDelete(t *testing.T) {
 	prepUploadFiles()
 	prepCopyFiles()
 	specFile := tests.GetFile(tests.MoveCopyDeleteSpec)
-	os.Args = tests.GetCommandAsArray("cp", specFile)
+	os.Args = tests.GetSpecCommandAsArray("cp", specFile)
 	main()
 	os.Args = []string{"jfrog", "rt", "del", tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/*", "--url=" + *tests.Url, "--user=" + *tests.User, "--password=" + *tests.Password, "--quiet=true"}
 	main()
@@ -59,7 +59,7 @@ func TestDeleteFolderWithWildcard(t *testing.T) {
 	prepUploadFiles()
 	prepCopyFiles()
 	specFile := tests.GetFile(tests.MoveCopyDeleteSpec)
-	os.Args = tests.GetCommandAsArray("cp", specFile)
+	os.Args = tests.GetSpecCommandAsArray("cp", specFile)
 	main()
 	resp, _, _, _ := ioutils.SendGet(*tests.Url + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, ioutils.HttpClientDetails{User:*tests.User, Password:*tests.Password})
 	if resp.StatusCode != 200 {
@@ -137,7 +137,7 @@ func TestMassiveDownloadSpec(t *testing.T) {
 	tests.CleanUp()
 	prepUploadFiles()
 	specFile := tests.GetFile(tests.DownloadSpec)
-	os.Args = tests.GetCommandAsArray("dl", specFile)
+	os.Args = tests.GetSpecCommandAsArray("dl", specFile)
 	main()
 	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
 	tests.IsExistLocally(tests.MassiveDownload, paths, t)
@@ -147,7 +147,7 @@ func TestMassiveUploadSpec(t *testing.T) {
 	tests.CleanUp()
 	specFile := tests.GetFile(tests.UploadSpec)
 	resultSpecFile := tests.GetFile(tests.Search)
-	os.Args = tests.GetCommandAsArray("u", specFile)
+	os.Args = tests.GetSpecCommandAsArray("u", specFile)
 	main()
 	tests.IsExistInArtifactory(tests.MassiveUpload, resultSpecFile, t)
 	tests.IsExistInArtifactoryByProps(tests.PropsExpected, tests.Repo1 + "/*/properties/*.in", "searchMe=true", t)
@@ -158,13 +158,12 @@ func TestSearchByApiKey(t *testing.T) {
 		tests.CleanUp()
 		specFile := tests.GetFile(tests.UploadSpec)
 		resultSpecFile := tests.GetFile(tests.Search)
-		os.Args = tests.GetCommandAsArray("u", specFile)
+		os.Args = tests.GetSpecCommandAsArray("u", specFile)
 		main()
 		results, _ := tests.SearchInArtifactory(resultSpecFile, tests.CreateArtifactoryDetailsByApiKey);
 		tests.CompareExpectedVsActuals(tests.MassiveUpload, results, t)
 	}
 }
-
 
 func prepUploadFiles() {
 	os.Args = []string{"jfrog", "rt", "u", tests.FixWinPath(tests.GetTestResourcesPath()) + "(.*)", tests.Repo1 + "/downloadTestResources/{1}", "--threads=10", "--regexp=true", "--props=searchMe=true", "--flat=false", "--url=" + *tests.Url, "--user=" + *tests.User, "--password=" + *tests.Password}
@@ -173,6 +172,6 @@ func prepUploadFiles() {
 
 func prepCopyFiles() {
 	specFile := tests.GetFile(tests.PrepareCopy)
-	os.Args = tests.GetCommandAsArray("cp", specFile)
+	os.Args = tests.GetSpecCommandAsArray("cp", specFile)
 	main()
 }

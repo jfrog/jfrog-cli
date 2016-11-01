@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo/*.in"
+      "pattern": "jfrog-cli-tests-repo1/*.in"
     }
   ]
 }

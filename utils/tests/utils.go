@@ -31,7 +31,6 @@ func init() {
 	ApiKey = flag.String("apikey", "", "Artifactory user API key")
 }
 
-
 func CreateReposIfNeeded() error {
 	var err error
 	var repoConfig string
@@ -214,17 +213,23 @@ func FixWinPath(filePath string) string {
 	return fixedPath
 }
 
-func GetCommandAsArray(command, spec string) []string {
-	parsedCommand := fmt.Sprintf(SpecsCommand, command, spec, *Url, *User, *Password)
+func GetSpecCommandAsArray(command, spec string) []string {
+	parsedCommand := fmt.Sprintf(SpecsCommand, command, spec)
 	fmt.Println(parsedCommand)
-	return strings.Split(parsedCommand, " ")
+	return AppendCredentials(strings.Split(parsedCommand, " "))
 }
 
 func GetDeleteCommandAsArray(spec string) []string {
-	parsedCommand := fmt.Sprintf(SpecsCommand, "del", spec, *Url, *User, *Password)
+	parsedCommand := fmt.Sprintf(SpecsCommand, "del", spec)
 	parsedCommand += " --quiet=true"
 	fmt.Println(parsedCommand)
-	return strings.Split(parsedCommand, " ")
+	return AppendCredentials(strings.Split(parsedCommand, " "))
+}
+
+func AppendCredentials(args []string) []string {
+	credentialsParameters := fmt.Sprintf(CredentialsParameters, *Url, *User, *Password)
+	fmt.Println(credentialsParameters)
+	return append(args, strings.Split(credentialsParameters, " ")...)
 }
 
 func GetPathsToDelete(specFile string) []utils.AqlSearchResultItem {

@@ -3,7 +3,7 @@
     {
       "aql": {
         "items.find": {
-          "repo": "jfrog-cli-tests-repo",
+          "repo": "jfrog-cli-tests-repo1",
           "$or": [
             {
               "$and": [
@@ -37,7 +37,7 @@
     {
       "aql": {
         "items.find": {
-          "repo": "jfrog-cli-tests-repo",
+          "repo": "jfrog-cli-tests-repo1",
           "$or": [
             {
               "$and": [
@@ -70,75 +70,75 @@
       "flat": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*",
       "target": "out/download/flat_recursive/",
       "flat": "true",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*3*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*3*",
       "target": "out/download/3_only_flat_recursive/",
       "flat": "true",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*",
       "target": "out/download/flat_nonrecursive/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*",
       "target": "out/download/nonflat_recursive/",
       "flat": "false",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*",
       "target": "out/download/nonflat_nonrecursive/",
       "flat": "false",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/*",
       "target": "out/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/a1.in",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/a1.in",
       "target": "out/download/simple/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/a/a1.in",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/a1.in",
       "target": "out/download/rename/a1.out",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/(a)/a1.in",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/(a)/a1.in",
       "target": "out/download/simple_placeholder/{1}/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/(*).in",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/(*).in",
       "target": "out/download/pattern_placeholder/{1}/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/*",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/*",
       "target": "out/download/properties/",
       "flat": "false",
       "recursive": "true",
       "props": "searchMe=true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo/downloadTestResources/*",
-      "target": "out/download/defaults_recursive_nonFlat/"
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/*",
+      "target": "out/download/defaults_recursive_nonflat/"
     }
   ]
 }
