@@ -45,18 +45,20 @@ $ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog
 By default, these tests use the following settings:
 
 * Artifactory url: http://localhost:8081/artifatory
-* user: admin
-* password: password
-* apikey: EMPTY
+* User: admin
+* Password: password
 
-These settings can be customized using the --url, --user, --password and --apikey flags while executing the go test command.<br/>
+These settings can be customized using the *--url*, *--user*, *--password* and *--apikey* flags while executing the go test command.<br/>
 For example:
 ````
 $ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog --url=http://yourArtifactoryUrl/artifactory --user=user --password=password --apikey=apikey
 ````
+* Adding the *--apikey* flag triggers specific tests for the API Key functionality, in addition to other tests which use user and password.
 * Running the tests will create two repositories: jfrog-cli-tests-repo and jfrog-cli-tests-repo1.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
 
 # Using JFrog CLI with Artifactory, Bintray and Mission Control
-JFrog CLI can be used for a variety of functions with Artifactory, Bintray and Mission Control, and has a dedicated set of commands for each product. To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
+and has a dedicated set of commands for each product.
+To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
