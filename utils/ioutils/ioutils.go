@@ -571,8 +571,12 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 func setAuthentication(req *http.Request, httpClientsDetails HttpClientDetails) {
 	//Set authentication
 	if httpClientsDetails.ApiKey != "" {
-		req.Header.Set("X-JFrog-Art-Api", httpClientsDetails.ApiKey)
-	} else if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
+		if httpClientsDetails.User != "" {
+			req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.ApiKey)
+		} else {
+			req.Header.Set("X-JFrog-Art-Api", httpClientsDetails.ApiKey)
+		}
+	} else if httpClientsDetails.Password != "" {
 		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
 	}
 }
