@@ -18,12 +18,13 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 	splitedLen := len(splitedDeletePattern)
 
 	if splitedLen > 1 && strings.Contains(splitedDeletePattern[splitedLen - 2], "*") && strings.Contains(splitedDeletePattern[splitedLen - 3], "*") {
+		removedPath := splitedDeletePattern[splitedLen - 2:]
 		newDeletePattern := strings.Join(splitedDeletePattern[:splitedLen - 2], "/") + "/"
 		del, e := WilcardToDirsPath(newDeletePattern, searchResult)
 		if e != nil {
 			return "", e
 		}
-		return WilcardToDirsPath(del + "*/", searchResult)
+		return WilcardToDirsPath(del + removedPath[0] + "/", searchResult)
 	}
 
 	regexpPattern := cliutils.PathToRegExp(deletePattern)
@@ -50,5 +51,6 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 		}
 		result = strings.Replace(result, "*", groups[i], 1)
 	}
+
 	return result, err
 }
