@@ -108,7 +108,7 @@ func isDirectoryDelete(deleteFile *utils.Files) (bool, error) {
 func getDirsForDeleteFromFilesPaths(deletePattern string, filesToDelete []utils.AqlSearchResultItem) ([]utils.AqlSearchResultItem, error) {
 	paths := make(map[string]bool)
 	for _, file := range filesToDelete {
-		path, err := utils.WilcardToDirsPath(deletePattern, file.GetFullUrl())
+		path, err := utils.WildcardToDirsPath(deletePattern, file.GetFullUrl())
 		if err != nil {
 			return []utils.AqlSearchResultItem{}, err
 		}
