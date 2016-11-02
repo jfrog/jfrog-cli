@@ -14,6 +14,12 @@ func WilcardToDirsPath(deletePattern, searchResult string) (string, error) {
 	if !strings.HasSuffix(deletePattern, "/") {
 		return "", errors.New("Delete pattern must end with \"/\"")
 	}
+	tempPattern := strings.Replace(deletePattern, "**", "*", -1)
+	for deletePattern != tempPattern {
+		deletePattern = tempPattern
+		tempPattern = strings.Replace(deletePattern, "**", "*", -1)
+	}
+
 	splitedDeletePattern := strings.Split(deletePattern, "/")
 	splitedLen := len(splitedDeletePattern)
 

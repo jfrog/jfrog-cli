@@ -32,6 +32,8 @@ func TestMatchingDelete(t *testing.T) {
 	assertDeletePattern("s/a/", actual, t)
 	actual, _ = WilcardToDirsPath("s/*/*path*/", "s/a/h/path/k/b/c/d/b.zip")
 	assertDeletePattern("s/a/h/path/", actual, t)
+	actual, _ = WilcardToDirsPath("a/b/*********/*******/", "a/b/c/d/e.zip")
+	assertDeletePattern("a/b/c/d/", actual, t)
 	actual, err := WilcardToDirsPath("s/*/a/*/*", "s/a/a/path/k/b/c/d/b.zip")
 	assertDeletePatternErr(err.Error(), "Delete pattern must end with \"/\"", t)
 }
