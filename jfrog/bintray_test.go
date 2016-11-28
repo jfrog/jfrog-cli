@@ -6,6 +6,4 @@ import (
 
 func TestBintray(t *testing.T) {
 	//fmt.Println("Testing Bintray")
-
-
 }

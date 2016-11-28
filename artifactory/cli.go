@@ -19,6 +19,8 @@ func GetCommands() []cli.Command {
 			Name:    "config",
 			Flags:   getConfigFlags(),
 			Aliases: []string{"c"},
+			//ArgsUsage: "re re",
+			//Description: "blablabla",
 			Usage:   "Configure Artifactory details.",
 			Action: func(c *cli.Context) {
 				configCmd(c)
@@ -103,6 +105,15 @@ func GetCommands() []cli.Command {
 			Usage:   "Clean build.",
 			Action: func(c *cli.Context) {
 				buildCleanCmd(c)
+			},
+		},
+		{
+			Name:    "build-promote",
+			Flags:   getBuildPromoteFlags(),
+			Aliases: []string{"bpr"},
+			Usage:   "Promote build.",
+			Action: func(c *cli.Context) {
+				buildPromoteCmd(c)
 			},
 		},
 	}
@@ -345,6 +356,35 @@ func getBuildPublishFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "env-exclude",
 			Usage: "[Default: *password*;*secret*;*key*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be eccluded.",
+		},
+	}...)
+}
+
+func getBuildPromoteFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "comment",
+			Usage: "[Optional] Build promotion comment.",
+		},
+		cli.StringFlag{
+			Name:  "source-repo",
+			Usage: "[Optional] Build promotion source repository.",
+		},
+		cli.StringFlag{
+			Name:  "status",
+			Usage: "[Optional] Build promotion status.",
+		},
+		cli.BoolFlag{
+			Name:  "include-dependencies",
+			Usage: "[Default: false] Including build dependencies.",
+		},
+		cli.BoolFlag{
+			Name:  "copy",
+			Usage: "[Default: false] Copy artifacts to target repository.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 	}...)
 }
@@ -638,6 +678,18 @@ func buildCleanCmd(c *cli.Context) {
 	exitOnErr(err)
 }
 
+func buildPromoteCmd(c *cli.Context) {
+	if c.NArg() != 3 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	buildPromoteFlags, err := createBuildPromoteFlags(c)
+	if err != nil {
+		exitOnErr(err)
+	}
+	err = commands.BuildPromote(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildPromoteFlags)
+	exitOnErr(err)
+}
+
 func vlidateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
@@ -841,6 +893,19 @@ func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, err erro
 	if len(flags.EnvExclude) == 0 {
 		flags.EnvExclude = "*password*;*secret*;*key*"
 	}
+	return
+}
+
+func createBuildPromoteFlags(c *cli.Context) (promoteFlags *commands.BuildPromoteFlags, err error) {
+	promoteFlags = new(commands.BuildPromoteFlags)
+	promoteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+
+	promoteFlags.Comment = c.String("comment")
+	promoteFlags.SourceRepo = c.String("source-repo")
+	promoteFlags.Status = c.String("status")
+	promoteFlags.IncludeDependencies = c.Bool("include-dependencies")
+	promoteFlags.Copy = c.Bool("copy")
+	promoteFlags.DryRun = c.Bool("dry-run")
 	return
 }
 

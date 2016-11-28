@@ -184,44 +184,44 @@ func TestArtifactoryPublishBuildInfo(t *testing.T) {
 	tests.DeleteBuild(buildName)
 }
 
-//func TestArtifactoryCleanBuildInfo(t *testing.T) {
-//	tests.InitTest()
-//	buildName, buildNumber := "cli-test-build", "11"
-//
-//	//upload files with buildName and buildNumber
-//	specFile := tests.GetFile(tests.UploadSpec)
-//	os.Args = tests.AppendBuildInfoParams(tests.GetSpecCommandAsArray("u", specFile), buildName, buildNumber)
-//	tests.LogCommand()
-//	main()
-//
-//	//cleanup buildInfo
-//	os.Args = strings.Split(fmt.Sprintf("jfrog rt bc %v %v", buildName, buildNumber), " ")
-//	tests.LogCommand()
-//	main()
-//
-//	//upload files with buildName and buildNumber
-//	specFile = tests.GetFile(tests.SimpleUploadSpec)
-//	os.Args = tests.AppendBuildInfoParams(tests.GetSpecCommandAsArray("u", specFile), buildName, buildNumber)
-//	tests.LogCommand()
-//	main()
-//
-//	//publish buildInfo
-//	os.Args = tests.AppendCredentials(strings.Split(fmt.Sprintf("jfrog rt bp %v %v", buildName, buildNumber), " "))
-//	tests.LogCommand()
-//	main()
-//
-//	//promote buildInfo
-//	os.Args = tests.AppendCredentials(strings.Split(fmt.Sprintf("jfrog rt bpr %v %v %v", buildName, buildNumber, tests.Repo2), " "))
-//	tests.LogCommand()
-//	main()
-//
-//	//validate files are uploaded with the build info name and number
-//	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-//	tests.IsExistInArtifactoryByProps(tests.SimpleUploadExpected2, tests.Repo2 + "/*", props, t)
-//
-//	//cleanup
-//	tests.DeleteBuild(buildName)
-//}
+func TestArtifactoryCleanBuildInfo(t *testing.T) {
+	tests.InitTest()
+	buildName, buildNumber := "cli-test-build", "11"
+
+	//upload files with buildName and buildNumber
+	specFile := tests.GetFile(tests.UploadSpec)
+	os.Args = tests.AppendBuildInfoParams(tests.GetSpecCommandAsArray("u", specFile), buildName, buildNumber)
+	tests.LogCommand()
+	main()
+
+	//cleanup buildInfo
+	os.Args = strings.Split(fmt.Sprintf("jfrog rt bc %v %v", buildName, buildNumber), " ")
+	tests.LogCommand()
+	main()
+
+	//upload files with buildName and buildNumber
+	specFile = tests.GetFile(tests.SimpleUploadSpec)
+	os.Args = tests.AppendBuildInfoParams(tests.GetSpecCommandAsArray("u", specFile), buildName, buildNumber)
+	tests.LogCommand()
+	main()
+
+	//publish buildInfo
+	os.Args = tests.AppendCredentials(strings.Split(fmt.Sprintf("jfrog rt bp %v %v", buildName, buildNumber), " "))
+	tests.LogCommand()
+	main()
+
+	//promote buildInfo
+	os.Args = tests.AppendCredentials(strings.Split(fmt.Sprintf("jfrog rt bpr %v %v %v", buildName, buildNumber, tests.Repo2), " "))
+	tests.LogCommand()
+	main()
+
+	//validate files are uploaded with the build info name and number
+	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
+	tests.IsExistInArtifactoryByProps(tests.SimpleUploadExpected2, tests.Repo2 + "/*", props, t)
+
+	//cleanup
+	tests.DeleteBuild(buildName)
+}
 
 func prepUploadFiles() {
 	os.Args = []string{"jfrog", "rt", "u", tests.FixWinPath(tests.GetTestResourcesPath()) + "(.*)", tests.Repo1 + "/downloadTestResources/{1}", "--threads=10", "--regexp=true", "--props=searchMe=true", "--flat=false", "--url=" + *tests.Url, "--user=" + *tests.User, "--password=" + *tests.Password}
