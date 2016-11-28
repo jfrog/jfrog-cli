@@ -53,9 +53,6 @@ func ShowConfig() error {
 	if details.User != "" {
 		fmt.Println("User: " + details.User)
 	}
-	if details.User != "" {
-		fmt.Println("User: " + details.User)
-	}
 	if details.Key != "" {
 		fmt.Println("Key: ***")
 	}

@@ -31,12 +31,6 @@
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/no_target/a/*",
-      "target": "_target",
-      "flat": "true",
-      "recursive": "false"
-    },
-    {
       "pattern": "jfrog-cli-tests-repo2/simple_source/a/a1.in",
       "target": "jfrog-cli-tests-repo2/simple_target/",
       "flat": "true",

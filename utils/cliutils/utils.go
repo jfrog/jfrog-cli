@@ -9,7 +9,7 @@ import (
 	"strings"
 	"runtime"
 	"regexp"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 const CliAgent = "jfrog-cli-go"
@@ -23,8 +23,8 @@ const CmdXray = "xr"
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
 const (
-    OnErrorPanic OnError = "panic"
-    OnErrorReturnError OnError = "return"
+	OnErrorPanic OnError = "panic"
+	OnErrorReturnError OnError = "return"
 )
 var onError OnError
 
@@ -43,26 +43,26 @@ var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
 
 func CheckError(err error) error {
-    return handleError(err, ExitCodeError)
+	return handleError(err, ExitCodeError)
 }
 
 func CheckWarning(err error) error {
-    return handleError(err, ExitCodeWarning)
+	return handleError(err, ExitCodeWarning)
 }
 
 func handleError(err error, exitCode ExitCode) error {
-    if err != nil {
-        if onError == OnErrorPanic {
-            panic(err)
-        }
-        logger.Logger.Error(err.Error())
-    }
-    return err
+	if err != nil {
+		if onError == OnErrorPanic {
+			panic(err)
+		}
+		log.Error(err.Error())
+	}
+	return err
 }
 
 func CheckErrorWithMessage(err error, message string) error {
 	if err != nil {
-		logger.Logger.Error(message)
+		log.Error(message)
 		err = CheckError(err)
 	}
 	return err
@@ -70,7 +70,7 @@ func CheckErrorWithMessage(err error, message string) error {
 
 func Exit(exitCode ExitCode, msg string) {
 	if msg != "" {
-		logger.Logger.Error(msg)
+		log.Error(msg)
 	}
 	os.Exit(exitCode.Code)
 }
@@ -142,9 +142,7 @@ func ConfirmAnswer(answer string) bool {
 func GetLogMsgPrefix(threadId int, dryRun bool) string {
 	var strDryRun string
 	if dryRun {
-		strDryRun = " [Dry run] "
-	} else {
-		strDryRun = " "
+		strDryRun = "[Dry run] "
 	}
 	return "[Thread " + strconv.Itoa(threadId) + "]" + strDryRun
 }
@@ -251,7 +249,7 @@ func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
 	}
 	val, err := strconv.ParseBool(envVarValue)
 	err = CheckErrorWithMessage(err, "can't parse environment variable " + flagName)
-    return val, err
+	return val, err
 }
 
 func StringToBool(boolVal string, defaultValue bool) (bool, error) {
@@ -287,7 +285,7 @@ func ReformatRegexp(regexpString, sourceString, destString string) (string, erro
 	r, err := regexp.Compile(regexpString)
 	err = CheckError(err)
 	if err != nil {
-	    return "", err
+		return "", err
 	}
 
 	groups := r.FindStringSubmatch(sourceString)

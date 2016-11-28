@@ -8,7 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
@@ -69,7 +69,7 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	    return err
 	}
 	if !exists {
-		fmt.Println("Warning: Could not find SSH key file at: " + details.SshKeyPath)
+		log.Warn("Could not find SSH key file at:", details.SshKeyPath)
 	}
 	return nil
 }
@@ -109,7 +109,7 @@ func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if details.Password == "" {
 		return details, nil
 	}
-	logger.Logger.Info("\nEncrypting password...")
+	log.Info("\nEncrypting password...")
 	response, encPassword, err := utils.GetEncryptedPasswordFromArtifactory(details)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
             err = cliutils.CheckError(errors.New(message))
         case 200:
             details.Password = encPassword
-            logger.Logger.Info("Done encrypting password.")
+            log.Info("Done encrypting password.")
         default:
             err = cliutils.CheckError(errors.New("\nArtifactory response: " + response.Status))
 	}

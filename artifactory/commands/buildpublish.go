@@ -5,11 +5,11 @@ import (
 	"sort"
 	"fmt"
 	"strings"
-	"errors"
 	"encoding/json"
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"errors"
 )
 
 func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) error {
@@ -53,7 +53,8 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 		return nil
 	}
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	setContentType("application/vnd.org.jfrog.artifactory+json", &httpClientsDetails.Headers)
+	utils.SetContentType("application/vnd.org.jfrog.artifactory+json", &httpClientsDetails.Headers)
+	log.Info("Deploying build info...")
 	resp, body, err := utils.PublishBuildInfo(flags.ArtDetails.Url, marshaledBuildInfo, httpClientsDetails)
 	if err != nil {
 		return err
@@ -61,18 +62,12 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 	if resp.StatusCode != 204 {
 		return cliutils.CheckError(errors.New(string(body)))
 	}
-	logger.Logger.Info("Build successfully deployed. Browse it in Artifactory under " + flags.ArtDetails.Url + "webapp/builds/" + buildName + "/" + buildNumber)
+
+	log.Info("Build info successfully deployed. Browse it in Artifactory under " + flags.ArtDetails.Url + "webapp/builds/" + buildName + "/" + buildNumber)
 	if err = utils.RemoveBuildDir(buildName, buildNumber); err != nil {
 		return err
 	}
 	return nil
-}
-
-func setContentType(contentType string, headers *map[string]string) {
-	if *headers == nil {
-		*headers = make(map[string]string)
-	}
-	(*headers)["Content-Type"] = contentType
 }
 
 func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, error) {

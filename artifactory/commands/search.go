@@ -4,6 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 type SearchResult struct {
@@ -18,6 +19,8 @@ func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchRes
 
 	var resultItems []utils.AqlSearchResultItem
 	var itemsFound []utils.AqlSearchResultItem
+
+	log.Info("Searching artifacts...")
 	for i := 0; i < len(searchSpec.Files); i++ {
 		switch searchSpec.Get(i).GetSpecType() {
 		case utils.WILDCARD, utils.SIMPLE:
@@ -41,7 +44,9 @@ func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchRes
 			resultItems = append(resultItems, itemsFound...)
 		}
 	}
+
 	result = aqlResultToSearchResult(resultItems)
+	utils.LogSearchResults(len(resultItems))
 	return
 }
 

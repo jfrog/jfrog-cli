@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"strings"
 	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
 )
 
@@ -29,32 +29,29 @@ func AqlSearchBySpec(aql Aql, flags AqlSearchFlag) ([]AqlSearchResultItem, error
 
 func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
-	logger.Logger.Info("Searching Artifactory using AQL query: " + aqlQuery)
+	log.Debug("Searching Artifactory using AQL query:", aqlQuery)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 	resp, json, err := ioutils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, cliutils.CheckError(errors.New("Artifactory response: " + resp.Status))
-	}
-	logger.Logger.Info("Artifactory response:", resp.Status)
 
-    resultItems, err := parseAqlSearchResponse(json)
-	logResultItems(resultItems)
+	log.Debug("Artifactory response: ", resp.Status)
+	if resp.StatusCode != 200 {
+		return nil, cliutils.CheckError(errors.New(string(json)))
+	}
+
+	resultItems, err := parseAqlSearchResponse(json)
 	return resultItems, err
 }
 
-func logResultItems(resultItems []AqlSearchResultItem) {
-	if resultItems != nil {
-		numOfArtifacts := len(resultItems)
-		var msgSuffix = " artifacts."
-		if numOfArtifacts == 1 {
-			msgSuffix = " artifact."
-		}
-		logger.Logger.Info("Found " + strconv.Itoa(numOfArtifacts) + msgSuffix)
+func LogSearchResults(numOfArtifacts int) {
+	var msgSuffix = "artifacts."
+	if numOfArtifacts == 1 {
+		msgSuffix = "artifact."
 	}
+	log.Info("Found", strconv.Itoa(numOfArtifacts), msgSuffix)
 }
 
 func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {
@@ -62,7 +59,7 @@ func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {
 	err := json.Unmarshal(resp, &result)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	return result.Results, nil
 }

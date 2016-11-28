@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 const VULNERABILITY = "__vuln"
@@ -38,21 +38,21 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 		return err
 	}
 	if len(vulnerabilities) > 0 {
-		logger.Logger.Info("Downloading vulnerabilities...")
+		log.Info("Downloading vulnerabilities...")
 		if err := saveData(xrayTempDir, "vuln", zipSuffix, "", vulnerabilities); err != nil {
 			return err
 		}
 	} else {
-		logger.Logger.Info("There aren't new vulnerabilities.")
+		log.Info("There aren't new vulnerabilities.")
 	}
 
 	if len(components) > 0 {
-		logger.Logger.Info("Downloading components...")
+		log.Info("Downloading components...")
 		if err := saveData(xrayTempDir, "comp", zipSuffix, "", components); err != nil {
 			return err
 		}
 	} else {
-		logger.Logger.Info("There aren't new components.")
+		log.Info("There aren't new components.")
 	}
 
 	return nil
@@ -104,20 +104,20 @@ func saveData(xrsyTmpdir, filesPrefix, zipSuffix, logMsgPrefix string, urlsList 
 	}()
 	for i, url := range urlsList {
 		fileName := filesPrefix + strconv.Itoa(i) + ".json"
-		logger.Logger.Info(logMsgPrefix + "Downloading " + url)
+		log.Info(logMsgPrefix, "Downloading", url)
 		ioutils.DownloadFile(url, dataDir, fileName, ioutils.HttpClientDetails{})
 	}
-	logger.Logger.Info("Zipping files.")
+	log.Info("Zipping files.")
 	err = zipFolderFiles(dataDir, filesPrefix + zipSuffix + ".zip")
 	if err != nil {
 		return err
 	}
-	logger.Logger.Info("Done zipping files.")
+	log.Info("Done zipping files.")
 	return nil
 }
 
 func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error) {
-	logger.Logger.Info("Getting updates...")
+	log.Info("Getting updates...")
 	headers := make(map[string]string)
 	headers["X-Xray-License"] = flags.License
 	httpClientDetails := ioutils.HttpClientDetails{

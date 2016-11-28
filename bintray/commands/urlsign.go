@@ -6,7 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) error {
@@ -17,13 +17,13 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) e
 	url := flags.BintrayDetails.ApiUrl + "signed_url/" + path
 	data := builJson(flags)
 
-	logger.Logger.Info("Signing URL for: " + path)
+	log.Info("Signing URL for:", path)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 	    return err
 	}
-	logger.Logger.Info("Bintray response: " + resp.Status)
+	log.Info("Bintray response:", resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }

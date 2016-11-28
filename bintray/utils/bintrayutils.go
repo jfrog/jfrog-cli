@@ -8,7 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"strings"
 	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func BuildDownloadBintrayFileUrl(bintrayDetails *config.BintrayDetails,
@@ -23,7 +23,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	flags *DownloadFlags, logMsgPrefix string) (err error) {
 
 	url := BuildDownloadBintrayFileUrl(bintrayDetails, pathDetails)
-	logger.Logger.Info(logMsgPrefix + "Downloading " + url)
+	log.Info(logMsgPrefix, "Downloading", url)
 
 	fileName, dir := ioutils.GetFileAndDirFromPath(pathDetails.Path)
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
@@ -45,7 +45,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 		return
 	}
 	if !shouldDownload {
-		logger.Logger.Info(logMsgPrefix + "File already exists locally.")
+		log.Info(logMsgPrefix, "File already exists locally.")
 		return
 	}
 	if flags.Flat {
@@ -59,7 +59,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 		if err != nil {
 			return err
 		}
-		logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
+		log.Info(logMsgPrefix, "Bintray response:", resp.Status)
 	} else {
 	    // We should attempt to download the file concurrently, but only if it is provided through the DSN.
 	    // To check if the file is provided through the DSN, we first attempt to download the file
@@ -88,7 +88,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
             if err != nil {
                 return
             }
-			logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
+			log.Info(logMsgPrefix, "Bintray response:", resp.Status)
         }
 	}
 	return

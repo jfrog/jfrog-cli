@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"path"
 )
 
@@ -34,6 +34,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 	}
 
 	buildDependecies := make([][]utils.DependenciesBuildInfo, flags.Threads)
+	log.Info("Searching artifacts...")
 	var downloadData []DownloadData
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		var partialDownloadData []DownloadData
@@ -48,6 +49,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 		}
 		downloadData = append(downloadData, partialDownloadData...)
 	}
+	utils.LogSearchResults(len(downloadData))
 	buildDependecies, err = downloadAqlResult(downloadData, flags)
 	if err != nil {
 		return
@@ -137,7 +139,7 @@ func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildD
 					err = e
 					break
 				}
-				logger.Logger.Info(logMsgPrefix + "Downloading " + dependecies[j].Dependency.GetFullUrl())
+				log.Info(logMsgPrefix, "Downloading", dependecies[j].Dependency.GetFullUrl())
 				if flags.DryRun {
 					continue
 				}
@@ -157,7 +159,7 @@ func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildD
 				dependency := createBuildDependencyItem(dependecies[j].Dependency)
 				if !shouldDownload {
 					buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
-					logger.Logger.Info(logMsgPrefix + "File already exists locally.")
+					log.Debug(logMsgPrefix, "File already exists locally.")
 					continue
 				}
 
@@ -182,7 +184,7 @@ func logDownloadTotals(buildDependencies [][]utils.DependenciesBuildInfo) {
 	for _, v := range buildDependencies {
 		totalDownloded += len(v)
 	}
-	logger.Logger.Info("Downloaded " + strconv.Itoa(totalDownloded) + " artifacts from Artifactory.")
+	log.Info("Downloaded ", strconv.Itoa(totalDownloded), "artifacts.")
 }
 
 func createBuildDependencyItem(resultItem utils.AqlSearchResultItem) utils.DependenciesBuildInfo {
@@ -232,7 +234,7 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 		if err != nil {
 			return err
 		}
-		logger.Logger.Info(logMsgPrefix + "Artifactory response:", resp.Status)
+		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 	} else {
 		concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
 			DownloadPath: downloadFileDetails.DownloadPath,

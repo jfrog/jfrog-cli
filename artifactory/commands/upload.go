@@ -15,7 +15,7 @@ import (
 	"time"
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -32,7 +32,12 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, tot
 			return 0, 0, err
 		}
 	}
+
+	spinner := cliutils.NewSpinner("[Info:] Prepering files for upload:", time.Second)
+	spinner.Start()
 	uploadData, err := buildUploadData(uploadSpec, flags)
+	spinner.Stop()
+
 	if err != nil {
 		return 0, 0, err
 	}
@@ -126,10 +131,10 @@ func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoArtifa
 		totalUploaded += i
 	}
 
-	logger.Logger.Info("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Artifactory.")
+	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
 	totalFailed = size - totalUploaded
 	if totalFailed > 0 {
-		logger.Logger.Info("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Artifactory.")
+		err = cliutils.CheckError(errors.New("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts."))
 	}
 	return
 }
@@ -266,7 +271,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		targetPath += getDebianMatrixParams(flags.Deb)
 	}
 
-	logger.Logger.Info(logMsgPrefix + "Uploading artifact: " + targetPath)
+	log.Info(logMsgPrefix, "Uploading artifact:", localPath)
 	file, err := os.Open(localPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -291,9 +296,13 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
 	if !flags.DryRun && !checksumDeployed {
-		resp, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
+		var body []byte
+		resp, body, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
 		if err != nil {
 			return utils.ArtifactBuildInfo{}, false, err
+		}
+		if resp.StatusCode != 201 && resp.StatusCode != 200 {
+			log.Error(logMsgPrefix + string(body))
 		}
 	}
 	if !flags.DryRun {
@@ -303,7 +312,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		} else {
 			strChecksumDeployed = ""
 		}
-		logger.Logger.Info(logMsgPrefix + "Artifactory response: " + resp.Status + strChecksumDeployed)
+		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status, strChecksumDeployed)
 	}
 	if (details == nil) {
 		details, err = ioutils.GetFileDetails(localPath)

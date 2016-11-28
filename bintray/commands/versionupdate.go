@@ -6,7 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func UpdateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFlags) error {
@@ -17,7 +17,7 @@ func UpdateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
 	url := flags.BintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
-	logger.Logger.Info("Updating version: " + versionDetails.Version)
+	log.Info("Updating version:", versionDetails.Version)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, err := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
     if err != nil {
@@ -29,7 +29,7 @@ func UpdateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
             return err
         }
 	}
-	logger.Logger.Info("Bintray response: " + resp.Status)
+	log.Info("Bintray response:", resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }

@@ -5,8 +5,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"strings"
+	"errors"
 )
 
 func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
@@ -21,10 +22,12 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	if err = DeleteFiles(resultItems, flags); err != nil {
 		return
 	}
+	log.Info("Deleted", len(resultItems), "items.")
 	return
 }
 
 func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
+	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		var isDirectoryDeleteBool bool
 		isSimpleDirectoryDeleteBool, e := isSimpleDirectoryDelete(deleteSpec.Get(i))
@@ -79,6 +82,7 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultIt
 			resultItems = append(resultItems, tempResultItems...)
 		}
 	}
+	utils.LogSearchResults(len(resultItems))
 	return
 }
 
@@ -147,17 +151,21 @@ func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 			return err
 		}
 		if flags.DryRun {
-			logger.Logger.Info("[Dry run] Deleting: " + fileUrl)
+			log.Info("[Dry run] Deleting:", v.GetFullUrl())
 			continue
 		}
 
-		logger.Logger.Info("Deleting: " + fileUrl)
+		log.Info("Deleting:", v.GetFullUrl())
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, _, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
+		resp, body, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
 			return err
 		}
-		logger.Logger.Info("Artifactory response:", resp.Status)
+
+		log.Debug("Artifactory response:", resp.Status)
+		if resp.StatusCode != 204 {
+			return cliutils.CheckError(errors.New(string(body)))
+		}
 	}
 	return nil
 }

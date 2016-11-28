@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -12,39 +11,39 @@ import (
 	"strings"
 	"sync"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
-	uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
+uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 
 	if uploadFlags.BintrayDetails.User == "" {
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
 	}
 	if !uploadFlags.DryRun {
-        verifyRepoExists(versionDetails, uploadFlags)
-        err = verifyPackageExists(versionDetails, uploadFlags)
-        if err != nil {
-            return
-        }
-        createVersionIfNeeded(versionDetails, uploadFlags)
+		verifyRepoExists(versionDetails, uploadFlags)
+		err = verifyPackageExists(versionDetails, uploadFlags)
+		if err != nil {
+			return
+		}
+		createVersionIfNeeded(versionDetails, uploadFlags)
 	}
 	// Get the list of artifacts to be uploaded to:
 	var artifacts []cliutils.Artifact
 	artifacts, err = getFilesToUpload(localPath, uploadPath, versionDetails.Package, uploadFlags)
 	if err != nil {
-	    return
+		return
 	}
 
 	baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
+			versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
 
 	totalUploaded, totalFailed, err = uploadFiles(artifacts, baseUrl, uploadFlags)
 	return
 }
 
 func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFlags) (totalUploaded,
-    totalFailed int, err error) {
+totalFailed int, err error) {
 
 	size := len(artifacts)
 	var wg sync.WaitGroup
@@ -52,27 +51,27 @@ func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFla
 	// Create an array of integers, to store the total file that were uploaded successfully.
 	// Each array item is used by a single thread.
 	uploadCount := make([]int, flags.Threads, flags.Threads)
-    matrixParams := getMatrixParams(flags)
+	matrixParams := getMatrixParams(flags)
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			for j := threadId; j < size; j += flags.Threads {
 				if err != nil {
-				    break
+					break
 				}
 				url := baseUrl + artifacts[j].TargetPath + matrixParams
 				if !flags.DryRun {
 					uploaded, e := uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails)
-                    if e != nil {
-                        err = e
-                        break;
-                    }
+					if e != nil {
+						err = e
+						break;
+					}
 					if uploaded {
 						uploadCount[threadId]++
 					}
 				} else {
-					fmt.Println("[Dry Run] Uploading artifact: " + url)
+					log.Info("[Dry Run] Uploading artifact:", url)
 					uploadCount[threadId]++
 				}
 			}
@@ -85,86 +84,86 @@ func uploadFiles(artifacts []cliutils.Artifact, baseUrl string, flags *UploadFla
 	for _, i := range uploadCount {
 		totalUploaded += i
 	}
-	logger.Logger.Info("Uploaded " + strconv.Itoa(totalUploaded) + " artifacts to Bintray.")
+	log.Info("Uploaded", strconv.Itoa(totalUploaded), " artifacts to Bintray.")
 	totalFailed = size - totalUploaded
 	if totalFailed > 0 {
-		logger.Logger.Info("Failed uploading " + strconv.Itoa(totalFailed) + " artifacts to Bintray.")
+		log.Info("Failed uploading", strconv.Itoa(totalFailed), " artifacts to Bintray.")
 	}
 	return
 }
 
 func getMatrixParams(flags *UploadFlags) string {
-    params := ""
-    if flags.Publish {
-        params += ";publish=1"
-    }
-    if flags.Override {
-        params += ";override=1"
-    }
-    if flags.Explode {
-        params += ";explode=1"
-    }
-    if flags.Deb != "" {
-        params += getDebianMatrixParams(flags.Deb)
-    }
-    return params
+	params := ""
+	if flags.Publish {
+		params += ";publish=1"
+	}
+	if flags.Override {
+		params += ";override=1"
+	}
+	if flags.Explode {
+		params += ";explode=1"
+	}
+	if flags.Deb != "" {
+		params += getDebianMatrixParams(flags.Deb)
+	}
+	return params
 }
 
 func getDebianMatrixParams(debianPropsStr string) string {
 	debProps := strings.Split(debianPropsStr, "/")
 	return ";deb_distribution=" + debProps[0] +
-        ";deb_component=" + debProps[1] +
-        ";deb_architecture=" + debProps[2]
+			";deb_component=" + debProps[1] +
+			";deb_architecture=" + debProps[2]
 }
 
 func getDebianDefaultPath(debianPropsStr, packageName string) string {
-    debProps := strings.Split(debianPropsStr, "/")
-    component := strings.Split(debProps[1], ",")[0]
-    return "pool/" + component + "/" + packageName[0:1] + "/" + packageName + "/"
+	debProps := strings.Split(debianPropsStr, "/")
+	component := strings.Split(debProps[1], ",")[0]
+	return "pool/" + component + "/" + packageName[0:1] + "/" + packageName + "/"
 }
 
 func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) (bool, error) {
-	logger.Logger.Info(logMsgPrefix + "Uploading artifact to: " + url)
+	log.Info(logMsgPrefix, "Uploading artifact to:", url)
 
 	f, err := os.Open(artifact.LocalPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 	defer f.Close()
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, err := ioutils.UploadFile(f, url, httpClientsDetails)
+	resp, _, err := ioutils.UploadFile(f, url, httpClientsDetails)
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
-	logger.Logger.Info(logMsgPrefix + "Bintray response: " + resp.Status)
+	log.Info(logMsgPrefix, "Bintray response:", resp.Status)
 	return resp.StatusCode == 201 || resp.StatusCode == 200, nil
 }
 
 func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
-	logger.Logger.Info("Verifying package " + versionDetails.Package + " exists...")
+	log.Info("Verifying package", versionDetails.Package, "exists...")
 	resp, err := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode == 404 {
-        err = promptPackageNotExist(versionDetails)
-        if err != nil {
-            return err
-        }
+		err = promptPackageNotExist(versionDetails)
+		if err != nil {
+			return err
+		}
 	} else if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New("Bintray response: "+resp.Status))
+		err = cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
 	return err
 }
 
 func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
-	logger.Logger.Info("Verifying repository " + versionDetails.Repo + " exists...")
+	log.Info("Verifying repository", versionDetails.Repo, "exists...")
 	resp, err := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode == 404 {
 		err = promptRepoNotExist(versionDetails)
 	} else if resp.StatusCode != 200 {
@@ -174,49 +173,49 @@ func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadF
 }
 
 func promptPackageNotExist(versionDetails *utils.VersionDetails) error {
-    msg := "It looks like package '" + versionDetails.Package +
-       "' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
-       "You can create the package by running the package-create command. For example:\n" +
-       "jfrog bt pc " +
-       versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
-       " --vcs-url=https://github.com/example"
+	msg := "It looks like package '" + versionDetails.Package +
+			"' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
+			"You can create the package by running the package-create command. For example:\n" +
+			"jfrog bt pc " +
+			versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
+			" --vcs-url=https://github.com/example"
 
-    conf, err := config.ReadBintrayConf()
-    if err != nil {
-        return err
-    }
-    if conf.DefPackageLicenses == "" {
-        msg += " --licenses=Apache-2.0-example"
-    }
-    err = cliutils.CheckError(errors.New(msg))
-    return err
+	conf, err := config.ReadBintrayConf()
+	if err != nil {
+		return err
+	}
+	if conf.DefPackageLicenses == "" {
+		msg += " --licenses=Apache-2.0-example"
+	}
+	err = cliutils.CheckError(errors.New(msg))
+	return err
 }
 
 func promptRepoNotExist(versionDetails *utils.VersionDetails) error {
-    msg := "It looks like repository '" + versionDetails.Repo + "' does not exist.\n"
-    return cliutils.CheckError(errors.New(msg))
+	msg := "It looks like repository '" + versionDetails.Repo + "' does not exist.\n"
+	return cliutils.CheckError(errors.New(msg))
 }
 
 func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
-	logger.Logger.Info("Checking if version " + versionDetails.Version + " exists...")
+	log.Info("Checking if version", versionDetails.Version, "exists...")
 	resp, err := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode == 404 {
-		logger.Logger.Info("Creating version " + versionDetails.Version + "...")
+		log.Info("Creating version", versionDetails.Version, "...")
 		resp, body, err := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
 		if err != nil {
-		    return err
+			return err
 		}
 		if resp.StatusCode != 201 {
-			logger.Logger.Info("Bintray response: " + resp.Status)
+			log.Info("Bintray response:", resp.Status)
 			err = cliutils.CheckError(errors.New(cliutils.IndentJson(body)))
-            if err != nil {
-                return err
-            }
+			if err != nil {
+				return err
+			}
 		}
-		logger.Logger.Info("Bintray response: " + resp.Status)
+		log.Info("Bintray response:", resp.Status)
 	} else if resp.StatusCode != 200 {
 		err = cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
@@ -224,33 +223,33 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
 }
 
 func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat bool) cliutils.Artifact {
-    var uploadPath string
-    if targetPath != "" && !strings.HasSuffix(targetPath, "/") {
-        rootPath = targetPath
-        targetPath = ""
-    }
-    if flat {
-        uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
-        uploadPath = targetPath + uploadPath
-    } else {
-        uploadPath = targetPath + rootPath
-        uploadPath = cliutils.TrimPath(uploadPath)
-    }
-    return cliutils.Artifact{rootPath, uploadPath}
+	var uploadPath string
+	if targetPath != "" && !strings.HasSuffix(targetPath, "/") {
+		rootPath = targetPath
+		targetPath = ""
+	}
+	if flat {
+		uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
+		uploadPath = targetPath + uploadPath
+	} else {
+		uploadPath = targetPath + rootPath
+		uploadPath = cliutils.TrimPath(uploadPath)
+	}
+	return cliutils.Artifact{rootPath, uploadPath}
 }
 
 func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFlags) ([]cliutils.Artifact, error) {
-    var debianDefaultPath string
-    if targetPath == "" && flags.Deb != "" {
-        debianDefaultPath = getDebianDefaultPath(flags.Deb, packageName)
-    }
+	var debianDefaultPath string
+	if targetPath == "" && flags.Deb != "" {
+		debianDefaultPath = getDebianDefaultPath(flags.Deb, packageName)
+	}
 
 	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
 	if !ioutils.IsPathExists(rootPath) {
-		err := cliutils.CheckError(errors.New("Path does not exist: "+rootPath))
-        if err != nil {
-            return nil, err
-        }
+		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
+		if err != nil {
+			return nil, err
+		}
 	}
 	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
 
@@ -258,17 +257,17 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 	// If the path is a single file then return it
 	dir, err := ioutils.IsDir(rootPath)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if !dir {
-        artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
+		artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
 		return append(artifacts, artifact), nil
 	}
 
 	r, err := regexp.Compile(localpath)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 
 	var paths []string
@@ -277,15 +276,15 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 	} else {
 		paths, err = ioutils.ListFiles(rootPath)
 	}
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	for _, path := range paths {
 		dir, err := ioutils.IsDir(path)
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 		if dir {
 			continue
 		}
@@ -297,12 +296,12 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 		if size > 0 {
 			for i := 1; i < size; i++ {
 				group := strings.Replace(groups[i], "\\", "/", -1)
-				target = strings.Replace(target, "{"+strconv.Itoa(i)+"}", group, -1)
+				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
 			}
 
 			if target == "" || strings.HasSuffix(target, "/") {
 				if target == "" {
-				    target = debianDefaultPath
+					target = debianDefaultPath
 				}
 				if flags.Flat {
 					fileName, _ := ioutils.GetFileAndDirFromPath(path)
@@ -321,13 +320,13 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 
 type UploadFlags struct {
 	BintrayDetails *config.BintrayDetails
-	Deb         string
-	DryRun      bool
-	Recursive   bool
-	Flat        bool
-	Publish     bool
-	Override    bool
-	Explode     bool
-	Threads     int
-	UseRegExp   bool
+	Deb            string
+	DryRun         bool
+	Recursive      bool
+	Flat           bool
+	Publish        bool
+	Override       bool
+	Explode        bool
+	Threads        int
+	UseRegExp      bool
 }

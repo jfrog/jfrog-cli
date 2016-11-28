@@ -14,7 +14,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 var PrintSearchResult *bool
@@ -64,19 +64,23 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		return errors.New("Fail to create repository. Reason local repository with key: " + repoName + " already exist\n")
 	}
+	log.Info("Repository", repoName, "was created.")
 	return nil
 }
 
 func isRepoExist(repoName string) bool {
-	resp, _, _, _ := ioutils.SendGet(*Url + RepoDetailsUrl + repoName, true, ioutils.HttpClientDetails{User:*User, Password:*Password})
-	println(*Url + RepoDetailsUrl + repoName)
+	resp, _, _, err := ioutils.SendGet(*Url + RepoDetailsUrl + repoName, true, ioutils.HttpClientDetails{User:*User, Password:*Password})
+	if err != nil {
+		os.Exit(1)
+	}
+
 	if resp.StatusCode != 400 {
 		return true
 	}
 	return false
 }
 
-func CleanUp() {
+func InitTest() {
 	cleanArtifactory()
 	cleanFileSystem()
 }
@@ -84,7 +88,7 @@ func CleanUp() {
 func cleanFileSystem() {
 	isExist, err := ioutils.IsDirExists(Out)
 	if err != nil {
-		logger.Logger.Error(err)
+		log.Error(err)
 	}
 	if isExist {
 		os.RemoveAll(Out)
@@ -99,6 +103,15 @@ func cleanArtifactory() {
 	commands.Delete(deleteSpec, deleteFlags)
 }
 
+func DeleteBuild(buildName string) {
+	resp, body, err := ioutils.SendDelete(*Url + "api/build/" + buildName + "?deleteAll=1", nil, ioutils.HttpClientDetails{User:*User, Password:*Password})
+	if err != nil {
+		log.Error(err)
+	}
+	if resp.StatusCode != 200 {
+		log.Error(string(body))
+	}
+}
 func IsExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
@@ -215,21 +228,22 @@ func FixWinPath(filePath string) string {
 
 func GetSpecCommandAsArray(command, spec string) []string {
 	parsedCommand := fmt.Sprintf(SpecsCommand, command, spec)
-	fmt.Println(parsedCommand)
 	return AppendCredentials(strings.Split(parsedCommand, " "))
 }
 
 func GetDeleteCommandAsArray(spec string) []string {
 	parsedCommand := fmt.Sprintf(SpecsCommand, "del", spec)
 	parsedCommand += " --quiet=true"
-	fmt.Println(parsedCommand)
 	return AppendCredentials(strings.Split(parsedCommand, " "))
 }
 
 func AppendCredentials(args []string) []string {
 	credentialsParameters := fmt.Sprintf(CredentialsParameters, *Url, *User, *Password)
-	fmt.Println(credentialsParameters)
 	return append(args, strings.Split(credentialsParameters, " ")...)
+}
+
+func AppendBuildInfoParams(args []string, buildName, buildNumber string) []string {
+	return append(args, strings.Split(fmt.Sprintf(BuildNameNumberParameters, buildName, buildNumber), " ")...)
 }
 
 func GetPathsToDelete(specFile string) []utils.AqlSearchResultItem {
@@ -240,3 +254,8 @@ func GetPathsToDelete(specFile string) []utils.AqlSearchResultItem {
 	artifactsToDelete, _ := commands.GetPathsToDelete(deleteSpec, flags)
 	return artifactsToDelete
 }
+
+func LogCommand() {
+	fmt.Println("[Command:]", strings.Join(os.Args, " "))
+}
+

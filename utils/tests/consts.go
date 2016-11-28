@@ -22,6 +22,7 @@ const (
 
 	SpecsCommand = "jfrog rt %v --spec=%v"
 	CredentialsParameters = "--url=%v --user=%v --password=%v"
+	BuildNameNumberParameters = "--build-name=%v --build-number=%v"
 
 )
 
@@ -35,6 +36,18 @@ var SimpleUploadExpected = []string{
 	Repo1 + "/flat_recursive/c2.in",
 	Repo1 + "/flat_recursive/c1.in",
 	Repo1 + "/flat_recursive/c3.in",
+}
+
+var SimpleUploadExpected2 = []string{
+	Repo2 + "/flat_recursive/a3.in",
+	Repo2 + "/flat_recursive/a1.in",
+	Repo2 + "/flat_recursive/a2.in",
+	Repo2 + "/flat_recursive/b2.in",
+	Repo2 + "/flat_recursive/b3.in",
+	Repo2 + "/flat_recursive/b1.in",
+	Repo2 + "/flat_recursive/c2.in",
+	Repo2 + "/flat_recursive/c1.in",
+	Repo2 + "/flat_recursive/c3.in",
 }
 
 var MassiveMoveExpected = []string{

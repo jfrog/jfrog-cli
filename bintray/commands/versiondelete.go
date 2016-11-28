@@ -6,7 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func DeleteVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) error {
@@ -16,7 +16,7 @@ func DeleteVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
-	logger.Logger.Info("Deleting version: " + versionDetails.Version)
+	log.Info("Deleting version:", versionDetails.Version)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
     if err != nil {
@@ -28,6 +28,6 @@ func DeleteVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.
             return err
         }
 	}
-	logger.Logger.Info("Bintray response: " + resp.Status)
+	log.Info("Bintray response:", resp.Status)
 	return nil
 }

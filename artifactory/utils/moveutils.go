@@ -2,12 +2,12 @@ package utils
 
 import (
 	"strings"
-	"fmt"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"errors"
 )
 
 const (
@@ -21,44 +21,62 @@ func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) 
 		return
 	}
 
+	var successCount int
+	var failedCount int
+
 	for i := 0; i < len(moveSpec.Files); i++ {
+		var successPartial, failedPartial int
 		switch moveSpec.Get(i).GetSpecType() {
 		case WILDCARD:
-			err = moveWildcard(moveSpec.Get(i), flags, moveType)
+			successPartial, failedPartial, err = moveWildcard(moveSpec.Get(i), flags, moveType)
 		case SIMPLE:
-			err = moveSimple(moveSpec.Get(i), flags, moveType)
+			successPartial, failedPartial, err = moveSimple(moveSpec.Get(i), flags, moveType)
 		case AQL:
-			err = moveAql(moveSpec.Get(i), flags, moveType)
+			successPartial, failedPartial, err = moveAql(moveSpec.Get(i), flags, moveType)
 		}
+		successCount += successPartial
+		failedCount += failedPartial
 		if err != nil {
 			return
 		}
 	}
+
+	log.Info(moveMsgs[moveType].MovedMsg, strconv.Itoa(successCount), "artifacts.")
+	if failedCount > 0 {
+		err = cliutils.CheckError(errors.New("Failed " + moveMsgs[moveType].MovingMsg + " " +strconv.Itoa(failedCount) + " artifacts."))
+	}
+
 	return
 }
 
-func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+	log.Info("Searching artifacts...")
 	resultItems, err := AqlSearchBySpec(fileSpec.Aql, flags)
 	if err != nil {
-		return err
+		return
 	}
-	return moveFiles("", resultItems, fileSpec, flags, moveType)
+	LogSearchResults(len(resultItems))
+	successCount, failedCount, err = moveFiles("", resultItems, fileSpec, flags, moveType)
+	return
 }
 
-func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
 	if err != nil {
-		return err
+		return
 	}
+	log.Info("Searching artifacts...")
 	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
 	if err != nil {
-		return err
+		return
 	}
+	LogSearchResults(len(resultItems))
 	regexpPath := cliutils.PathToRegExp(fileSpec.Pattern)
-	return moveFiles(regexpPath, resultItems, fileSpec, flags, moveType)
+	successCount, failedCount, err = moveFiles(regexpPath, resultItems, fileSpec, flags, moveType)
+	return
 }
 
-func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
+func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 
 	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
 	patternFileName, _ := ioutils.GetFileAndDirFromPath(fileSpec.Pattern)
@@ -66,24 +84,28 @@ func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
 	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
 	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
 	if err != nil {
-		return err
+		return
 	}
 
 	if strings.HasSuffix(placeHolderTarget, "/") {
 		placeHolderTarget += patternFileName
 	}
-	_, err = moveFile(cleanPattern, placeHolderTarget, flags, moveType)
-	return err
+	success, err := moveFile(cleanPattern, placeHolderTarget, flags, moveType)
+	successCount = cliutils.Bool2Int(success)
+	failedCount = cliutils.Bool2Int(!success)
+	return
 }
 
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *Files, flags *MoveFlags, moveType MoveType) error {
-	movedCount := 0
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+	successCount = 0
+	failedCount = 0
 
 	for _, v := range resultItems {
 		destPathLocal := fileSpec.Target
-		isFlat, err := cliutils.StringToBool(fileSpec.Flat, false)
-		if err != nil {
-			return err
+		isFlat, e := cliutils.StringToBool(fileSpec.Flat, false)
+		if e != nil {
+			err = e
+			return
 		}
 		if !isFlat {
 			if strings.Contains(destPathLocal, "/") {
@@ -93,32 +115,34 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *F
 				destPathLocal = cliutils.TrimPath(destPathLocal + "/" + v.Path + "/")
 			}
 		}
-		destFile, err := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
-		if err != nil {
-			return err
+		destFile, e := cliutils.ReformatRegexp(regexpPath, v.GetFullUrl(), destPathLocal)
+		if e != nil {
+			err = e
+			return
 		}
 		if strings.HasSuffix(destFile, "/") {
 			destFile += v.Name
 		}
-		success, err := moveFile(v.GetFullUrl(), destFile, flags, moveType)
-		if err != nil {
-			return err
+		success, e := moveFile(v.GetFullUrl(), destFile, flags, moveType)
+		if e != nil {
+			err = e
+			return
 		}
-		movedCount += cliutils.Bool2Int(success)
-	}
 
-	logger.Logger.Info(moveMsgs[moveType].MovedMsg + " " + strconv.Itoa(movedCount) + " artifacts in Artifactory")
-	return nil
+		successCount += cliutils.Bool2Int(success)
+		failedCount += cliutils.Bool2Int(!success)
+	}
+	return
 }
 
 func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) (bool, error) {
-	message := moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to " + destPath
+	message := moveMsgs[moveType].MovingMsg + " artifact: " + sourcePath + " to: " + destPath
 	if flags.DryRun == true {
-		fmt.Println("[Dry run] " + message)
+		log.Info("[Dry run] ", message)
 		return true, nil
 	}
 
-	logger.Logger.Info(message)
+	log.Info(message)
 
 	moveUrl := flags.ArtDetails.Url
 	restApi := "api/" + string(moveType) + "/" + sourcePath
@@ -127,12 +151,16 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 		return false, err
 	}
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, _, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	resp, body, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
 
-	logger.Logger.Info("Artifactory response:", resp.Status)
+	if resp.StatusCode != 200 {
+		log.Error(string(body))
+	}
+
+	log.Debug("Artifactory response:", resp.Status)
 	return resp.StatusCode == 200, nil
 }
 

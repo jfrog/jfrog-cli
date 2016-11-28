@@ -6,16 +6,16 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) error {
-	logger.Logger.Info("Creating package: " + packageDetails.Package)
+	log.Info("Creating package:", packageDetails.Package)
 	resp, body, err := DoCreatePackage(packageDetails, flags)
 	if err != nil {
 	    return err
 	}
-	logger.Logger.Info("Bintray response: " + resp.Status)
+	log.Info("Bintray response:", resp.Status)
 	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }

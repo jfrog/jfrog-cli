@@ -26,13 +26,13 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 }
 
 func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, error) {
+details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, []byte, error) {
 	var err error
 	if details == nil {
 		details, err = ioutils.GetFileDetails(f.Name())
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	headers := map[string]string{
 		"X-Checksum-Sha1": details.Sha1,
@@ -131,6 +131,13 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 		ApiKey:    artifactoryDetails.ApiKey,
 		Headers:   artifactoryDetails.SshAuthHeaders,
 		Transport: artifactoryDetails.Transport}
+}
+
+func SetContentType(contentType string, headers *map[string]string) {
+	if *headers == nil {
+		*headers = make(map[string]string)
+	}
+	(*headers)["Content-Type"] = contentType
 }
 
 func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) (string, error) {

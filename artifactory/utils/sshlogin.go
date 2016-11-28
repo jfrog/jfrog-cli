@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func SshAuthentication(details *config.ArtifactoryDetails) error {
@@ -20,7 +20,7 @@ func SshAuthentication(details *config.ArtifactoryDetails) error {
 	    return err
 	}
 
-	logger.Logger.Info("Performing SSH authentication...")
+	log.Info("Performing SSH authentication...")
 	if details.SshKeyPath == "" {
 		err := cliutils.CheckError(errors.New("Cannot invoke the SshAuthentication function with no SSH key path. "))
         if err != nil {
@@ -79,7 +79,7 @@ func SshAuthentication(details *config.ArtifactoryDetails) error {
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(result.Href)
 	details.SshAuthHeaders = result.Headers
-	logger.Logger.Info("SSH authentication successful.")
+	log.Info("SSH authentication successful.")
 	return nil
 }
 
