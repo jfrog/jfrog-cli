@@ -116,6 +116,15 @@ func GetCommands() []cli.Command {
 				buildPromoteCmd(c)
 			},
 		},
+		{
+			Name:    "build-distribute",
+			Flags:   getBuildDistributeFlags(),
+			Aliases: []string{"bd"},
+			Usage:   "Distribute build.",
+			Action: func(c *cli.Context) {
+				buildDistributeCmd(c)
+			},
+		},
 	}
 }
 
@@ -384,7 +393,36 @@ func getBuildPromoteFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] If true, promotion is only simulated. No builds are actually promoted.",
+		},
+	}...)
+}
+
+func getBuildDistributeFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "source-repos",
+			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.",
+		},
+		cli.StringFlag{
+			Name:  "pgp-passphrase",
+			Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.",
+		},
+		cli.BoolFlag{
+			Name:  "publish",
+			Usage: "[Default: true] If true, builds are published when deployed to Bintray.",
+		},
+		cli.BoolFlag{
+			Name:  "override-existing-files",
+			Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.",
+		},
+		cli.BoolFlag{
+			Name:  "async",
+			Usage: "[Default: false] If true, the build will be distributed asynchronously.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.",
 		},
 	}...)
 }
@@ -690,6 +728,18 @@ func buildPromoteCmd(c *cli.Context) {
 	exitOnErr(err)
 }
 
+func buildDistributeCmd(c *cli.Context) {
+	if c.NArg() != 3 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	buildDistributeFlags, err := createBuildDistributeFlags(c)
+	if err != nil {
+		exitOnErr(err)
+	}
+	err = commands.BuildDistribute(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildDistributeFlags)
+	exitOnErr(err)
+}
+
 func vlidateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
@@ -906,6 +956,19 @@ func createBuildPromoteFlags(c *cli.Context) (promoteFlags *commands.BuildPromot
 	promoteFlags.IncludeDependencies = c.Bool("include-dependencies")
 	promoteFlags.Copy = c.Bool("copy")
 	promoteFlags.DryRun = c.Bool("dry-run")
+	return
+}
+
+func createBuildDistributeFlags(c *cli.Context) (distributeFlags *commands.BuildDistributeFlags, err error) {
+	distributeFlags = new(commands.BuildDistributeFlags)
+	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+
+	distributeFlags.Publish = cliutils.GetBoolFlagValue(c, "publish", true)
+	distributeFlags.OverrideExistingFiles = c.Bool("override-existing-files")
+	distributeFlags.GpgPassphrase = c.String("pgp-passphrase")
+	distributeFlags.Async = c.Bool("async")
+	distributeFlags.SourceRepo = c.String("source-repos")
+	distributeFlags.DryRun = c.Bool("dry-run")
 	return
 }
 
