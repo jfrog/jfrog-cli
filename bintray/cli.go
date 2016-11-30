@@ -186,6 +186,15 @@ func GetCommands() []cli.Command {
 				logs(c)
 			},
 		},
+		{
+			Name:    "firehose",
+			Usage:   "Open events notification channel.",
+			Aliases: []string{"fh"},
+			Flags:   getFirehoseFlags(),
+			Action: func(c *cli.Context) {
+				firehose(c)
+			},
+		},
 	}
 }
 
@@ -202,6 +211,16 @@ func getFlags() []cli.Flag {
 			Usage:  "[Mandatory] Bintray API key",
 		},
 	}
+}
+
+func getFirehoseFlags() []cli.Flag {
+	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "include",
+			Value: "",
+			Usage: "[Optional] List of events type in the form of \"value1;value2;...\" leave empty to include all.",
+		},
+	}...)
 }
 
 func getConfigFlags() []cli.Flag {
@@ -793,6 +812,26 @@ func logs(c *cli.Context) {
         }
 	} else {
 	    cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+}
+
+func firehose(c *cli.Context) {
+	bintrayDetails, err := createBintrayDetails(c, true)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
+	if len(c.Args()) != 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+
+	streamDetails := &commands.StreamDetails{
+		BintrayDetails: bintrayDetails,
+		Subject: c.Args()[0],
+		Include: c.String("include"),
+	}
+	err = commands.Firehose(streamDetails, os.Stdout)
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, "")
 	}
 }
 

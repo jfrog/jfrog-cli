@@ -35,7 +35,7 @@ func (logger *CliLogger) setLevel() {
 		logger.logLevel = INFO
 	}
 	logger.InfoLog = log.New(os.Stdout, "[Info:] ", 0)
-	logger.ErrorLog = log.New(os.Stdout, "[Error:] ", 0)
+	logger.ErrorLog = log.New(os.Stderr, "[Error:] ", 0)
 }
 
 func (logger CliLogger) Info(a ...interface{}) {
