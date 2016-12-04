@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/helpers"
 	"fmt"
 	"time"
