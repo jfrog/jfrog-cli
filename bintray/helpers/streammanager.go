@@ -15,20 +15,20 @@ import (
 
 const BINTRAY_RECONNECT_HEADER = "X-Bintray-Hose-Reconnect-Id"
 
-type FirehoseManager struct {
+type StreamManager struct {
 	HttpClientDetails ioutils.HttpClientDetails
 	Url               string
 	IncludeFilter     map[string]struct{}
 	ReconnectId       string
 }
 
-func (fh *FirehoseManager) ReadStream(resp *http.Response, writer io.Writer, lastServerInteraction *time.Time) {
+func (sm *StreamManager) ReadStream(resp *http.Response, writer io.Writer, lastServerInteraction *time.Time) {
 	ioReader := resp.Body
 	bodyReader := bufio.NewReader(ioReader)
-	fh.handleStream(bodyReader, writer, lastServerInteraction)
+	sm.handleStream(bodyReader, writer, lastServerInteraction)
 }
 
-func (fh *FirehoseManager) handleStream(ioReader io.Reader, writer io.Writer, lastServerInteraction *time.Time) {
+func (sm *StreamManager) handleStream(ioReader io.Reader, writer io.Writer, lastServerInteraction *time.Time) {
 	bodyReader := bufio.NewReader(ioReader)
 	pReader, pWriter := io.Pipe()
 	defer pWriter.Close()
@@ -48,16 +48,16 @@ func (fh *FirehoseManager) handleStream(ioReader io.Reader, writer io.Writer, la
 	}()
 	streamDecoder := json.NewDecoder(pReader)
 	streamEncoder := json.NewEncoder(writer)
-	fh.parseStream(streamDecoder, streamEncoder)
+	sm.parseStream(streamDecoder, streamEncoder)
 }
 
-func (fh *FirehoseManager) parseStream(streamDecoder *json.Decoder, streamEncoder *json.Encoder) error {
+func (sm *StreamManager) parseStream(streamDecoder *json.Decoder, streamEncoder *json.Encoder) error {
 	for {
 		var decodedJson map[string]interface{}
 		if e := streamDecoder.Decode(&decodedJson); e != nil {
 			return e
 		}
-		if _, ok := fh.IncludeFilter[decodedJson["type"].(string)]; ok || len(fh.IncludeFilter) == 0 {
+		if _, ok := sm.IncludeFilter[decodedJson["type"].(string)]; ok || len(sm.IncludeFilter) == 0 {
 			if e := streamEncoder.Encode(&decodedJson); e != nil {
 				return e
 			}
@@ -65,23 +65,23 @@ func (fh *FirehoseManager) parseStream(streamDecoder *json.Decoder, streamEncode
 	}
 }
 
-func (fh *FirehoseManager) isReconnection() bool {
-	return len(fh.ReconnectId) > 0
+func (sm *StreamManager) isReconnection() bool {
+	return len(sm.ReconnectId) > 0
 }
 
-func (fh *FirehoseManager) setReconnectHeader() {
-	if fh.HttpClientDetails.Headers == nil {
-		fh.HttpClientDetails.Headers = map[string]string{}
+func (sm *StreamManager) setReconnectHeader() {
+	if sm.HttpClientDetails.Headers == nil {
+		sm.HttpClientDetails.Headers = map[string]string{}
 	}
-	fh.HttpClientDetails.Headers[BINTRAY_RECONNECT_HEADER] = fh.ReconnectId
+	sm.HttpClientDetails.Headers[BINTRAY_RECONNECT_HEADER] = sm.ReconnectId
 }
 
-func (fh *FirehoseManager) Connect() (bool, *http.Response) {
-	if fh.isReconnection() {
-		fh.setReconnectHeader()
+func (sm *StreamManager) Connect() (bool, *http.Response) {
+	if sm.isReconnection() {
+		sm.setReconnectHeader()
 	}
-	logger.Logger.Info("Connecting to firehose...")
-	resp, _, _, e := ioutils.Stream(fh.Url, fh.HttpClientDetails)
+	logger.Logger.Info("Connecting...")
+	resp, _, _, e := ioutils.Stream(sm.Url, sm.HttpClientDetails)
 	if e != nil {
 		return false, resp
 	}
@@ -95,7 +95,7 @@ func (fh *FirehoseManager) Connect() (bool, *http.Response) {
 		return false, resp
 
 	}
-	fh.ReconnectId = resp.Header.Get(BINTRAY_RECONNECT_HEADER)
-	logger.Logger.Info("Connected successfully...")
+	sm.ReconnectId = resp.Header.Get(BINTRAY_RECONNECT_HEADER)
+	logger.Logger.Info("Connected.")
 	return true, resp
 }

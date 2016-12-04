@@ -12,29 +12,29 @@ import (
 	"strings"
 )
 
-const STREAM_URL = "%vstream?subject=%v"
+const STREAM_URL = "%vstream/%v"
 const TIMEOUT = 90
 const TIMEOUT_DURATION = TIMEOUT * time.Second
 const ON_ERROR_RECONNECT_DURATION = 3 * time.Second
 
-func Firehose(streamDetails *StreamDetails, writer io.Writer) (err error) {
+func Stream(streamDetails *StreamDetails, writer io.Writer) (err error) {
 	var resp *http.Response
 	var connected bool
 	lastServerInteraction := time.Now()
-	firehoseManager := createFirehoseManager(streamDetails)
+	streamManager := createStreamManager(streamDetails)
 
 	go func() {
 		for {
 			connected = false
 			var connectionEstablished bool
-			connectionEstablished, resp = firehoseManager.Connect()
+			connectionEstablished, resp = streamManager.Connect()
 			if !connectionEstablished {
 				time.Sleep(ON_ERROR_RECONNECT_DURATION)
 				continue
 			}
 			lastServerInteraction = time.Now()
 			connected = true
-			firehoseManager.ReadStream(resp, writer, &lastServerInteraction)
+			streamManager.ReadStream(resp, writer, &lastServerInteraction)
 		}
 	}()
 
@@ -48,7 +48,6 @@ func Firehose(streamDetails *StreamDetails, writer io.Writer) (err error) {
 			continue
 		}
 		if resp != nil {
-			logger.Logger.Info("Triggering firehose connection reset..")
 			resp.Body.Close()
 			time.Sleep(TIMEOUT_DURATION)
 			continue
@@ -69,8 +68,8 @@ func buildIncludeFilterMap(filterPattern string) map[string]struct{} {
 	}
 	return result
 }
-func createFirehoseManager(streamDetails *StreamDetails) *helpers.FirehoseManager {
-	return &helpers.FirehoseManager{
+func createStreamManager(streamDetails *StreamDetails) *helpers.StreamManager {
+	return &helpers.StreamManager{
 		Url: fmt.Sprintf(STREAM_URL, streamDetails.BintrayDetails.ApiUrl, streamDetails.Subject),
 		HttpClientDetails: utils.GetBintrayHttpClientDetails(streamDetails.BintrayDetails),
 		IncludeFilter: buildIncludeFilterMap(streamDetails.Include)}

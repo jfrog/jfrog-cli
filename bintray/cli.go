@@ -187,12 +187,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "firehose",
+			Name:    "stream",
 			Usage:   "Open events notification channel.",
-			Aliases: []string{"fh"},
-			Flags:   getFirehoseFlags(),
+			Aliases: []string{"st"},
+			Flags:   getStreamFlags(),
 			Action: func(c *cli.Context) {
-				firehose(c)
+				stream(c)
 			},
 		},
 	}
@@ -213,7 +213,7 @@ func getFlags() []cli.Flag {
 	}
 }
 
-func getFirehoseFlags() []cli.Flag {
+func getStreamFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "include",
@@ -815,7 +815,7 @@ func logs(c *cli.Context) {
 	}
 }
 
-func firehose(c *cli.Context) {
+func stream(c *cli.Context) {
 	bintrayDetails, err := createBintrayDetails(c, true)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
@@ -829,7 +829,7 @@ func firehose(c *cli.Context) {
 		Subject: c.Args()[0],
 		Include: c.String("include"),
 	}
-	err = commands.Firehose(streamDetails, os.Stdout)
+	err = commands.Stream(streamDetails, os.Stdout)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, "")
 	}
