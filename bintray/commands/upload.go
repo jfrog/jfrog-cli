@@ -224,6 +224,7 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
 
 func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat bool) cliutils.Artifact {
 	var uploadPath string
+	rootPathOrig := rootPath
 	if targetPath != "" && !strings.HasSuffix(targetPath, "/") {
 		rootPath = targetPath
 		targetPath = ""
@@ -235,23 +236,23 @@ func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat 
 		uploadPath = targetPath + rootPath
 		uploadPath = cliutils.TrimPath(uploadPath)
 	}
-	return cliutils.Artifact{rootPath, uploadPath}
+	return cliutils.Artifact{LocalPath: rootPathOrig, TargetPath: uploadPath}
 }
 
-func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFlags) ([]cliutils.Artifact, error) {
+func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFlags) ([]cliutils.Artifact, error) {
 	var debianDefaultPath string
 	if targetPath == "" && flags.Deb != "" {
 		debianDefaultPath = getDebianDefaultPath(flags.Deb, packageName)
 	}
 
-	rootPath := cliutils.GetRootPathForUpload(localpath, flags.UseRegExp)
+	rootPath := cliutils.GetRootPathForUpload(localPath, flags.UseRegExp)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
 			return nil, err
 		}
 	}
-	localpath = cliutils.PrepareLocalPathForUpload(localpath, flags.UseRegExp)
+	localPath = cliutils.PrepareLocalPathForUpload(localPath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
@@ -259,12 +260,13 @@ func getFilesToUpload(localpath, targetPath, packageName string, flags *UploadFl
 	if err != nil {
 		return nil, err
 	}
+
 	if !dir {
 		artifact := getSingleFileToUpload(rootPath, targetPath, debianDefaultPath, flags.Flat)
 		return append(artifacts, artifact), nil
 	}
 
-	r, err := regexp.Compile(localpath)
+	r, err := regexp.Compile(localPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return nil, err

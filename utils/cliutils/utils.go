@@ -22,10 +22,12 @@ const CmdXray = "xr"
 
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
+
 const (
 	OnErrorPanic OnError = "panic"
 	OnErrorReturnError OnError = "return"
 )
+
 var onError OnError
 
 func init() {
@@ -39,6 +41,7 @@ func init() {
 type ExitCode struct {
 	Code int
 }
+
 var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
 
@@ -306,7 +309,6 @@ func GetTestsFileSeperator() string {
 	}
 	return "/"
 }
-
 
 // Remove all chars from the given string.
 func StripChars(str, chr string) string {

@@ -178,18 +178,18 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 	if strings.Index(uploadFiles.Target, "/") < 0 {
 		uploadFiles.Target += "/"
 	}
-	isRegexpe, err := cliutils.StringToBool(uploadFiles.Regexp, false)
+	isRegexp, err := cliutils.StringToBool(uploadFiles.Regexp, false)
 	if err != nil {
 		return nil, err
 	}
-	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, isRegexpe)
+	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, isRegexp)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
 			return nil, err
 		}
 	}
-	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, isRegexpe)
+	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, isRegexp)
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
 	dir, err := ioutils.IsDir(rootPath)

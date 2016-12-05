@@ -19,11 +19,6 @@ const (
 	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
 
 	RepoDetailsUrl = "api/repositories/"
-
-	SpecsCommand = "jfrog rt %v --spec=%v"
-	CredentialsParameters = "--url=%v --user=%v --password=%v"
-	BuildNameNumberParameters = "--build-name=%v --build-number=%v"
-
 )
 
 var SimpleUploadExpected = []string{

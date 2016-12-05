@@ -11,40 +11,44 @@ import (
 	"sync"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, flags *utils.DownloadFlags) error {
+func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, flags *utils.DownloadFlags) error {
 	ioutils.CreateTempDirPath()
 	defer ioutils.RemoveTempDir()
 
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = versionDetails.Subject
 	}
-	path := BuildDownloadVersionUrl(versionDetails, flags.BintrayDetails)
+	path := BuildDownloadVersionUrl(versionDetails, flags.BintrayDetails, flags.IncludeUnpublished)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
-		err := cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		err := cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
+		if err != nil {
+			return err
+		}
 	}
 	var results []VersionFilesResult
 	err := json.Unmarshal(body, &results)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return err
+		return err
 	}
 
-	downloadFiles(results, versionDetails, flags)
+	downloadFiles(results, versionDetails, targetPath, flags)
 	return nil
 }
 
-func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) string {
-    return bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
+func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails, includeUnpublished bool) string {
+	urlPath := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+			versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version + "/files"
+	if includeUnpublished {
+		urlPath += "?include_unpublished=1"
+	}
+	return urlPath
 }
 
-func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails,
-	flags *utils.DownloadFlags) (err error) {
+func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails, targetPath string,
+flags *utils.DownloadFlags) (err error) {
 
 	size := len(results)
 	var wg sync.WaitGroup
@@ -53,16 +57,16 @@ func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDe
 		go func(threadId int) {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, false)
 			for j := threadId; j < size; j += flags.Threads {
-                pathDetails := &utils.PathDetails{
-                    Subject: versionDetails.Subject,
-                    Repo:    versionDetails.Repo,
-                    Path:    results[j].Path}
+				pathDetails := &utils.PathDetails{
+					Subject: versionDetails.Subject,
+					Repo:    versionDetails.Repo,
+					Path:    results[j].Path}
 
-				e := utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails,
+				e := utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails, targetPath,
 					flags, logMsgPrefix)
-                if e != nil {
-                    err = e
-                }
+				if e != nil {
+					err = e
+				}
 			}
 			wg.Done()
 		}(i)
@@ -75,9 +79,9 @@ func CreateVersionDetailsForDownloadVersion(versionStr string) (*utils.VersionDe
 	parts := strings.Split(versionStr, "/")
 	if len(parts) != 4 {
 		err := cliutils.CheckError(errors.New("Argument format should be subject/repository/package/version. Got " + versionStr))
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 	}
 	return utils.CreateVersionDetails(versionStr)
 }

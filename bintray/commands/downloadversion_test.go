@@ -11,7 +11,7 @@ func TestDownloadVersion(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-    url := BuildDownloadVersionUrl(versionDetails, tests.CreateBintrayDetails())
+    url := BuildDownloadVersionUrl(versionDetails, tests.CreateBintrayDetails(), false)
     expected := "https://api.bintray.com/packages/test-subject/test-repo/test-package/versions/ver-1.2/files"
     if expected != url {
         t.Error("Got unexpected url from BuildDownloadVersionUrl. Expected: " + expected + " Got " + url)

@@ -22,6 +22,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
+	"path"
 )
 
 var tempDirPath string
@@ -78,6 +79,21 @@ func GetFileAndDirFromPath(path string) (fileName, dir string) {
 	}
 	fileName = path
 	dir = ""
+	return
+}
+
+func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {
+	targetFileName, targetDirPath := GetFileAndDirFromPath(targetPath)
+
+	localTargetPath = targetDirPath
+	if !flat {
+		localTargetPath = path.Join(targetDirPath, relativePath)
+	}
+
+	fileName = originalFileName
+	if targetFileName != "" {
+		fileName = targetFileName
+	}
 	return
 }
 
@@ -423,6 +439,10 @@ func CreateTempDirPath() error {
 }
 
 func RemoveTempDir() error {
+	defer func() {
+		tempDirPath = ""
+	}()
+
 	exists, err := IsDirExists(tempDirPath)
 	if err != nil {
 		return err

@@ -161,7 +161,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "gpg-sign-file",
-			Usage:   "GPF Sign file",
+			Usage:   "GPG Sign file",
 			Aliases: []string{"gsf"},
 			Flags:   getGpgSigningFlags(),
 			Action: func(c *cli.Context) {
@@ -170,7 +170,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "gpg-sign-ver",
-			Usage:   "GPF Sign Version",
+			Usage:   "GPG Sign Version",
 			Aliases: []string{"gsv"},
 			Flags:   getGpgSigningFlags(),
 			Action: func(c *cli.Context) {
@@ -342,6 +342,11 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "split-count",
 			Value: "",
 			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
+		},
+		cli.StringFlag{
+			Name:  "include-unpublished",
+			Value: "",
+			Usage: "[Default: false] Download unpublished files.",
 		},
 	}
 }
@@ -678,10 +683,19 @@ func publishVersion(c *cli.Context) {
 }
 
 func downloadVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	len := len(c.Args())
+	if len < 1 || len > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	versionDetails, err := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
+	targetPath := ""
+	if len > 1 {
+		targetPath = c.Args()[1]
+		if strings.HasPrefix(targetPath, "/") {
+			targetPath = targetPath[1:]
+		}
+	}
+
     if err != nil {
         cliutils.Exit(cliutils.ExitCodeError, err.Error())
     }
@@ -689,7 +703,7 @@ func downloadVersion(c *cli.Context) {
     if err != nil {
         cliutils.Exit(cliutils.ExitCodeError, err.Error())
     }
-	commands.DownloadVersion(versionDetails, flags)
+	commands.DownloadVersion(versionDetails, targetPath, flags)
 }
 
 func upload(c *cli.Context) {
@@ -725,18 +739,18 @@ func downloadFile(c *cli.Context) {
     if err != nil {
         cliutils.Exit(cliutils.ExitCodeError, err.Error())
     }
-	var path string
+	targetPath := ""
 	if len > 1 {
-        path = c.Args()[1]
-        if strings.HasPrefix(path, "/") {
-            path = path[1:]
+        targetPath = c.Args()[1]
+        if strings.HasPrefix(targetPath, "/") {
+            targetPath = targetPath[1:]
         }
 	}
 	flags, err := createDownloadFlags(c)
     if err != nil {
         cliutils.Exit(cliutils.ExitCodeError, err.Error())
     }
-	commands.DownloadFile(pathDetails, path, flags)
+	commands.DownloadFile(pathDetails, targetPath, flags)
 }
 
 func signUrl(c *cli.Context) {
@@ -1042,10 +1056,11 @@ func createDownloadFlags(c *cli.Context) (*utils.DownloadFlags, error) {
     }
 	return &utils.DownloadFlags{
 		BintrayDetails: details,
-		Threads:        getThreadsOptionValue(c),
-		MinSplitSize:   getMinSplitFlag(c),
-		SplitCount:     getSplitCountFlag(c),
-		Flat:           flat}, nil
+		Threads:            getThreadsOptionValue(c),
+		MinSplitSize:       getMinSplitFlag(c),
+		SplitCount:         getSplitCountFlag(c),
+		IncludeUnpublished: cliutils.GetBoolFlagValue(c, "include-unpublished", false),
+		Flat:               flat}, nil
 }
 
 func createEntitlementFlagsForShowAndDelete(c *cli.Context) (*entitlements.EntitlementFlags, error) {
