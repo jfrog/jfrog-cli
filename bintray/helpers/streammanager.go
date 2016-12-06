@@ -13,7 +13,7 @@ import (
 	"encoding/json"
 )
 
-const BINTRAY_RECONNECT_HEADER = "X-Bintray-Hose-Reconnect-Id"
+const BINTRAY_RECONNECT_HEADER = "X-Bintray-Stream-Reconnect-Id"
 
 type StreamManager struct {
 	HttpClientDetails ioutils.HttpClientDetails
