@@ -25,7 +25,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 	if flags.IncludeUnpublished {
 		url += "?include-unpublished=1"
 	}
-	log.Info(logMsgPrefix, "Downloading", downloadPath)
+	log.Info(logMsgPrefix + "Downloading", downloadPath)
 
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
 	var details *ioutils.FileDetails
@@ -62,7 +62,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 		if err != nil {
 			return err
 		}
-		log.Info(logMsgPrefix, "Bintray response:", resp.Status)
+		log.Debug(logMsgPrefix, "Bintray response:", resp.Status)
 	} else {
 		// We should attempt to download the file concurrently, but only if it is provided through the DSN.
 		// To check if the file is provided through the DSN, we first attempt to download the file

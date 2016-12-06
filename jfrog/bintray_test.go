@@ -84,6 +84,34 @@ func TestBintraySimpleUpload(t *testing.T) {
 	cleanBintrayTest()
 }
 
+func TestBintrayUploadNoVersion(t *testing.T) {
+	initBintrayTest(t)
+
+	packageName := "simpleUploadPackage"
+	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	versionName := "1.0"
+	versionPath := packagePath + "/" + versionName
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+
+	//Upload file
+	fileName := "a1.in"
+	uploadFilePath := tests.GetTestResourcesPath() + "a/" + fileName
+	bintrayCli.Exec("upload", uploadFilePath, versionPath)
+
+	//Check file uploaded
+	expected := []tests.PackageSearchResultItem{{
+		Repo:       tests.BintrayRepo1,
+		Path:       fileName,
+		Package:    packageName,
+		Name:       fileName,
+		Version:    "1.0",
+		Sha1:       "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
+	assertPackageFiles(expected, getPackageFiles(packageName), t)
+
+	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	cleanBintrayTest()
+}
+
 func TestBintrayUploadOverride(t *testing.T) {
 	initBintrayTest(t)
 
@@ -112,6 +140,21 @@ func TestBintrayUploads(t *testing.T) {
 	testBintrayUpload(t, "a/(.*)", "--flat=false --recursive=true --regexp=true", tests.BintrayExpectedUploadNonFlatRecursive)
 	testBintrayUpload(t, "a/(.*)", "--flat=false --recursive=false --regexp=true", tests.BintrayExpectedUploadNonFlatNonRecursive)
 
+	cleanBintrayTest()
+}
+
+func TestBintrayLogs(t *testing.T) {
+	initBintrayTest(t)
+
+	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
+	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	createPackageAndVersion(packagePath, versionPath)
+
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true --publish=true")
+	assertPackageFiles(tests.BintrayExpectedUploadFlatRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
+	bintrayCli.Exec("logs", packagePath)
+
+	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 	cleanBintrayTest()
 }
 

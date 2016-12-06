@@ -1,8 +1,7 @@
 package commands
 
 import (
-    "errors"
-	"fmt"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -14,26 +13,24 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}
-	var message string
+	version := versionDetails.Version
 	if versionDetails.Version == "" {
 		versionDetails.Version = "_latest"
-		message = "Getting latest version"
-	} else {
-		message = "Getting version: " + versionDetails.Version
+		version = "latest"
 	}
-	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
-	log.Info(message)
+	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
+			versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
+
+	log.Info("Getting version details...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
-	if resp.StatusCode == 200 {
-		fmt.Println(cliutils.IndentJson(body))
-	} else {
-		err := cliutils.CheckError(errors.New("Bintray response: "+resp.Status))
-        if err != nil {
-            return err
-        }
+
+	if resp.StatusCode != 200 {
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Version", version, "details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }

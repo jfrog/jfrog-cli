@@ -1,52 +1,50 @@
 package commands
 
 import (
-    "errors"
-    "fmt"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetails) (err error) {
+func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetails) error {
 	if details.User == "" {
 		details.User = packageDetails.Subject
 	}
 	path := details.ApiUrl + "packages/" + packageDetails.Subject + "/" +
-		packageDetails.Repo + "/" + packageDetails.Package + "/logs/"
+			packageDetails.Repo + "/" + packageDetails.Package + "/logs/"
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
+	log.Info("Getting logs...")
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
+
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
-	return
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Log details:", "\n" + cliutils.IndentJson(body))
+	return nil
 }
 
 func DownloadLog(packageDetails *utils.VersionDetails, logName string,
-    details *config.BintrayDetails) (err error) {
+details *config.BintrayDetails) error {
 	if details.User == "" {
 		details.User = packageDetails.Subject
 	}
 	path := details.ApiUrl + "packages/" + packageDetails.Subject + "/" +
-		packageDetails.Repo + "/" + packageDetails.Package + "/logs/" + logName
+			packageDetails.Repo + "/" + packageDetails.Package + "/logs/" + logName
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
+	log.Info("Downloading logs...")
 	resp, err := ioutils.DownloadFile(path, "", logName, httpClientsDetails)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status))
-        if err != nil {
-            return
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Downloaded logs.")
 	return nil
 }

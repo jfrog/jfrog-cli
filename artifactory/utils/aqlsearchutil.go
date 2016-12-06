@@ -36,12 +36,11 @@ func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, err
 	if err != nil {
 		return nil, err
 	}
-
-	log.Debug("Artifactory response: ", resp.Status)
 	if resp.StatusCode != 200 {
-		return nil, cliutils.CheckError(errors.New(string(json)))
+		return nil, cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(json)))
 	}
 
+	log.Debug("Artifactory response: ", resp.Status)
 	resultItems, err := parseAqlSearchResponse(json)
 	return resultItems, err
 }

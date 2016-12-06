@@ -6,9 +6,9 @@ import (
 )
 
 func TestShowAndCreateEntitlements(t *testing.T) {
-    repo := CreateVersionDetails("my-subject/my-repo")
-    pkg := CreateVersionDetails("my-subject/my-repo/my-pkg")
-    version := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
+    repo, _ := CreateVersionDetails("my-subject/my-repo")
+    pkg, _ := CreateVersionDetails("my-subject/my-repo/my-pkg")
+    version, _ := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
 
     bintrayDetails := tests.CreateBintrayDetails()
 
@@ -32,9 +32,9 @@ func TestShowAndCreateEntitlements(t *testing.T) {
 }
 
 func TestShowUpdateAndDeleteEntitlement(t *testing.T) {
-    repo := CreateVersionDetails("my-subject/my-repo")
-    pkg := CreateVersionDetails("my-subject/my-repo/my-pkg")
-    version := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
+    repo, _ := CreateVersionDetails("my-subject/my-repo")
+    pkg, _ := CreateVersionDetails("my-subject/my-repo/my-pkg")
+    version, _ := CreateVersionDetails("my-subject/my-repo/my-pkg/ver-1.9.1")
 
     bintrayDetails := tests.CreateBintrayDetails()
 

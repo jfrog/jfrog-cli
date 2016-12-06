@@ -71,6 +71,18 @@ func CheckErrorWithMessage(err error, message string) error {
 	return err
 }
 
+func ExitOnErr(err error) {
+	if err != nil {
+		Exit(ExitCodeError, "")
+	}
+}
+
+func ExitOnErrWithMsg(err error) {
+	if err != nil {
+		Exit(ExitCodeError, err.Error())
+	}
+}
+
 func Exit(exitCode ExitCode, msg string) {
 	if msg != "" {
 		log.Error(msg)
@@ -147,7 +159,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 	if dryRun {
 		strDryRun = "[Dry run] "
 	}
-	return "[Thread " + strconv.Itoa(threadId) + "]" + strDryRun
+	return "[Thread " + strconv.Itoa(threadId) + "] " + strDryRun
 }
 
 func GetVersion() string {

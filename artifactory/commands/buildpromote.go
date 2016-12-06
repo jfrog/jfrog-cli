@@ -55,9 +55,11 @@ func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromote
 	}
 
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(string(body)))
+		err = cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 		return
 	}
+
+	log.Debug("Artifactory response:", resp.Status)
 	log.Info("Promoted build", buildName , "#" + buildNumber, "to:", targetRepo, "repository.")
 	return
 }

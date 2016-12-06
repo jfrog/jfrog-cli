@@ -1,8 +1,7 @@
 package commands
 
 import (
-    "errors"
-	"fmt"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -15,22 +14,20 @@ func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config
 		bintrayDetails.User = versionDetails.Subject
 	}
 	url := bintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package + "/" +
-		versionDetails.Version + "/publish"
+			versionDetails.Repo + "/" + versionDetails.Package + "/" +
+			versionDetails.Version + "/publish"
 
-	log.Info("Publishing version:", versionDetails.Version)
+	log.Info("Publishing version...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, err := ioutils.SendPost(url, nil, httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	log.Info("Bintray response:", resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Published version", versionDetails.Version + ", details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }

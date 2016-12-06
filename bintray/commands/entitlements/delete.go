@@ -1,11 +1,11 @@
 package entitlements
 
 import (
-    "errors"
-	"fmt"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) error {
@@ -15,17 +15,17 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 	}
 
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Deleting entitlement...")
 	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Deleted entitlement, details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }
 

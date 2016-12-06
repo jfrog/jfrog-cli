@@ -263,9 +263,7 @@ func configure(c *cli.Context) {
 		}
 	} else {
 		flags, err := createConfigFlags(c)
-        if err != nil {
-            cliutils.Exit(cliutils.ExitCodeError, err.Error())
-        }
+        cliutils.ExitOnErr(err)
 		commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
 	}
 }

@@ -161,11 +161,11 @@ func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 		if err != nil {
 			return err
 		}
+		if resp.StatusCode != 204 {
+			return cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+		}
 
 		log.Debug("Artifactory response:", resp.Status)
-		if resp.StatusCode != 204 {
-			return cliutils.CheckError(errors.New(string(body)))
-		}
 	}
 	return nil
 }

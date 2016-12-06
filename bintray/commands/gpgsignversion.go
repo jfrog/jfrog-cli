@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -15,27 +14,25 @@ func GpgSignVersion(versionDetails *utils.VersionDetails, passphrase string, bin
 		bintrayDetails.User = versionDetails.Subject
 	}
 	url := bintrayDetails.ApiUrl + "gpg/" + versionDetails.Subject + "/" +
-		versionDetails.Repo + "/" + versionDetails.Package +
-		"/versions/" + versionDetails.Version
+			versionDetails.Repo + "/" + versionDetails.Package +
+			"/versions/" + versionDetails.Version
 
 	var data string
 	if passphrase != "" {
 		data = "{ \"passphrase\": \"" + passphrase + "\" }"
 	}
 
-	log.Info("GPG signing version:", versionDetails.Version)
+	log.Info("GPG signing version...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	log.Info("Bintray response:", resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("GPG signed version", versionDetails.Version, ", details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }

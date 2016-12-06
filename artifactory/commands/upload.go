@@ -271,7 +271,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		targetPath += getDebianMatrixParams(flags.Deb)
 	}
 
-	log.Info(logMsgPrefix, "Uploading artifact:", localPath)
+	log.Info(logMsgPrefix + "Uploading artifact:", localPath)
 	file, err := os.Open(localPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -302,7 +302,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 			return utils.ArtifactBuildInfo{}, false, err
 		}
 		if resp.StatusCode != 201 && resp.StatusCode != 200 {
-			log.Error(logMsgPrefix + string(body))
+			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 		}
 	}
 	if !flags.DryRun {

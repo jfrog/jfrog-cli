@@ -139,7 +139,7 @@ func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildD
 					err = e
 					break
 				}
-				log.Info(logMsgPrefix, "Downloading", dependecies[j].Dependency.GetFullUrl())
+				log.Info(logMsgPrefix + "Downloading", dependecies[j].Dependency.GetFullUrl())
 				if flags.DryRun {
 					continue
 				}
@@ -184,7 +184,7 @@ func logDownloadTotals(buildDependencies [][]utils.DependenciesBuildInfo) {
 	for _, v := range buildDependencies {
 		totalDownloded += len(v)
 	}
-	log.Info("Downloaded ", strconv.Itoa(totalDownloded), "artifacts.")
+	log.Info("Downloaded", strconv.Itoa(totalDownloded), "artifacts.")
 }
 
 func createBuildDependencyItem(resultItem utils.AqlSearchResultItem) utils.DependenciesBuildInfo {

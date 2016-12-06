@@ -1,42 +1,40 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"errors"
 	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) (err error) {
+func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
 	path := GetAccessKeysPath(bintrayDetails, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
+	log.Info("Getting access keys...")
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-		if err != nil {
-		    return
-		}
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
-	return
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Access keys details:", "\n" + cliutils.IndentJson(body))
+	return nil
 }
 
 func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Getting access key...")
 	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-		if err != nil {
-		    return
-		}
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Access keys details:", "\n" + cliutils.IndentJson(body))
 	return
 }
 
@@ -44,18 +42,17 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	data := BuildAccessKeyJson(flags, true)
 	url := GetAccessKeysPath(flags.BintrayDetails, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Creating access key...")
 	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
-	    return
+		return
 	}
 	if resp.StatusCode != 201 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-		if err != nil {
-		    return
-		}
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Created access key, details:", "\n" + cliutils.IndentJson(body))
 	return
 }
 
@@ -63,18 +60,17 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
 	data := BuildAccessKeyJson(flags, false)
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Updating access key...")
 	resp, body, err := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Updated access key, details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }
 
@@ -84,9 +80,9 @@ func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 	var blackCidrs string
 	if flags.ExistenceCheckUrl != "" {
 		existenceCheck = "\"existence_check\": {" +
-			"\"url\": \"" + flags.ExistenceCheckUrl + "\"," +
-			"\"cache_for_secs\": \"" + strconv.Itoa(flags.ExistenceCheckCache) + "\"" +
-			"}"
+				"\"url\": \"" + flags.ExistenceCheckUrl + "\"," +
+				"\"cache_for_secs\": \"" + strconv.Itoa(flags.ExistenceCheckCache) + "\"" +
+				"}"
 	}
 	if flags.WhiteCidrs != "" {
 		whiteCidrs = "\"white_cidrs\": " + cliutils.BuildListString(flags.WhiteCidrs)
@@ -99,7 +95,7 @@ func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 		data += "\"id\": \"" + flags.Id + "\","
 	}
 	if flags.Password != "" {
-        data += "\"password\": \"" + flags.Password + "\","
+		data += "\"password\": \"" + flags.Password + "\","
 	}
 	data += "\"expiry\": \"" + flags.Expiry + "\""
 
@@ -120,17 +116,17 @@ func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
 func DeleteAccessKey(flags *AccessKeyFlags, org string) error {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Deleting access key...")
 	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". "+utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Deleted access key.")
 	return nil
 }
 

@@ -2,46 +2,50 @@ package entitlements
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails) (err error) {
+func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails) error {
 	url := BuildEntitlementsUrl(bintrayDetails, details)
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = details.Subject
 	}
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
-	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return
-        }
+	log.Info("Getting entitlements...")
+	resp, body, _, err := ioutils.SendGet(url, true, httpClientsDetails)
+	if err != nil {
+		return err
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
-	return
+	if resp.StatusCode != 200 {
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+	}
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Entitlements details:", "\n" + cliutils.IndentJson(body))
+	return nil
 }
 
-func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) (err error) {
+func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) error {
 	url := BuildEntitlementUrl(flags.BintrayDetails, details, flags.Id)
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = details.Subject
 	}
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
-	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return
-        }
+	log.Info("Getting entitlement...")
+	resp, body, _, err := ioutils.SendGet(url, true, httpClientsDetails)
+	if err != nil {
+		return err
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
-	return
+	if resp.StatusCode != 200 {
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+	}
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Entitlement details:", "\n" + cliutils.IndentJson(body))
+	return nil
 }
 

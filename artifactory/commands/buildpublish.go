@@ -60,9 +60,10 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 		return err
 	}
 	if resp.StatusCode != 204 {
-		return cliutils.CheckError(errors.New(string(body)))
+		return cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
+	log.Debug("Artifactory response:", resp.Status)
 	log.Info("Build info successfully deployed. Browse it in Artifactory under " + flags.ArtDetails.Url + "webapp/builds/" + buildName + "/" + buildNumber)
 	if err = utils.RemoveBuildDir(buildName, buildNumber); err != nil {
 		return err

@@ -12,10 +12,10 @@ import (
 	"strings"
 )
 
-func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDistributeFlags) (err error) {
-	err = utils.PreCommandSetup(flags)
+func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDistributeFlags) error {
+	err := utils.PreCommandSetup(flags)
 	if err != nil {
-		return
+		return err
 	}
 
 	dryRun := ""
@@ -29,7 +29,7 @@ func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDist
 	restApi := path.Join("api/build/distribute/", buildName, buildNumber)
 	requestFullUrl, err := utils.BuildArtifactoryUrl(distributeUrl, restApi, make(map[string]string))
 	if err != nil {
-		return
+		return err
 	}
 
 	data := DistributionConfigContent{
@@ -42,10 +42,7 @@ func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDist
 		DryRun:                 flags.DryRun}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
-		err = cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
-		if err != nil {
-			return
-		}
+		return cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
 
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
@@ -53,20 +50,20 @@ func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDist
 
 	resp, body, err := ioutils.SendPost(requestFullUrl, requestContent, httpClientsDetails)
 	if err != nil {
-		return
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
-	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(string(body)))
-		return
-	}
+	log.Debug("Artifactory response:", resp.Status)
 	if flags.Async && !flags.DryRun {
 		log.Info("Asynchronously distributed build", buildName, "#" + buildNumber, "to:", targetRepo, "repository, logs are avalable in Artifactory.")
-		return
+		return nil
 	}
 
 	log.Info(dryRun + "Distributed build", buildName, "#" + buildNumber, "to:", targetRepo, "repository.")
-	return
+	return nil
 }
 
 type BuildDistributeFlags struct {

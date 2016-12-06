@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"errors"
 )
 
 func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) error {
@@ -17,14 +17,19 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) e
 	url := flags.BintrayDetails.ApiUrl + "signed_url/" + path
 	data := builJson(flags)
 
-	log.Info("Signing URL for:", path)
+	log.Info("Signing URL...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
-	log.Info("Bintray response:", resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	if resp.StatusCode != 200 {
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+	}
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Signed URL", path + ", details:", "\n" + cliutils.IndentJson(body))
 	return nil
 }
 

@@ -157,7 +157,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 	}
 
 	if resp.StatusCode != 200 {
-		log.Error(string(body))
+		log.Error("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 	}
 
 	log.Debug("Artifactory response:", resp.Status)

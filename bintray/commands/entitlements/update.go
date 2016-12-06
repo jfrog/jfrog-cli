@@ -2,10 +2,10 @@ package entitlements
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) error {
@@ -15,18 +15,17 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 	}
 	data := buildEntitlementJson(flags, true)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
+	log.Info("Updating entitlement...")
 	resp, body, err := ioutils.SendPatch(path, []byte(data), httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	fmt.Println("Bintray response: " + resp.Status)
-	fmt.Println(cliutils.IndentJson(body))
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Updated entitlement, details:", "\n" + cliutils.IndentJson(body))
 	return err
 }
 

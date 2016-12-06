@@ -16,18 +16,17 @@ func DeleteVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 
-	log.Info("Deleting version:", versionDetails.Version)
+	log.Info("Deleting version...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
     if err != nil {
         return err
     }
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	log.Info("Bintray response:", resp.Status)
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Deleted version", versionDetails.Version + ".")
 	return nil
 }

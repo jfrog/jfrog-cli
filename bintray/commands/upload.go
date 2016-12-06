@@ -12,6 +12,7 @@ import (
 	"sync"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"time"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
@@ -71,7 +72,7 @@ totalFailed int, err error) {
 						uploadCount[threadId]++
 					}
 				} else {
-					log.Info("[Dry Run] Uploading artifact:", url)
+					log.Info("[Dry Run] Uploading artifact:", artifacts[j].LocalPath)
 					uploadCount[threadId]++
 				}
 			}
@@ -84,11 +85,8 @@ totalFailed int, err error) {
 	for _, i := range uploadCount {
 		totalUploaded += i
 	}
-	log.Info("Uploaded", strconv.Itoa(totalUploaded), " artifacts to Bintray.")
+	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
 	totalFailed = size - totalUploaded
-	if totalFailed > 0 {
-		log.Info("Failed uploading", strconv.Itoa(totalFailed), " artifacts to Bintray.")
-	}
 	return
 }
 
@@ -123,7 +121,7 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
 }
 
 func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) (bool, error) {
-	log.Info(logMsgPrefix, "Uploading artifact to:", url)
+	log.Info(logMsgPrefix + "Uploading artifact:", artifact.LocalPath)
 
 	f, err := os.Open(artifact.LocalPath)
 	err = cliutils.CheckError(err)
@@ -132,12 +130,16 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	}
 	defer f.Close()
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, _, err := ioutils.UploadFile(f, url, httpClientsDetails)
+	resp, body, err := ioutils.UploadFile(f, url, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
+	log.Debug(logMsgPrefix + "Bintray response:", resp.Status)
+	if resp.StatusCode != 201 && resp.StatusCode != 200 {
+		log.Error(logMsgPrefix, "Bintray response:", resp.Status)
+		log.Error(logMsgPrefix, string(body))
+	}
 
-	log.Info(logMsgPrefix, "Bintray response:", resp.Status)
 	return resp.StatusCode == 201 || resp.StatusCode == 200, nil
 }
 
@@ -197,25 +199,22 @@ func promptRepoNotExist(versionDetails *utils.VersionDetails) error {
 }
 
 func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
-	log.Info("Checking if version", versionDetails.Version, "exists...")
+	log.Info("Verifying version", versionDetails.Version, "exists...")
 	resp, err := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode == 404 {
-		log.Info("Creating version", versionDetails.Version, "...")
+		log.Info("Creating version...")
 		resp, body, err := DoCreateVersion(versionDetails, uploadFlags.BintrayDetails)
 		if err != nil {
 			return err
 		}
 		if resp.StatusCode != 201 {
-			log.Info("Bintray response:", resp.Status)
-			err = cliutils.CheckError(errors.New(cliutils.IndentJson(body)))
-			if err != nil {
-				return err
-			}
+			return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 		}
-		log.Info("Bintray response:", resp.Status)
+		log.Debug("Bintray response:", resp.Status)
+		log.Info("Created version", versionDetails.Version + ".")
 	} else if resp.StatusCode != 200 {
 		err = cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
@@ -272,6 +271,8 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 		return nil, err
 	}
 
+	spinner := cliutils.NewSpinner("[Info:] Prepering files for upload:", time.Second)
+	spinner.Start()
 	var paths []string
 	if flags.Recursive {
 		paths, err = ioutils.ListFilesRecursive(rootPath)
@@ -317,6 +318,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 			artifacts = append(artifacts, cliutils.Artifact{path, target})
 		}
 	}
+	spinner.Stop()
 	return artifacts, nil
 }
 

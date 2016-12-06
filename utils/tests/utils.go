@@ -30,7 +30,7 @@ func init() {
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
-	TestBintray = flag.Bool("test.bintray", true, "Test Bintray")
+	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")
 }

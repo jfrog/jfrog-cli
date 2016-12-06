@@ -523,9 +523,9 @@ func configCmd(c *cli.Context) {
 		}
 	} else {
 		configFlags, err := createConfigFlags(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 		_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	}
 }
 
@@ -541,15 +541,15 @@ func downloadCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		downloadSpec, err = getDownloadSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		downloadSpec = createDefaultDownloadSpec(c)
 	}
 
 	flags, err := createDownloadFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	err = commands.Download(downloadSpec, flags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func uploadCmd(c *cli.Context) {
@@ -564,15 +564,15 @@ func uploadCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		uploadSpec, err = getUploadSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
 
 	flags, err := createUploadFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	if failed > 0 {
 		if uploaded > 0 {
 			cliutils.Exit(cliutils.ExitCodeWarning, "")
@@ -593,15 +593,15 @@ func moveCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		moveSpec, err = getMoveSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		moveSpec = createDefaultMoveSpec(c)
 	}
 
 	flags, err := createMoveFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	err = commands.Move(moveSpec, flags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func copyCmd(c *cli.Context) {
@@ -616,15 +616,15 @@ func copyCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		copySpec, err = getMoveSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		copySpec = createDefaultMoveSpec(c)
 	}
 
 	flags, err := createMoveFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	err = commands.Copy(copySpec, flags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func deleteCmd(c *cli.Context) {
@@ -639,16 +639,16 @@ func deleteCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		deleteSpec, err = getDeleteSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		deleteSpec = createDefaultDeleteSpec(c)
 	}
 
 	flags, err := createDeleteFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	if !c.Bool("quiet") {
 		pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 		if len(pathsToDelete) < 1 {
 			return
 		}
@@ -662,10 +662,10 @@ func deleteCmd(c *cli.Context) {
 			return
 		}
 		err = commands.DeleteFiles(pathsToDelete, flags)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		err = commands.Delete(deleteSpec, flags)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	}
 }
 
@@ -681,17 +681,17 @@ func searchCmd(c *cli.Context) {
 	if c.IsSet("spec") {
 		var err error
 		searchSpec, err = getSearchSpec(c)
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	} else {
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
 	flags, err := createSearchFlags(c)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	SearchResult, err := commands.Search(searchSpec, flags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(SearchResult)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 
 	fmt.Println(string(cliutils.IndentJson(result)))
 }
@@ -699,21 +699,21 @@ func searchCmd(c *cli.Context) {
 func buildPublishCmd(c *cli.Context) {
 	vlidateBuildInfoArgument(c)
 	buildInfoFlags, err := createBuildInfoFlags(c)
-	exitOnErrWithMsg(err)
+	cliutils.ExitOnErrWithMsg(err)
 	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) {
 	vlidateBuildInfoArgument(c)
 	err := commands.BuildCollectEnv(c.Args().Get(0), c.Args().Get(1))
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func buildCleanCmd(c *cli.Context) {
 	vlidateBuildInfoArgument(c)
 	err := commands.BuildClean(c.Args().Get(0), c.Args().Get(1))
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func buildPromoteCmd(c *cli.Context) {
@@ -722,10 +722,10 @@ func buildPromoteCmd(c *cli.Context) {
 	}
 	buildPromoteFlags, err := createBuildPromoteFlags(c)
 	if err != nil {
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	}
 	err = commands.BuildPromote(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildPromoteFlags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func buildDistributeCmd(c *cli.Context) {
@@ -734,10 +734,10 @@ func buildDistributeCmd(c *cli.Context) {
 	}
 	buildDistributeFlags, err := createBuildDistributeFlags(c)
 	if err != nil {
-		exitOnErr(err)
+		cliutils.ExitOnErr(err)
 	}
 	err = commands.BuildDistribute(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildDistributeFlags)
-	exitOnErr(err)
+	cliutils.ExitOnErr(err)
 }
 
 func vlidateBuildInfoArgument(c *cli.Context) {
@@ -1097,14 +1097,3 @@ func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
 	}
 }
 
-func exitOnErr(err error) {
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "")
-	}
-}
-
-func exitOnErrWithMsg(err error) {
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
-}

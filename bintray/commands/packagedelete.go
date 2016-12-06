@@ -1,7 +1,7 @@
 package commands
 
 import (
-    "errors"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -14,20 +14,19 @@ func DeletePackage(packageDetails *utils.VersionDetails, bintrayDetails *config.
 		bintrayDetails.User = packageDetails.Subject
 	}
 	url := bintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
-		packageDetails.Repo + "/" + packageDetails.Package
+			packageDetails.Repo + "/" + packageDetails.Package
 
-	log.Info("Deleting package:", packageDetails.Package)
+	log.Info("Deleting package...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
-	    return err
+		return err
 	}
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	log.Info("Bintray response:", resp.Status)
+
+	log.Debug("Bintray response:", resp.Status)
+	log.Info("Deleted package", packageDetails.Package + ".")
 	return nil
 }

@@ -9,9 +9,11 @@ import (
 	"strings"
 	"errors"
 	"sync"
+	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, flags *utils.DownloadFlags) error {
+func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, flags *utils.DownloadFlags) (totalDownloded, totalFailed int, err error) {
 	ioutils.CreateTempDirPath()
 	defer ioutils.RemoveTempDir()
 
@@ -22,20 +24,21 @@ func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, fl
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
-		err := cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
+		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
 		if err != nil {
-			return err
+			return
 		}
 	}
 	var results []VersionFilesResult
-	err := json.Unmarshal(body, &results)
-	err = cliutils.CheckError(err)
-	if err != nil {
-		return err
+	err = json.Unmarshal(body, &results)
+	if cliutils.CheckError(err) != nil {
+		return
 	}
 
-	downloadFiles(results, versionDetails, targetPath, flags)
-	return nil
+	totalDownloded, err = downloadFiles(results, versionDetails, targetPath, flags)
+	log.Info("Downloaded", strconv.Itoa(totalDownloded), "artifacts.")
+	totalFailed = len(results) - totalDownloded
+	return
 }
 
 func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails, includeUnpublished bool) string {
@@ -48,9 +51,10 @@ func BuildDownloadVersionUrl(versionDetails *utils.VersionDetails, bintrayDetail
 }
 
 func downloadFiles(results []VersionFilesResult, versionDetails *utils.VersionDetails, targetPath string,
-flags *utils.DownloadFlags) (err error) {
+flags *utils.DownloadFlags) (totalDownloaded int, err error) {
 
 	size := len(results)
+	downloadedForThread := make([]int, flags.Threads)
 	var wg sync.WaitGroup
 	for i := 0; i < flags.Threads; i++ {
 		wg.Add(1)
@@ -66,12 +70,18 @@ flags *utils.DownloadFlags) (err error) {
 					flags, logMsgPrefix)
 				if e != nil {
 					err = e
+					continue
 				}
+				downloadedForThread[threadId]++
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+
+	for i := range downloadedForThread {
+		totalDownloaded += downloadedForThread[i]
+	}
 	return
 }
 
