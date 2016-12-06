@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/logger"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"time"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"errors"
 	"bufio"
 	"encoding/json"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 const BINTRAY_RECONNECT_HEADER = "X-Bintray-Stream-Reconnect-Id"
@@ -80,7 +80,7 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 	if sm.isReconnection() {
 		sm.setReconnectHeader()
 	}
-	logger.Logger.Info("Connecting...")
+	log.Info("Connecting...")
 	resp, _, _, e := ioutils.Stream(sm.Url, sm.HttpClientDetails)
 	if e != nil {
 		return false, resp
@@ -96,6 +96,6 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 
 	}
 	sm.ReconnectId = resp.Header.Get(BINTRAY_RECONNECT_HEADER)
-	logger.Logger.Info("Connected.")
+	log.Info("Connected.")
 	return true, resp
 }
