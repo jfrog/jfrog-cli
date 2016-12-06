@@ -145,10 +145,19 @@ func ListFiles(path string) ([]string, error) {
 	return fileList, nil
 }
 
+func sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
+	return Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
+}
+
 func sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
-	resp, _, redirectUrl, err := Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
+	resp, _, redirectUrl, err := sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
 	return resp, redirectUrl, err
 }
+
+func Stream(url string, httpClientsDetails HttpClientDetails) (*http.Response,[]byte, string, error) {
+	return sendGetLeaveBodyOpen(url, true, httpClientsDetails)
+}
+
 func SendGet(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 	return Send("GET", url, nil, allowRedirect, true, httpClientsDetails)
 }
