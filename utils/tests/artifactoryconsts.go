@@ -21,7 +21,7 @@ const (
 	RepoDetailsUrl = "api/repositories/"
 )
 
-var SimpleUploadExpected = []string{
+var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/a3.in",
 	Repo1 + "/flat_recursive/a1.in",
 	Repo1 + "/flat_recursive/a2.in",
@@ -33,7 +33,7 @@ var SimpleUploadExpected = []string{
 	Repo1 + "/flat_recursive/c3.in",
 }
 
-var SimpleUploadExpected2 = []string{
+var SimpleUploadExpectedRepo2 = []string{
 	Repo2 + "/flat_recursive/a3.in",
 	Repo2 + "/flat_recursive/a1.in",
 	Repo2 + "/flat_recursive/a2.in",

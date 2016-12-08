@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetails) error {
@@ -24,7 +25,8 @@ func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetai
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Log details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Log details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 
@@ -45,6 +47,6 @@ details *config.BintrayDetails) error {
 		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Downloaded logs.")
+	log.Info("Downloaded log.")
 	return nil
 }

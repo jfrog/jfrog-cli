@@ -146,7 +146,7 @@ func (cli *JfrogCli) Exec(args ...string) {
 		os.Args = append(os.Args, strings.Split(cli.suffix, spaceSplit)...)
 	}
 
-	fmt.Println("[Command:]", strings.Join(os.Args, " "))
+	fmt.Println("[Command]", strings.Join(os.Args, " "))
 	cli.main()
 }
 

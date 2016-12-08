@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) error {
@@ -31,6 +32,7 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Version", version, "details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Version", version, "details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }

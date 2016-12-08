@@ -25,9 +25,7 @@ func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, fl
 	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
-		if err != nil {
-			return
-		}
+		return
 	}
 	var results []VersionFilesResult
 	err = json.Unmarshal(body, &results)

@@ -82,6 +82,7 @@ func GetFileAndDirFromPath(path string) (fileName, dir string) {
 	return
 }
 
+// Get the local path and filename from original file name and path according to targetPath
 func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {
 	targetFileName, targetDirPath := GetFileAndDirFromPath(targetPath)
 

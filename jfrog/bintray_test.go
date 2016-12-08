@@ -168,10 +168,10 @@ func TestBintrayFileDownloads(t *testing.T) {
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/a1.in", versionPath, "--flat=false")
 
-	bintrayCli.Exec("download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--include-unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--include-unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--include-unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/" + tests.GetTestResourcesPath()[1:] + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --include-unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath + "/" + tests.GetTestResourcesPath()[1:] + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
 
 	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/bintray/")
 	expected := []string{
@@ -194,7 +194,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	createPackageAndVersion(packagePath, versionPath)
 
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
-	bintrayCli.Exec("download-ver", versionPath, tests.Out + "/bintray/", "--include-unpublished=true")
+	bintrayCli.Exec("download-ver", versionPath, tests.Out + "/bintray/", "--unpublished=true")
 
 	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/bintray/")
 	expected := []string{

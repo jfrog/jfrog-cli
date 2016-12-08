@@ -363,9 +363,9 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
 		cli.StringFlag{
-			Name:  "include-unpublished",
+			Name:  "unpublished",
 			Value: "",
-			Usage: "[Default: false] Download unpublished files.",
+			Usage: "[Default: false] Download both published and unpublished files.",
 		},
 	}
 }
@@ -522,15 +522,15 @@ func getGpgSigningFlags() []cli.Flag {
 }
 
 func configure(c *cli.Context) {
-	if len(c.Args()) > 1 {
+	if c.NArg() > 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
-	} else if len(c.Args()) == 1 {
-		if c.Args()[0] == "show" {
+	} else if c.NArg() == 1 {
+		if c.Args().Get(0) == "show" {
 			commands.ShowConfig()
-		} else if c.Args()[0] == "clear" {
+		} else if c.Args().Get(0) == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
+			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args().Get(0) + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
 		interactive := cliutils.GetBoolFlagValue(c, "interactive", true)
@@ -546,10 +546,10 @@ func configure(c *cli.Context) {
 }
 
 func showPackage(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	packageDetails, err := utils.CreatePackageDetails(c.Args()[0])
+	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -562,10 +562,10 @@ func showPackage(c *cli.Context) {
 }
 
 func showVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -578,10 +578,10 @@ func showVersion(c *cli.Context) {
 }
 
 func createPackage(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	packageDetails, err := utils.CreatePackageDetails(c.Args()[0])
+	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -594,10 +594,10 @@ func createPackage(c *cli.Context) {
 }
 
 func createVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -610,10 +610,10 @@ func createVersion(c *cli.Context) {
 }
 
 func updateVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -626,10 +626,10 @@ func updateVersion(c *cli.Context) {
 }
 
 func updatePackage(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	packageDetails, err := utils.CreatePackageDetails(c.Args()[0])
+	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -642,10 +642,10 @@ func updatePackage(c *cli.Context) {
 }
 
 func deletePackage(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	packageDetails, err := utils.CreatePackageDetails(c.Args()[0])
+	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -667,10 +667,10 @@ func deletePackage(c *cli.Context) {
 }
 
 func deleteVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -693,10 +693,10 @@ func deleteVersion(c *cli.Context) {
 }
 
 func publishVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -709,22 +709,14 @@ func publishVersion(c *cli.Context) {
 }
 
 func downloadVersion(c *cli.Context) {
-	len := len(c.Args())
-	if len < 1 || len > 2 {
+	if c.NArg() < 1 || c.NArg() > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := commands.CreateVersionDetailsForDownloadVersion(c.Args()[0])
+	versionDetails, err := commands.CreateVersionDetailsForDownloadVersion(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
-	targetPath := ""
-	if len > 1 {
-		targetPath = c.Args()[1]
-		if strings.HasPrefix(targetPath, "/") {
-			targetPath = targetPath[1:]
-		}
-	}
-
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	targetPath := c.Args().Get(1)
+	if strings.HasPrefix(targetPath, "/") {
+		targetPath = targetPath[1:]
 	}
 	flags, err := createDownloadFlags(c)
 	if err != nil {
@@ -741,22 +733,19 @@ func downloadVersion(c *cli.Context) {
 }
 
 func upload(c *cli.Context) {
-	len := len(c.Args())
-	if len < 2 || len > 3 {
+	if c.NArg() < 2 || c.NArg() > 3 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	localPath := c.Args()[0]
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[1])
+	localPath := c.Args().Get(0)
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(1))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	var uploadPath string
-	if len > 2 {
-		uploadPath = c.Args()[2]
-		if strings.HasPrefix(uploadPath, "/") {
-			uploadPath = uploadPath[1:]
-		}
+	uploadPath := c.Args().Get(2)
+	if strings.HasPrefix(uploadPath, "/") {
+		uploadPath = uploadPath[1:]
 	}
+
 	uploadFlags, err := createUploadFlags(c)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
@@ -772,21 +761,18 @@ func upload(c *cli.Context) {
 }
 
 func downloadFile(c *cli.Context) {
-	len := len(c.Args())
-	if len < 1 || len > 2 {
+	if c.NArg() < 1 || c.NArg() > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pathDetails, err := utils.CreatePathDetails(c.Args()[0])
+	pathDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	targetPath := ""
-	if len > 1 {
-		targetPath = c.Args()[1]
-		if strings.HasPrefix(targetPath, "/") {
-			targetPath = targetPath[1:]
-		}
+	targetPath := c.Args().Get(1)
+	if strings.HasPrefix(targetPath, "/") {
+		targetPath = targetPath[1:]
 	}
+
 	flags, err := createDownloadFlags(c)
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
@@ -796,10 +782,10 @@ func downloadFile(c *cli.Context) {
 }
 
 func signUrl(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	urlSigningDetails, err := utils.CreatePathDetails(c.Args()[0])
+	urlSigningDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -807,15 +793,15 @@ func signUrl(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	commands.SignVersion(urlSigningDetails, urlSigningFlags)
+	err = commands.SignVersion(urlSigningDetails, urlSigningFlags)
 	cliutils.ExitOnErr(err)
 }
 
 func gpgSignFile(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	pathDetails, err := utils.CreatePathDetails(c.Args()[0])
+	pathDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -823,7 +809,7 @@ func gpgSignFile(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	commands.GpgSignFile(pathDetails, c.String("passphrase"), flags)
+	err = commands.GpgSignFile(pathDetails, c.String("passphrase"), flags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -832,22 +818,21 @@ func logs(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	if len(c.Args()) == 1 {
-		packageDetails, err := utils.CreatePackageDetails(c.Args()[0])
+	if c.NArg() == 1 {
+		packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 		cliutils.ExitOnErr(err)
 		err = commands.LogsList(packageDetails, bintrayDetails)
 		cliutils.ExitOnErr(err)
-	} else
-	if len(c.Args()) == 3 {
-		if c.Args()[0] == "download" {
-			packageDetails, err := utils.CreatePackageDetails(c.Args()[1])
+	} else if c.NArg() == 3 {
+		if c.Args().Get(0) == "download" {
+			packageDetails, err := utils.CreatePackageDetails(c.Args().Get(1))
 			if err != nil {
 				cliutils.Exit(cliutils.ExitCodeError, err.Error())
 			}
-			err = commands.DownloadLog(packageDetails, c.Args()[2], bintrayDetails)
+			err = commands.DownloadLog(packageDetails, c.Args().Get(2), bintrayDetails)
 			cliutils.ExitOnErr(err)
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args()[0] + ". " + cliutils.GetDocumentationMessage())
+			cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args().Get(0) + ". " + cliutils.GetDocumentationMessage())
 		}
 	} else {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
@@ -859,13 +844,13 @@ func stream(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 
 	streamDetails := &commands.StreamDetails{
 		BintrayDetails: bintrayDetails,
-		Subject: c.Args()[0],
+		Subject: c.Args().Get(0),
 		Include: c.String("include"),
 	}
 	err = commands.Stream(streamDetails, os.Stdout)
@@ -875,10 +860,10 @@ func stream(c *cli.Context) {
 }
 
 func gpgSignVersion(c *cli.Context) {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	versionDetails, err := utils.CreateVersionDetails(c.Args()[0])
+	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
@@ -886,92 +871,89 @@ func gpgSignVersion(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	commands.GpgSignVersion(versionDetails, c.String("passphrase"), flags)
+	err = commands.GpgSignVersion(versionDetails, c.String("passphrase"), flags)
 	cliutils.ExitOnErr(err)
 }
 
 func accessKeys(c *cli.Context) {
 	org := c.String("org")
-	argsSize := len(c.Args())
-	if argsSize == 0 {
+	if c.NArg() == 0 {
 		bintrayDetails, err := createBintrayDetails(c, true)
 		cliutils.ExitOnErr(err)
 		err = commands.ShowAccessKeys(bintrayDetails, org)
 		cliutils.ExitOnErr(err)
 		return
 	}
-	if argsSize != 2 {
+	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	keyId := c.Args()[1]
-	if c.Args()[0] == "show" {
-		flags, err := createAccessKeyFlagsForShowAndDelete(keyId, c)
+	keyId := c.Args().Get(1)
+	var flags *commands.AccessKeyFlags
+	var err error
+	switch c.Args().Get(0) {
+	case "show":
+		flags, err = createAccessKeyFlagsForShowAndDelete(keyId, c)
 		cliutils.ExitOnErr(err)
 		err = commands.ShowAccessKey(flags, org)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "create" {
-		flags, err := createAccessKeyFlagsForCreateAndUpdate(keyId, c)
+	case "create":
+		flags, err = createAccessKeyFlagsForCreateAndUpdate(keyId, c)
 		cliutils.ExitOnErr(err)
 		err = commands.CreateAccessKey(flags, org)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "update" {
-		flags, err := createAccessKeyFlagsForCreateAndUpdate(keyId, c)
+	case "update":
+		flags, err = createAccessKeyFlagsForCreateAndUpdate(keyId, c)
 		cliutils.ExitOnErr(err)
 		err = commands.UpdateAccessKey(flags, org)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "delete" {
-		flags, err := createAccessKeyFlagsForShowAndDelete(keyId, c)
+	case "delete":
+		flags, err = createAccessKeyFlagsForShowAndDelete(keyId, c)
 		cliutils.ExitOnErr(err)
 		err = commands.DeleteAccessKey(flags, org)
-		cliutils.ExitOnErr(err)
-	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before the key argument. Got " + c.Args()[0])
+	default:
+		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before the key argument. Got " + c.Args().Get(0))
 	}
+	cliutils.ExitOnErr(err)
 }
 
 func handleEntitlements(c *cli.Context) {
-	argsSize := len(c.Args())
-	if argsSize == 0 {
+	if c.NArg() == 0 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	if argsSize == 1 {
+	if c.NArg() == 1 {
 		bintrayDetails, err := createBintrayDetails(c, true)
 		cliutils.ExitOnErr(err)
-		details, err := entitlements.CreateVersionDetails(c.Args()[0])
+		details, err := entitlements.CreateVersionDetails(c.Args().Get(0))
 		cliutils.ExitOnErr(err)
 		err = entitlements.ShowEntitlements(bintrayDetails, details)
 		cliutils.ExitOnErr(err)
 		return
 	}
-	if argsSize != 2 {
+	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	details, err := entitlements.CreateVersionDetails(c.Args()[1])
+	details, err := entitlements.CreateVersionDetails(c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 
-	if c.Args()[0] == "show" {
-		flags, err := createEntitlementFlagsForShowAndDelete(c)
+	var flags *entitlements.EntitlementFlags
+	switch c.Args().Get(0) {
+	case "show":
+		flags, err = createEntitlementFlagsForShowAndDelete(c)
 		cliutils.ExitOnErr(err)
 		err = entitlements.ShowEntitlement(flags, details)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "create" {
-		flags, err := createEntitlementFlagsForCreate(c)
+	case "create":
+		flags, err = createEntitlementFlagsForCreate(c)
 		cliutils.ExitOnErr(err)
 		err = entitlements.CreateEntitlement(flags, details)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "update" {
-		flags, err := createEntitlementFlagsForUpdate(c)
+	case "update":
+		flags, err = createEntitlementFlagsForUpdate(c)
 		cliutils.ExitOnErr(err)
 		err = entitlements.UpdateEntitlement(flags, details)
-		cliutils.ExitOnErr(err)
-	} else if c.Args()[0] == "delete" {
-		flags, err := createEntitlementFlagsForShowAndDelete(c)
+	case "delete":
+		flags, err = createEntitlementFlagsForShowAndDelete(c)
 		cliutils.ExitOnErr(err)
 		err = entitlements.DeleteEntitlement(flags, details)
-		cliutils.ExitOnErr(err)
-	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before " + c.Args()[1] + ". Got " + c.Args()[0])
+	default:
+		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before " + c.Args().Get(1) + ". Got " + c.Args().Get(0))
 	}
+	cliutils.ExitOnErr(err)
 }
 
 func createPackageFlags(c *cli.Context) (*utils.PackageFlags, error) {
@@ -1111,7 +1093,7 @@ func createDownloadFlags(c *cli.Context) (*utils.DownloadFlags, error) {
 		Threads:            getThreadsOptionValue(c),
 		MinSplitSize:       getMinSplitFlag(c),
 		SplitCount:         getSplitCountFlag(c),
-		IncludeUnpublished: cliutils.GetBoolFlagValue(c, "include-unpublished", false),
+		IncludeUnpublished: cliutils.GetBoolFlagValue(c, "unpublished", false),
 		Flat:               flat}, nil
 }
 

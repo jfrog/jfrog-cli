@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDistributeFlags) error {
+func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDistributionFlags) error {
 	err := utils.PreCommandSetup(flags)
 	if err != nil {
 		return err
@@ -32,8 +32,8 @@ func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDist
 		return err
 	}
 
-	data := DistributionConfigContent{
-		SourceRepo:             strings.Split(flags.SourceRepo, ","),
+	data := BuildDistributionConfig{
+		SourceRepos:             strings.Split(flags.SourceRepos, ","),
 		TargetRepo:             targetRepo,
 		Publish:                flags.Publish,
 		OverrideExistingFiles:  flags.OverrideExistingFiles,
@@ -66,9 +66,9 @@ func BuildDistribute(buildName, buildNumber, targetRepo string, flags *BuildDist
 	return nil
 }
 
-type BuildDistributeFlags struct {
+type BuildDistributionFlags struct {
 	ArtDetails            *config.ArtifactoryDetails
-	SourceRepo            string
+	SourceRepos           string
 	GpgPassphrase         string
 	Publish               bool
 	OverrideExistingFiles bool
@@ -76,8 +76,8 @@ type BuildDistributeFlags struct {
 	DryRun                bool
 }
 
-type DistributionConfigContent struct {
-	SourceRepo            []string  `json:"sourceRepos,omitempty"`
+type BuildDistributionConfig struct {
+	SourceRepos           []string  `json:"sourceRepos,omitempty"`
 	TargetRepo            string    `json:"targetRepo,omitempty"`
 	GpgPassphrase         string    `json:"gpgPassphrase,omitempty"`
 	Publish               bool      `json:"publish"`
@@ -86,10 +86,10 @@ type DistributionConfigContent struct {
 	DryRun                bool      `json:"dryRun,omitempty"`
 }
 
-func (flags *BuildDistributeFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+func (flags *BuildDistributionFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
 }
 
-func (flags *BuildDistributeFlags) IsDryRun() bool {
+func (flags *BuildDistributionFlags) IsDryRun() bool {
 	return flags.DryRun
 }

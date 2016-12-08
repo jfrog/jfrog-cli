@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func AttachLic(instanceName string, flags *AttachLicFlags) (err error) {
+func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	prepareLicenseFile(flags.LicensePath, flags.Override)
 	postContent := utils.LicenseRequestContent{
 		Name: 	  	 instanceName,
@@ -20,48 +20,42 @@ func AttachLic(instanceName string, flags *AttachLicFlags) (err error) {
 		Deploy:	     flags.Deploy}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
-		err = cliutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
-        if err != nil {
-            return
-        }
+		return cliutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
     if err != nil {
-        return
+        return err
     }
 	if resp.StatusCode != 200 {
 		if flags.LicensePath != "" {
 			os.Remove(flags.LicensePath)
 		}
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
-		if err != nil {
-		    return
-		}
+		return cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
 	fmt.Println("Mission Control response: " + resp.Status)
 	if flags.LicensePath == "" {
 	    var m Message
 	    m, err = extractJsonValue(body)
 		if err != nil {
-		    return
+		    return err
 		}
 		requestContent, err = json.Marshal(m)
 		err = cliutils.CheckError(err)
 		if err != nil {
-		    return
+		    return err
 		}
 		fmt.Println(string(requestContent))
 	} else {
 	    var licenseKey []byte
 		licenseKey, err = getLicenseFromJson(body)
 		if err != nil {
-		    return
+		    return err
 		}
 		err = saveLicense(flags.LicensePath, licenseKey)
 	}
-	return
+	return nil
 }
 
 func getLicenseFromJson(body []byte) (licenseKey []byte, err error) {

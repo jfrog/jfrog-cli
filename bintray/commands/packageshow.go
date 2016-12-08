@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) (err error) {
@@ -24,6 +25,7 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Package", packageDetails.Package, "details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Package", packageDetails.Package, "details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return
 }

@@ -23,7 +23,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 
 	url := bintrayDetails.DownloadServerUrl + downloadPath
 	if flags.IncludeUnpublished {
-		url += "?include-unpublished=1"
+		url += "?include_unpublished=1"
 	}
 	log.Info(logMsgPrefix + "Downloading", downloadPath)
 

@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-var logLevel = map[string]int{"ERROR": 0, "WARN":  1, "INFO":  2, "DEBUG": 3, }
+var LogLevel = map[string]int{"ERROR": 0, "WARN":  1, "INFO":  2, "DEBUG": 3, }
 var logger Log
 
 func init() {
@@ -13,7 +13,7 @@ func init() {
 }
 
 type CliLogger struct {
-	logLevel int
+	LogLevel int
 	DebugLog *log.Logger
 	InfoLog  *log.Logger
 	WarnLog  *log.Logger
@@ -27,15 +27,19 @@ func createLogger() (logger *CliLogger) {
 }
 
 func (logger *CliLogger) setLevel() {
-	logger.logLevel = logLevel["INFO"]
-	if val, ok := logLevel[os.Getenv("JFROG_CLI_LOG_LEVEL")]; ok {
-		logger.logLevel = val;
+	logger.LogLevel = LogLevel["INFO"]
+	if val, ok := LogLevel[os.Getenv("JFROG_CLI_LOG_LEVEL")]; ok {
+		logger.LogLevel = val;
 	}
 
-	logger.DebugLog = log.New(os.Stdout, "[Debug:] ", 0)
-	logger.InfoLog = log.New(os.Stdout, "[Info:] ", 0)
-	logger.WarnLog = log.New(os.Stdout, "[Warn:] ", 0)
-	logger.ErrorLog = log.New(os.Stdout, "[Error:] ", 0)
+	logger.DebugLog = log.New(os.Stdout, "[Debug] ", 0)
+	logger.InfoLog = log.New(os.Stdout, "[Info] ", 0)
+	logger.WarnLog = log.New(os.Stdout, "[Warn] ", 0)
+	logger.ErrorLog = log.New(os.Stderr, "[Error] ", 0)
+}
+
+func GetLogLevel() int {
+	return logger.GetLogLevel()
 }
 
 func Debug(a ...interface{}) {
@@ -54,31 +58,37 @@ func Error(a ...interface{}) {
 	logger.Error(a...)
 }
 
+func (logger CliLogger) GetLogLevel() int {
+	return logger.LogLevel
+}
+
 func (logger CliLogger) Debug(a ...interface{}) {
-	if logger.logLevel >= logLevel["DEBUG"] {
+	if logger.LogLevel >= LogLevel["DEBUG"] {
 		logger.DebugLog.Println(a...)
 	}
 }
 
 func (logger CliLogger) Info(a ...interface{}) {
-	if logger.logLevel >= logLevel["INFO"] {
+	if logger.LogLevel >= LogLevel["INFO"] {
 		logger.InfoLog.Println(a...)
 	}
 }
 
 func (logger CliLogger) Warn(a ...interface{}) {
-	if logger.logLevel >= logLevel["WARN"] {
+	if logger.LogLevel >= LogLevel["WARN"] {
 		logger.WarnLog.Println(a...)
 	}
 }
 
 func (logger CliLogger) Error(a ...interface{}) {
-	if logger.logLevel >= logLevel["ERROR"] {
+	if logger.LogLevel >= LogLevel["ERROR"] {
 		logger.ErrorLog.Println(a...)
 	}
 }
 
+
 type Log interface {
+	GetLogLevel() int
 	Debug(a ...interface{})
 	Info(a ...interface{})
 	Warn(a ...interface{})

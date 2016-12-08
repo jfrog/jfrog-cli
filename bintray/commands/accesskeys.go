@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
@@ -20,7 +21,8 @@ func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Access keys details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Access keys details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 
@@ -34,7 +36,8 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Access keys details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Access keys details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return
 }
 
@@ -52,7 +55,8 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created access key, details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Created access key, details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return
 }
 
@@ -70,7 +74,8 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Updated access key, details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Updated access key, details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 

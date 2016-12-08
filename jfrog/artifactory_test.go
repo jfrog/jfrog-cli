@@ -44,7 +44,7 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
 	artifactoryCli.Exec("upload", "--spec=" + specFile)
 
-	isExistInArtifactory(tests.SimpleUploadExpected, tests.GetFilePath(tests.Search), t)
+	isExistInArtifactory(tests.SimpleUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
 	cleanArtifactoryTest()
 }
 
@@ -199,7 +199,7 @@ func TestArtifactoryPublishBuildInfo(t *testing.T) {
 
 	//validate files are uploaded with the build info name and number
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.SimpleUploadExpected, tests.Repo1 + "/*", props, t)
+	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo1, tests.Repo1 + "/*", props, t)
 
 	//cleanup
 	deleteBuild(buildName)
@@ -229,7 +229,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 
 	//validate files are uploaded with the build info name and number
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.SimpleUploadExpected2, tests.Repo2 + "/*", props, t)
+	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo2, tests.Repo2 + "/*", props, t)
 
 	//cleanup
 	deleteBuild(buildName)
@@ -281,6 +281,7 @@ func deleteBuild(buildName string) {
 		log.Error(err)
 	}
 	if resp.StatusCode != 200 {
+		log.Error(resp.Status)
 		log.Error(string(body))
 	}
 }

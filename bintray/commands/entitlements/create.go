@@ -6,6 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) (err error) {
@@ -26,7 +27,8 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) (
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created entitlement, details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Created entitlement, details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return
 }
 

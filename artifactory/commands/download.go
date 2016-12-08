@@ -110,21 +110,6 @@ func createDownloadDataList(items []utils.AqlSearchResultItem, fileSpec *utils.F
 	return dependencies, nil
 }
 
-func getLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {
-	targetFileName, targetDirPath := ioutils.GetFileAndDirFromPath(targetPath)
-
-	localTargetPath = targetDirPath
-	if !flat {
-		localTargetPath = path.Join(targetDirPath, relativePath)
-	}
-
-	fileName = originalFileName
-	if targetFileName != "" {
-		fileName = targetFileName
-	}
-	return
-}
-
 func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildDependencies [][]utils.DependenciesBuildInfo, err error) {
 	size := len(dependecies)
 	buildDependencies = make([][]utils.DependenciesBuildInfo, flags.Threads)
@@ -150,7 +135,7 @@ func downloadAqlResult(dependecies []DownloadData, flags *DownloadFlags) (buildD
 					err = e
 					break
 				}
-				localPath, localFileName := getLocalPathAndFile(dependecies[j].Dependency.Name, dependecies[j].Dependency.Path, placeHolderTarget, dependecies[j].Flat)
+				localPath, localFileName := ioutils.GetLocalPathAndFile(dependecies[j].Dependency.Name, dependecies[j].Dependency.Path, placeHolderTarget, dependecies[j].Flat)
 				shouldDownload, e := shouldDownloadFile(path.Join(localPath, dependecies[j].Dependency.Name), dependecies[j].Dependency.Actual_Md5, dependecies[j].Dependency.Actual_Sha1)
 				if e != nil {
 					err = e

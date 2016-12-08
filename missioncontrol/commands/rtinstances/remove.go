@@ -17,10 +17,7 @@ func Remove(instanceName string, flags *RemoveFlags) error {
 	    return err
 	}
 	if resp.StatusCode != 204 {
-		err := cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
 	fmt.Println("Mission Control response: " + resp.Status)
 	return nil

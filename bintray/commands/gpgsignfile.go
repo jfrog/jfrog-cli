@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetails *config.BintrayDetails) error {
@@ -32,6 +33,7 @@ func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetai
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("GPG signed file", pathDetails.Path, ", details:", "\n" + cliutils.IndentJson(body))
+	log.Info("GPG signed file", pathDetails.Path, ", details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }

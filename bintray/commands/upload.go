@@ -87,6 +87,9 @@ totalFailed int, err error) {
 	}
 	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
 	totalFailed = size - totalUploaded
+	if totalFailed > 0 {
+		log.Error("Failed uploading", strconv.Itoa(totalFailed), "artifacts.")
+	}
 	return
 }
 
@@ -136,8 +139,7 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	}
 	log.Debug(logMsgPrefix + "Bintray response:", resp.Status)
 	if resp.StatusCode != 201 && resp.StatusCode != 200 {
-		log.Error(logMsgPrefix, "Bintray response:", resp.Status)
-		log.Error(logMsgPrefix, string(body))
+		log.Error(logMsgPrefix + "Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 	}
 
 	return resp.StatusCode == 201 || resp.StatusCode == 200, nil
@@ -271,7 +273,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 		return nil, err
 	}
 
-	spinner := cliutils.NewSpinner("[Info:] Prepering files for upload:", time.Second)
+	spinner := cliutils.NewSpinner("[Info] Collecting files for upload:", time.Second)
 	spinner.Start()
 	var paths []string
 	if flags.Recursive {

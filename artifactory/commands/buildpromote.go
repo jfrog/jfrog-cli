@@ -11,10 +11,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromoteFlags) (err error) {
-	err = utils.PreCommandSetup(flags)
+func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromotionFlags) error {
+	err := utils.PreCommandSetup(flags)
 	if err != nil {
-		return
+		return err
 	}
 
 	message := "Promoting build..."
@@ -27,10 +27,10 @@ func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromote
 	restApi := path.Join("api/build/promote/", buildName, buildNumber)
 	requestFullUrl, err := utils.BuildArtifactoryUrl(promoteUrl, restApi, make(map[string]string))
 	if err != nil {
-		return
+		return err
 	}
 
-	data := PromotionConfigContent{
+	data := BuildPromotionConfig{
 		Status:                 flags.Status,
 		Comment :               flags.Comment,
 		Copy:                   flags.Copy,
@@ -40,10 +40,7 @@ func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromote
 		DryRun:                 flags.DryRun}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
-		err = cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
-		if err != nil {
-			return
-		}
+		return cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
 
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
@@ -51,20 +48,19 @@ func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromote
 
 	resp, body, err := ioutils.SendPost(requestFullUrl, requestContent, httpClientsDetails)
 	if err != nil {
-		return
+		return err
 	}
 
 	if resp.StatusCode != 200 {
-		err = cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
-		return
+		return cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
 	log.Info("Promoted build", buildName , "#" + buildNumber, "to:", targetRepo, "repository.")
-	return
+	return nil
 }
 
-type BuildPromoteFlags struct {
+type BuildPromotionFlags struct {
 	ArtDetails          *config.ArtifactoryDetails
 	Comment             string
 	SourceRepo          string
@@ -74,7 +70,7 @@ type BuildPromoteFlags struct {
 	DryRun              bool
 }
 
-type PromotionConfigContent struct {
+type BuildPromotionConfig struct {
 	Comment             string `json:"comment,omitempty"`
 	SourceRepo          string `json:"sourceRepo,omitempty"`
 	TargetRepo          string `json:"targetRepo,omitempty"`
@@ -84,10 +80,10 @@ type PromotionConfigContent struct {
 	DryRun              bool   `json:"dryRun,omitempty"`
 }
 
-func (flags *BuildPromoteFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+func (flags *BuildPromotionFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
 	return flags.ArtDetails
 }
 
-func (flags *BuildPromoteFlags) IsDryRun() bool {
+func (flags *BuildPromotionFlags) IsDryRun() bool {
 	return flags.DryRun
 }

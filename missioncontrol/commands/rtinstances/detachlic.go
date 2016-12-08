@@ -18,10 +18,7 @@ func DetachLic(instanceName string, flags *DetachLicFlags) error {
 		NodeID:	     flags.NodeId}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
-		err := cliutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + bucketId + "/licenses";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
@@ -30,10 +27,7 @@ func DetachLic(instanceName string, flags *DetachLicFlags) error {
 	    return err
 	}
 	if resp.StatusCode != 200 {
-		err := cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
-        if err != nil {
-            return err
-        }
+		return cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
 	fmt.Println("Mission Control response: " + resp.Status)
 	return nil

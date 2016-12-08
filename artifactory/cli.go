@@ -19,8 +19,6 @@ func GetCommands() []cli.Command {
 			Name:    "config",
 			Flags:   getConfigFlags(),
 			Aliases: []string{"c"},
-			//ArgsUsage: "re re",
-			//Description: "blablabla",
 			Usage:   "Configure Artifactory details.",
 			Action: func(c *cli.Context) {
 				configCmd(c)
@@ -109,7 +107,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "build-promote",
-			Flags:   getBuildPromoteFlags(),
+			Flags:   getBuildPromotionFlags(),
 			Aliases: []string{"bpr"},
 			Usage:   "Promote build.",
 			Action: func(c *cli.Context) {
@@ -331,7 +329,6 @@ func getDeleteFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 	}...)
-
 }
 
 func getSearchFlags() []cli.Flag {
@@ -369,8 +366,12 @@ func getBuildPublishFlags() []cli.Flag {
 	}...)
 }
 
-func getBuildPromoteFlags() []cli.Flag {
+func getBuildPromotionFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "status",
+			Usage: "[Optional] Build promotion status.",
+		},
 		cli.StringFlag{
 			Name:  "comment",
 			Usage: "[Optional] Build promotion comment.",
@@ -379,21 +380,17 @@ func getBuildPromoteFlags() []cli.Flag {
 			Name:  "source-repo",
 			Usage: "[Optional] Build promotion source repository.",
 		},
-		cli.StringFlag{
-			Name:  "status",
-			Usage: "[Optional] Build promotion status.",
-		},
 		cli.BoolFlag{
 			Name:  "include-dependencies",
-			Usage: "[Default: false] Including build dependencies.",
+			Usage: "[Default: false] If set to true, the build dependencies are also promoted.",
 		},
 		cli.BoolFlag{
 			Name:  "copy",
-			Usage: "[Default: false] Copy artifacts to target repository.",
+			Usage: "[Default: false] If set true, the build are artifacts and dependencies are copied to the target repository, otherwise they are moved.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] If true, promotion is only simulated. No builds are actually promoted.",
+			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.",
 		},
 	}...)
 }
@@ -405,7 +402,7 @@ func getBuildDistributeFlags() []cli.Flag {
 			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.",
 		},
 		cli.StringFlag{
-			Name:  "pgp-passphrase",
+			Name:  "passphrase",
 			Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.",
 		},
 		cli.BoolFlag{
@@ -413,7 +410,7 @@ func getBuildDistributeFlags() []cli.Flag {
 			Usage: "[Default: true] If true, builds are published when deployed to Bintray.",
 		},
 		cli.BoolFlag{
-			Name:  "override-existing-files",
+			Name:  "override",
 			Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.",
 		},
 		cli.BoolFlag{
@@ -732,7 +729,7 @@ func buildDistributeCmd(c *cli.Context) {
 	if c.NArg() != 3 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
-	buildDistributeFlags, err := createBuildDistributeFlags(c)
+	buildDistributeFlags, err := createBuildDistributionFlags(c)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -946,29 +943,29 @@ func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, err erro
 	return
 }
 
-func createBuildPromoteFlags(c *cli.Context) (promoteFlags *commands.BuildPromoteFlags, err error) {
-	promoteFlags = new(commands.BuildPromoteFlags)
-	promoteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-
+func createBuildPromoteFlags(c *cli.Context) (promoteFlags *commands.BuildPromotionFlags, err error) {
+	promoteFlags = new(commands.BuildPromotionFlags)
 	promoteFlags.Comment = c.String("comment")
 	promoteFlags.SourceRepo = c.String("source-repo")
 	promoteFlags.Status = c.String("status")
 	promoteFlags.IncludeDependencies = c.Bool("include-dependencies")
 	promoteFlags.Copy = c.Bool("copy")
 	promoteFlags.DryRun = c.Bool("dry-run")
+
+	promoteFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
-func createBuildDistributeFlags(c *cli.Context) (distributeFlags *commands.BuildDistributeFlags, err error) {
-	distributeFlags = new(commands.BuildDistributeFlags)
-	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-
+func createBuildDistributionFlags(c *cli.Context) (distributeFlags *commands.BuildDistributionFlags, err error) {
+	distributeFlags = new(commands.BuildDistributionFlags)
 	distributeFlags.Publish = cliutils.GetBoolFlagValue(c, "publish", true)
-	distributeFlags.OverrideExistingFiles = c.Bool("override-existing-files")
-	distributeFlags.GpgPassphrase = c.String("pgp-passphrase")
+	distributeFlags.OverrideExistingFiles = c.Bool("override")
+	distributeFlags.GpgPassphrase = c.String("passphrase")
 	distributeFlags.Async = c.Bool("async")
-	distributeFlags.SourceRepo = c.String("source-repos")
+	distributeFlags.SourceRepos = c.String("source-repos")
 	distributeFlags.DryRun = c.Bool("dry-run")
+
+	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 

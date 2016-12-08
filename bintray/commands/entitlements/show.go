@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.VersionDetails) error {
@@ -25,7 +26,8 @@ func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.Vers
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Entitlements details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Entitlements details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 
@@ -45,7 +47,8 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) err
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Entitlement details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Entitlement details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 

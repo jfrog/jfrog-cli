@@ -10,7 +10,7 @@ import (
 	"fmt"
 )
 
-func AddInstance(instanceName string, flags *AddInstanceFlags) (err error) {
+func AddInstance(instanceName string, flags *AddInstanceFlags) error {
 	data := AddInstanceRequestContent{
 		Name: 	  	 instanceName,
 		Url : 	  	 flags.ArtifactoryInstanceDetails.Url,
@@ -20,26 +20,20 @@ func AddInstance(instanceName string, flags *AddInstanceFlags) (err error) {
 		Location: 	 flags.Location}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
-		err = cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
-        if err != nil {
-            return
-        }
+		return cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
-	    return
+	    return err
 	}
 	if resp.StatusCode == 201 || resp.StatusCode == 204 {
 		fmt.Println("Mission Control response: " + resp.Status)
 	} else {
-		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
-        if err != nil {
-            return
-        }
+		return cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
-	return
+	return nil
 }
 
 type AddInstanceFlags struct {

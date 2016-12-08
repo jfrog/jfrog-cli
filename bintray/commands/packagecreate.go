@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
+	"fmt"
 )
 
 func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFlags) error {
@@ -20,7 +21,8 @@ func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created package", packageDetails.Package + ", details:", "\n" + cliutils.IndentJson(body))
+	log.Info("Created package", packageDetails.Package + ", details:")
+	fmt.Println(cliutils.IndentJson(body))
 	return nil
 }
 

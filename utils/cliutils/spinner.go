@@ -4,6 +4,7 @@ import (
 	"time"
 	"fmt"
 	"sync"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 type Spinner struct {
@@ -25,7 +26,7 @@ func NewSpinner(prefix string, d time.Duration) *Spinner {
 }
 
 func (s *Spinner) Start() {
-	if s.active {
+	if s.active || log.GetLogLevel() == log.LogLevel["ERROR"] {
 		return
 	}
 	s.active = true
@@ -47,6 +48,9 @@ func (s *Spinner) Start() {
 }
 
 func (s *Spinner) Stop() {
+	if log.GetLogLevel() == log.LogLevel["ERROR"] {
+		return
+	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.active {
