@@ -37,11 +37,13 @@ func (sm *StreamManager) handleStream(ioReader io.Reader, writer io.Writer, last
 		for {
 			line, _, err := bodyReader.ReadLine()
 			if err != nil {
+				log.Debug(err)
 				break
 			}
 			*lastServerInteraction = time.Now()
 			_, err = pWriter.Write(line)
 			if err != nil {
+				log.Debug(err)
 				break
 			}
 		}
@@ -55,10 +57,12 @@ func (sm *StreamManager) parseStream(streamDecoder *json.Decoder, streamEncoder 
 	for {
 		var decodedJson map[string]interface{}
 		if e := streamDecoder.Decode(&decodedJson); e != nil {
+			log.Debug(e)
 			return e
 		}
 		if _, ok := sm.IncludeFilter[decodedJson["type"].(string)]; ok || len(sm.IncludeFilter) == 0 {
 			if e := streamEncoder.Encode(&decodedJson); e != nil {
+				log.Debug(e)
 				return e
 			}
 		}
