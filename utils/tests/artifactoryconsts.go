@@ -14,12 +14,17 @@ const (
 	MoveCopyDeleteSpec = "move_copy_delete_spec.json"
 	PrepareCopy = "prepare_copy.json"
 	Search = "search.json"
+	SearchTxt = "search_txt.json"
 	SearchMoveDeleteRepoSpec = "search_move_delete_repo_spec.json"
 	MoveRepositoryConfig = "move_repository_config.json"
 	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
 
 	RepoDetailsUrl = "api/repositories/"
 )
+
+var TxtUploadExpectedRepo1 = []string{
+	Repo1 + "/cliTestFile.txt",
+}
 
 var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/a3.in",

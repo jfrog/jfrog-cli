@@ -253,6 +253,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 			return nil, err
 		}
 	}
+	localPath = cliutils.ReplaceTildeWithUserHome(localPath)
 	localPath = cliutils.PrepareLocalPathForUpload(localPath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}

@@ -112,6 +112,40 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 	cleanBintrayTest()
 }
 
+func TestBintrayUploadFromHomeDir(t *testing.T) {
+	initBintrayTest(t)
+	filename := "cliTestFile.txt"
+	testFileRel := "~/cliTestFile.*"
+	testFileAbs := ioutils.GetHomeDir() + "/" + filename
+
+	d1 := []byte("test file")
+	err := ioutil.WriteFile(testFileAbs, d1, 0644)
+	if err != nil {
+		t.Error("Coudln't create file:", err)
+	}
+
+	packageName := "simpleUploadHomePackage"
+	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	versionName := "1.0"
+	versionPath := packagePath + "/" + versionName
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+	bintrayCli.Exec("upload", testFileRel, versionPath, "--recursive=false")
+
+	//Check file uploaded
+	expected := []tests.PackageSearchResultItem{{
+		Repo:       tests.BintrayRepo1,
+		Path:       filename,
+		Package:    packageName,
+		Name:       filename,
+		Version:    "1.0",
+		Sha1:       "8f93542443e98f41fe98e97d6d2a147193b1b005"}}
+	assertPackageFiles(expected, getPackageFiles(packageName), t)
+
+	os.Remove(testFileAbs)
+	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	cleanBintrayTest()
+}
+
 func TestBintrayUploadOverride(t *testing.T) {
 	initBintrayTest(t)
 

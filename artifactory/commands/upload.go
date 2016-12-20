@@ -185,6 +185,8 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	uploadFiles.Pattern = cliutils.ReplaceTildeWithUserHome(uploadFiles.Pattern)
 	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, isRegexp)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))

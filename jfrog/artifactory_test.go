@@ -48,6 +48,24 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadFromHomeDir(t *testing.T) {
+	initArtifactoryTest(t)
+	testFileRel := "~/cliTestFile.*"
+	testFileAbs := ioutils.GetHomeDir() + "/cliTestFile.txt"
+
+	d1 := []byte("test file")
+	err := ioutil.WriteFile(testFileAbs, d1, 0644)
+	if err != nil {
+		t.Error("Coudln't create file:", err)
+	}
+
+	artifactoryCli.Exec("upload", testFileRel, tests.Repo1, "--recursive=false")
+	isExistInArtifactory(tests.TxtUploadExpectedRepo1, tests.GetFilePath(tests.SearchTxt), t)
+
+	os.Remove(testFileAbs)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCopySpec(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
