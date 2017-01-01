@@ -12,8 +12,7 @@ import (
 )
 
 func AqlSearchDefaultReturnFields(pattern string, recursive bool, props string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
-	query, err := BuildAqlSearchQuery(pattern, recursive, props, returnFields)
+	query, err := BuildAqlSearchQuery(pattern, recursive, props, GetDefaultQueryReturnFields())
 	if err != nil {
 		return nil, err
 	}
@@ -22,8 +21,7 @@ func AqlSearchDefaultReturnFields(pattern string, recursive bool, props string, 
 
 func AqlSearchBySpec(aql Aql, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	aqlString := aql.ItemsFind
-	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
-	query := "items.find(" + aqlString + ").include(" + strings.Join(returnFields, ",") + ")"
+	query := "items.find(" + aqlString + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
 	return AqlSearch(query, flags)
 }
 
@@ -43,6 +41,10 @@ func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, err
 	log.Debug("Artifactory response: ", resp.Status)
 	resultItems, err := parseAqlSearchResponse(json)
 	return resultItems, err
+}
+
+func GetDefaultQueryReturnFields() []string {
+	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\""}
 }
 
 func LogSearchResults(numOfArtifacts int) {
