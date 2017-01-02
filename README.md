@@ -14,7 +14,7 @@ You can get the executable directly from the [JFrog CLI Download Page](https://w
 
 On Mac you can run:
 ````
-$ brew install jfrog-cli-go
+brew install jfrog-cli-go
 ````
 
 ## Building the Executable
@@ -32,30 +32,45 @@ Navigate to the directory where you want to create the jfrog-cli-go project, and
 
 To download the jfrog-cli-go project, execute the following command:
 ````
-$ go get github.com/jfrogdev/jfrog-cli-go/...
+go get github.com/jfrogdev/jfrog-cli-go/...
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
 ### Integration tests
-To execute integration tests, run the following commands:
+#### Testing Jfrog CLI with Artifactory
+To run Artifactory tests execute the following command: 
 ````
-$ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -test.artifactory=true -test.bintray=false
 ````
+Optional flags:
 
-By default, these tests use the following settings:
+| Flag | Description |
+| --- | --- |
+| `-rt.url` | [Default: http://localhost:8081/artifatory] Artifactory URL. |
+| `-rt.user` | [Default: admin] Artifactory username. |
+| `-rt.password` | [Default: password] Artifactory password. |
+| `-rt.apikey` | [Optional] Artifactory API key. |
 
-* Artifactory url: http://localhost:8081/artifatory
-* User: admin
-* Password: password
 
-These settings can be customized using the *--url*, *--user*, *--password* and *--apikey* flags while executing the go test command.<br/>
-For example:
-````
-$ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog --url=http://yourArtifactoryUrl/artifactory --user=user --password=password --apikey=apikey
-````
-* Adding the *--apikey* flag triggers specific tests for the API Key functionality, in addition to other tests which use user and password.
-* Running the tests will create two repositories: jfrog-cli-tests-repo and jfrog-cli-tests-repo1.<br/>
+* Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
+
+#### Testing Jfrog CLI with Bintray
+Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
+
+To run Bintray tests execute the following command: 
+````
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -test.artifactory=false -test.bintray=true
+````
+Flags:
+
+| Flag | Description |
+| --- | --- |
+| `-bt.user` | [Mandatory if not configured] Bintray username. |
+| `-bt.key` | [Mandatory if not configured] Bintray API key |
+
+* Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
+  Once the tests are completed, the repository will be deleted.
 
 # Using JFrog CLI with Artifactory, Bintray and Mission Control
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
