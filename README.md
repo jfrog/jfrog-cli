@@ -17,18 +17,18 @@ On Mac you can run:
 brew install jfrog-cli-go
 ````
 
-## Building the Executable
+# Building the Executable
 
 JFrog CLI is written in the [Go programming language](https://golang.org/), so to build the CLI yourself, you first need to have Go installed and configured on your machine.
 
-### Setup Go
+## Setup Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
 Please download `Go 1.6` or above.
 
 Navigate to the directory where you want to create the jfrog-cli-go project, and set the value of the GOPATH environment variable to the full path of this directory.
 
-### Download and Build the CLI
+## Download and Build the CLI
 
 To download the jfrog-cli-go project, execute the following command:
 ````
@@ -36,9 +36,9 @@ go get github.com/jfrogdev/jfrog-cli-go/...
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
-### Integration tests
-#### Testing Jfrog CLI with Artifactory
-To run Artifactory tests execute the following command: 
+## Running Integration tests
+### Artifactory Integration tests
+To run Artifactory integration tests execute the following command: 
 ````
 go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -test.artifactory=true -test.bintray=false
 ````
@@ -55,7 +55,7 @@ Optional flags:
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
 
-#### Testing Jfrog CLI with Bintray
+### Bintray Integration tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
 
 To run Bintray tests execute the following command: 
@@ -72,7 +72,10 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-# Using JFrog CLI with Artifactory, Bintray and Mission Control
+# Pull Requests
+We welcome pull requests.
+
+# Using 
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
