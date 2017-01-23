@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"errors"
 	"runtime"
 	"time"
@@ -32,17 +31,11 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, tot
 			return 0, 0, err
 		}
 	}
-
-	spinner := cliutils.NewSpinner("[Info] Collecting files for upload:", time.Second)
-	spinner.Start()
-	uploadData, err := buildUploadData(uploadSpec, flags)
-	spinner.Stop()
-
+	minChecksumDeploySize, err := getMinChecksumDeploySize()
 	if err != nil {
 		return 0, 0, err
 	}
-
-	buildArtifacts, totalUploaded, totalFailed, err := uploadWildcard(uploadData, flags)
+	buildArtifacts, totalUploaded, totalFailed, err := uploadFiles(minChecksumDeploySize, uploadSpec, flags)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -53,93 +46,65 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadFlags) (totalUploaded, tot
 		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 			tempWrapper.Artifacts = toBuildInfoArtifacts(buildArtifacts)
 		}
-		err = utils.PrepareBuildInfoForSave(flags.BuildName, flags.BuildNumber, populateFunc)
+		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
 	}
 	return
 }
 
-func buildUploadData(uploadSpec *utils.SpecFiles, flags *UploadFlags) ([]UploadData, error) {
-	var result []UploadData
-	for _, v := range uploadSpec.Files {
-		artifacts, err := getFilesToUpload(&v)
-		if err != nil {
-			return nil, err
-		}
-		addBuildProps(&v, flags)
-		for _, artifact := range artifacts {
-			result = append(result, UploadData{
-				Artifact: artifact,
-				Props: v.Props,
-			})
-		}
+func uploadFiles(minChecksumDeploySize int64, uploadSpec *utils.SpecFiles, flags *UploadFlags) ([][]utils.ArtifactsBuildInfo, int, int, error) {
+	uploadSummery := uploadResult{
+		UploadCount: make([]int, flags.Threads),
+		TotalCount: make([]int, flags.Threads),
+		BuildInfoArtifacts: make([][]utils.ArtifactsBuildInfo, flags.Threads),
 	}
-	return result, nil
+	artifactHandlerFunc := createArtifactHandlerFunc(&uploadSummery, minChecksumDeploySize, flags)
+	producerConsumer := utils.NewProducerConsumer(flags.Threads)
+	prepareUploadTasks(producerConsumer, uploadSpec, artifactHandlerFunc, flags)
+	return performUploadTasks(producerConsumer, &uploadSummery)
 }
 
-func toBuildInfoArtifacts(artifactsBuildInfo [][]utils.ArtifactBuildInfo) []utils.ArtifactBuildInfo {
-	var buildInfo []utils.ArtifactBuildInfo
+func prepareUploadTasks(producer utils.Producer, uploadSpec *utils.SpecFiles, artifactHandlerFunc artifactContext, flags *UploadFlags)  {
+	go func() {
+		collectFilesForUpload(uploadSpec, flags, producer, artifactHandlerFunc)
+	}()
+}
+
+func toBuildInfoArtifacts(artifactsBuildInfo [][]utils.ArtifactsBuildInfo) []utils.ArtifactsBuildInfo {
+	var buildInfo []utils.ArtifactsBuildInfo
 	for _, v := range artifactsBuildInfo {
 		buildInfo = append(buildInfo, v...)
 	}
 	return buildInfo
 }
 
-func uploadWildcard(artifacts []UploadData, flags *UploadFlags) (buildInfoArtifacts [][]utils.ArtifactBuildInfo, totalUploaded, totalFailed int, err error) {
-	minChecksumDeploySize, e := getMinChecksumDeploySize()
-	if e != nil {
+func performUploadTasks(consumer utils.Consumer, uploadSummery *uploadResult) (buildInfoArtifacts [][]utils.ArtifactsBuildInfo, totalUploaded, totalFailed int, err error) {
+	// Blocking until we finish consuming for some reason
+	consumer.Consume()
+	if e := consumer.GetError(); e != nil {
 		err = e
 		return
 	}
-
-	size := len(artifacts)
-	var wg sync.WaitGroup
-
-	// Create an array of integers, to store the total file that were uploaded successfully.
-	// Each array item is used by a single thread.
-	uploadCount := make([]int, flags.Threads, flags.Threads)
-	buildInfoArtifacts = make([][]utils.ArtifactBuildInfo, flags.Threads)
-	for i := 0; i < flags.Threads; i++ {
-		wg.Add(1)
-		go func(threadId int) {
-			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
-			for j := threadId; j < size && err == nil; j += flags.Threads {
-				var e error
-				var uploaded bool
-				var target string
-				var buildInfoArtifact utils.ArtifactBuildInfo
-				target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifacts[j].Artifact.TargetPath, make(map[string]string))
-				if e != nil {
-					err = e
-					break
-				}
-				buildInfoArtifact, uploaded, e = uploadFile(artifacts[j].Artifact.LocalPath, target, artifacts[j].Props, flags, minChecksumDeploySize, logMsgPrefix)
-				if e != nil {
-					err = e
-					break
-				}
-				if uploaded {
-					uploadCount[threadId]++
-					buildInfoArtifacts[threadId] = append(buildInfoArtifacts[threadId], buildInfoArtifact)
-				}
-			}
-			wg.Done()
-		}(i)
-	}
-	wg.Wait()
 	if err != nil {
 		return
 	}
-	totalUploaded = 0
-	for _, i := range uploadCount {
-		totalUploaded += i
-	}
+	totalUploaded = sumIntArray(uploadSummery.UploadCount)
+	totalUploadAttempted := sumIntArray(uploadSummery.TotalCount)
 
 	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
-	totalFailed = size - totalUploaded
+	totalFailed = totalUploadAttempted - totalUploaded
 	if totalFailed > 0 {
 		log.Error("Failed uploading", strconv.Itoa(totalFailed), "artifacts.")
 	}
+	buildInfoArtifacts = uploadSummery.BuildInfoArtifacts
 	return
+}
+
+func sumIntArray(arr []int) int {
+	sum := 0
+	for _, i := range arr {
+		sum += i
+	}
+	return sum
 }
 
 func addBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
@@ -177,49 +142,53 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
 	return cliutils.Artifact{LocalPath: rootPath, TargetPath: uploadPath}
 }
 
-func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
-	if strings.Index(uploadFiles.Target, "/") < 0 {
-		uploadFiles.Target += "/"
+func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, producer utils.Producer, artifactHandlerFunc artifactContext) {
+	defer producer.Finish()
+	for _, uploadFile := range uploadSpec.Files {
+		addBuildProps(&uploadFile, flags)
+		if strings.Index(uploadFile.Target, "/") < 0 {
+			uploadFile.Target += "/"
+		}
+		uploadMetaData := uploadDescriptor{}
+		uploadFile.Pattern = cliutils.ReplaceTildeWithUserHome(uploadFile.Pattern)
+		uploadMetaData.CreateUploadDescriptor(uploadFile.Regexp, uploadFile.Flat, uploadFile.Pattern)
+		if uploadMetaData.Err != nil {
+			producer.SetError(uploadMetaData.Err)
+			return
+		}
+		// If the path is a single file then return it
+		if !uploadMetaData.IsDir {
+			artifact := getSingleFileToUpload(uploadMetaData.RootPath, uploadFile.Target, uploadMetaData.IsFlat)
+			uploadData := UploadData{artifact, uploadFile.Props}
+			task := artifactHandlerFunc(uploadData)
+			producer.Produce(task)
+			continue
+		}
+		uploadFile.Pattern = cliutils.PrepareLocalPathForUpload(uploadFile.Pattern, uploadMetaData.IsRegexp)
+		err := collectPatternMatchingFiles(uploadFile, uploadMetaData, producer, artifactHandlerFunc)
+		if err != nil {
+			producer.SetError(err)
+			return
+		}
 	}
-	isRegexp, err := cliutils.StringToBool(uploadFiles.Regexp, false)
-	if err != nil {
-		return nil, err
-	}
+}
 
-	uploadFiles.Pattern = cliutils.ReplaceTildeWithUserHome(uploadFiles.Pattern)
-	rootPath := cliutils.GetRootPathForUpload(uploadFiles.Pattern, isRegexp)
+func getRootPath(pattern string, isRegexp bool) (string, error){
+	rootPath := cliutils.GetRootPathForUpload(pattern, isRegexp)
 	if !ioutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
-	uploadFiles.Pattern = cliutils.PrepareLocalPathForUpload(uploadFiles.Pattern, isRegexp)
-	artifacts := []cliutils.Artifact{}
-	// If the path is a single file then return it
-	dir, err := ioutils.IsDir(rootPath)
-	if err != nil {
-		return nil, err
-	}
-	isFlat, err := cliutils.StringToBool(uploadFiles.Flat, true)
-	if err != nil {
-		return nil, err
-	}
-	if !dir {
-		artifact := getSingleFileToUpload(rootPath, uploadFiles.Target, isFlat)
-		return append(artifacts, artifact), nil
-	}
+	return rootPath, nil
+}
 
-	r, err := regexp.Compile(uploadFiles.Pattern)
-	cliutils.CheckError(err)
-	if err != nil {
-		return nil, err
-	}
-
+func getUploadPaths(isRecursiveString, rootPath string) ([]string, error) {
 	var paths []string
-	isRecursive, err := cliutils.StringToBool(uploadFiles.Recursive, true)
+	isRecursive, err := cliutils.StringToBool(isRecursiveString, true)
 	if err != nil {
-		return nil, err
+		return paths, err
 	}
 	if isRecursive {
 		paths, err = ioutils.ListFilesRecursive(rootPath)
@@ -227,27 +196,39 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 		paths, err = ioutils.ListFiles(rootPath)
 	}
 	if err != nil {
-		return nil, err
+		return paths, err
+	}
+	return paths, nil
+}
+
+func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext) error {
+	r, err := regexp.Compile(uploadFile.Pattern)
+	if cliutils.CheckError(err) != nil {
+		return err
 	}
 
+	paths, err := getUploadPaths(uploadFile.Recursive, uploadMetaData.RootPath)
+	if err != nil {
+		return err
+	}
 	for _, path := range paths {
 		dir, err := ioutils.IsDir(path)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if dir {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
 		size := len(groups)
-		target := uploadFiles.Target
+		target := uploadFile.Target
 		if size > 0 {
 			for i := 1; i < size; i++ {
 				group := strings.Replace(groups[i], "\\", "/", -1)
 				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
 			}
 			if strings.HasSuffix(target, "/") {
-				if isFlat {
+				if uploadMetaData.IsFlat {
 					fileName, _ := ioutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
@@ -255,20 +236,21 @@ func getFilesToUpload(uploadFiles *utils.Files) ([]cliutils.Artifact, error) {
 					target += uploadPath
 				}
 			}
-			artifacts = append(artifacts, cliutils.Artifact{path, target})
+			uploadData := UploadData{cliutils.Artifact{path, target}, uploadFile.Props}
+			task := artifactHandlerFunc(uploadData)
+			producer.Produce(task)
 		}
 	}
-	return artifacts, nil
+	return nil
 }
-
 // Uploads the file in the specified local path to the specified target path.
 // Returns true if the file was successfully uploaded.
-func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChecksumDeploySize int64, logMsgPrefix string) (utils.ArtifactBuildInfo, bool, error) {
+func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChecksumDeploySize int64, logMsgPrefix string) (utils.ArtifactsBuildInfo, bool, error) {
 	fileName, _ := ioutils.GetFileAndDirFromPath(targetPath)
 	if props != "" {
 		encodedProp, err := utils.EncodeParams(props)
 		if err != nil {
-			return utils.ArtifactBuildInfo{}, false, err
+			return utils.ArtifactsBuildInfo{}, false, err
 		}
 		targetPath += ";" + encodedProp
 	}
@@ -280,23 +262,24 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	file, err := os.Open(localPath)
 	err = cliutils.CheckError(err)
 	if err != nil {
-		return utils.ArtifactBuildInfo{}, false, err
+		return utils.ArtifactsBuildInfo{}, false, err
 	}
 	defer file.Close()
 	fileInfo, err := file.Stat()
 	err = cliutils.CheckError(err)
 	if err != nil {
-		return utils.ArtifactBuildInfo{}, false, err
+		return utils.ArtifactsBuildInfo{}, false, err
 	}
 
 	var checksumDeployed bool = false
 	var resp *http.Response
 	var details *ioutils.FileDetails
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	if fileInfo.Size() >= minChecksumDeploySize {
+	addExplodeHeader(&httpClientsDetails, flags.ExplodeArchive)
+	if fileInfo.Size() >= minChecksumDeploySize && !flags.ExplodeArchive {
 		resp, details, err = tryChecksumDeploy(localPath, targetPath, flags, httpClientsDetails)
 		if err != nil {
-			return utils.ArtifactBuildInfo{}, false, err
+			return utils.ArtifactsBuildInfo{}, false, err
 		}
 		checksumDeployed = !flags.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
@@ -304,7 +287,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		var body []byte
 		resp, body, err = utils.UploadFile(file, targetPath, flags.ArtDetails, details, httpClientsDetails)
 		if err != nil {
-			return utils.ArtifactBuildInfo{}, false, err
+			return utils.ArtifactsBuildInfo{}, false, err
 		}
 		if resp.StatusCode != 201 && resp.StatusCode != 200 {
 			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
@@ -326,14 +309,18 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) utils.ArtifactBuildInfo {
-	return utils.ArtifactBuildInfo{
+func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) utils.ArtifactsBuildInfo {
+	return utils.ArtifactsBuildInfo{
 		Name: fileName,
 		BuildInfoCommon : &utils.BuildInfoCommon{
 			Sha1: details.Sha1,
 			Md5: details.Md5,
 		},
 	}
+}
+
+func addExplodeHeader(httpClientsDetails *ioutils.HttpClientDetails, isExplode bool) {
+	utils.AddHeader("X-Explode-Archive", strconv.FormatBool(isExplode), &httpClientsDetails.Headers)
 }
 
 func getMinChecksumDeploySize() (int64, error) {
@@ -384,17 +371,18 @@ httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *iou
 func getDebianMatrixParams(debianPropsStr string) string {
 	debProps := strings.Split(debianPropsStr, "/")
 	return ";deb.distribution=" + debProps[0] +
-			";deb.component=" + debProps[1] +
-			";deb.architecture=" + debProps[2]
+		";deb.component=" + debProps[1] +
+		";deb.architecture=" + debProps[2]
 }
 
 type UploadFlags struct {
-	ArtDetails  *config.ArtifactoryDetails
-	DryRun      bool
-	Deb         string
-	Threads     int
-	BuildName   string
-	BuildNumber string
+	ArtDetails     *config.ArtifactoryDetails
+	DryRun         bool
+	ExplodeArchive bool
+	Deb            string
+	Threads        int
+	BuildName      string
+	BuildNumber    string
 }
 
 func (flags *UploadFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
@@ -408,4 +396,76 @@ func (flags *UploadFlags) IsDryRun() bool {
 type UploadData struct {
 	Artifact cliutils.Artifact
 	Props    string
+}
+
+type uploadDescriptor struct {
+	IsFlat   bool
+	IsRegexp bool
+	IsDir    bool
+	RootPath string
+	Err      error
+}
+
+func (p *uploadDescriptor) CreateUploadDescriptor(isRegexp, isFlat, pattern string) {
+	p.isRegexp(isRegexp)
+	p.isFlat(isFlat)
+	p.setRootPath(pattern)
+	p.checkIfDir()
+}
+
+func (p *uploadDescriptor) isRegexp(isRegexpString string) {
+	if p.Err == nil {
+		p.IsRegexp, p.Err = cliutils.StringToBool(isRegexpString, false)
+	}
+}
+
+func (p *uploadDescriptor) isFlat(isFlatString string) {
+	if p.Err == nil {
+		p.IsFlat, p.Err = cliutils.StringToBool(isFlatString, true)
+	}
+}
+
+func (p *uploadDescriptor) setRootPath(pattern string) {
+	if p.Err == nil {
+		p.RootPath, p.Err = getRootPath(pattern, p.IsRegexp)
+	}
+}
+
+func (p *uploadDescriptor) checkIfDir() {
+	if p.Err == nil {
+		p.IsDir, p.Err = ioutils.IsDir(p.RootPath)
+	}
+}
+
+type uploadResult struct {
+	UploadCount           []int
+	TotalCount            []int
+	BuildInfoArtifacts    [][]utils.ArtifactsBuildInfo
+}
+
+type artifactContext func(UploadData) utils.Task
+
+func createArtifactHandlerFunc(s *uploadResult, minChecksumDeploySize int64, flags *UploadFlags) artifactContext {
+	return func(artifact UploadData) utils.Task {
+		return func(threadId int) (e error) {
+			var uploaded bool
+			var target string
+			var buildInfoArtifact utils.ArtifactsBuildInfo
+			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
+			target, e = utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifact.Artifact.TargetPath, make(map[string]string))
+			if e != nil {
+				return
+			}
+			buildInfoArtifact, uploaded, e = uploadFile(artifact.Artifact.LocalPath, target, artifact.Props, flags, minChecksumDeploySize, logMsgPrefix)
+			if e != nil {
+				return
+			}
+			if uploaded {
+				s.UploadCount[threadId]++
+				s.BuildInfoArtifacts[threadId] = append(s.BuildInfoArtifacts[threadId], buildInfoArtifact)
+			}
+			s.TotalCount[threadId]++
+			return
+		}
+	}
 }

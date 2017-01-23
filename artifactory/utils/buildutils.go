@@ -45,6 +45,7 @@ func saveBuildData(action interface{}, buildName, buildNumber string) (err error
 	if err != nil {
 		return err
 	}
+	defer tmpfile.Close()
 	_, err = tmpfile.Write([]byte(content.String()))
 	return
 }
@@ -80,7 +81,7 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 
 type populateBuildInfoWrapper func(*ArtifactBuildInfoWrapper)
 
-func PrepareBuildInfoForSave(buildName, buildNumber string, populateDataFunc populateBuildInfoWrapper) error {
+func SavePartialBuildInfo(buildName, buildNumber string, populateDataFunc populateBuildInfoWrapper) error {
 	tempBuildInfo := new(ArtifactBuildInfoWrapper)
 	tempBuildInfo.Timestamp = time.Now().UnixNano() / int64(time.Millisecond)
 	populateDataFunc(tempBuildInfo)
@@ -146,7 +147,7 @@ type BuildInfoCommon struct {
 	Md5  string `json:"md5,omitempty"`
 }
 
-type ArtifactBuildInfo struct {
+type ArtifactsBuildInfo struct {
 	Name string `json:"name,omitempty"`
 	*BuildInfoCommon
 }
@@ -159,7 +160,7 @@ type DependenciesBuildInfo struct {
 type BuildInfoAction string
 
 type ArtifactBuildInfoWrapper struct {
-	Artifacts    []ArtifactBuildInfo     `json:"Artifacts,omitempty"`
+	Artifacts    []ArtifactsBuildInfo     `json:"Artifacts,omitempty"`
 	Dependencies []DependenciesBuildInfo `json:"Dependencies,omitempty"`
 	Env          BuildEnv                `json:"Env,omitempty"`
 	Timestamp    int64                   `json:"Timestamp,omitempty"`

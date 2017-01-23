@@ -50,7 +50,8 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 
 func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t)
-	testFileRel := "~/cliTestFile.*"
+
+	testFileRel := "~" + ioutils.GetFileSeperator() + "cliTestFile.txt"
 	testFileAbs := ioutils.GetHomeDir() + "/cliTestFile.txt"
 
 	d1 := []byte("test file")

@@ -134,10 +134,14 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 }
 
 func SetContentType(contentType string, headers *map[string]string) {
+	AddHeader("Content-Type", contentType, headers)
+}
+
+func AddHeader(headerName, headerValue string, headers *map[string]string) {
 	if *headers == nil {
 		*headers = make(map[string]string)
 	}
-	(*headers)["Content-Type"] = contentType
+	(*headers)[headerName] = headerValue
 }
 
 func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) (string, error) {

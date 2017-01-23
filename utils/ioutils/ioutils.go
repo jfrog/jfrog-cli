@@ -197,20 +197,23 @@ func getHttpClient(transport *http.Transport) *http.Client {
 }
 
 func Send(method string, url string, content []byte, allowRedirect bool,
-closeBody bool, httpClientsDetails HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 
 	var req *http.Request
+	var err error
 	if content != nil {
 		req, err = http.NewRequest(method, url, bytes.NewBuffer(content))
 	} else {
 		req, err = http.NewRequest(method, url, nil)
 	}
-	err = cliutils.CheckError(err)
-	if err != nil {
-		return
+	if cliutils.CheckError(err) != nil {
+		return nil, nil, "", err
 	}
-	req.Close = true
+	return doRequest(req, allowRedirect, closeBody, httpClientsDetails)
+}
 
+func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails)  (resp *http.Response, respBody []byte, redirectUrl string, err error)  {
+	req.Close = true
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 
@@ -258,33 +261,9 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 		return nil, nil, err
 	}
 	req.ContentLength = size
-	req.Close = true
 
-	if httpClientsDetails.Headers != nil {
-		for name := range httpClientsDetails.Headers {
-			req.Header.Set(name, httpClientsDetails.Headers[name])
-		}
-	}
-	if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
-		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
-	}
-
-	setAuthentication(req, httpClientsDetails)
-	addUserAgentHeader(req)
-
-	length := strconv.FormatInt(size, 10)
-	req.Header.Set("Content-Length", length)
-
-	client := getHttpClient(httpClientsDetails.Transport);
-	resp, err := client.Do(req)
-	err = cliutils.CheckError(err)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	return resp, body, nil
+	resp, body, _, err := doRequest(req, false, false, httpClientsDetails)
+	return resp, body, err
 }
 
 func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) (*http.Response, error) {
