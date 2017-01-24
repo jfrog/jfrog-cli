@@ -48,23 +48,23 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]utils.DependenciesBuildInfo, error) {
 	buildDependencies := make([][]utils.DependenciesBuildInfo, flags.Threads)
 	producerConsumer := utils.NewProducerConsumer(flags.Threads)
-	dependencyHandlerFunc := createDependencyHandlerFunc(buildDependencies, flags)
+	fileHandlerFunc := createFileHandlerFunc(buildDependencies, flags)
 	log.Info("Searching artifacts...")
-	getDependenciesForDownload(producerConsumer, downloadSpec, dependencyHandlerFunc, flags)
-	err := performDownloadTasks(producerConsumer)
+	prepareTasks(producerConsumer, downloadSpec, fileHandlerFunc, flags)
+	err := performTasks(producerConsumer)
 	return buildDependencies, err
 }
 
-func getDependenciesForDownload(producer utils.Producer, downloadSpec *utils.SpecFiles, dependencyContextHandler dependencyHandlerFunc, flags *DownloadFlags) {
+func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, flags *DownloadFlags) {
 	go func() {
 		defer producer.Finish()
 		var err error
 		for i := 0; i < len(downloadSpec.Files); i++ {
 			switch downloadSpec.Get(i).GetSpecType() {
 			case utils.WILDCARD, utils.SIMPLE:
-				err = collectWildcardDependencies(downloadSpec.Get(i), producer, dependencyContextHandler, flags)
+				err = collectFilesUsingWildcardPattern(downloadSpec.Get(i), producer, fileContextHandler, flags)
 			case utils.AQL:
-				err = collectAqlDependencies(downloadSpec.Get(i), producer, dependencyContextHandler, flags)
+				err = collectFilesUsingAql(downloadSpec.Get(i), producer, fileContextHandler, flags)
 			}
 			if err != nil {
 				producer.SetError(err)
@@ -82,7 +82,7 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.Depe
 	return buildInfo
 }
 
-func collectWildcardDependencies(fileSpec *utils.Files, producer  utils.Producer, dependencyHandler dependencyHandlerFunc, flags *DownloadFlags) error {
+func collectFilesUsingWildcardPattern(fileSpec *utils.Files, producer  utils.Producer, fileHandler fileHandlerFunc, flags *DownloadFlags) error {
 	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
 	if err != nil {
 		return err
@@ -91,18 +91,18 @@ func collectWildcardDependencies(fileSpec *utils.Files, producer  utils.Producer
 	if err != nil {
 		return err
 	}
-	return produceDownloadTasks(resultItems, fileSpec, producer, dependencyHandler)
+	return produceTasks(resultItems, fileSpec, producer, fileHandler)
 }
 
-func collectAqlDependencies(fileSpec *utils.Files, producer utils.Producer, dependencyHandler dependencyHandlerFunc, flags *DownloadFlags) error {
+func collectFilesUsingAql(fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc, flags *DownloadFlags) error {
 	resultItems, err := utils.AqlSearchBySpec(fileSpec.Aql, flags)
 	if err != nil {
 		return err
 	}
-	return produceDownloadTasks(resultItems, fileSpec, producer, dependencyHandler)
+	return produceTasks(resultItems, fileSpec, producer, fileHandler)
 }
 
-func produceDownloadTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, dependencyHandler dependencyHandlerFunc) error {
+func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc) error {
 	flat, err := cliutils.StringToBool(fileSpec.Flat, false)
 	if err != nil {
 		return err
@@ -114,12 +114,12 @@ func produceDownloadTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Fil
 			Target: fileSpec.Target,
 			Flat: flat,
 		}
-		producer.Produce(dependencyHandler(tempData))
+		producer.Produce(fileHandler(tempData))
 	}
 	return nil
 }
 
-func performDownloadTasks(producerConsumer utils.Consumer) (err error) {
+func performTasks(producerConsumer utils.Consumer) (err error) {
 	// Blocks until finish consuming
 	producerConsumer.Consume()
 	if e := producerConsumer.GetError(); e != nil {
@@ -226,8 +226,8 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 	return false, nil
 }
 
-type dependencyHandlerFunc func(DownloadData) utils.Task
-func createDependencyHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) dependencyHandlerFunc {
+type fileHandlerFunc func(DownloadData) utils.Task
+func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) fileHandlerFunc {
 	return func(downloadData DownloadData) utils.Task {
 		return func(threadId int) error {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
