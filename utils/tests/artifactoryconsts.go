@@ -38,6 +38,18 @@ var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/c3.in",
 }
 
+var ExplodeUploadExpectedRepo1 = []string{
+	Repo1 + "/a/a3.in",
+	Repo1 + "/a/a1.in",
+	Repo1 + "/a/a2.in",
+	Repo1 + "/a/b/b1.in",
+	Repo1 + "/a/b/b2.in",
+	Repo1 + "/a/b/b3.in",
+	Repo1 + "/a/b/c/c1.in",
+	Repo1 + "/a/b/c/c2.in",
+	Repo1 + "/a/b/c/c3.in",
+}
+
 var SimpleUploadExpectedRepo2 = []string{
 	Repo2 + "/flat_recursive/a3.in",
 	Repo2 + "/flat_recursive/a1.in",

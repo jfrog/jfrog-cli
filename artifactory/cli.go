@@ -197,8 +197,8 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 		cli.BoolFlag{
-			Name:  "explode-archive",
-			Usage: "[Default: false] Set to true to deploys an archive containing multiple artifacts and extracts it at the specified destination.",
+			Name:  "explode",
+			Usage: "[Default: false] Set to true to extract an archive after it is deployed to Artifactory.",
 		},
 	}...)
 }
@@ -1061,7 +1061,7 @@ func fixWinDownloadFilesPath(uploadSpec *utils.SpecFiles) {
 func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err error) {
 	uploadFlags = new(commands.UploadFlags)
 	uploadFlags.DryRun = c.Bool("dry-run")
-	uploadFlags.ExplodeArchive = c.Bool("explode-archive")
+	uploadFlags.ExplodeArchive = c.Bool("explode")
 	uploadFlags.Threads = getThreadsCount(c);
 	uploadFlags.BuildName = getBuildName(c);
 	uploadFlags.BuildNumber = getBuildNumber(c);

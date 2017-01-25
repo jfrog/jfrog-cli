@@ -320,7 +320,9 @@ func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) util
 }
 
 func addExplodeHeader(httpClientsDetails *ioutils.HttpClientDetails, isExplode bool) {
-	utils.AddHeader("X-Explode-Archive", strconv.FormatBool(isExplode), &httpClientsDetails.Headers)
+	if isExplode {
+		utils.AddHeader("X-Explode-Archive", "true", &httpClientsDetails.Headers)
+	}
 }
 
 func getMinChecksumDeploySize() (int64, error) {
