@@ -24,7 +24,7 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 ## Setup Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
-Please download `Go 1.6` or above.
+Please download `Go 1.7` or above.
 
 Navigate to the directory where you want to create the jfrog-cli-go project, and set the value of the GOPATH environment variable to the full path of this directory.
 
