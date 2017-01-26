@@ -41,8 +41,8 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*
 			    &details.DefPackageLicenses, defaultDetails.DefPackageLicenses)
 		}
 	}
-	config.SaveBintrayConf(details)
-	return details, nil
+	err := config.SaveBintrayConf(details)
+	return details, err
 }
 
 func ShowConfig() error {

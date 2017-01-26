@@ -87,6 +87,7 @@ func (pc *ProducerConsumer) Consume() {
 				e := task(threadId)
 				if e != nil {
 					err = e
+					pc.SetError(err)
 					pc.StopProducer()
 					break
 				}
