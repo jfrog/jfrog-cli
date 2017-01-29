@@ -12,6 +12,8 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"os"
+	"path/filepath"
+	"runtime"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -84,6 +86,147 @@ func TestArtifactoryCopySpec(t *testing.T) {
 
 	isExistInArtifactory(tests.MassiveMoveExpected, tests.GetFilePath(tests.SearchMoveDeleteRepoSpec), t)
 	cleanArtifactoryTest()
+}
+
+func TestSimpleSymlinkHandling(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath() + "a/", "a1.in")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("u", link + " " + tests.Repo1 + " --symlinks=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true --validate-symlinks=true")
+	validateSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestSymlinkWildcardPathHandling(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath() + "a/", "a1.in")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	link1 := filepath.Join(tests.GetTestResourcesPath() + "a/", "link*")
+	artifactoryCli.Exec("u", link1 + " " + tests.Repo1 + " --symlinks=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true --validate-symlinks=true")
+	validateSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestSymlinkToDirHandling(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath(), "a")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("u", link + " " + tests.Repo1 + " --symlinks=true --recursive=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	validateSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestSymlinkToDirWilcardHandling(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath(), "a")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	link1 := filepath.Join(tests.GetTestResourcesPath() + "a/", "lin*")
+	artifactoryCli.Exec("u", link1 + " " + tests.Repo1 + " --symlinks=true --recursive=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	validateSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localDirPath := filepath.Join(tests.GetTestResourcesPath(), "a")
+	link1 := filepath.Join(tests.GetTestResourcesPath() + "a/", "link1")
+	err := os.Symlink(localDirPath, link1)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	localFilePath := filepath.Join(tests.GetTestResourcesPath() + "a/", "a1.in")
+	link2 := filepath.Join(tests.GetTestResourcesPath() + "a/", "link2")
+	err = os.Symlink(localFilePath, link2)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	artifactoryCli.Exec("u", localDirPath + "/link* " + tests.Repo1 + " --symlinks=true --recursive=true")
+	err = os.Remove(link1)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	err = os.Remove(link2)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link* " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	validateSymLink(link1, localDirPath, t)
+	os.Remove(link1)
+	validateSymLink(link2, localFilePath, t)
+	os.Remove(link2)
+	cleanArtifactoryTest()
+}
+
+func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
+	exists := ioutils.IsPathSymlink(localLinkPath)
+	if !exists {
+		t.Error(errors.New("Faild to download symlinks from artifactory"))
+	}
+	symlinks, err := filepath.EvalSymlinks(localLinkPath)
+	if err != nil {
+		t.Error(errors.New("Can't eval symlinks"))
+	}
+	if symlinks != localFilePath {
+		t.Error(errors.New("Symlinks wasn't created as expected. expected:" + localFilePath + " actual: " + symlinks))
+	}
 }
 
 func TestArtifactoryDelete(t *testing.T) {

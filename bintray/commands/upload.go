@@ -318,7 +318,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 				}
 			}
 
-			artifacts = append(artifacts, cliutils.Artifact{path, target})
+			artifacts = append(artifacts, cliutils.Artifact{path, target, ""})
 		}
 	}
 	spinner.Stop()

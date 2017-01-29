@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"os/user"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -25,6 +24,7 @@ import (
 	"path"
 )
 
+const SYMLINK_FILE_CONTENT = ""
 var tempDirPath string
 
 func GetFileSeperator() string {
@@ -49,6 +49,15 @@ func IsFileExists(path string) (bool, error) {
 		return false, err
 	}
 	return !f.IsDir(), nil
+}
+
+func IsPathSymlink(path string) bool {
+	f, _ := os.Lstat(path)
+	return f != nil && IsFileSymlink(f)
+}
+
+func IsFileSymlink(file os.FileInfo) bool {
+	return file.Mode() & os.ModeSymlink != 0
 }
 
 func IsDir(path string) (bool, error) {
@@ -98,27 +107,24 @@ func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat
 	return
 }
 
-func SplitArtifactPathToRepoPathName(filePath string) (repo, path, fileName string) {
-	index1 := strings.Index(filePath, "/")
-	index2 := strings.LastIndex(filePath, "/")
-	repo = filePath[:index1]
-
-	if index1 != index2 {
-		path = filePath[index1 + 1:index2]
-	}
-	if index2 != len(filePath) {
-		fileName = filePath[index2 + 1:]
-	}
+// Return the recursive list of files and directories in the specified path
+func ListFilesRecursive(path string) (fileList []string, err error) {
+	fileList = []string{}
+	err = cliutils.Walk(path, func(path string, f os.FileInfo, err error) error {
+		fileList = append(fileList, path)
+		return nil
+	}, false)
+	err = cliutils.CheckError(err)
 	return
 }
 
 // Return the recursive list of files and directories in the specified path
-func ListFilesRecursive(path string) (fileList []string, err error) {
+func ListFilesRecursiveWalkIntoDirSymlink(path string, walkIntoDirSymlink bool) (fileList []string, err error) {
 	fileList = []string{}
-	err = filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err = cliutils.Walk(path, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
 		return nil
-	})
+	}, walkIntoDirSymlink)
 	err = cliutils.CheckError(err)
 	return
 }
@@ -139,7 +145,7 @@ func ListFiles(path string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if exists {
+		if exists || IsPathSymlink(filePath) {
 			fileList = append(fileList, filePath)
 		}
 	}
@@ -247,23 +253,76 @@ func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClient
 	return
 }
 
+func getUploadRequestContent(file *os.File) io.Reader {
+	var reqBody io.Reader
+	reqBody = file
+	if file == nil {
+		reqBody = bytes.NewBuffer([]byte(SYMLINK_FILE_CONTENT))
+	}
+	return reqBody
+}
+
+func getFileSize(file *os.File) (int64, error) {
+	size := int64(0)
+	if file != nil {
+		fileInfo, err := file.Stat()
+		if cliutils.CheckError(err) != nil {
+			return size, err
+		}
+		size = fileInfo.Size()
+	}
+	return size, nil
+}
+
+func setRequestHeaders(httpClientsDetails HttpClientDetails, size int64, req *http.Request) {
+	if httpClientsDetails.Headers != nil {
+		for name := range httpClientsDetails.Headers {
+			req.Header.Set(name, httpClientsDetails.Headers[name])
+		}
+	}
+	length := strconv.FormatInt(size, 10)
+	req.Header.Set("Content-Length", length)
+}
+
 func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*http.Response, []byte, error) {
-	fileInfo, err := f.Stat()
-	err = cliutils.CheckError(err)
+	size, err := getFileSize(f)
 	if err != nil {
 		return nil, nil, err
 	}
-	size := fileInfo.Size()
-
-	req, err := http.NewRequest("PUT", url, f)
-	err = cliutils.CheckError(err)
-	if err != nil {
+	req, err := http.NewRequest("PUT", url, getUploadRequestContent(f))
+	if cliutils.CheckError(err) != nil {
 		return nil, nil, err
 	}
 	req.ContentLength = size
+	req.Close = true
 
-	resp, body, _, err := doRequest(req, false, false, httpClientsDetails)
-	return resp, body, err
+	if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
+		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
+	}
+	setRequestHeaders(httpClientsDetails, size, req)
+	setAuthentication(req, httpClientsDetails)
+	addUserAgentHeader(req)
+
+	client := getHttpClient(httpClientsDetails.Transport);
+	resp, err := client.Do(req)
+	if cliutils.CheckError(err) != nil {
+		return nil, nil, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	return resp, body, nil
+}
+
+func CreateFilePath(localPath, fileName string) (string, error) {
+	if localPath != "" {
+		err := os.MkdirAll(localPath, 0777)
+		if cliutils.CheckError(err) != nil {
+			return "", err
+		}
+		fileName = localPath + "/" + fileName
+	}
+	return fileName, nil
 }
 
 func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) (*http.Response, error) {
@@ -271,19 +330,17 @@ func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails H
 	return resp, err
 }
 
-func DownloadFileNoRedirect(downloadPath, localPath, fileName string,
-httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
-
+func DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
 	return downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails)
 }
 
 func downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
 httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
-	if localPath != "" {
-		os.MkdirAll(localPath, 0777)
-		fileName = localPath + "/" + fileName
-	}
 
+	fileName, err = CreateFilePath(localPath, fileName)
+	if err != nil {
+		return
+	}
 	out, err := os.Create(fileName)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -526,11 +583,11 @@ func ScanFromConsole(caption string, scanInto *string, defaultValue string) {
 func GetFileDetails(filePath string) (*FileDetails, error) {
 	var err error
 	details := new(FileDetails)
-	details.Md5, err = calcMd5(filePath)
+	details.Md5, err = CalcMd5(filePath)
 	if err != nil {
 		return nil, err
 	}
-	details.Sha1, err = calcSha1(filePath)
+	details.Sha1, err = CalcSha1(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -591,17 +648,20 @@ func addUserAgentHeader(req *http.Request) {
 	req.Header.Set("User-Agent", cliutils.CliAgent + "/" + cliutils.GetVersion())
 }
 
-func calcSha1(filePath string) (string, error) {
+func CalcSha1(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	cliutils.CheckError(err)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
+	return GetSha1(file)
+}
 
+func GetSha1(input io.Reader) (string, error) {
 	var resSha1 []byte
 	hashSha1 := sha1.New()
-	_, err = io.Copy(hashSha1, file)
+	_, err := io.Copy(hashSha1, input)
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return "", err
@@ -609,7 +669,7 @@ func calcSha1(filePath string) (string, error) {
 	return hex.EncodeToString(hashSha1.Sum(resSha1)), nil
 }
 
-func calcMd5(filePath string) (string, error) {
+func CalcMd5(filePath string) (string, error) {
 	var err error
 	file, err := os.Open(filePath)
 	err = cliutils.CheckError(err)
@@ -617,10 +677,13 @@ func calcMd5(filePath string) (string, error) {
 		return "", err
 	}
 	defer file.Close()
+	return GetMd5(file)
+}
 
+func GetMd5(input io.Reader) (string, error) {
 	var resMd5 []byte
 	hashMd5 := md5.New()
-	_, err = io.Copy(hashMd5, file)
+	_, err := io.Copy(hashMd5, input)
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return "", err
