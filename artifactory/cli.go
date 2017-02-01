@@ -202,7 +202,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "symlinks",
-			Usage: "[Default: false] Set to true to preserve soft links structure in Artifactory.",
+			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.",
 		},
 	}...)
 }
@@ -260,7 +260,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "validate-symlinks",
-			Usage: "[Default: false] Set to true to validate symlinks pointing to files by comparing sha1.",
+			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
 		},
 	}...)
 }

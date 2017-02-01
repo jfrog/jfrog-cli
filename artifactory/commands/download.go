@@ -228,7 +228,7 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 	return false, nil
 }
 
-func removeSymlinkFile(localSymlinkPath string) error {
+func removeIfSymlink(localSymlinkPath string) error {
 	if ioutils.IsPathSymlink(localSymlinkPath) {
 		if err := os.Remove(localSymlinkPath); cliutils.CheckError(err) != nil {
 			return err
@@ -237,10 +237,13 @@ func removeSymlinkFile(localSymlinkPath string) error {
 	return nil
 }
 
-func createLocalSymlink(localPath, localFileName, symlinkArtifact string, validateSymlinkContentChecksum bool, symlinkContentChecksum string, logMsgPrefix string) error {
-	if validateSymlinkContentChecksum && symlinkContentChecksum != "" {
+func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlinkChecksum bool, symlinkContentChecksum string, logMsgPrefix string) error {
+	if symlinkChecksum && symlinkContentChecksum != "" {
 		sha1, err := ioutils.CalcSha1(symlinkArtifact)
-		if err != nil || sha1 != symlinkContentChecksum {
+		if err != nil {
+			return err
+		}
+		if sha1 != symlinkContentChecksum {
 			return cliutils.CheckError(errors.New("Symlink validation failed for link: " + symlinkArtifact))
 		}
 	}
@@ -255,7 +258,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, valida
 			return err
 		}
 	}
-	// Need to prepare the folders hierarchy
+	// Need to prepare the directories hierarchy
 	_, err = ioutils.CreateFilePath(localPath, localFileName)
 	if err != nil {
 		return err
@@ -268,7 +271,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, valida
 	return nil
 }
 
-func getArtifactPropertyByKey(properties []utils.ArtifactProperty, key string) string {
+func getArtifactPropertyByKey(properties []utils.Property, key string) string {
 	for _, v := range properties {
 		if v.Key == key {
 			return v.Value
@@ -277,11 +280,11 @@ func getArtifactPropertyByKey(properties []utils.ArtifactProperty, key string) s
 	return ""
 }
 
-func getArtifactSymlinkPath(properties []utils.ArtifactProperty) string {
+func getArtifactSymlinkPath(properties []utils.Property) string {
 	return getArtifactPropertyByKey(properties, utils.ARTIFACTORY_SYMLINK)
 }
 
-func getArtifactSymlinkCheckSum(properties []utils.ArtifactProperty) string {
+func getArtifactSymlinkChecksum(properties []utils.Property) string {
 	return getArtifactPropertyByKey(properties, utils.SYMLINK_SHA1)
 }
 
@@ -305,16 +308,10 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 				return e
 			}
 			localPath, localFileName := ioutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
-			removeSymlinkFile(filepath.Join(localPath, localFileName))
+			removeIfSymlink(filepath.Join(localPath, localFileName))
 			if flags.Symlink {
-				symlinkArtifact := getArtifactSymlinkPath(downloadData.Dependency.Properties)
-				if len(symlinkArtifact) > 0 {
-					if e = createLocalSymlink(localPath, localFileName, symlinkArtifact, flags.ValidateSymlink, getArtifactSymlinkCheckSum(downloadData.Dependency.Properties), logMsgPrefix); e != nil {
-						return e
-					}
-					dependency := createBuildDependencyItem(downloadData.Dependency)
-					buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
-					return nil
+				if isSymlink, e := createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix, downloadData, buildDependencies, threadId, flags); isSymlink {
+					return e
 				}
 			}
 			shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
@@ -339,6 +336,21 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 	}
 }
 
+func createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix string, downloadData DownloadData, buildDependencies [][]utils.DependenciesBuildInfo, threadId int, flags *DownloadFlags) (bool, error) {
+	symlinkArtifact := getArtifactSymlinkPath(downloadData.Dependency.Properties)
+	isSymlink := len(symlinkArtifact) > 0
+	if isSymlink {
+		symlinkChecksum := getArtifactSymlinkChecksum(downloadData.Dependency.Properties)
+		if e := createLocalSymlink(localPath, localFileName, symlinkArtifact, flags.ValidateSymlink, symlinkChecksum, logMsgPrefix); e != nil {
+			return isSymlink, e
+		}
+		dependency := createBuildDependencyItem(downloadData.Dependency)
+		buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
+		return isSymlink, nil
+	}
+	return isSymlink, nil
+}
+
 type DownloadFileDetails struct {
 	DownloadPath  string          `json:"DownloadPath,omitempty"`
 	LocalPath     string          `json:"LocalPath,omitempty"`
@@ -348,13 +360,13 @@ type DownloadFileDetails struct {
 }
 
 type DownloadFlags struct {
-	ArtDetails   *config.ArtifactoryDetails
-	DryRun       bool
-	Threads      int
-	MinSplitSize int64
-	SplitCount   int
-	BuildName    string
-	BuildNumber  string
+	ArtDetails      *config.ArtifactoryDetails
+	DryRun          bool
+	Threads         int
+	MinSplitSize    int64
+	SplitCount      int
+	BuildName       string
+	BuildNumber     string
 	Symlink         bool
 	ValidateSymlink bool
 }

@@ -88,6 +88,9 @@ func TestArtifactoryCopySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload symlink by full path to Artifactory and the link content checksum
+// Download the symlink which was uploaded.
+// validate the symlink content checksum.
 func TestSimpleSymlinkHandling(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -110,6 +113,9 @@ func TestSimpleSymlinkHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload symlink to Artifactory using wildcard pattern and the link content checksum
+// Download the symlink which was uploaded.
+// validate the symlink content checksum.
 func TestSymlinkWildcardPathHandling(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -133,6 +139,8 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload symlink pointing to directory to Artifactory.
+// Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -155,6 +163,8 @@ func TestSymlinkToDirHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload symlink pointing to directory using wildcard path to Artifactory.
+// Download the symlink which was uploaded.
 func TestSymlinkToDirWilcardHandling(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -178,6 +188,9 @@ func TestSymlinkToDirWilcardHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Upload symlink pointing to directory using wildcard path to Artifactory.
+// Download the symlink which was uploaded.
+// The test create circular links and the test suppose to prune the circular searching.
 func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -338,7 +351,7 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	specFile := tests.GetFilePath(tests.DownloadSpec)
 	artifactoryCli.Exec("download", "--spec=" + specFile)
 
-	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/", false)
 	tests.IsExistLocally(tests.MassiveDownload, paths, t)
 	cleanArtifactoryTest()
 }

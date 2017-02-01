@@ -278,7 +278,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 	spinner.Start()
 	var paths []string
 	if flags.Recursive {
-		paths, err = ioutils.ListFilesRecursive(rootPath)
+		paths, err = ioutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
 	} else {
 		paths, err = ioutils.ListFiles(rootPath)
 	}

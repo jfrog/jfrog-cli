@@ -44,11 +44,11 @@ func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]boo
 		if err != nil {
 			return err
 		}
-		if walkIntoDirSymlink && visited[realPath] == true {
+		if walkIntoDirSymlink && visited[realPath] {
 			continue
 		}
 		var fileHandler Stat
-		if walkIntoDirSymlink == true {
+		if walkIntoDirSymlink {
 			fileHandler = stat
 		} else {
 			fileHandler = lStat
@@ -70,7 +70,7 @@ func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]boo
 	return nil
 }
 
-// The same as filepath.Walk the only difference is that we can drill into symlink.
+// The same as filepath.Walk the only difference is that we can walk into symlink.
 // Avoiding infinite loops by saving the real paths we already visited.
 func Walk(root string, walkFn WalkFunc, walkIntoDirSymlink bool) error {
 	info, err := stat(root)
@@ -83,6 +83,7 @@ func Walk(root string, walkFn WalkFunc, walkIntoDirSymlink bool) error {
 
 // readDirNames reads the directory named by dirname and returns
 // a sorted list of directory entries.
+// The same as path/filepath readDirNames function
 func readDirNames(dirname string) ([]string, error) {
 	f, err := os.Open(dirname)
 	if err != nil {

@@ -76,10 +76,10 @@ type AqlSearchResultItem struct {
 	Actual_Md5  string
 	Actual_Sha1 string
 	Size        int64
-	Properties  []ArtifactProperty
+	Properties  []Property
 }
 
-type ArtifactProperty struct {
+type Property struct {
 	Key   string
 	Value string
 }

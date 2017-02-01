@@ -112,18 +112,14 @@ func addBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
 	if flags.BuildName == "" || flags.BuildNumber == "" {
 		return
 	}
-	props := uploadFiles.Props
-	if (props != "") {
-		props += ";"
-	}
-	props += "build.name=" + flags.BuildName
+	props := "build.name=" + flags.BuildName
 	props += ";build.number=" + flags.BuildNumber
 	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(flags.BuildName, flags.BuildNumber)
 	if err != nil {
 		return
 	}
 	props += ";build.timestamp=" + strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano() / int64(time.Millisecond), 10)
-	uploadFiles.Props = props
+	uploadFiles.Props = addProps(uploadFiles.Props, props)
 	return
 }
 
@@ -147,13 +143,17 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
 	return cliutils.Artifact{LocalPath: rootPath, TargetPath: uploadPath, Symlink: symlinkPath}
 }
 
-func buildArtifactProps(props string, artifact cliutils.Artifact, flags *UploadFlags) (string, error) {
-	artifactProps := props
+func addProps(oldProps, additionalProps string) string {
+	if len(oldProps) > 0 && !strings.HasSuffix(oldProps, ";")  && len(additionalProps) > 0 {
+		oldProps += ";"
+	}
+	return oldProps + additionalProps
+}
+
+func addSymlinkProps(props string, artifact cliutils.Artifact, flags *UploadFlags) (string, error) {
+	artifactProps := ""
 	artifactSymlink := artifact.Symlink
 	if flags.Symlink && len(artifactSymlink) > 0 {
-		if len(artifactProps) > 0 && !strings.HasSuffix(artifactProps, ";") {
-			artifactProps += ";"
-		}
 		sha1Property := ""
 		fileInfo, err := os.Stat(artifact.LocalPath)
 		if err != nil {
@@ -168,6 +168,7 @@ func buildArtifactProps(props string, artifact cliutils.Artifact, flags *UploadF
 		}
 		artifactProps += utils.ARTIFACTORY_SYMLINK + "=" + artifactSymlink + sha1Property
 	}
+	artifactProps = addProps(props, artifactProps)
 	return artifactProps, nil
 }
 
@@ -188,7 +189,7 @@ func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, prod
 		// If the path is a single file then return it
 		if !uploadMetaData.IsDir || (flags.Symlink && ioutils.IsPathSymlink(uploadFile.Pattern)) {
 			artifact := getSingleFileToUpload(uploadMetaData.RootPath, uploadFile.Target, uploadMetaData.IsFlat)
-			props, err := buildArtifactProps(uploadFile.Props, artifact, flags)
+			props, err := addSymlinkProps(uploadFile.Props, artifact, flags)
 			if err != nil {
 				producer.SetError(uploadMetaData.Err)
 				return
@@ -218,6 +219,7 @@ func getRootPath(pattern string, isRegexp bool) (string, error){
 	return rootPath, nil
 }
 
+// If filePath is path to a symlink we should return the link content e.g where the link points
 func getFileSymlinkPath(filePath string) (string, error){
 	fileInfo, e := os.Lstat(filePath)
 	if cliutils.CheckError(e) != nil {
@@ -290,7 +292,7 @@ func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDe
 				return e
 			}
 			artifact := cliutils.Artifact{LocalPath:path, TargetPath:target, Symlink:symlinkPath}
-			props, e := buildArtifactProps(uploadFile.Props, artifact, flags)
+			props, e := addSymlinkProps(uploadFile.Props, artifact, flags)
 			if e != nil {
 				return e
 			}
@@ -357,20 +359,25 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		return utils.ArtifactsBuildInfo{}, false, err
 	}
 	if flags.Symlink && ioutils.IsFileSymlink(fileStat) {
-		details = createSymlinkFileDetails()
-		resp, body, err = utils.UploadFile(nil, targetPath, flags.ArtDetails, details, httpClientsDetails)
+		resp, details, body, err = uploadSymlink(targetPath, httpClientsDetails, flags)
 		if err != nil {
 			return utils.ArtifactsBuildInfo{}, false, err
 		}
 	} else {
-		resp, details, body, err = uploadConcretelyFile(file, localPath, targetPath, logMsgPrefix, httpClientsDetails, fileInfo, minChecksumDeploySize, flags)
+		resp, details, body, err = doUpload(file, localPath, targetPath, logMsgPrefix, httpClientsDetails, fileInfo, minChecksumDeploySize, flags)
 	}
 	logUploadResponse(logMsgPrefix, resp, body, checksumDeployed, flags)
 	artifact := createBuildArtifactItem(fileName, details)
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func uploadConcretelyFile(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails ioutils.HttpClientDetails, fileInfo os.FileInfo, minChecksumDeploySize int64, flags *UploadFlags) (*http.Response, *ioutils.FileDetails, []byte, error){
+func uploadSymlink(targetPath string, httpClientsDetails ioutils.HttpClientDetails, flags *UploadFlags) (resp *http.Response, details *ioutils.FileDetails, body []byte, err error) {
+	details = createSymlinkFileDetails()
+	resp, body, err = utils.UploadFile(nil, targetPath, flags.ArtDetails, details, httpClientsDetails)
+	return
+}
+
+func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails ioutils.HttpClientDetails, fileInfo os.FileInfo, minChecksumDeploySize int64, flags *UploadFlags) (*http.Response, *ioutils.FileDetails, []byte, error) {
 	var details *ioutils.FileDetails
 	var checksumDeployed bool
 	var resp *http.Response

@@ -222,12 +222,7 @@ func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClient
 	req.Close = true
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
-
-	if httpClientsDetails.Headers != nil {
-		for name := range httpClientsDetails.Headers {
-			req.Header.Set(name, httpClientsDetails.Headers[name])
-		}
-	}
+	copyHeaders(httpClientsDetails, req)
 
 	client := getHttpClient(httpClientsDetails.Transport);
 	if !allowRedirect {
@@ -274,12 +269,16 @@ func getFileSize(file *os.File) (int64, error) {
 	return size, nil
 }
 
-func setRequestHeaders(httpClientsDetails HttpClientDetails, size int64, req *http.Request) {
+func copyHeaders(httpClientsDetails HttpClientDetails, req *http.Request) {
 	if httpClientsDetails.Headers != nil {
 		for name := range httpClientsDetails.Headers {
 			req.Header.Set(name, httpClientsDetails.Headers[name])
 		}
 	}
+}
+
+func setRequestHeaders(httpClientsDetails HttpClientDetails, size int64, req *http.Request) {
+	copyHeaders(httpClientsDetails, req)
 	length := strconv.FormatInt(size, 10)
 	req.Header.Set("Content-Length", length)
 }
@@ -296,9 +295,6 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	req.ContentLength = size
 	req.Close = true
 
-	if httpClientsDetails.User != "" && httpClientsDetails.Password != "" {
-		req.SetBasicAuth(httpClientsDetails.User, httpClientsDetails.Password)
-	}
 	setRequestHeaders(httpClientsDetails, size, req)
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
