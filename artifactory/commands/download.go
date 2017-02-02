@@ -49,27 +49,37 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 
 func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]utils.DependenciesBuildInfo, error) {
 	buildDependencies := make([][]utils.DependenciesBuildInfo, flags.Threads)
-	producerConsumer := utils.NewProducerConsumer(flags.Threads)
+	producerConsumer := utils.NewProducerConsumer(flags.Threads, true)
+	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := createFileHandlerFunc(buildDependencies, flags)
 	log.Info("Searching artifacts...")
-	prepareTasks(producerConsumer, downloadSpec, fileHandlerFunc, flags)
-	err := performTasks(producerConsumer)
+	prepareTasks(producerConsumer, downloadSpec, fileHandlerFunc, errorsQueue, flags)
+	err := performTasks(producerConsumer, errorsQueue)
 	return buildDependencies, err
 }
 
-func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, flags *DownloadFlags) {
+func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, flags *DownloadFlags) {
 	go func() {
-		defer producer.Finish()
+		defer producer.Close()
 		var err error
 		for i := 0; i < len(downloadSpec.Files); i++ {
+			var resultItems []utils.AqlSearchResultItem
+			fileSpec := downloadSpec.Get(i)
 			switch downloadSpec.Get(i).GetSpecType() {
 			case utils.WILDCARD, utils.SIMPLE:
-				err = collectFilesUsingWildcardPattern(downloadSpec.Get(i), producer, fileContextHandler, flags)
+				resultItems, err = collectFilesUsingWildcardPattern(fileSpec, flags)
 			case utils.AQL:
-				err = collectFilesUsingAql(downloadSpec.Get(i), producer, fileContextHandler, flags)
+				resultItems, err = utils.AqlSearchBySpec(fileSpec.Aql, flags)
 			}
+
 			if err != nil {
-				producer.SetError(err)
+				errorsQueue.AddError(err)
+				return
+			}
+
+			err =  produceTasks(resultItems, fileSpec, producer, fileContextHandler, errorsQueue)
+			if err != nil {
+				errorsQueue.AddError(err)
 				return
 			}
 		}
@@ -84,27 +94,15 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.Depe
 	return buildInfo
 }
 
-func collectFilesUsingWildcardPattern(fileSpec *utils.Files, producer  utils.Producer, fileHandler fileHandlerFunc, flags *DownloadFlags) error {
+func collectFilesUsingWildcardPattern(fileSpec *utils.Files, flags *DownloadFlags) ([]utils.AqlSearchResultItem, error) {
 	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resultItems, err := utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
-	if err != nil {
-		return err
-	}
-	return produceTasks(resultItems, fileSpec, producer, fileHandler)
+	return utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
 }
 
-func collectFilesUsingAql(fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc, flags *DownloadFlags) error {
-	resultItems, err := utils.AqlSearchBySpec(fileSpec.Aql, flags)
-	if err != nil {
-		return err
-	}
-	return produceTasks(resultItems, fileSpec, producer, fileHandler)
-}
-
-func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc) error {
+func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
 	flat, err := cliutils.StringToBool(fileSpec.Flat, false)
 	if err != nil {
 		return err
@@ -116,17 +114,15 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, prod
 			Target: fileSpec.Target,
 			Flat: flat,
 		}
-		producer.Produce(fileHandler(tempData))
+		producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
 	}
 	return nil
 }
 
-func performTasks(producerConsumer utils.Consumer) (err error) {
-	// Blocks until finish consuming
-	producerConsumer.Consume()
-	if e := producerConsumer.GetError(); e != nil {
-		err = e
-	}
+func performTasks(producerConsumer utils.Consumer, errorsQueue *utils.ErrorsQueue) (err error) {
+	// Blocked until finish consuming
+	producerConsumer.Run()
+	err = errorsQueue.GetError()
 	return
 }
 

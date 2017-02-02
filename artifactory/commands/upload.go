@@ -59,14 +59,15 @@ func uploadFiles(minChecksumDeploySize int64, uploadSpec *utils.SpecFiles, flags
 		BuildInfoArtifacts: make([][]utils.ArtifactsBuildInfo, flags.Threads),
 	}
 	artifactHandlerFunc := createArtifactHandlerFunc(&uploadSummery, minChecksumDeploySize, flags)
-	producerConsumer := utils.NewProducerConsumer(flags.Threads)
-	prepareUploadTasks(producerConsumer, uploadSpec, artifactHandlerFunc, flags)
-	return performUploadTasks(producerConsumer, &uploadSummery)
+	producerConsumer := utils.NewProducerConsumer(flags.Threads, true)
+	errorsQueue := utils.NewErrorsQueue(1)
+	prepareUploadTasks(producerConsumer, uploadSpec, artifactHandlerFunc, errorsQueue, flags)
+	return performUploadTasks(producerConsumer, &uploadSummery, errorsQueue)
 }
 
-func prepareUploadTasks(producer utils.Producer, uploadSpec *utils.SpecFiles, artifactHandlerFunc artifactContext, flags *UploadFlags)  {
+func prepareUploadTasks(producer utils.Producer, uploadSpec *utils.SpecFiles, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags)  {
 	go func() {
-		collectFilesForUpload(uploadSpec, flags, producer, artifactHandlerFunc)
+		collectFilesForUpload(uploadSpec, flags, producer, artifactHandlerFunc, errorsQueue)
 	}()
 }
 
@@ -78,14 +79,11 @@ func toBuildInfoArtifacts(artifactsBuildInfo [][]utils.ArtifactsBuildInfo) []uti
 	return buildInfo
 }
 
-func performUploadTasks(consumer utils.Consumer, uploadSummery *uploadResult) (buildInfoArtifacts [][]utils.ArtifactsBuildInfo, totalUploaded, totalFailed int, err error) {
+func performUploadTasks(consumer utils.Consumer, uploadSummery *uploadResult, errorsQueue *utils.ErrorsQueue) (buildInfoArtifacts [][]utils.ArtifactsBuildInfo, totalUploaded, totalFailed int, err error) {
 	// Blocking until we finish consuming for some reason
-	consumer.Consume()
-	if e := consumer.GetError(); e != nil {
+	consumer.Run()
+	if e := errorsQueue.GetError(); e != nil {
 		err = e
-		return
-	}
-	if err != nil {
 		return
 	}
 	totalUploaded = sumIntArray(uploadSummery.UploadCount)
@@ -172,8 +170,8 @@ func addSymlinkProps(props string, artifact cliutils.Artifact, flags *UploadFlag
 	return artifactProps, nil
 }
 
-func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, producer utils.Producer, artifactHandlerFunc artifactContext) {
-	defer producer.Finish()
+func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) {
+	defer producer.Close()
 	for _, uploadFile := range uploadSpec.Files {
 		addBuildProps(&uploadFile, flags)
 		if strings.Index(uploadFile.Target, "/") < 0 {
@@ -183,7 +181,7 @@ func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, prod
 		uploadFile.Pattern = cliutils.ReplaceTildeWithUserHome(uploadFile.Pattern)
 		uploadMetaData.CreateUploadDescriptor(uploadFile.Regexp, uploadFile.Flat, uploadFile.Pattern)
 		if uploadMetaData.Err != nil {
-			producer.SetError(uploadMetaData.Err)
+			errorsQueue.AddError(uploadMetaData.Err)
 			return
 		}
 		// If the path is a single file then return it
@@ -191,18 +189,18 @@ func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, prod
 			artifact := getSingleFileToUpload(uploadMetaData.RootPath, uploadFile.Target, uploadMetaData.IsFlat)
 			props, err := addSymlinkProps(uploadFile.Props, artifact, flags)
 			if err != nil {
-				producer.SetError(uploadMetaData.Err)
+				errorsQueue.AddError(err)
 				return
 			}
 			uploadData := UploadData{Artifact:artifact, Props:props}
 			task := artifactHandlerFunc(uploadData)
-			producer.Produce(task)
+			producer.AddTaskWithError(task, errorsQueue.AddError)
 			continue
 		}
 		uploadFile.Pattern = cliutils.PrepareLocalPathForUpload(uploadFile.Pattern, uploadMetaData.IsRegexp)
-		err := collectPatternMatchingFiles(uploadFile, uploadMetaData, producer, artifactHandlerFunc, flags)
+		err := collectPatternMatchingFiles(uploadFile, uploadMetaData, producer, artifactHandlerFunc, errorsQueue, flags)
 		if err != nil {
-			producer.SetError(err)
+			errorsQueue.AddError(err)
 			return
 		}
 	}
@@ -252,7 +250,7 @@ func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]s
 	return paths, nil
 }
 
-func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext, flags *UploadFlags) error {
+func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags) error {
 	r, err := regexp.Compile(uploadFile.Pattern)
 	if cliutils.CheckError(err) != nil {
 		return err
@@ -298,7 +296,7 @@ func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDe
 			}
 			uploadData := UploadData{Artifact:artifact, Props:props}
 			task := artifactHandlerFunc(uploadData)
-			producer.Produce(task)
+			producer.AddTaskWithError(task, errorsQueue.AddError)
 		}
 	}
 	return nil
