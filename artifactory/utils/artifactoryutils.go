@@ -14,8 +14,8 @@ import (
 	"crypto/tls"
 )
 
-const ARTIFACTORY_SYMLINK = "symbolic.link"
-const SYMLINK_SHA1 = "symbolic.link.sha1"
+const ARTIFACTORY_SYMLINK = "symlink.dest"
+const SYMLINK_SHA1 = "symlink.destsha1"
 func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryDetails) (*http.Response, string, error) {
 	err := initTransport(artifactoryDetails)
 	if err != nil {
