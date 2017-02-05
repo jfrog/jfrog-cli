@@ -163,7 +163,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.6.0"
+	return "1.7.0"
 }
 
 func GetUserHomeDir() string {
@@ -363,5 +363,6 @@ type Credentials interface {
 type Artifact struct {
 	LocalPath  string
 	TargetPath string
+	Symlink    string
 }
 

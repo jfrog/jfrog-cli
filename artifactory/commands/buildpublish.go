@@ -71,8 +71,8 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 	return nil
 }
 
-func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, error) {
-	var artifacts []utils.ArtifactBuildInfo
+func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactsBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, error) {
+	var artifacts []utils.ArtifactsBuildInfo
 	var dependencies []utils.DependenciesBuildInfo
 	var env utils.BuildEnv
 	env = make(map[string]string)
@@ -103,7 +103,7 @@ func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, e
 	return artifacts, dependencies, env, nil
 }
 
-func createModule(buildName string, artifacts []utils.ArtifactBuildInfo, dependencies []utils.DependenciesBuildInfo) (module *Modules) {
+func createModule(buildName string, artifacts []utils.ArtifactsBuildInfo, dependencies []utils.DependenciesBuildInfo) (module *Modules) {
 	module = createDefaultModule(buildName)
 	if artifacts != nil && len(artifacts) > 0 {
 		module.Artifacts = append(module.Artifacts, artifacts...)
@@ -132,7 +132,7 @@ type CliAgent struct {
 type Modules struct {
 	Properties   map[string][]string           `json:"properties,omitempty"`
 	Id           string                        `json:"id,omitempty"`
-	Artifacts    []utils.ArtifactBuildInfo     `json:"artifacts,omitempty"`
+	Artifacts    []utils.ArtifactsBuildInfo     `json:"artifacts,omitempty"`
 	Dependencies []utils.DependenciesBuildInfo `json:"dependencies,omitempty"`
 }
 
@@ -152,7 +152,7 @@ func createDefaultModule(buildName string) (module *Modules) {
 	module = new(Modules)
 	module.Id = buildName
 	module.Properties = make(map[string][]string)
-	module.Artifacts = make([]utils.ArtifactBuildInfo, 0)
+	module.Artifacts = make([]utils.ArtifactsBuildInfo, 0)
 	module.Dependencies = make([]utils.DependenciesBuildInfo, 0)
 	return
 }

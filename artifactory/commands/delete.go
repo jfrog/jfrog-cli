@@ -29,58 +29,57 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
-		var isDirectoryDeleteBool bool
-		isSimpleDirectoryDeleteBool, e := isSimpleDirectoryDelete(deleteSpec.Get(i))
+		// Search paths using AQL.
+		if deleteSpec.Get(i).GetSpecType() == utils.AQL {
+			if resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags); e == nil {
+				resultItems = append(resultItems, resultItemsTemp...)
+				continue
+			} else {
+				err = e
+				return
+			}
+		}
+		// Simple directory delete, no need to search in Artifactory.
+		if simpleDir, e := isSimpleDirectoryDelete(deleteSpec.Get(i)); simpleDir && e == nil {
+			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
+			resultItems = append(resultItems, []utils.AqlSearchResultItem{simplePathItem}...)
+			continue
+		} else if e != nil {
+			err = e
+			return
+		}
+		// Directory with wildcard pattern, searching with special AQL query.
+		if directoryDelete, e := isDirectoryDelete(deleteSpec.Get(i)); directoryDelete && e == nil {
+			query, e := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
+			if e != nil {
+				err = e
+				return
+			}
+			tempResultItems, e := utils.AqlSearch(query, flags)
+			if e != nil {
+				err = e
+				return
+			}
+			paths := reduceDirResult(tempResultItems)
+			resultItems = append(resultItems, paths...)
+			continue
+		} else if e != nil {
+			err = e
+			return
+		}
+		// All other use cases, pattern with/without wildcard files.
+		isRecursive, e := cliutils.StringToBool(deleteSpec.Get(i).Recursive, true)
 		if e != nil {
 			err = e
 			return
 		}
-		if !isSimpleDirectoryDeleteBool {
-			isDirectoryDeleteBool, e = isDirectoryDelete(deleteSpec.Get(i))
-			if e != nil {
-				err = e
-				return
-			}
+		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern,
+			isRecursive, deleteSpec.Get(i).Props, flags)
+		if e != nil {
+			err = e
+			return
 		}
-		switch {
-		case deleteSpec.Get(i).GetSpecType() == utils.AQL:
-			resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags)
-			if e != nil {
-				err = e
-				return
-			}
-			resultItems = append(resultItems, resultItemsTemp...)
-
-		case isSimpleDirectoryDeleteBool:
-			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
-			resultItems = append(resultItems, []utils.AqlSearchResultItem{simplePathItem}...)
-
-		case isDirectoryDeleteBool:
-			tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern, true, "", flags)
-			if e != nil {
-				err = e
-				return
-			}
-			paths, e := getDirsForDeleteFromFilesPaths(deleteSpec.Get(i).Pattern, tempResultItems)
-			if e != nil {
-				err = e
-				return
-			}
-			resultItems = append(resultItems, paths...)
-		default:
-			isRecursive, e := cliutils.StringToBool(deleteSpec.Get(i).Recursive, true)
-			if e != nil {
-				err = e
-				return
-			}
-			tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern,
-				isRecursive, deleteSpec.Get(i).Props, flags)
-			if e != nil {
-				err = e
-				return
-			}
-			resultItems = append(resultItems, tempResultItems...)
-		}
+		resultItems = append(resultItems, tempResultItems...)
 	}
 	utils.LogSearchResults(len(resultItems))
 	return
@@ -109,30 +108,18 @@ func isDirectoryDelete(deleteFile *utils.Files) (bool, error) {
 	return utils.IsDirectoryPath(deleteFile.Pattern) && isRecursive && deleteFile.Props == "", nil
 }
 
-func getDirsForDeleteFromFilesPaths(deletePattern string, filesToDelete []utils.AqlSearchResultItem) ([]utils.AqlSearchResultItem, error) {
-	paths := make(map[string]bool)
-	for _, file := range filesToDelete {
-		path, err := utils.WildcardToDirsPath(deletePattern, file.GetFullUrl())
-		if err != nil {
-			return []utils.AqlSearchResultItem{}, err
-		}
-		if len(path) > 0 {
-			paths[path] = true
-		}
-	}
-	var result []utils.AqlSearchResultItem
-	paths = reduceDirResult(paths)
-	for k := range paths {
-		repo, path, name := ioutils.SplitArtifactPathToRepoPathName(k)
-		result = append(result, utils.AqlSearchResultItem{Repo: repo, Path:path, Name:name})
-	}
-	return result, nil
-}
-
 // Remove unnecessary paths.
 // For example if we have two paths for delete a/b/c/ and a/b/
 // it's enough to delete only a/b/
-func reduceDirResult(paths map[string]bool) map[string]bool {
+func reduceDirResult(foldersToDelete []utils.AqlSearchResultItem) []utils.AqlSearchResultItem {
+	paths := make(map[string]utils.AqlSearchResultItem)
+	for _, file := range foldersToDelete {
+		if file.Name == "." {
+			continue
+		}
+		paths[file.GetFullUrl()] = file
+	}
+
 	for k := range paths {
 		for k2 := range paths {
 			if k != k2 && strings.HasPrefix(k, k2) {
@@ -141,7 +128,12 @@ func reduceDirResult(paths map[string]bool) map[string]bool {
 			}
 		}
 	}
-	return paths
+	var result []utils.AqlSearchResultItem
+	for _, v := range paths {
+		v.Name += "/"
+		result = append(result, v)
+	}
+	return result
 }
 
 func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {

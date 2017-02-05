@@ -14,12 +14,17 @@ const (
 	MoveCopyDeleteSpec = "move_copy_delete_spec.json"
 	PrepareCopy = "prepare_copy.json"
 	Search = "search.json"
+	SearchTxt = "search_txt.json"
 	SearchMoveDeleteRepoSpec = "search_move_delete_repo_spec.json"
 	MoveRepositoryConfig = "move_repository_config.json"
 	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
 
 	RepoDetailsUrl = "api/repositories/"
 )
+
+var TxtUploadExpectedRepo1 = []string{
+	Repo1 + "/cliTestFile.txt",
+}
 
 var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/a3.in",
@@ -31,6 +36,18 @@ var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/c2.in",
 	Repo1 + "/flat_recursive/c1.in",
 	Repo1 + "/flat_recursive/c3.in",
+}
+
+var ExplodeUploadExpectedRepo1 = []string{
+	Repo1 + "/a/a3.in",
+	Repo1 + "/a/a1.in",
+	Repo1 + "/a/a2.in",
+	Repo1 + "/a/b/b1.in",
+	Repo1 + "/a/b/b2.in",
+	Repo1 + "/a/b/b3.in",
+	Repo1 + "/a/b/c/c1.in",
+	Repo1 + "/a/b/c/c2.in",
+	Repo1 + "/a/b/c/c3.in",
 }
 
 var SimpleUploadExpectedRepo2 = []string{

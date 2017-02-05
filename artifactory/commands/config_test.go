@@ -8,7 +8,10 @@ import (
 
 func TestConfig(t *testing.T) {
 	inputDetails := config.ArtifactoryDetails{"http://localhost:8080/artifactory", "admin", "password", "", "", nil, nil}
-	Config(&inputDetails, nil, false, false)
+	_, err := Config(&inputDetails, nil, false, false)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	outputConfig, err := GetConfig()
 	if err != nil {
 	    t.Error(err.Error())

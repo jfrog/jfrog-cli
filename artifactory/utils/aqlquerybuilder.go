@@ -2,49 +2,56 @@ package utils
 
 import (
 	"strings"
+	"path/filepath"
 )
 
+//Returns an AQL query string to search folders in Artifactory according to the pattern and return fields provided.
+func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) (string, error) {
+	pairs := createPathFolderPairs(searchPattern)
+	index := strings.Index(searchPattern, "/")
+	repo := searchPattern[:index]
+
+	size := len(pairs)
+	json := "{\"repo\": \"" + repo + "\",\"$or\": ["
+
+	for i := 0; i < size; i++ {
+		json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, "folder") + "}"
+		if i + 1 < size {
+			json += ","
+		}
+	}
+
+	json += "]}"
+	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
+}
+
+// Returns an AQL query string to search files in Artifactory according the the specified arguments requirements.
 func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aqlReturnFields []string) (string, error) {
 	searchPattern = prepareSearchPattern(searchPattern)
 	index := strings.Index(searchPattern, "/")
 
 	repo := searchPattern[:index]
-	searchPattern = searchPattern[index+1:]
+	searchPattern = searchPattern[index + 1:]
 
 	pairs := createPathFilePairs(searchPattern, recursive)
 	size := len(pairs)
 	propsQuery, err := buildPropsQuery(props)
 	if err != nil {
-	    return "", err
+		return "", err
 	}
 
-	json :=
-		"{" +
-			"\"repo\": \"" + repo + "\"," +
-			    propsQuery +
-			"\"$or\": ["
-
+	json := "{\"repo\": \"" + repo + "\"," + propsQuery + "\"$or\": ["
 	if size == 0 {
-		json +=
-			"{" +
-				buildInnerQuery(repo, ".", searchPattern) +
-				"}"
+		json += "{" + buildInnerQuery(".", searchPattern, "") + "}"
 	} else {
 		for i := 0; i < size; i++ {
-			json +=
-				"{" +
-					buildInnerQuery(repo, pairs[i].path, pairs[i].file) +
-					"}"
-
-			if i+1 < size {
+			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, "") + "}"
+			if i + 1 < size {
 				json += ","
 			}
 		}
 	}
-
-	json +=
-		"]" +
-			"}"
+	json += "]}"
 
 	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
 }
@@ -85,24 +92,60 @@ func buildPropsQuery(props string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		query +=
-			"\"@" + key + "\": {\"$match\" : \"" + value + "\"},"
+		query += "\"@" + key + "\": {\"$match\" : \"" + value + "\"},"
 	}
 	return query, nil
 }
 
-func buildInnerQuery(repo, path, name string) string {
-	query :=
-		"\"$and\": [{" +
-			"\"path\": {" +
-			"\"$match\":" + "\"" + path + "\"" +
-			"}," +
-			"\"name\":{" +
-			"\"$match\":" + "\"" + name + "\"" +
-			"}" +
-			"}]"
+func buildInnerQuery(path, name, itemType string) string {
+	itemTypeQuery := ""
+	if itemType != "" {
+		itemTypeQuery = ",\"type\": {\"$eq\": \"" + itemType + "\"}"
+	}
+	nePath := ""
+	if itemType == "folder" && path == "*" && name == "*" {
+		nePath = "\"path\": {\"$ne\": \".\"},"
+	}
+
+	query := "\"$and\": [{\"path\": {\"$match\": \"" + path + "\"}," + nePath +
+			"\"name\": {\"$match\": \"" + name + "\"}" + itemTypeQuery + "}]"
 
 	return query
+}
+
+// We need to translate the provided download pattern to an AQL query.
+// In Artifactory, for each artifact the name and path of the artifact are saved separately including folders.
+// We therefore need to build an AQL query that covers all possible folders the provided
+// pattern can include.
+// For example, the pattern a/*b*c*/ can include the two following folders:
+// a/b/c, a/bc/, a/x/y/z/b/c/
+// To achieve that, this function parses the pattern by splitting it by its * characters.
+// The end result is a list of PathFilePair structs.
+// Each struct represent a possible path and folder name pair to be included in AQL query with an "or" relationship.
+func createPathFolderPairs(searchPattern string) []PathFilePair {
+	// Remove parenthesis
+	searchPattern = searchPattern[:len(searchPattern) - 1]
+	searchPattern = strings.Replace(searchPattern, "(", "", -1)
+	searchPattern = strings.Replace(searchPattern, ")", "", -1)
+
+	index := strings.Index(searchPattern, "/")
+	searchPattern = searchPattern[index + 1:]
+
+	index = strings.LastIndex(searchPattern, "/")
+	lastSlashPath := searchPattern
+	path := "."
+	if index != -1 {
+		lastSlashPath = searchPattern[index + 1:]
+		path = searchPattern[:index]
+	}
+
+	pairs := []PathFilePair{{path:path, file:lastSlashPath}}
+	for i := 0; i < len(lastSlashPath); i++ {
+		if string(lastSlashPath[i]) == "*" {
+			pairs = append(pairs, PathFilePair{path:filepath.Join(path, lastSlashPath[:i + 1]), file:lastSlashPath[i:]})
+		}
+	}
+	return pairs
 }
 
 // We need to translate the provided download pattern to an AQL query.
@@ -117,14 +160,14 @@ func buildInnerQuery(repo, path, name string) string {
 func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 	var defaultPath string
 	if recursive {
-        defaultPath = "*"
+		defaultPath = "*"
 	} else {
-	    defaultPath = "."
+		defaultPath = "."
 	}
 
 	pairs := []PathFilePair{}
 	if pattern == "*" {
-        pairs = append(pairs, PathFilePair{defaultPath, "*"})
+		pairs = append(pairs, PathFilePair{defaultPath, "*"})
 		return pairs
 	}
 
@@ -136,9 +179,9 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 		path = ""
 		name = pattern
 	} else
-	if slashIndex >=0 {
+	if slashIndex >= 0 {
 		path = pattern[0:slashIndex]
-		name = pattern[slashIndex+1:]
+		name = pattern[slashIndex + 1:]
 		pairs = append(pairs, PathFilePair{path, name})
 	}
 	if !recursive {
@@ -155,8 +198,8 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 	size := len(sections)
 	for i := 0; i < size; i++ {
 		options := []string{}
-		if i+1 < size {
-			options = append(options, sections[i]+"*/")
+		if i + 1 < size {
+			options = append(options, sections[i] + "*/")
 		}
 		for _, option := range options {
 			str := ""
@@ -177,7 +220,7 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 				fileName = "*"
 			}
 			if path != "" {
-			    path += "/"
+				path += "/"
 			}
 			pairs = append(pairs, PathFilePair{path + filePath, fileName})
 		}

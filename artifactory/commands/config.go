@@ -54,8 +54,8 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
             return nil, err
         }
 	}
-	config.SaveArtifactoryConf(details)
-	return details, nil
+	err = config.SaveArtifactoryConf(details)
+	return details, err
 }
 
 func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {

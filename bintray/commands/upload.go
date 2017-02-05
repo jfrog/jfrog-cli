@@ -253,6 +253,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 			return nil, err
 		}
 	}
+	localPath = cliutils.ReplaceTildeWithUserHome(localPath)
 	localPath = cliutils.PrepareLocalPathForUpload(localPath, flags.UseRegExp)
 
 	artifacts := []cliutils.Artifact{}
@@ -277,7 +278,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 	spinner.Start()
 	var paths []string
 	if flags.Recursive {
-		paths, err = ioutils.ListFilesRecursive(rootPath)
+		paths, err = ioutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
 	} else {
 		paths, err = ioutils.ListFiles(rootPath)
 	}
@@ -317,7 +318,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 				}
 			}
 
-			artifacts = append(artifacts, cliutils.Artifact{path, target})
+			artifacts = append(artifacts, cliutils.Artifact{path, target, ""})
 		}
 	}
 	spinner.Stop()

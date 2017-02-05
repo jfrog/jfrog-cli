@@ -112,6 +112,40 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 	cleanBintrayTest()
 }
 
+func TestBintrayUploadFromHomeDir(t *testing.T) {
+	initBintrayTest(t)
+	filename := "cliTestFile.txt"
+	testFileRel := "~/cliTestFile.*"
+	testFileAbs := ioutils.GetHomeDir() + "/" + filename
+
+	d1 := []byte("test file")
+	err := ioutil.WriteFile(testFileAbs, d1, 0644)
+	if err != nil {
+		t.Error("Coudln't create file:", err)
+	}
+
+	packageName := "simpleUploadHomePackage"
+	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	versionName := "1.0"
+	versionPath := packagePath + "/" + versionName
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+	bintrayCli.Exec("upload", testFileRel, versionPath, "--recursive=false")
+
+	//Check file uploaded
+	expected := []tests.PackageSearchResultItem{{
+		Repo:       tests.BintrayRepo1,
+		Path:       filename,
+		Package:    packageName,
+		Name:       filename,
+		Version:    "1.0",
+		Sha1:       "8f93542443e98f41fe98e97d6d2a147193b1b005"}}
+	assertPackageFiles(expected, getPackageFiles(packageName), t)
+
+	os.Remove(testFileAbs)
+	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	cleanBintrayTest()
+}
+
 func TestBintrayUploadOverride(t *testing.T) {
 	initBintrayTest(t)
 
@@ -173,7 +207,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 	bintrayCli.Exec("download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true")
 	bintrayCli.Exec("download-file", repositoryPath + "/" + tests.GetTestResourcesPath()[1:] + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
 
-	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/bintray/")
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
 		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a1.in",
 		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "x.in",
@@ -196,7 +230,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
 	bintrayCli.Exec("download-ver", versionPath, tests.Out + "/bintray/", "--unpublished=true")
 
-	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/bintray/")
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
 		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a1.in",
 		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a2.in",

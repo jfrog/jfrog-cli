@@ -13,7 +13,7 @@ func BuildCollectEnv(buildName, buildNumber string) (err error) {
 	populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
 		tempWrapper.Env = getEnvVariables()
 	}
-	err = utils.PrepareBuildInfoForSave(buildName, buildNumber, populateFunc)
+	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)
 	return
 }
 

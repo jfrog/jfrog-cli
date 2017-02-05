@@ -196,6 +196,14 @@ func getUploadFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
+		cli.BoolFlag{
+			Name:  "explode",
+			Usage: "[Default: false] Set to true to extract an archive after it is deployed to Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "symlinks",
+			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.",
+		},
 	}...)
 }
 
@@ -245,6 +253,14 @@ func getDownloadFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "symlinks",
+			Usage: "[Default: false] Set to true create symlinks as represented in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "validate-symlinks",
+			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
 		},
 	}...)
 }
@@ -998,6 +1014,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags, err error) {
 	downloadFlags = new(commands.DownloadFlags)
 	downloadFlags.DryRun = c.Bool("dry-run")
+	downloadFlags.Symlink = c.Bool("symlinks")
+	downloadFlags.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
 	downloadFlags.Threads = getThreadsCount(c);
@@ -1057,6 +1075,8 @@ func fixWinDownloadFilesPath(uploadSpec *utils.SpecFiles) {
 func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err error) {
 	uploadFlags = new(commands.UploadFlags)
 	uploadFlags.DryRun = c.Bool("dry-run")
+	uploadFlags.ExplodeArchive = c.Bool("explode")
+	uploadFlags.Symlink = c.Bool("symlinks")
 	uploadFlags.Threads = getThreadsCount(c);
 	uploadFlags.BuildName = getBuildName(c);
 	uploadFlags.BuildNumber = getBuildNumber(c);

@@ -78,7 +78,6 @@ func SaveArtifactoryConf(details *ArtifactoryDetails) error {
     }
 	conf.Artifactory = details
 	return saveConfig(conf)
-	return nil
 }
 
 func SaveMissionControlConf(details *MissionControlDetails) error {
@@ -88,7 +87,6 @@ func SaveMissionControlConf(details *MissionControlDetails) error {
     }
 	conf.MissionControl = details
 	return saveConfig(conf)
-	return nil
 }
 
 func SaveBintrayConf(details *BintrayDetails) error {
