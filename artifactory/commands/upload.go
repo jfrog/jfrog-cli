@@ -364,6 +364,9 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	} else {
 		resp, details, body, err = doUpload(file, localPath, targetPath, logMsgPrefix, httpClientsDetails, fileInfo, minChecksumDeploySize, flags)
 	}
+	if err != nil {
+		return utils.ArtifactsBuildInfo{}, false, err
+	}
 	logUploadResponse(logMsgPrefix, resp, body, checksumDeployed, flags)
 	artifact := createBuildArtifactItem(fileName, details)
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
@@ -417,7 +420,11 @@ func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpCli
 }
 
 func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, checksumDeployed bool, flags *UploadFlags) {
-	if resp != nil && resp.StatusCode != 201 && resp.StatusCode != 200 {
+	if resp == nil {
+		log.Error(logMsgPrefix + "Artifactory response is not accessible." )
+		return
+	}
+	if resp.StatusCode != 201 && resp.StatusCode != 200 {
 		log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 	}
 	if !flags.DryRun {
