@@ -235,12 +235,15 @@ func removeIfSymlink(localSymlinkPath string) error {
 
 func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlinkChecksum bool, symlinkContentChecksum string, logMsgPrefix string) error {
 	if symlinkChecksum && symlinkContentChecksum != "" {
+		if !ioutils.IsPathExists(symlinkArtifact) {
+			return cliutils.CheckError(errors.New("Symlink validation failed, target doesn't exist: " + symlinkArtifact))
+		}
 		sha1, err := ioutils.CalcSha1(symlinkArtifact)
 		if err != nil {
 			return err
 		}
 		if sha1 != symlinkContentChecksum {
-			return cliutils.CheckError(errors.New("Symlink validation failed for link: " + symlinkArtifact))
+			return cliutils.CheckError(errors.New("Symlink validation failed for target: " + symlinkArtifact))
 		}
 	}
 	localSymlinkPath := filepath.Join(localPath, localFileName)
