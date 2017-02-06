@@ -1,4 +1,4 @@
-package cliutils
+package ioutils
 
 import (
 	"errors"
@@ -20,7 +20,13 @@ func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]boo
 	if err != nil {
 		return err
 	}
-	visited[realPath] = true
+	isRealPathDir, err := IsDir(realPath)
+	if err != nil {
+		return err
+	}
+	if isRealPathDir {
+		visited[realPath] = true
+	}
 	err = walkFn(path, info, nil)
 	if err != nil {
 		if info.IsDir() && err == SkipDir {
@@ -44,6 +50,7 @@ func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]boo
 		if err != nil {
 			return err
 		}
+
 		if walkIntoDirSymlink && visited[realPath] {
 			continue
 		}
