@@ -110,7 +110,7 @@ func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat
 // Return the recursive list of files and directories in the specified path
 func ListFilesRecursive(path string) (fileList []string, err error) {
 	fileList = []string{}
-	err = cliutils.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err = Walk(path, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
 		return nil
 	}, false)
@@ -121,7 +121,7 @@ func ListFilesRecursive(path string) (fileList []string, err error) {
 // Return the recursive list of files and directories in the specified path
 func ListFilesRecursiveWalkIntoDirSymlink(path string, walkIntoDirSymlink bool) (fileList []string, err error) {
 	fileList = []string{}
-	err = cliutils.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err = Walk(path, func(path string, f os.FileInfo, err error) error {
 		fileList = append(fileList, path)
 		return nil
 	}, walkIntoDirSymlink)
