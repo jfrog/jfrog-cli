@@ -3,6 +3,7 @@ package utils
 import (
 	"strings"
 	"path/filepath"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
 //Returns an AQL query string to search folders in Artifactory according to the pattern and return fields provided.
@@ -25,17 +26,22 @@ func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) (
 	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
 }
 
-// Returns an AQL query string to search files in Artifactory according the the specified arguments requirements.
-func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aqlReturnFields []string) (string, error) {
-	searchPattern = prepareSearchPattern(searchPattern)
+// Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
+func createAqlBodyForItem(specFile *File) (string, error) {
+	searchPattern := prepareSearchPattern(specFile.Pattern)
 	index := strings.Index(searchPattern, "/")
 
 	repo := searchPattern[:index]
 	searchPattern = searchPattern[index + 1:]
 
+	recursive, err := cliutils.StringToBool(specFile.Recursive, true)
+	if err != nil {
+		return "", err
+	}
+
 	pairs := createPathFilePairs(searchPattern, recursive)
 	size := len(pairs)
-	propsQuery, err := buildPropsQuery(props)
+	propsQuery, err := buildPropsQuery(specFile.Props)
 	if err != nil {
 		return "", err
 	}
@@ -53,7 +59,15 @@ func BuildAqlSearchQuery(searchPattern string, recursive bool, props string, aql
 	}
 	json += "]}"
 
-	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
+	return json, nil
+}
+
+func createAqlQueryForBuild(buildName, buildNumber string) string {
+	return "items.find(" +
+			"{\"$and\": [" +
+				"{\"artifact.module.build.name\": {\"$eq\": \"" + buildName + "\"}}," +
+				"{\"artifact.module.build.number\": {\"$eq\": \"" + buildNumber + "\"}}" +
+			"]}).include(\"name\",\"repo\",\"path\",\"actual_sha1\")"
 }
 
 func buildAqlReturnFieldsString(returnFields []string) (fieldsString string) {
@@ -152,7 +166,7 @@ func createPathFolderPairs(searchPattern string) []PathFilePair {
 // In Artifactory, for each artifact the name and path of the artifact are saved separately.
 // We therefore need to build an AQL query that covers all possible paths and names the provided
 // pattern can include.
-// For example, the pattern a/* can include the two following files:
+// For example, the pattern a/* can include the two following file:
 // a/file1.tgz and also a/b/file2.tgz
 // To achieve that, this function parses the pattern by splitting it by its * characters.
 // The end result is a list of PathFilePair structs.

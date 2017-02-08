@@ -388,6 +388,168 @@ func TestArtifactoryPublishBuildInfo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	specFile := tests.GetFilePath(tests.BuildDownloadSpec)
+
+	//upload files with buildName and buildNumber
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--spec=" + specFile)
+
+	//validate files are downloaded by build number
+	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
+	tests.IsLocalExactAsExpected(tests.BuildDownload, paths, t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+
+	//upload files with buildName and buildNumber
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Download by build number, a1 should not be downloaded, b1 should
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/a1.in " + tests.Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator(), "--build=" + buildName)
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in " +  tests.Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator(), "--build=" + buildName)
+
+	//validate files are downloaded by build number
+	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
+	tests.IsLocalExactAsExpected(tests.BuildSimpleDownload, paths, t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	specFile := tests.GetFilePath(tests.CopyByBuildSpec)
+
+
+	// Upload files with buildName and buildNumber: a* uploaded with build number "10", b* uploaded with build number "11"
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Copy by build build number "10" from spec, a* should be copied
+	artifactoryCli.Exec("copy", "--spec=" + specFile)
+
+	//validate files are Copied by build number
+	isExistInArtifactory(tests.BuildCopyExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyByBuildOverridingByInlineFlag(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	specFile := tests.GetFilePath(tests.CopyByBuildSpec)
+
+
+	// Upload files with buildName and buildNumber: b* uploaded with build number "10", a* uploaded with build number "11"
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Copy by build number: using override of build by flag from inline (no number set so LATEST build should be copied), a* should be copied
+	artifactoryCli.Exec("copy", "--build=" + buildName + " --spec=" + specFile)
+
+	//validate files are Copied by build number
+	isExistInArtifactory(tests.BuildCopyExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryMoveByBuildUsingFlags(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	specFile := tests.GetFilePath(tests.CopyByBuildSpec)
+
+
+	//upload files with buildName and buildNumber
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Move by build name and number
+	artifactoryCli.Exec("move", "--build=" + buildName + "/11 --spec=" + specFile)
+
+	//validate files are moved by build number
+	isExistInArtifactory(tests.BuildMoveExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	specFile := tests.GetFilePath(tests.CopyByBuildSpec)
+
+
+	//upload files with buildName and buildNumber
+	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec=" + specFileB, "--build-name=" + buildName, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "--spec=" + specFileA, "--build-name=" + buildName, "--build-number=" + buildNumberB)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Delete by build name and LATEST
+	artifactoryCli.Exec("delete", "--build=" + buildName + "/LATEST --quiet=true --spec=" + specFile)
+
+	//validate files are deleted by build number
+	isExistInArtifactory(tests.BuildDeleteExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	//cleanup
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
@@ -523,7 +685,7 @@ func searchInArtifactory(specFile string) (result []commands.SearchResult, err e
 }
 
 func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
-	results, _ := searchInArtifactory(specFile);
+	results, _ := searchInArtifactory(specFile)
 	if *tests.PrintSearchResult {
 		for _, v := range results {
 			fmt.Print("\"")
@@ -539,7 +701,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
 	searchFlags := new(commands.SearchFlags)
 	searchFlags.ArtDetails = artifactoryDetails
-	searchSpec := utils.CreateSpec(pattern, "", props, true, false, false)
+	searchSpec := utils.CreateSpec(pattern, "", props, "", true, false, false)
 	results, err := commands.Search(searchSpec, searchFlags)
 	if err != nil {
 		t.Error(err)

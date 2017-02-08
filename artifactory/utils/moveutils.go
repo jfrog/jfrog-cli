@@ -49,9 +49,9 @@ func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) 
 	return
 }
 
-func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+func moveAql(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
-	resultItems, err := AqlSearchBySpec(fileSpec.Aql, flags)
+	resultItems, err := AqlSearchBySpec(fileSpec, flags)
 	if err != nil {
 		return
 	}
@@ -60,13 +60,9 @@ func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount
 	return
 }
 
-func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
-	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
-	if err != nil {
-		return
-	}
+func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
-	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
+	resultItems, err := AqlSearchDefaultReturnFields(fileSpec, flags)
 	if err != nil {
 		return
 	}
@@ -76,7 +72,7 @@ func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) (success
 	return
 }
 
-func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+func moveSimple(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 
 	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
 	patternFileName, _ := ioutils.GetFileAndDirFromPath(fileSpec.Pattern)
@@ -96,7 +92,7 @@ func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCo
 	return
 }
 
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	successCount = 0
 	failedCount = 0
 

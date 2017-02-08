@@ -3,23 +3,27 @@ package tests
 import "github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 
 const (
-	Repo1 = "jfrog-cli-tests-repo1"
-	Repo2 = "jfrog-cli-tests-repo2"
-	Out = "out"
-	DownloadSpec = "download_spec.json"
-	SimpleUploadSpec = "simple_upload_spec.json"
-	UploadSpec = "upload_spec.json"
-	DeleteSpec = "delete_spec.json"
-	DeleteComplexSpec = "delete_complex_spec.json"
-	MoveCopyDeleteSpec = "move_copy_delete_spec.json"
-	PrepareCopy = "prepare_copy.json"
-	Search = "search.json"
-	SearchTxt = "search_txt.json"
-	SearchMoveDeleteRepoSpec = "search_move_delete_repo_spec.json"
-	MoveRepositoryConfig = "move_repository_config.json"
+	Repo1                     = "jfrog-cli-tests-repo1"
+	Repo2                     = "jfrog-cli-tests-repo2"
+	Out                       = "out"
+	DownloadSpec              = "download_spec.json"
+	BuildDownloadSpec         = "build_download_spec.json"
+	SimpleUploadSpec          = "simple_upload_spec.json"
+	SplittedUploadSpecA       = "splitted_upload_spec_a.json"
+	SplittedUploadSpecB       = "splitted_upload_spec_b.json"
+	UploadSpec                = "upload_spec.json"
+	DeleteSpec                = "delete_spec.json"
+	DeleteComplexSpec         = "delete_complex_spec.json"
+	MoveCopyDeleteSpec        = "move_copy_delete_spec.json"
+	PrepareCopy               = "prepare_copy.json"
+	Search                    = "search.json"
+	SearchTxt                 = "search_txt.json"
+	SearchMoveDeleteRepoSpec  = "search_move_delete_repo_spec.json"
+	CopyByBuildSpec           = "move_copy_delete_by_build_spec.json"
+	CpMvDlByBuildAssertSpec   = "copy_by_build_assert_spec.json"
+	MoveRepositoryConfig      = "move_repository_config.json"
 	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
-
-	RepoDetailsUrl = "api/repositories/"
+	RepoDetailsUrl            = "api/repositories/"
 )
 
 var TxtUploadExpectedRepo1 = []string{
@@ -131,6 +135,33 @@ var MassiveMoveExpected = []string{
 	Repo2 + "/simple_target/a1.in",
 }
 
+var BuildCopyExpected = []string{
+	Repo1 + "/data/a1.in",
+	Repo1 + "/data/a2.in",
+	Repo1 + "/data/a3.in",
+	Repo1 + "/data/b1.in",
+	Repo1 + "/data/b2.in",
+	Repo1 + "/data/b3.in",
+	Repo2 + "/data/a1.in",
+	Repo2 + "/data/a2.in",
+	Repo2 + "/data/a3.in",
+}
+
+var BuildMoveExpected = []string{
+	Repo1 + "/data/b1.in",
+	Repo1 + "/data/b2.in",
+	Repo1 + "/data/b3.in",
+	Repo2 + "/data/a1.in",
+	Repo2 + "/data/a2.in",
+	Repo2 + "/data/a3.in",
+}
+
+var BuildDeleteExpected = []string{
+	Repo1 + "/data/b1.in",
+	Repo1 + "/data/b2.in",
+	Repo1 + "/data/b3.in",
+}
+
 var MassiveDownload = []string{
 	Out + ioutils.GetFileSeperator() + "a1.in",
 	Out + ioutils.GetFileSeperator() + "a2.in",
@@ -201,6 +232,24 @@ var MassiveDownload = []string{
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple" + ioutils.GetFileSeperator() + "a1.in",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_placeholder" + ioutils.GetFileSeperator() + "a",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_placeholder" + ioutils.GetFileSeperator() + "a" + ioutils.GetFileSeperator() + "a1.in",
+}
+
+var BuildDownload = []string{
+	Out + ioutils.GetFileSeperator(),
+	Out + ioutils.GetFileSeperator() + "download",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build" + ioutils.GetFileSeperator() + "data",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build" + ioutils.GetFileSeperator() + "data" + ioutils.GetFileSeperator() + "a1.in",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build" + ioutils.GetFileSeperator() + "data" + ioutils.GetFileSeperator() + "a2.in",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build" + ioutils.GetFileSeperator() + "data" + ioutils.GetFileSeperator() + "a3.in",
+}
+
+var BuildSimpleDownload = []string{
+	Out + ioutils.GetFileSeperator(),
+	Out + ioutils.GetFileSeperator() + "download",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator() + "data",
+	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator() + "data" + ioutils.GetFileSeperator() + "b1.in",
 }
 
 var MassiveUpload = []string{

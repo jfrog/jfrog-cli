@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/data/*",
+      "flat": "false",
+      "recursive": "true"
+    },
+    {
+      "pattern": "jfrog-cli-tests-repo2/data/*",
+      "flat": "false",
+      "recursive": "true"
+    }
+  ]
+}

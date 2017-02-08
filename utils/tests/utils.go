@@ -49,6 +49,17 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
+	compare(expected, actual, t)
+}
+
+func IsLocalExactAsExpected(expected, actual []string, t *testing.T) {
+	if len(actual) != len(expected)  {
+		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
+	}
+	compare(expected, actual, t)
+}
+
+func compare(expected, actual []string, t *testing.T) {
 	for _, v := range expected {
 		for i, r := range actual {
 			if v == r {
@@ -63,7 +74,7 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 
 func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
+		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

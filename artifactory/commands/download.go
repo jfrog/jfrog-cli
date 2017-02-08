@@ -69,7 +69,7 @@ func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileCo
 			case utils.WILDCARD, utils.SIMPLE:
 				resultItems, err = collectFilesUsingWildcardPattern(fileSpec, flags)
 			case utils.AQL:
-				resultItems, err = utils.AqlSearchBySpec(fileSpec.Aql, flags)
+				resultItems, err = utils.AqlSearchBySpec(fileSpec, flags)
 			}
 
 			if err != nil {
@@ -94,15 +94,11 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.Depe
 	return buildInfo
 }
 
-func collectFilesUsingWildcardPattern(fileSpec *utils.Files, flags *DownloadFlags) ([]utils.AqlSearchResultItem, error) {
-	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	return utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
+func collectFilesUsingWildcardPattern(fileSpec *utils.File, flags *DownloadFlags) ([]utils.AqlSearchResultItem, error) {
+	return utils.AqlSearchDefaultReturnFields(fileSpec, flags)
 }
 
-func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
+func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, producer utils.Producer, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
 	flat, err := cliutils.StringToBool(fileSpec.Flat, false)
 	if err != nil {
 		return err

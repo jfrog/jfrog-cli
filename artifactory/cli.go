@@ -236,6 +236,10 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.",
 		},
 		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
+		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
 			Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
@@ -289,6 +293,10 @@ func getMoveFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be moved.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 
 }
@@ -317,6 +325,10 @@ func getCopyFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be copied.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 }
 
@@ -344,6 +356,10 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 }
 
@@ -361,6 +377,10 @@ func getSearchFlags() []cli.Flag {
 			Name:  "recursive",
 			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
 		},
 	}...)
 }
@@ -858,10 +878,11 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	target := c.Args().Get(1)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false)
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -872,6 +893,7 @@ func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&searchSpec.Get(i).Flat, c, "flat")
 	}
@@ -888,9 +910,10 @@ func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags, err error) {
 func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false)
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -902,6 +925,7 @@ func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
@@ -920,9 +944,10 @@ func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err e
 func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false)
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -933,6 +958,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
@@ -989,10 +1015,11 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := strings.TrimPrefix(c.Args().Get(0), "/")
 	target := c.Args().Get(1)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false)
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
@@ -1005,6 +1032,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&downloadSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
 	}
@@ -1018,9 +1046,9 @@ func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags,
 	downloadFlags.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
-	downloadFlags.Threads = getThreadsCount(c);
-	downloadFlags.BuildName = getBuildName(c);
-	downloadFlags.BuildNumber = getBuildNumber(c);
+	downloadFlags.Threads = getThreadsCount(c)
+	downloadFlags.BuildName = getBuildName(c)
+	downloadFlags.BuildNumber = getBuildNumber(c)
 	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
@@ -1032,11 +1060,12 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	target := strings.TrimPrefix(c.Args().Get(1), "/")
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", true)
 	regexp := c.Bool("regexp")
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, regexp)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp)
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
@@ -1077,13 +1106,13 @@ func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err e
 	uploadFlags.DryRun = c.Bool("dry-run")
 	uploadFlags.ExplodeArchive = c.Bool("explode")
 	uploadFlags.Symlink = c.Bool("symlinks")
-	uploadFlags.Threads = getThreadsCount(c);
-	uploadFlags.BuildName = getBuildName(c);
-	uploadFlags.BuildNumber = getBuildNumber(c);
+	uploadFlags.Threads = getThreadsCount(c)
+	uploadFlags.BuildName = getBuildName(c)
+	uploadFlags.BuildNumber = getBuildNumber(c)
 	if (uploadFlags.BuildName == "" && uploadFlags.BuildNumber != "") || (uploadFlags.BuildName != "" && uploadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
-	uploadFlags.Deb = getDebFlag(c);
+	uploadFlags.Deb = getDebFlag(c)
 	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
@@ -1113,4 +1142,3 @@ func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
 		*field = c.Bool(fieldName)
 	}
 }
-

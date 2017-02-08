@@ -106,7 +106,7 @@ func sumIntArray(arr []int) int {
 	return sum
 }
 
-func addBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
+func addBuildProps(uploadFile *utils.File, flags *UploadFlags) (err error) {
 	if flags.BuildName == "" || flags.BuildNumber == "" {
 		return
 	}
@@ -117,7 +117,7 @@ func addBuildProps(uploadFiles *utils.Files, flags *UploadFlags) (err error) {
 		return
 	}
 	props += ";build.timestamp=" + strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano() / int64(time.Millisecond), 10)
-	uploadFiles.Props = addProps(uploadFiles.Props, props)
+	uploadFile.Props = addProps(uploadFile.Props, props)
 	return
 }
 
@@ -250,7 +250,7 @@ func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]s
 	return paths, nil
 }
 
-func collectPatternMatchingFiles(uploadFile utils.Files, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags) error {
+func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags) error {
 	r, err := regexp.Compile(uploadFile.Pattern)
 	if cliutils.CheckError(err) != nil {
 		return err
@@ -413,18 +413,14 @@ func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpCli
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status, strChecksumDeployed)
 	}
-	if (details == nil) {
+	if details == nil {
 		details, err = ioutils.GetFileDetails(localPath)
 	}
 	return resp, details, body, err
 }
 
 func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, checksumDeployed bool, flags *UploadFlags) {
-	if resp == nil {
-		log.Error(logMsgPrefix + "Artifactory response is not accessible." )
-		return
-	}
-	if resp.StatusCode != 201 && resp.StatusCode != 200 {
+	if resp != nil && resp.StatusCode != 201 && resp.StatusCode != 200 {
 		log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 	}
 	if !flags.DryRun {
