@@ -255,10 +255,6 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 		cli.BoolFlag{
-			Name:  "symlinks",
-			Usage: "[Default: false] Set to true create symlinks as represented in Artifactory.",
-		},
-		cli.BoolFlag{
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
 		},
@@ -1014,7 +1010,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags, err error) {
 	downloadFlags = new(commands.DownloadFlags)
 	downloadFlags.DryRun = c.Bool("dry-run")
-	downloadFlags.Symlink = c.Bool("symlinks")
+	downloadFlags.Symlink = true
 	downloadFlags.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)

@@ -107,7 +107,7 @@ func TestSimpleSymlinkHandling(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true --validate-symlinks=true")
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --validate-symlinks=true")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -133,7 +133,7 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true --validate-symlinks=true")
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --validate-symlinks=true")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -157,7 +157,7 @@ func TestSymlinkToDirHandling(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -182,7 +182,7 @@ func TestSymlinkToDirWilcardHandling(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -220,7 +220,7 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	artifactoryCli.Exec("dl", tests.Repo1 + "/link* " + tests.GetTestResourcesPath() + "a/ --symlinks=true")
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link* " + tests.GetTestResourcesPath() + "a/")
 	validateSymLink(link1, localDirPath, t)
 	os.Remove(link1)
 	validateSymLink(link2, localFilePath, t)
