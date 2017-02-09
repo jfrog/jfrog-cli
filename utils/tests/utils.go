@@ -11,6 +11,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"bytes"
+	"os/exec"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
 var PrintSearchResult *bool
@@ -163,4 +166,34 @@ func (cli *JfrogCli) Exec(args ...string) {
 
 func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
 	return &JfrogCli{cli.main, cli.prefix, suffix}
+}
+
+
+type gitManager struct {
+	workingPath string
+}
+
+func GitExecutor(workingPath string) *gitManager {
+	return &gitManager{workingPath:workingPath}
+}
+
+func (m *gitManager) GetUrl() (string, string, error) {
+	return m.execGit("config", "--get", "remote.origin.url")
+}
+
+func (m *gitManager) GetRevision() (string, string, error) {
+	return m.execGit("show", "-s", "--format=%H", "HEAD")
+}
+
+func (m *gitManager) execGit(args ...string) (string, string, error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd := exec.Command("git", args...)
+	cmd.Dir = m.workingPath
+	cmd.Stdin = nil
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	cliutils.CheckError(err)
+	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }

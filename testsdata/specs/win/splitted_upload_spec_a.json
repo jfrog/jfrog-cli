@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "..ֿֿֿ\\testsdata\\a\\*",
+      "pattern": "..\\testsdata\\a\\*",
       "target": "jfrog-cli-tests-repo1/data/",
       "flat": "true",
       "recursive": "false"

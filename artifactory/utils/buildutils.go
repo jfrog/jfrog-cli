@@ -90,8 +90,8 @@ func SavePartialBuildInfo(buildName, buildNumber string, populateDataFunc popula
 	return saveBuildData(tempBuildInfo, buildName, buildNumber)
 }
 
-func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfo, error) {
-	var buildInfo []*ArtifactBuildInfoWrapper
+func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfoData, error) {
+	var BuildInfoPartialData []*ArtifactBuildInfoWrapper
 	path, err := getBuildDir(buildName, buildNumber)
 	if err != nil {
 		return nil, err
@@ -115,12 +115,12 @@ func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		atifactBuildInfoWrapper := new(ArtifactBuildInfoWrapper)
-		json.Unmarshal(content, &atifactBuildInfoWrapper)
-		buildInfo = append(buildInfo, atifactBuildInfoWrapper)
+		artifactBuildInfoWrapper := new(ArtifactBuildInfoWrapper)
+		json.Unmarshal(content, &artifactBuildInfoWrapper)
+		BuildInfoPartialData = append(BuildInfoPartialData, artifactBuildInfoWrapper)
 	}
 
-	return buildInfo, nil
+	return BuildInfoPartialData, nil
 }
 
 func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*BuildGeneralDetails, error) {
@@ -166,23 +166,30 @@ type ArtifactBuildInfoWrapper struct {
 	Dependencies []DependenciesBuildInfo `json:"Dependencies,omitempty"`
 	Env          BuildEnv                `json:"Env,omitempty"`
 	Timestamp    int64                   `json:"Timestamp,omitempty"`
+	*Vcs
 }
+
+type Vcs struct {
+	VcsUrl      string `json:"vcsUrl,omitempty"`
+	VcsRevision string `json:"vcsRevision,omitempty"`
+}
+
 
 type BuildGeneralDetails struct {
 	Timestamp time.Time `json:"Timestamp,omitempty"`
 }
 
-type BuildInfo []*ArtifactBuildInfoWrapper
+type BuildInfoData []*ArtifactBuildInfoWrapper
 
-func (wrapper BuildInfo) Len() int {
+func (wrapper BuildInfoData) Len() int {
 	return len(wrapper)
 }
 
-func (wrapper BuildInfo) Less(i, j int) bool {
+func (wrapper BuildInfoData) Less(i, j int) bool {
 	return wrapper[i].Timestamp < wrapper[j].Timestamp;
 }
 
-func (wrapper BuildInfo) Swap(i, j int) {
+func (wrapper BuildInfoData) Swap(i, j int) {
 	wrapper[i], wrapper[j] = wrapper[j], wrapper[i]
 }
 

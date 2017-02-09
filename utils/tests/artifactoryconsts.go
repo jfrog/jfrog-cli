@@ -235,7 +235,7 @@ var MassiveDownload = []string{
 }
 
 var BuildDownload = []string{
-	Out + ioutils.GetFileSeperator(),
+	Out,
 	Out + ioutils.GetFileSeperator() + "download",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "aql_by_build" + ioutils.GetFileSeperator() + "data",
@@ -245,7 +245,7 @@ var BuildDownload = []string{
 }
 
 var BuildSimpleDownload = []string{
-	Out + ioutils.GetFileSeperator(),
+	Out,
 	Out + ioutils.GetFileSeperator() + "download",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build",
 	Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator() + "data",

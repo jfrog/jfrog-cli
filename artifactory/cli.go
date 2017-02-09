@@ -97,6 +97,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "build-collect-git-info",
+			Flags:    getFlags(),
+			Aliases: []string{"bcgi"},
+			Usage:   "Capture git revision and remote url.",
+			Action: func(c *cli.Context) {
+				buildGitInfoCollectCmd(c)
+			},
+		},
+		{
 			Name:    "build-clean",
 			Flags:    []cli.Flag{},
 			Aliases: []string{"bc"},
@@ -726,7 +735,7 @@ func searchCmd(c *cli.Context) {
 }
 
 func buildPublishCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	buildInfoFlags, err := createBuildInfoFlags(c)
 	cliutils.ExitOnErrWithMsg(err)
 	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags)
@@ -734,13 +743,25 @@ func buildPublishCmd(c *cli.Context) {
 }
 
 func buildCollectEnvCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	err := commands.BuildCollectEnv(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
 
+func buildGitInfoCollectCmd(c *cli.Context) {
+	if c.NArg() > 3 && c.NArg() < 2{
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	dotGitPath := ""
+	if c.NArg() == 3 {
+		dotGitPath = c.Args().Get(2)
+	}
+	err := commands.BuildGitInfoCollect(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	cliutils.ExitOnErr(err)
+}
+
 func buildCleanCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	err := commands.BuildClean(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
@@ -769,7 +790,7 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func vlidateBuildInfoArgument(c *cli.Context) {
+func validateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}

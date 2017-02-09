@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"github.com/buger/jsonparser"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -351,7 +352,7 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	specFile := tests.GetFilePath(tests.DownloadSpec)
 	artifactoryCli.Exec("download", "--spec=" + specFile)
 
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/", false)
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsExistLocally(tests.MassiveDownload, paths, t)
 	cleanArtifactoryTest()
 }
@@ -407,7 +408,7 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec=" + specFile)
 
 	//validate files are downloaded by build number
-	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsLocalExactAsExpected(tests.BuildDownload, paths, t)
 
 	//cleanup
@@ -434,7 +435,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in " +  tests.Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator(), "--build=" + buildName)
 
 	//validate files are downloaded by build number
-	paths, _ := ioutils.ListFilesRecursive(tests.Out + "/")
+	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsLocalExactAsExpected(tests.BuildSimpleDownload, paths, t)
 
 	//cleanup
@@ -580,6 +581,87 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestCollectGitBuildInfo(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "13"
+	dotGitPath := getCliDotGitPath(t)
+	artifactoryCli.Exec("build-collect-git-info", buildName, buildNumber, dotGitPath)
+
+	//publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+
+	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
+	_, body, _, err := ioutils.SendGet(*tests.RtUrl + "api/build/" + buildName + "/" + buildNumber, false, artHttpDetails)
+	if err != nil {
+		t.Error(err)
+	}
+	buildInfoVcsRevision, err := jsonparser.GetString(body, "buildInfo", "vcsRevision")
+	if err != nil {
+		t.Error(err)
+	}
+	buildInfoVcsUrl, err := jsonparser.GetString(body, "buildInfo", "vcsUrl")
+	if err != nil {
+		t.Error(err)
+	}
+	if buildInfoVcsRevision == "" {
+		t.Error("failed to get git revision.")
+	}
+
+	if buildInfoVcsUrl == "" {
+		t.Error("failed to get git remote url.")
+	}
+
+	gitManager := commands.NewGitManager(dotGitPath)
+	if err = gitManager.ReadGitConfig(); err != nil {
+		t.Error("failed read .git config file.")
+	}
+	if gitManager.GetRevision() != buildInfoVcsRevision {
+		t.Error("Wrong revision", "expected: " + gitManager.GetRevision(), "Got: " + buildInfoVcsRevision)
+	}
+
+	gitConfigUrl := gitManager.GetUrl() + ".git"
+	if gitConfigUrl != buildInfoVcsUrl {
+		t.Error("Wrong url", "expected: " + gitConfigUrl, "Got: " + buildInfoVcsUrl)
+	}
+
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestReadGitConfig(t *testing.T) {
+	dotGitPath := getCliDotGitPath(t)
+	gitManager := commands.NewGitManager(dotGitPath)
+	err := gitManager.ReadGitConfig()
+	if err != nil {
+		t.Error("failed read .git config file.")
+	}
+
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Error("failed to get current dir.")
+	}
+	gitExecutor := tests.GitExecutor(workingDir)
+	revision, _, err := gitExecutor.GetRevision()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if gitManager.GetRevision() != revision {
+		t.Error("Wrong revision", "expected: " + revision, "Got: " + gitManager.GetRevision())
+	}
+
+	url, _, err := gitExecutor.GetUrl()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if gitManager.GetUrl() != url {
+		t.Error("Wrong revision", "expected: " + url, "Got: " + gitManager.GetUrl())
+	}
+}
+
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
 }
@@ -720,4 +802,20 @@ func isRepoExist(repoName string) bool {
 		return true
 	}
 	return false
+}
+
+func getCliDotGitPath(t *testing.T) string {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Error("failed to get current dir.")
+	}
+	dotGitPath := filepath.Join(workingDir, "..")
+	dotGitExists, err := ioutils.IsDirExists(filepath.Join(dotGitPath, ".git"))
+	if err != nil {
+		t.Error(err)
+	}
+	if !dotGitExists {
+		t.Error("can't find .git")
+	}
+	return dotGitPath
 }
