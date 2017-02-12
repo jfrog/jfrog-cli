@@ -3,7 +3,6 @@ package httputils
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,8 +10,9 @@ import (
 	"strconv"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 )
 
 func sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
@@ -244,19 +244,19 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		tempFilePath += "/" + flags.FileName + "_" + strconv.Itoa(i)
 		fileutils.AppendFile(tempFilePath, destFile)
 	}
-	fmt.Println(logMsgPrefix + "Done downloading.")
+	log.Info(logMsgPrefix + "Done downloading.")
 	return nil
 }
 
 func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string,
 httpClientsDetails HttpClientDetails) error {
 
-	tempLoclPath, err := fileutils.GetTempDirPath()
+	tempLocalPath, err := fileutils.GetTempDirPath()
 	if err != nil {
 		return err
 	}
 	if !flags.Flat {
-		tempLoclPath += "/" + flags.LocalPath
+		tempLocalPath += "/" + flags.LocalPath
 	}
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
@@ -271,9 +271,9 @@ httpClientsDetails HttpClientDetails) error {
 		return err
 	}
 
-	fmt.Println(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
-	os.MkdirAll(tempLoclPath, 0777)
-	filePath := tempLoclPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
+	log.Info(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
+	os.MkdirAll(tempLocalPath, 0777)
+	filePath := tempLocalPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
 
 	out, err := os.Create(filePath)
 	err = cliutils.CheckError(err)
