@@ -1,4 +1,4 @@
-package ioutils
+package fileutils
 
 import (
 	"errors"

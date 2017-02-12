@@ -2,12 +2,12 @@ package utils
 
  import (
 	 "github.com/jfrogdev/jfrog-cli-go/utils/config"
-	 "github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	 "github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	 "encoding/json"
  )
 
-func GetMissionControlHttpClientDetails(missionControlDetails *config.MissionControlDetails) ioutils.HttpClientDetails {
-	return ioutils.HttpClientDetails{
+func GetMissionControlHttpClientDetails(missionControlDetails *config.MissionControlDetails) httputils.HttpClientDetails {
+	return httputils.HttpClientDetails{
 		User:     missionControlDetails.User,
 		Password: missionControlDetails.Password,
 		Headers:  map[string]string{"Content-Type": "application/json"}}

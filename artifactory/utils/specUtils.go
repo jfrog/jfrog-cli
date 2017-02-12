@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"strings"
 	"strconv"
@@ -51,7 +51,7 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 
 func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
-	content, err := ioutils.ReadFile(specFilePath)
+	content, err := fileutils.ReadFile(specFilePath)
 	if cliutils.CheckError(err) != nil {
 		return
 	}

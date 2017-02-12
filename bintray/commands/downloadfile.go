@@ -2,13 +2,13 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func DownloadFile(pathDetails *utils.PathDetails, targetPath string, flags *utils.DownloadFlags) (err error) {
-	ioutils.CreateTempDirPath()
-	defer ioutils.RemoveTempDir()
+	fileutils.CreateTempDirPath()
+	defer fileutils.RemoveTempDir()
 
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = pathDetails.Subject

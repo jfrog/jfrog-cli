@@ -3,7 +3,7 @@ package rtinstances
 import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"encoding/json"
 	"errors"
@@ -24,7 +24,7 @@ func AddInstance(instanceName string, flags *AddInstanceFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 	    return err
 	}

@@ -5,7 +5,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"strings"
 	"errors"
 	"sync"
@@ -14,15 +15,15 @@ import (
 )
 
 func DownloadVersion(versionDetails *utils.VersionDetails, targetPath string, flags *utils.DownloadFlags) (totalDownloded, totalFailed int, err error) {
-	ioutils.CreateTempDirPath()
-	defer ioutils.RemoveTempDir()
+	fileutils.CreateTempDirPath()
+	defer fileutils.RemoveTempDir()
 
 	if flags.BintrayDetails.User == "" {
 		flags.BintrayDetails.User = versionDetails.Subject
 	}
 	path := BuildDownloadVersionUrl(versionDetails, flags.BintrayDetails, flags.IncludeUnpublished)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
+	resp, body, _, _ := httputils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		err = cliutils.CheckError(errors.New(resp.Status + ". " + utils.ReadBintrayMessage(body)))
 		return

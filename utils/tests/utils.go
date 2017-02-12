@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"runtime"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"bytes"
 	"os/exec"
@@ -23,6 +23,7 @@ var RtPassword *string
 var RtApiKey *string
 var BtUser *string
 var BtKey *string
+var BtOrganization *string
 var TestArtifactory *bool
 var TestBintray *bool
 
@@ -36,10 +37,11 @@ func init() {
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")
+	BtOrganization = flag.String("bt.organization", "", "Bintray organization")
 }
 
 func CleanFileSystem() {
-	isExist, err := ioutils.IsDirExists(Out)
+	isExist, err := fileutils.IsDirExists(Out)
 	if err != nil {
 		log.Error(err)
 	}
@@ -93,15 +95,15 @@ func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult,
 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
-	fileSepatatr := ioutils.GetFileSeperator()
+	fileSepatatr := fileutils.GetFileSeperator()
 	index := strings.LastIndex(dir, fileSepatatr)
 	dir = dir[:index]
-	return dir + ioutils.GetFileSeperator() + "testsdata" + ioutils.GetFileSeperator()
+	return dir + fileutils.GetFileSeperator() + "testsdata" + fileutils.GetFileSeperator()
 }
 
 func getFileByOs(fileName string) string {
 	var currentOs string;
-	fileSepatatr := ioutils.GetFileSeperator()
+	fileSepatatr := fileutils.GetFileSeperator()
 	if runtime.GOOS == "windows" {
 		currentOs = "win"
 	} else {
@@ -111,8 +113,8 @@ func getFileByOs(fileName string) string {
 }
 
 func GetFilePath(fileName string) string {
-	filePath := GetTestResourcesPath() + "specs/common" + ioutils.GetFileSeperator() + fileName
-	isExists, _ := ioutils.IsFileExists(filePath)
+	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeperator() + fileName
+	isExists, _ :=fileutils.IsFileExists(filePath)
 	if isExists {
 		return filePath
 	}

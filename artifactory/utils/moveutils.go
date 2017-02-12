@@ -4,7 +4,8 @@ import (
 	"strings"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
@@ -75,7 +76,7 @@ func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successC
 func moveSimple(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 
 	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
-	patternFileName, _ := ioutils.GetFileAndDirFromPath(fileSpec.Pattern)
+	patternFileName, _ := fileutils.GetFileAndDirFromPath(fileSpec.Pattern)
 
 	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
 	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
@@ -105,7 +106,7 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *F
 		}
 		if !isFlat {
 			if strings.Contains(destPathLocal, "/") {
-				file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
+				file, dir := fileutils.GetFileAndDirFromPath(destPathLocal)
 				destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
 			} else {
 				destPathLocal = cliutils.TrimPath(destPathLocal + "/" + v.Path + "/")
@@ -147,7 +148,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 		return false, err
 	}
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, body, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	resp, body, err := httputils.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}

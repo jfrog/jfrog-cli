@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -18,7 +18,7 @@ func CreateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) (
 	data := buildEntitlementJson(flags, true)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Creating entitlement...")
-	resp, body, err := ioutils.SendPost(path, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPost(path, []byte(data), httpClientsDetails)
 	if err != nil {
 		return
 	}

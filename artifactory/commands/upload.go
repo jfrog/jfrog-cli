@@ -3,7 +3,8 @@ package commands
 import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"net/http"
 	"os"
 	"regexp"
@@ -127,7 +128,7 @@ func getSingleFileToUpload(rootPath, targetPath string, flat bool) cliutils.Arti
 		uploadPath = targetPath
 	} else {
 		if flat {
-			uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
+			uploadPath, _ = fileutils.GetFileAndDirFromPath(rootPath)
 			uploadPath = targetPath + uploadPath
 		} else {
 			uploadPath = targetPath + rootPath
@@ -158,7 +159,7 @@ func addSymlinkProps(props string, artifact cliutils.Artifact, flags *UploadFlag
 			return "", err
 		}
 		if !fileInfo.IsDir() {
-			sha1, err := ioutils.CalcSha1(artifact.LocalPath)
+			sha1, err := fileutils.CalcSha1(artifact.LocalPath)
 			if err != nil {
 				return "", err
 			}
@@ -185,7 +186,7 @@ func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, prod
 			return
 		}
 		// If the path is a single file then return it
-		if !uploadMetaData.IsDir || (flags.Symlink && ioutils.IsPathSymlink(uploadFile.Pattern)) {
+		if !uploadMetaData.IsDir || (flags.Symlink && fileutils.IsPathSymlink(uploadFile.Pattern)) {
 			artifact := getSingleFileToUpload(uploadMetaData.RootPath, uploadFile.Target, uploadMetaData.IsFlat)
 			props, err := addSymlinkProps(uploadFile.Props, artifact, flags)
 			if err != nil {
@@ -208,7 +209,7 @@ func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, prod
 
 func getRootPath(pattern string, isRegexp bool) (string, error){
 	rootPath := cliutils.GetRootPathForUpload(pattern, isRegexp)
-	if !ioutils.IsPathExists(rootPath) {
+	if !fileutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
 			return "", err
@@ -224,7 +225,7 @@ func getFileSymlinkPath(filePath string) (string, error){
 		return "", e
 	}
 	var symlinkPath = ""
-	if ioutils.IsFileSymlink(fileInfo) {
+	if fileutils.IsFileSymlink(fileInfo) {
 		symlinkPath, e = os.Readlink(filePath)
 		if cliutils.CheckError(e) != nil {
 			return "", e
@@ -240,9 +241,9 @@ func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]s
 		return paths, err
 	}
 	if isRecursive {
-		paths, err = ioutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, !flags.Symlink)
+		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, !flags.Symlink)
 	} else {
-		paths, err = ioutils.ListFiles(rootPath)
+		paths, err = fileutils.ListFiles(rootPath)
 	}
 	if err != nil {
 		return paths, err
@@ -261,11 +262,11 @@ func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDes
 		return err
 	}
 	for _, path := range paths {
-		dir, err := ioutils.IsDir(path)
+		dir, err := fileutils.IsDir(path)
 		if err != nil {
 			return err
 		}
-		if dir && (!flags.Symlink || !ioutils.IsPathSymlink(path)) {
+		if dir && (!flags.Symlink || !fileutils.IsPathSymlink(path)) {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
@@ -278,7 +279,7 @@ func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDes
 			}
 			if strings.HasSuffix(target, "/") {
 				if uploadMetaData.IsFlat {
-					fileName, _ := ioutils.GetFileAndDirFromPath(path)
+					fileName, _ := fileutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
 					uploadPath := cliutils.TrimPath(path)
@@ -317,7 +318,7 @@ func addPropsToTargetPath(targetPath, props string, flags *UploadFlags) (string,
 }
 
 func prepareUploadData(targetPath, localPath, props, logMsgPrefix string, flags *UploadFlags) (os.FileInfo, string, string, error) {
-	fileName, _ := ioutils.GetFileAndDirFromPath(targetPath)
+	fileName, _ := fileutils.GetFileAndDirFromPath(targetPath)
 	targetPath, err := addPropsToTargetPath(targetPath, props, flags)
 	if cliutils.CheckError(err) != nil {
 		return nil, "", "", err
@@ -349,14 +350,14 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	}
 	var checksumDeployed bool = false
 	var resp *http.Response
-	var details *ioutils.FileDetails
+	var details *fileutils.FileDetails
 	var body []byte
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	fileStat, err := os.Lstat(localPath)
 	if cliutils.CheckError(err) != nil {
 		return utils.ArtifactsBuildInfo{}, false, err
 	}
-	if flags.Symlink && ioutils.IsFileSymlink(fileStat) {
+	if flags.Symlink && fileutils.IsFileSymlink(fileStat) {
 		resp, details, body, err = uploadSymlink(targetPath, httpClientsDetails, flags)
 		if err != nil {
 			return utils.ArtifactsBuildInfo{}, false, err
@@ -372,14 +373,14 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
 }
 
-func uploadSymlink(targetPath string, httpClientsDetails ioutils.HttpClientDetails, flags *UploadFlags) (resp *http.Response, details *ioutils.FileDetails, body []byte, err error) {
+func uploadSymlink(targetPath string, httpClientsDetails httputils.HttpClientDetails, flags *UploadFlags) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
 	details = createSymlinkFileDetails()
 	resp, body, err = utils.UploadFile(nil, targetPath, flags.ArtDetails, details, httpClientsDetails)
 	return
 }
 
-func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails ioutils.HttpClientDetails, fileInfo os.FileInfo, minChecksumDeploySize int64, flags *UploadFlags) (*http.Response, *ioutils.FileDetails, []byte, error) {
-	var details *ioutils.FileDetails
+func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, fileInfo os.FileInfo, minChecksumDeploySize int64, flags *UploadFlags) (*http.Response, *fileutils.FileDetails, []byte, error) {
+	var details *fileutils.FileDetails
 	var checksumDeployed bool
 	var resp *http.Response
 	var body []byte
@@ -398,7 +399,7 @@ func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpCli
 		if err != nil {
 			return resp, details, body, err
 		}
-		details, err = ioutils.GetFileDetails(localPath)
+		details, err = fileutils.GetFileDetails(localPath)
 		if err != nil {
 			return resp, details, body, err
 		}
@@ -414,7 +415,7 @@ func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpCli
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status, strChecksumDeployed)
 	}
 	if details == nil {
-		details, err = ioutils.GetFileDetails(localPath)
+		details, err = fileutils.GetFileDetails(localPath)
 	}
 	return resp, details, body, err
 }
@@ -435,16 +436,16 @@ func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, ch
 }
 
 // When handling symlink we want to simulate the creation of  empty file
-func createSymlinkFileDetails() *ioutils.FileDetails {
+func createSymlinkFileDetails() *fileutils.FileDetails {
 	const symlinkBody = ""
-	details := new(ioutils.FileDetails)
-	details.Md5, _ = ioutils.GetMd5(bytes.NewBuffer([]byte(ioutils.SYMLINK_FILE_CONTENT)))
-	details.Sha1, _ = ioutils.GetSha1(bytes.NewBuffer([]byte(ioutils.SYMLINK_FILE_CONTENT)))
+	details := new(fileutils.FileDetails)
+	details.Md5, _ = fileutils.GetMd5(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
+	details.Sha1, _ = fileutils.GetSha1(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
 	details.Size = int64(0)
 	return details
 }
 
-func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) utils.ArtifactsBuildInfo {
+func createBuildArtifactItem(fileName string, details *fileutils.FileDetails) utils.ArtifactsBuildInfo {
 	return utils.ArtifactsBuildInfo{
 		Name: fileName,
 		BuildInfoCommon : &utils.BuildInfoCommon{
@@ -454,7 +455,7 @@ func createBuildArtifactItem(fileName string, details *ioutils.FileDetails) util
 	}
 }
 
-func addExplodeHeader(httpClientsDetails *ioutils.HttpClientDetails, isExplode bool) {
+func addExplodeHeader(httpClientsDetails *httputils.HttpClientDetails, isExplode bool) {
 	if isExplode {
 		utils.AddHeader("X-Explode-Archive", "true", &httpClientsDetails.Headers)
 	}
@@ -484,9 +485,9 @@ func extractOnlyFileNameFromPath(file string) string {
 }
 
 func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
-httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *ioutils.FileDetails, body []byte, err error) {
+httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
 
-	details, err = ioutils.GetFileDetails(filePath)
+	details, err = fileutils.GetFileDetails(filePath)
 	if err != nil {
 		return
 	}
@@ -501,7 +502,7 @@ httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, details *iou
 	}
 	utils.AddAuthHeaders(headers, flags.ArtDetails)
 	cliutils.MergeMaps(headers, requestClientDetails.Headers)
-	resp, body, err = ioutils.SendPut(targetPath, nil, *requestClientDetails)
+	resp, body, err = httputils.SendPut(targetPath, nil, *requestClientDetails)
 	return
 }
 
@@ -571,7 +572,7 @@ func (p *uploadDescriptor) setRootPath(pattern string) {
 
 func (p *uploadDescriptor) checkIfDir() {
 	if p.Err == nil {
-		p.IsDir, p.Err = ioutils.IsDir(p.RootPath)
+		p.IsDir, p.Err = fileutils.IsDir(p.RootPath)
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"strings"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -26,7 +26,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
             }
 	    }
 		if details.Url == "" {
-			ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+			fileutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		}
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			err = readSshKeyPathFromConsole(details, defaultDetails)
@@ -35,10 +35,10 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
             }
 		} else {
 		    if details.ApiKey == "" && details.Password == "" {
-		        ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+		        fileutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
 		    }
 			if details.ApiKey == "" {
-				ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+				fileutils.ReadCredentialsFromConsole(details, defaultDetails)
 			}
 		}
 	}
@@ -60,11 +60,11 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 
 func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
 	if details.SshKeyPath == "" {
-		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
+		fileutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
 	}
 
 	details.SshKeyPath = cliutils.ReplaceTildeWithUserHome(details.SshKeyPath)
-	exists, err := ioutils.IsFileExists(details.SshKeyPath)
+	exists, err :=fileutils.IsFileExists(details.SshKeyPath)
 	if err != nil {
 	    return err
 	}

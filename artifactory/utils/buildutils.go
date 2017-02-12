@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"os"
 	"io/ioutil"
@@ -59,7 +60,7 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	}
 	path += BUILD_INFO_DETAILS
 	var exists bool
-	exists, err = ioutils.IsFileExists(path)
+	exists, err =fileutils.IsFileExists(path)
 	if err != nil {
 		return err
 	}
@@ -96,12 +97,12 @@ func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfoData, error) {
 	if err != nil {
 		return nil, err
 	}
-	buildFiles, err := ioutils.ListFiles(path)
+	buildFiles, err := fileutils.ListFiles(path)
 	if err != nil {
 		return nil, err
 	}
 	for _, buildFile := range buildFiles {
-		dir, err := ioutils.IsDir(buildFile)
+		dir, err := fileutils.IsDir(buildFile)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +112,7 @@ func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfoData, error) {
 		if strings.HasSuffix(buildFile, BUILD_INFO_DETAILS) {
 			continue
 		}
-		content, err := ioutils.ReadFile(buildFile)
+		content, err := fileutils.ReadFile(buildFile)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +130,7 @@ func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*BuildGeneralDe
 		return nil, err
 	}
 	path += BUILD_INFO_DETAILS
-	content, err := ioutils.ReadFile(path)
+	content, err := fileutils.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +139,8 @@ func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*BuildGeneralDe
 	return details, nil
 }
 
-func PublishBuildInfo(url string, content []byte, httpClientsDetails ioutils.HttpClientDetails) (resp *http.Response, body []byte, err error) {
-	return ioutils.SendPut(url + "api/build/", content, httpClientsDetails)
+func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) ( *http.Response, []byte, error) {
+	return httputils.SendPut(url + "api/build/", content, httpClientsDetails)
 }
 
 type BuildEnv map[string]string
@@ -198,7 +199,7 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 	if err != nil {
 		return err
 	}
-	exists, err := ioutils.IsDirExists(tempDirPath)
+	exists, err := fileutils.IsDirExists(tempDirPath)
 	if err != nil {
 		return err
 	}
@@ -291,7 +292,7 @@ func getBuildNumberFromArtifactory(buildName, buildNumber string, flags AqlSearc
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 	SetContentType("application/json", &httpClientsDetails.Headers)
 	log.Debug("Sending post request to: " + restUrl + ", with the following body: " + string(body))
-	resp, body, err := ioutils.SendPost(restUrl, body, httpClientsDetails)
+	resp, body, err := httputils.SendPost(restUrl, body, httpClientsDetails)
 	if err != nil {
 		return "", "", err
 	}

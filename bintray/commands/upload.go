@@ -4,7 +4,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"os"
 	"regexp"
 	"strconv"
@@ -133,7 +134,7 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 	}
 	defer f.Close()
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, err := ioutils.UploadFile(f, url, httpClientsDetails)
+	resp, body, err := httputils.UploadFile(f, url, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
@@ -231,7 +232,7 @@ func getSingleFileToUpload(rootPath, targetPath, debianDefaultPath string, flat 
 		targetPath = ""
 	}
 	if flat {
-		uploadPath, _ = ioutils.GetFileAndDirFromPath(rootPath)
+		uploadPath, _ = fileutils.GetFileAndDirFromPath(rootPath)
 		uploadPath = targetPath + uploadPath
 	} else {
 		uploadPath = targetPath + rootPath
@@ -247,7 +248,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 	}
 
 	rootPath := cliutils.GetRootPathForUpload(localPath, flags.UseRegExp)
-	if !ioutils.IsPathExists(rootPath) {
+	if !fileutils.IsPathExists(rootPath) {
 		err := cliutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
 			return nil, err
@@ -258,7 +259,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 
 	artifacts := []cliutils.Artifact{}
 	// If the path is a single file then return it
-	dir, err := ioutils.IsDir(rootPath)
+	dir, err := fileutils.IsDir(rootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -278,16 +279,16 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 	spinner.Start()
 	var paths []string
 	if flags.Recursive {
-		paths, err = ioutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
+		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
 	} else {
-		paths, err = ioutils.ListFiles(rootPath)
+		paths, err = fileutils.ListFiles(rootPath)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	for _, path := range paths {
-		dir, err := ioutils.IsDir(path)
+		dir, err := fileutils.IsDir(path)
 		if err != nil {
 			return nil, err
 		}
@@ -310,7 +311,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 					target = debianDefaultPath
 				}
 				if flags.Flat {
-					fileName, _ := ioutils.GetFileAndDirFromPath(path)
+					fileName, _ := fileutils.GetFileAndDirFromPath(path)
 					target += fileName
 				} else {
 					uploadPath := cliutils.TrimPath(path)

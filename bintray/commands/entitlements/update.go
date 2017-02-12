@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -17,7 +17,7 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 	data := buildEntitlementJson(flags, true)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Updating entitlement...")
-	resp, body, err := ioutils.SendPatch(path, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPatch(path, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}

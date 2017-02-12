@@ -8,7 +8,7 @@ import (
 	"os"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 )
 
 func IsArtifactoryConfExists() (bool, error) {
@@ -115,7 +115,7 @@ func saveConfig(config *Config) error {
 	    return err
 	}
 	var exists bool
-	exists, err = ioutils.IsFileExists(path)
+	exists, err =fileutils.IsFileExists(path)
 	if err != nil {
 	    return err
 	}
@@ -140,14 +140,14 @@ func readConf() (*Config, error) {
 	    return nil, err
 	}
 	config := new(Config)
-	exists, err := ioutils.IsFileExists(confFilePath)
+	exists, err :=fileutils.IsFileExists(confFilePath)
 	if err != nil {
 	    return nil, err
 	}
 	if !exists {
 		return config, nil
 	}
-	content, err := ioutils.ReadFile(confFilePath)
+	content, err := fileutils.ReadFile(confFilePath)
 	if err != nil {
 	    return nil, err
 	}
@@ -157,7 +157,7 @@ func readConf() (*Config, error) {
 }
 
 func GetJfrogHomeDir() (string, error) {
-	userDir := ioutils.GetHomeDir()
+	userDir := fileutils.GetHomeDir()
 	if userDir == "" {
 		err := cliutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
         if err != nil {

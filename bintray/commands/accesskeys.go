@@ -4,7 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"errors"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -15,7 +15,7 @@ func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
 	path := GetAccessKeysPath(bintrayDetails, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	log.Info("Getting access keys...")
-	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
+	resp, body, _, _ := httputils.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
@@ -30,7 +30,7 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Getting access key...")
-	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
+	resp, body, _, _ := httputils.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != 200 {
 		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
@@ -46,7 +46,7 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	url := GetAccessKeysPath(flags.BintrayDetails, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Creating access key...")
-	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return
 	}
@@ -65,7 +65,7 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Updating access key...")
-	resp, body, err := ioutils.SendPatch(url, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPatch(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func DeleteAccessKey(flags *AccessKeyFlags, org string) error {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Deleting access key...")
-	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
+	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}

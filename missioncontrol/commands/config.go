@@ -2,7 +2,7 @@ package commands
 
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"errors"
@@ -48,7 +48,7 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 			}
 		}
 		if conf.Url == "" {
-			ioutils.ScanFromConsole("Mission Control URL", &conf.Url, defaultDetails.Url)
+			fileutils.ScanFromConsole("Mission Control URL", &conf.Url, defaultDetails.Url)
 			var u *url.URL
 			u, err = url.Parse(conf.Url);
 			err = cliutils.CheckError(err)
@@ -62,7 +62,7 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
                 }
 			}
 		}
-		ioutils.ReadCredentialsFromConsole(conf, defaultDetails)
+		fileutils.ReadCredentialsFromConsole(conf, defaultDetails)
 	}
 	conf.Url = cliutils.AddTrailingSlashIfNeeded(conf.Url)
 	config.SaveMissionControlConf(conf)

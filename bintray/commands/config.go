@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )
@@ -22,7 +22,7 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*
 			}
 	    }
 		if details.User == "" {
-			ioutils.ScanFromConsole("User", &details.User, defaultDetails.User)
+			fileutils.ScanFromConsole("User", &details.User, defaultDetails.User)
 		}
 		if details.Key == "" {
 			print("Key: ")
@@ -37,7 +37,7 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*
 			}
 		}
 		if details.DefPackageLicenses == "" {
-			ioutils.ScanFromConsole("\nDefault package licenses",
+			fileutils.ScanFromConsole("\nDefault package licenses",
 			    &details.DefPackageLicenses, defaultDetails.DefPackageLicenses)
 		}
 	}

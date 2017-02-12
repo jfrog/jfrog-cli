@@ -1,4 +1,4 @@
-package ioutils
+package httputils
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"

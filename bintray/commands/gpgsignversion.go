@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -25,7 +25,7 @@ func GpgSignVersion(versionDetails *utils.VersionDetails, passphrase string, bin
 
 	log.Info("GPG signing version...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}

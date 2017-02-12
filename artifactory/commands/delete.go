@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -143,7 +143,7 @@ func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 
 		log.Info("Deleting:", v.GetFullUrl())
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, body, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
+		resp, body, err := httputils.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
 			return err
 		}

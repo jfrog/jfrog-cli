@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -18,7 +18,7 @@ func LogsList(packageDetails *utils.VersionDetails, details *config.BintrayDetai
 			packageDetails.Repo + "/" + packageDetails.Package + "/logs/"
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
 	log.Info("Getting logs...")
-	resp, body, _, _ := ioutils.SendGet(path, true, httpClientsDetails)
+	resp, body, _, _ := httputils.SendGet(path, true, httpClientsDetails)
 
 	if resp.StatusCode != 200 {
 		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
@@ -39,7 +39,7 @@ details *config.BintrayDetails) error {
 			packageDetails.Repo + "/" + packageDetails.Package + "/logs/" + logName
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(details)
 	log.Info("Downloading logs...")
-	resp, err := ioutils.DownloadFile(path, "", logName, httpClientsDetails)
+	resp, err := httputils.DownloadFile(path, "", logName, httpClientsDetails)
 	if err != nil {
 		return err
 	}

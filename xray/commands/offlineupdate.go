@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -105,7 +105,7 @@ func saveData(xrsyTmpdir, filesPrefix, zipSuffix, logMsgPrefix string, urlsList 
 	for i, url := range urlsList {
 		fileName := filesPrefix + strconv.Itoa(i) + ".json"
 		log.Info(logMsgPrefix, "Downloading", url)
-		ioutils.DownloadFile(url, dataDir, fileName, ioutils.HttpClientDetails{})
+		httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
 	}
 	log.Info("Zipping files.")
 	err = zipFolderFiles(dataDir, filesPrefix + zipSuffix + ".zip")
@@ -120,10 +120,10 @@ func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error)
 	log.Info("Getting updates...")
 	headers := make(map[string]string)
 	headers["X-Xray-License"] = flags.License
-	httpClientDetails := ioutils.HttpClientDetails{
+	httpClientDetails := httputils.HttpClientDetails{
 		Headers: headers,
 	}
-	resp, body, _, err := ioutils.SendGet(updatesUrl, false, httpClientDetails)
+	resp, body, _, err := httputils.SendGet(updatesUrl, false, httpClientDetails)
 	if err != nil {
 		cliutils.CheckError(err)
 		return nil, nil, 0, err

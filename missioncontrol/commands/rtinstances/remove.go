@@ -3,7 +3,7 @@ package rtinstances
 import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"errors"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 func Remove(instanceName string, flags *RemoveFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances/" + instanceName;
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := ioutils.SendDelete(missionControlUrl, nil, httpClientDetails)
+	resp, body, err := httputils.SendDelete(missionControlUrl, nil, httpClientDetails)
 	if err != nil {
 	    return err
 	}

@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"net/http"
 )
 
@@ -12,7 +12,7 @@ func HeadPackage(packageDetails *VersionDetails, bintrayDetails *config.BintrayD
 		packageDetails.Repo + "/" + packageDetails.Package
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
 
-	return ioutils.SendHead(url, httpClientsDetails)
+	return httputils.SendHead(url, httpClientsDetails)
 }
 
 func HeadRepo(packageDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (*http.Response, error) {
@@ -20,7 +20,7 @@ func HeadRepo(packageDetails *VersionDetails, bintrayDetails *config.BintrayDeta
 		packageDetails.Repo
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
 
-	return ioutils.SendHead(url, httpClientsDetails)
+	return httputils.SendHead(url, httpClientsDetails)
 }
 
 func CreatePackageJson(packageName string, flags *PackageFlags) string {

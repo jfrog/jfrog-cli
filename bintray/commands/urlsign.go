@@ -4,7 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
 	"fmt"
@@ -20,7 +20,7 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) e
 
 	log.Info("Signing URL...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	resp, body, err := ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}

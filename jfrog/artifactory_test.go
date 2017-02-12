@@ -3,7 +3,8 @@ package main
 import (
 	"testing"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/tests"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
@@ -61,8 +62,8 @@ func TestArtifactoryUploadandExplode(t *testing.T) {
 func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t)
 
-	testFileRel := "~" + ioutils.GetFileSeperator() + "cliTestFile.txt"
-	testFileAbs := ioutils.GetHomeDir() + "/cliTestFile.txt"
+	testFileRel := "~" + fileutils.GetFileSeperator() + "cliTestFile.txt"
+	testFileAbs := fileutils.GetHomeDir() + "/cliTestFile.txt"
 
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbs, d1, 0644)
@@ -230,7 +231,7 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 }
 
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
-	exists := ioutils.IsPathSymlink(localLinkPath)
+	exists := fileutils.IsPathSymlink(localLinkPath)
 	if !exists {
 		t.Error(errors.New("Faild to download symlinks from artifactory"))
 	}
@@ -265,13 +266,13 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	artifactoryCli.Exec("copy", "--spec=" + specFile)
 
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, _, _, _ := ioutils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ := httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != 200 {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
 	artifactoryCli.Exec("delete", tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/*/b/", "--quiet=true")
-	resp, _, _, _ = ioutils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ = httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != 404 {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
@@ -286,7 +287,7 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	artifactoryCli.Exec("delete", tests.Repo1 + "/downloadTestResources/", "--quiet=true")
 
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, body, _, err := ioutils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err := httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Coudln't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -302,11 +303,11 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 	artifactoryCli.Exec("delete", "--spec=" + tests.GetFilePath(tests.DeleteSpec), "--quiet=true")
 
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, body, _, err := ioutils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err := httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Coudln't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
-	resp, body, _, err = ioutils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err = httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Coudln't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
 	}
@@ -352,7 +353,7 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	specFile := tests.GetFilePath(tests.DownloadSpec)
 	artifactoryCli.Exec("download", "--spec=" + specFile)
 
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsExistLocally(tests.MassiveDownload, paths, t)
 	cleanArtifactoryTest()
 }
@@ -408,7 +409,7 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec=" + specFile)
 
 	//validate files are downloaded by build number
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsLocalExactAsExpected(tests.BuildDownload, paths, t)
 
 	//cleanup
@@ -431,11 +432,11 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/a1.in " + tests.Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator(), "--build=" + buildName)
-	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in " +  tests.Out + ioutils.GetFileSeperator() + "download" + ioutils.GetFileSeperator() + "simple_by_build" + ioutils.GetFileSeperator(), "--build=" + buildName)
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/a1.in " + tests.Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator(), "--build=" + buildName)
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in " +  tests.Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator(), "--build=" + buildName)
 
 	//validate files are downloaded by build number
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsLocalExactAsExpected(tests.BuildSimpleDownload, paths, t)
 
 	//cleanup
@@ -591,7 +592,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	_, body, _, err := ioutils.SendGet(*tests.RtUrl + "api/build/" + buildName + "/" + buildNumber, false, artHttpDetails)
+	_, body, _, err := httputils.SendGet(*tests.RtUrl + "api/build/" + buildName + "/" + buildNumber, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -702,7 +703,7 @@ func getPathsToDelete(specFile string) []utils.AqlSearchResultItem {
 
 func deleteBuild(buildName string) {
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, body, err := ioutils.SendDelete(*tests.RtUrl + "api/build/" + buildName + "?deleteAll=1", nil, artHttpDetails)
+	resp, body, err := httputils.SendDelete(*tests.RtUrl + "api/build/" + buildName + "?deleteAll=1", nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 	}
@@ -719,7 +720,7 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	}
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
 	artHttpDetails.Headers = map[string]string{"Content-Type": "application/json"}
-	resp, _, err := ioutils.SendPut(*tests.RtUrl + "api/repositories/" + repoName, content, artHttpDetails)
+	resp, _, err := httputils.SendPut(*tests.RtUrl + "api/repositories/" + repoName, content, artHttpDetails)
 	if err != nil {
 		return err
 	}
@@ -793,7 +794,7 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 
 func isRepoExist(repoName string) bool {
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, _, _, err := ioutils.SendGet(*tests.RtUrl + tests.RepoDetailsUrl + repoName, true, artHttpDetails)
+	resp, _, _, err := httputils.SendGet(*tests.RtUrl + tests.RepoDetailsUrl + repoName, true, artHttpDetails)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -810,7 +811,7 @@ func getCliDotGitPath(t *testing.T) string {
 		t.Error("failed to get current dir.")
 	}
 	dotGitPath := filepath.Join(workingDir, "..")
-	dotGitExists, err := ioutils.IsDirExists(filepath.Join(dotGitPath, ".git"))
+	dotGitExists, err := fileutils.IsDirExists(filepath.Join(dotGitPath, ".git"))
 	if err != nil {
 		t.Error(err)
 	}

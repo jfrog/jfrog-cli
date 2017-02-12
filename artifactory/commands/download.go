@@ -4,7 +4,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"strconv"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
@@ -27,11 +28,11 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 		}
 	}
 	if !flags.DryRun {
-		err = ioutils.CreateTempDirPath()
+		err = fileutils.CreateTempDirPath()
 		if err != nil {
 			return
 		}
-		defer ioutils.RemoveTempDir()
+		defer fileutils.RemoveTempDir()
 	}
 	buildDependencies, err := downloadFiles(downloadSpec, flags)
 	if err != nil {
@@ -150,9 +151,9 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, ac
 	return
 }
 
-func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (*ioutils.FileDetails, error) {
+func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (*fileutils.FileDetails, error) {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	details, err := ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
+	details, err := httputils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
 	if err != nil {
 		err = cliutils.CheckError(errors.New("Artifactory " + err.Error()))
 		if err != nil {
@@ -173,20 +174,20 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 		bulkDownload = !acceptRange
 	}
 	if bulkDownload {
-		resp, err := ioutils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
+		resp, err := httputils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
 		if err != nil {
 			return err
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 	} else {
-		concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
+		concurrentDownloadFlags := httputils.ConcurrentDownloadFlags{
 			DownloadPath: downloadFileDetails.DownloadPath,
 			FileName:     downloadFileDetails.LocalFileName,
 			LocalPath:    downloadFileDetails.LocalPath,
 			FileSize:     downloadFileDetails.Size,
 			SplitCount:   flags.SplitCount}
 
-		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
+		httputils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 	}
 	return nil
 }
@@ -203,14 +204,14 @@ func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *Download
 }
 
 func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
-	exists, err := ioutils.IsFileExists(localFilePath)
+	exists, err :=fileutils.IsFileExists(localFilePath)
 	if err != nil {
 		return false, err
 	}
 	if !exists {
 		return true, nil
 	}
-	localFileDetails, err := ioutils.GetFileDetails(localFilePath)
+	localFileDetails, err := fileutils.GetFileDetails(localFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -221,7 +222,7 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 }
 
 func removeIfSymlink(localSymlinkPath string) error {
-	if ioutils.IsPathSymlink(localSymlinkPath) {
+	if fileutils.IsPathSymlink(localSymlinkPath) {
 		if err := os.Remove(localSymlinkPath); cliutils.CheckError(err) != nil {
 			return err
 		}
@@ -231,10 +232,10 @@ func removeIfSymlink(localSymlinkPath string) error {
 
 func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlinkChecksum bool, symlinkContentChecksum string, logMsgPrefix string) error {
 	if symlinkChecksum && symlinkContentChecksum != "" {
-		if !ioutils.IsPathExists(symlinkArtifact) {
+		if !fileutils.IsPathExists(symlinkArtifact) {
 			return cliutils.CheckError(errors.New("Symlink validation failed, target doesn't exist: " + symlinkArtifact))
 		}
-		sha1, err := ioutils.CalcSha1(symlinkArtifact)
+		sha1, err := fileutils.CalcSha1(symlinkArtifact)
 		if err != nil {
 			return err
 		}
@@ -243,7 +244,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		}
 	}
 	localSymlinkPath := filepath.Join(localPath, localFileName)
-	isFileExists, err := ioutils.IsFileExists(localSymlinkPath)
+	isFileExists, err :=fileutils.IsFileExists(localSymlinkPath)
 	if err != nil {
 		return err
 	}
@@ -254,7 +255,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		}
 	}
 	// Need to prepare the directories hierarchy
-	_, err = ioutils.CreateFilePath(localPath, localFileName)
+	_, err = fileutils.CreateFilePath(localPath, localFileName)
 	if err != nil {
 		return err
 	}
@@ -302,7 +303,7 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 			if e != nil {
 				return e
 			}
-			localPath, localFileName := ioutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
+			localPath, localFileName :=fileutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
 			removeIfSymlink(filepath.Join(localPath, localFileName))
 			if flags.Symlink {
 				if isSymlink, e := createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix, downloadData, buildDependencies, threadId, flags); isSymlink {

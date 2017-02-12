@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"strings"
 	"strconv"
@@ -52,7 +52,7 @@ func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
 	log.Debug("Searching Artifactory using AQL query: ", aqlQuery)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
-	resp, body, err := ioutils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
+	resp, body, err := httputils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
 	if err != nil {
 		return nil, err
 	}
