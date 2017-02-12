@@ -685,26 +685,36 @@ func deleteCmd(c *cli.Context) {
 	flags, err := createDeleteFlags(c)
 	cliutils.ExitOnErr(err)
 	if !c.Bool("quiet") {
-		pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
-		cliutils.ExitOnErr(err)
-		if len(pathsToDelete) < 1 {
-			return
-		}
-		for _, v := range pathsToDelete {
-			fmt.Println("  " + v.GetFullUrl())
-		}
-		var confirm string
-		fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
-		fmt.Scanln(&confirm)
-		if !cliutils.ConfirmAnswer(confirm) {
-			return
-		}
-		err = commands.DeleteFiles(pathsToDelete, flags)
+		err = deleteNotQuiet(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	} else {
 		err = commands.Delete(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	}
+}
+
+func deleteNotQuiet(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags) error {
+	var err error
+	if err = utils.PreCommandSetup(flags); err != nil {
+		return err
+	}
+	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
+	if err != nil {
+		return err
+	}
+	if len(pathsToDelete) < 1 {
+		return nil
+	}
+	for _, v := range pathsToDelete {
+		fmt.Println("  " + v.GetFullUrl())
+	}
+	var confirm string
+	fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
+	fmt.Scanln(&confirm)
+	if !cliutils.ConfirmAnswer(confirm) {
+		return nil
+	}
+	return commands.DeleteFiles(pathsToDelete, flags)
 }
 
 func searchCmd(c *cli.Context) {
