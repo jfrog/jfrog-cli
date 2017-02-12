@@ -115,7 +115,7 @@ func saveConfig(config *Config) error {
 	    return err
 	}
 	var exists bool
-	exists, err =fileutils.IsFileExists(path)
+	exists, err = fileutils.IsFileExists(path)
 	if err != nil {
 	    return err
 	}
@@ -140,7 +140,7 @@ func readConf() (*Config, error) {
 	    return nil, err
 	}
 	config := new(Config)
-	exists, err :=fileutils.IsFileExists(confFilePath)
+	exists, err := fileutils.IsFileExists(confFilePath)
 	if err != nil {
 	    return nil, err
 	}

@@ -204,7 +204,7 @@ func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *Download
 }
 
 func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
-	exists, err :=fileutils.IsFileExists(localFilePath)
+	exists, err := fileutils.IsFileExists(localFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -244,7 +244,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		}
 	}
 	localSymlinkPath := filepath.Join(localPath, localFileName)
-	isFileExists, err :=fileutils.IsFileExists(localSymlinkPath)
+	isFileExists, err := fileutils.IsFileExists(localSymlinkPath)
 	if err != nil {
 		return err
 	}
@@ -303,7 +303,7 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 			if e != nil {
 				return e
 			}
-			localPath, localFileName :=fileutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
+			localPath, localFileName := fileutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
 			removeIfSymlink(filepath.Join(localPath, localFileName))
 			if flags.Symlink {
 				if isSymlink, e := createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix, downloadData, buildDependencies, threadId, flags); isSymlink {

@@ -96,7 +96,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
         }
 	}
 	var exists bool
-	exists, err =fileutils.IsFileExists(filepath)
+	exists, err = fileutils.IsFileExists(filepath)
 	if err != nil {
 	    return
 	}

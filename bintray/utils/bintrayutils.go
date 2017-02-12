@@ -45,7 +45,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 		return
 	}
 
-	localPath, localFileName :=fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, flags.Flat)
+	localPath, localFileName := fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, flags.Flat)
 	var shouldDownload bool
 	shouldDownload, err = shouldDownloadFile(path.Join(localPath, localFileName), details)
 	if err != nil {
@@ -99,7 +99,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 }
 
 func shouldDownloadFile(localFilePath string, remoteFileDetails *fileutils.FileDetails) (bool, error) {
-	exists, err :=fileutils.IsFileExists(localFilePath)
+	exists, err := fileutils.IsFileExists(localFilePath)
 	if err != nil {
 		return false, err
 	}

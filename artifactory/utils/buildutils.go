@@ -60,7 +60,7 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	}
 	path += BUILD_INFO_DETAILS
 	var exists bool
-	exists, err =fileutils.IsFileExists(path)
+	exists, err = fileutils.IsFileExists(path)
 	if err != nil {
 		return err
 	}

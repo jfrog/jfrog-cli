@@ -114,7 +114,7 @@ func getFileByOs(fileName string) string {
 
 func GetFilePath(fileName string) string {
 	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeperator() + fileName
-	isExists, _ :=fileutils.IsFileExists(filePath)
+	isExists, _ := fileutils.IsFileExists(filePath)
 	if isExists {
 		return filePath
 	}
