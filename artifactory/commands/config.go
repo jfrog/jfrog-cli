@@ -6,6 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/ioutils"
 	"strings"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -26,7 +27,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
             }
 	    }
 		if details.Url == "" {
-			fileutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+			ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		}
 		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 			err = readSshKeyPathFromConsole(details, defaultDetails)
@@ -35,10 +36,10 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
             }
 		} else {
 		    if details.ApiKey == "" && details.Password == "" {
-		        fileutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+				ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
 		    }
 			if details.ApiKey == "" {
-				fileutils.ReadCredentialsFromConsole(details, defaultDetails)
+				ioutils.ReadCredentialsFromConsole(details, defaultDetails)
 			}
 		}
 	}
@@ -60,7 +61,7 @@ func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
 
 func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
 	if details.SshKeyPath == "" {
-		fileutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
+		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
 	}
 
 	details.SshKeyPath = cliutils.ReplaceTildeWithUserHome(details.SshKeyPath)

@@ -7,7 +7,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,8 +15,6 @@ import (
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
-	"golang.org/x/crypto/ssh/terminal"
-	"syscall"
 	"path"
 )
 
@@ -281,18 +278,6 @@ func ReadFile(filePath string) ([]byte, error) {
 	return content, err
 }
 
-func ScanFromConsole(caption string, scanInto *string, defaultValue string) {
-	if defaultValue != "" {
-		print(caption + " [" + defaultValue + "]: ")
-	} else {
-		print(caption + ": ")
-	}
-	fmt.Scanln(scanInto)
-	if *scanInto == "" {
-		*scanInto = defaultValue
-	}
-}
-
 func GetFileDetails(filePath string) (*FileDetails, error) {
 	var err error
 	details := new(FileDetails)
@@ -362,27 +347,6 @@ func GetMd5(input io.Reader) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(hashMd5.Sum(resMd5)), nil
-}
-
-func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials) error {
-	if details.GetUser() == "" {
-		tempUser := ""
-		ScanFromConsole("User", &tempUser, savedDetails.GetUser())
-		details.SetUser(tempUser)
-	}
-	if details.GetPassword() == "" {
-		print("Password: ")
-		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-		err = cliutils.CheckError(err)
-		if err != nil {
-			return err
-		}
-		details.SetPassword(string(bytePassword))
-		if details.GetPassword() == "" {
-			details.SetPassword(savedDetails.GetPassword())
-		}
-	}
-	return nil
 }
 
 type FileDetails struct {
