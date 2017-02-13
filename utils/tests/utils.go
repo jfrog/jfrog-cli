@@ -170,13 +170,12 @@ func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
 	return &JfrogCli{cli.main, cli.prefix, suffix}
 }
 
-
 type gitManager struct {
-	workingPath string
+	dotGitPath string
 }
 
-func GitExecutor(workingPath string) *gitManager {
-	return &gitManager{workingPath:workingPath}
+func GitExecutor(dotGitPath string) *gitManager {
+	return &gitManager{dotGitPath:dotGitPath}
 }
 
 func (m *gitManager) GetUrl() (string, string, error) {
@@ -191,7 +190,7 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd := exec.Command("git", args...)
-	cmd.Dir = m.workingPath
+	cmd.Dir = m.dotGitPath
 	cmd.Stdin = nil
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

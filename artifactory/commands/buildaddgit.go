@@ -10,11 +10,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
-func BuildGitInfoCollect(buildName, buildNumber, workingPath string) (err error) {
+func BuildAddGit(buildName, buildNumber, dotGitPath string) (err error) {
 	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
 		return
 	}
-	dotGitPath := workingPath
 	if dotGitPath == "" {
 		dotGitPath, err = os.Getwd()
 		if err != nil {
@@ -51,7 +50,7 @@ func NewGitManager(path string) *gitManager {
 
 func (m *gitManager) ReadGitConfig() error {
 	if m.path == "" {
-		return cliutils.CheckError(errors.New("Working path must be defined."))
+		return cliutils.CheckError(errors.New(".git path must be defined."))
 	}
 	m.readRevision()
 	m.readUrl()

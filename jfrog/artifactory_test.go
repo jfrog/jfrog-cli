@@ -586,7 +586,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "13"
 	dotGitPath := getCliDotGitPath(t)
-	artifactoryCli.Exec("build-collect-git-info", buildName, buildNumber, dotGitPath)
+	artifactoryCli.Exec("build-add-git", buildName, buildNumber, dotGitPath)
 
 	//publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
@@ -605,16 +605,16 @@ func TestCollectGitBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	if buildInfoVcsRevision == "" {
-		t.Error("failed to get git revision.")
+		t.Error("Failed to get git revision.")
 	}
 
 	if buildInfoVcsUrl == "" {
-		t.Error("failed to get git remote url.")
+		t.Error("Failed to get git remote url.")
 	}
 
 	gitManager := commands.NewGitManager(dotGitPath)
 	if err = gitManager.ReadGitConfig(); err != nil {
-		t.Error("failed read .git config file.")
+		t.Error("Failed to read .git config file.")
 	}
 	if gitManager.GetRevision() != buildInfoVcsRevision {
 		t.Error("Wrong revision", "expected: " + gitManager.GetRevision(), "Got: " + buildInfoVcsRevision)
@@ -634,12 +634,12 @@ func TestReadGitConfig(t *testing.T) {
 	gitManager := commands.NewGitManager(dotGitPath)
 	err := gitManager.ReadGitConfig()
 	if err != nil {
-		t.Error("failed read .git config file.")
+		t.Error("Failed to read .git config file.")
 	}
 
 	workingDir, err := os.Getwd()
 	if err != nil {
-		t.Error("failed to get current dir.")
+		t.Error("Failed to get current dir.")
 	}
 	gitExecutor := tests.GitExecutor(workingDir)
 	revision, _, err := gitExecutor.GetRevision()
@@ -808,7 +808,7 @@ func isRepoExist(repoName string) bool {
 func getCliDotGitPath(t *testing.T) string {
 	workingDir, err := os.Getwd()
 	if err != nil {
-		t.Error("failed to get current dir.")
+		t.Error("Failed to get current dir.")
 	}
 	dotGitPath := filepath.Join(workingDir, "..")
 	dotGitExists, err := fileutils.IsDirExists(filepath.Join(dotGitPath, ".git"))
@@ -816,7 +816,7 @@ func getCliDotGitPath(t *testing.T) string {
 		t.Error(err)
 	}
 	if !dotGitExists {
-		t.Error("can't find .git")
+		t.Error("Can't find .git")
 	}
 	return dotGitPath
 }

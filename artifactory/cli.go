@@ -97,9 +97,9 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "build-collect-git-info",
+			Name:    "build-add-git",
 			Flags:    getFlags(),
-			Aliases: []string{"bcgi"},
+			Aliases: []string{"bag"},
 			Usage:   "Capture git revision and remote url.",
 			Action: func(c *cli.Context) {
 				buildGitInfoCollectCmd(c)
@@ -762,7 +762,7 @@ func buildGitInfoCollectCmd(c *cli.Context) {
 	if c.NArg() == 3 {
 		dotGitPath = c.Args().Get(2)
 	}
-	err := commands.BuildGitInfoCollect(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	err := commands.BuildAddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
 	cliutils.ExitOnErr(err)
 }
 
