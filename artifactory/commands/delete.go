@@ -15,18 +15,25 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	if err != nil {
 		return
 	}
-	resultItems, err := GetPathsToDelete(deleteSpec, flags)
+	resultItems, err := getPathsToDeleteInternal(deleteSpec, flags)
 	if err != nil {
 		return err
 	}
-	if err = DeleteFiles(resultItems, flags); err != nil {
+	if err = deleteFilesInternal(resultItems, flags); err != nil {
 		return
 	}
 	log.Info("Deleted", len(resultItems), "items.")
 	return
 }
 
-func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
+func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) ([]utils.AqlSearchResultItem, error) {
+	if err := utils.PreCommandSetup(flags); err != nil {
+		return nil, err
+	}
+	return getPathsToDeleteInternal(deleteSpec, flags)
+}
+
+func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		// Search paths using AQL.
@@ -131,6 +138,13 @@ func reduceDirResult(foldersToDelete []utils.AqlSearchResultItem) []utils.AqlSea
 }
 
 func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
+	if err := utils.PreCommandSetup(flags); err != nil {
+		return err
+	}
+	return deleteFilesInternal(resultItems, flags)
+}
+
+func deleteFilesInternal(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
 	for _, v := range resultItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {

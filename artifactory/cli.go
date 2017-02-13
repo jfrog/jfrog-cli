@@ -685,7 +685,7 @@ func deleteCmd(c *cli.Context) {
 	flags, err := createDeleteFlags(c)
 	cliutils.ExitOnErr(err)
 	if !c.Bool("quiet") {
-		err = deleteNotQuiet(deleteSpec, flags)
+		err = deleteIfConfirmed(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	} else {
 		err = commands.Delete(deleteSpec, flags)
@@ -693,11 +693,7 @@ func deleteCmd(c *cli.Context) {
 	}
 }
 
-func deleteNotQuiet(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags) error {
-	var err error
-	if err = utils.PreCommandSetup(flags); err != nil {
-		return err
-	}
+func deleteIfConfirmed(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags) error {
 	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
 	if err != nil {
 		return err
