@@ -19,7 +19,7 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	if err != nil {
 		return err
 	}
-	if err = deleteFilesInternal(resultItems, flags); err != nil {
+	if err = deleteFiles(resultItems, flags); err != nil {
 		return
 	}
 	log.Info("Deleted", len(resultItems), "items.")
@@ -141,10 +141,10 @@ func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 	if err := utils.PreCommandSetup(flags); err != nil {
 		return err
 	}
-	return deleteFilesInternal(resultItems, flags)
+	return deleteFiles(resultItems, flags)
 }
 
-func deleteFilesInternal(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
 	for _, v := range resultItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {
