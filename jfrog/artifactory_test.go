@@ -410,7 +410,7 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 
 	//validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsLocalExactAsExpected(tests.BuildDownload, paths, t)
+	tests.IsListsIdentical(tests.BuildDownload, paths, t)
 
 	//cleanup
 	deleteBuild(buildName)
@@ -437,7 +437,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 	//validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsLocalExactAsExpected(tests.BuildSimpleDownload, paths, t)
+	tests.IsListsIdentical(tests.BuildSimpleDownload, paths, t)
 
 	//cleanup
 	deleteBuild(buildName)

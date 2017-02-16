@@ -370,7 +370,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 	}
 	logUploadResponse(logMsgPrefix, resp, body, checksumDeployed, flags)
 	artifact := createBuildArtifactItem(fileName, details)
-	return artifact, (flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200), nil
+	return artifact, flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200, nil
 }
 
 func uploadSymlink(targetPath string, httpClientsDetails httputils.HttpClientDetails, flags *UploadFlags) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
