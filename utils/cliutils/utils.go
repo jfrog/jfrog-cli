@@ -227,19 +227,19 @@ func GetRootPathForUpload(path string, useRegExp bool) string {
 	return rootPath
 }
 
-func PrepareLocalPathForUpload(localpath string, useRegExp bool) string {
-	if localpath == "./" || localpath == ".\\" {
+func PrepareLocalPathForUpload(localPath string, useRegExp bool) string {
+	if localPath == "./" || localPath == ".\\" {
 		return "^.*$"
 	}
-	if strings.HasPrefix(localpath, "./") {
-		localpath = localpath[2:]
-	} else if strings.HasPrefix(localpath, ".\\") {
-		localpath = localpath[3:]
+	if strings.HasPrefix(localPath, "./") {
+		localPath = localPath[2:]
+	} else if strings.HasPrefix(localPath, ".\\") {
+		localPath = localPath[3:]
 	}
 	if !useRegExp {
-		localpath = PathToRegExp(localpath)
+		localPath = PathToRegExp(localPath)
 	}
-	return localpath
+	return localPath
 }
 
 func TrimPath(path string) string {
@@ -280,16 +280,18 @@ func GetDocumentationMessage() string {
 	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
 }
 
-func PathToRegExp(localpath string) string {
-	var wildcard = ".*"
-
-	localpath = strings.Replace(localpath, ".", "\\.", -1)
-	localpath = strings.Replace(localpath, "*", wildcard, -1)
-	if strings.HasSuffix(localpath, "/") || strings.HasSuffix(localpath, "\\") {
-		localpath += wildcard
+func PathToRegExp(localPath string) string {
+	var SPECIAL_CHARS = []string{".", "+"}
+	for _, char := range SPECIAL_CHARS {
+		localPath = strings.Replace(localPath, char, "\\" + char, -1)
 	}
-	localpath = "^" + localpath + "$"
-	return localpath
+	var wildcard = ".*"
+	localPath = strings.Replace(localPath, "*", wildcard, -1)
+	if strings.HasSuffix(localPath, "/") || strings.HasSuffix(localPath, "\\") {
+		localPath += wildcard
+	}
+	localPath = "^" + localPath + "$"
+	return localPath
 }
 
 // Replaces matched regular expression from sourceString to corresponding {i} at destString.
