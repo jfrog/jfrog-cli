@@ -28,10 +28,8 @@ func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) 
 	for i := 0; i < len(moveSpec.Files); i++ {
 		var successPartial, failedPartial int
 		switch moveSpec.Get(i).GetSpecType() {
-		case WILDCARD:
+		case WILDCARD, SIMPLE:
 			successPartial, failedPartial, err = moveWildcard(moveSpec.Get(i), flags, moveType)
-		case SIMPLE:
-			successPartial, failedPartial, err = moveSimple(moveSpec.Get(i), flags, moveType)
 		case AQL:
 			successPartial, failedPartial, err = moveAql(moveSpec.Get(i), flags, moveType)
 		}
@@ -70,26 +68,6 @@ func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successC
 	LogSearchResults(len(resultItems))
 	regexpPath := cliutils.PathToRegExp(fileSpec.Pattern)
 	successCount, failedCount, err = moveFiles(regexpPath, resultItems, fileSpec, flags, moveType)
-	return
-}
-
-func moveSimple(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
-
-	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
-	patternFileName, _ := fileutils.GetFileAndDirFromPath(fileSpec.Pattern)
-
-	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
-	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
-	if err != nil {
-		return
-	}
-
-	if strings.HasSuffix(placeHolderTarget, "/") {
-		placeHolderTarget += patternFileName
-	}
-	success, err := moveFile(cleanPattern, placeHolderTarget, flags, moveType)
-	successCount = cliutils.Bool2Int(success)
-	failedCount = cliutils.Bool2Int(!success)
 	return
 }
 

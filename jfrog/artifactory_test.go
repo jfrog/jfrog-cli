@@ -52,6 +52,31 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1)
+	isExistInArtifactory(tests.SimpleUploadSpecialCharNoRegexExpectedRepo1, tests.GetFilePath(tests.Search), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/a1.in", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadandExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a.zip", "jfrog-cli-tests-repo1", "--explode=true")
@@ -366,7 +391,6 @@ func TestArtifactoryMassiveUploadSpec(t *testing.T) {
 
 	isExistInArtifactory(tests.MassiveUpload, resultSpecFile, t)
 	isExistInArtifactoryByProps(tests.PropsExpected, tests.Repo1 + "/*/properties/*.in", "searchMe=true", t)
-
 	cleanArtifactoryTest()
 }
 

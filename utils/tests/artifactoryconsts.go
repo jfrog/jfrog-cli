@@ -19,6 +19,7 @@ const (
 	MoveCopyDeleteSpec        = "move_copy_delete_spec.json"
 	PrepareCopy               = "prepare_copy.json"
 	Search                    = "search.json"
+	SearchRepo2               = "search_repo2.json"
 	SearchTxt                 = "search_txt.json"
 	SearchMoveDeleteRepoSpec  = "search_move_delete_repo_spec.json"
 	CopyByBuildSpec           = "move_copy_delete_by_build_spec.json"
@@ -42,6 +43,14 @@ var SimpleUploadExpectedRepo1 = []string{
 	Repo1 + "/flat_recursive/c2.in",
 	Repo1 + "/flat_recursive/c1.in",
 	Repo1 + "/flat_recursive/c3.in",
+}
+
+var SimpleUploadSpecialCharNoRegexExpectedRepo1 = []string{
+	Repo1 + "/a1.in",
+}
+
+var SingleFileCopy = []string{
+	Repo2 + "/path/a1.in",
 }
 
 var ExplodeUploadExpectedRepo1 = []string{
@@ -309,6 +318,7 @@ var MassiveUpload = []string{
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c1.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/a+a/a1.in",
 	Repo1 + "/spec-copy-test/simple/a1.in",
 }
 
@@ -322,6 +332,7 @@ var PropsExpected = []string{
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/b3.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/a+a/a1.in",
 }
 
 var Delete1 = []string{
