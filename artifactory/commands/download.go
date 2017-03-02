@@ -10,6 +10,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"github.com/gofrog/parallel"
 	"path"
 	"path/filepath"
 	"os"
@@ -50,7 +51,7 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 
 func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]utils.DependenciesBuildInfo, error) {
 	buildDependencies := make([][]utils.DependenciesBuildInfo, flags.Threads)
-	producerConsumer := utils.NewProducerConsumer(flags.Threads, true)
+	producerConsumer := parallel.NewBounedRunner(flags.Threads, true)
 	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := createFileHandlerFunc(buildDependencies, flags)
 	log.Info("Searching artifacts...")
@@ -59,9 +60,9 @@ func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]uti
 	return buildDependencies, err
 }
 
-func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, flags *DownloadFlags) {
+func prepareTasks(producer parallel.Runner, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, flags *DownloadFlags) {
 	go func() {
-		defer producer.Close()
+		defer producer.Done()
 		var err error
 		for i := 0; i < len(downloadSpec.Files); i++ {
 			var resultItems []utils.AqlSearchResultItem
@@ -99,7 +100,7 @@ func collectFilesUsingWildcardPattern(fileSpec *utils.File, flags *DownloadFlags
 	return utils.AqlSearchDefaultReturnFields(fileSpec, flags)
 }
 
-func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, producer utils.Producer, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
+func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, producer parallel.Runner, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
 	flat, err := cliutils.StringToBool(fileSpec.Flat, false)
 	if err != nil {
 		return err
@@ -116,9 +117,9 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, produ
 	return nil
 }
 
-func performTasks(producerConsumer utils.Consumer, errorsQueue *utils.ErrorsQueue) (err error) {
+func performTasks(consumer parallel.Runner, errorsQueue *utils.ErrorsQueue) (err error) {
 	// Blocked until finish consuming
-	producerConsumer.Run()
+	consumer.Run()
 	err = errorsQueue.GetError()
 	return
 }
@@ -284,9 +285,9 @@ func getArtifactSymlinkChecksum(properties []utils.Property) string {
 	return getArtifactPropertyByKey(properties, utils.SYMLINK_SHA1)
 }
 
-type fileHandlerFunc func(DownloadData) utils.Task
+type fileHandlerFunc func(DownloadData) parallel.TaskFunc
 func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) fileHandlerFunc {
-	return func(downloadData DownloadData) utils.Task {
+	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
 			downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadData.Dependency.GetFullUrl(), make(map[string]string))

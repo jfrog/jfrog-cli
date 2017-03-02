@@ -15,6 +15,7 @@ import (
 	"time"
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/gofrog/parallel"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"bytes"
 )
@@ -60,13 +61,13 @@ func uploadFiles(minChecksumDeploySize int64, uploadSpec *utils.SpecFiles, flags
 		BuildInfoArtifacts: make([][]utils.ArtifactsBuildInfo, flags.Threads),
 	}
 	artifactHandlerFunc := createArtifactHandlerFunc(&uploadSummery, minChecksumDeploySize, flags)
-	producerConsumer := utils.NewProducerConsumer(flags.Threads, true)
+	producerConsumer := parallel.NewBounedRunner(flags.Threads, true)
 	errorsQueue := utils.NewErrorsQueue(1)
 	prepareUploadTasks(producerConsumer, uploadSpec, artifactHandlerFunc, errorsQueue, flags)
 	return performUploadTasks(producerConsumer, &uploadSummery, errorsQueue)
 }
 
-func prepareUploadTasks(producer utils.Producer, uploadSpec *utils.SpecFiles, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags)  {
+func prepareUploadTasks(producer parallel.Runner, uploadSpec *utils.SpecFiles, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags)  {
 	go func() {
 		collectFilesForUpload(uploadSpec, flags, producer, artifactHandlerFunc, errorsQueue)
 	}()
@@ -80,7 +81,7 @@ func toBuildInfoArtifacts(artifactsBuildInfo [][]utils.ArtifactsBuildInfo) []uti
 	return buildInfo
 }
 
-func performUploadTasks(consumer utils.Consumer, uploadSummery *uploadResult, errorsQueue *utils.ErrorsQueue) (buildInfoArtifacts [][]utils.ArtifactsBuildInfo, totalUploaded, totalFailed int, err error) {
+func performUploadTasks(consumer parallel.Runner, uploadSummery *uploadResult, errorsQueue *utils.ErrorsQueue) (buildInfoArtifacts [][]utils.ArtifactsBuildInfo, totalUploaded, totalFailed int, err error) {
 	// Blocking until we finish consuming for some reason
 	consumer.Run()
 	if e := errorsQueue.GetError(); e != nil {
@@ -171,8 +172,8 @@ func addSymlinkProps(props string, artifact cliutils.Artifact, flags *UploadFlag
 	return artifactProps, nil
 }
 
-func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) {
-	defer producer.Close()
+func collectFilesForUpload(uploadSpec *utils.SpecFiles, flags *UploadFlags, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) {
+	defer producer.Done()
 	for _, uploadFile := range uploadSpec.Files {
 		addBuildProps(&uploadFile, flags)
 		if strings.Index(uploadFile.Target, "/") < 0 {
@@ -251,7 +252,7 @@ func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]s
 	return paths, nil
 }
 
-func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDescriptor, producer utils.Producer, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags) error {
+func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDescriptor, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue, flags *UploadFlags) error {
 	r, err := regexp.Compile(uploadFile.Pattern)
 	if cliutils.CheckError(err) != nil {
 		return err
@@ -582,10 +583,10 @@ type uploadResult struct {
 	BuildInfoArtifacts    [][]utils.ArtifactsBuildInfo
 }
 
-type artifactContext func(UploadData) utils.Task
+type artifactContext func(UploadData) parallel.TaskFunc
 
 func createArtifactHandlerFunc(s *uploadResult, minChecksumDeploySize int64, flags *UploadFlags) artifactContext {
-	return func(artifact UploadData) utils.Task {
+	return func(artifact UploadData) parallel.TaskFunc {
 		return func(threadId int) (e error) {
 			var uploaded bool
 			var target string
