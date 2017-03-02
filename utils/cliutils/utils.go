@@ -166,6 +166,10 @@ func GetVersion() string {
 	return "1.7.1"
 }
 
+func GetConfigVersion() string {
+	return "1"
+}
+
 func GetUserHomeDir() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")

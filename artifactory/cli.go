@@ -98,7 +98,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "build-add-git",
-			Flags:    getFlags(),
+			Flags:    getServerFlags(),
 			Aliases: []string{"bag"},
 			Usage:   "Capture git revision and remote url.",
 			Action: func(c *cli.Context) {
@@ -135,7 +135,7 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func getFlags() []cli.Flag {
+func getCommonFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
@@ -160,8 +160,16 @@ func getFlags() []cli.Flag {
 	}
 }
 
+func getServerFlags() []cli.Flag {
+	return append(getCommonFlags(), cli.StringFlag{
+		Name:  "server-id",
+		Usage: "[Optional] If server-id already exist you will update the choosen config, if not than a new config will be created. If not specified then the defauld configuration will be choosen.",
+	},
+	)
+}
+
 func getUploadFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -217,7 +225,7 @@ func getUploadFlags() []cli.Flag {
 }
 
 func getDownloadFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -275,7 +283,7 @@ func getDownloadFlags() []cli.Flag {
 }
 
 func getMoveFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -307,7 +315,7 @@ func getMoveFlags() []cli.Flag {
 }
 
 func getCopyFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -338,7 +346,7 @@ func getCopyFlags() []cli.Flag {
 }
 
 func getDeleteFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -369,7 +377,7 @@ func getDeleteFlags() []cli.Flag {
 }
 
 func getSearchFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -391,7 +399,7 @@ func getSearchFlags() []cli.Flag {
 }
 
 func getBuildPublishFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -408,7 +416,7 @@ func getBuildPublishFlags() []cli.Flag {
 }
 
 func getBuildPromotionFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "status",
 			Usage: "[Optional] Build promotion status.",
@@ -437,7 +445,7 @@ func getBuildPromotionFlags() []cli.Flag {
 }
 
 func getBuildDistributeFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "source-repos",
 			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.",
@@ -476,7 +484,7 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
 	}
-	return append(flags, getFlags()...)
+	return append(flags, getCommonFlags()...)
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
@@ -548,23 +556,52 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	return
 }
 
+func validateReservedServerId(serverName string) {
+	reserveNames := []string{"delete", "use", "show", "clear"}
+	for _, reserveName := range reserveNames {
+		if serverName == reserveName {
+			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server Name can't be one of the reserved names: %s\n %s", strings.Join(reserveNames, ", "), cliutils.GetDocumentationMessage()))
+		}
+	}
+}
+
 func configCmd(c *cli.Context) {
-	if len(c.Args()) > 1 {
+	if len(c.Args()) > 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
-	} else if len(c.Args()) == 1 {
+	}
+
+	var serverId string
+	if len(c.Args()) == 2 {
+		serverId = c.Args()[1]
+		validateReservedServerId(serverId)
+		if c.Args()[0] == "delete" {
+			err := commands.DeleteConfig(serverId)
+			cliutils.ExitOnErr(err)
+			return
+		} else if c.Args()[0] == "use" {
+			err := commands.Use(serverId)
+			cliutils.ExitOnErr(err)
+			return
+		}
+	}
+	if len(c.Args()) > 0 {
 		if c.Args()[0] == "show" {
-			commands.ShowConfig()
+			err := commands.ShowConfig(serverId)
+			cliutils.ExitOnErr(err)
+			return
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
+			cliutils.ExitOnErr(nil)
+			return
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
+			serverId = c.Args()[0]
+			validateReservedServerId(serverId)
 		}
-	} else {
-		configFlags, err := createConfigFlags(c)
-		cliutils.ExitOnErr(err)
-		_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
-		cliutils.ExitOnErr(err)
 	}
+	configFlags, err := createConfigFlags(c)
+	cliutils.ExitOnErr(err)
+	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
+	cliutils.ExitOnErr(err)
 }
 
 func downloadCmd(c *cli.Context) {
@@ -817,7 +854,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		return
 	}
 	if !val {
-		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 1))
 		return
 	}
 	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
@@ -828,7 +865,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 	var confirm string
 	fmt.Scanln(&confirm)
 	if !cliutils.ConfirmAnswer(confirm) {
-		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 1))
 		return
 	}
 	details, err = createArtifactoryDetails(c, false)
@@ -836,7 +873,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		return
 	}
 	encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
-	details, err = commands.Config(nil, details, true, encPassword)
+	details, err = commands.Config(nil, details, true, encPassword, "")
 	return
 }
 
@@ -856,9 +893,10 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 	details.User = c.String("user")
 	details.Password = c.String("password")
 	details.SshKeyPath = c.String("ssh-key-path")
+	details.ServerId = c.String("server-id")
 
 	if includeConfig {
-		confDetails, err := commands.GetConfig()
+		confDetails, err := commands.GetConfig(c.String("server-id"))
 		if err != nil {
 			return nil, err
 		}

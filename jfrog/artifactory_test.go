@@ -52,6 +52,18 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
+	initArtifactoryTest(t)
+	const rtServerId = "rtTestServerId"
+	artifactoryCli.Exec("c", rtServerId)
+	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", "")
+	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
+	artifactoryCommandExecutor.Exec("upload", "--spec=" + specFile, "--server-id=" + rtServerId)
+	isExistInArtifactory(tests.SimpleUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
+	artifactoryCommandExecutor.Exec("c", "delete", rtServerId)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = "../testsdata/a+a/a*"

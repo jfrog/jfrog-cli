@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
+	"github.com/buger/jsonparser"
 )
 
 func IsArtifactoryConfExists() (bool, error) {
@@ -35,14 +36,53 @@ func IsBintrayConfExists() (bool, error) {
 	return conf.Bintray != nil, nil
 }
 
-func ReadArtifactoryConf() (*ArtifactoryDetails, error) {
-    conf, err := readConf()
-    if err != nil {
-        return nil, err
-    }
+func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) {
+	conf, err := readConf()
+	if err != nil {
+		return nil, err
+	}
+	details := conf.Artifactory
+	if details == nil || len(details) == 0 {
+		return new(ArtifactoryDetails), nil
+	}
+	var artifactoryDetails *ArtifactoryDetails
+	if len(serverId) == 0 {
+		artifactoryDetails = GetDefaultArtifactoryConf(details)
+	} else {
+		artifactoryDetails = GetArtifactoryConfByServerId(serverId, details)
+	}
+	return artifactoryDetails, err
+}
+
+func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) *ArtifactoryDetails {
+	for _, conf := range configs {
+		if conf.IsDefault == true {
+			return conf
+		}
+	}
+	if len(configs) == 0 {
+		return new(ArtifactoryDetails)
+	}
+	return configs[0]
+}
+
+func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails) {
+	for _, conf := range configs {
+		if conf.ServerId == serverName {
+			return conf
+		}
+	}
+	return new(ArtifactoryDetails)
+}
+
+func GetAllArtifactoryConfigs() ([]*ArtifactoryDetails, error) {
+	conf, err := readConf()
+	if err != nil {
+		return nil, err
+	}
 	details := conf.Artifactory
 	if details == nil {
-		return new(ArtifactoryDetails), nil
+		return make([]*ArtifactoryDetails, 0), nil
 	}
 	return details, nil
 }
@@ -71,7 +111,7 @@ func ReadBintrayConf() (*BintrayDetails, error) {
 	return details, nil
 }
 
-func SaveArtifactoryConf(details *ArtifactoryDetails) error {
+func SaveArtifactoryConf(details []*ArtifactoryDetails) error {
     conf, err := readConf()
     if err != nil {
         return err
@@ -98,7 +138,8 @@ func SaveBintrayConf(details *BintrayDetails) error {
 	return saveConfig(config)
 }
 
-func saveConfig(config *Config) error {
+func saveConfig(config *ConfigV1) error {
+	config.Version = cliutils.GetConfigVersion()
 	b, err := json.Marshal(&config)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -134,26 +175,53 @@ func saveConfig(config *Config) error {
 	return nil
 }
 
-func readConf() (*Config, error) {
+func readConf() (*ConfigV1, error) {
 	confFilePath, err := getConFilePath()
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
-	config := new(Config)
+	config := new(ConfigV1)
 	exists, err := fileutils.IsFileExists(confFilePath)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if !exists {
 		return config, nil
 	}
 	content, err := fileutils.ReadFile(confFilePath)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
-	json.Unmarshal(content, &config)
+	if len(content) == 0 {
+		return new(ConfigV1), nil
+	}
+	content, err = convertIfNecessary(content)
+	err = json.Unmarshal(content, &config)
+	return config, err
+}
 
-	return config, nil
+func convertIfNecessary(content []byte) ([]byte, error) {
+	version, err := jsonparser.GetString(content, "Version")
+	if err != nil {
+		if err.Error() == "Key path not found" {
+			version = "0"
+		} else {
+			return nil, cliutils.CheckError(err)
+		}
+	}
+	switch version {
+	case "0":
+		result := new(ConfigV1)
+		configV0 := new(ConfigV0)
+		err = json.Unmarshal(content, &configV0)
+		if cliutils.CheckError(err) != nil {
+			return nil, err
+		}
+		result = configV0.Convert()
+		err = saveConfig(result)
+		content, err = json.Marshal(&result)
+	}
+	return content, err
 }
 
 func GetJfrogHomeDir() (string, error) {
@@ -176,10 +244,29 @@ func getConFilePath() (string, error) {
 	return confPath + "jfrog-cli.conf", nil
 }
 
-type Config struct {
+type ConfigV1 struct {
+	Artifactory    []*ArtifactoryDetails  `json:"artifactory,omitempty"`
+	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
+	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
+	Version        string                 `json:"Version,omitempty"`
+}
+
+type ConfigV0 struct {
 	Artifactory    *ArtifactoryDetails    `json:"artifactory,omitempty"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
 	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
+}
+
+func (o *ConfigV0) Convert() *ConfigV1 {
+	config := new(ConfigV1)
+	config.Bintray = o.Bintray
+	config.MissionControl = o.MissionControl
+	if o.Artifactory != nil {
+		o.Artifactory.IsDefault = true
+		o.Artifactory.ServerId = "default"
+		config.Artifactory = []*ArtifactoryDetails{o.Artifactory}
+	}
+	return config
 }
 
 type ArtifactoryDetails struct {
@@ -188,6 +275,8 @@ type ArtifactoryDetails struct {
 	Password       string            `json:"password,omitempty"`
 	ApiKey         string            `json:"apiKey,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
+	ServerId       string            `json:"serverId,omitempty"`
+	IsDefault      bool              `json:"isDefault,omitempty"`
 	SshAuthHeaders map[string]string `json:"-"`
 	Transport      *http.Transport   `json:"-"`
 }
