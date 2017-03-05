@@ -36,6 +36,7 @@ $ go get github.com/jfrogdev/jfrog-cli-go/...
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
+## Tests
 ### Integration tests
 To execute integration tests, run the following commands:
 ````
@@ -48,15 +49,25 @@ By default, these tests use the following settings:
 * User: admin
 * Password: password
 
-These settings can be customized using the *--url*, *--user*, *--password* and *--apikey* flags while executing the go test command.<br/>
+These settings can be customized using the *-rt.url*, *-rt.user*, *-rt.password* and *-rt.apikey* flags while executing the go test command.<br/>
 For example:
 ````
-$ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog --url=http://yourArtifactoryUrl/artifactory --user=user --password=password --apikey=apikey
+$ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -rt.url=http://yourArtifactoryUrl/artifactory --rt.user=user --rt.password=password --rt.apikey=apikey
 ````
-* Adding the *--apikey* flag triggers specific tests for the API Key functionality, in addition to other tests which use user and password.
+* Adding the *--rt.apikey* flag triggers specific tests for the API Key functionality, in addition to other tests which use user and password.
 * Running the tests will create two repositories: jfrog-cli-tests-repo and jfrog-cli-tests-repo1.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
+### Unit tests
+To execute all the cli unit tests run the following command:
+#### Windows
+````
+jfrogdev\jfrog-cli-go> for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog"') do @go test %G
+````
 
+#### Unix
+```
+jfrogdev/jfrog-cli-go$ go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog)
+```
 # Using JFrog CLI with Artifactory, Bintray and Mission Control
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
 and has a dedicated set of commands for each product.

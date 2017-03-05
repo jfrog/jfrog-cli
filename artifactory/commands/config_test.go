@@ -29,6 +29,7 @@ func TestConfig(t *testing.T) {
 }
 
 func configStructToString(artConfig *config.ArtifactoryDetails) string {
+	artConfig.IsDefault = false
 	marshaledStruct, _ := json.Marshal(*artConfig)
 	return string(marshaledStruct)
 }
