@@ -245,7 +245,7 @@ func getConFilePath() (string, error) {
 }
 
 type ConfigV1 struct {
-	Artifactory    []*ArtifactoryDetails  `json:"artifactory,omitempty"`
+	Artifactory    []*ArtifactoryDetails  `json:"artifactory"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
 	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
 	Version        string                 `json:"Version,omitempty"`

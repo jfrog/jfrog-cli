@@ -854,7 +854,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		return
 	}
 	if !val {
-		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 1))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
 	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
@@ -865,7 +865,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 	var confirm string
 	fmt.Scanln(&confirm)
 	if !cliutils.ConfirmAnswer(confirm) {
-		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 1))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
 	details, err = createArtifactoryDetails(c, false)

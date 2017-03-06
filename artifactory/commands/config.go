@@ -63,7 +63,12 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 				details.ServerId = serverId
 			}
 		}
+	} else {
+		// We got here from offer config flow
+		configurations = append(configurations, defaultDetails)
+		defaultDetails.IsDefault = true
 	}
+
 	return details, defaultDetails, configurations, err
 }
 
