@@ -780,7 +780,7 @@ func searchCmd(c *cli.Context) {
 func buildPublishCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
 	buildInfoFlags, err := createBuildInfoFlags(c)
-	cliutils.ExitOnErrWithMsg(err)
+	cliutils.ExitOnErr(err)
 	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags)
 	cliutils.ExitOnErr(err)
 }

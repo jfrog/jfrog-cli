@@ -46,19 +46,10 @@ var ExitCodeError ExitCode = ExitCode{1}
 var ExitCodeWarning ExitCode = ExitCode{2}
 
 func CheckError(err error) error {
-	return handleError(err, ExitCodeError)
-}
-
-func CheckWarning(err error) error {
-	return handleError(err, ExitCodeWarning)
-}
-
-func handleError(err error, exitCode ExitCode) error {
 	if err != nil {
 		if onError == OnErrorPanic {
 			panic(err)
 		}
-		log.Error(err.Error())
 	}
 	return err
 }
@@ -72,12 +63,6 @@ func CheckErrorWithMessage(err error, message string) error {
 }
 
 func ExitOnErr(err error) {
-	if err != nil {
-		Exit(ExitCodeError, "")
-	}
-}
-
-func ExitOnErrWithMsg(err error) {
 	if err != nil {
 		Exit(ExitCodeError, err.Error())
 	}
