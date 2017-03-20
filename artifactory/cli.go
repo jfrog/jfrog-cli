@@ -91,7 +91,7 @@ func GetCommands() []cli.Command {
 			Name:    "build-collect-env",
 			Flags:    []cli.Flag{},
 			Aliases: []string{"bce"},
-			Usage:   "Capture environment varaibles.",
+			Usage:   "Capture environment variables.",
 			Action: func(c *cli.Context) {
 				buildCollectEnvCmd(c)
 			},
