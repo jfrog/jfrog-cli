@@ -47,23 +47,25 @@ func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) 
 	}
 	var artifactoryDetails *ArtifactoryDetails
 	if len(serverId) == 0 {
-		artifactoryDetails = GetDefaultArtifactoryConf(details)
+		artifactoryDetails, err = GetDefaultArtifactoryConf(details)
 	} else {
 		artifactoryDetails = GetArtifactoryConfByServerId(serverId, details)
 	}
 	return artifactoryDetails, err
 }
 
-func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) *ArtifactoryDetails {
+func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
+	if len(configs) == 0 {
+		details := new(ArtifactoryDetails)
+		details.IsDefault = true
+		return details, nil
+	}
 	for _, conf := range configs {
 		if conf.IsDefault == true {
-			return conf
+			return conf, nil
 		}
 	}
-	if len(configs) == 0 {
-		return new(ArtifactoryDetails)
-	}
-	return configs[0]
+	return nil, cliutils.CheckError(errors.New("Couldn't find default server."))
 }
 
 func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails) {
@@ -112,10 +114,10 @@ func ReadBintrayConf() (*BintrayDetails, error) {
 }
 
 func SaveArtifactoryConf(details []*ArtifactoryDetails) error {
-    conf, err := readConf()
-    if err != nil {
-        return err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return err
+	}
 	conf.Artifactory = details
 	return saveConfig(conf)
 }
@@ -143,34 +145,34 @@ func saveConfig(config *ConfigV1) error {
 	b, err := json.Marshal(&config)
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return err
+		return err
 	}
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
 	err = cliutils.CheckError(err)
 	if err != nil {
-	    return err
+		return err
 	}
 	path, err := getConFilePath()
 	if err != nil {
-	    return err
+		return err
 	}
 	var exists bool
 	exists, err = fileutils.IsFileExists(path)
 	if err != nil {
-	    return err
+		return err
 	}
 	if exists {
 		err := os.Remove(path)
 		err = cliutils.CheckError(err)
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 	}
 	path, err = getConFilePath()
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 	ioutil.WriteFile(path, []byte(content.String()), 0600)
 	return nil
 }
@@ -200,6 +202,7 @@ func readConf() (*ConfigV1, error) {
 	return config, err
 }
 
+// The configuration schema can change between versions, there for we need to convert old versions to the new schema.
 func convertIfNecessary(content []byte) ([]byte, error) {
 	version, err := jsonparser.GetString(content, "Version")
 	if err != nil {
@@ -293,6 +296,10 @@ type MissionControlDetails struct {
 	Url      string `json:"url,omitempty"`
 	User     string `json:"user,omitempty"`
 	Password string `json:"password,omitempty"`
+}
+
+func (artifactoryDetails *ArtifactoryDetails) IsEmpty() bool {
+	return len(artifactoryDetails.Url) == 0
 }
 
 func (artifactoryDetails *ArtifactoryDetails) SetApiKey(apiKey string) {

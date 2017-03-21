@@ -51,18 +51,7 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 		details = new(config.ArtifactoryDetails)
 	}
 	if defaultDetails == nil {
-		if serverId == "" {
-			defaultDetails = config.GetDefaultArtifactoryConf(configurations)
-		} else {
-			defaultDetails = config.GetArtifactoryConfByServerId(serverId, configurations)
-			if len(configurations) == 0 {
-				defaultDetails.IsDefault = true
-			}
-			if defaultDetails.Url == "" {
-				configurations = append(configurations, defaultDetails)
-				details.ServerId = serverId
-			}
-		}
+		defaultDetails, configurations, details, err = handleEmptyDefaultDetails(serverId, configurations, details)
 	} else {
 		// We got here from offer config flow
 		configurations = append(configurations, defaultDetails)
@@ -70,6 +59,29 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 	}
 
 	return details, defaultDetails, configurations, err
+}
+
+func handleEmptyDefaultDetails(serverId string, configurations []*config.ArtifactoryDetails, details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, []*config.ArtifactoryDetails, *config.ArtifactoryDetails, error) {
+	var defaultDetails *config.ArtifactoryDetails
+	var err error
+	// If we don't have serverId we need to search for the default server
+	if serverId == "" {
+		defaultDetails, err = config.GetDefaultArtifactoryConf(configurations)
+		// No default was found
+		if err == nil && defaultDetails.IsEmpty() {
+			configurations = append(configurations, defaultDetails)
+		}
+	} else {
+		defaultDetails = config.GetArtifactoryConfByServerId(serverId, configurations)
+		// No server with serverId was found
+		if defaultDetails.IsEmpty() {
+			defaultDetails.IsDefault = len(configurations) == 0
+			configurations = append(configurations, defaultDetails)
+			// The new server details should have the serverId the user configured
+			details.ServerId = serverId
+		}
+	}
+	return defaultDetails, configurations, details, err
 }
 
 func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {
@@ -157,7 +169,7 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 			fmt.Println("SSH key file path: " + details.SshKeyPath)
 		}
 		if details.ServerId != "" {
-			fmt.Println("Server Name: " + details.ServerId)
+			fmt.Println("Server Id: " + details.ServerId)
 		}
 		fmt.Println("Default: ", details.IsDefault)
 		fmt.Println()

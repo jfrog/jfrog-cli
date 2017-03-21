@@ -25,6 +25,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "use",
+			Usage:   "Configure active Artifactory details.",
+			Action: func(c *cli.Context) {
+				useCmd(c)
+			},
+		},
+		{
 			Name:    "upload",
 			Flags:   getUploadFlags(),
 			Aliases: []string{"u"},
@@ -163,7 +170,7 @@ func getCommonFlags() []cli.Flag {
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), cli.StringFlag{
 		Name:  "server-id",
-		Usage: "[Optional] If server-id already exist you will update the choosen config, if not than a new config will be created. If not specified then the defauld configuration will be choosen.",
+		Usage: "[Optional] Artifactory server id configured using the config command.",
 	},
 	)
 }
@@ -556,12 +563,25 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	return
 }
 
-func validateReservedServerId(serverName string) {
-	reserveNames := []string{"delete", "use", "show", "clear"}
-	for _, reserveName := range reserveNames {
-		if serverName == reserveName {
-			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server Name can't be one of the reserved names: %s\n %s", strings.Join(reserveNames, ", "), cliutils.GetDocumentationMessage()))
+func validateReservedServerId(serverId string) {
+	reservedIds := []string{"delete", "use", "show", "clear"}
+	for _, reservedId := range reservedIds {
+		if serverId == reservedId {
+			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server can't have one of the following Id's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
 		}
+	}
+}
+
+func useCmd(c *cli.Context) {
+	var serverId string
+	if len(c.Args()) == 1 {
+		serverId = c.Args()[0]
+		validateReservedServerId(serverId)
+		err := commands.Use(serverId)
+		cliutils.ExitOnErr(err)
+		return
+	} else {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 }
 
@@ -576,10 +596,6 @@ func configCmd(c *cli.Context) {
 		validateReservedServerId(serverId)
 		if c.Args()[0] == "delete" {
 			err := commands.DeleteConfig(serverId)
-			cliutils.ExitOnErr(err)
-			return
-		} else if c.Args()[0] == "use" {
-			err := commands.Use(serverId)
 			cliutils.ExitOnErr(err)
 			return
 		}

@@ -135,7 +135,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 		  "Version": "1"
 		}
 	`
-	content, err := convertIfNecessary([]byte(config));
+	content, err := convertIfNecessary([]byte(config))
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -144,7 +144,10 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	serverDetails := GetDefaultArtifactoryConf(configV1.Artifactory)
+	serverDetails, err := GetDefaultArtifactoryConf(configV1.Artifactory)
+	if err != nil {
+		t.Error(err.Error())
+	}
 	if serverDetails.ServerId != "name" {
 		t.Error(errors.New("Failed to get default server."))
 	}
