@@ -58,7 +58,7 @@ $ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -rt.url=http://yourArtifacto
 * Running the tests will create two repositories: jfrog-cli-tests-repo and jfrog-cli-tests-repo1.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
 ### Unit tests
-To execute all the cli unit tests run the following command:
+To execute all the JFrog CLI unit tests run the following command:
 #### Windows
 ````
 jfrogdev\jfrog-cli-go> for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog"') do @go test %G

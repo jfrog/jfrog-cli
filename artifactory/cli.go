@@ -109,7 +109,7 @@ func GetCommands() []cli.Command {
 			Aliases: []string{"bag"},
 			Usage:   "Capture git revision and remote url.",
 			Action: func(c *cli.Context) {
-				buildGitInfoCollectCmd(c)
+				buildAddGitCmd(c)
 			},
 		},
 		{
@@ -571,7 +571,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	return
 }
 
-func validateReservedServerId(serverId string) {
+func validateServerId(serverId string) {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
@@ -584,7 +584,7 @@ func useCmd(c *cli.Context) {
 	var serverId string
 	if len(c.Args()) == 1 {
 		serverId = c.Args()[0]
-		validateReservedServerId(serverId)
+		validateServerId(serverId)
 		err := commands.Use(serverId)
 		cliutils.ExitOnErr(err)
 		return
@@ -601,7 +601,7 @@ func configCmd(c *cli.Context) {
 	var serverId string
 	if len(c.Args()) == 2 {
 		serverId = c.Args()[1]
-		validateReservedServerId(serverId)
+		validateServerId(serverId)
 		if c.Args()[0] == "delete" {
 			err := commands.DeleteConfig(serverId)
 			cliutils.ExitOnErr(err)
@@ -619,7 +619,7 @@ func configCmd(c *cli.Context) {
 			return
 		} else {
 			serverId = c.Args()[0]
-			validateReservedServerId(serverId)
+			validateServerId(serverId)
 		}
 	}
 	configFlags, err := createConfigFlags(c)
@@ -814,7 +814,7 @@ func buildCollectEnvCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func buildGitInfoCollectCmd(c *cli.Context) {
+func buildAddGitCmd(c *cli.Context) {
 	if c.NArg() > 3 && c.NArg() < 2{
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
