@@ -5,7 +5,7 @@
       "target": "jfrog-cli-tests-repo1/",
       "flat": "true",
       "recursive": "true",
-      "includeDirs": "true",
+      "includeDirs": "true"
     }
   ]
 }
