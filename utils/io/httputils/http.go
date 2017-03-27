@@ -176,8 +176,8 @@ httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, 
 	}
 	defer out.Close()
 	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
-	defer resp.Body.Close()
 	if err == nil {
+		defer resp.Body.Close()
 		_, err = io.Copy(out, resp.Body)
 		err = cliutils.CheckError(err)
 		if err != nil {
@@ -263,13 +263,12 @@ httpClientsDetails HttpClientDetails) error {
 	}
 	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end - 1, 10)
 
-	resp, _, err :=
-		sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
-	defer resp.Body.Close()
+	resp, _, err := sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	log.Info(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
 	os.MkdirAll(tempLocalPath, 0777)

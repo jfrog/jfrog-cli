@@ -11,6 +11,8 @@ const (
 	DownloadSpec              = "download_spec.json"
 	BuildDownloadSpec         = "build_download_spec.json"
 	SimpleUploadSpec          = "simple_upload_spec.json"
+	UploadEmptyDirs           = "upload_empty_dir_spec.json"
+	DownloadEmptyDirs         = "download_empty_dir_spec.json"
 	SplittedUploadSpecA       = "splitted_upload_spec_a.json"
 	SplittedUploadSpecB       = "splitted_upload_spec_b.json"
 	UploadSpec                = "upload_spec.json"

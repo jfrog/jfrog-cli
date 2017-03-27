@@ -406,6 +406,73 @@ func TestArtifactoryMassiveUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryFolderUploadRecursive(t *testing.T) {
+	initArtifactoryTest(t)
+	dirInnerPath := fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	canonicalPath := tests.Out + dirInnerPath
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out + fileutils.GetFileSeperator() + "(*)"), tests.Repo1 + "/{1}", "--include-dirs=true", "--recursive=true")
+	err = os.RemoveAll(tests.Out)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out + fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
+	if !fileutils.IsPathExists(canonicalPath) {
+		t.Error("Failed to Download folders from Artifatory")
+	}
+	//cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	dirInnerPath := "empty" + fileutils.GetFileSeperator() + "folder"
+	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	specFile := tests.GetFilePath(tests.UploadEmptyDirs)
+	artifactoryCli.Exec("upload", "--spec=" + specFile)
+	//err = os.RemoveAll(tests.GetTestResourcesPath() + "empty")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	specFile = tests.GetFilePath(tests.DownloadEmptyDirs)
+	artifactoryCli.Exec("download", "--spec=" + specFile)
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + fileutils.GetFileSeperator() + "folder")) {
+		t.Error("Failed to Download folders from Artifatory")
+	}
+	//cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
+	initArtifactoryTest(t)
+	canonicalPath := tests.Out + fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("upload", "ou*" , tests.Repo1, "--include-dirs=true", "--recursive=false")
+	err = os.RemoveAll(tests.Out)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("download", tests.Repo1, "--include-dirs=true")
+	if !fileutils.IsPathExists(tests.Out) {
+		t.Error("Failed to Download folder from Artifatory")
+	}
+	if fileutils.IsPathExists(canonicalPath) {
+		t.Error("Path should be flat ")
+	}
+	//cleanup
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryPublishBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "10"
@@ -484,7 +551,6 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	specFile := tests.GetFilePath(tests.CopyByBuildSpec)
-
 
 	// Upload files with buildName and buildNumber: a* uploaded with build number "10", b* uploaded with build number "11"
 	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
@@ -820,7 +886,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
 	searchFlags := new(commands.SearchFlags)
 	searchFlags.ArtDetails = artifactoryDetails
-	searchSpec := utils.CreateSpec(pattern, "", props, "", true, false, false)
+	searchSpec := utils.CreateSpec(pattern, "", props, "", true, false, false, false)
 	results, err := commands.Search(searchSpec, searchFlags)
 	if err != nil {
 		t.Error(err)

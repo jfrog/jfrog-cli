@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "use",
-			Usage:   "Configure active Artifactory details.",
+			Usage:   "Set the active Artifactory server by its ID.",
 			Action: func(c *cli.Context) {
 				useCmd(c)
 			},
@@ -170,7 +170,7 @@ func getCommonFlags() []cli.Flag {
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), cli.StringFlag{
 		Name:  "server-id",
-		Usage: "[Optional] Artifactory server id configured using the config command.",
+		Usage: "[Optional] Artifactory server ID configured using the config command.",
 	},
 	)
 }
@@ -227,6 +227,10 @@ func getUploadFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
 		},
 	}...)
 }
@@ -285,6 +289,10 @@ func getDownloadFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
+		},
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the tagret path pattern for folders and not just for files in Artifactory.",
 		},
 	}...)
 }
@@ -567,7 +575,7 @@ func validateReservedServerId(serverId string) {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server can't have one of the following Id's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
+			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
 		}
 	}
 }
@@ -659,7 +667,6 @@ func uploadCmd(c *cli.Context) {
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
-
 	flags, err := createUploadFlags(c)
 	cliutils.ExitOnErr(err)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
@@ -959,7 +966,7 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, false)
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -990,7 +997,7 @@ func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1024,7 +1031,7 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1095,8 +1102,9 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
+	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, includeDirs)
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
@@ -1112,6 +1120,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 		overrideStringIfSet(&downloadSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&downloadSpec.Get(i).IncludeDirs, c, "include-dirs")
 	}
 	return
 }
@@ -1141,8 +1150,9 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", true)
 	regexp := c.Bool("regexp")
+	isIncludeDirs := c.Bool("include-dirs")
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp, isIncludeDirs)
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
@@ -1158,6 +1168,7 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&uploadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
+		overrideStringIfSet(&uploadSpec.Get(i).IncludeDirs, c, "include-dirs")
 	}
 	return
 }

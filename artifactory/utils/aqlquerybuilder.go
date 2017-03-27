@@ -7,7 +7,7 @@ import (
 )
 
 //Returns an AQL query string to search folders in Artifactory according to the pattern and return fields provided.
-func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) (string, error) {
+func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) string {
 	pairs := createPathFolderPairs(searchPattern)
 	index := strings.Index(searchPattern, "/")
 	repo := searchPattern[:index]
@@ -23,16 +23,20 @@ func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) (
 	}
 
 	json += "]}"
-	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")", nil
+	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")"
 }
 
 // Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
 func createAqlBodyForItem(specFile *File) (string, error) {
+	var itemType string
+	if specFile.IncludeDirs == "true" {
+		itemType = "any"
+	}
 	searchPattern := prepareSearchPattern(specFile.Pattern)
 	index := strings.Index(searchPattern, "/")
 
 	repo := searchPattern[:index]
-	searchPattern = searchPattern[index + 1:]
+	searchPattern = searchPattern[index+1:]
 
 	recursive, err := cliutils.StringToBool(specFile.Recursive, true)
 	if err != nil {
@@ -48,17 +52,16 @@ func createAqlBodyForItem(specFile *File) (string, error) {
 
 	json := "{\"repo\": \"" + repo + "\"," + propsQuery + "\"$or\": ["
 	if size == 0 {
-		json += "{" + buildInnerQuery(".", searchPattern, "") + "}"
+		json += "{" + buildInnerQuery(".", searchPattern, itemType) + "}"
 	} else {
 		for i := 0; i < size; i++ {
-			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, "") + "}"
-			if i + 1 < size {
+			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType) + "}"
+			if i+1 < size {
 				json += ","
 			}
 		}
 	}
 	json += "]}"
-
 	return json, nil
 }
 
@@ -192,11 +195,17 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 		pairs = append(pairs, PathFilePair{".", pattern})
 		path = ""
 		name = pattern
-	} else
-	if slashIndex >= 0 {
-		path = pattern[0:slashIndex]
-		name = pattern[slashIndex + 1:]
-		pairs = append(pairs, PathFilePair{path, name})
+	} else {
+		path = pattern[:slashIndex]
+		name = pattern[slashIndex+1:]
+		if path == "*" {
+			pairs = append(pairs, PathFilePair{path + "/*", name})
+			if name == "*" {
+				return pairs
+			}
+		} else {
+			pairs = append(pairs, PathFilePair{path, name})
+		}
 	}
 	if !recursive {
 		return pairs
@@ -234,7 +243,9 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 				fileName = "*"
 			}
 			if path != "" {
-				path += "/"
+				if !strings.HasSuffix(path, "/") {
+					path += "/"
+				}
 			}
 			pairs = append(pairs, PathFilePair{path + filePath, fileName})
 		}

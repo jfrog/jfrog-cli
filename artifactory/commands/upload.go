@@ -18,6 +18,7 @@ import (
 	"github.com/gofrog/parallel"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"bytes"
+	"sort"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -235,7 +236,7 @@ func getFileSymlinkPath(filePath string) (string, error){
 	return symlinkPath, nil
 }
 
-func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]string, error) {
+func getUploadPaths(isRecursiveString, rootPath string, includeDirs bool, flags *UploadFlags) ([]string, error) {
 	var paths []string
 	isRecursive, err := cliutils.StringToBool(isRecursiveString, true)
 	if err != nil {
@@ -244,7 +245,7 @@ func getUploadPaths(isRecursiveString, rootPath string, flags *UploadFlags) ([]s
 	if isRecursive {
 		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, !flags.Symlink)
 	} else {
-		paths, err = fileutils.ListFiles(rootPath)
+		paths, err = fileutils.ListFiles(rootPath, includeDirs)
 	}
 	if err != nil {
 		return paths, err
@@ -258,50 +259,92 @@ func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDes
 		return err
 	}
 
-	paths, err := getUploadPaths(uploadFile.Recursive, uploadMetaData.RootPath, flags)
+	paths, err := getUploadPaths(uploadFile.Recursive, uploadMetaData.RootPath, uploadFile.IsIncludeDirs(), flags)
 	if err != nil {
 		return err
 	}
-	for _, path := range paths {
-		dir, err := fileutils.IsDir(path)
+	// Longest paths first
+	sort.Sort(sort.Reverse(sort.StringSlice(paths)))
+	for index, path := range paths {
+		isDir, err := fileutils.IsDir(path)
 		if err != nil {
 			return err
 		}
-		if dir && (!flags.Symlink || !fileutils.IsPathSymlink(path)) {
+		isSymlinkFlow := flags.Symlink && fileutils.IsPathSymlink(path)
+		if isDir && !uploadFile.IsIncludeDirs() && !isSymlinkFlow {
 			continue
 		}
 		groups := r.FindStringSubmatch(path)
 		size := len(groups)
 		target := uploadFile.Target
 		if size > 0 {
-			for i := 1; i < size; i++ {
-				group := strings.Replace(groups[i], "\\", "/", -1)
-				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
+			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow, paths: paths,
+				groups:                     groups, index: index, size: size, uploadFile: uploadFile, uploadMetaData: uploadMetaData,
+				producer:                   producer, artifactHandlerFunc: artifactHandlerFunc, errorsQueue: errorsQueue, flags: flags,
 			}
-			if strings.HasSuffix(target, "/") {
-				if uploadMetaData.IsFlat {
-					fileName, _ := fileutils.GetFileAndDirFromPath(path)
-					target += fileName
-				} else {
-					uploadPath := cliutils.TrimPath(path)
-					target += uploadPath
-				}
-			}
-			symlinkPath, e := getFileSymlinkPath(path)
-			if e != nil {
-				return e
-			}
-			artifact := cliutils.Artifact{LocalPath:path, TargetPath:target, Symlink:symlinkPath}
-			props, e := addSymlinkProps(uploadFile.Props, artifact, flags)
-			if e != nil {
-				return e
-			}
-			uploadData := UploadData{Artifact:artifact, Props:props}
-			task := artifactHandlerFunc(uploadData)
-			producer.AddTaskWithError(task, errorsQueue.AddError)
+			createUploadTask(taskData)
 		}
 	}
 	return nil
+}
+
+type uploadTaskData struct {
+	target              string
+	path                string
+	isDir               bool
+	isSymlinkFlow       bool
+	paths               []string
+	groups              []string
+	index               int
+	size                int
+	uploadFile          utils.File
+	uploadMetaData      uploadDescriptor
+	producer            parallel.Runner
+	artifactHandlerFunc artifactContext
+	errorsQueue         *utils.ErrorsQueue
+	flags               *UploadFlags
+}
+
+func createUploadTask(taskData *uploadTaskData) error {
+	for i := 1; i < taskData.size; i++ {
+		group := strings.Replace(taskData.groups[i], "\\", "/", -1)
+		taskData.target = strings.Replace(taskData.target, "{"+strconv.Itoa(i)+"}", group, -1)
+	}
+	var task parallel.TaskFunc
+	taskData.target = getUploadTarget(taskData.uploadMetaData.IsFlat, taskData.path, taskData.target)
+	// If case taskData.path is a symlink we get the symlink link path.
+	symlinkPath, e := getFileSymlinkPath(taskData.path)
+	if e != nil {
+		return e
+	}
+	artifact := cliutils.Artifact{LocalPath: taskData.path, TargetPath: taskData.target, Symlink: symlinkPath}
+	props, e := addSymlinkProps(taskData.uploadFile.Props, artifact, taskData.flags)
+	if e != nil {
+		return e
+	}
+	uploadData := UploadData{Artifact: artifact, Props: props}
+	if taskData.isDir && taskData.uploadFile.IsIncludeDirs() && !taskData.isSymlinkFlow {
+		if taskData.path != "." && (taskData.index == 0 || !strings.HasPrefix(taskData.paths[taskData.index-1], taskData.paths[taskData.index])) {
+			uploadData.IsDir = true
+		} else {
+			return nil
+		}
+	}
+	task = taskData.artifactHandlerFunc(uploadData)
+	taskData.producer.AddTaskWithError(task, taskData.errorsQueue.AddError)
+	return nil
+}
+
+func getUploadTarget(isFlat bool, path, target string) string {
+	if strings.HasSuffix(target, "/") {
+		if isFlat {
+			fileName, _ := fileutils.GetFileAndDirFromPath(path)
+			target += fileName
+		} else {
+			target += cliutils.TrimPath(path)
+		}
+	}
+	return target
 }
 
 func addPropsToTargetPath(targetPath, props string, flags *UploadFlags) (string, error) {
@@ -536,6 +579,7 @@ func (flags *UploadFlags) IsDryRun() bool {
 type UploadData struct {
 	Artifact cliutils.Artifact
 	Props    string
+	IsDir    bool
 }
 
 type uploadDescriptor struct {
@@ -588,6 +632,10 @@ type artifactContext func(UploadData) parallel.TaskFunc
 func createArtifactHandlerFunc(s *uploadResult, minChecksumDeploySize int64, flags *UploadFlags) artifactContext {
 	return func(artifact UploadData) parallel.TaskFunc {
 		return func(threadId int) (e error) {
+			if artifact.IsDir {
+				createFolderInArtifactory(artifact, flags)
+				return
+			}
 			var uploaded bool
 			var target string
 			var buildInfoArtifact utils.ArtifactsBuildInfo
@@ -608,4 +656,21 @@ func createArtifactHandlerFunc(s *uploadResult, minChecksumDeploySize int64, fla
 			return
 		}
 	}
+}
+
+func createFolderInArtifactory(artifact UploadData, flags *UploadFlags) error {
+	url, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, artifact.Artifact.TargetPath, make(map[string]string))
+	url = cliutils.AddTrailingSlashIfNeeded(url)
+	if err != nil {
+		return err
+	}
+	content := make([]byte, 0)
+	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
+	resp, body, err := httputils.SendPut(url, content, httpClientsDetails)
+	if err != nil {
+		log.Debug(resp)
+		return err
+	}
+	logUploadResponse("Uploaded folder :", resp, body, false, flags)
+	return err
 }

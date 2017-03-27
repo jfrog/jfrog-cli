@@ -277,12 +277,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 
 	spinner := cliutils.NewSpinner("[Info] Collecting files for upload:", time.Second)
 	spinner.Start()
-	var paths []string
-	if flags.Recursive {
-		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
-	} else {
-		paths, err = fileutils.ListFiles(rootPath)
-	}
+	paths, err := listFiles(flags, err, rootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +298,7 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 		if size > 0 {
 			for i := 1; i < size; i++ {
 				group := strings.Replace(groups[i], "\\", "/", -1)
-				target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
+				target = strings.Replace(target, "{"+strconv.Itoa(i)+"}", group, -1)
 			}
 
 			if target == "" || strings.HasSuffix(target, "/") {
@@ -324,6 +319,15 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 	}
 	spinner.Stop()
 	return artifacts, nil
+}
+func listFiles(flags *UploadFlags, err error, rootPath string) ([]string, error) {
+	var paths []string
+	if flags.Recursive {
+		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, false)
+	} else {
+		paths, err = fileutils.ListFiles(rootPath, false)
+	}
+	return paths, err
 }
 
 type UploadFlags struct {

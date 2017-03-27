@@ -97,7 +97,7 @@ func ReadBuildInfoFiles(buildName, buildNumber string) (BuildInfoData, error) {
 	if err != nil {
 		return nil, err
 	}
-	buildFiles, err := fileutils.ListFiles(path)
+	buildFiles, err := fileutils.ListFiles(path, false)
 	if err != nil {
 		return nil, err
 	}

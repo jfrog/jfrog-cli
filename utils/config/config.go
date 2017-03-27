@@ -202,7 +202,7 @@ func readConf() (*ConfigV1, error) {
 	return config, err
 }
 
-// The configuration schema can change between versions, there for we need to convert old versions to the new schema.
+// The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
 func convertIfNecessary(content []byte) ([]byte, error) {
 	version, err := jsonparser.GetString(content, "Version")
 	if err != nil {

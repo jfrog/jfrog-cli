@@ -14,6 +14,8 @@ import (
 	"path"
 	"path/filepath"
 	"os"
+	"strings"
+	"sort"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -54,7 +56,7 @@ func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]uti
 	producerConsumer := parallel.NewBounedRunner(flags.Threads, true)
 	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := createFileHandlerFunc(buildDependencies, flags)
-	log.Info("Searching artifacts...")
+	log.Info("Searching items to download...")
 	prepareTasks(producerConsumer, downloadSpec, fileHandlerFunc, errorsQueue, flags)
 	err := performTasks(producerConsumer, errorsQueue)
 	return buildDependencies, err
@@ -105,6 +107,13 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, produ
 	if err != nil {
 		return err
 	}
+	// Collect all folders path which might be needed to create.
+	// key = folder path, value = the necessary data for producing create folder task.
+	directoriesData := make(map[string]DownloadData)
+	// Store all the paths which was created implicitly due to file upload.
+	alreadyCreatedDirs := make(map[string]bool)
+	// Store all the keys of directoriesData as an array.
+	var directoriesDataKeys []string
 	for _, v := range items {
 		tempData := DownloadData{
 			Dependency: v,
@@ -112,9 +121,49 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, produ
 			Target: fileSpec.Target,
 			Flat: flat,
 		}
-		producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
+		if v.Type != "folder" {
+			// Add a task, task is a function of type TaskFunc which later on will be executed by other go routine, the communication is done using channels.
+			// The second argument is a error handling func in case the taskFunc return an error.
+			producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
+			// We don't want to create directories which are created explicitly by download files when the --include-dirs flag is used.
+			alreadyCreatedDirs[v.Path] = true
+		} else {
+			directoriesData, directoriesDataKeys = collectDirPathsToCreate(v, directoriesData, tempData, directoriesDataKeys)
+		}
 	}
+
+	addCreateDirsTasks(directoriesDataKeys, alreadyCreatedDirs, producer, fileHandler, directoriesData, errorsQueue)
 	return nil
+}
+
+// Extract for the aqlResultItem the directory path, store the path the directoriesDataKeys and in the directoriesData map.
+// In addition directoriesData holds the correlate DownloadData for each key, later on this DownloadData will be used to create a create dir tasks if needed.
+// This function append the new data to directoriesDataKeys and to directoriesData and return the new map and the new []string
+// We are storing all the keys of directoriesData in additional array(directoriesDataKeys) so we could sort the keys and access the maps in the sorted order.
+func collectDirPathsToCreate(aqlResultItem utils.AqlSearchResultItem, directoriesData map[string]DownloadData, tempData DownloadData, directoriesDataKeys []string) (map[string]DownloadData, []string) {
+	key := aqlResultItem.Name
+	if aqlResultItem.Path != "." {
+		key = aqlResultItem.Path + "/" + aqlResultItem.Name
+	}
+	directoriesData[key] = tempData
+	directoriesDataKeys = append(directoriesDataKeys, key)
+	return directoriesData, directoriesDataKeys
+}
+
+func addCreateDirsTasks(directoriesDataKeys []string, alreadyCreatedDirs map[string]bool, producer parallel.Runner, fileHandler fileHandlerFunc, directoriesData map[string]DownloadData, errorsQueue *utils.ErrorsQueue) {
+	// Longest path first
+	// We are going to create the longest path first by doing so all sub paths of the longest path will be created implicitly.
+	sort.Sort(sort.Reverse(sort.StringSlice(directoriesDataKeys)))
+	for index, v := range directoriesDataKeys {
+		// In order to avoid duplication we need to check the path wasn't already created by the previous action.
+		if v != "." && // For some files the returned path can be the root path, ".", in that case we doing need to create any directory.
+			(index == 0 || !strings.HasPrefix(directoriesDataKeys[index-1], v) && // directoriesDataKeys store all the path which might needed to be created, that's include duplicated paths.
+			                                                                     // By sorting the directoriesDataKeys we can assure that the longest path was created and therefore no need to create all it's sub paths.
+
+				!alreadyCreatedDirs[v]) { // Some directories were created due to file download.
+			producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+		}
+	}
 }
 
 func performTasks(consumer parallel.Runner, errorsQueue *utils.ErrorsQueue) (err error) {
@@ -290,6 +339,7 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
+			dependency := createBuildDependencyItem(downloadData.Dependency)
 			downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadData.Dependency.GetFullUrl(), make(map[string]string))
 			if e != nil {
 				return e
@@ -305,25 +355,16 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 				return e
 			}
 			localPath, localFileName := fileutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
+			if downloadData.Dependency.Type == "folder" {
+				return createDir(localPath, localFileName, logMsgPrefix)
+			}
 			removeIfSymlink(filepath.Join(localPath, localFileName))
 			if flags.Symlink {
 				if isSymlink, e := createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix, downloadData, buildDependencies, threadId, flags); isSymlink {
 					return e
 				}
 			}
-			shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
-			if e != nil {
-				return e
-			}
-			dependency := createBuildDependencyItem(downloadData.Dependency)
-			if !shouldDownload {
-				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
-				log.Debug(logMsgPrefix, "File already exists locally.")
-				return nil
-			}
-
-			downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, downloadData.Dependency.Size)
-			e = downloadFile(downloadFileDetails, logMsgPrefix, flags)
+			e = downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix, downloadData, flags)
 			if e != nil {
 				return e
 			}
@@ -331,6 +372,29 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 			return nil
 		}
 	}
+}
+
+func downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix string, downloadData DownloadData, flags *DownloadFlags) error {
+	shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
+	if e != nil {
+		return e
+	}
+	if !shouldDownload {
+		log.Debug(logMsgPrefix, "File already exists locally.")
+		return nil
+	}
+	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, downloadData.Dependency.Size)
+	return downloadFile(downloadFileDetails, logMsgPrefix, flags)
+}
+
+func createDir(localPath, localFileName, logMsgPrefix string) error {
+	folderPath := filepath.Join(localPath, localFileName)
+	e := fileutils.CreateDirIfNotExist(folderPath)
+	if e != nil {
+		return e
+	}
+	log.Info(logMsgPrefix + "Creating folder: " + folderPath)
+	return nil
 }
 
 func createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix string, downloadData DownloadData, buildDependencies [][]utils.DependenciesBuildInfo, threadId int, flags *DownloadFlags) (bool, error) {

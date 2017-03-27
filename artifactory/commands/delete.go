@@ -57,11 +57,7 @@ func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (
 		}
 		// Directory with wildcard pattern, searching with special AQL query.
 		if directoryDelete, e := isDirectoryDelete(deleteSpec.Get(i)); directoryDelete && e == nil {
-			query, e := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
-			if e != nil {
-				err = e
-				return
-			}
+			query := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
 			tempResultItems, e := utils.AqlSearch(query, flags)
 			if e != nil {
 				err = e

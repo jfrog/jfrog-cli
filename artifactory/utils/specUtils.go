@@ -19,14 +19,15 @@ type Aql struct {
 }
 
 type File struct {
-	Pattern   string
-	Target    string
-	Props     string
-	Recursive string
-	Flat      string
-	Regexp    string
-	Aql       Aql
-	Build	  string
+	Pattern     string
+	Target      string
+	Props       string
+	Recursive   string
+	Flat        string
+	Regexp      string
+	Aql         Aql
+	Build       string
+	IncludeDirs string
 }
 
 type SpecFiles struct {
@@ -63,17 +64,18 @@ func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	return
 }
 
-func CreateSpec(pattern, target, props, build string, recursive, flat, regexp bool) (spec *SpecFiles) {
+func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, includeDirs bool) (spec *SpecFiles) {
 	spec = &SpecFiles{
 		Files: []File{
 			{
-				Pattern:   pattern,
-				Target:    target,
-				Props:     props,
-				Build:	   build,
-				Recursive: strconv.FormatBool(recursive),
-				Flat:      strconv.FormatBool(flat),
-				Regexp:    strconv.FormatBool(regexp),
+				Pattern:     pattern,
+				Target:      target,
+				Props:       props,
+				Build:       build,
+				Recursive:   strconv.FormatBool(recursive),
+				Flat:        strconv.FormatBool(flat),
+				Regexp:      strconv.FormatBool(regexp),
+				IncludeDirs: strconv.FormatBool(includeDirs),
 			},
 		},
 	}
@@ -90,6 +92,10 @@ func (file File) GetSpecType() (specType SpecType) {
 		specType = AQL
 	}
 	return specType
+}
+
+func (file File) IsIncludeDirs() bool {
+	return file.IncludeDirs == "true"
 }
 
 type SpecType string

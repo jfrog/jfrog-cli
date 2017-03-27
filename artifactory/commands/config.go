@@ -169,7 +169,7 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 			fmt.Println("SSH key file path: " + details.SshKeyPath)
 		}
 		if details.ServerId != "" {
-			fmt.Println("Server Id: " + details.ServerId)
+			fmt.Println("Server ID: " + details.ServerId)
 		}
 		fmt.Println("Default: ", details.IsDefault)
 		fmt.Println()

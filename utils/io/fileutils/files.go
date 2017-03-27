@@ -89,7 +89,6 @@ func GetFileAndDirFromPath(path string) (fileName, dir string) {
 // Get the local path and filename from original file name and path according to targetPath
 func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat bool) (localTargetPath, fileName string) {
 	targetFileName, targetDirPath := GetFileAndDirFromPath(targetPath)
-
 	localTargetPath = targetDirPath
 	if !flat {
 		localTargetPath = path.Join(targetDirPath, relativePath)
@@ -114,7 +113,7 @@ func ListFilesRecursiveWalkIntoDirSymlink(path string, walkIntoDirSymlink bool) 
 }
 
 // Return the list of files and directories in the specified path
-func ListFiles(path string) ([]string, error) {
+func ListFiles(path string, includeDirs bool) ([]string, error) {
 	sep := GetFileSeperator()
 	if !strings.HasSuffix(path, sep) {
 		path += sep
@@ -131,6 +130,14 @@ func ListFiles(path string) ([]string, error) {
 		}
 		if exists || IsPathSymlink(filePath) {
 			fileList = append(fileList, filePath)
+		} else if includeDirs {
+			isDir, err := IsDir(filePath)
+			if err != nil {
+				return nil, err
+			}
+			if isDir {
+				fileList = append(fileList, filePath)
+			}
 		}
 	}
 	return fileList, nil
@@ -166,6 +173,15 @@ func CreateFilePath(localPath, fileName string) (string, error) {
 		fileName = localPath + "/" + fileName
 	}
 	return fileName, nil
+}
+
+func CreateDirIfNotExist(path string) error {
+	exist, err := IsDir(path)
+	if exist || err != nil {
+		return err
+	}
+	_, err = CreateFilePath(path, "")
+	return  err
 }
 
 func GetTempDirPath() (string, error) {

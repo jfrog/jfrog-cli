@@ -65,7 +65,7 @@ func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
 }
 
 func GetDefaultQueryReturnFields() []string {
-	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\""}
+	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\"", "\"type\""}
 }
 
 func LogSearchResults(numOfArtifacts int) {
@@ -97,6 +97,7 @@ type AqlSearchResultItem struct {
 	Actual_Sha1 string
 	Size        int64
 	Properties  []Property
+	Type        string
 }
 
 type Property struct {
