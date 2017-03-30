@@ -1010,13 +1010,13 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadFlags, err error) {
 	downloadFlags = new(commands.DownloadFlags)
 	downloadFlags.DryRun = c.Bool("dry-run")
-	downloadFlags.Symlink = true
 	downloadFlags.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
-	downloadFlags.Threads = getThreadsCount(c);
-	downloadFlags.BuildName = getBuildName(c);
-	downloadFlags.BuildNumber = getBuildNumber(c);
+	downloadFlags.Threads = getThreadsCount(c)
+	downloadFlags.BuildName = getBuildName(c)
+	downloadFlags.BuildNumber = getBuildNumber(c)
+	downloadFlags.Symlink = true
 	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
