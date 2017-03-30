@@ -37,7 +37,7 @@ go get github.com/jfrogdev/jfrog-cli-go/...
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
 # Tests
-## Running Integration tests
+
 ### Artifactory Integration tests
 To run Artifactory integration tests execute the following command: 
 ````
