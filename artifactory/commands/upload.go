@@ -265,6 +265,9 @@ func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDes
 	}
 	// Longest paths first
 	sort.Sort(sort.Reverse(sort.StringSlice(paths)))
+	// 'foldersPaths' is a subset of the 'paths' array. foldersPaths is in use only when we need to upload folders with flat=true.
+	// 'foldersPaths' will contain only the directories paths which are in the 'paths' array.
+	var foldersPaths[]string
 	for index, path := range paths {
 		isDir, err := fileutils.IsDir(path)
 		if err != nil {
@@ -278,8 +281,18 @@ func collectPatternMatchingFiles(uploadFile utils.File, uploadMetaData uploadDes
 		size := len(groups)
 		target := uploadFile.Target
 		if size > 0 {
-			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow, paths: paths,
-				groups:                     groups, index: index, size: size, uploadFile: uploadFile, uploadMetaData: uploadMetaData,
+			tempPaths := paths
+			tempIndex := index
+			// In case we need to upload directories with flat=true, we want to avoid the creation of unnecessary paths in Artifactory.
+			// To achieve this, we need to take into consideration the directories which had already been uploaded, ignoring all files paths.
+			// When flat=false we take into consideration folder paths which were created implicitly by file upload
+			if uploadMetaData.IsFlat && uploadFile.IsIncludeDirs() && isDir {
+				foldersPaths = append(foldersPaths, path)
+				tempPaths = foldersPaths
+				tempIndex = len(foldersPaths) - 1
+			}
+			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow, paths: tempPaths,
+				groups:                     groups, index: tempIndex, size: size, uploadFile: uploadFile, uploadMetaData: uploadMetaData,
 				producer:                   producer, artifactHandlerFunc: artifactHandlerFunc, errorsQueue: errorsQueue, flags: flags,
 			}
 			createUploadTask(taskData)
@@ -324,7 +337,7 @@ func createUploadTask(taskData *uploadTaskData) error {
 	}
 	uploadData := UploadData{Artifact: artifact, Props: props}
 	if taskData.isDir && taskData.uploadFile.IsIncludeDirs() && !taskData.isSymlinkFlow {
-		if taskData.path != "." && (taskData.index == 0 || !strings.HasPrefix(taskData.paths[taskData.index-1], taskData.paths[taskData.index])) {
+		if taskData.path != "." && (taskData.index == 0 || !utils.IsSubPath(taskData.paths, taskData.index, fileutils.GetFileSeperator())) {
 			uploadData.IsDir = true
 		} else {
 			return nil

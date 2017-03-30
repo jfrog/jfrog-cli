@@ -14,7 +14,6 @@ import (
 	"path"
 	"path/filepath"
 	"os"
-	"strings"
 	"sort"
 )
 
@@ -132,7 +131,7 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, produ
 		}
 	}
 
-	addCreateDirsTasks(directoriesDataKeys, alreadyCreatedDirs, producer, fileHandler, directoriesData, errorsQueue)
+	addCreateDirsTasks(directoriesDataKeys, alreadyCreatedDirs, producer, fileHandler, directoriesData, errorsQueue, flat)
 	return nil
 }
 
@@ -150,18 +149,22 @@ func collectDirPathsToCreate(aqlResultItem utils.AqlSearchResultItem, directorie
 	return directoriesData, directoriesDataKeys
 }
 
-func addCreateDirsTasks(directoriesDataKeys []string, alreadyCreatedDirs map[string]bool, producer parallel.Runner, fileHandler fileHandlerFunc, directoriesData map[string]DownloadData, errorsQueue *utils.ErrorsQueue) {
+func addCreateDirsTasks(directoriesDataKeys []string, alreadyCreatedDirs map[string]bool, producer parallel.Runner, fileHandler fileHandlerFunc, directoriesData map[string]DownloadData, errorsQueue *utils.ErrorsQueue, isFlat bool) {
 	// Longest path first
 	// We are going to create the longest path first by doing so all sub paths of the longest path will be created implicitly.
 	sort.Sort(sort.Reverse(sort.StringSlice(directoriesDataKeys)))
 	for index, v := range directoriesDataKeys {
 		// In order to avoid duplication we need to check the path wasn't already created by the previous action.
 		if v != "." && // For some files the returned path can be the root path, ".", in that case we doing need to create any directory.
-			(index == 0 || !strings.HasPrefix(directoriesDataKeys[index-1], v) && // directoriesDataKeys store all the path which might needed to be created, that's include duplicated paths.
+			(index == 0 || !utils.IsSubPath(directoriesDataKeys, index, "/")) {// directoriesDataKeys store all the path which might needed to be created, that's include duplicated paths.
 			                                                                     // By sorting the directoriesDataKeys we can assure that the longest path was created and therefore no need to create all it's sub paths.
 
-				!alreadyCreatedDirs[v]) { // Some directories were created due to file download.
-			producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+			// Some directories were created due to file download when we aren't in flat download flow.
+			if isFlat {
+				producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+			} else if !alreadyCreatedDirs[v] {
+				producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+			}
 		}
 	}
 }

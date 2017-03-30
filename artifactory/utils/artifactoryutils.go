@@ -202,3 +202,20 @@ func SplitProp(prop string) (string, string, error) {
 	return prop[:splitIndex], prop[splitIndex + 1:], nil
 
 }
+
+// @paths - sorted array
+// @index - index of the current path which we want to check if it a prefix of any of the other previous paths
+// @separator - file separator
+// returns true paths[index] is a prefix of any of the paths[i] where i<index , otherwise returns false
+func IsSubPath(paths []string, index int, separator string) bool {
+	currentPath := paths[index]
+	if !strings.HasSuffix(currentPath, separator) {
+		currentPath += separator
+	}
+	for i := index - 1; i >= 0; i-- {
+		if strings.HasPrefix(paths[i], currentPath) {
+			return true
+		}
+	}
+	return false
+}
