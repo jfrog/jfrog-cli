@@ -89,7 +89,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 	}
 	if details.ServerId == "" {
-		ioutils.ScanFromConsole("Artifactory server name", &details.ServerId, defaultDetails.ServerId)
+		ioutils.ScanFromConsole("Artifactory server ID", &details.ServerId, defaultDetails.ServerId)
 	}
 	if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 		err := readSshKeyPathFromConsole(details, defaultDetails)
@@ -153,6 +153,9 @@ func ShowConfig(serverName string) error {
 
 func printConfigs(configuration []*config.ArtifactoryDetails) {
 	for _, details := range configuration {
+		if details.ServerId != "" {
+			fmt.Println("Server ID: " + details.ServerId)
+		}
 		if details.Url != "" {
 			fmt.Println("Url: " + details.Url)
 		}
@@ -167,9 +170,6 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 		}
 		if details.SshKeyPath != "" {
 			fmt.Println("SSH key file path: " + details.SshKeyPath)
-		}
-		if details.ServerId != "" {
-			fmt.Println("Server ID: " + details.ServerId)
 		}
 		fmt.Println("Default: ", details.IsDefault)
 		fmt.Println()
