@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"strings"
 	"strconv"
@@ -11,40 +11,61 @@ import (
 	"errors"
 )
 
-func AqlSearchDefaultReturnFields(pattern string, recursive bool, props string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	query, err := BuildAqlSearchQuery(pattern, recursive, props, GetDefaultQueryReturnFields())
+func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
+	query, err := createAqlBodyForItem(specFile)
 	if err != nil {
 		return nil, err
 	}
-	return AqlSearch(query, flags)
+	specFile.Aql = Aql{ItemsFind:query}
+	return AqlSearchBySpec(specFile, flags)
 }
 
-func AqlSearchBySpec(aql Aql, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	aqlString := aql.ItemsFind
-	query := "items.find(" + aqlString + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
-	return AqlSearch(query, flags)
+func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
+	aqlBody := specFile.Aql.ItemsFind
+	query := "items.find(" + aqlBody + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	results, err := AqlSearch(query, flags)
+	if err != nil {
+		return nil, err
+	}
+	buildIdentifier := specFile.Build
+	if buildIdentifier != "" && len(results) > 0 {
+		results, err = filterSearchByBuild(buildIdentifier, results, flags)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return results, err
 }
 
 func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
-	log.Debug("Searching Artifactory using AQL query:", aqlQuery)
-
-	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
-	resp, json, err := ioutils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
+	json, err := execAqlSearch(aqlQuery, flags)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(json)))
-	}
 
-	log.Debug("Artifactory response: ", resp.Status)
 	resultItems, err := parseAqlSearchResponse(json)
 	return resultItems, err
 }
 
+func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
+	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
+	log.Debug("Searching Artifactory using AQL query: ", aqlQuery)
+
+	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
+	resp, body, err := httputils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, cliutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+	}
+
+	log.Debug("Artifactory response: ", resp.Status)
+	return body, err
+}
+
 func GetDefaultQueryReturnFields() []string {
-	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\""}
+	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\"", "\"type\""}
 }
 
 func LogSearchResults(numOfArtifacts int) {
@@ -58,8 +79,7 @@ func LogSearchResults(numOfArtifacts int) {
 func parseAqlSearchResponse(resp []byte) ([]AqlSearchResultItem, error) {
 	var result AqlSearchResult
 	err := json.Unmarshal(resp, &result)
-	err = cliutils.CheckError(err)
-	if err != nil {
+	if cliutils.CheckError(err) != nil {
 		return nil, err
 	}
 	return result.Results, nil
@@ -77,6 +97,7 @@ type AqlSearchResultItem struct {
 	Actual_Sha1 string
 	Size        int64
 	Properties  []Property
+	Type        string
 }
 
 type Property struct {

@@ -3,7 +3,8 @@ package utils
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,15 +24,15 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 	}
 	apiUrl := artifactoryDetails.Url + "api/security/encryptedPassword"
 	httpClientsDetails := GetArtifactoryHttpClientDetails(artifactoryDetails)
-	resp, body, _, err := ioutils.SendGet(apiUrl, true, httpClientsDetails)
+	resp, body, _, err := httputils.SendGet(apiUrl, true, httpClientsDetails)
 	return resp, string(body), err
 }
 
 func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*http.Response, []byte, error) {
+details *fileutils.FileDetails, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
 	var err error
 	if details == nil {
-		details, err = ioutils.GetFileDetails(f.Name())
+		details, err = fileutils.GetFileDetails(f.Name())
 	}
 	if err != nil {
 		return nil, nil, err
@@ -44,7 +45,7 @@ details *ioutils.FileDetails, httpClientsDetails ioutils.HttpClientDetails) (*ht
 	requestClientDetails := httpClientsDetails.Clone()
 	cliutils.MergeMaps(headers, requestClientDetails.Headers)
 
-	return ioutils.UploadFile(f, url, *requestClientDetails)
+	return httputils.UploadFile(f, url, *requestClientDetails)
 }
 
 func AddAuthHeaders(headers map[string]string, artifactoryDetails *config.ArtifactoryDetails) map[string]string {
@@ -62,7 +63,7 @@ func loadCertificates(caCertPool *x509.CertPool) error {
 	if err != nil {
 		return err
 	}
-	if !ioutils.IsPathExists(securityDir) {
+	if !fileutils.IsPathExists(securityDir) {
 		return nil
 	}
 	files, err := ioutil.ReadDir(securityDir)
@@ -126,8 +127,8 @@ func PreCommandSetup(flags CommonFlag) (err error) {
 	return
 }
 
-func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) ioutils.HttpClientDetails {
-	return ioutils.HttpClientDetails{
+func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetails) httputils.HttpClientDetails {
+	return httputils.HttpClientDetails{
 		User:      artifactoryDetails.User,
 		Password:  artifactoryDetails.Password,
 		ApiKey:    artifactoryDetails.ApiKey,
@@ -200,4 +201,21 @@ func SplitProp(prop string) (string, string, error) {
 	}
 	return prop[:splitIndex], prop[splitIndex + 1:], nil
 
+}
+
+// @paths - sorted array
+// @index - index of the current path which we want to check if it a prefix of any of the other previous paths
+// @separator - file separator
+// returns true paths[index] is a prefix of any of the paths[i] where i<index , otherwise returns false
+func IsSubPath(paths []string, index int, separator string) bool {
+	currentPath := paths[index]
+	if !strings.HasSuffix(currentPath, separator) {
+		currentPath += separator
+	}
+	for i := index - 1; i >= 0; i-- {
+		if strings.HasPrefix(paths[i], currentPath) {
+			return true
+		}
+	}
+	return false
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/ioutils"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 )

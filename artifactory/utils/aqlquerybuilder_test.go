@@ -1,38 +1,98 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestBuildAqlSearchQueryRecursive(t *testing.T) {
-	aqlResult, _ := BuildAqlSearchQuery("repo-local", true, "", []string{"\"name\"","\"repo\"","\"path\"","\"actual_md5\"","\"actual_sha1\"","\"size\""})
-	expected := "items.find({\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"*\"},\"name\": {\"$match\": \"*\"}}]}]}).include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
-
-	if aqlResult != expected {
-		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
-	}
-
-	aqlResult, _ = BuildAqlSearchQuery("repo-local2/a*b*c/dd/", true, "", []string{"\"name\"","\"repo\"","\"path\"","\"actual_md5\"","\"actual_sha1\"","\"size\""})
-	expected = "items.find({\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]},{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd/*\"},\"name\": {\"$match\": \"*\"}}]}]}).include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
+func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
+	specFile := CreateSpec("repo-local", "", "", "", true, true, false, false).Files[0]
+	aqlResult, _ := createAqlBodyForItem(&specFile)
+	expected := "{\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"*\"},\"name\": {\"$match\": \"*\"}}]}]}"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
 	}
 }
 
-func TestBuildAqlSearchQueryNonRecursive(t *testing.T) {
-	aqlResult, _ := BuildAqlSearchQuery("repo-local", false, "", []string{"\"name\"","\"repo\"","\"path\"","\"actual_md5\"","\"actual_sha1\"","\"size\""})
-	expected := "items.find({\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}).include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
-
-	if aqlResult != expected {
-		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
-	}
-
-	aqlResult, _ = BuildAqlSearchQuery("repo-local2/a*b*c/dd/", false, "", []string{"\"name\"","\"repo\"","\"path\"","\"actual_md5\"","\"actual_sha1\"","\"size\""})
-	expected = "items.find({\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]}]}).include(\"name\",\"repo\",\"path\",\"actual_md5\",\"actual_sha1\",\"size\")"
+func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
+	specFile := CreateSpec("repo-local2/a*b*c/dd/", "", "", "", true, true, false, false).Files[0]
+	aqlResult, _ := createAqlBodyForItem(&specFile)
+	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]},{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd/*\"},\"name\": {\"$match\": \"*\"}}]}]}"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
 	}
 }
 
+func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
+	specFile := CreateSpec("repo-local", "", "", "", false, true, false, false).Files[0]
+	aqlResult, _ := createAqlBodyForItem(&specFile)
+	expected := "{\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
 
+	if aqlResult != expected {
+		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
+	}
+}
 
+func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
+	specFile := CreateSpec("repo-local2/a*b*c/dd/", "", "", "", false, true, false, false).Files[0]
+	aqlResult, _ := createAqlBodyForItem(&specFile)
+	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]}]}"
+
+	if aqlResult != expected {
+		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
+	}
+}
+
+func TestCreatePathFilePairs(t *testing.T) {
+	pairs := []PathFilePair{{".","a"}}
+	validatePathPairs(createPathFilePairs("a", true), pairs,"a", t)
+	pairs = []PathFilePair{{"a","*"}, {"a/*","*"}}
+	validatePathPairs(createPathFilePairs("a/*", true), pairs,"a/*",  t)
+	pairs = []PathFilePair{{"a","a*b"}, {"a/a*","*b"}}
+	validatePathPairs(createPathFilePairs("a/a*b", true), pairs,"a/a*b", t)
+	pairs = []PathFilePair{{"a", "a*b*"}, {"a/a*", "*b*"}, {"a/a*b*", "*"}}
+	validatePathPairs(createPathFilePairs("a/a*b*", true), pairs, "a/a*b*", t)
+	pairs = []PathFilePair{{"a/a*b*/a", "b"}}
+	validatePathPairs(createPathFilePairs("a/a*b*/a/b", true), pairs, "a/a*b*/a/b", t)
+	pairs = []PathFilePair{{"*/a*", "*b*a*"}, {"*/a*/*", "*b*a*"}, {"*/a*/*b*", "*a*"}, {"*/a*/*b*a*", "*"}}
+	validatePathPairs(createPathFilePairs("*/a*/*b*a*", true), pairs, "*/a*/*b*a*", t)
+	pairs = []PathFilePair{{"*", "*"}}
+	validatePathPairs(createPathFilePairs("*", true), pairs, "*", t)
+	pairs = []PathFilePair{{"*/*", "*"}}
+	validatePathPairs(createPathFilePairs("*/*", true), pairs, "*/*", t)
+	pairs = []PathFilePair{{"*/*", "a.z"}}
+	validatePathPairs(createPathFilePairs("*/a.z", true), pairs, "*/a.z", t)
+	pairs = []PathFilePair{{"*/*", "*"}}
+	validatePathPairs(createPathFilePairs("*/*", false), pairs, "*/*", t)
+	pairs = []PathFilePair{{".", "a"}}
+	validatePathPairs(createPathFilePairs("a", false), pairs, "a", t)
+	pairs = []PathFilePair{{"", "*"}}
+	validatePathPairs(createPathFilePairs("/*", false), pairs, "/*", t)
+	pairs = []PathFilePair{{"", "a*b"}}
+	validatePathPairs(createPathFilePairs("/a*b", false), pairs, "a*b", t)
+}
+
+func TestCreatePathFolderPairs(t *testing.T) {
+	pairs := []PathFilePair{{"*","*"}, {"*\\*","*"}}
+	validatePathPairs(createPathFolderPairs("repo/*/*/"), pairs, "repo/*/*/", t)
+	pairs = []PathFilePair{{".","*"}, {"*","*"}}
+	validatePathPairs(createPathFolderPairs("repo/*/"), pairs, "repo/*/", t)
+}
+
+func validatePathPairs(actual, expected []PathFilePair, pattern string, t *testing.T) {
+	if len(actual) != len(expected) {
+		t.Error("Wrong path pairs for pattern: " + pattern)
+	}
+	for _, pair := range expected {
+		found := false
+		for _,testPair := range actual {
+			if pair.path == testPair.path && pair.file== testPair.file {
+				found = true
+			}
+		}
+		if found == false {
+			t.Error("Wrong path pairs for pattern: " + pattern + " , missing ", pair)
+		}
+	}
+}

@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
@@ -18,7 +18,7 @@ func DeletePackage(packageDetails *utils.VersionDetails, bintrayDetails *config.
 
 	log.Info("Deleting package...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
+	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}

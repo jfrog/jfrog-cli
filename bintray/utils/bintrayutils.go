@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"strings"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -19,7 +20,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 	cleanPath = strings.Replace(cleanPath, ")", "", -1)
 	downloadPath := path.Join(pathDetails.Subject, pathDetails.Repo, cleanPath)
 
-	fileName, filePath := ioutils.GetFileAndDirFromPath(cleanPath)
+	fileName, filePath := fileutils.GetFileAndDirFromPath(cleanPath)
 
 	url := bintrayDetails.DownloadServerUrl + downloadPath
 	if flags.IncludeUnpublished {
@@ -28,8 +29,8 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 	log.Info(logMsgPrefix + "Downloading", downloadPath)
 
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
-	var details *ioutils.FileDetails
-	details, err = ioutils.GetRemoteFileDetails(url, httpClientsDetails)
+	var details *fileutils.FileDetails
+	details, err = httputils.GetRemoteFileDetails(url, httpClientsDetails)
 	if err != nil {
 		err = cliutils.CheckError(errors.New("Bintray " + err.Error()))
 		if err != nil {
@@ -44,7 +45,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 		return
 	}
 
-	localPath, localFileName := ioutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, flags.Flat)
+	localPath, localFileName := fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, flags.Flat)
 	var shouldDownload bool
 	shouldDownload, err = shouldDownloadFile(path.Join(localPath, localFileName), details)
 	if err != nil {
@@ -58,7 +59,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 	// Check if the file should be downloaded concurrently.
 	if flags.SplitCount == 0 || flags.MinSplitSize < 0 || flags.MinSplitSize * 1000 > details.Size {
 		// File should not be downloaded concurrently. Download it as one block.
-		resp, err := ioutils.DownloadFile(url, localPath, localFileName, httpClientsDetails)
+		resp, err := httputils.DownloadFile(url, localPath, localFileName, httpClientsDetails)
 		if err != nil {
 			return err
 		}
@@ -71,13 +72,13 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 		var resp *http.Response
 		var redirectUrl string
 		resp, redirectUrl, err =
-				ioutils.DownloadFileNoRedirect(url, localPath, localFileName, httpClientsDetails)
+				httputils.DownloadFileNoRedirect(url, localPath, localFileName, httpClientsDetails)
 		// There are two options now. Either the file has just been downloaded as one block, or
 		// we got a redirect to DSN download URL. In case of the later, we should download the file
 		// concurrently from the DSN URL.
 		// 'err' is not nil in case 'redirectUrl' was returned.
 		if redirectUrl != "" {
-			concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
+			concurrentDownloadFlags := httputils.ConcurrentDownloadFlags{
 				DownloadPath: redirectUrl,
 				FileName:     localFileName,
 				LocalPath:    localPath,
@@ -85,7 +86,7 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 				SplitCount:   flags.SplitCount,
 				Flat:         flags.Flat}
 
-			ioutils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
+			httputils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 		} else {
 			err = cliutils.CheckError(err)
 			if err != nil {
@@ -97,15 +98,15 @@ flags *DownloadFlags, logMsgPrefix string) (err error) {
 	return
 }
 
-func shouldDownloadFile(localFilePath string, remoteFileDetails *ioutils.FileDetails) (bool, error) {
-	exists, err := ioutils.IsFileExists(localFilePath)
+func shouldDownloadFile(localFilePath string, remoteFileDetails *fileutils.FileDetails) (bool, error) {
+	exists, err := fileutils.IsFileExists(localFilePath)
 	if err != nil {
 		return false, err
 	}
 	if !exists {
 		return true, nil
 	}
-	localFileDetails, err := ioutils.GetFileDetails(localFilePath)
+	localFileDetails, err := fileutils.GetFileDetails(localFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -183,8 +184,8 @@ func CreatePathDetails(str string) (*PathDetails, error) {
 		Path:    path}, nil
 }
 
-func GetBintrayHttpClientDetails(bintrayDetails *config.BintrayDetails) ioutils.HttpClientDetails {
-	return ioutils.HttpClientDetails{
+func GetBintrayHttpClientDetails(bintrayDetails *config.BintrayDetails) httputils.HttpClientDetails {
+	return httputils.HttpClientDetails{
 		User:     bintrayDetails.User,
 		Password: bintrayDetails.Key}
 }

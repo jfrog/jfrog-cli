@@ -7,7 +7,8 @@ import (
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"path"
 	"io/ioutil"
 	"encoding/json"
@@ -16,21 +17,30 @@ import (
 
 var bintrayConfig *config.BintrayDetails
 var bintrayCli *tests.JfrogCli
+var bintrayOrganization string
 
 func InitBintrayTests() {
 	if !*tests.TestBintray {
 		return
 	}
 	initBintrayCredentials()
+	initBintrayOrg()
 	deleteBintrayRepo()
 	createBintrayRepo()
 	bintrayCli = tests.NewJfrogCli(main, "jfrog bt", "--user=" + bintrayConfig.User + " --key=" + bintrayConfig.Key)
 }
 
+func initBintrayOrg() {
+	bintrayOrganization = bintrayConfig.User
+	if *tests.BtOrganization != "" {
+		bintrayOrganization = *tests.BtOrganization
+	}
+}
+
 func TestBintrayPackages(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/testPackage"
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/testPackage"
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
 	bintrayCli.Exec("package-show", packagePath)
 	bintrayCli.Exec("package-update", packagePath, "--licenses=GPL-3.0 --vcs-url=other.url.com")
@@ -42,7 +52,7 @@ func TestBintrayPackages(t *testing.T) {
 func TestBintrayVersions(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/testPackage"
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/testPackage"
 	versionPath := packagePath + "/1.0"
 
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
@@ -60,7 +70,7 @@ func TestBintraySimpleUpload(t *testing.T) {
 	initBintrayTest(t)
 
 	packageName := "simpleUploadPackage"
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
 	versionName := "1.0"
 	versionPath := packagePath + "/" + versionName
 
@@ -88,7 +98,7 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 	initBintrayTest(t)
 
 	packageName := "simpleUploadPackage"
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
 	versionName := "1.0"
 	versionPath := packagePath + "/" + versionName
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
@@ -116,7 +126,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	initBintrayTest(t)
 	filename := "cliTestFile.txt"
 	testFileRel := "~/cliTestFile.*"
-	testFileAbs := ioutils.GetHomeDir() + "/" + filename
+	testFileAbs := fileutils.GetHomeDir() + "/" + filename
 
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbs, d1, 0644)
@@ -125,7 +135,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	}
 
 	packageName := "simpleUploadHomePackage"
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + packageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
 	versionName := "1.0"
 	versionPath := packagePath + "/" + versionName
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
@@ -149,7 +159,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 func TestBintrayUploadOverride(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
@@ -180,7 +190,7 @@ func TestBintrayUploads(t *testing.T) {
 func TestBintrayLogs(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
@@ -195,7 +205,7 @@ func TestBintrayLogs(t *testing.T) {
 func TestBintrayFileDownloads(t *testing.T) {
 	initBintrayTest(t)
 
-	repositoryPath := bintrayConfig.User + "/" + tests.BintrayRepo1
+	repositoryPath := bintrayOrganization + "/" + tests.BintrayRepo1
 	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
@@ -207,12 +217,12 @@ func TestBintrayFileDownloads(t *testing.T) {
 	bintrayCli.Exec("download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true")
 	bintrayCli.Exec("download-file", repositoryPath + "/" + tests.GetTestResourcesPath()[1:] + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
 
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a1.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "x.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "zc.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a" + ioutils.GetFileSeperator() + "fullpatha1.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a1.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "x.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "zc.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "fullpatha1.in",
 	}
 	tests.IsExistLocally(expected, paths, t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -222,7 +232,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 func TestBintrayVersionDownloads(t *testing.T) {
 	initBintrayTest(t)
 
-	repositoryPath := bintrayConfig.User + "/" + tests.BintrayRepo1
+	repositoryPath := bintrayOrganization + "/" + tests.BintrayRepo1
 	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
@@ -230,17 +240,17 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
 	bintrayCli.Exec("download-ver", versionPath, tests.Out + "/bintray/", "--unpublished=true")
 
-	paths, _ := ioutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a1.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a2.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "a3.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "b1.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "b2.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "b3.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "c1.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "c2.in",
-		tests.Out + ioutils.GetFileSeperator() + "bintray" + ioutils.GetFileSeperator() + "c3.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a1.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a2.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a3.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b1.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b2.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b3.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c1.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c2.in",
+		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c3.in",
 	}
 	tests.IsExistLocally(expected, paths, t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -304,7 +314,7 @@ func cleanBintrayTest() {
 }
 
 func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.PackageSearchResultItem) {
-	packagePath := bintrayConfig.User + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
@@ -314,13 +324,13 @@ func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.Pac
 }
 
 func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
-	apiUrl := bintrayConfig.ApiUrl + path.Join("packages", bintrayConfig.User, tests.BintrayRepo1, packageName, "files?include_unpublished=1")
-	clientDetails := ioutils.HttpClientDetails{
+	apiUrl := bintrayConfig.ApiUrl + path.Join("packages", bintrayOrganization, tests.BintrayRepo1, packageName, "files?include_unpublished=1")
+	clientDetails := httputils.HttpClientDetails{
 		User:       bintrayConfig.User,
 		Password:   bintrayConfig.Key,
 		Headers:    map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, _, err := ioutils.SendGet(apiUrl, true, clientDetails)
+	resp, body, _, err := httputils.SendGet(apiUrl, true, clientDetails)
 	if cliutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -382,13 +392,13 @@ func createBintrayRepo() {
 		os.Exit(1)
 	}
 
-	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayConfig.User, tests.BintrayRepo1)
-	clientDetails := ioutils.HttpClientDetails{
+	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayOrganization, tests.BintrayRepo1)
+	clientDetails := httputils.HttpClientDetails{
 		User:       bintrayConfig.User,
 		Password:   bintrayConfig.Key,
 		Headers:    map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := ioutils.SendPost(apiUrl, content, clientDetails)
+	resp, body, err := httputils.SendPost(apiUrl, content, clientDetails)
 	if cliutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -401,13 +411,13 @@ func createBintrayRepo() {
 }
 
 func deleteBintrayRepo() {
-	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayConfig.User, tests.BintrayRepo1)
-	clientDetails := ioutils.HttpClientDetails{
+	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayOrganization, tests.BintrayRepo1)
+	clientDetails := httputils.HttpClientDetails{
 		User:       bintrayConfig.User,
 		Password:   bintrayConfig.Key,
 		Headers:    map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := ioutils.SendDelete(apiUrl, nil, clientDetails)
+	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
 	if cliutils.CheckError(err) != nil {
 		os.Exit(1)
 	}

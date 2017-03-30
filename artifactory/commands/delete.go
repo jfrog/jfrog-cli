@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -15,23 +15,30 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	if err != nil {
 		return
 	}
-	resultItems, err := GetPathsToDelete(deleteSpec, flags)
+	resultItems, err := getPathsToDeleteInternal(deleteSpec, flags)
 	if err != nil {
 		return err
 	}
-	if err = DeleteFiles(resultItems, flags); err != nil {
+	if err = deleteFiles(resultItems, flags); err != nil {
 		return
 	}
 	log.Info("Deleted", len(resultItems), "items.")
 	return
 }
 
-func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
+func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) ([]utils.AqlSearchResultItem, error) {
+	if err := utils.PreCommandSetup(flags); err != nil {
+		return nil, err
+	}
+	return getPathsToDeleteInternal(deleteSpec, flags)
+}
+
+func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		// Search paths using AQL.
 		if deleteSpec.Get(i).GetSpecType() == utils.AQL {
-			if resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i).Aql, flags); e == nil {
+			if resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i), flags); e == nil {
 				resultItems = append(resultItems, resultItemsTemp...)
 				continue
 			} else {
@@ -50,11 +57,7 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultIt
 		}
 		// Directory with wildcard pattern, searching with special AQL query.
 		if directoryDelete, e := isDirectoryDelete(deleteSpec.Get(i)); directoryDelete && e == nil {
-			query, e := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
-			if e != nil {
-				err = e
-				return
-			}
+			query := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
 			tempResultItems, e := utils.AqlSearch(query, flags)
 			if e != nil {
 				err = e
@@ -68,13 +71,7 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultIt
 			return
 		}
 		// All other use cases, pattern with/without wildcard files.
-		isRecursive, e := cliutils.StringToBool(deleteSpec.Get(i).Recursive, true)
-		if e != nil {
-			err = e
-			return
-		}
-		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i).Pattern,
-			isRecursive, deleteSpec.Get(i).Props, flags)
+		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i), flags)
 		if e != nil {
 			err = e
 			return
@@ -90,7 +87,7 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultIt
 //    2) The deleteFile doest contains wildcards
 //    3) The user hasn't sent any props
 //    4) The delete is recursive
-func isSimpleDirectoryDelete(deleteFile *utils.Files) (bool, error) {
+func isSimpleDirectoryDelete(deleteFile *utils.File) (bool, error) {
 	isRecursive, err := cliutils.StringToBool(deleteFile.Recursive, true)
 	if err != nil {
 		return false, err
@@ -100,7 +97,7 @@ func isSimpleDirectoryDelete(deleteFile *utils.Files) (bool, error) {
 
 // The diffrence between isSimpleDirectoryDelete to isDirectoryDelete is:
 // isDirectoryDelete returns true when the deleteFile path contains wildcatds.
-func isDirectoryDelete(deleteFile *utils.Files) (bool, error) {
+func isDirectoryDelete(deleteFile *utils.File) (bool, error) {
 	isRecursive, err := cliutils.StringToBool(deleteFile.Recursive, true)
 	if err != nil {
 		return false, err
@@ -137,6 +134,13 @@ func reduceDirResult(foldersToDelete []utils.AqlSearchResultItem) []utils.AqlSea
 }
 
 func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
+	if err := utils.PreCommandSetup(flags); err != nil {
+		return err
+	}
+	return deleteFiles(resultItems, flags)
+}
+
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
 	for _, v := range resultItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {
@@ -149,7 +153,7 @@ func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) er
 
 		log.Info("Deleting:", v.GetFullUrl())
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-		resp, body, err := ioutils.SendDelete(fileUrl, nil, httpClientsDetails)
+		resp, body, err := httputils.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
 			return err
 		}

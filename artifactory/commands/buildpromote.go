@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
@@ -46,7 +46,7 @@ func BuildPromote(buildName, buildNumber, targetRepo string, flags *BuildPromoti
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
 	utils.SetContentType("application/vnd.org.jfrog.artifactory.build.PromotionRequest+json", &httpClientsDetails.Headers)
 
-	resp, body, err := ioutils.SendPost(requestFullUrl, requestContent, httpClientsDetails)
+	resp, body, err := httputils.SendPost(requestFullUrl, requestContent, httpClientsDetails)
 	if err != nil {
 		return err
 	}

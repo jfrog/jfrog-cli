@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -25,7 +25,7 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.Bi
 
 	log.Info("Getting version details...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, _, _ := ioutils.SendGet(url, true, httpClientsDetails)
+	resp, body, _, _ := httputils.SendGet(url, true, httpClientsDetails)
 
 	if resp.StatusCode != 200 {
 		return cliutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + cliutils.IndentJson(body)))

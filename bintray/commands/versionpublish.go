@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -20,7 +20,7 @@ func PublishVersion(versionDetails *utils.VersionDetails, bintrayDetails *config
 
 	log.Info("Publishing version...")
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	resp, body, err := ioutils.SendPost(url, nil, httpClientsDetails)
+	resp, body, err := httputils.SendPost(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}

@@ -5,11 +5,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/commands"
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/commands/rtinstances"
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"fmt"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
 )
 
 func GetCommands() []cli.Command {
@@ -288,7 +288,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	    return
 	}
 	flags.LicensePath = c.String("license-path")
-	if strings.HasSuffix(flags.LicensePath, ioutils.GetFileSeperator()) {
+	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeperator()) {
 		cliutils.Exit(cliutils.ExitCodeError, "The --license-path option cannot be a directory")
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {

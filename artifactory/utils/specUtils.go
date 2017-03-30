@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"strings"
 	"strconv"
@@ -18,25 +18,27 @@ type Aql struct {
 	ItemsFind string `json:"items.find"`
 }
 
-type Files struct {
-	Pattern   string
-	Target    string
-	Props     string
-	Recursive string
-	Flat      string
-	Regexp    string
-	Aql       Aql
+type File struct {
+	Pattern     string
+	Target      string
+	Props       string
+	Recursive   string
+	Flat        string
+	Regexp      string
+	Aql         Aql
+	Build       string
+	IncludeDirs string
 }
 
 type SpecFiles struct {
-	Files []Files
+	Files []File
 }
 
-func (spec *SpecFiles) Get(index int) *Files {
+func (spec *SpecFiles) Get(index int) *File {
 	if index < len(spec.Files) {
 		return &spec.Files[index]
 	}
-	return new(Files)
+	return new(File)
 }
 
 func (aql *Aql) UnmarshalJSON(value []byte) error {
@@ -50,7 +52,7 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 
 func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
-	content, err := ioutils.ReadFile(specFilePath)
+	content, err := fileutils.ReadFile(specFilePath)
 	if cliutils.CheckError(err) != nil {
 		return
 	}
@@ -62,32 +64,38 @@ func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	return
 }
 
-func CreateSpec(pattern, target, props string, recursive, flat, regexp bool) (spec *SpecFiles) {
+func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, includeDirs bool) (spec *SpecFiles) {
 	spec = &SpecFiles{
-		Files: []Files{
+		Files: []File{
 			{
-				Pattern:   pattern,
-				Target:    target,
-				Props:     props,
-				Recursive: strconv.FormatBool(recursive),
-				Flat:      strconv.FormatBool(flat),
-				Regexp:    strconv.FormatBool(regexp),
+				Pattern:     pattern,
+				Target:      target,
+				Props:       props,
+				Build:       build,
+				Recursive:   strconv.FormatBool(recursive),
+				Flat:        strconv.FormatBool(flat),
+				Regexp:      strconv.FormatBool(regexp),
+				IncludeDirs: strconv.FormatBool(includeDirs),
 			},
 		},
 	}
 	return spec
 }
 
-func (files Files) GetSpecType() (specType SpecType) {
+func (file File) GetSpecType() (specType SpecType) {
 	switch {
-	case files.Pattern != "" && IsWildcardPattern(files.Pattern):
+	case file.Pattern != "" && (IsWildcardPattern(file.Pattern) || file.Build != ""):
 		specType = WILDCARD
-	case files.Pattern != "":
+	case file.Pattern != "":
 		specType = SIMPLE
-	case files.Aql.ItemsFind != "" :
+	case file.Aql.ItemsFind != "" :
 		specType = AQL
 	}
 	return specType
+}
+
+func (file File) IsIncludeDirs() bool {
+	return file.IncludeDirs == "true"
 }
 
 type SpecType string

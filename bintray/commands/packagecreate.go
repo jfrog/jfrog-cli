@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
@@ -34,5 +34,5 @@ func DoCreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageF
 	url := flags.BintrayDetails.ApiUrl + "packages/" + packageDetails.Subject + "/" +
 			packageDetails.Repo
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
-	return ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	return httputils.SendPost(url, []byte(data), httpClientsDetails)
 }

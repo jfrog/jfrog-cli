@@ -3,7 +3,8 @@ package rtinstances
 import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"encoding/json"
 	"io/ioutil"
@@ -24,7 +25,7 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := ioutils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
     if err != nil {
         return err
     }
@@ -84,7 +85,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		return
 	}
 	var dir bool
-	dir, err = ioutils.IsDir(filepath)
+	dir, err = fileutils.IsDir(filepath)
 	if err != nil {
 	    return
 	}
@@ -95,7 +96,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
         }
 	}
 	var exists bool
-	exists, err = ioutils.IsFileExists(filepath)
+	exists, err = fileutils.IsFileExists(filepath)
 	if err != nil {
 	    return
 	}
@@ -105,8 +106,8 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
             return
         }
 	}
-	_, directory := ioutils.GetFileAndDirFromPath(filepath)
-	isPathExists := ioutils.IsPathExists(directory)
+	_, directory := fileutils.GetFileAndDirFromPath(filepath)
+	isPathExists := fileutils.IsPathExists(directory)
 	if !isPathExists {
 		os.MkdirAll(directory, 0700)
 	}

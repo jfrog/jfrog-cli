@@ -4,7 +4,7 @@ package rtinstances
 import (
 	"github.com/jfrogdev/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"encoding/json"
 	"errors"
@@ -22,7 +22,7 @@ func DetachLic(instanceName string, flags *DetachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + bucketId + "/licenses";
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := ioutils.SendDelete(missionControlUrl, requestContent, httpClientDetails)
+	resp, body, err := httputils.SendDelete(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 	    return err
 	}

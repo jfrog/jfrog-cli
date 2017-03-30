@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -17,7 +17,7 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Deleting entitlement...")
-	resp, body, err := ioutils.SendDelete(url, nil, httpClientsDetails)
+	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}

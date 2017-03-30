@@ -18,32 +18,23 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 		return err
 	}
 
-	buildData, err := utils.ReadBuildInfoFiles(buildName, buildNumber)
+	buildInfoData, err := utils.ReadBuildInfoFiles(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
 
-	if len(buildData) == 0 {
+	if len(buildInfoData) == 0 {
 		return cliutils.CheckError(fmt.Errorf("Can't find any files related to build name: %q, number: %q", buildName, buildNumber))
 	}
-	sort.Sort(buildData)
-	buildInfo := createNewBuildInfo()
-	buildInfo.Name = buildName
-	buildInfo.Number = buildNumber
-	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	sort.Sort(buildInfoData)
+	buildInfo, err := createBuildInfo(buildName, buildNumber, buildInfoData, flags)
 	if err != nil {
 		return err
 	}
-	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	artifactsSet, dependenciesSet, env, err := prepareBuildInfoData(buildData, createIncludeFilter(flags), createExcludeFilter(flags))
-	if err != nil {
-		return err
-	}
-	if len(env) != 0 {
-		buildInfo.Propertires = env
-	}
-	module := createModule(buildName, artifactsSet, dependenciesSet)
-	buildInfo.Modules = append(buildInfo.Modules, module)
+	return sendBuildInfo(buildName, buildNumber, buildInfo, flags)
+}
+
+func sendBuildInfo(buildName, buildNumber string, buildInfo *BuildInfo, flags *utils.BuildInfoFlags) error {
 	marshaledBuildInfo, err := json.Marshal(buildInfo)
 	if cliutils.CheckError(err) != nil {
 		return err
@@ -71,10 +62,36 @@ func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags) er
 	return nil
 }
 
-func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactsBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, error) {
+func createBuildInfo(buildName, buildNumber string, buildInfoRawData utils.BuildInfoData, flags *utils.BuildInfoFlags) (*BuildInfo, error) {
+	buildInfo := newBuildInfo()
+	buildInfo.Name = buildName
+	buildInfo.Number = buildNumber
+	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return nil, err
+	}
+	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
+	artifactsSet, dependenciesSet, env, vcs, err := prepareBuildInfoData(buildInfoRawData, createIncludeFilter(flags), createExcludeFilter(flags))
+	if err != nil {
+		return nil, err
+	}
+	if len(env) != 0 {
+		buildInfo.Properties = env
+	}
+	if vcs != (utils.Vcs{}) {
+		buildInfo.VcsRevision = vcs.VcsRevision
+		buildInfo.VcsUrl = vcs.VcsUrl
+	}
+	module := createModule(buildName, artifactsSet, dependenciesSet)
+	buildInfo.Modules = append(buildInfo.Modules, module)
+	return buildInfo, nil
+}
+
+func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfoData, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactsBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, utils.Vcs, error) {
 	var artifacts []utils.ArtifactsBuildInfo
 	var dependencies []utils.DependenciesBuildInfo
 	var env utils.BuildEnv
+	var vcs utils.Vcs
 	env = make(map[string]string)
 	for _, buildInfoData := range artifactsDataWrapper {
 		switch {
@@ -86,21 +103,23 @@ func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfo, includeFilter, e
 			for _, v := range buildInfoData.Dependencies {
 				dependencies = append(dependencies, v)
 			}
+		case buildInfoData.Vcs != nil:
+			vcs = *buildInfoData.Vcs
 		case buildInfoData.Env != nil:
 			envAfterIncludeFilter, e := includeFilter(buildInfoData.Env)
 			if cliutils.CheckError(e) != nil {
-				return artifacts, dependencies, env, e
+				return artifacts, dependencies, env, vcs, e
 			}
 			envAfterExcludeFilter, e := excludeFilter(envAfterIncludeFilter)
 			if cliutils.CheckError(e) != nil {
-				return artifacts, dependencies, env, e
+				return artifacts, dependencies, env, vcs, e
 			}
 			for k, v := range envAfterExcludeFilter {
 				env[k] = v
 			}
 		}
 	}
-	return artifacts, dependencies, env, nil
+	return artifacts, dependencies, env, vcs, nil
 }
 
 func createModule(buildName string, artifacts []utils.ArtifactsBuildInfo, dependencies []utils.DependenciesBuildInfo) (module *Modules) {
@@ -121,7 +140,9 @@ type BuildInfo struct {
 	BuildAgent  *CliAgent      `json:"buildAgent,omitempty"`
 	Modules     []*Modules     `json:"modules,omitempty"`
 	Started     string         `json:"started,omitempty"`
-	Propertires utils.BuildEnv `json:"properties,omitempty"`
+	Properties  utils.BuildEnv `json:"properties,omitempty"`
+	VcsUrl      string 		   `json:"vcsUrl,omitempty"`
+	VcsRevision string 		   `json:"vcsRevision,omitempty"`
 }
 
 type CliAgent struct {
@@ -136,7 +157,7 @@ type Modules struct {
 	Dependencies []utils.DependenciesBuildInfo `json:"dependencies,omitempty"`
 }
 
-func createNewBuildInfo() (buildInfo *BuildInfo) {
+func newBuildInfo() (buildInfo *BuildInfo) {
 	buildInfo = new(BuildInfo)
 	buildInfo.Agent = new(CliAgent)
 	buildInfo.Agent.Name = cliutils.CliAgent

@@ -5,57 +5,115 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/ioutils"
 	"strings"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
-func Config(details, defaultDetails *config.ArtifactoryDetails, interactive,
-    shouldEncPassword bool) (*config.ArtifactoryDetails, error) {
+func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
+shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 
-    if details == nil {
-        details = new(config.ArtifactoryDetails)
-    }
-    var err error
+	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails)
+	if err != nil {
+		return nil, err
+	}
 	if interactive {
-	    if defaultDetails == nil {
-            defaultDetails, err = config.ReadArtifactoryConf()
-            if err != nil {
-                return nil, err
-            }
-	    }
-		if details.Url == "" {
-			ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
-		}
-		if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
-			err = readSshKeyPathFromConsole(details, defaultDetails)
-            if err != nil {
-                return nil, err
-            }
-		} else {
-		    if details.ApiKey == "" && details.Password == "" {
-		        ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
-		    }
-			if details.ApiKey == "" {
-				ioutils.ReadCredentialsFromConsole(details, defaultDetails)
-			}
+		err = getConfigurationFromUser(details, defaultDetails)
+		if err != nil {
+			return nil, err
 		}
 	}
 	err = checkSingleAuthMethod(details)
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
 		details, err = encryptPassword(details)
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 	}
-	err = config.SaveArtifactoryConf(details)
+	copyDetails(details, defaultDetails)
+	err = config.SaveArtifactoryConf(configurations)
 	return details, err
+}
+
+func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
+	configurations, err := config.GetAllArtifactoryConfigs()
+	if err != nil {
+		return details, defaultDetails, configurations, err
+	}
+	if details == nil {
+		details = new(config.ArtifactoryDetails)
+	}
+	if defaultDetails == nil {
+		defaultDetails, configurations, details, err = handleEmptyDefaultDetails(serverId, configurations, details)
+	} else {
+		// We got here from offer config flow
+		configurations = append(configurations, defaultDetails)
+		defaultDetails.IsDefault = true
+	}
+
+	return details, defaultDetails, configurations, err
+}
+
+func handleEmptyDefaultDetails(serverId string, configurations []*config.ArtifactoryDetails, details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, []*config.ArtifactoryDetails, *config.ArtifactoryDetails, error) {
+	var defaultDetails *config.ArtifactoryDetails
+	var err error
+	// If we don't have serverId we need to search for the default server
+	if serverId == "" {
+		defaultDetails, err = config.GetDefaultArtifactoryConf(configurations)
+		// No default was found
+		if err == nil && defaultDetails.IsEmpty() {
+			configurations = append(configurations, defaultDetails)
+		}
+	} else {
+		defaultDetails = config.GetArtifactoryConfByServerId(serverId, configurations)
+		// No server with serverId was found
+		if defaultDetails.IsEmpty() {
+			defaultDetails.IsDefault = len(configurations) == 0
+			configurations = append(configurations, defaultDetails)
+			// The new server details should have the serverId the user configured
+			details.ServerId = serverId
+		}
+	}
+	return defaultDetails, configurations, details, err
+}
+
+func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {
+	if details.Url == "" {
+		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+	}
+	if details.ServerId == "" {
+		ioutils.ScanFromConsole("Artifactory server name", &details.ServerId, defaultDetails.ServerId)
+	}
+	if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
+		err := readSshKeyPathFromConsole(details, defaultDetails)
+		if err != nil {
+			return err
+		}
+	} else {
+		if details.ApiKey == "" && details.Password == "" {
+			ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
+		}
+		if details.ApiKey == "" {
+			ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+		}
+	}
+	return nil
+}
+
+func copyDetails(src, dst *config.ArtifactoryDetails) {
+	if dst == nil {
+		dst = new(config.ArtifactoryDetails)
+	}
+	isDefault := dst.IsDefault
+	*dst = *src
+	dst.IsDefault = isDefault
 }
 
 func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
@@ -64,7 +122,7 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	}
 
 	details.SshKeyPath = cliutils.ReplaceTildeWithUserHome(details.SshKeyPath)
-	exists, err := ioutils.IsFileExists(details.SshKeyPath)
+	exists, err := fileutils.IsFileExists(details.SshKeyPath)
 	if err != nil {
 	    return err
 	}
@@ -74,42 +132,115 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	return nil
 }
 
-func ShowConfig() error {
-	details, err := config.ReadArtifactoryConf()
+func ShowConfig(serverName string) error {
+	var configuration []*config.ArtifactoryDetails
+	if serverName != "" {
+		singleConfig, err := config.GetArtifactorySpecificConfig(serverName)
+		if err != nil {
+			return err
+		}
+		configuration = []*config.ArtifactoryDetails{singleConfig}
+	} else {
+		var err error
+		configuration, err = config.GetAllArtifactoryConfigs()
+		if err != nil {
+			return err
+		}
+	}
+	printConfigs(configuration)
+	return nil
+}
+
+func printConfigs(configuration []*config.ArtifactoryDetails) {
+	for _, details := range configuration {
+		if details.Url != "" {
+			fmt.Println("Url: " + details.Url)
+		}
+		if details.ApiKey != "" {
+			fmt.Println("API key: " + details.ApiKey)
+		}
+		if details.User != "" {
+			fmt.Println("User: " + details.User)
+		}
+		if details.Password != "" {
+			fmt.Println("Password: ***")
+		}
+		if details.SshKeyPath != "" {
+			fmt.Println("SSH key file path: " + details.SshKeyPath)
+		}
+		if details.ServerId != "" {
+			fmt.Println("Server ID: " + details.ServerId)
+		}
+		fmt.Println("Default: ", details.IsDefault)
+		fmt.Println()
+	}
+}
+
+func DeleteConfig(serverName string) error {
+	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
-	    return err
+		return err
 	}
-	if details.Url != "" {
-		fmt.Println("Url: " + details.Url)
+	var isDefault, isFoundName bool
+	for i, config := range configurations {
+		if config.ServerId == serverName {
+			isDefault = config.IsDefault
+			configurations = append(configurations[:i], configurations[i+1:]...)
+			isFoundName = true
+			break
+		}
+
 	}
-	if details.ApiKey != "" {
-		fmt.Println("API key: " + details.ApiKey)
+	if isDefault && len(configurations) > 0 {
+		configurations[0].IsDefault = true
 	}
-	if details.User != "" {
-		fmt.Println("User: " + details.User)
+	if isFoundName {
+		return config.SaveArtifactoryConf(configurations)
 	}
-	if details.Password != "" {
-		fmt.Println("Password: ***")
+	return nil
+}
+
+// Set the default configuration
+func Use(serverName string) error {
+	configurations, err := config.GetAllArtifactoryConfigs()
+	if err != nil {
+		return err
 	}
-	if details.SshKeyPath != "" {
-		fmt.Println("SSH key file path: " + details.SshKeyPath)
+	var isFoundName bool
+	for _, config := range configurations {
+		if config.ServerId == serverName {
+			// In case the serverId is already default we can return, no more changes needed
+			if config.IsDefault {
+				return nil
+			}
+			config.IsDefault = true
+			isFoundName = true
+		} else {
+			config.IsDefault = false
+		}
+	}
+	// Need to save only if we found a server with the serverId
+	if isFoundName {
+		return config.SaveArtifactoryConf(configurations)
+	} else {
+		log.Info("Couldn't find matching server, no changes were made.")
 	}
 	return nil
 }
 
 func ClearConfig() {
-	config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+	config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 }
 
-func GetConfig() (*config.ArtifactoryDetails, error) {
-	return config.ReadArtifactoryConf()
+func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
+	return config.GetArtifactorySpecificConfig(serverId)
 }
 
 func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, error) {
 	if details.Password == "" {
 		return details, nil
 	}
-	log.Info("\nEncrypting password...")
+	log.Info("Encrypting password...")
 	response, encPassword, err := utils.GetEncryptedPasswordFromArtifactory(details)
 	if err != nil {
 		return nil, err
@@ -137,7 +268,7 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) (err error) {
 }
 
 type ConfigFlags struct {
-	ArtDetails   *config.ArtifactoryDetails
-	Interactive  bool
-	EncPassword  bool
+	ArtDetails  *config.ArtifactoryDetails
+	Interactive bool
+	EncPassword bool
 }

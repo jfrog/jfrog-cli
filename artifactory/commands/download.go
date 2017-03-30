@@ -4,14 +4,17 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"strconv"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"github.com/gofrog/parallel"
 	"path"
 	"path/filepath"
 	"os"
+	"sort"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -27,11 +30,11 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 		}
 	}
 	if !flags.DryRun {
-		err = ioutils.CreateTempDirPath()
+		err = fileutils.CreateTempDirPath()
 		if err != nil {
 			return
 		}
-		defer ioutils.RemoveTempDir()
+		defer fileutils.RemoveTempDir()
 	}
 	buildDependencies, err := downloadFiles(downloadSpec, flags)
 	if err != nil {
@@ -49,18 +52,18 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
 
 func downloadFiles(downloadSpec *utils.SpecFiles, flags *DownloadFlags) ([][]utils.DependenciesBuildInfo, error) {
 	buildDependencies := make([][]utils.DependenciesBuildInfo, flags.Threads)
-	producerConsumer := utils.NewProducerConsumer(flags.Threads, true)
+	producerConsumer := parallel.NewBounedRunner(flags.Threads, true)
 	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := createFileHandlerFunc(buildDependencies, flags)
-	log.Info("Searching artifacts...")
+	log.Info("Searching items to download...")
 	prepareTasks(producerConsumer, downloadSpec, fileHandlerFunc, errorsQueue, flags)
 	err := performTasks(producerConsumer, errorsQueue)
 	return buildDependencies, err
 }
 
-func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, flags *DownloadFlags) {
+func prepareTasks(producer parallel.Runner, downloadSpec *utils.SpecFiles, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, flags *DownloadFlags) {
 	go func() {
-		defer producer.Close()
+		defer producer.Done()
 		var err error
 		for i := 0; i < len(downloadSpec.Files); i++ {
 			var resultItems []utils.AqlSearchResultItem
@@ -69,7 +72,7 @@ func prepareTasks(producer utils.Producer, downloadSpec *utils.SpecFiles, fileCo
 			case utils.WILDCARD, utils.SIMPLE:
 				resultItems, err = collectFilesUsingWildcardPattern(fileSpec, flags)
 			case utils.AQL:
-				resultItems, err = utils.AqlSearchBySpec(fileSpec.Aql, flags)
+				resultItems, err = utils.AqlSearchBySpec(fileSpec, flags)
 			}
 
 			if err != nil {
@@ -94,19 +97,22 @@ func stripThreadIdFromBuildInfoDependencies(dependenciesBuildInfo [][]utils.Depe
 	return buildInfo
 }
 
-func collectFilesUsingWildcardPattern(fileSpec *utils.Files, flags *DownloadFlags) ([]utils.AqlSearchResultItem, error) {
-	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	return utils.AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
+func collectFilesUsingWildcardPattern(fileSpec *utils.File, flags *DownloadFlags) ([]utils.AqlSearchResultItem, error) {
+	return utils.AqlSearchDefaultReturnFields(fileSpec, flags)
 }
 
-func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, producer utils.Producer, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
+func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.File, producer parallel.Runner, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
 	flat, err := cliutils.StringToBool(fileSpec.Flat, false)
 	if err != nil {
 		return err
 	}
+	// Collect all folders path which might be needed to create.
+	// key = folder path, value = the necessary data for producing create folder task.
+	directoriesData := make(map[string]DownloadData)
+	// Store all the paths which was created implicitly due to file upload.
+	alreadyCreatedDirs := make(map[string]bool)
+	// Store all the keys of directoriesData as an array.
+	var directoriesDataKeys []string
 	for _, v := range items {
 		tempData := DownloadData{
 			Dependency: v,
@@ -114,14 +120,58 @@ func produceTasks(items []utils.AqlSearchResultItem, fileSpec *utils.Files, prod
 			Target: fileSpec.Target,
 			Flat: flat,
 		}
-		producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
+		if v.Type != "folder" {
+			// Add a task, task is a function of type TaskFunc which later on will be executed by other go routine, the communication is done using channels.
+			// The second argument is a error handling func in case the taskFunc return an error.
+			producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
+			// We don't want to create directories which are created explicitly by download files when the --include-dirs flag is used.
+			alreadyCreatedDirs[v.Path] = true
+		} else {
+			directoriesData, directoriesDataKeys = collectDirPathsToCreate(v, directoriesData, tempData, directoriesDataKeys)
+		}
 	}
+
+	addCreateDirsTasks(directoriesDataKeys, alreadyCreatedDirs, producer, fileHandler, directoriesData, errorsQueue, flat)
 	return nil
 }
 
-func performTasks(producerConsumer utils.Consumer, errorsQueue *utils.ErrorsQueue) (err error) {
+// Extract for the aqlResultItem the directory path, store the path the directoriesDataKeys and in the directoriesData map.
+// In addition directoriesData holds the correlate DownloadData for each key, later on this DownloadData will be used to create a create dir tasks if needed.
+// This function append the new data to directoriesDataKeys and to directoriesData and return the new map and the new []string
+// We are storing all the keys of directoriesData in additional array(directoriesDataKeys) so we could sort the keys and access the maps in the sorted order.
+func collectDirPathsToCreate(aqlResultItem utils.AqlSearchResultItem, directoriesData map[string]DownloadData, tempData DownloadData, directoriesDataKeys []string) (map[string]DownloadData, []string) {
+	key := aqlResultItem.Name
+	if aqlResultItem.Path != "." {
+		key = aqlResultItem.Path + "/" + aqlResultItem.Name
+	}
+	directoriesData[key] = tempData
+	directoriesDataKeys = append(directoriesDataKeys, key)
+	return directoriesData, directoriesDataKeys
+}
+
+func addCreateDirsTasks(directoriesDataKeys []string, alreadyCreatedDirs map[string]bool, producer parallel.Runner, fileHandler fileHandlerFunc, directoriesData map[string]DownloadData, errorsQueue *utils.ErrorsQueue, isFlat bool) {
+	// Longest path first
+	// We are going to create the longest path first by doing so all sub paths of the longest path will be created implicitly.
+	sort.Sort(sort.Reverse(sort.StringSlice(directoriesDataKeys)))
+	for index, v := range directoriesDataKeys {
+		// In order to avoid duplication we need to check the path wasn't already created by the previous action.
+		if v != "." && // For some files the returned path can be the root path, ".", in that case we doing need to create any directory.
+			(index == 0 || !utils.IsSubPath(directoriesDataKeys, index, "/")) {// directoriesDataKeys store all the path which might needed to be created, that's include duplicated paths.
+			                                                                     // By sorting the directoriesDataKeys we can assure that the longest path was created and therefore no need to create all it's sub paths.
+
+			// Some directories were created due to file download when we aren't in flat download flow.
+			if isFlat {
+				producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+			} else if !alreadyCreatedDirs[v] {
+				producer.AddTaskWithError(fileHandler(directoriesData[v]), errorsQueue.AddError)
+			}
+		}
+	}
+}
+
+func performTasks(consumer parallel.Runner, errorsQueue *utils.ErrorsQueue) (err error) {
 	// Blocked until finish consuming
-	producerConsumer.Run()
+	consumer.Run()
 	err = errorsQueue.GetError()
 	return
 }
@@ -154,9 +204,9 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, ac
 	return
 }
 
-func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (*ioutils.FileDetails, error) {
+func getFileRemoteDetails(downloadPath string, flags *DownloadFlags) (*fileutils.FileDetails, error) {
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	details, err := ioutils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
+	details, err := httputils.GetRemoteFileDetails(downloadPath, httpClientsDetails)
 	if err != nil {
 		err = cliutils.CheckError(errors.New("Artifactory " + err.Error()))
 		if err != nil {
@@ -177,20 +227,20 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 		bulkDownload = !acceptRange
 	}
 	if bulkDownload {
-		resp, err := ioutils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
+		resp, err := httputils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
 		if err != nil {
 			return err
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 	} else {
-		concurrentDownloadFlags := ioutils.ConcurrentDownloadFlags{
+		concurrentDownloadFlags := httputils.ConcurrentDownloadFlags{
 			DownloadPath: downloadFileDetails.DownloadPath,
 			FileName:     downloadFileDetails.LocalFileName,
 			LocalPath:    downloadFileDetails.LocalPath,
 			FileSize:     downloadFileDetails.Size,
 			SplitCount:   flags.SplitCount}
 
-		ioutils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
+		httputils.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 	}
 	return nil
 }
@@ -207,14 +257,14 @@ func isFileAcceptRange(downloadFileDetails *DownloadFileDetails, flags *Download
 }
 
 func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
-	exists, err := ioutils.IsFileExists(localFilePath)
+	exists, err := fileutils.IsFileExists(localFilePath)
 	if err != nil {
 		return false, err
 	}
 	if !exists {
 		return true, nil
 	}
-	localFileDetails, err := ioutils.GetFileDetails(localFilePath)
+	localFileDetails, err := fileutils.GetFileDetails(localFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -225,7 +275,7 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 }
 
 func removeIfSymlink(localSymlinkPath string) error {
-	if ioutils.IsPathSymlink(localSymlinkPath) {
+	if fileutils.IsPathSymlink(localSymlinkPath) {
 		if err := os.Remove(localSymlinkPath); cliutils.CheckError(err) != nil {
 			return err
 		}
@@ -235,10 +285,10 @@ func removeIfSymlink(localSymlinkPath string) error {
 
 func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlinkChecksum bool, symlinkContentChecksum string, logMsgPrefix string) error {
 	if symlinkChecksum && symlinkContentChecksum != "" {
-		if !ioutils.IsPathExists(symlinkArtifact) {
+		if !fileutils.IsPathExists(symlinkArtifact) {
 			return cliutils.CheckError(errors.New("Symlink validation failed, target doesn't exist: " + symlinkArtifact))
 		}
-		sha1, err := ioutils.CalcSha1(symlinkArtifact)
+		sha1, err := fileutils.CalcSha1(symlinkArtifact)
 		if err != nil {
 			return err
 		}
@@ -247,7 +297,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		}
 	}
 	localSymlinkPath := filepath.Join(localPath, localFileName)
-	isFileExists, err := ioutils.IsFileExists(localSymlinkPath)
+	isFileExists, err := fileutils.IsFileExists(localSymlinkPath)
 	if err != nil {
 		return err
 	}
@@ -258,7 +308,7 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		}
 	}
 	// Need to prepare the directories hierarchy
-	_, err = ioutils.CreateFilePath(localPath, localFileName)
+	_, err = fileutils.CreateFilePath(localPath, localFileName)
 	if err != nil {
 		return err
 	}
@@ -287,11 +337,12 @@ func getArtifactSymlinkChecksum(properties []utils.Property) string {
 	return getArtifactPropertyByKey(properties, utils.SYMLINK_SHA1)
 }
 
-type fileHandlerFunc func(DownloadData) utils.Task
+type fileHandlerFunc func(DownloadData) parallel.TaskFunc
 func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) fileHandlerFunc {
-	return func(downloadData DownloadData) utils.Task {
+	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
 			logMsgPrefix := cliutils.GetLogMsgPrefix(threadId, flags.DryRun)
+			dependency := createBuildDependencyItem(downloadData.Dependency)
 			downloadPath, e := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, downloadData.Dependency.GetFullUrl(), make(map[string]string))
 			if e != nil {
 				return e
@@ -306,26 +357,17 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 			if e != nil {
 				return e
 			}
-			localPath, localFileName := ioutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
+			localPath, localFileName := fileutils.GetLocalPathAndFile(downloadData.Dependency.Name, downloadData.Dependency.Path, placeHolderTarget, downloadData.Flat)
+			if downloadData.Dependency.Type == "folder" {
+				return createDir(localPath, localFileName, logMsgPrefix)
+			}
 			removeIfSymlink(filepath.Join(localPath, localFileName))
 			if flags.Symlink {
 				if isSymlink, e := createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix, downloadData, buildDependencies, threadId, flags); isSymlink {
 					return e
 				}
 			}
-			shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
-			if e != nil {
-				return e
-			}
-			dependency := createBuildDependencyItem(downloadData.Dependency)
-			if !shouldDownload {
-				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
-				log.Debug(logMsgPrefix, "File already exists locally.")
-				return nil
-			}
-
-			downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, downloadData.Dependency.Size)
-			e = downloadFile(downloadFileDetails, logMsgPrefix, flags)
+			e = downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix, downloadData, flags)
 			if e != nil {
 				return e
 			}
@@ -333,6 +375,29 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 			return nil
 		}
 	}
+}
+
+func downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix string, downloadData DownloadData, flags *DownloadFlags) error {
+	shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
+	if e != nil {
+		return e
+	}
+	if !shouldDownload {
+		log.Debug(logMsgPrefix, "File already exists locally.")
+		return nil
+	}
+	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, downloadData.Dependency.Size)
+	return downloadFile(downloadFileDetails, logMsgPrefix, flags)
+}
+
+func createDir(localPath, localFileName, logMsgPrefix string) error {
+	folderPath := filepath.Join(localPath, localFileName)
+	e := fileutils.CreateDirIfNotExist(folderPath)
+	if e != nil {
+		return e
+	}
+	log.Info(logMsgPrefix + "Creating folder: " + folderPath)
+	return nil
 }
 
 func createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix string, downloadData DownloadData, buildDependencies [][]utils.DependenciesBuildInfo, threadId int, flags *DownloadFlags) (bool, error) {

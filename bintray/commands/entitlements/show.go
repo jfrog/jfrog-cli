@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
 )
@@ -17,7 +17,7 @@ func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.Vers
 	}
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
 	log.Info("Getting entitlements...")
-	resp, body, _, err := ioutils.SendGet(url, true, httpClientsDetails)
+	resp, body, _, err := httputils.SendGet(url, true, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) err
 	}
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Getting entitlement...")
-	resp, body, _, err := ioutils.SendGet(url, true, httpClientsDetails)
+	resp, body, _, err := httputils.SendGet(url, true, httpClientsDetails)
 	if err != nil {
 		return err
 	}

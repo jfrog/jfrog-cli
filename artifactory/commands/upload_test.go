@@ -10,15 +10,15 @@ import (
 
 func TestSingleFileUpload(t *testing.T) {
 	flags := getUploadFlags()
-	spec := utils.CreateSpec("testdata/a.txt", "repo-local", "", false, true, false)
+	spec := utils.CreateSpec("testdata/a.txt", "repo-local", "", "", false, true, false)
 	uploaded1, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded1, err, 1)
 
-	spec = utils.CreateSpec("testdata/aa.txt", "repo-local", "", false, true, false)
+	spec = utils.CreateSpec("testdata/aa.txt", "repo-local", "", "", false, true, false)
 	uploaded2, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded2, err, 1)
 
-	spec = utils.CreateSpec("testdata/aa1*.txt", "repo-local", "", false, true, false)
+	spec = utils.CreateSpec("testdata/aa1*.txt", "repo-local", "", "", false, true, false)
 	uploaded3, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded3, err, 0)
 
@@ -36,15 +36,15 @@ func TestPatternNonRecursiveUpload(t *testing.T) {
 
 func testPatternUpload(t *testing.T, recursive bool, flags *UploadFlags) {
 	sep := cliutils.GetTestsFileSeperator()
-	spec := utils.CreateSpec("testdata" + sep + "*", "repo-local", "", recursive, true, false)
+	spec := utils.CreateSpec("testdata" + sep + "*", "repo-local", "", "", recursive, true, false)
 	uploaded1, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded1, err, 3)
 
-	spec = utils.CreateSpec("testdata" + sep + "a*", "repo-local", "", recursive, true, false)
+	spec = utils.CreateSpec("testdata" + sep + "a*", "repo-local", "", "", recursive, true, false)
 	uploaded2, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded2, err, 2)
 
-	spec = utils.CreateSpec("testdata" + sep + "b*", "repo-local", "", recursive, true, false)
+	spec = utils.CreateSpec("testdata" + sep + "b*", "repo-local", "", "", recursive, true, false)
 	uploaded3, _, err := Upload(spec, flags)
 	checkUploaded(t, uploaded3, err, 1)
 }

@@ -25,6 +25,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "use",
+			Usage:   "Set the active Artifactory server by its ID.",
+			Action: func(c *cli.Context) {
+				useCmd(c)
+			},
+		},
+		{
 			Name:    "upload",
 			Flags:   getUploadFlags(),
 			Aliases: []string{"u"},
@@ -97,6 +104,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:    "build-add-git",
+			Flags:    getServerFlags(),
+			Aliases: []string{"bag"},
+			Usage:   "Capture git revision and remote url.",
+			Action: func(c *cli.Context) {
+				buildAddGitCmd(c)
+			},
+		},
+		{
 			Name:    "build-clean",
 			Flags:    []cli.Flag{},
 			Aliases: []string{"bc"},
@@ -126,7 +142,7 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func getFlags() []cli.Flag {
+func getCommonFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
@@ -151,8 +167,16 @@ func getFlags() []cli.Flag {
 	}
 }
 
+func getServerFlags() []cli.Flag {
+	return append(getCommonFlags(), cli.StringFlag{
+		Name:  "server-id",
+		Usage: "[Optional] Artifactory server ID configured using the config command.",
+	},
+	)
+}
+
 func getUploadFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -204,11 +228,15 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.",
 		},
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
+		},
 	}...)
 }
 
 func getDownloadFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -236,6 +264,10 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.",
 		},
 		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
+		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
 			Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
@@ -258,11 +290,15 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
 		},
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the tagret path pattern for folders and not just for files in Artifactory.",
+		},
 	}...)
 }
 
 func getMoveFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -285,12 +321,16 @@ func getMoveFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be moved.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 
 }
 
 func getCopyFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -313,11 +353,15 @@ func getCopyFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be copied.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 }
 
 func getDeleteFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -340,11 +384,15 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 }
 
 func getSearchFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
@@ -358,11 +406,15 @@ func getSearchFlags() []cli.Flag {
 			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
 		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 	}...)
 }
 
 func getBuildPublishFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -379,7 +431,7 @@ func getBuildPublishFlags() []cli.Flag {
 }
 
 func getBuildPromotionFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "status",
 			Usage: "[Optional] Build promotion status.",
@@ -408,7 +460,7 @@ func getBuildPromotionFlags() []cli.Flag {
 }
 
 func getBuildDistributeFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "source-repos",
 			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.",
@@ -447,7 +499,7 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
 	}
-	return append(flags, getFlags()...)
+	return append(flags, getCommonFlags()...)
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
@@ -519,23 +571,61 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	return
 }
 
-func configCmd(c *cli.Context) {
-	if len(c.Args()) > 1 {
+func validateServerId(serverId string) {
+	reservedIds := []string{"delete", "use", "show", "clear"}
+	for _, reservedId := range reservedIds {
+		if serverId == reservedId {
+			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
+		}
+	}
+}
+
+func useCmd(c *cli.Context) {
+	var serverId string
+	if len(c.Args()) == 1 {
+		serverId = c.Args()[0]
+		validateServerId(serverId)
+		err := commands.Use(serverId)
+		cliutils.ExitOnErr(err)
+		return
+	} else {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
-	} else if len(c.Args()) == 1 {
+	}
+}
+
+func configCmd(c *cli.Context) {
+	if len(c.Args()) > 2 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+
+	var serverId string
+	if len(c.Args()) == 2 {
+		serverId = c.Args()[1]
+		validateServerId(serverId)
+		if c.Args()[0] == "delete" {
+			err := commands.DeleteConfig(serverId)
+			cliutils.ExitOnErr(err)
+			return
+		}
+	}
+	if len(c.Args()) > 0 {
 		if c.Args()[0] == "show" {
-			commands.ShowConfig()
+			err := commands.ShowConfig(serverId)
+			cliutils.ExitOnErr(err)
+			return
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
+			cliutils.ExitOnErr(nil)
+			return
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
+			serverId = c.Args()[0]
+			validateServerId(serverId)
 		}
-	} else {
-		configFlags, err := createConfigFlags(c)
-		cliutils.ExitOnErr(err)
-		_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword)
-		cliutils.ExitOnErr(err)
 	}
+	configFlags, err := createConfigFlags(c)
+	cliutils.ExitOnErr(err)
+	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
+	cliutils.ExitOnErr(err)
 }
 
 func downloadCmd(c *cli.Context) {
@@ -577,7 +667,6 @@ func uploadCmd(c *cli.Context) {
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
-
 	flags, err := createUploadFlags(c)
 	cliutils.ExitOnErr(err)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
@@ -656,26 +745,32 @@ func deleteCmd(c *cli.Context) {
 	flags, err := createDeleteFlags(c)
 	cliutils.ExitOnErr(err)
 	if !c.Bool("quiet") {
-		pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
-		cliutils.ExitOnErr(err)
-		if len(pathsToDelete) < 1 {
-			return
-		}
-		for _, v := range pathsToDelete {
-			fmt.Println("  " + v.GetFullUrl())
-		}
-		var confirm string
-		fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
-		fmt.Scanln(&confirm)
-		if !cliutils.ConfirmAnswer(confirm) {
-			return
-		}
-		err = commands.DeleteFiles(pathsToDelete, flags)
+		err = deleteIfConfirmed(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	} else {
 		err = commands.Delete(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	}
+}
+
+func deleteIfConfirmed(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags) error {
+	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
+	if err != nil {
+		return err
+	}
+	if len(pathsToDelete) < 1 {
+		return nil
+	}
+	for _, v := range pathsToDelete {
+		fmt.Println("  " + v.GetFullUrl())
+	}
+	var confirm string
+	fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
+	fmt.Scanln(&confirm)
+	if !cliutils.ConfirmAnswer(confirm) {
+		return nil
+	}
+	return commands.DeleteFiles(pathsToDelete, flags)
 }
 
 func searchCmd(c *cli.Context) {
@@ -706,21 +801,33 @@ func searchCmd(c *cli.Context) {
 }
 
 func buildPublishCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	buildInfoFlags, err := createBuildInfoFlags(c)
-	cliutils.ExitOnErrWithMsg(err)
+	cliutils.ExitOnErr(err)
 	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags)
 	cliutils.ExitOnErr(err)
 }
 
 func buildCollectEnvCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	err := commands.BuildCollectEnv(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
 
+func buildAddGitCmd(c *cli.Context) {
+	if c.NArg() > 3 && c.NArg() < 2{
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	dotGitPath := ""
+	if c.NArg() == 3 {
+		dotGitPath = c.Args().Get(2)
+	}
+	err := commands.BuildAddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	cliutils.ExitOnErr(err)
+}
+
 func buildCleanCmd(c *cli.Context) {
-	vlidateBuildInfoArgument(c)
+	validateBuildInfoArgument(c)
 	err := commands.BuildClean(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
@@ -749,7 +856,7 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func vlidateBuildInfoArgument(c *cli.Context) {
+func validateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
@@ -770,7 +877,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		return
 	}
 	if !val {
-		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
 	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
@@ -781,7 +888,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 	var confirm string
 	fmt.Scanln(&confirm)
 	if !cliutils.ConfirmAnswer(confirm) {
-		config.SaveArtifactoryConf(new(config.ArtifactoryDetails))
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
 	details, err = createArtifactoryDetails(c, false)
@@ -789,7 +896,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		return
 	}
 	encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
-	details, err = commands.Config(nil, details, true, encPassword)
+	details, err = commands.Config(nil, details, true, encPassword, "")
 	return
 }
 
@@ -809,9 +916,10 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 	details.User = c.String("user")
 	details.Password = c.String("password")
 	details.SshKeyPath = c.String("ssh-key-path")
+	details.ServerId = c.String("server-id")
 
 	if includeConfig {
-		confDetails, err := commands.GetConfig()
+		confDetails, err := commands.GetConfig(c.String("server-id"))
 		if err != nil {
 			return nil, err
 		}
@@ -854,10 +962,11 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	target := c.Args().Get(1)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, false)
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -868,6 +977,7 @@ func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&searchSpec.Get(i).Flat, c, "flat")
 	}
@@ -884,9 +994,10 @@ func createMoveFlags(c *cli.Context) (moveFlags *utils.MoveFlags, err error) {
 func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -898,6 +1009,7 @@ func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
@@ -916,9 +1028,10 @@ func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteFlags, err e
 func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 
-	return utils.CreateSpec(pattern, "", props, recursive, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -929,6 +1042,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 	}
 	return
@@ -985,10 +1099,12 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := strings.TrimPrefix(c.Args().Get(0), "/")
 	target := c.Args().Get(1)
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
+	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, includeDirs)
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
@@ -1001,8 +1117,10 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
+		overrideStringIfSet(&downloadSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
+		overrideStringIfSet(&downloadSpec.Get(i).IncludeDirs, c, "include-dirs")
 	}
 	return
 }
@@ -1028,11 +1146,13 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	target := strings.TrimPrefix(c.Args().Get(1), "/")
 	props := c.String("props")
+	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", true)
 	regexp := c.Bool("regexp")
+	isIncludeDirs := c.Bool("include-dirs")
 
-	return utils.CreateSpec(pattern, target, props, recursive, flat, regexp)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp, isIncludeDirs)
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
@@ -1048,6 +1168,7 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&uploadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
+		overrideStringIfSet(&uploadSpec.Get(i).IncludeDirs, c, "include-dirs")
 	}
 	return
 }
@@ -1073,13 +1194,13 @@ func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadFlags, err e
 	uploadFlags.DryRun = c.Bool("dry-run")
 	uploadFlags.ExplodeArchive = c.Bool("explode")
 	uploadFlags.Symlink = c.Bool("symlinks")
-	uploadFlags.Threads = getThreadsCount(c);
-	uploadFlags.BuildName = getBuildName(c);
-	uploadFlags.BuildNumber = getBuildNumber(c);
+	uploadFlags.Threads = getThreadsCount(c)
+	uploadFlags.BuildName = getBuildName(c)
+	uploadFlags.BuildNumber = getBuildNumber(c)
 	if (uploadFlags.BuildName == "" && uploadFlags.BuildNumber != "") || (uploadFlags.BuildName != "" && uploadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
-	uploadFlags.Deb = getDebFlag(c);
+	uploadFlags.Deb = getDebFlag(c)
 	uploadFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
@@ -1109,4 +1230,3 @@ func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
 		*field = c.Bool(fieldName)
 	}
 }
-

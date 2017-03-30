@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"runtime"
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/commands"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"bytes"
+	"os/exec"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
 var PrintSearchResult *bool
@@ -20,6 +23,7 @@ var RtPassword *string
 var RtApiKey *string
 var BtUser *string
 var BtKey *string
+var BtOrganization *string
 var TestArtifactory *bool
 var TestBintray *bool
 
@@ -33,10 +37,11 @@ func init() {
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")
+	BtOrganization = flag.String("bt.organization", "", "Bintray organization")
 }
 
 func CleanFileSystem() {
-	isExist, err := ioutils.IsDirExists(Out)
+	isExist, err := fileutils.IsDirExists(Out)
 	if err != nil {
 		log.Error(err)
 	}
@@ -49,6 +54,17 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
+	compare(expected, actual, t)
+}
+
+func IsListsIdentical(expected, actual []string, t *testing.T) {
+	if len(actual) != len(expected)  {
+		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
+	}
+	compare(expected, actual, t)
+}
+
+func compare(expected, actual []string, t *testing.T) {
 	for _, v := range expected {
 		for i, r := range actual {
 			if v == r {
@@ -63,7 +79,7 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 
 func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
+		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
 	for _, v := range expected {
 		for i, r := range actual {
@@ -79,15 +95,15 @@ func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult,
 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
-	fileSepatatr := ioutils.GetFileSeperator()
+	fileSepatatr := fileutils.GetFileSeperator()
 	index := strings.LastIndex(dir, fileSepatatr)
 	dir = dir[:index]
-	return dir + ioutils.GetFileSeperator() + "testsdata" + ioutils.GetFileSeperator()
+	return dir + fileutils.GetFileSeperator() + "testsdata" + fileutils.GetFileSeperator()
 }
 
 func getFileByOs(fileName string) string {
 	var currentOs string;
-	fileSepatatr := ioutils.GetFileSeperator()
+	fileSepatatr := fileutils.GetFileSeperator()
 	if runtime.GOOS == "windows" {
 		currentOs = "win"
 	} else {
@@ -97,8 +113,8 @@ func getFileByOs(fileName string) string {
 }
 
 func GetFilePath(fileName string) string {
-	filePath := GetTestResourcesPath() + "specs/common" + ioutils.GetFileSeperator() + fileName
-	isExists, _ := ioutils.IsFileExists(filePath)
+	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeperator() + fileName
+	isExists, _ := fileutils.IsFileExists(filePath)
 	if isExists {
 		return filePath
 	}
@@ -152,4 +168,33 @@ func (cli *JfrogCli) Exec(args ...string) {
 
 func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
 	return &JfrogCli{cli.main, cli.prefix, suffix}
+}
+
+type gitManager struct {
+	dotGitPath string
+}
+
+func GitExecutor(dotGitPath string) *gitManager {
+	return &gitManager{dotGitPath:dotGitPath}
+}
+
+func (m *gitManager) GetUrl() (string, string, error) {
+	return m.execGit("config", "--get", "remote.origin.url")
+}
+
+func (m *gitManager) GetRevision() (string, string, error) {
+	return m.execGit("show", "-s", "--format=%H", "HEAD")
+}
+
+func (m *gitManager) execGit(args ...string) (string, string, error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd := exec.Command("git", args...)
+	cmd.Dir = m.dotGitPath
+	cmd.Stdin = nil
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	cliutils.CheckError(err)
+	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }

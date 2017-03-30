@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
@@ -24,20 +23,14 @@ func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchRes
 	for i := 0; i < len(searchSpec.Files); i++ {
 		switch searchSpec.Get(i).GetSpecType() {
 		case utils.WILDCARD, utils.SIMPLE:
-			isRecursive, e := cliutils.StringToBool(searchSpec.Get(i).Recursive, true)
-			if e != nil {
-				err = e
-				return
-			}
-			itemsFound, e = utils.AqlSearchDefaultReturnFields(searchSpec.Get(i).Pattern,
-				isRecursive, searchSpec.Get(i).Props, flags)
+			itemsFound, e := utils.AqlSearchDefaultReturnFields(searchSpec.Get(i), flags)
 			if e != nil {
 				err = e
 				return
 			}
 			resultItems = append(resultItems, itemsFound...)
 		case utils.AQL:
-			itemsFound, err = utils.AqlSearchBySpec(searchSpec.Get(i).Aql, flags)
+			itemsFound, err = utils.AqlSearchBySpec(searchSpec.Get(i), flags)
 			if err != nil {
 				return
 			}

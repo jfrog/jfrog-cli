@@ -36,7 +36,8 @@ go get github.com/jfrogdev/jfrog-cli-go/...
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
-## Running Integration tests
+# Tests
+
 ### Artifactory Integration tests
 To run Artifactory integration tests execute the following command: 
 ````
@@ -51,6 +52,9 @@ Optional flags:
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
 
+* Artifactory url: http://localhost:8081/artifatory
+* User: admin
+* Password: password
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
@@ -71,6 +75,18 @@ Flags:
 
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
+
+### Unit tests
+To execute all the JFrog CLI unit tests run the following command:
+#### Windows
+````
+jfrogdev\jfrog-cli-go> for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog"') do @go test %G
+````
+
+#### Unix
+```
+jfrogdev/jfrog-cli-go$ go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog)
+```
 
 # Pull Requests
 We welcome pull requests.

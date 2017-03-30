@@ -5,7 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
@@ -46,5 +46,5 @@ func doCreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionF
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 			versionDetails.Repo + "/" + versionDetails.Package + "/versions"
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(bintrayDetails)
-	return ioutils.SendPost(url, []byte(data), httpClientsDetails)
+	return httputils.SendPost(url, []byte(data), httpClientsDetails)
 }

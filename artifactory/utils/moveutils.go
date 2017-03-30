@@ -4,7 +4,8 @@ import (
 	"strings"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
@@ -27,10 +28,8 @@ func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) 
 	for i := 0; i < len(moveSpec.Files); i++ {
 		var successPartial, failedPartial int
 		switch moveSpec.Get(i).GetSpecType() {
-		case WILDCARD:
+		case WILDCARD, SIMPLE:
 			successPartial, failedPartial, err = moveWildcard(moveSpec.Get(i), flags, moveType)
-		case SIMPLE:
-			successPartial, failedPartial, err = moveSimple(moveSpec.Get(i), flags, moveType)
 		case AQL:
 			successPartial, failedPartial, err = moveAql(moveSpec.Get(i), flags, moveType)
 		}
@@ -49,9 +48,9 @@ func MoveFilesWrapper(moveSpec *SpecFiles, flags *MoveFlags, moveType MoveType) 
 	return
 }
 
-func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+func moveAql(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
-	resultItems, err := AqlSearchBySpec(fileSpec.Aql, flags)
+	resultItems, err := AqlSearchBySpec(fileSpec, flags)
 	if err != nil {
 		return
 	}
@@ -60,13 +59,9 @@ func moveAql(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount
 	return
 }
 
-func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
-	isRecursive, err := cliutils.StringToBool(fileSpec.Recursive, true)
-	if err != nil {
-		return
-	}
+func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
-	resultItems, err := AqlSearchDefaultReturnFields(fileSpec.Pattern, isRecursive, fileSpec.Props, flags)
+	resultItems, err := AqlSearchDefaultReturnFields(fileSpec, flags)
 	if err != nil {
 		return
 	}
@@ -76,27 +71,7 @@ func moveWildcard(fileSpec *Files, flags *MoveFlags, moveType MoveType) (success
 	return
 }
 
-func moveSimple(fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
-
-	cleanPattern := cliutils.StripChars(fileSpec.Pattern, "()")
-	patternFileName, _ := ioutils.GetFileAndDirFromPath(fileSpec.Pattern)
-
-	regexpPattern := cliutils.PathToRegExp(fileSpec.Pattern)
-	placeHolderTarget, err := cliutils.ReformatRegexp(regexpPattern, cleanPattern, fileSpec.Target)
-	if err != nil {
-		return
-	}
-
-	if strings.HasSuffix(placeHolderTarget, "/") {
-		placeHolderTarget += patternFileName
-	}
-	success, err := moveFile(cleanPattern, placeHolderTarget, flags, moveType)
-	successCount = cliutils.Bool2Int(success)
-	failedCount = cliutils.Bool2Int(!success)
-	return
-}
-
-func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *Files, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
+func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	successCount = 0
 	failedCount = 0
 
@@ -109,7 +84,7 @@ func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *F
 		}
 		if !isFlat {
 			if strings.Contains(destPathLocal, "/") {
-				file, dir := ioutils.GetFileAndDirFromPath(destPathLocal)
+				file, dir := fileutils.GetFileAndDirFromPath(destPathLocal)
 				destPathLocal = cliutils.TrimPath(dir + "/" + v.Path + "/" + file)
 			} else {
 				destPathLocal = cliutils.TrimPath(destPathLocal + "/" + v.Path + "/")
@@ -151,7 +126,7 @@ func moveFile(sourcePath, destPath string, flags *MoveFlags, moveType MoveType) 
 		return false, err
 	}
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, body, err := ioutils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	resp, body, err := httputils.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
