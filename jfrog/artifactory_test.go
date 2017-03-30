@@ -981,7 +981,7 @@ func cleanArtifactoryTest() {
 		return
 	}
 	cleanArtifactory()
-	//tests.CleanFileSystem()
+	tests.CleanFileSystem()
 }
 
 func prepUploadFiles() {
@@ -1056,10 +1056,10 @@ func createReposIfNeeded() error {
 }
 
 func cleanArtifactory() {
-	//deleteFlags := new(commands.DeleteFlags)
-	//deleteFlags.ArtDetails = artifactoryDetails
-	//deleteSpec, _ := utils.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec))
-	//commands.Delete(deleteSpec, deleteFlags)
+	deleteFlags := new(commands.DeleteFlags)
+	deleteFlags.ArtDetails = artifactoryDetails
+	deleteSpec, _ := utils.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec))
+	commands.Delete(deleteSpec, deleteFlags)
 }
 
 func searchInArtifactory(specFile string) (result []commands.SearchResult, err error) {
