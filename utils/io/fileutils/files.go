@@ -277,13 +277,13 @@ func AppendFile(srcPath string, destFile *os.File) error {
 }
 
 func GetHomeDir() string {
-	user, err := user.Current()
-	if err == nil {
-		return user.HomeDir
-	}
 	home := os.Getenv("HOME")
 	if home != "" {
 		return home
+	}
+	user, err := user.Current()
+	if err == nil {
+		return user.HomeDir
 	}
 	return ""
 }
