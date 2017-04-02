@@ -105,7 +105,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "build-add-git",
-			Flags:    getServerFlags(),
+			Flags:   []cli.Flag{},
 			Aliases: []string{"bag"},
 			Usage:   "Capture git revision and remote url.",
 			Action: func(c *cli.Context) {
