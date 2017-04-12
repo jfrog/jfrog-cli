@@ -139,6 +139,15 @@ func GetCommands() []cli.Command {
 				buildDistributeCmd(c)
 			},
 		},
+		{
+			Name:    "git-lfs-clean",
+			Flags:   getGitLfsCleanFlags(),
+			Aliases: []string{"glc", "lfsgc"},
+			Usage:   "Run Git LFS garbage collection.",
+			Action: func(c *cli.Context) {
+				gitLfsCleanCmd(c)
+			},
+		},
 	}
 }
 
@@ -484,6 +493,31 @@ func getBuildDistributeFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.",
+		},
+	}...)
+}
+
+func getGitLfsCleanFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "refs",
+			Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.",
+		},
+		cli.BoolFlag{
+			Name:  "regexp",
+			Usage: "[Default: false] Set to true to use a regular expression instead of wildcard expressions to specify refs.",
+		},
+		cli.StringFlag{
+			Name:  "repo",
+			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.",
+		},
+		cli.BoolFlag{
+			Name:  "quiet",
+			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.",
 		},
 	}...)
 }
@@ -856,6 +890,18 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func gitLfsCleanCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. "+cliutils.GetDocumentationMessage())
+	}
+	gitLfsCleanFlags, err := createGitLfsCleanFlags(c)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	err = commands.GitLfsClean(c.Args().Get(0), gitLfsCleanFlags)
+	cliutils.ExitOnErr(err)
+}
+
 func validateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
@@ -1092,6 +1138,20 @@ func createBuildDistributionFlags(c *cli.Context) (distributeFlags *commands.Bui
 	distributeFlags.DryRun = c.Bool("dry-run")
 
 	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createGitLfsCleanFlags(c *cli.Context) (gitLfsCleanFlags *commands.GitLfsCleanFlags, err error) {
+	gitLfsCleanFlags = new(commands.GitLfsCleanFlags)
+	gitLfsCleanFlags.Refs = c.String("refs")
+	if len(gitLfsCleanFlags.Refs) == 0 {
+		gitLfsCleanFlags.Refs = "refs/remotes/*"
+	}
+	gitLfsCleanFlags.Regexp = c.Bool("regexp")
+	gitLfsCleanFlags.Repo = c.String("repo")
+	gitLfsCleanFlags.Quiet = c.Bool("quiet")
+	gitLfsCleanFlags.DryRun = c.Bool("dry-run")
+	gitLfsCleanFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
