@@ -10,7 +10,7 @@ type SearchResult struct {
 	Path string `json:"path,omitempty"`
 }
 
-func Search(searchSpec *utils.SpecFiles, flags *SearchFlags) (result []SearchResult, err error) {
+func Search(searchSpec *utils.SpecFiles, flags utils.CommonFlag) (result []SearchResult, err error) {
 	err = utils.PreCommandSetup(flags)
 	if err != nil {
 		return

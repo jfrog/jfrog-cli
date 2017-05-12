@@ -142,8 +142,8 @@ func GetCommands() []cli.Command {
 		{
 			Name:    "git-lfs-clean",
 			Flags:   getGitLfsCleanFlags(),
-			Aliases: []string{"glc", "lfsgc"},
-			Usage:   "Run Git LFS garbage collection.",
+			Aliases: []string{"glc"},
+			Usage:   "Clean Git LFS repository. This deletes all artifacts from a Git LFS repository that are no longer available in a corresponding Git repository.",
 			Action: func(c *cli.Context) {
 				gitLfsCleanCmd(c)
 			},
@@ -891,14 +891,18 @@ func buildDistributeCmd(c *cli.Context) {
 }
 
 func gitLfsCleanCmd(c *cli.Context) {
-	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. "+cliutils.GetDocumentationMessage())
+	if c.NArg() > 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	dotGitPath := ""
+	if c.NArg() == 1 {
+		dotGitPath = c.Args().Get(0)
 	}
 	gitLfsCleanFlags, err := createGitLfsCleanFlags(c)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
-	err = commands.GitLfsClean(c.Args().Get(0), gitLfsCleanFlags)
+	err = commands.GitLfsClean(dotGitPath, gitLfsCleanFlags)
 	cliutils.ExitOnErr(err)
 }
 

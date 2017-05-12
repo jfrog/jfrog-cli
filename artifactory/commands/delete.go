@@ -10,7 +10,7 @@ import (
 	"errors"
 )
 
-func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
+func Delete(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) (err error) {
 	err = utils.PreCommandSetup(flags)
 	if err != nil {
 		return
@@ -26,14 +26,14 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (err error) {
 	return
 }
 
-func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) ([]utils.AqlSearchResultItem, error) {
+func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) ([]utils.AqlSearchResultItem, error) {
 	if err := utils.PreCommandSetup(flags); err != nil {
 		return nil, err
 	}
 	return getPathsToDeleteInternal(deleteSpec, flags)
 }
 
-func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
+func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		// Search paths using AQL.
@@ -133,26 +133,26 @@ func reduceDirResult(foldersToDelete []utils.AqlSearchResultItem) []utils.AqlSea
 	return result
 }
 
-func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
+func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
 	if err := utils.PreCommandSetup(flags); err != nil {
 		return err
 	}
 	return deleteFiles(resultItems, flags)
 }
 
-func deleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
 	for _, v := range resultItems {
-		fileUrl, err := utils.BuildArtifactoryUrl(flags.ArtDetails.Url, v.GetFullUrl(), make(map[string]string))
+		fileUrl, err := utils.BuildArtifactoryUrl(flags.GetArtifactoryDetails().Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {
 			return err
 		}
-		if flags.DryRun {
+		if flags.IsDryRun() {
 			log.Info("[Dry run] Deleting:", v.GetFullUrl())
 			continue
 		}
 
 		log.Info("Deleting:", v.GetFullUrl())
-		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
+		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 		resp, body, err := httputils.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
 			return err
