@@ -90,6 +90,134 @@ func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestAqlFindingItemOnRoot(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/")
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/someFile", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/*", tests.Repo2)
+	isExistInArtifactory(tests.AnyItemCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("del", tests.Repo2 + "/*", "--quiet=true")
+	artifactoryCli.Exec("del", tests.Repo1 + "/*", "--quiet=true")
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/")
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/someFile", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/*/", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectoryCopy(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/*/", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/inner", tests.Repo2, "--flat=true")
+	isExistInArtifactory(tests.SingleDirectoryCopyFlat, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/", tests.Repo2, "--flat=true")
+	isExistInArtifactory(tests.SingleDirectoryCopyFlat, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyAnyItemUsingWildcardFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/someFile", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/*", tests.Repo2)
+	isExistInArtifactory(tests.AnyItemCopy, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyAnyItemRecursive(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/a/b/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/aFile", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/a*", tests.Repo2, "--recursive=true")
+	isExistInArtifactory(tests.AnyItemCopyRecursive, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+	artifactoryCli.Exec("cp", tests.Repo1 + "/*", tests.Repo2 + "/newPath")
+	isExistInArtifactory(tests.CopyFolderRename, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyAnyItemUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+
+	specFile := tests.GetFilePath(tests.CopyItemsSpec)
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/someFile", "--flat=true")
+	artifactoryCli.Exec("cp", "--spec=" + specFile)
+	isExistInArtifactory(tests.AnyItemCopyUsingSpec, tests.GetFilePath(tests.SearchRepo2), t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadandExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a.zip", "jfrog-cli-tests-repo1", "--explode=true")
@@ -309,7 +437,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
-	artifactoryCli.Exec("delete", tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/*/b/", "--quiet=true")
+	artifactoryCli.Exec("delete", tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
 	resp, _, _, _ = httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != 404 {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
@@ -360,12 +488,12 @@ func TestArtifactoryDisplyedPathToDelete(t *testing.T) {
 
 	specFile := tests.GetFilePath(tests.DeleteComplexSpec)
 	artifactsToDelete := getPathsToDelete(specFile)
-	var displyedPaths []commands.SearchResult
+	var displayedPaths []commands.SearchResult
 	for _, v := range artifactsToDelete {
-		displyedPaths = append(displyedPaths, commands.SearchResult{Path:v.Repo + "/" + v.Path + "/" + v.Name})
+		displayedPaths = append(displayedPaths, commands.SearchResult{Path: v.GetFullUrl()})
 	}
 
-	tests.CompareExpectedVsActuals(tests.DeleteDisplyedFiles, displyedPaths, t)
+	tests.CompareExpectedVsActuals(tests.DeleteDisplyedFiles, displayedPaths, t)
 	cleanArtifactoryTest()
 }
 
@@ -887,9 +1015,10 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 
 func TestCollectGitBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
+	gitCollectCliRunner := tests.NewJfrogCli(main, "jfrog rt", "")
 	buildName, buildNumber := "cli-test-build", "13"
-	dotGitPath := getCliDotGitPath(t)
-	artifactoryCli.Exec("build-add-git", buildName, buildNumber, dotGitPath)
+	dotGitPath := tests.FixWinPath(getCliDotGitPath(t))
+	gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, dotGitPath)
 
 	//publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)

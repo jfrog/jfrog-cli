@@ -6,26 +6,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 )
 
-//Returns an AQL query string to search folders in Artifactory according to the pattern and return fields provided.
-func BuildAqlFolderSearchQuery(searchPattern string, aqlReturnFields []string) string {
-	pairs := createPathFolderPairs(searchPattern)
-	index := strings.Index(searchPattern, "/")
-	repo := searchPattern[:index]
-
-	size := len(pairs)
-	json := "{\"repo\": \"" + repo + "\",\"$or\": ["
-
-	for i := 0; i < size; i++ {
-		json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, "folder") + "}"
-		if i + 1 < size {
-			json += ","
-		}
-	}
-
-	json += "]}"
-	return "items.find(" + json + ").include(" + buildAqlReturnFieldsString(aqlReturnFields) + ")"
-}
-
 // Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
 func createAqlBodyForItem(specFile *File) (string, error) {
 	var itemType string
@@ -44,6 +24,7 @@ func createAqlBodyForItem(specFile *File) (string, error) {
 	}
 
 	pairs := createPathFilePairs(searchPattern, recursive)
+	includeRoot := strings.LastIndex(searchPattern, "/") < 0
 	size := len(pairs)
 	propsQuery, err := buildPropsQuery(specFile.Props)
 	if err != nil {
@@ -52,10 +33,10 @@ func createAqlBodyForItem(specFile *File) (string, error) {
 
 	json := "{\"repo\": \"" + repo + "\"," + propsQuery + "\"$or\": ["
 	if size == 0 {
-		json += "{" + buildInnerQuery(".", searchPattern, itemType) + "}"
+		json += "{" + buildInnerQuery(".", searchPattern, itemType, true) + "}"
 	} else {
 		for i := 0; i < size; i++ {
-			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType) + "}"
+			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType, includeRoot) + "}"
 			if i+1 < size {
 				json += ","
 			}
@@ -114,13 +95,13 @@ func buildPropsQuery(props string) (string, error) {
 	return query, nil
 }
 
-func buildInnerQuery(path, name, itemType string) string {
+func buildInnerQuery(path, name, itemType string, includeRoot bool) string {
 	itemTypeQuery := ""
 	if itemType != "" {
 		itemTypeQuery = ",\"type\": {\"$eq\": \"" + itemType + "\"}"
 	}
 	nePath := ""
-	if itemType == "folder" && path == "*" && name == "*" {
+	if !includeRoot {
 		nePath = "\"path\": {\"$ne\": \".\"},"
 	}
 
@@ -198,14 +179,7 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 	} else {
 		path = pattern[:slashIndex]
 		name = pattern[slashIndex+1:]
-		if path == "*" {
-			pairs = append(pairs, PathFilePair{path + "/*", name})
-			if name == "*" {
-				return pairs
-			}
-		} else {
-			pairs = append(pairs, PathFilePair{path, name})
-		}
+		pairs = append(pairs, PathFilePair{path, name})
 	}
 	if !recursive {
 		return pairs

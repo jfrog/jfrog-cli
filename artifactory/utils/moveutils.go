@@ -54,18 +54,17 @@ func moveAql(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount,
 	if err != nil {
 		return
 	}
-	LogSearchResults(len(resultItems))
 	successCount, failedCount, err = moveFiles("", resultItems, fileSpec, flags, moveType)
 	return
 }
 
 func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
+	fileSpec.IncludeDirs = "true"
 	resultItems, err := AqlSearchDefaultReturnFields(fileSpec, flags)
 	if err != nil {
 		return
 	}
-	LogSearchResults(len(resultItems))
 	regexpPath := cliutils.PathToRegExp(fileSpec.Pattern)
 	successCount, failedCount, err = moveFiles(regexpPath, resultItems, fileSpec, flags, moveType)
 	return
@@ -74,7 +73,8 @@ func moveWildcard(fileSpec *File, flags *MoveFlags, moveType MoveType) (successC
 func moveFiles(regexpPath string, resultItems []AqlSearchResultItem, fileSpec *File, flags *MoveFlags, moveType MoveType) (successCount, failedCount int, err error) {
 	successCount = 0
 	failedCount = 0
-
+	resultItems = ReduceDirResult(resultItems)
+	LogSearchResults(len(resultItems))
 	for _, v := range resultItems {
 		destPathLocal := fileSpec.Target
 		isFlat, e := cliutils.StringToBool(fileSpec.Flat, false)

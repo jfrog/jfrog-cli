@@ -17,7 +17,7 @@ func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
 func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
 	specFile := CreateSpec("repo-local2/a*b*c/dd/", "", "", "", true, true, false, false).Files[0]
 	aqlResult, _ := createAqlBodyForItem(&specFile)
-	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]},{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd/*\"},\"name\": {\"$match\": \"*\"}}]}]}"
+	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]},{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd/*\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
@@ -37,7 +37,7 @@ func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
 	specFile := CreateSpec("repo-local2/a*b*c/dd/", "", "", "", false, true, false, false).Files[0]
 	aqlResult, _ := createAqlBodyForItem(&specFile)
-	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"name\": {\"$match\": \"*\"}}]}]}"
+	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
@@ -59,12 +59,10 @@ func TestCreatePathFilePairs(t *testing.T) {
 	validatePathPairs(createPathFilePairs("*/a*/*b*a*", true), pairs, "*/a*/*b*a*", t)
 	pairs = []PathFilePair{{"*", "*"}}
 	validatePathPairs(createPathFilePairs("*", true), pairs, "*", t)
-	pairs = []PathFilePair{{"*/*", "*"}}
+	pairs = []PathFilePair{{"*", "*"}, {"*/*", "*"}}
 	validatePathPairs(createPathFilePairs("*/*", true), pairs, "*/*", t)
-	pairs = []PathFilePair{{"*/*", "a.z"}}
+	pairs = []PathFilePair{{"*", "a.z"}}
 	validatePathPairs(createPathFilePairs("*/a.z", true), pairs, "*/a.z", t)
-	pairs = []PathFilePair{{"*/*", "*"}}
-	validatePathPairs(createPathFilePairs("*/*", false), pairs, "*/*", t)
 	pairs = []PathFilePair{{".", "a"}}
 	validatePathPairs(createPathFilePairs("a", false), pairs, "a", t)
 	pairs = []PathFilePair{{"", "*"}}

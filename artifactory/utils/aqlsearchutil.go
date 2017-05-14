@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"errors"
+	"sort"
 )
 
 func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
@@ -113,6 +114,9 @@ func (item AqlSearchResultItem) GetFullUrl() string {
 	url := item.Repo
 	url = addSeparator(url, "/", item.Path)
 	url = addSeparator(url, "/", item.Name)
+	if item.Type == "folder" && !strings.HasSuffix(url,"/") {
+		url = url + "/"
+	}
 	return url
 }
 
@@ -129,4 +133,41 @@ func addSeparator(str1, separator, str2 string) string {
 
 type AqlSearchFlag interface {
 	GetArtifactoryDetails() *config.ArtifactoryDetails
+}
+
+// Remove unnecessary paths.
+// For example if we have two paths for delete a/b/c/ and a/b/
+// it's enough to delete only a/b/
+func ReduceDirResult(searchResults []AqlSearchResultItem) []AqlSearchResultItem {
+	paths := make(map[string]AqlSearchResultItem)
+	pathsKeys := make([]string, 0, len(searchResults))
+	for _, file := range searchResults {
+		if file.Name == "." {
+			continue
+		}
+
+		url := file.GetFullUrl()
+		paths[url] = file
+		pathsKeys = append(pathsKeys, url)
+	}
+	sort.Strings(pathsKeys)
+	for _, k := range pathsKeys {
+		for _, k2 := range pathsKeys {
+			prefix := k2
+			if paths[k2].Type == "folder" &&  !strings.HasSuffix(k2, "/") {
+				prefix += "/"
+			}
+
+			if k != k2 && strings.HasPrefix(k, prefix) {
+				delete(paths, k)
+				continue
+			}
+		}
+	}
+
+	var result []AqlSearchResultItem
+	for _, v := range paths {
+		result = append(result, v)
+	}
+	return result
 }

@@ -51,8 +51,8 @@
       "flat": "true",
       "recursive": "true"
     },{
-      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/(*)",
-      "target": "jfrog-cli-tests-repo2/properties_source/a/{1}",
+      "pattern": "jfrog-cli-tests-repo1/downloadTestResources/a/",
+      "target": "jfrog-cli-tests-repo2/properties_source/a/",
       "flat": "true",
       "recursive": "true"
     },{

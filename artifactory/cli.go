@@ -966,7 +966,7 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, true)
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {

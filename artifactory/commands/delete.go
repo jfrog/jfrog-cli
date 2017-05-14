@@ -6,7 +6,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
-	"strings"
 	"errors"
 )
 
@@ -36,9 +35,10 @@ func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteFlags) ([]utils.
 func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
+		currentSpec := deleteSpec.Get(i)
 		// Search paths using AQL.
-		if deleteSpec.Get(i).GetSpecType() == utils.AQL {
-			if resultItemsTemp, e := utils.AqlSearchBySpec(deleteSpec.Get(i), flags); e == nil {
+		if currentSpec.GetSpecType() == utils.AQL {
+			if resultItemsTemp, e := utils.AqlSearchBySpec(currentSpec, flags); e == nil {
 				resultItems = append(resultItems, resultItemsTemp...)
 				continue
 			} else {
@@ -47,36 +47,23 @@ func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags *DeleteFlags) (
 			}
 		}
 		// Simple directory delete, no need to search in Artifactory.
-		if simpleDir, e := isSimpleDirectoryDelete(deleteSpec.Get(i)); simpleDir && e == nil {
-			simplePathItem := utils.AqlSearchResultItem{Path:deleteSpec.Get(i).Pattern}
+		if simpleDir, e := isSimpleDirectoryDelete(currentSpec); simpleDir && e == nil {
+			simplePathItem := utils.AqlSearchResultItem{Path:currentSpec.Pattern}
 			resultItems = append(resultItems, []utils.AqlSearchResultItem{simplePathItem}...)
 			continue
 		} else if e != nil {
 			err = e
 			return
 		}
-		// Directory with wildcard pattern, searching with special AQL query.
-		if directoryDelete, e := isDirectoryDelete(deleteSpec.Get(i)); directoryDelete && e == nil {
-			query := utils.BuildAqlFolderSearchQuery(deleteSpec.Get(i).Pattern, utils.GetDefaultQueryReturnFields())
-			tempResultItems, e := utils.AqlSearch(query, flags)
-			if e != nil {
-				err = e
-				return
-			}
-			paths := reduceDirResult(tempResultItems)
-			resultItems = append(resultItems, paths...)
-			continue
-		} else if e != nil {
-			err = e
-			return
-		}
-		// All other use cases, pattern with/without wildcard files.
-		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteSpec.Get(i), flags)
+
+		currentSpec.IncludeDirs = "true"
+		tempResultItems, e := utils.AqlSearchDefaultReturnFields(currentSpec, flags)
 		if e != nil {
 			err = e
 			return
 		}
-		resultItems = append(resultItems, tempResultItems...)
+		paths := utils.ReduceDirResult(tempResultItems)
+		resultItems = append(resultItems, paths...)
 	}
 	utils.LogSearchResults(len(resultItems))
 	return
@@ -93,44 +80,6 @@ func isSimpleDirectoryDelete(deleteFile *utils.File) (bool, error) {
 		return false, err
 	}
 	return utils.IsSimpleDirectoryPath(deleteFile.Pattern) && isRecursive && deleteFile.Props == "", nil
-}
-
-// The diffrence between isSimpleDirectoryDelete to isDirectoryDelete is:
-// isDirectoryDelete returns true when the deleteFile path contains wildcatds.
-func isDirectoryDelete(deleteFile *utils.File) (bool, error) {
-	isRecursive, err := cliutils.StringToBool(deleteFile.Recursive, true)
-	if err != nil {
-		return false, err
-	}
-	return utils.IsDirectoryPath(deleteFile.Pattern) && isRecursive && deleteFile.Props == "", nil
-}
-
-// Remove unnecessary paths.
-// For example if we have two paths for delete a/b/c/ and a/b/
-// it's enough to delete only a/b/
-func reduceDirResult(foldersToDelete []utils.AqlSearchResultItem) []utils.AqlSearchResultItem {
-	paths := make(map[string]utils.AqlSearchResultItem)
-	for _, file := range foldersToDelete {
-		if file.Name == "." {
-			continue
-		}
-		paths[file.GetFullUrl()] = file
-	}
-
-	for k := range paths {
-		for k2 := range paths {
-			if k != k2 && strings.HasPrefix(k, k2) {
-				delete(paths, k);
-				continue
-			}
-		}
-	}
-	var result []utils.AqlSearchResultItem
-	for _, v := range paths {
-		v.Name += "/"
-		result = append(result, v)
-	}
-	return result
 }
 
 func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags *DeleteFlags) error {
