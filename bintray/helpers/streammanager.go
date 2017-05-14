@@ -84,7 +84,7 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 	if sm.isReconnection() {
 		sm.setReconnectHeader()
 	}
-	log.Info("Connecting...")
+	log.Debug("Connecting...")
 	resp, _, _, e := httputils.Stream(sm.Url, sm.HttpClientDetails)
 	if e != nil {
 		return false, resp
@@ -100,6 +100,6 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 
 	}
 	sm.ReconnectId = resp.Header.Get(BINTRAY_RECONNECT_HEADER)
-	log.Info("Connected.")
+	log.Debug("Connected.")
 	return true, resp
 }
