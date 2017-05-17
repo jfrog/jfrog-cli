@@ -5,30 +5,33 @@ import (
 )
 
 const (
-	Repo1                     = "jfrog-cli-tests-repo1"
-	Repo2                     = "jfrog-cli-tests-repo2"
-	Out                       = "out"
-	DownloadSpec              = "download_spec.json"
-	BuildDownloadSpec         = "build_download_spec.json"
-	SimpleUploadSpec          = "simple_upload_spec.json"
-	UploadEmptyDirs           = "upload_empty_dir_spec.json"
-	DownloadEmptyDirs         = "download_empty_dir_spec.json"
-	SplittedUploadSpecA       = "splitted_upload_spec_a.json"
-	SplittedUploadSpecB       = "splitted_upload_spec_b.json"
-	UploadSpec                = "upload_spec.json"
-	DeleteSpec                = "delete_spec.json"
-	DeleteComplexSpec         = "delete_complex_spec.json"
-	MoveCopyDeleteSpec        = "move_copy_delete_spec.json"
-	PrepareCopy               = "prepare_copy.json"
-	Search                    = "search.json"
-	SearchRepo2               = "search_repo2.json"
-	SearchTxt                 = "search_txt.json"
-	SearchMoveDeleteRepoSpec  = "search_move_delete_repo_spec.json"
-	CopyByBuildSpec           = "move_copy_delete_by_build_spec.json"
-	CpMvDlByBuildAssertSpec   = "copy_by_build_assert_spec.json"
-	MoveRepositoryConfig      = "move_repository_config.json"
-	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
-	RepoDetailsUrl            = "api/repositories/"
+	Repo1                      = "jfrog-cli-tests-repo1"
+	Repo2                      = "jfrog-cli-tests-repo2"
+	Lfs_Repo                   = "jfrog-cli-lfs-repo"
+	Out                        = "out"
+	DownloadSpec               = "download_spec.json"
+	BuildDownloadSpec          = "build_download_spec.json"
+	SimpleUploadSpec           = "simple_upload_spec.json"
+	UploadEmptyDirs            = "upload_empty_dir_spec.json"
+	DownloadEmptyDirs          = "download_empty_dir_spec.json"
+	SplittedUploadSpecA        = "splitted_upload_spec_a.json"
+	SplittedUploadSpecB        = "splitted_upload_spec_b.json"
+	UploadSpec                 = "upload_spec.json"
+	DeleteSpec                 = "delete_spec.json"
+	DeleteComplexSpec          = "delete_complex_spec.json"
+	MoveCopyDeleteSpec         = "move_copy_delete_spec.json"
+	PrepareCopy                = "prepare_copy.json"
+	Search                     = "search.json"
+	SearchRepo2                = "search_repo2.json"
+	SearchTxt                  = "search_txt.json"
+	SearchMoveDeleteRepoSpec   = "search_move_delete_repo_spec.json"
+	CopyByBuildSpec            = "move_copy_delete_by_build_spec.json"
+	CpMvDlByBuildAssertSpec    = "copy_by_build_assert_spec.json"
+	GitLfsAssertSpec           = "git_lfs_assert_spec.json"
+	MoveRepositoryConfig       = "move_repository_config.json"
+	SpecsTestRepositoryConfig  = "specs_test_repository_config.json"
+	GitLfsTestRepositoryConfig = "git_lfs_test_repository_config.json"
+	RepoDetailsUrl             = "api/repositories/"
 	CopyItemsSpec             = "copy_items_spec.json"
 )
 
@@ -181,6 +184,10 @@ var BuildCopyExpected = []string{
 	Repo2 + "/data/a1.in",
 	Repo2 + "/data/a2.in",
 	Repo2 + "/data/a3.in",
+}
+
+var GitLfsExpected = []string{
+	Lfs_Repo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
 }
 
 var BuildMoveExpected = []string{

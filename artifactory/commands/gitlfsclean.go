@@ -22,7 +22,6 @@ import (
 type GitLfsCleanFlags struct {
 	ArtDetails *config.ArtifactoryDetails
 	Refs       string
-	Regexp     bool
 	Repo       string
 	Quiet      bool
 	DryRun     bool
@@ -39,6 +38,12 @@ func (flags *GitLfsCleanFlags) IsDryRun() bool {
 func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
 	var err error
 	repo := flags.Repo
+	if gitPath == "" {
+		gitPath, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
 	if len(repo) <= 0 {
 		repo, err = detectRepo(gitPath, flags.ArtDetails.Url)
 		if err != nil {
@@ -46,16 +51,13 @@ func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
 		}
 	}
 	log.Info("Gathering artifacts in repository", repo, "...")
-	regex := flags.Refs
-	if !flags.Regexp {
-		regex = getRefsRegex(flags.Refs)
-	}
+	refsRegex := getRefsRegex(flags.Refs)
 	artifactoryLfsFiles, err := searchLfsFilesInArtifactory(repo, flags)
 	if err != nil {
 		return err
 	}
 	log.Info("Gathering artifacts to preserve from Git references matching the pattern", flags.Refs, "...")
-	gitLfsFiles, err := getLfsFilesFromGit(gitPath, regex)
+	gitLfsFiles, err := getLfsFilesFromGit(gitPath, refsRegex)
 	if err != nil {
 		return err
 	}
@@ -70,13 +72,21 @@ func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
 	return nil
 }
 
+func lfsConfigUrlExtractor (conf *gitconfig.Config) (*url.URL, error) {
+	return url.Parse(conf.Section("lfs").Option("url"))
+}
+
+func configLfsUrlExtractor(conf *gitconfig.Config) (*url.URL, error) {
+	return url.Parse(conf.Section("remote").Subsection("origin").Option("lfsurl"))
+}
+
 func detectRepo(gitPath, rtUrl string) (string, error) {
-	repo, err := extractRepo(gitPath, ".lfsconfig", rtUrl)
+	repo, err := extractRepo(gitPath, ".lfsconfig", rtUrl, lfsConfigUrlExtractor)
 	if err == nil {
 		return repo, nil
 	}
 	errMsg1 := fmt.Sprintln("Cannot detect Git LFS repository from .lfsconfig: %s", err)
-	repo, err = extractRepo(gitPath, ".git/config", rtUrl)
+	repo, err = extractRepo(gitPath, ".git/config", rtUrl, configLfsUrlExtractor)
 	if err == nil {
 		return repo, nil
 	}
@@ -85,22 +95,12 @@ func detectRepo(gitPath, rtUrl string) (string, error) {
 	return "", fmt.Errorf("%s%s%s", errMsg1, errMsg2, suggestedSolution)
 }
 
-func extractRepo(gitPath, configFile, rtUrl string) (string, error) {
-	lfsConf, err := os.Open(path.Join(gitPath, configFile))
-	if err != nil {
-		return "", err
-	}
-	defer lfsConf.Close()
-	conf := gitconfig.New()
-	err = gitconfig.NewDecoder(lfsConf).Decode(conf)
+func extractRepo(gitPath, configFile, rtUrl string, lfsUrlExtractor lfsUrlExtractorFunc) (string, error) {
+	lfsUrl, err := getLfsUrl(gitPath, configFile, lfsUrlExtractor)
 	if err != nil {
 		return "", err
 	}
 	artifactoryConfiguredUrl, err := url.Parse(rtUrl)
-	if err != nil {
-		return "", err
-	}
-	lfsUrl, err := url.Parse(conf.Section("lfs").Option("url"))
 	if err != nil {
 		return "", err
 	}
@@ -113,6 +113,23 @@ func extractRepo(gitPath, configFile, rtUrl string) (string, error) {
 		return lfsUrlPath[len(artifactoryConfiguredUrlPath):], nil
 	}
 	return "", fmt.Errorf("Configured Git LFS URL %q does not match provided URL %q", lfsUrl.String(), artifactoryConfiguredUrl.String())
+}
+type lfsUrlExtractorFunc func(conf *gitconfig.Config) (*url.URL, error)
+
+func getLfsUrl(gitPath, configFile string, lfsUrlExtractor lfsUrlExtractorFunc) (*url.URL, error) {
+	var lfsUrl *url.URL
+	lfsConf, err := os.Open(path.Join(gitPath, configFile))
+	if err != nil {
+		return nil, err
+	}
+	defer lfsConf.Close()
+	conf := gitconfig.New()
+	err = gitconfig.NewDecoder(lfsConf).Decode(conf)
+	if err != nil {
+		return nil, err
+	}
+	lfsUrl, err = lfsUrlExtractor(conf)
+	return lfsUrl, err
 }
 
 func getRefsRegex(refs string) string {

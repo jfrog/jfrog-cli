@@ -983,6 +983,24 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestGitLfsCleanup(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/gitlfs/(4b)(*)"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\gitlfs\\(4b)(*)")
+	}
+	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo + "/objects/4b/f4/{2}{1}")
+	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo + "/objects/4b/f4/")
+	refs := strings.Join([]string{"refs", "heads", "*"}, "/")
+	if runtime.GOOS == "windows" {
+		refs = strings.Join([]string{"refs", "heads", "*"}, "\\")
+	}
+	dotGitPath := getCliDotGitPath(t)
+	artifactoryCli.Exec("glc", dotGitPath, "--repo=" + tests.Lfs_Repo, "--refs=" + refs, "--quiet=true")
+	isExistInArtifactory(tests.GitLfsExpected, tests.GetFilePath(tests.GitLfsAssertSpec), t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
@@ -1177,6 +1195,13 @@ func createReposIfNeeded() error {
 	if !isRepoExist(tests.Repo2) {
 		repoConfig = tests.GetTestResourcesPath() + tests.MoveRepositoryConfig
 		err = execCreateRepoRest(repoConfig, tests.Repo2)
+		if err != nil {
+			return err
+		}
+	}
+	if !isRepoExist(tests.Lfs_Repo) {
+		repoConfig = tests.GetTestResourcesPath() + tests.GitLfsTestRepositoryConfig
+		err = execCreateRepoRest(repoConfig, tests.Lfs_Repo)
 		if err != nil {
 			return err
 		}

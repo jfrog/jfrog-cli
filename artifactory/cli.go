@@ -503,10 +503,6 @@ func getGitLfsCleanFlags() []cli.Flag {
 			Name:  "refs",
 			Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.",
 		},
-		cli.BoolFlag{
-			Name:  "regexp",
-			Usage: "[Default: false] Set to true to use a regular expression instead of wildcard expressions to specify refs.",
-		},
 		cli.StringFlag{
 			Name:  "repo",
 			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.",
@@ -1151,7 +1147,6 @@ func createGitLfsCleanFlags(c *cli.Context) (gitLfsCleanFlags *commands.GitLfsCl
 	if len(gitLfsCleanFlags.Refs) == 0 {
 		gitLfsCleanFlags.Refs = "refs/remotes/*"
 	}
-	gitLfsCleanFlags.Regexp = c.Bool("regexp")
 	gitLfsCleanFlags.Repo = c.String("repo")
 	gitLfsCleanFlags.Quiet = c.Bool("quiet")
 	gitLfsCleanFlags.DryRun = c.Bool("dry-run")
