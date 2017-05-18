@@ -845,7 +845,7 @@ func buildCollectEnvCmd(c *cli.Context) {
 }
 
 func buildAddGitCmd(c *cli.Context) {
-	if c.NArg() > 3 && c.NArg() < 2{
+	if c.NArg() > 3 || c.NArg() < 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	dotGitPath := ""

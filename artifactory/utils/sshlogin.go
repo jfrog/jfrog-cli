@@ -43,6 +43,7 @@ func SshAuthentication(details *config.ArtifactoryDetails) error {
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
+		HostKeyCallback : ssh.InsecureIgnoreHostKey(),
 	}
 
 	hostAndPort := host + ":" + strconv.Itoa(port)
