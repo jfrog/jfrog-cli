@@ -991,10 +991,11 @@ func TestGitLfsCleanup(t *testing.T) {
 	}
 	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo + "/objects/4b/f4/{2}{1}")
 	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo + "/objects/4b/f4/")
-	refs := strings.Join([]string{"refs", "heads", "*"}, "/")
+	separator := "/"
 	if runtime.GOOS == "windows" {
-		refs = strings.Join([]string{"refs", "heads", "*"}, "\\")
+		separator = "\\"
 	}
+	refs := strings.Join([]string{"refs", "heads", "*"}, separator)
 	dotGitPath := getCliDotGitPath(t)
 	artifactoryCli.Exec("glc", dotGitPath, "--repo=" + tests.Lfs_Repo, "--refs=" + refs, "--quiet=true")
 	isExistInArtifactory(tests.GitLfsExpected, tests.GetFilePath(tests.GitLfsAssertSpec), t)

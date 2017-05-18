@@ -19,29 +19,13 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-type GitLfsCleanFlags struct {
-	ArtDetails *config.ArtifactoryDetails
-	Refs       string
-	Repo       string
-	Quiet      bool
-	DryRun     bool
-}
-
-func (flags *GitLfsCleanFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
-	return flags.ArtDetails
-}
-
-func (flags *GitLfsCleanFlags) IsDryRun() bool {
-	return flags.DryRun
-}
-
 func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
 	var err error
 	repo := flags.Repo
 	if gitPath == "" {
 		gitPath, err = os.Getwd()
 		if err != nil {
-			return err
+			return cliutils.CheckError(err)
 		}
 	}
 	if len(repo) <= 0 {
@@ -50,23 +34,23 @@ func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
 			return err
 		}
 	}
-	log.Info("Gathering artifacts in repository", repo, "...")
+	log.Info("Searching files from Artifactory repository", repo, "...")
 	refsRegex := getRefsRegex(flags.Refs)
 	artifactoryLfsFiles, err := searchLfsFilesInArtifactory(repo, flags)
 	if err != nil {
-		return err
+		return cliutils.CheckError(err)
 	}
-	log.Info("Gathering artifacts to preserve from Git references matching the pattern", flags.Refs, "...")
+	log.Info("Collecting files to preserve from Git references matching the pattern", flags.Refs, "...")
 	gitLfsFiles, err := getLfsFilesFromGit(gitPath, refsRegex)
 	if err != nil {
-		return err
+		return cliutils.CheckError(err)
 	}
 	filesToDelete := findFilesToDelete(artifactoryLfsFiles, gitLfsFiles)
 	log.Info("Found", len(gitLfsFiles), "files to keep, and", len(filesToDelete), "to clean")
 	if confirmDelete(filesToDelete, flags.Quiet) {
 		err = deleteLfsFilesFromArtifactory(repo, filesToDelete, flags)
 		if err != nil {
-			return err
+			return cliutils.CheckError(err)
 		}
 	}
 	return nil
@@ -92,7 +76,7 @@ func detectRepo(gitPath, rtUrl string) (string, error) {
 	}
 	errMsg2 := fmt.Sprintln("Cannot detect Git LFS repository from .git/config: %s", err)
 	suggestedSolution := "You may want to try passing the --repo option manually"
-	return "", fmt.Errorf("%s%s%s", errMsg1, errMsg2, suggestedSolution)
+	return "", cliutils.CheckError(fmt.Errorf("%s%s%s", errMsg1, errMsg2, suggestedSolution))
 }
 
 func extractRepo(gitPath, configFile, rtUrl string, lfsUrlExtractor lfsUrlExtractorFunc) (string, error) {
@@ -120,16 +104,16 @@ func getLfsUrl(gitPath, configFile string, lfsUrlExtractor lfsUrlExtractorFunc) 
 	var lfsUrl *url.URL
 	lfsConf, err := os.Open(path.Join(gitPath, configFile))
 	if err != nil {
-		return nil, err
+		return nil, cliutils.CheckError(err)
 	}
 	defer lfsConf.Close()
 	conf := gitconfig.New()
 	err = gitconfig.NewDecoder(lfsConf).Decode(conf)
 	if err != nil {
-		return nil, err
+		return nil, cliutils.CheckError(err)
 	}
 	lfsUrl, err = lfsUrlExtractor(conf)
-	return lfsUrl, err
+	return lfsUrl, cliutils.CheckError(err)
 }
 
 func getRefsRegex(refs string) string {
@@ -147,7 +131,7 @@ func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlag) ([]utils.A
 }
 
 func deleteLfsFilesFromArtifactory(repo string, files []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
-	log.Info("Cleaning", len(files), "files from", repo, "...")
+	log.Info("Deleting", len(files), "files from", repo, "...")
 	return DeleteFiles(files, flags)
 }
 
@@ -166,12 +150,12 @@ func getLfsFilesFromGit(path, refMatch string) (map[string]struct{}, error) {
 	results := make(map[string]struct{}, 0)
 	repo, err := git.PlainOpen(path)
 	if err != nil {
-		return nil, err
+		return nil, cliutils.CheckError(err)
 	}
 	log.Debug("Opened Git repo at", path, "for reading")
 	refs, err := repo.References()
 	if err != nil {
-		return nil, err
+		return nil, cliutils.CheckError(err)
 	}
 	// look for every Git LFS pointer file that exists in any ref (branch,
 	// remote branch, tag, etc.) who's name matches the regex refMatch
@@ -185,22 +169,22 @@ func getLfsFilesFromGit(path, refMatch string) (map[string]struct{}, error) {
 		log.Debug("Checking ref", ref.Name().String())
 		match, err := regexp.MatchString(refMatch, ref.Name().String())
 		if err != nil || !match {
-			return err
+			return cliutils.CheckError(err)
 		}
 		commit, err := repo.CommitObject(ref.Hash())
 		if err != nil {
-			return err
+			return cliutils.CheckError(err)
 		}
 		files, err := commit.Files()
 		if err != nil {
-			return err
+			return cliutils.CheckError(err)
 		}
 		err = files.ForEach(func(file *object.File) error {
 			return collectLfsFileFromGit(results, file)
 		})
-		return err
+		return cliutils.CheckError(err)
 	})
-	return results, err
+	return results, cliutils.CheckError(err)
 }
 
 func collectLfsFileFromGit(results map[string]struct{}, file *object.File) error {
@@ -211,7 +195,7 @@ func collectLfsFileFromGit(results map[string]struct{}, file *object.File) error
 	}
 	lines, err := file.Lines()
 	if err != nil {
-		return err
+		return cliutils.CheckError(err)
 	}
 	// the line containing the sha2 we're looking for will match this regex
 	regex := "^oid sha256:[[:alnum:]]{64}$"
@@ -221,7 +205,7 @@ func collectLfsFileFromGit(results map[string]struct{}, file *object.File) error
 		}
 		match, err := regexp.MatchString(regex, line)
 		if err != nil || !match {
-			return err
+			return cliutils.CheckError(err)
 		}
 		result := line[strings.Index(line, ":") + 1:]
 		log.Debug("Found file", result)
@@ -245,4 +229,20 @@ func confirmDelete(files []utils.AqlSearchResultItem, quiet bool) bool {
 	fmt.Print("Are you sure you want to delete the above files? (y/n): ")
 	fmt.Scanln(&confirm)
 	return cliutils.ConfirmAnswer(confirm)
+}
+
+type GitLfsCleanFlags struct {
+	ArtDetails *config.ArtifactoryDetails
+	Refs       string
+	Repo       string
+	Quiet      bool
+	DryRun     bool
+}
+
+func (flags *GitLfsCleanFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *GitLfsCleanFlags) IsDryRun() bool {
+	return flags.DryRun
 }

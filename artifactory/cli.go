@@ -143,7 +143,7 @@ func GetCommands() []cli.Command {
 			Name:    "git-lfs-clean",
 			Flags:   getGitLfsCleanFlags(),
 			Aliases: []string{"glc"},
-			Usage:   "Clean Git LFS repository. This deletes all artifacts from a Git LFS repository that are no longer available in a corresponding Git repository.",
+			Usage:   "Clean files from a Git LFS repository. This deletes all files from a Git LFS repository that are no longer available in a corresponding Git repository.",
 			Action: func(c *cli.Context) {
 				gitLfsCleanCmd(c)
 			},
