@@ -148,7 +148,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.8.0"
+	return "1.9.0"
 }
 
 func GetConfigVersion() string {
