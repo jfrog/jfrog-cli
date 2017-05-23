@@ -17,7 +17,7 @@ node {
         withEnv(["GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
 
             stage 'Go get'
-            sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/...'
+            sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/jfrog'
             if (BRANCH?.trim()) {
                 dir("src/github.com/jfrogdev/jfrog-cli-go/jfrog") {
                     sh "git checkout $BRANCH"
