@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo2/flat_recursive_source/a/*.in",
+      "pattern": "jfrog-cli-tests-repo2/flat_recursive_source/a/*",
       "target": "jfrog-cli-tests-repo2/flat_recursive_target/",
       "flat": "true",
       "recursive": "true"
@@ -13,19 +13,19 @@
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/flat_nonrecursive_source/a/*.in",
+      "pattern": "jfrog-cli-tests-repo2/flat_nonrecursive_source/a/*",
       "target": "jfrog-cli-tests-repo2/flat_nonrecursive_target/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/nonflat_recursive_source/a/*.in",
+      "pattern": "jfrog-cli-tests-repo2/nonflat_recursive_source/a/*",
       "target": "jfrog-cli-tests-repo2/nonflat_recursive_target/",
       "flat": "false",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/nonflat_nonrecursive_source/a/*.in",
+      "pattern": "jfrog-cli-tests-repo2/nonflat_nonrecursive_source/a/*",
       "target": "jfrog-cli-tests-repo2/nonflat_nonrecursive_target/",
       "flat": "false",
       "recursive": "false"

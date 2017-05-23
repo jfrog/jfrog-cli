@@ -54,16 +54,6 @@ func createAqlQueryForBuild(buildName, buildNumber string) string {
 			"]}).include(\"name\",\"repo\",\"path\",\"actual_sha1\")"
 }
 
-func buildAqlReturnFieldsString(returnFields []string) (fieldsString string) {
-	for i, value := range returnFields {
-		fieldsString += value
-		if i < len(returnFields) - 1 {
-			fieldsString += ","
-		}
-	}
-	return fieldsString
-}
-
 func prepareSearchPattern(pattern string) string {
 	index := strings.Index(pattern, "/")
 	if index < 0 {

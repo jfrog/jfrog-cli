@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"encoding/json"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -149,6 +150,45 @@ func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryCopyPathsTwice(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = "../testsdata/a+a/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+	}
+	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
+
+	t.Log("Copy Folder to root twice")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopyFullPath, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2)
+	isExistInArtifactory(tests.SingleFileCopyFullPath, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("del", tests.Repo2, "--quiet=true")
+
+	t.Log("Copy to from repo1/path to repo2/path twice")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2 + "/path")
+	isExistInArtifactory(tests.SingleFileCopyFullPath, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2 + "/path")
+	isExistInArtifactory(tests.FolderCopyTwice, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("del", tests.Repo2, "--quiet=true")
+
+	t.Log("Copy to from repo1/path/ to repo2/path/ twice")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/", tests.Repo2 + "/path/")
+	isExistInArtifactory(tests.SingleInnerFileCopyFullPath, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path/", tests.Repo2 + "/path/")
+	isExistInArtifactory(tests.SingleInnerFileCopyFullPath, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("del", tests.Repo2, "--quiet=true")
+
+	t.Log("Copy to from repo1/path/ to repo2/path/ twice")
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2 + "/path/")
+	isExistInArtifactory(tests.FolderCopyIntoFolder, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("cp", tests.Repo1 + "/path", tests.Repo2 + "/path/")
+	isExistInArtifactory(tests.FolderCopyIntoFolder, tests.GetFilePath(tests.SearchRepo2), t)
+	artifactoryCli.Exec("del", tests.Repo2, "--quiet=true")
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = "../testsdata/a+a/a*"
@@ -158,7 +198,7 @@ func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1 + "/path/inner/", )
 	artifactoryCli.Exec("cp", tests.Repo1 + "/path/", tests.Repo2, "--flat=true")
-	isExistInArtifactory(tests.SingleDirectoryCopyFlat, tests.GetFilePath(tests.SearchRepo2), t)
+	isExistInArtifactory(tests.AnyItemCopyUsingSpec, tests.GetFilePath(tests.SearchRepo2), t)
 	cleanArtifactoryTest()
 }
 
@@ -450,7 +490,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
-	artifactoryCli.Exec("delete", tests.Repo1 + "/downloadTestResources/", "--quiet=true")
+	artifactoryCli.Exec("delete", tests.Repo1 + "/downloadTestResources", "--quiet=true")
 
 	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
 	resp, body, _, err := httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
@@ -458,6 +498,31 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 		t.Error("Coudln't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
 
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeleteFolderContent(t *testing.T) {
+	initArtifactoryTest(t)
+	prepUploadFiles()
+	artifactoryCli.Exec("delete", tests.Repo1 + "/downloadTestResources/", "--quiet=true")
+
+	artHttpDetails := utils.GetArtifactoryHttpClientDetails(artifactoryDetails)
+	resp, body, _, err := httputils.SendGet(*tests.RtUrl + "api/storage/" + tests.Repo1 + "/downloadTestResources", true, artHttpDetails)
+	if err != nil || resp.StatusCode != 200 {
+		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
+	}
+	folderContent, _, _, err := jsonparser.Get(body, "children")
+	if err != nil {
+		t.Error("Coudln't parse body:", string(body))
+	}
+	var folderChildren []struct{}
+	err = json.Unmarshal(folderContent, &folderChildren)
+	if err != nil {
+		t.Error("Coudln't parse body:", string(body))
+	}
+	if len(folderChildren) != 0 {
+		t.Error("downloadTestResources content wasn't deleted")
+	}
 	cleanArtifactoryTest()
 }
 

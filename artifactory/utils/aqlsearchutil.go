@@ -114,7 +114,7 @@ func (item AqlSearchResultItem) GetFullUrl() string {
 	url := item.Repo
 	url = addSeparator(url, "/", item.Path)
 	url = addSeparator(url, "/", item.Name)
-	if item.Type == "folder" && !strings.HasSuffix(url,"/") {
+	if item.Type == "folder" && !strings.HasSuffix(url, "/") {
 		url = url + "/"
 	}
 	return url
@@ -135,21 +135,21 @@ type AqlSearchFlag interface {
 	GetArtifactoryDetails() *config.ArtifactoryDetails
 }
 
-// Remove unnecessary paths.
-// For example if we have two paths for delete a/b/c/ and a/b/
-// it's enough to delete only a/b/
-func ReduceDirResult(searchResults []AqlSearchResultItem) []AqlSearchResultItem {
-	paths := make(map[string]AqlSearchResultItem)
-	pathsKeys := make([]string, 0, len(searchResults))
-	for _, file := range searchResults {
-		if file.Name == "." {
-			continue
-		}
+type AqlSearchResultItemFilter func(map[string]AqlSearchResultItem, []string) []AqlSearchResultItem
 
-		url := file.GetFullUrl()
-		paths[url] = file
-		pathsKeys = append(pathsKeys, url)
+func FilterBottomChainResults(paths map[string]AqlSearchResultItem, pathsKeys []string) []AqlSearchResultItem {
+	var result []AqlSearchResultItem
+	sort.Sort(sort.Reverse(sort.StringSlice(pathsKeys)))
+	for i, k := range pathsKeys {
+		if i == 0 || !IsSubPath(pathsKeys, i, "/") {
+			result = append(result, paths[k])
+		}
 	}
+
+	return result
+}
+
+func FilterTopChainResults(paths map[string]AqlSearchResultItem, pathsKeys []string) []AqlSearchResultItem {
 	sort.Strings(pathsKeys)
 	for _, k := range pathsKeys {
 		for _, k2 := range pathsKeys {
@@ -169,5 +169,22 @@ func ReduceDirResult(searchResults []AqlSearchResultItem) []AqlSearchResultItem 
 	for _, v := range paths {
 		result = append(result, v)
 	}
+
 	return result
+}
+
+// Reduce Dir results by using the resultsFilter
+func ReduceDirResult(searchResults []AqlSearchResultItem, resultsFilter AqlSearchResultItemFilter) []AqlSearchResultItem {
+	paths := make(map[string]AqlSearchResultItem)
+	pathsKeys := make([]string, 0, len(searchResults))
+	for _, file := range searchResults {
+		if file.Name == "." {
+			continue
+		}
+
+		url := file.GetFullUrl()
+		paths[url] = file
+		pathsKeys = append(pathsKeys, url)
+	}
+	return  resultsFilter(paths, pathsKeys)
 }

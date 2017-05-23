@@ -46,15 +46,6 @@ func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFla
 				return
 			}
 		}
-		// Simple directory delete, no need to search in Artifactory.
-		if simpleDir, e := isSimpleDirectoryDelete(currentSpec); simpleDir && e == nil {
-			simplePathItem := utils.AqlSearchResultItem{Path:currentSpec.Pattern}
-			resultItems = append(resultItems, []utils.AqlSearchResultItem{simplePathItem}...)
-			continue
-		} else if e != nil {
-			err = e
-			return
-		}
 
 		currentSpec.IncludeDirs = "true"
 		tempResultItems, e := utils.AqlSearchDefaultReturnFields(currentSpec, flags)
@@ -62,24 +53,11 @@ func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFla
 			err = e
 			return
 		}
-		paths := utils.ReduceDirResult(tempResultItems)
+		paths := utils.ReduceDirResult(tempResultItems, utils.FilterTopChainResults)
 		resultItems = append(resultItems, paths...)
 	}
 	utils.LogSearchResults(len(resultItems))
 	return
-}
-
-// We have simple dir delete when:
-//    1) The deleteFile is a dir path, ends with "/"
-//    2) The deleteFile doest contains wildcards
-//    3) The user hasn't sent any props
-//    4) The delete is recursive
-func isSimpleDirectoryDelete(deleteFile *utils.File) (bool, error) {
-	isRecursive, err := cliutils.StringToBool(deleteFile.Recursive, true)
-	if err != nil {
-		return false, err
-	}
-	return utils.IsSimpleDirectoryPath(deleteFile.Pattern) && isRecursive && deleteFile.Props == "", nil
 }
 
 func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlag) error {

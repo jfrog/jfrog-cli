@@ -27,31 +27,31 @@ func TestReduceDirResult(t *testing.T) {
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"b", Name:"c/"})
 	expected = append(expected, AqlSearchResultItem{Repo:"repo1", Path:"b", Name:"c/"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"br", Name:"c/"})
 	expected = append(expected, AqlSearchResultItem{Repo:"repo1", Path:"br", Name:"c/"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"br/c/dont/care", Name:"somename"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"bl", Name:"c1/"})
 	expected = append(expected, AqlSearchResultItem{Repo:"repo1", Path:"bl", Name:"c1/"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"bl/c1/you/dont/care", Name:"somename"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"bl/c1/i/dont/care", Name:"somename"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo1", Path:"b", Name:"."})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 
 	paths = append(paths, AqlSearchResultItem{Repo:"repo2", Path:"bl", Name:"c1"})
 	expected = append(expected, AqlSearchResultItem{Repo:"repo2", Path:"bl", Name:"c1"})
-	assertPackageFiles(expected, ReduceDirResult(paths), t)
+	assertPackageFiles(expected, ReduceDirResult(paths, FilterTopChainResults), t)
 }
 
 func assertPackageFiles(expected, actual []AqlSearchResultItem, t *testing.T) {
