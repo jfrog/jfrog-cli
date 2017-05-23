@@ -1,0 +1,4 @@
+[remote "origin"]
+    url = https://github.com/jfrogdev/jfrog-cli-go
+    fetch = +refs/heads/*:refs/remotes/origin/*
+    lfsurl = "http://localhost:8081/artifactory/api/lfs/lfs-local"

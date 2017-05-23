@@ -7,6 +7,10 @@
     {
       "pattern": "jfrog-cli-tests-repo2/",
       "recursive": "true"
+    },
+    {
+      "pattern": "jfrog-cli-lfs-repo/",
+      "recursive": "true"
     }
   ]
 }

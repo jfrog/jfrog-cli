@@ -105,7 +105,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "build-add-git",
-			Flags:    getServerFlags(),
+			Flags:   []cli.Flag{},
 			Aliases: []string{"bag"},
 			Usage:   "Capture git revision and remote url.",
 			Action: func(c *cli.Context) {
@@ -137,6 +137,15 @@ func GetCommands() []cli.Command {
 			Usage:   "Distribute build.",
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
+			},
+		},
+		{
+			Name:    "git-lfs-clean",
+			Flags:   getGitLfsCleanFlags(),
+			Aliases: []string{"glc"},
+			Usage:   "Clean files from a Git LFS repository. This deletes all files from a Git LFS repository that are no longer available in a corresponding Git repository.",
+			Action: func(c *cli.Context) {
+				gitLfsCleanCmd(c)
 			},
 		},
 	}
@@ -488,6 +497,27 @@ func getBuildDistributeFlags() []cli.Flag {
 	}...)
 }
 
+func getGitLfsCleanFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "refs",
+			Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.",
+		},
+		cli.StringFlag{
+			Name:  "repo",
+			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.",
+		},
+		cli.BoolFlag{
+			Name:  "quiet",
+			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.",
+		},
+	}...)
+}
+
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
@@ -815,7 +845,7 @@ func buildCollectEnvCmd(c *cli.Context) {
 }
 
 func buildAddGitCmd(c *cli.Context) {
-	if c.NArg() > 3 && c.NArg() < 2{
+	if c.NArg() > 3 || c.NArg() < 2 {
 		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
 	}
 	dotGitPath := ""
@@ -853,6 +883,22 @@ func buildDistributeCmd(c *cli.Context) {
 		cliutils.ExitOnErr(err)
 	}
 	err = commands.BuildDistribute(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildDistributeFlags)
+	cliutils.ExitOnErr(err)
+}
+
+func gitLfsCleanCmd(c *cli.Context) {
+	if c.NArg() > 1 {
+		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+	}
+	dotGitPath := ""
+	if c.NArg() == 1 {
+		dotGitPath = c.Args().Get(0)
+	}
+	gitLfsCleanFlags, err := createGitLfsCleanFlags(c)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	err = commands.GitLfsClean(dotGitPath, gitLfsCleanFlags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -966,7 +1012,7 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, false)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, true)
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1092,6 +1138,19 @@ func createBuildDistributionFlags(c *cli.Context) (distributeFlags *commands.Bui
 	distributeFlags.DryRun = c.Bool("dry-run")
 
 	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createGitLfsCleanFlags(c *cli.Context) (gitLfsCleanFlags *commands.GitLfsCleanFlags, err error) {
+	gitLfsCleanFlags = new(commands.GitLfsCleanFlags)
+	gitLfsCleanFlags.Refs = c.String("refs")
+	if len(gitLfsCleanFlags.Refs) == 0 {
+		gitLfsCleanFlags.Refs = "refs/remotes/*"
+	}
+	gitLfsCleanFlags.Repo = c.String("repo")
+	gitLfsCleanFlags.Quiet = c.Bool("quiet")
+	gitLfsCleanFlags.DryRun = c.Bool("dry-run")
+	gitLfsCleanFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 

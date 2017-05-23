@@ -37,12 +37,12 @@ func Stream(streamDetails *StreamDetails, writer io.Writer) (err error) {
 		}
 	}()
 
-	for (err == nil) {
-		if (!connected) {
+	for err == nil {
+		if !connected {
 			time.Sleep(TIMEOUT_DURATION)
 			continue
 		}
-		if (time.Since(lastServerInteraction) < TIMEOUT_DURATION) {
+		if time.Since(lastServerInteraction) < TIMEOUT_DURATION {
 			time.Sleep(TIMEOUT_DURATION - time.Now().Sub(lastServerInteraction))
 			continue
 		}
