@@ -653,6 +653,7 @@ func configCmd(c *cli.Context) {
 			validateServerId(serverId)
 		}
 	}
+	validateConfigFlags(configFlags)
 	cliutils.ExitOnErr(err)
 	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
 	cliutils.ExitOnErr(err)
@@ -1272,10 +1273,13 @@ func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err er
 	}
 	configFlag.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
 	configFlag.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
+	return
+}
+
+func validateConfigFlags(configFlag *commands.ConfigFlags) {
 	if !configFlag.Interactive && configFlag.ArtDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
 	}
-	return
 }
 
 func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {

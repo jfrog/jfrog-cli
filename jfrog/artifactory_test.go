@@ -62,7 +62,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
 	artifactoryCommandExecutor.Exec("upload", "--spec=" + specFile, "--server-id=" + rtServerId)
 	isExistInArtifactory(tests.SimpleUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
-	artifactoryCommandExecutor.Exec("c", "delete", rtServerId)
+	artifactoryCommandExecutor.Exec("c", "delete", rtServerId, "--interactive=false")
 	cleanArtifactoryTest()
 }
 
