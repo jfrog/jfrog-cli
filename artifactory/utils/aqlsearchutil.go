@@ -17,13 +17,29 @@ func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSea
 	if err != nil {
 		return nil, err
 	}
-	specFile.Aql = Aql{ItemsFind:query}
+	var dat map[string]interface{}
+	json.Unmarshal([]byte(query), &dat)
+	specFile.Aql = Aql{ItemsFind:dat}
 	return AqlSearchBySpec(specFile, flags)
 }
 
 func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	aqlBody := specFile.Aql.ItemsFind
-	query := "items.find(" + aqlBody + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	aqlJson, _ := json.Marshal(specFile.Aql.ItemsFind)
+	sortJson,_ := json.Marshal(specFile.Aql.Sort)
+	aqlBody := string(aqlJson)
+	sort := string(sortJson)
+	limit := specFile.Aql.Limit
+	query := "items.find(" + aqlBody + ")"
+	query += ".include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	if sort != "" {
+		query += ".sort(" + sort + ")"
+	}
+	if sort != "" {
+		query += ".limit(" + strconv.Itoa(limit) + ")"
+	}
+
+	log.Info("AQL query = " +query)
+
 	results, err := AqlSearch(query, flags)
 	if err != nil {
 		return nil, err
