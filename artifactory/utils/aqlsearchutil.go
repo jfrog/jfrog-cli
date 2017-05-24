@@ -24,21 +24,27 @@ func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSea
 }
 
 func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	aqlJson, _ := json.Marshal(specFile.Aql.ItemsFind)
-	sortJson,_ := json.Marshal(specFile.Aql.Sort)
+	aqlJson, err := json.Marshal(specFile.Aql.ItemsFind)
+	if cliutils.CheckError(err) != nil {
+		return nil, err
+	}
+	sortJson, err := json.Marshal(specFile.Aql.Sort)
+	if cliutils.CheckError(err) != nil {
+		return nil, err
+	}
 	aqlBody := string(aqlJson)
 	sort := string(sortJson)
 	limit := specFile.Aql.Limit
 	query := "items.find(" + aqlBody + ")"
 	query += ".include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
-	if sort != "" {
+	if sort != "" && sort != "null" {
 		query += ".sort(" + sort + ")"
 	}
-	if sort != "" {
+	if limit > 0 {
 		query += ".limit(" + strconv.Itoa(limit) + ")"
 	}
 
-	log.Info("AQL query = " +query)
+	log.Debug("AQL query = " +query)
 
 	results, err := AqlSearch(query, flags)
 	if err != nil {
