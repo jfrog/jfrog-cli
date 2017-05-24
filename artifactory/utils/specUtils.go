@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	//"strings"
 	"strconv"
 )
 
@@ -43,14 +42,6 @@ func (spec *SpecFiles) Get(index int) *File {
 	return new(File)
 }
 
-/*func (aql *Aql) UnmarshalJSON(value []byte) error {
-	str := string(value)
-	first := strings.Index(str[strings.Index(str, "{") + 1 :], "{")
-	last := strings.LastIndex(str, "}")
-
-	aql.ItemsFind = cliutils.StripChars(str[first:last], "\n\t ")
-	return nil
-}*/
 
 func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
