@@ -2,6 +2,7 @@ package utils
 
 import (
 	"testing"
+	"path/filepath"
 )
 
 func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
@@ -72,7 +73,7 @@ func TestCreatePathFilePairs(t *testing.T) {
 }
 
 func TestCreatePathFolderPairs(t *testing.T) {
-	pairs := []PathFilePair{{"*","*"}, {"*\\*","*"}}
+	pairs := []PathFilePair{{"*","*"}, {filepath.Join("*", "*"),"*"}}
 	validatePathPairs(createPathFolderPairs("repo/*/*/"), pairs, "repo/*/*/", t)
 	pairs = []PathFilePair{{".","*"}, {"*","*"}}
 	validatePathPairs(createPathFolderPairs("repo/*/"), pairs, "repo/*/", t)

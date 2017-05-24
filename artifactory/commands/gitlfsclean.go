@@ -225,10 +225,7 @@ func confirmDelete(files []utils.AqlSearchResultItem, quiet bool) bool {
 	for _, v := range files {
 		fmt.Println("  " + v.Name)
 	}
-	var confirm string
-	fmt.Print("Are you sure you want to delete the above files? (y/n): ")
-	fmt.Scanln(&confirm)
-	return cliutils.ConfirmAnswer(confirm)
+	return cliutils.InteractiveConfirm("Are you sure you want to delete the above files?")
 }
 
 type GitLfsCleanFlags struct {

@@ -22,7 +22,7 @@ func TestConfig(t *testing.T) {
 	if configStructToString(&inputDetails) != configStructToString(outputConfig) {
 		t.Error("Unexpected configuration was saved to file. Expected: " + configStructToString(&inputDetails) + " Got " + configStructToString(outputConfig))
 	}
-	err = DeleteConfig("test")
+	err = DeleteConfig("test", false)
 	if err != nil {
 		t.Error(err.Error())
 	}

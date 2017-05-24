@@ -629,11 +629,12 @@ func configCmd(c *cli.Context) {
 	}
 
 	var serverId string
+	configFlags, err := createConfigFlags(c)
 	if len(c.Args()) == 2 {
 		serverId = c.Args()[1]
 		validateServerId(serverId)
 		if c.Args()[0] == "delete" {
-			err := commands.DeleteConfig(serverId)
+			err := commands.DeleteConfig(serverId, configFlags.Interactive)
 			cliutils.ExitOnErr(err)
 			return
 		}
@@ -644,7 +645,7 @@ func configCmd(c *cli.Context) {
 			cliutils.ExitOnErr(err)
 			return
 		} else if c.Args()[0] == "clear" {
-			commands.ClearConfig()
+			commands.ClearConfig(configFlags.Interactive)
 			cliutils.ExitOnErr(nil)
 			return
 		} else {
@@ -652,7 +653,6 @@ func configCmd(c *cli.Context) {
 			validateServerId(serverId)
 		}
 	}
-	configFlags, err := createConfigFlags(c)
 	cliutils.ExitOnErr(err)
 	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
 	cliutils.ExitOnErr(err)

@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"regexp"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 const CliAgent = "jfrog-cli-go"
@@ -132,6 +133,13 @@ func MapToJson(m map[string]string) string {
 	}
 	json += "}"
 	return json
+}
+
+func InteractiveConfirm(message string) bool {
+	var confirm string
+	fmt.Print(message + " (y/n): ")
+	fmt.Scanln(&confirm)
+	return ConfirmAnswer(confirm)
 }
 
 func ConfirmAnswer(answer string) bool {

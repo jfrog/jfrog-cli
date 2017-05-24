@@ -12,6 +12,8 @@ import (
 	"github.com/buger/jsonparser"
 )
 
+const DefaultServerId = "Default-Server"
+
 func IsArtifactoryConfExists() (bool, error) {
     conf, err := readConf()
     if err != nil {
@@ -266,7 +268,7 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 	config.MissionControl = o.MissionControl
 	if o.Artifactory != nil {
 		o.Artifactory.IsDefault = true
-		o.Artifactory.ServerId = "default"
+		o.Artifactory.ServerId = DefaultServerId
 		config.Artifactory = []*ArtifactoryDetails{o.Artifactory}
 	}
 	return config

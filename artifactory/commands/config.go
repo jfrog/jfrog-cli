@@ -25,6 +25,7 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 			return nil, err
 		}
 	}
+	serverId = resolveServerId(serverId, details, defaultDetails)
 	err = checkSingleAuthMethod(details)
 	if err != nil {
 		return nil, err
@@ -37,9 +38,19 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 			return nil, err
 		}
 	}
-	copyDetails(details, defaultDetails)
+	populateConfigurationDetails(serverId, details, defaultDetails)
 	err = config.SaveArtifactoryConf(configurations)
 	return details, err
+}
+
+func populateConfigurationDetails(serverId string, details, defaultDetails *config.ArtifactoryDetails) {
+	if defaultDetails == nil {
+		defaultDetails = new(config.ArtifactoryDetails)
+	}
+	isDefault := defaultDetails.IsDefault
+	*defaultDetails = *details
+	defaultDetails.IsDefault = isDefault
+	defaultDetails.ServerId = serverId
 }
 
 func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
@@ -61,6 +72,19 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 	return details, defaultDetails, configurations, err
 }
 
+func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails) (string) {
+	if serverId != "" {
+		return serverId
+	}
+	if details.ServerId != "" {
+		return details.ServerId
+	}
+	if defaultDetails.ServerId != "" {
+		return defaultDetails.ServerId
+	}
+	return config.DefaultServerId
+}
+
 func handleEmptyDefaultDetails(serverId string, configurations []*config.ArtifactoryDetails, details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, []*config.ArtifactoryDetails, *config.ArtifactoryDetails, error) {
 	var defaultDetails *config.ArtifactoryDetails
 	var err error
@@ -77,8 +101,6 @@ func handleEmptyDefaultDetails(serverId string, configurations []*config.Artifac
 		if defaultDetails.IsEmpty() {
 			defaultDetails.IsDefault = len(configurations) == 0
 			configurations = append(configurations, defaultDetails)
-			// The new server details should have the serverId the user configured
-			details.ServerId = serverId
 		}
 	}
 	return defaultDetails, configurations, details, err
@@ -105,15 +127,6 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		}
 	}
 	return nil
-}
-
-func copyDetails(src, dst *config.ArtifactoryDetails) {
-	if dst == nil {
-		dst = new(config.ArtifactoryDetails)
-	}
-	isDefault := dst.IsDefault
-	*dst = *src
-	dst.IsDefault = isDefault
 }
 
 func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
@@ -176,7 +189,7 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 	}
 }
 
-func DeleteConfig(serverName string) error {
+func DeleteConfig(serverName string, interactive bool) error {
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
 		return err
@@ -195,7 +208,15 @@ func DeleteConfig(serverName string) error {
 		configurations[0].IsDefault = true
 	}
 	if isFoundName {
+		if interactive {
+			var confirmed =	cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverName + "\" configuration?")
+			if !confirmed {
+				return nil
+			}
+		}
 		return config.SaveArtifactoryConf(configurations)
+	} else {
+		log.Info("\"" + serverName + "\" configuration could not be found.\n")
 	}
 	return nil
 }
@@ -228,7 +249,13 @@ func Use(serverName string) error {
 	return nil
 }
 
-func ClearConfig() {
+func ClearConfig(interactive bool) {
+	if interactive {
+		confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete all the configurations?")
+		if !confirmed {
+			return
+		}
+	}
 	config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 }
 
@@ -261,7 +288,7 @@ func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) (err error) {
 	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.SshKeyPath != ""}
-	if (cliutils.SumTrueValues(boolArr) > 1) {
+	if cliutils.SumTrueValues(boolArr) > 1 {
 		err = cliutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
 	}
 	return
