@@ -84,6 +84,9 @@ func createBuildInfo(buildName, buildNumber string, buildInfoRawData utils.Build
 	}
 	module := createModule(buildName, artifactsSet, dependenciesSet)
 	buildInfo.Modules = append(buildInfo.Modules, module)
+	if (flags.CiServerUrl != "") {
+		buildInfo.CiServerUrl = flags.CiServerUrl
+	}
 	return buildInfo, nil
 }
 
@@ -143,6 +146,7 @@ type BuildInfo struct {
 	Properties  utils.BuildEnv `json:"properties,omitempty"`
 	VcsUrl      string 		   `json:"vcsUrl,omitempty"`
 	VcsRevision string 		   `json:"vcsRevision,omitempty"`
+	CiServerUrl string 		   `json:"url,omitempty"`
 }
 
 type CliAgent struct {
