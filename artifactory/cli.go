@@ -191,6 +191,10 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Optional] Path to a spec file.",
 		},
 		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the upload spec.",
+		},
+		cli.StringFlag{
 			Name:  "build-name",
 			Usage: "[Optional] Build name.",
 		},
@@ -249,6 +253,10 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the download spec.",
 		},
 		cli.StringFlag{
 			Name:  "build-name",
@@ -313,6 +321,10 @@ func getMoveFlags() []cli.Flag {
 			Usage: "[Optional] Path to a spec file.",
 		},
 		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the move spec.",
+		},
+		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.",
@@ -343,6 +355,10 @@ func getCopyFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the copy spec.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -376,6 +392,10 @@ func getDeleteFlags() []cli.Flag {
 			Usage: "[Optional] Path to a spec file.",
 		},
 		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the delete spec.",
+		},
+		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be deleted.",
 		},
@@ -405,6 +425,10 @@ func getSearchFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a spec file.",
+		},
+		cli.StringFlag{
+			Name:  "spec-vars",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the search spec.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -1017,7 +1041,7 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1048,7 +1072,7 @@ func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1082,7 +1106,7 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1168,7 +1192,7 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
-	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1216,7 +1240,7 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
-	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"))
+	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1285,11 +1309,5 @@ func validateConfigFlags(configFlag *commands.ConfigFlags) {
 func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
 		*field = c.String(fieldName)
-	}
-}
-
-func overrideBoolIfSet(field *bool, c *cli.Context, fieldName string) {
-	if c.IsSet(fieldName) {
-		*field = c.Bool(fieldName)
 	}
 }

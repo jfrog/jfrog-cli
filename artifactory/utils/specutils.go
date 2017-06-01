@@ -6,6 +6,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"strings"
 	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"bytes"
+	"fmt"
 )
 
 const (
@@ -50,11 +53,15 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
+func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
 	content, err := fileutils.ReadFile(specFilePath)
 	if cliutils.CheckError(err) != nil {
 		return
+	}
+
+	if len(specVars) > 0 {
+		content = replaceSpecVars(content, specVars)
 	}
 
 	err = json.Unmarshal(content, spec)
@@ -62,6 +69,17 @@ func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 		return
 	}
 	return
+}
+
+func replaceSpecVars(content []byte, specVars map[string]string) []byte {
+	log.Debug("Replacing variables in the provided fileSpec: \n" + string(content))
+	for key, val := range specVars {
+		key = "${" + key + "}"
+		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
+		content = bytes.Replace(content, []byte(key), []byte(val), -1)
+	}
+	log.Debug("The reformatted fileSpec is: \n" + string(content))
+	return content
 }
 
 func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, includeDirs bool) (spec *SpecFiles) {

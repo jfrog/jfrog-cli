@@ -352,6 +352,36 @@ func SumTrueValues(boolArr []bool) int {
 	return counter
 }
 
+func ParseSpecVars(rawVars string) map[string]string {
+	if len(rawVars) == 0 {
+		return nil
+	}
+	varCandidates := strings.Split(rawVars, ";")
+	varsList := []string{}
+	for _, v := range varCandidates {
+		if len(varsList) > 0 && isEndsWithEscapeChar(varsList[len(varsList) - 1]) {
+			currentLastVar := varsList[len(varsList) - 1]
+			varsList[len(varsList) - 1] = strings.TrimSuffix(currentLastVar, "\\") + ";" + v
+			continue
+		}
+		varsList = append(varsList, v)
+	}
+	return createVarsToMap(varsList)
+}
+
+func isEndsWithEscapeChar(lastVar string) bool {
+	return strings.HasSuffix(lastVar, "\\")
+}
+
+func createVarsToMap(vars []string) map[string]string {
+	result := map[string]string{}
+	for _, v := range vars {
+		keyVal := strings.SplitN(v, "=", 2)
+		result[keyVal[0]] = keyVal[1]
+	}
+	return result
+}
+
 type Credentials interface {
 	SetUser(string)
 	SetPassword(string)
