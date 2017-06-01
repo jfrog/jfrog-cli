@@ -36,6 +36,13 @@ go get github.com/jfrogdev/jfrog-cli-go/jfrog
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
+## Build a modified version hosted in another git repo
+- Checkout your repo e.g. to "...\Repos\jfrog-cli-go\src\github.com\jfrogdev\jfrog-cli-go\"
+- Do your modifications.
+- cd into the jfrog dir and do a "go install", this will create a jfrog.exe in "Repos\jfrog-cli-go\bin"
+
+
+
 # Tests
 
 ### Artifactory Integration tests

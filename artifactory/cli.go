@@ -436,6 +436,10 @@ func getBuildPublishFlags() []cli.Flag {
 			Name:  "env-exclude",
 			Usage: "[Default: *password*;*secret*;*key*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be eccluded.",
 		},
+		cli.StringFlag{
+			Name:  "ciserver-url",
+			Usage: "[Optional] Your CI-Server URL for this build.",
+		},
 	}...)
 }
 
@@ -1106,6 +1110,7 @@ func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, err erro
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
 	flags.EnvExclude = c.String("env-exclude")
+	flags.CiServerUrl = c.String("ciserver-url")
 	if len(flags.EnvInclude) == 0 {
 		flags.EnvInclude = "*"
 	}

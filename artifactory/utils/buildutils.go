@@ -211,9 +211,10 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 
 type BuildInfoFlags struct {
 	ArtDetails *config.ArtifactoryDetails
-	DryRun     bool
-	EnvInclude string
-	EnvExclude string
+	DryRun      bool
+	EnvInclude  string
+	EnvExclude  string
+	CiServerUrl string
 }
 
 type build struct {
