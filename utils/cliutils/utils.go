@@ -369,6 +369,13 @@ func ParseSpecVars(rawVars string) map[string]string {
 	return createVarsToMap(varsList)
 }
 
+func CopyMap(src map[string]string) (dst map[string]string) {
+	for k, v := range src {
+		dst[k] = v
+	}
+	return
+}
+
 func isEndsWithEscapeChar(lastVar string) bool {
 	return strings.HasSuffix(lastVar, "\\")
 }
@@ -394,4 +401,3 @@ type Artifact struct {
 	TargetPath string
 	Symlink    string
 }
-

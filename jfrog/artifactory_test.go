@@ -1212,7 +1212,7 @@ func prepCopyFiles() {
 func getPathsToDelete(specFile string) []utils.AqlSearchResultItem {
 	flags := new(commands.DeleteFlags)
 	flags.ArtDetails = artifactoryDetails
-	deleteSpec, _ := utils.CreateSpecFromFile(specFile)
+	deleteSpec, _ := utils.CreateSpecFromFile(specFile, nil)
 	artifactsToDelete, _ := commands.GetPathsToDelete(deleteSpec, flags)
 	return artifactsToDelete
 }
@@ -1278,14 +1278,14 @@ func createReposIfNeeded() error {
 func cleanArtifactory() {
 	deleteFlags := new(commands.DeleteFlags)
 	deleteFlags.ArtDetails = artifactoryDetails
-	deleteSpec, _ := utils.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec))
+	deleteSpec, _ := utils.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec), nil)
 	commands.Delete(deleteSpec, deleteFlags)
 }
 
 func searchInArtifactory(specFile string) (result []commands.SearchResult, err error) {
 	searchFlags := new(commands.SearchFlags)
 	searchFlags.ArtDetails = artifactoryDetails
-	searchSpec, _ := utils.CreateSpecFromFile(specFile)
+	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
 	result, err = commands.Search(searchSpec, searchFlags)
 	return
 }

@@ -132,7 +132,7 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 		User:      artifactoryDetails.User,
 		Password:  artifactoryDetails.Password,
 		ApiKey:    artifactoryDetails.ApiKey,
-		Headers:   artifactoryDetails.SshAuthHeaders,
+		Headers:   cliutils.CopyMap(artifactoryDetails.SshAuthHeaders),
 		Transport: artifactoryDetails.Transport}
 }
 
