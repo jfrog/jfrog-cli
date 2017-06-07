@@ -352,7 +352,7 @@ func SumTrueValues(boolArr []bool) int {
 	return counter
 }
 
-func ParseSpecVars(rawVars string) map[string]string {
+func SpecVarsStringToMap(rawVars string) map[string]string {
 	if len(rawVars) == 0 {
 		return nil
 	}
@@ -366,7 +366,7 @@ func ParseSpecVars(rawVars string) map[string]string {
 		}
 		varsList = append(varsList, v)
 	}
-	return createVarsToMap(varsList)
+	return varsAsMap(varsList)
 }
 
 func CopyMap(src map[string]string) (dst map[string]string) {
@@ -380,7 +380,7 @@ func isEndsWithEscapeChar(lastVar string) bool {
 	return strings.HasSuffix(lastVar, "\\")
 }
 
-func createVarsToMap(vars []string) map[string]string {
+func varsAsMap(vars []string) map[string]string {
 	result := map[string]string{}
 	for _, v := range vars {
 		keyVal := strings.SplitN(v, "=", 2)

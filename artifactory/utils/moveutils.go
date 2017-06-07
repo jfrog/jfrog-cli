@@ -157,7 +157,6 @@ func createPathForMoveAction(destPath string, flags *MoveFlags, moveType MoveTyp
 		return true, nil
 	}
 
-	log.Info("Prepare path before folder", moveType + ".")
 	return createPathInArtifactory(destPath, flags)
 }
 

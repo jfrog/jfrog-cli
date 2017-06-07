@@ -26,24 +26,24 @@ func assertReformatRegexp(regexp, source, dest, expected string, t *testing.T) {
 	}
 }
 
-func TestPrepareSpecVars(t *testing.T) {
+func TestSpecVarsStringToMap(t *testing.T) {
 	var actual map[string]string
-	actual = ParseSpecVars("")
+	actual = SpecVarsStringToMap("")
 	assertSpecVars(nil, actual, t)
 
-	actual = ParseSpecVars("foo=bar")
+	actual = SpecVarsStringToMap("foo=bar")
 	assertSpecVars(map[string]string{"foo": "bar"}, actual, t)
 
-	actual = ParseSpecVars("foo=bar;bar=foo")
+	actual = SpecVarsStringToMap("foo=bar;bar=foo")
 	assertSpecVars(map[string]string{"foo": "bar", "bar": "foo"}, actual, t)
 
-	actual = ParseSpecVars("foo=bar\\;bar=foo")
+	actual = SpecVarsStringToMap("foo=bar\\;bar=foo")
 	assertSpecVars(map[string]string{"foo": "bar;bar=foo"}, actual, t)
 
-	actual = ParseSpecVars("a=b;foo=foo=bar\\;bar=foo")
+	actual = SpecVarsStringToMap("a=b;foo=foo=bar\\;bar=foo")
 	assertSpecVars(map[string]string{"foo": "foo=bar;bar=foo", "a": "b"}, actual, t)
 
-	actual = ParseSpecVars("foo=bar;foo=bar")
+	actual = SpecVarsStringToMap("foo=bar;foo=bar")
 	assertSpecVars(map[string]string{"foo": "bar"}, actual, t)
 }
 

@@ -192,7 +192,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the upload spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "build-name",
@@ -256,7 +256,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the download spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "build-name",
@@ -322,7 +322,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the move spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -358,7 +358,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the copy spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -393,7 +393,7 @@ func getDeleteFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the delete spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -428,7 +428,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the search spec.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -1041,7 +1041,7 @@ func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1072,7 +1072,7 @@ func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1106,7 +1106,7 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
+	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1192,7 +1192,7 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
-	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
+	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -1240,7 +1240,7 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
-	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.ParseSpecVars(c.String("spec-vars")))
+	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
