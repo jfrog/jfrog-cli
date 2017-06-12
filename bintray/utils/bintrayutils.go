@@ -14,7 +14,7 @@ import (
 )
 
 func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *PathDetails, targetPath string,
-flags *DownloadFlags, logMsgPrefix string) (err error) {
+	flags *DownloadFlags, logMsgPrefix string) (err error) {
 
 	cleanPath := strings.Replace(pathDetails.Path, "(", "", -1)
 	cleanPath = strings.Replace(cleanPath, ")", "", -1)
@@ -110,10 +110,7 @@ func shouldDownloadFile(localFilePath string, remoteFileDetails *fileutils.FileD
 	if err != nil {
 		return false, err
 	}
-	if localFileDetails.Sha1 != remoteFileDetails.Sha1 {
-		return true, nil
-	}
-	return false, nil
+	return localFileDetails.Checksum.Sha1 != remoteFileDetails.Checksum.Sha1, nil
 }
 
 func ReadBintrayMessage(resp []byte) string {

@@ -28,8 +28,8 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 	return resp, string(body), err
 }
 
-func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-details *fileutils.FileDetails, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
+func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails, details *fileutils.FileDetails,
+	httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
 	var err error
 	if details == nil {
 		details, err = fileutils.GetFileDetails(f.Name())
@@ -38,8 +38,8 @@ details *fileutils.FileDetails, httpClientsDetails httputils.HttpClientDetails) 
 		return nil, nil, err
 	}
 	headers := map[string]string{
-		"X-Checksum-Sha1": details.Sha1,
-		"X-Checksum-Md5":  details.Md5,
+		"X-Checksum-Sha1": details.Checksum.Sha1,
+		"X-Checksum-Md5":  details.Checksum.Md5,
 	}
 	AddAuthHeaders(headers, artifactoryDetails)
 	requestClientDetails := httpClientsDetails.Clone()

@@ -11,9 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"errors"
-	"runtime"
 	"time"
-	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/gofrog/parallel"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -456,10 +454,6 @@ func doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpCli
 		if err != nil {
 			return resp, details, body, err
 		}
-		details, err = fileutils.GetFileDetails(localPath)
-		if err != nil {
-			return resp, details, body, err
-		}
 		if resp.StatusCode != 201 && resp.StatusCode != 200 {
 			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body))
 		}
@@ -494,10 +488,9 @@ func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, ch
 
 // When handling symlink we want to simulate the creation of  empty file
 func createSymlinkFileDetails() *fileutils.FileDetails {
-	const symlinkBody = ""
 	details := new(fileutils.FileDetails)
-	details.Md5, _ = fileutils.GetMd5(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
-	details.Sha1, _ = fileutils.GetSha1(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
+	details.Checksum.Md5, _ = fileutils.GetMd5(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
+	details.Checksum.Sha1, _ = fileutils.GetSha1(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
 	details.Size = int64(0)
 	return details
 }
@@ -506,8 +499,8 @@ func createBuildArtifactItem(fileName string, details *fileutils.FileDetails) ut
 	return utils.ArtifactsBuildInfo{
 		Name: fileName,
 		BuildInfoCommon : &utils.BuildInfoCommon{
-			Sha1: details.Sha1,
-			Md5: details.Md5,
+			Sha1: details.Checksum.Sha1,
+			Md5: details.Checksum.Md5,
 		},
 	}
 }
@@ -531,18 +524,8 @@ func getMinChecksumDeploySize() (int64, error) {
 	return minSize * 1000, nil
 }
 
-func extractOnlyFileNameFromPath(file string) string {
-	if runtime.GOOS == "windows" {
-		splitedPath := strings.Split(file, "\\")
-		return splitedPath[len(splitedPath) - 1]
-	} else {
-		_, fileName := filepath.Split(file)
-		return fileName
-	}
-}
-
 func tryChecksumDeploy(filePath, targetPath string, flags *UploadFlags,
-httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
+	httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
 
 	details, err = fileutils.GetFileDetails(filePath)
 	if err != nil {
@@ -550,8 +533,8 @@ httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, details *f
 	}
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
-	headers["X-Checksum-Sha1"] = details.Sha1
-	headers["X-Checksum-Md5"] = details.Md5
+	headers["X-Checksum-Sha1"] = details.Checksum.Sha1
+	headers["X-Checksum-Md5"] = details.Checksum.Md5
 	requestClientDetails := httpClientsDetails.Clone()
 	cliutils.MergeMaps(headers, requestClientDetails.Headers)
 	if flags.DryRun {

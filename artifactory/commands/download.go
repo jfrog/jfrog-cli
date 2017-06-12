@@ -268,10 +268,7 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if localFileDetails.Md5 != md5 || localFileDetails.Sha1 != sha1 {
-		return true, nil
-	}
-	return false, nil
+	return localFileDetails.Checksum.Md5 != md5 || localFileDetails.Checksum.Sha1 != sha1, nil
 }
 
 func removeIfSymlink(localSymlinkPath string) error {

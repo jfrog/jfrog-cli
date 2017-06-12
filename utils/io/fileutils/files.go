@@ -16,6 +16,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
 	"path"
+	"sync"
 )
 
 const SYMLINK_FILE_CONTENT = ""
@@ -181,7 +182,7 @@ func CreateDirIfNotExist(path string) error {
 		return err
 	}
 	_, err = CreateFilePath(path, "")
-	return  err
+	return err
 }
 
 func GetTempDirPath() (string, error) {
@@ -297,14 +298,7 @@ func ReadFile(filePath string) ([]byte, error) {
 func GetFileDetails(filePath string) (*FileDetails, error) {
 	var err error
 	details := new(FileDetails)
-	details.Md5, err = CalcMd5(filePath)
-	if err != nil {
-		return nil, err
-	}
-	details.Sha1, err = CalcSha1(filePath)
-	if err != nil {
-		return nil, err
-	}
+	details.Checksum, err = calcChecksumDetails(filePath)
 
 	file, err := os.Open(filePath)
 	err = cliutils.CheckError(err)
@@ -320,6 +314,31 @@ func GetFileDetails(filePath string) (*FileDetails, error) {
 	}
 	details.Size = fileInfo.Size()
 	return details, nil
+}
+
+func calcChecksumDetails(filePath string) (ChecksumDetails, error) {
+	checksumArray := []struct {
+		calc  func(string) (string, error)
+		value string
+		err   error
+	}{{calc: CalcMd5}, {calc: CalcSha1}}
+
+	var wg sync.WaitGroup
+	for i, checksum := range checksumArray {
+		wg.Add(1)
+		go func(i int, calc func(string) (string, error)) {
+			checksumArray[i].value, checksumArray[i].err = calc(filePath)
+			wg.Done()
+		}(i, checksum.calc)
+	}
+	wg.Wait()
+
+	for _, checksum := range checksumArray {
+		if checksum.err != nil {
+			return ChecksumDetails{}, checksum.err
+		}
+	}
+	return ChecksumDetails{Md5: checksumArray[0].value, Sha1: checksumArray[1].value}, nil
 }
 
 func CalcSha1(filePath string) (string, error) {
@@ -366,10 +385,12 @@ func GetMd5(input io.Reader) (string, error) {
 }
 
 type FileDetails struct {
-	Md5          string
-	Sha1         string
+	Checksum     ChecksumDetails
 	Size         int64
 	AcceptRanges *types.BoolEnum
 }
 
-
+type ChecksumDetails struct {
+	Md5          string
+	Sha1         string
+}

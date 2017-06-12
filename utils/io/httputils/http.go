@@ -300,8 +300,8 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 	}
 
 	fileDetails := new(fileutils.FileDetails)
-	fileDetails.Md5 = resp.Header.Get("X-Checksum-Md5")
-	fileDetails.Sha1 = resp.Header.Get("X-Checksum-Sha1")
+	fileDetails.Checksum.Md5 = resp.Header.Get("X-Checksum-Md5")
+	fileDetails.Checksum.Sha1 = resp.Header.Get("X-Checksum-Sha1")
 	fileDetails.Size = fileSize
 	fileDetails.AcceptRanges = types.CreateBoolEnum()
 	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")
