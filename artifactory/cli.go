@@ -11,6 +11,7 @@ import (
 	"strings"
 	"encoding/json"
 	"runtime"
+	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func GetCommands() []cli.Command {
@@ -658,8 +659,21 @@ func configCmd(c *cli.Context) {
 		serverId = c.Args()[1]
 		validateServerId(serverId)
 		if c.Args()[0] == "delete" {
-			err := commands.DeleteConfig(serverId, configFlags.Interactive)
+			artDetails, err := config.GetArtifactorySpecificConfig(serverId)
 			cliutils.ExitOnErr(err)
+			if artDetails.IsEmpty() {
+				log.Info("\"" + serverId + "\" configuration could not be found.")
+				return
+			}
+			if !configFlags.Interactive {
+				cliutils.ExitOnErr(commands.DeleteConfig(serverId))
+				return
+			}
+			var confirmed =	cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?")
+			if !confirmed {
+				return
+			}
+			cliutils.ExitOnErr(commands.DeleteConfig(serverId))
 			return
 		}
 	}
@@ -819,10 +833,8 @@ func deleteIfConfirmed(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags)
 	for _, v := range pathsToDelete {
 		fmt.Println("  " + v.GetFullUrl())
 	}
-	var confirm string
-	fmt.Print("Are you sure you want to delete the above paths? (y/n): ")
-	fmt.Scanln(&confirm)
-	if !cliutils.ConfirmAnswer(confirm) {
+	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
+	if !confirmed {
 		return nil
 	}
 	return commands.DeleteFiles(pathsToDelete, flags)
@@ -920,11 +932,29 @@ func gitLfsCleanCmd(c *cli.Context) {
 		dotGitPath = c.Args().Get(0)
 	}
 	gitLfsCleanFlags, err := createGitLfsCleanFlags(c)
-	if err != nil {
+	cliutils.ExitOnErr(err)
+	filesToDelete, flags, err := commands.PrepareGitLfsClean(dotGitPath, gitLfsCleanFlags)
+	cliutils.ExitOnErr(err)
+	if len(filesToDelete) < 1 {
+		return
+	}
+	if flags.Quiet {
+		err = commands.DeleteLfsFilesFromArtifactory(filesToDelete, flags)
+		cliutils.ExitOnErr(err)
+		return
+	}
+	interactiveDeleteLfsFiles(filesToDelete, flags)
+}
+
+func interactiveDeleteLfsFiles(filesToDelete []utils.AqlSearchResultItem, flags *commands.GitLfsCleanFlags) {
+	for _, v := range filesToDelete {
+		fmt.Println("  " + v.Name)
+	}
+	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above files?")
+	if confirmed {
+		err := commands.DeleteLfsFilesFromArtifactory(filesToDelete, flags)
 		cliutils.ExitOnErr(err)
 	}
-	err = commands.GitLfsClean(dotGitPath, gitLfsCleanFlags)
-	cliutils.ExitOnErr(err)
 }
 
 func validateBuildInfoArgument(c *cli.Context) {
@@ -954,11 +984,9 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
 			"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 			"You can also configure these parameters later using the 'config' command.\n" +
-			"Configure now? (y/n): "
-	fmt.Print(msg)
-	var confirm string
-	fmt.Scanln(&confirm)
-	if !cliutils.ConfirmAnswer(confirm) {
+			"Configure now?"
+	confirmed := cliutils.InteractiveConfirm(msg)
+	if !confirmed {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}

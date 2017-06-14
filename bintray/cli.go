@@ -1,7 +1,6 @@
 package bintray
 
 import (
-	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/commands"
 	"github.com/jfrogdev/jfrog-cli-go/bintray/commands/entitlements"
@@ -655,10 +654,8 @@ func deletePackage(c *cli.Context) {
 	}
 
 	if !c.Bool("quiet") {
-		var confirm string
-		fmt.Print("Delete package " + packageDetails.Package + "? (y/n): ")
-		fmt.Scanln(&confirm)
-		if !cliutils.ConfirmAnswer(confirm) {
+		confirmed := cliutils.InteractiveConfirm("Delete package " + packageDetails.Package + "?")
+		if !confirmed {
 			return
 		}
 	}
@@ -680,11 +677,9 @@ func deleteVersion(c *cli.Context) {
 	}
 
 	if !c.Bool("quiet") {
-		var confirm string
-		fmt.Print("Delete version " + versionDetails.Version +
-				" of package " + versionDetails.Package + "? (y/n): ")
-		fmt.Scanln(&confirm)
-		if !cliutils.ConfirmAnswer(confirm) {
+		confirmed := cliutils.InteractiveConfirm("Delete version " + versionDetails.Version +
+			" of package " + versionDetails.Package + "?")
+		if !confirmed {
 			return
 		}
 	}
@@ -1200,11 +1195,9 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 			"- Default Package Licenses\n" +
 			"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 			"You can also configure these parameters later using the 'config' command.\n" +
-			"Configure now? (y/n): "
-	fmt.Print(msg)
-	var confirm string
-	fmt.Scanln(&confirm)
-	if !cliutils.ConfirmAnswer(confirm) {
+			"Configure now?"
+	confirmed := cliutils.InteractiveConfirm(msg)
+	if !confirmed {
 		config.SaveBintrayConf(new(config.BintrayDetails))
 		return nil, nil
 	}

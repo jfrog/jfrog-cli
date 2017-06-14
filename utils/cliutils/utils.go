@@ -139,10 +139,10 @@ func InteractiveConfirm(message string) bool {
 	var confirm string
 	fmt.Print(message + " (y/n): ")
 	fmt.Scanln(&confirm)
-	return ConfirmAnswer(confirm)
+	return confirmAnswer(confirm)
 }
 
-func ConfirmAnswer(answer string) bool {
+func confirmAnswer(answer string) bool {
 	answer = strings.ToLower(answer)
 	return answer == "y" || answer == "yes"
 }

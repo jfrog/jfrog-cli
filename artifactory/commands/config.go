@@ -38,12 +38,12 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 			return nil, err
 		}
 	}
-	populateConfigurationDetails(serverId, details, defaultDetails)
+	populateConfigDetails(serverId, details, defaultDetails)
 	err = config.SaveArtifactoryConf(configurations)
 	return details, err
 }
 
-func populateConfigurationDetails(serverId string, details, defaultDetails *config.ArtifactoryDetails) {
+func populateConfigDetails(serverId string, details, defaultDetails *config.ArtifactoryDetails) {
 	if defaultDetails == nil {
 		defaultDetails = new(config.ArtifactoryDetails)
 	}
@@ -72,7 +72,12 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 	return details, defaultDetails, configurations, err
 }
 
-func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails) (string) {
+/// Returning the first non empty value:
+// 1. The serverId argument sent.
+// 2. details.ServerId
+// 3. defaultDetails.ServerId
+// 4. config.DefaultServerId
+func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails) string {
 	if serverId != "" {
 		return serverId
 	}
@@ -189,7 +194,7 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 	}
 }
 
-func DeleteConfig(serverName string, interactive bool) error {
+func DeleteConfig(serverName string) error {
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
 		return err
@@ -208,16 +213,9 @@ func DeleteConfig(serverName string, interactive bool) error {
 		configurations[0].IsDefault = true
 	}
 	if isFoundName {
-		if interactive {
-			var confirmed =	cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverName + "\" configuration?")
-			if !confirmed {
-				return nil
-			}
-		}
 		return config.SaveArtifactoryConf(configurations)
-	} else {
-		log.Info("\"" + serverName + "\" configuration could not be found.\n")
 	}
+	log.Info("\"" + serverName + "\" configuration could not be found.\n")
 	return nil
 }
 

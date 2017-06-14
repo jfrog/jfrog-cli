@@ -8,7 +8,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"fmt"
 	"strings"
 )
 
@@ -178,10 +177,8 @@ func removeInstance(c *cli.Context) {
 	}
 	instanceName := c.Args()[0];
 	if !c.Bool("quiet") {
-		var confirm string
-		fmt.Print("Remove Instance,  " + instanceName + "? (y/n): ")
-		fmt.Scanln(&confirm)
-		if !cliutils.ConfirmAnswer(confirm) {
+		confirmed := cliutils.InteractiveConfirm("Remove Instance,  " + instanceName + "?")
+		if !confirmed {
 			return
 		}
 	}
@@ -235,11 +232,9 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	msg := "The CLI commands require the Mission Control URL and authentication details\n" +
 	"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 	"You can also configure these parameters later using the 'config' command.\n" +
-	"Configure now? (y/n): "
-	fmt.Print(msg)
-	var confirm string
-	fmt.Scanln(&confirm)
-	if !cliutils.ConfirmAnswer(confirm) {
+	"Configure now?"
+	confirmed := cliutils.InteractiveConfirm(msg)
+	if !confirmed {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
