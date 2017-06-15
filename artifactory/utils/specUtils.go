@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
-	"strings"
 	"strconv"
 )
 
@@ -15,7 +14,9 @@ const (
 )
 
 type Aql struct {
-	ItemsFind string `json:"items.find"`
+	ItemsFind map[string]interface{} `json:"items.find"`
+	Sort map[string]interface{} `json:"sort"`
+	Limit int `json:"limit"`
 }
 
 type File struct {
@@ -41,14 +42,6 @@ func (spec *SpecFiles) Get(index int) *File {
 	return new(File)
 }
 
-func (aql *Aql) UnmarshalJSON(value []byte) error {
-	str := string(value)
-	first := strings.Index(str[strings.Index(str, "{") + 1 :], "{")
-	last := strings.LastIndex(str, "}")
-
-	aql.ItemsFind = cliutils.StripChars(str[first:last], "\n\t ")
-	return nil
-}
 
 func CreateSpecFromFile(specFilePath string) (spec *SpecFiles, err error) {
 	spec = new(SpecFiles)
@@ -88,7 +81,7 @@ func (file File) GetSpecType() (specType SpecType) {
 		specType = WILDCARD
 	case file.Pattern != "":
 		specType = SIMPLE
-	case file.Aql.ItemsFind != "" :
+	case file.Aql.ItemsFind != nil :
 		specType = AQL
 	}
 	return specType

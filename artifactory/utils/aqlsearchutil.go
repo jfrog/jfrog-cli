@@ -17,14 +17,42 @@ func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSea
 	if err != nil {
 		return nil, err
 	}
-	specFile.Aql = Aql{ItemsFind:query}
+	var dat map[string]interface{}
+	json.Unmarshal([]byte(query), &dat)
+	specFile.Aql = Aql{ItemsFind:dat}
 	return AqlSearchBySpec(specFile, flags)
 }
 
 func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
-	aqlBody := specFile.Aql.ItemsFind
-	query := "items.find(" + aqlBody + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	aqlJson, err := json.Marshal(specFile.Aql.ItemsFind)
+	if cliutils.CheckError(err) != nil {
+		return nil, err
+	}
+	sortJson, err := json.Marshal(specFile.Aql.Sort)
+	if cliutils.CheckError(err) != nil {
+		return nil, err
+	}
+	aqlBody := string(aqlJson)
+	sort := string(sortJson)
+	limit := specFile.Aql.Limit
+	includeProperties := limit == 0 // AQL cannot combine limit and properties (see AQL documentation)
+
+	query := "items.find(" + aqlBody + ")"
+	query += ".include(" + strings.Join(GetDefaultQueryReturnFields(includeProperties), ",") + ")"
+	if sort != "" && sort != "null" {
+		query += ".sort(" + sort + ")"
+	}
+	if limit > 0 {
+		query += ".limit(" + strconv.Itoa(limit) + ")"
+		log.Info("Please notice that symlinks are not being processed when using AQL queries with a limit")
+	}
+
+	log.Debug("AQL query = " +query)
+
 	results, err := AqlSearch(query, flags)
+
+	log.Info("Results size = " + strconv.Itoa(len(results)))
+
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +93,12 @@ func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
 	return body, err
 }
 
-func GetDefaultQueryReturnFields() []string {
-	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\"", "\"type\""}
+func GetDefaultQueryReturnFields(includeProperties bool) []string {
+	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"type\""}
+	if includeProperties {
+		returnFields = append(returnFields, "\"property\"")
+	}
+	return returnFields
 }
 
 func LogSearchResults(numOfArtifacts int) {
