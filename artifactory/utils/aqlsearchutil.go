@@ -35,18 +35,24 @@ func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem
 	aqlBody := string(aqlJson)
 	sort := string(sortJson)
 	limit := specFile.Aql.Limit
+	includeProperties := limit == 0 // AQL cannot combine limit and properties (see AQL documentation)
+
 	query := "items.find(" + aqlBody + ")"
-	query += ".include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	query += ".include(" + strings.Join(GetDefaultQueryReturnFields(includeProperties), ",") + ")"
 	if sort != "" && sort != "null" {
 		query += ".sort(" + sort + ")"
 	}
 	if limit > 0 {
 		query += ".limit(" + strconv.Itoa(limit) + ")"
+		log.Info("Please notice that symlinks are not being processed when using AQL queries with a limit")
 	}
 
 	log.Debug("AQL query = " +query)
 
 	results, err := AqlSearch(query, flags)
+
+	log.Info("Results size = " + strconv.Itoa(len(results)))
+
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +93,12 @@ func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
 	return body, err
 }
 
-func GetDefaultQueryReturnFields() []string {
-	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\"", "\"type\""}
+func GetDefaultQueryReturnFields(includeProperties bool) []string {
+	returnFields := []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"type\""}
+	if includeProperties {
+		returnFields = append(returnFields, "\"property\"")
+	}
+	return returnFields
 }
 
 func LogSearchResults(numOfArtifacts int) {
