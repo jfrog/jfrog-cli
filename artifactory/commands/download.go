@@ -80,7 +80,7 @@ func prepareTasks(producer parallel.Runner, downloadSpec *utils.SpecFiles, fileC
 				return
 			}
 
-			err =  produceTasks(resultItems, fileSpec, producer, fileContextHandler, errorsQueue)
+			err = produceTasks(resultItems, fileSpec, producer, fileContextHandler, errorsQueue)
 			if err != nil {
 				errorsQueue.AddError(err)
 				return
@@ -375,7 +375,7 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 }
 
 func downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix string, downloadData DownloadData, flags *DownloadFlags) error {
-	shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
+	shouldDownload, e := shouldDownloadFile(path.Join(localPath, localFileName), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
 	if e != nil {
 		return e
 	}
