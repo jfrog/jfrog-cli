@@ -87,7 +87,7 @@ func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClient
 	addUserAgentHeader(req)
 	copyHeaders(httpClientsDetails, req)
 
-	client := getHttpClient(httpClientsDetails.Transport);
+	client := getHttpClient(httpClientsDetails.Transport)
 	if !allowRedirect {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			redirectUrl = req.URL.String()
@@ -141,7 +141,7 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 
-	client := getHttpClient(httpClientsDetails.Transport);
+	client := getHttpClient(httpClientsDetails.Transport)
 	resp, err := client.Do(req)
 	if cliutils.CheckError(err) != nil {
 		return nil, nil, err

@@ -11,140 +11,201 @@ import (
 	"strings"
 	"encoding/json"
 	"runtime"
+	"github.com/jfrogdev/jfrog-cli-go/docs/common"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/copy"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/delete"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/upload"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/use"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/download"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/move"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/search"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildpublish"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildcollectenv"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildaddgit"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildclean"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildpromote"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/builddistribute"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/gitlfsclean"
+	configdocs "github.com/jfrogdev/jfrog-cli-go/docs/artifactory/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    "config",
-			Flags:   getConfigFlags(),
-			Aliases: []string{"c"},
-			Usage:   "Configure Artifactory details.",
+			Name:      "config",
+			Flags:     getConfigFlags(),
+			Aliases:   []string{"c"},
+			Usage:     configdocs.Description,
+			HelpName:  common.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
+			UsageText: configdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				configCmd(c)
 			},
 		},
 		{
-			Name:    "use",
-			Usage:   "Set the active Artifactory server by its ID.",
+			Name:      "use",
+			Usage:     use.Description,
+			HelpName:  common.CreateUsage("rt use", use.Description, use.Usage),
+			UsageText: use.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				useCmd(c)
 			},
 		},
 		{
-			Name:    "upload",
-			Flags:   getUploadFlags(),
-			Aliases: []string{"u"},
-			Usage:   "Upload files.",
+			Name:      "upload",
+			Flags:     getUploadFlags(),
+			Aliases:   []string{"u"},
+			Usage:     upload.Description,
+			HelpName:  common.CreateUsage("rt upload", upload.Description, upload.Usage),
+			UsageText: upload.Arguments,
+			ArgsUsage: common.CreateEnvVars(upload.EnvVar),
 			Action: func(c *cli.Context) {
 				uploadCmd(c)
 			},
 		},
 		{
-			Name:    "download",
-			Flags:   getDownloadFlags(),
-			Aliases: []string{"dl"},
-			Usage:   "Download files.",
+			Name:      "download",
+			Flags:     getDownloadFlags(),
+			Aliases:   []string{"dl"},
+			Usage:     download.Description,
+			HelpName:  common.CreateUsage("rt download", download.Description, download.Usage),
+			UsageText: download.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				downloadCmd(c)
 			},
 		},
 		{
-			Name:    "move",
-			Flags:   getMoveFlags(),
-			Aliases: []string{"mv"},
-			Usage:   "Move files.",
+			Name:      "move",
+			Flags:     getMoveFlags(),
+			Aliases:   []string{"mv"},
+			Usage:     move.Description,
+			HelpName:  common.CreateUsage("rt move", move.Description, move.Usage),
+			UsageText: move.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				moveCmd(c)
 			},
 		},
 		{
-			Name:    "copy",
-			Flags:   getCopyFlags(),
-			Aliases: []string{"cp"},
-			Usage:   "Copy files.",
+			Name:      "copy",
+			Flags:     getCopyFlags(),
+			Aliases:   []string{"cp"},
+			Usage:     copy.Description,
+			HelpName:  common.CreateUsage("rt copy", copy.Description, copy.Usage),
+			UsageText: copy.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				copyCmd(c)
 			},
 		},
 		{
-			Name:    "delete",
-			Flags:   getDeleteFlags(),
-			Aliases: []string{"del"},
-			Usage:   "Delete files.",
+			Name:      "delete",
+			Flags:     getDeleteFlags(),
+			Aliases:   []string{"del"},
+			Usage:     delete.Description,
+			HelpName:  common.CreateUsage("rt delete", delete.Description, delete.Usage),
+			UsageText: delete.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				deleteCmd(c)
 			},
 		},
 		{
-			Name:    "search",
-			Flags:   getSearchFlags(),
-			Aliases: []string{"s"},
-			Usage:   "Search files.",
+			Name:      "search",
+			Flags:     getSearchFlags(),
+			Aliases:   []string{"s"},
+			Usage:     search.Description,
+			HelpName:  common.CreateUsage("rt search", search.Description, search.Usage),
+			UsageText: search.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				searchCmd(c)
 			},
 		},
 		{
-			Name:    "build-publish",
-			Flags:   getBuildPublishFlags(),
-			Aliases: []string{"bp"},
-			Usage:   "Publish build info.",
+			Name:      "build-publish",
+			Flags:     getBuildPublishFlags(),
+			Aliases:   []string{"bp"},
+			Usage:     buildpublish.Description,
+			HelpName:  common.CreateUsage("rt build-publish", buildpublish.Description, buildpublish.Usage),
+			UsageText: buildpublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildPublishCmd(c)
 			},
 		},
 		{
-			Name:    "build-collect-env",
-			Flags:    []cli.Flag{},
-			Aliases: []string{"bce"},
-			Usage:   "Capture environment variables.",
+			Name:      "build-collect-env",
+			Flags:     []cli.Flag{},
+			Aliases:   []string{"bce"},
+			Usage:     buildcollectenv.Description,
+			HelpName:  common.CreateUsage("rt build-collect-env", buildcollectenv.Description, buildcollectenv.Usage),
+			UsageText: buildcollectenv.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildCollectEnvCmd(c)
 			},
 		},
 		{
-			Name:    "build-add-git",
-			Flags:   []cli.Flag{},
-			Aliases: []string{"bag"},
-			Usage:   "Capture git revision and remote url.",
+			Name:      "build-add-git",
+			Flags:     []cli.Flag{},
+			Aliases:   []string{"bag"},
+			Usage:     buildaddgit.Description,
+			HelpName:  common.CreateUsage("rt build-add-git", buildaddgit.Description, buildaddgit.Usage),
+			UsageText: buildaddgit.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildAddGitCmd(c)
 			},
 		},
 		{
-			Name:    "build-clean",
-			Flags:    []cli.Flag{},
-			Aliases: []string{"bc"},
-			Usage:   "Clean build.",
+			Name:      "build-clean",
+			Flags:     []cli.Flag{},
+			Aliases:   []string{"bc"},
+			Usage:     buildclean.Description,
+			HelpName:  common.CreateUsage("rt build-clean", buildclean.Description, buildclean.Usage),
+			UsageText: buildclean.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildCleanCmd(c)
 			},
 		},
 		{
-			Name:    "build-promote",
-			Flags:   getBuildPromotionFlags(),
-			Aliases: []string{"bpr"},
-			Usage:   "Promote build.",
+			Name:      "build-promote",
+			Flags:     getBuildPromotionFlags(),
+			Aliases:   []string{"bpr"},
+			Usage:     buildpromote.Description,
+			HelpName:  common.CreateUsage("rt build-promote", buildpromote.Description, buildpromote.Usage),
+			UsageText: buildpromote.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildPromoteCmd(c)
 			},
 		},
 		{
-			Name:    "build-distribute",
-			Flags:   getBuildDistributeFlags(),
-			Aliases: []string{"bd"},
-			Usage:   "Distribute build.",
+			Name:      "build-distribute",
+			Flags:     getBuildDistributeFlags(),
+			Aliases:   []string{"bd"},
+			Usage:     builddistribute.Description,
+			HelpName:  common.CreateUsage("rt build-distribute", builddistribute.Description, builddistribute.Usage),
+			UsageText: builddistribute.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
 			},
 		},
 		{
-			Name:    "git-lfs-clean",
-			Flags:   getGitLfsCleanFlags(),
-			Aliases: []string{"glc"},
-			Usage:   "Clean files from a Git LFS repository. This deletes all files from a Git LFS repository that are no longer available in a corresponding Git repository.",
+			Name:      "git-lfs-clean",
+			Flags:     getGitLfsCleanFlags(),
+			Aliases:   []string{"glc"},
+			Usage:     gitlfsclean.Description,
+			HelpName:  common.CreateUsage("rt git-lfs-clean", gitlfsclean.Description, gitlfsclean.Usage),
+			UsageText: gitlfsclean.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				gitLfsCleanCmd(c)
 			},
@@ -189,7 +250,7 @@ func getUploadFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -197,11 +258,11 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name.",
+			Usage: "[Optional] Build name, providing this flag will record all uploaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number.",
+			Usage: "[Optional] Build number, providing this flag will record all uploaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -253,7 +314,7 @@ func getDownloadFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -261,15 +322,15 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name.",
+			Usage: "[Optional] Build name, providing this flag will record all downloaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number.",
+			Usage: "[Optional] Build number, providing this flag will record all downloaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be downloaded.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -319,7 +380,7 @@ func getMoveFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -341,7 +402,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be moved.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -355,7 +416,7 @@ func getCopyFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -377,7 +438,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be copied.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -390,7 +451,7 @@ func getDeleteFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -398,7 +459,7 @@ func getDeleteFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be deleted.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -425,7 +486,7 @@ func getSearchFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a spec file.",
+			Usage: "[Optional] Path to a File Spec.",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
@@ -433,7 +494,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" Only artifacts with these properties will be returned.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -644,13 +705,13 @@ func useCmd(c *cli.Context) {
 		cliutils.ExitOnErr(err)
 		return
 	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 }
 
 func configCmd(c *cli.Context) {
 	if len(c.Args()) > 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var serverId string
@@ -699,10 +760,10 @@ func configCmd(c *cli.Context) {
 
 func downloadCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var downloadSpec *utils.SpecFiles
@@ -722,10 +783,10 @@ func downloadCmd(c *cli.Context) {
 
 func uploadCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var uploadSpec *utils.SpecFiles
@@ -750,10 +811,10 @@ func uploadCmd(c *cli.Context) {
 
 func moveCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var moveSpec *utils.SpecFiles
@@ -773,10 +834,10 @@ func moveCmd(c *cli.Context) {
 
 func copyCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var copySpec *utils.SpecFiles
@@ -796,10 +857,10 @@ func copyCmd(c *cli.Context) {
 
 func deleteCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var deleteSpec *utils.SpecFiles
@@ -842,10 +903,10 @@ func deleteIfConfirmed(deleteSpec *utils.SpecFiles, flags *commands.DeleteFlags)
 
 func searchCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.Exit(cliutils.ExitCodeError, "No arguments should be sent when the spec option is used. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	var searchSpec *utils.SpecFiles
@@ -883,7 +944,7 @@ func buildCollectEnvCmd(c *cli.Context) {
 
 func buildAddGitCmd(c *cli.Context) {
 	if c.NArg() > 3 || c.NArg() < 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	dotGitPath := ""
 	if c.NArg() == 3 {
@@ -901,7 +962,7 @@ func buildCleanCmd(c *cli.Context) {
 
 func buildPromoteCmd(c *cli.Context) {
 	if c.NArg() != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	buildPromoteFlags, err := createBuildPromoteFlags(c)
 	if err != nil {
@@ -913,7 +974,7 @@ func buildPromoteCmd(c *cli.Context) {
 
 func buildDistributeCmd(c *cli.Context) {
 	if c.NArg() != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	buildDistributeFlags, err := createBuildDistributionFlags(c)
 	if err != nil {
@@ -925,7 +986,7 @@ func buildDistributeCmd(c *cli.Context) {
 
 func gitLfsCleanCmd(c *cli.Context) {
 	if c.NArg() > 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	dotGitPath := ""
 	if c.NArg() == 1 {
@@ -959,7 +1020,7 @@ func interactiveDeleteLfsFiles(filesToDelete []utils.AqlSearchResultItem, flags 
 
 func validateBuildInfoArgument(c *cli.Context) {
 	if c.NArg() != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 }
 

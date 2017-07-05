@@ -5,6 +5,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/xray/commands"
 	"time"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/docs/xray/offlineupdate"
+	"github.com/jfrogdev/jfrog-cli-go/docs/common"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -12,10 +14,12 @@ const DATE_FORMAT = "2006-01-02"
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    "offline-update",
-			Usage:   "Download Xray offline updates",
-			Flags:   offlineUpdateFlags(),
-			Action: offlineUpdates,
+			Name:      "offline-update",
+			Usage:     offlineupdate.Description,
+			HelpName:  common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
+			ArgsUsage: common.CreateEnvVars(),
+			Flags:     offlineUpdateFlags(),
+			Action:    offlineUpdates,
 		},
 	}
 }
@@ -41,7 +45,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags,
 	flags = new(commands.OfflineUpdatesFlags)
 	flags.License = c.String("license-id");
 	if len(flags.License) < 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --license-id option is mandatory")
+		cliutils.Exit(cliutils.ExitCodeError, "The --license-id option is mandatory.")
 	}
 	from := c.String("from")
 	to := c.String("to")

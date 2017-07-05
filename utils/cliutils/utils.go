@@ -76,6 +76,12 @@ func Exit(exitCode ExitCode, msg string) {
 	os.Exit(exitCode.Code)
 }
 
+func PrintHelpAndExitWithError(msg string, context *cli.Context) {
+	log.Error(msg + " " + GetDocumentationMessage())
+	cli.ShowCommandHelp(context, context.Command.Name)
+	os.Exit(ExitCodeError.Code)
+}
+
 func AddTrailingSlashIfNeeded(url string) string {
 	if url != "" && !strings.HasSuffix(url, "/") {
 		url += "/"
@@ -156,7 +162,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.9.0"
+	return "1.10.0"
 }
 
 func GetConfigVersion() string {
@@ -274,7 +280,7 @@ func StringToBool(boolVal string, defaultValue bool) (bool, error) {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
+	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
 }
 
 func PathToRegExp(localPath string) string {

@@ -10,6 +10,19 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/xray"
 )
 
+const helpTemplate string =
+`{{.HelpName}}{{if .UsageText}}
+Arguments:
+{{.UsageText}}
+{{end}}{{if .Flags}}
+Options:
+	{{range .Flags}}{{.}}
+	{{end}}{{end}}{{if .ArgsUsage}}
+Environment Variables:
+{{.ArgsUsage}}{{end}}
+
+`
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "jfrog"
@@ -17,6 +30,7 @@ func main() {
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()
+	cli.CommandHelpTemplate = helpTemplate
 	app.Run(args)
 }
 

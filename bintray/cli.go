@@ -10,186 +10,266 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/docs/common"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/downloadfile"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/downloadver"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/packageshow"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/packagecreate"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/packageupdate"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/packagedelete"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/versionshow"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/versioncreate"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/versionupdate"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/versiondelete"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/versionpublish"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/accesskeys"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/urlsign"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/gpgsignfile"
+	"github.com/jfrogdev/jfrog-cli-go/docs/bintray/gpgsignver"
+	entitlementsdocs "github.com/jfrogdev/jfrog-cli-go/docs/bintray/entitlements"
+	logsdocs "github.com/jfrogdev/jfrog-cli-go/docs/bintray/logs"
+	configdocs "github.com/jfrogdev/jfrog-cli-go/docs/bintray/config"
+	uploaddocs "github.com/jfrogdev/jfrog-cli-go/docs/bintray/upload"
+	streamdocs "github.com/jfrogdev/jfrog-cli-go/docs/bintray/stream"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    "config",
-			Usage:   "Configure Bintray details",
-			Aliases: []string{"c"},
-			Flags:   getConfigFlags(),
+			Name:      "config",
+			Flags:     getConfigFlags(),
+			Aliases:   []string{"c"},
+			Usage:     configdocs.Description,
+			HelpName:  common.CreateUsage("bt config", configdocs.Description, configdocs.Usage),
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				configure(c)
 			},
 		},
 		{
-			Name:    "upload",
-			Usage:   "Upload files",
-			Aliases: []string{"u"},
-			Flags:   getUploadFlags(),
+			Name:      "upload",
+			Flags:     getUploadFlags(),
+			Aliases:   []string{"u"},
+			Usage:     uploaddocs.Description,
+			HelpName:  common.CreateUsage("bt upload", uploaddocs.Description, uploaddocs.Usage),
+			UsageText: uploaddocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				upload(c)
 			},
 		},
 		{
-			Name:    "download-file",
-			Usage:   "Download file",
-			Aliases: []string{"dlf"},
-			Flags:   getDownloadFileFlags(),
+			Name:      "download-file",
+			Flags:     getDownloadFileFlags(),
+			Aliases:   []string{"dlf"},
+			Usage:     downloadfile.Description,
+			HelpName:  common.CreateUsage("bt download-file", downloadfile.Description, downloadfile.Usage),
+			UsageText: downloadfile.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				downloadFile(c)
 			},
 		},
 		{
-			Name:    "download-ver",
-			Usage:   "Download Version files",
-			Aliases: []string{"dlv"},
-			Flags:   getDownloadVersionFlags(),
+			Name:      "download-ver",
+			Flags:     getDownloadVersionFlags(),
+			Aliases:   []string{"dlv"},
+			Usage:     downloadver.Description,
+			HelpName:  common.CreateUsage("bt download-ver", downloadver.Description, downloadver.Usage),
+			UsageText: downloadver.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				downloadVersion(c)
 			},
 		},
 		{
-			Name:    "package-show",
-			Usage:   "Show Package details",
-			Aliases: []string{"ps"},
-			Flags:   getFlags(),
+			Name:      "package-show",
+			Flags:     getFlags(),
+			Aliases:   []string{"ps"},
+			Usage:     packageshow.Description,
+			HelpName:  common.CreateUsage("bt package-show", packageshow.Description, packageshow.Usage),
+			UsageText: packageshow.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				showPackage(c)
 			},
 		},
 		{
-			Name:    "package-create",
-			Usage:   "Create Package",
-			Aliases: []string{"pc"},
-			Flags:   getCreateAndUpdatePackageFlags(),
+			Name:      "package-create",
+			Flags:     getCreateAndUpdatePackageFlags(),
+			Aliases:   []string{"pc"},
+			Usage:     packagecreate.Description,
+			HelpName:  common.CreateUsage("bt package-create", packagecreate.Description, packagecreate.Usage),
+			UsageText: packagecreate.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				createPackage(c)
 			},
 		},
 		{
-			Name:    "package-update",
-			Usage:   "Update Package",
-			Aliases: []string{"pu"},
-			Flags:   getCreateAndUpdatePackageFlags(),
+			Name:      "package-update",
+			Flags:     getCreateAndUpdatePackageFlags(),
+			Aliases:   []string{"pu"},
+			Usage:     packageupdate.Description,
+			HelpName:  common.CreateUsage("bt package-update", packageupdate.Description, packageupdate.Usage),
+			UsageText: packageupdate.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				updatePackage(c)
 			},
 		},
 		{
-			Name:    "package-delete",
-			Usage:   "Delete Package",
-			Aliases: []string{"pd"},
-			Flags:   getDeletePackageAndVersionFlags(),
+			Name:      "package-delete",
+			Flags:     getDeletePackageAndVersionFlags(),
+			Aliases:   []string{"pd"},
+			Usage:     packagedelete.Description,
+			HelpName:  common.CreateUsage("bt package-delete", packagedelete.Description, packagedelete.Usage),
+			UsageText: packagedelete.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				deletePackage(c)
 			},
 		},
 		{
-			Name:    "version-show",
-			Usage:   "Show Version",
-			Aliases: []string{"vs"},
-			Flags:   getFlags(),
+			Name:      "version-show",
+			Flags:     getFlags(),
+			Aliases:   []string{"vs"},
+			Usage:     versionshow.Description,
+			HelpName:  common.CreateUsage("bt version-show", versionshow.Description, versionshow.Usage),
+			UsageText: versionshow.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				showVersion(c)
 			},
 		},
 		{
-			Name:    "version-create",
-			Usage:   "Create Version",
-			Aliases: []string{"vc"},
-			Flags:   getCreateAndUpdateVersionFlags(),
+			Name:      "version-create",
+			Flags:     getCreateAndUpdateVersionFlags(),
+			Aliases:   []string{"vc"},
+			Usage:     versioncreate.Description,
+			HelpName:  common.CreateUsage("bt version-create", versioncreate.Description, versioncreate.Usage),
+			UsageText: versioncreate.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				createVersion(c)
 			},
 		},
 		{
-			Name:    "version-update",
-			Usage:   "Update Version",
-			Aliases: []string{"vu"},
-			Flags:   getCreateAndUpdateVersionFlags(),
+			Name:      "version-update",
+			Flags:     getCreateAndUpdateVersionFlags(),
+			Aliases:   []string{"vu"},
+			Usage:     versionupdate.Description,
+			HelpName:  common.CreateUsage("bt version-update", versionupdate.Description, versionupdate.Usage),
+			UsageText: versionupdate.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				updateVersion(c)
 			},
 		},
 		{
-			Name:    "version-delete",
-			Usage:   "Delete Version",
-			Aliases: []string{"vd"},
-			Flags:   getDeletePackageAndVersionFlags(),
+			Name:      "version-delete",
+			Flags:     getDeletePackageAndVersionFlags(),
+			Aliases:   []string{"vd"},
+			Usage:     versiondelete.Description,
+			HelpName:  common.CreateUsage("bt version-delete", versiondelete.Description, versiondelete.Usage),
+			UsageText: versiondelete.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				deleteVersion(c)
 			},
 		},
 		{
-			Name:    "version-publish",
-			Usage:   "Publish Version",
-			Aliases: []string{"vp"},
-			Flags:   getFlags(),
+			Name:      "version-publish",
+			Flags:     getFlags(),
+			Aliases:   []string{"vp"},
+			Usage:     versionpublish.Description,
+			HelpName:  common.CreateUsage("bt version-publish", versionpublish.Description, versionpublish.Usage),
+			UsageText: versionpublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				publishVersion(c)
 			},
 		},
 		{
-			Name:    "entitlements",
-			Usage:   "Manage Entitlements",
-			Aliases: []string{"ent"},
-			Flags:   getEntitlementsFlags(),
+			Name:      "entitlements",
+			Flags:     getEntitlementsFlags(),
+			Aliases:   []string{"ent"},
+			Usage:     entitlementsdocs.Description,
+			HelpName:  common.CreateUsage("bt entitlements", entitlementsdocs.Description, entitlementsdocs.Usage),
+			UsageText: entitlementsdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				handleEntitlements(c)
 			},
 		},
 		{
-			Name:    "access-keys",
-			Usage:   "Manage Access Keys",
-			Aliases: []string{"acc-keys"},
-			Flags:   getAccessKeysFlags(),
+			Name:      "access-keys",
+			Flags:     getAccessKeysFlags(),
+			Aliases:   []string{"acc-keys"},
+			Usage:     accesskeys.Description,
+			HelpName:  common.CreateUsage("bt access-keys", accesskeys.Description, accesskeys.Usage),
+			UsageText: accesskeys.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				accessKeys(c)
 			},
 		},
 		{
-			Name:    "url-sign",
-			Usage:   "Create Signed Download URL",
-			Aliases: []string{"us"},
-			Flags:   getUrlSigningFlags(),
+			Name:      "url-sign",
+			Flags:     getUrlSigningFlags(),
+			Aliases:   []string{"us"},
+			Usage:     urlsign.Description,
+			HelpName:  common.CreateUsage("bt url-sign", urlsign.Description, urlsign.Usage),
+			UsageText: urlsign.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				signUrl(c)
 			},
 		},
 		{
-			Name:    "gpg-sign-file",
-			Usage:   "GPG Sign file",
-			Aliases: []string{"gsf"},
-			Flags:   getGpgSigningFlags(),
+			Name:      "gpg-sign-file",
+			Flags:     getGpgSigningFlags(),
+			Aliases:   []string{"gsf"},
+			Usage:     gpgsignfile.Description,
+			HelpName:  common.CreateUsage("bt gpg-sign-file", gpgsignfile.Description, gpgsignfile.Usage),
+			UsageText: gpgsignfile.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				gpgSignFile(c)
 			},
 		},
 		{
-			Name:    "gpg-sign-ver",
-			Usage:   "GPG Sign Version",
-			Aliases: []string{"gsv"},
-			Flags:   getGpgSigningFlags(),
+			Name:      "gpg-sign-ver",
+			Flags:     getGpgSigningFlags(),
+			Aliases:   []string{"gsv"},
+			Usage:     gpgsignver.Description,
+			HelpName:  common.CreateUsage("bt gpg-sign-ver", gpgsignver.Description, gpgsignver.Usage),
+			UsageText: gpgsignver.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				gpgSignVersion(c)
 			},
 		},
 		{
-			Name:    "logs",
-			Usage:   "Download available log files for a package",
-			Aliases: []string{"l"},
-			Flags:   getFlags(),
+			Name:      "logs",
+			Flags:     getFlags(),
+			Aliases:   []string{"l"},
+			Usage:     logsdocs.Description,
+			HelpName:  common.CreateUsage("bt logs", logsdocs.Description, logsdocs.Usage),
+			UsageText: logsdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				logs(c)
 			},
 		},
 		{
-			Name:    "stream",
-			Usage:   "Open events notification channel.",
-			Aliases: []string{"st"},
-			Flags:   getStreamFlags(),
+			Name:      "stream",
+			Flags:     getStreamFlags(),
+			Aliases:   []string{"st"},
+			Usage:     streamdocs.Description,
+			HelpName:  common.CreateUsage("bt stream", streamdocs.Description, streamdocs.Usage),
+			UsageText: streamdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				stream(c)
 			},
@@ -258,7 +338,7 @@ func getPackageFlags(prefix string) []cli.Flag {
 		cli.StringFlag{
 			Name:  "pub-stats",
 			Value: "",
-			Usage: "[Default: true] Public statistics",
+			Usage: "[Default: true] Public statistics.",
 		},
 		cli.StringFlag{
 			Name:  "desc",
@@ -434,19 +514,19 @@ func getEntitlementsFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "id",
-			Usage: "[Optional] Entitlement ID. Used for Entitlements update.",
+			Usage: "[Optional] Entitlement ID. Used for entitlements update.",
 		},
 		cli.StringFlag{
 			Name:  "access",
-			Usage: "[Optional] Entitlement access. Used for Entitlements creation and update.",
+			Usage: "[Optional] Entitlement access. Used for entitlements creation and update.",
 		},
 		cli.StringFlag{
 			Name:  "keys",
-			Usage: "[Optional] Used for Entitlements creation and update. List of Access Keys in the form of \"key1\",\"key2\"...",
+			Usage: "[Optional] Used for entitlements creation and update. List of Access Keys in the form of \"key1\",\"key2\"...",
 		},
 		cli.StringFlag{
 			Name:  "path",
-			Usage: "[Optional] Entitlement path. Used for Entitlements creating and update.",
+			Usage: "[Optional] Entitlement path. Used for entitlements creating and update.",
 		},
 	}...)
 }
@@ -467,19 +547,19 @@ func getAccessKeysFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "ex-check-url",
-			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.",
+			Usage: "[Optional] You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-cache",
-			Usage: "[Optional] Used for Access Key creation and update. You can optionally provide the period in seconds for the callback URL results cache.",
+			Usage: "[Optional] You can optionally provide the period in seconds for the callback URL results cache.",
 		},
 		cli.StringFlag{
 			Name:  "white-cidrs",
-			Usage: "[Optional] Used for Access Key creation and update. Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will allow access only for those IPs that exist in that address range.",
+			Usage: "[Optional] Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will allow access only for those IPs that exist in that address range.",
 		},
 		cli.StringFlag{
 			Name:  "black-cidrs",
-			Usage: "[Optional] Used for Access Key creation and update. Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
+			Usage: "[Optional] Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
 		},
 	}...)
 }
@@ -522,7 +602,7 @@ func getGpgSigningFlags() []cli.Flag {
 
 func configure(c *cli.Context) {
 	if c.NArg() > 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	} else if c.NArg() == 1 {
 		if c.Args().Get(0) == "show" {
 			commands.ShowConfig()
@@ -546,7 +626,7 @@ func configure(c *cli.Context) {
 
 func showPackage(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
@@ -562,7 +642,7 @@ func showPackage(c *cli.Context) {
 
 func showVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -578,7 +658,7 @@ func showVersion(c *cli.Context) {
 
 func createPackage(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
@@ -594,7 +674,7 @@ func createPackage(c *cli.Context) {
 
 func createVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -610,7 +690,7 @@ func createVersion(c *cli.Context) {
 
 func updateVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -626,7 +706,7 @@ func updateVersion(c *cli.Context) {
 
 func updatePackage(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
@@ -642,7 +722,7 @@ func updatePackage(c *cli.Context) {
 
 func deletePackage(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	packageDetails, err := utils.CreatePackageDetails(c.Args().Get(0))
 	if err != nil {
@@ -665,7 +745,7 @@ func deletePackage(c *cli.Context) {
 
 func deleteVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -689,7 +769,7 @@ func deleteVersion(c *cli.Context) {
 
 func publishVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -705,7 +785,7 @@ func publishVersion(c *cli.Context) {
 
 func downloadVersion(c *cli.Context) {
 	if c.NArg() < 1 || c.NArg() > 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := commands.CreateVersionDetailsForDownloadVersion(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
@@ -729,7 +809,7 @@ func downloadVersion(c *cli.Context) {
 
 func upload(c *cli.Context) {
 	if c.NArg() < 2 || c.NArg() > 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	localPath := c.Args().Get(0)
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(1))
@@ -757,7 +837,7 @@ func upload(c *cli.Context) {
 
 func downloadFile(c *cli.Context) {
 	if c.NArg() < 1 || c.NArg() > 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	pathDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
@@ -778,7 +858,7 @@ func downloadFile(c *cli.Context) {
 
 func signUrl(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	urlSigningDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
@@ -794,7 +874,7 @@ func signUrl(c *cli.Context) {
 
 func gpgSignFile(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	pathDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
@@ -830,7 +910,7 @@ func logs(c *cli.Context) {
 			cliutils.Exit(cliutils.ExitCodeError, "Unkown argument " + c.Args().Get(0) + ". " + cliutils.GetDocumentationMessage())
 		}
 	} else {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 }
 
@@ -840,7 +920,7 @@ func stream(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
 	streamDetails := &commands.StreamDetails{
@@ -856,7 +936,7 @@ func stream(c *cli.Context) {
 
 func gpgSignVersion(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := utils.CreateVersionDetails(c.Args().Get(0))
 	if err != nil {
@@ -880,7 +960,7 @@ func accessKeys(c *cli.Context) {
 		return
 	}
 	if c.NArg() != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	keyId := c.Args().Get(1)
 	var flags *commands.AccessKeyFlags
@@ -910,7 +990,7 @@ func accessKeys(c *cli.Context) {
 
 func handleEntitlements(c *cli.Context) {
 	if c.NArg() == 0 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	if c.NArg() == 1 {
 		bintrayDetails, err := createBintrayDetails(c, true)
@@ -922,7 +1002,7 @@ func handleEntitlements(c *cli.Context) {
 		return
 	}
 	if c.NArg() != 2 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	details, err := entitlements.CreateVersionDetails(c.Args().Get(1))
 	cliutils.ExitOnErr(err)
@@ -1267,7 +1347,7 @@ func getMinSplitFlag(c *cli.Context) int64 {
 	}
 	minSplit, err := strconv.ParseInt(c.String("min-split"), 10, 64)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("The '--min-split' option should have a numeric value.", c)
 	}
 	return minSplit
 }
@@ -1278,7 +1358,7 @@ func getSplitCountFlag(c *cli.Context) int {
 	}
 	splitCount, err := strconv.Atoi(c.String("split-count"))
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. Try 'art download --help'.")
+		cliutils.PrintHelpAndExitWithError("The '--split-count' option should have a numeric value.", c)
 	}
 	if splitCount > 15 {
 		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")

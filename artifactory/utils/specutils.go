@@ -72,13 +72,13 @@ func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *
 }
 
 func replaceSpecVars(content []byte, specVars map[string]string) []byte {
-	log.Debug("Replacing variables in the provided fileSpec: \n" + string(content))
+	log.Debug("Replacing variables in the provided File Spec: \n" + string(content))
 	for key, val := range specVars {
 		key = "${" + key + "}"
 		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
 		content = bytes.Replace(content, []byte(key), []byte(val), -1)
 	}
-	log.Debug("The reformatted fileSpec is: \n" + string(content))
+	log.Debug("The reformatted File Spec is: \n" + string(content))
 	return content
 }
 

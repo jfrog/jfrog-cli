@@ -9,22 +9,31 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/docs/common"
+	"github.com/jfrogdev/jfrog-cli-go/docs/missioncontrol/rtinstances/add"
+	"github.com/jfrogdev/jfrog-cli-go/docs/missioncontrol/rtinstances/remove"
+	"github.com/jfrogdev/jfrog-cli-go/docs/missioncontrol/rtinstances/detachlic"
+	"github.com/jfrogdev/jfrog-cli-go/docs/missioncontrol/rtinstances/attachlic"
+	configdocs "github.com/jfrogdev/jfrog-cli-go/docs/missioncontrol/config"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:    "rt-instances",
-			Aliases: []string{"rti"},
-			Usage:   "Artifactory instances",
+			Name:        "rt-instances",
+			Aliases:     []string{"rti"},
+			Usage:       "Artifactory instances",
 			Subcommands: getRtiSubCommands(),
 		},
 		{
-			Name:    "config",
-			Flags:   getConfigFlags(),
-			Aliases: []string{"c"},
-			Usage:   "Configure Mission Control details",
-			Action: configure,
+			Name:      "config",
+			Flags:     getConfigFlags(),
+			Usage:     configdocs.Description,
+			HelpName:  common.CreateUsage("mc config", configdocs.Description, configdocs.Usage),
+			UsageText: configdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Aliases:   []string{"c"},
+			Action:    configure,
 		},
 	}
 }
@@ -32,28 +41,40 @@ func GetCommands() []cli.Command {
 func getRtiSubCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:   "add",
-			Flags:  getAddInstanceFlags(),
-			Usage:  "Add an instance",
-			Action: addInstance,
+			Name:      "add",
+			Flags:     getAddInstanceFlags(),
+			Usage:     add.Description,
+			HelpName:  common.CreateUsage("mc rt-instances add", add.Description, add.Usage),
+			UsageText: add.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action:    addInstance,
 		},
 		{
-			Name:   "remove",
-			Flags:  getRemoveInstanceFlags(),
-			Usage:  "Remove an instance",
-			Action: removeInstance,
+			Name:      "remove",
+			Flags:     getRemoveInstanceFlags(),
+			Usage:     remove.Description,
+			HelpName:  common.CreateUsage("mc rt-instances remove", remove.Description, remove.Usage),
+			UsageText: remove.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action:    removeInstance,
 		},
 		{
-			Name:   "attach-lic",
-			Flags:  getAttachLicenseFlags(),
-			Usage:  "Attach license to an instance",
-			Action: attachLicense,
+			Name:      "attach-lic",
+			Flags:     getAttachLicenseFlags(),
+			Usage:     attachlic.Description,
+			HelpName:  common.CreateUsage("mc rt-instances attach-lic", attachlic.Description, attachlic.Usage),
+			UsageText: attachlic.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action:    attachLicense,
 		},
 		{
-			Name:   "detach-lic",
-			Flags:  getDetachLicenseFlags(),
-			Usage:  "Dettach license from an instance",
-			Action: detachLicense,
+			Name:      "detach-lic",
+			Flags:     getDetachLicenseFlags(),
+			Usage:     detachlic.Description,
+			HelpName:  common.CreateUsage("mc rt-instances detach-lic", detachlic.Description, detachlic.Usage),
+			UsageText: detachlic.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action:    detachLicense,
 		},
 	}
 }
@@ -105,7 +126,7 @@ func getAddInstanceFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "location",
-			Usage: "[Optional] Artifactory instance location.",
+			Usage: "[Optional] Artifactory instance location, e.g. US.",
 		},
 	}...)
 }
@@ -161,7 +182,7 @@ func getConfigFlags() []cli.Flag {
 func addInstance(c *cli.Context) {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	addInstanceFlags, err := createAddInstanceFlag(c)
     if err != nil {
@@ -173,7 +194,7 @@ func addInstance(c *cli.Context) {
 func removeInstance(c *cli.Context) {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	instanceName := c.Args()[0];
 	if !c.Bool("quiet") {
@@ -192,7 +213,7 @@ func removeInstance(c *cli.Context) {
 func attachLicense(c *cli.Context) {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createAttachLicFlags(c)
     if err != nil {
@@ -204,7 +225,7 @@ func attachLicense(c *cli.Context) {
 func detachLicense(c *cli.Context) {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createDetachLicFlags(c)
     if err != nil {
@@ -247,7 +268,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 
 func configure(c *cli.Context) {
 	if len(c.Args()) > 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "Wrong number of arguments. " + cliutils.GetDocumentationMessage())
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	} else if len(c.Args()) == 1 {
 		if c.Args()[0] == "show" {
 			commands.ShowConfig()
@@ -270,7 +291,7 @@ func createDetachLicFlags(c *cli.Context) (flags *rtinstances.DetachLicFlags, er
 	    return
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == ""{
-		cliutils.Exit(cliutils.ExitCodeError, "The --bucket-id option is mandatory")
+		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
 	}
 	flags.NodeId = c.String("node-id")
 	return
@@ -287,7 +308,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 		cliutils.Exit(cliutils.ExitCodeError, "The --license-path option cannot be a directory")
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --bucket-id option is mandatory")
+		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
 	}
 	flags.Override = cliutils.GetBoolFlagValue(c, "override", false)
 	flags.Deploy = cliutils.GetBoolFlagValue(c, "deploy", false)
@@ -322,7 +343,7 @@ func createAddInstanceFlag(c *cli.Context) (flags *rtinstances.AddInstanceFlags,
 		cliutils.Exit(cliutils.ExitCodeError, "The --rt-user option is mandatory")
 	}
 	if flags.ArtifactoryInstanceDetails.Password = c.String("rt-password"); flags.ArtifactoryInstanceDetails.Password == ""{
-		cliutils.Exit(cliutils.ExitCodeError, "The --rt-password option is mandatory test")
+		cliutils.Exit(cliutils.ExitCodeError, "The --rt-password option is mandatory")
 	}
 	flags.Description = c.String("desc")
 	flags.Location = c.String("location")
