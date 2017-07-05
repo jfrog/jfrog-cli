@@ -59,12 +59,23 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 }
 
 func buildUpdatesUrl(flags *OfflineUpdatesFlags) (err error) {
+	var queryParams string
 	if flags.From > 0 && flags.To > 0 {
 		if err = validateDates(flags.From, flags.To); err != nil {
 			return
 		}
-		updatesUrl = fmt.Sprintf(BUNDLES_URL, flags.From, flags.To)
+		queryParams += fmt.Sprintf("from=%v&to=%v", flags.From, flags.To)
 	}
+	if flags.Version != "" {
+		if queryParams != "" {
+			queryParams += "&"
+		}
+		queryParams += fmt.Sprintf("version=%v", flags.Version)
+	}
+	if queryParams != "" {
+		updatesUrl += "?" + queryParams
+	}
+
 	return
 }
 
@@ -208,6 +219,7 @@ type OfflineUpdatesFlags struct {
 	License string
 	From    int64
 	To      int64
+	Version   string
 }
 
 type FilesList struct {

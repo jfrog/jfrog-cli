@@ -19,6 +19,7 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
 			ArgsUsage: common.CreateEnvVars(),
 			Flags:     offlineUpdateFlags(),
+			Aliases:   []string{"ou"},
 			Action:    offlineUpdates,
 		},
 	}
@@ -38,11 +39,16 @@ func offlineUpdateFlags() []cli.Flag {
 			Name:  "to",
 			Usage: "[Optional] To update date in YYYY-MM-DD format.",
 		},
+		cli.StringFlag{
+			Name:  "version",
+			Usage: "[Optional] Xray version.",
+		},
 	}
 }
 
 func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags, err error) {
 	flags = new(commands.OfflineUpdatesFlags)
+	flags.Version = c.String("version");
 	flags.License = c.String("license-id");
 	if len(flags.License) < 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "The --license-id option is mandatory.")
