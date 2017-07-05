@@ -20,7 +20,6 @@ const VULNERABILITY = "__vuln"
 const COMPONENT = "__comp"
 const JXRAY_BASR_URL = "https://jxray.jfrog.io/api/v1/updates/"
 const ONBOARDING_URL = JXRAY_BASR_URL + "onboarding"
-const BUNDLES_URL = JXRAY_BASR_URL + "bundles?from=%v&to=%v"
 
 var updatesUrl = ONBOARDING_URL
 
