@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"github.com/jfrogdev/jfrog-cli-go/errors/httperrors"
 )
 
 const VULNERABILITY = "__vuln"
@@ -38,7 +39,8 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 	}
 	if len(vulnerabilities) > 0 {
 		log.Info("Downloading vulnerabilities...")
-		if err := saveData(xrayTempDir, "vuln", zipSuffix, "", vulnerabilities); err != nil {
+		err := saveData(xrayTempDir, "vuln", zipSuffix, vulnerabilities)
+		if err != nil {
 			return err
 		}
 	} else {
@@ -47,7 +49,8 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 
 	if len(components) > 0 {
 		log.Info("Downloading components...")
-		if err := saveData(xrayTempDir, "comp", zipSuffix, "", components); err != nil {
+		err := saveData(xrayTempDir, "comp", zipSuffix, components)
+		if err != nil {
 			return err
 		}
 	} else {
@@ -102,8 +105,8 @@ func getXrayTempDir() (string, error) {
 	return xrayDir, nil
 }
 
-func saveData(xrsyTmpdir, filesPrefix, zipSuffix, logMsgPrefix string, urlsList []string) (err error) {
-	dataDir, err := ioutil.TempDir(xrsyTmpdir, filesPrefix)
+func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) error {
+	dataDir, err := ioutil.TempDir(xrayTmpDir, filesPrefix)
 	if err != nil {
 		return err
 	}
@@ -114,8 +117,11 @@ func saveData(xrsyTmpdir, filesPrefix, zipSuffix, logMsgPrefix string, urlsList 
 	}()
 	for i, url := range urlsList {
 		fileName := filesPrefix + strconv.Itoa(i) + ".json"
-		log.Info(logMsgPrefix, "Downloading", url)
-		httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
+		log.Info("Downloading", url)
+		_, err := httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
+		if err != nil {
+			return err
+		}
 	}
 	log.Info("Zipping files.")
 	err = zipFolderFiles(dataDir, filesPrefix + zipSuffix + ".zip")
@@ -138,13 +144,18 @@ func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error)
 		cliutils.CheckError(err)
 		return nil, nil, 0, err
 	}
-	if resp.StatusCode != 200 {
-		err := errors.New("Response: " + resp.Status)
-		cliutils.CheckError(err)
+	if err = httperrors.CheckResponseStatusError(resp, body, 200); err != nil {
+		cliutils.CheckError(errors.New("Response: " + err.Error()))
 		return nil, nil, 0, err
 	}
+
 	var urls FilesList
-	json.Unmarshal(body, &urls)
+	err = json.Unmarshal(body, &urls)
+	if err != nil {
+		err = cliutils.CheckError(errors.New("Failed parsing json response: " + string(body)))
+		return nil, nil, 0, err
+	}
+
 	var vulnerabilities, components []string
 	for _, v := range urls.Urls {
 		if strings.Contains(v, VULNERABILITY) {

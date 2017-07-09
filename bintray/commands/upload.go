@@ -148,7 +148,7 @@ func uploadFile(artifact cliutils.Artifact, url, logMsgPrefix string, bintrayDet
 
 func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	log.Info("Verifying package", versionDetails.Package, "exists...")
-	resp, err := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
+	resp, _, err := utils.HeadPackage(versionDetails, uploadFlags.BintrayDetails)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func verifyPackageExists(versionDetails *utils.VersionDetails, uploadFlags *Uplo
 
 func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	log.Info("Verifying repository", versionDetails.Repo, "exists...")
-	resp, err := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
+	resp, _, err := utils.HeadRepo(versionDetails, uploadFlags.BintrayDetails)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func promptRepoNotExist(versionDetails *utils.VersionDetails) error {
 
 func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *UploadFlags) error {
 	log.Info("Verifying version", versionDetails.Version, "exists...")
-	resp, err := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
+	resp, _, err := utils.HeadVersion(versionDetails, uploadFlags.BintrayDetails)
 	if err != nil {
 		return err
 	}

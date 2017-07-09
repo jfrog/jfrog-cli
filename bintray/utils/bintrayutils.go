@@ -88,8 +88,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 
 			httputils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 		} else {
-			err = cliutils.CheckError(err)
-			if err != nil {
+			if cliutils.CheckError(err) != nil {
 				return
 			}
 			log.Info(logMsgPrefix, "Bintray response:", resp.Status)

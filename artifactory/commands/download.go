@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"os"
 	"sort"
+	"github.com/jfrogdev/jfrog-cli-go/errors/httperrors"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -228,7 +229,8 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 	}
 	if bulkDownload {
 		resp, err := httputils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
-		if err != nil {
+		// Ignore response status errors to continue downloading
+		if err != nil && !httperrors.IsResponseStatusError(err) {
 			return err
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
@@ -335,6 +337,7 @@ func getArtifactSymlinkChecksum(properties []utils.Property) string {
 }
 
 type fileHandlerFunc func(DownloadData) parallel.TaskFunc
+
 func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) fileHandlerFunc {
 	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
