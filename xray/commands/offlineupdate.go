@@ -215,9 +215,9 @@ func zipFolderFiles(source, target string) (err error) {
 }
 
 type OfflineUpdatesFlags struct {
-	License string
-	From    int64
-	To      int64
+	License   string
+	From      int64
+	To        int64
 	Version   string
 }
 

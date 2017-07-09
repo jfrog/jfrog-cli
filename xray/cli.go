@@ -41,7 +41,7 @@ func offlineUpdateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "version",
-			Usage: "[Optional] Xray version.",
+			Usage: "[Optional] Xray API version.",
 		},
 	}
 }
