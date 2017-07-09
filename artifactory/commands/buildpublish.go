@@ -78,6 +78,7 @@ func createBuildInfo(buildName, buildNumber string, buildInfoRawData utils.Build
 	if len(env) != 0 {
 		buildInfo.Properties = env
 	}
+	buildInfo.artifactoryPrincipal = flags.ArtDetails.User
 	if vcs != (utils.Vcs{}) {
 		buildInfo.VcsRevision = vcs.VcsRevision
 		buildInfo.VcsUrl = vcs.VcsUrl
@@ -134,15 +135,16 @@ func createModule(buildName string, artifacts []utils.ArtifactsBuildInfo, depend
 }
 
 type BuildInfo struct {
-	Name        string         `json:"name,omitempty"`
-	Number      string         `json:"number,omitempty"`
-	Agent       *CliAgent      `json:"agent,omitempty"`
-	BuildAgent  *CliAgent      `json:"buildAgent,omitempty"`
-	Modules     []*Modules     `json:"modules,omitempty"`
-	Started     string         `json:"started,omitempty"`
-	Properties  utils.BuildEnv `json:"properties,omitempty"`
-	VcsUrl      string 		   `json:"vcsUrl,omitempty"`
-	VcsRevision string 		   `json:"vcsRevision,omitempty"`
+	Name                 string           `json:"name,omitempty"`
+	Number               string           `json:"number,omitempty"`
+	Agent                *CliAgent        `json:"agent,omitempty"`
+	BuildAgent           *CliAgent        `json:"buildAgent,omitempty"`
+	Modules              []*Modules       `json:"modules,omitempty"`
+	Started              string           `json:"started,omitempty"`
+	Properties           utils.BuildEnv   `json:"properties,omitempty"`
+	artifactoryPrincipal string           `json:"artifactoryPrincipal,omitempty"`
+	VcsUrl               string           `json:"vcsUrl,omitempty"`
+	VcsRevision          string           `json:"vcsRevision,omitempty"`
 }
 
 type CliAgent struct {
