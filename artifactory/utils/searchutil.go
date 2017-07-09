@@ -12,6 +12,31 @@ import (
 	"sort"
 )
 
+func SearchBySpecFiles(searchSpec *SpecFiles, flags CommonFlags) ([]AqlSearchResultItem, error) {
+	var resultItems []AqlSearchResultItem
+	var itemsFound []AqlSearchResultItem
+	var err error
+
+	for i := 0; i < len(searchSpec.Files); i++ {
+		switch searchSpec.Get(i).GetSpecType() {
+		case WILDCARD, SIMPLE:
+			itemsFound, e := AqlSearchDefaultReturnFields(searchSpec.Get(i), flags)
+			if e != nil {
+				err = e
+				return resultItems, err
+			}
+			resultItems = append(resultItems, itemsFound...)
+		case AQL:
+			itemsFound, err = AqlSearchBySpec(searchSpec.Get(i), flags)
+			if err != nil {
+				return resultItems, err
+			}
+			resultItems = append(resultItems, itemsFound...)
+		}
+	}
+	return resultItems, err
+}
+
 func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	query, err := createAqlBodyForItem(specFile)
 	if err != nil {
@@ -24,7 +49,7 @@ func AqlSearchDefaultReturnFields(specFile *File, flags AqlSearchFlag) ([]AqlSea
 func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	aqlBody := specFile.Aql.ItemsFind
 	query := "items.find(" + aqlBody + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
-	results, err := AqlSearch(query, flags)
+	results, err := aqlSearch(query, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +63,7 @@ func AqlSearchBySpec(specFile *File, flags AqlSearchFlag) ([]AqlSearchResultItem
 	return results, err
 }
 
-func AqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
+func aqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, error) {
 	json, err := execAqlSearch(aqlQuery, flags)
 	if err != nil {
 		return nil, err

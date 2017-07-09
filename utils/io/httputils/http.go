@@ -66,9 +66,7 @@ func getHttpClient(transport *http.Transport) *http.Client {
 	return client
 }
 
-func Send(method string, url string, content []byte, allowRedirect bool,
-closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
-
+func Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 	var req *http.Request
 	var err error
 	if content != nil {
@@ -79,6 +77,7 @@ closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, s
 	if cliutils.CheckError(err) != nil {
 		return nil, nil, "", err
 	}
+
 	return doRequest(req, allowRedirect, closeBody, httpClientsDetails)
 }
 

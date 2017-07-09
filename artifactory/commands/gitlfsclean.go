@@ -115,7 +115,7 @@ func getRefsRegex(refs string) string {
 	return replacer.Replace(regexp.QuoteMeta(refs))
 }
 
-func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlag) ([]utils.AqlSearchResultItem, error) {
+func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlags) ([]utils.AqlSearchResultItem, error) {
 	err := utils.PreCommandSetup(flags)
 	if err != nil {
 		return nil, err

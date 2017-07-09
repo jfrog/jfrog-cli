@@ -9,7 +9,7 @@ import (
 	"errors"
 )
 
-func Delete(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) (err error) {
+func Delete(deleteSpec *utils.SpecFiles, flags utils.CommonFlags) (err error) {
 	err = utils.PreCommandSetup(flags)
 	if err != nil {
 		return
@@ -25,14 +25,14 @@ func Delete(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) (err error) {
 	return
 }
 
-func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) ([]utils.AqlSearchResultItem, error) {
+func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags utils.CommonFlags) ([]utils.AqlSearchResultItem, error) {
 	if err := utils.PreCommandSetup(flags); err != nil {
 		return nil, err
 	}
 	return getPathsToDeleteInternal(deleteSpec, flags)
 }
 
-func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFlag) (resultItems []utils.AqlSearchResultItem, err error) {
+func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFlags) (resultItems []utils.AqlSearchResultItem, err error) {
 	log.Info("Searching artifacts...")
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		currentSpec := deleteSpec.Get(i)
@@ -60,14 +60,14 @@ func getPathsToDeleteInternal(deleteSpec *utils.SpecFiles, flags utils.CommonFla
 	return
 }
 
-func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
+func DeleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlags) error {
 	if err := utils.PreCommandSetup(flags); err != nil {
 		return err
 	}
 	return deleteFiles(resultItems, flags)
 }
 
-func deleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
+func deleteFiles(resultItems []utils.AqlSearchResultItem, flags utils.CommonFlags) error {
 	for _, v := range resultItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(flags.GetArtifactoryDetails().Url, v.GetFullUrl(), make(map[string]string))
 		if err != nil {

@@ -111,7 +111,7 @@ func initTransport(artDetails *config.ArtifactoryDetails) (error) {
 	return nil
 }
 
-func PreCommandSetup(flags CommonFlag) (err error) {
+func PreCommandSetup(flags CommonFlags) (err error) {
 	if flags.GetArtifactoryDetails().SshKeyPath != "" {
 		err = SshAuthentication(flags.GetArtifactoryDetails())
 		if err != nil {
@@ -169,6 +169,9 @@ func EncodeParams(props string) (string, error) {
 	propList := strings.Split(props, ";")
 	result := []string{}
 	for _, prop := range propList {
+		if prop == "" {
+			continue
+		}
 		key, value, err := SplitProp(prop)
 		if err != nil {
 			return "", err
@@ -177,20 +180,6 @@ func EncodeParams(props string) (string, error) {
 	}
 
 	return strings.Join(result, ";"), nil
-}
-
-// Simple directory path - dir path without wildcards.
-func IsSimpleDirectoryPath(path string) bool {
-	return IsDirectoryPath(path) && !strings.Contains(path, "*")
-}
-
-func IsDirectoryPath(path string) bool {
-	return path != "" && strings.HasSuffix(path, "/")
-}
-
-type CommonFlag interface {
-	GetArtifactoryDetails() *config.ArtifactoryDetails
-	IsDryRun() bool
 }
 
 func SplitProp(prop string) (string, string, error) {
@@ -218,4 +207,22 @@ func IsSubPath(paths []string, index int, separator string) bool {
 		}
 	}
 	return false
+}
+
+type CommonFlags interface {
+	GetArtifactoryDetails() *config.ArtifactoryDetails
+	IsDryRun() bool
+}
+
+type CommonFlagsImpl struct {
+	ArtDetails *config.ArtifactoryDetails
+	DryRun     bool
+}
+
+func (flags *CommonFlagsImpl) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *CommonFlagsImpl) IsDryRun() bool {
+	return flags.DryRun
 }

@@ -265,6 +265,33 @@ func TestArtifactoryUploadandExplode(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySetProperties(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/a.in")
+	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/a.*", "prop=val")
+	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
+    resultItems, err := utils.SearchBySpecFiles(spec, flags)
+	if err != nil {
+		t.Error("Failed Searching files:", err)
+	}
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		if len(properties) < 1 {
+			t.Error("Failed setting properties on item:", item.GetFullUrl())
+		}
+		for i, prop := range properties {
+			if i > 0 {
+				t.Error("Expected single property.")
+			}
+			if prop.Key != "prop" || prop.Value != "val" {
+				t.Error("Wrong properties")
+			}
+		}
+	}
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -1326,11 +1353,16 @@ func cleanArtifactory() {
 }
 
 func searchInArtifactory(specFile string) (result []commands.SearchResult, err error) {
-	searchFlags := new(commands.SearchFlags)
-	searchFlags.ArtDetails = artifactoryDetails
-	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
+	searchSpec, searchFlags := getSpecAndCommonFlags(specFile)
 	result, err = commands.Search(searchSpec, searchFlags)
 	return
+}
+
+func getSpecAndCommonFlags(specFile string) (*utils.SpecFiles, utils.CommonFlags) {
+	searchFlags := new(utils.CommonFlagsImpl)
+	searchFlags.ArtDetails = artifactoryDetails
+	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
+	return searchSpec, searchFlags
 }
 
 func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
@@ -1348,7 +1380,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 }
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
-	searchFlags := new(commands.SearchFlags)
+	searchFlags := new(utils.CommonFlagsImpl)
 	searchFlags.ArtDetails = artifactoryDetails
 	searchSpec := utils.CreateSpec(pattern, "", props, "", true, false, false, false)
 	results, err := commands.Search(searchSpec, searchFlags)

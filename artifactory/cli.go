@@ -28,6 +28,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/gitlfsclean"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/docs/artifactory/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/setprops"
 )
 
 func GetCommands() []cli.Command {
@@ -210,6 +211,18 @@ func GetCommands() []cli.Command {
 				gitLfsCleanCmd(c)
 			},
 		},
+		{
+			Name:      "set-props",
+			Flags:     getSetPropertiesFlags(),
+			Aliases:   []string{"sp"},
+			Usage:     setprops.Description,
+			HelpName:  common.CreateUsage("rt set-props", setprops.Description, setprops.Usage),
+			UsageText: setprops.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				setPropsCmd(c)
+			},
+		},
 	}
 }
 
@@ -371,7 +384,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the tagret path pattern for folders and not just for files in Artifactory.",
+			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
 		},
 	}...)
 }
@@ -504,6 +517,15 @@ func getSearchFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
+	}...)
+}
+
+func getSetPropertiesFlags() []cli.Flag {
+	return append(getSearchFlags(), []cli.Flag{
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
 		},
 	}...)
 }
@@ -918,7 +940,7 @@ func searchCmd(c *cli.Context) {
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
-	flags, err := createSearchFlags(c)
+	flags, err := createCommonFlags(c)
 	cliutils.ExitOnErr(err)
 	SearchResult, err := commands.Search(searchSpec, flags)
 	cliutils.ExitOnErr(err)
@@ -926,6 +948,29 @@ func searchCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 
 	fmt.Println(string(cliutils.IndentJson(result)))
+}
+
+func setPropsCmd(c *cli.Context) {
+	if !(c.NArg() == 2 || (c.NArg() == 1 && c.IsSet("spec"))) {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	var setPropertiesSpec *utils.SpecFiles
+	var properties string
+	if c.IsSet("spec") {
+		var err error
+		setPropertiesSpec, err = getSetPropertiesSpec(c)
+		cliutils.ExitOnErr(err)
+		properties = c.Args()[0]
+	} else {
+		setPropertiesSpec = createDefaultSetPropertiesSpec(c)
+		properties = c.Args()[1]
+	}
+
+	flags, err := createCommonFlags(c)
+	cliutils.ExitOnErr(err)
+	err = commands.SetProps(setPropertiesSpec, flags, properties)
+	cliutils.ExitOnErr(err)
 }
 
 func buildPublishCmd(c *cli.Context) {
@@ -1194,6 +1239,16 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
 }
 
+func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
+	pattern := c.Args().Get(0)
+	props := c.String("props")
+	build := c.String("build")
+	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
+	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, includeDirs)
+}
+
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
@@ -1208,10 +1263,15 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	return
 }
 
-func createSearchFlags(c *cli.Context) (searchFlags *commands.SearchFlags, err error) {
-	searchFlags = new(commands.SearchFlags)
-	searchFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
-	return
+func getSetPropertiesSpec(c *cli.Context) (*utils.SpecFiles, error) {
+	return getSearchSpec(c)
+}
+
+func createCommonFlags(c *cli.Context) (utils.CommonFlags, error) {
+	var err error
+	flags := new(utils.CommonFlagsImpl)
+	flags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return flags, err
 }
 
 func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, err error) {
