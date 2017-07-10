@@ -561,6 +561,10 @@ func getAccessKeysFlags() []cli.Flag {
 			Name:  "black-cidrs",
 			Usage: "[Optional] Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
 		},
+		cli.StringFlag{
+			Name:  "api-only",
+			Usage: "[Default: true] You can set api_only to false to allow access keys access to Bintray UI as well as to the API.",
+		},
 	}...)
 }
 
@@ -1238,6 +1242,16 @@ func createAccessKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) (*comm
 			cliutils.Exit(cliutils.ExitCodeError, "The --ex-check-cache option should have a numeric value.")
 		}
 	}
+
+	var expiry int64
+	if c.String("expiry") != "" {
+		var err error
+		expiry, err = strconv.ParseInt(c.String("expiry"), 10, 64)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, "The --expiry option should have a numeric value.")
+		}
+	}
+
 	details, err := createBintrayDetails(c, true)
 	if err != nil {
 		return nil, err
@@ -1246,11 +1260,12 @@ func createAccessKeyFlagsForCreateAndUpdate(keyId string, c *cli.Context) (*comm
 		BintrayDetails:      details,
 		Id:                  keyId,
 		Password:            c.String("password"),
-		Expiry:              c.String("expiry"),
+		Expiry:              expiry,
 		ExistenceCheckUrl:   c.String("ex-check-url"),
 		ExistenceCheckCache: cachePeriod,
 		WhiteCidrs:          c.String("white-cidrs"),
-		BlackCidrs:          c.String("black-cidrs")}, nil
+		BlackCidrs:          c.String("black-cidrs"),
+		ApiOnly:             c.String("api-only")}, nil
 }
 
 func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {

@@ -420,9 +420,11 @@ func deleteBintrayRepo() {
 
 	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
 	if cliutils.CheckError(err) != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
-	if (resp.StatusCode != 200 && resp.StatusCode != 404) {
+
+	if resp.StatusCode != 200 && resp.StatusCode != 404 {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)

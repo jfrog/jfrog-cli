@@ -6,9 +6,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"errors"
-	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"fmt"
+	"encoding/json"
+	"strings"
 )
 
 func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
@@ -42,7 +43,10 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
 }
 
 func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
-	data := BuildAccessKeyJson(flags, true)
+	data, err := BuildAccessKeyJson(flags)
+	if err != nil {
+		return err
+	}
 	url := GetAccessKeysPath(flags.BintrayDetails, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Creating access key...")
@@ -61,7 +65,10 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
 }
 
 func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
-	data := BuildAccessKeyJson(flags, false)
+	data, err := BuildAccessKeyJson(flags)
+	if err != nil {
+		return err
+	}
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Updating access key...")
@@ -79,43 +86,27 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
 	return nil
 }
 
-func BuildAccessKeyJson(flags *AccessKeyFlags, create bool) string {
-	var existenceCheck string
-	var whiteCidrs string
-	var blackCidrs string
-	if flags.ExistenceCheckUrl != "" {
-		existenceCheck = "\"existence_check\": {" +
-				"\"url\": \"" + flags.ExistenceCheckUrl + "\"," +
-				"\"cache_for_secs\": \"" + strconv.Itoa(flags.ExistenceCheckCache) + "\"" +
-				"}"
+func BuildAccessKeyJson(flags *AccessKeyFlags) (string, error) {
+	apiOnly, err := cliutils.StringToBool(flags.ApiOnly, true)
+	if err != nil {
+		return "", err
 	}
-	if flags.WhiteCidrs != "" {
-		whiteCidrs = "\"white_cidrs\": " + cliutils.BuildListString(flags.WhiteCidrs)
-	}
-	if flags.BlackCidrs != "" {
-		blackCidrs = "\"black_cidrs\": " + cliutils.BuildListString(flags.BlackCidrs)
-	}
-	data := "{"
-	if create {
-		data += "\"id\": \"" + flags.Id + "\","
-	}
-	if flags.Password != "" {
-		data += "\"password\": \"" + flags.Password + "\","
-	}
-	data += "\"expiry\": \"" + flags.Expiry + "\""
 
-	if existenceCheck != "" {
-		data += "," + existenceCheck
+	data := AccessKeyConfig{
+		Id:             flags.Id,
+		Expiry:         flags.Expiry,
+		WhiteCidrs:     strings.Split(flags.WhiteCidrs, ","),
+		BlackCidrs:     strings.Split(flags.BlackCidrs, ","),
+		ApiOnly:        apiOnly,
+		ExistenceCheck: ExistenceCheckConfig{
+			Url:             flags.ExistenceCheckUrl,
+			Cache_for_secs:  flags.ExistenceCheckCache},
 	}
-	if whiteCidrs != "" {
-		data += "," + whiteCidrs
+	requestContent, err := json.Marshal(data)
+	if err != nil {
+		return "", cliutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
-	if blackCidrs != "" {
-		data += "," + blackCidrs
-	}
-	data += "}"
-
-	return data
+	return string(requestContent), nil
 }
 
 func DeleteAccessKey(flags *AccessKeyFlags, org string) error {
@@ -150,9 +141,24 @@ type AccessKeyFlags struct {
 	BintrayDetails      *config.BintrayDetails
 	Id                  string
 	Password            string
-	Expiry              string
+	Expiry              int64
 	ExistenceCheckUrl   string
 	ExistenceCheckCache int
 	WhiteCidrs          string
 	BlackCidrs          string
+	ApiOnly             string
+}
+
+type AccessKeyConfig struct {
+	Id             string                `json:"id,omitempty"`
+	Expiry         int64                 `json:"expiry,omitempty"`
+	ExistenceCheck ExistenceCheckConfig  `json:"existence_check,omitempty"`
+	WhiteCidrs     []string              `json:"white_cidrs,omitempty"`
+	BlackCidrs     []string              `json:"black_cidrs,omitempty"`
+	ApiOnly        bool                  `json:"api_only"`
+}
+
+type ExistenceCheckConfig struct {
+	Url            string  `json:"url,omitempty"`
+	Cache_for_secs int     `json:"cache_for_secs,omitempty"`
 }
