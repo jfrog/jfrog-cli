@@ -6,8 +6,8 @@ var Usage = []string{"jfrog rt sp [command options] <artifacts pattern> <artifac
 
 const Arguments string =
 `    artifacts pattern
-		Specifies the artifacts path in Artifactory, on which the properties are should be set.
+		Artifacts that match the pattern will be set with the specified properties.
 
 	artifact properties
-		List of properties in the form of key1=value1;key2=value2,... to be set on the matching artifacts.
+		The list of properties, in the form of key1=value1;key2=value2,..., to be set on the matching artifacts.
 `

@@ -525,20 +525,20 @@ func getSetPropertiesFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
 			Value: "",
-			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are affected. The property format is build-name/build-number.",
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
+			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.",
 		},
 	}...)
 }
