@@ -522,7 +522,20 @@ func getSearchFlags() []cli.Flag {
 }
 
 func getSetPropertiesFlags() []cli.Flag {
-	return append(getSearchFlags(), []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+		},
+		cli.StringFlag{
+			Name:  "recursive",
+			Value: "",
+			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "build",
+			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
@@ -951,22 +964,11 @@ func searchCmd(c *cli.Context) {
 }
 
 func setPropsCmd(c *cli.Context) {
-	if !(c.NArg() == 2 || (c.NArg() == 1 && c.IsSet("spec"))) {
+	if c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-
-	var setPropertiesSpec *utils.SpecFiles
-	var properties string
-	if c.IsSet("spec") {
-		var err error
-		setPropertiesSpec, err = getSetPropertiesSpec(c)
-		cliutils.ExitOnErr(err)
-		properties = c.Args()[0]
-	} else {
-		setPropertiesSpec = createDefaultSetPropertiesSpec(c)
-		properties = c.Args()[1]
-	}
-
+	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
+	properties := c.Args()[1]
 	flags, err := createCommonFlags(c)
 	cliutils.ExitOnErr(err)
 	err = commands.SetProps(setPropertiesSpec, flags, properties)
