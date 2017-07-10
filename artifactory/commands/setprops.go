@@ -4,7 +4,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
-	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/errors/httperrors"
 )
 
 func SetProps(spec *utils.SpecFiles, flags utils.CommonFlags, props string) error {
@@ -18,24 +18,24 @@ func SetProps(spec *utils.SpecFiles, flags utils.CommonFlags, props string) erro
 	}
 	updatePropertiesBaseUrl := flags.GetArtifactoryDetails().Url + "api/storage"
 	log.Info("Setting properties...")
+	encodedParam, err := utils.EncodeParams(props)
+	if err != nil {
+		return err
+	}
 	for _, item := range resultItems {
 		log.Info("Setting properties to:", item.GetFullUrl())
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
-		encodedParam, err := utils.EncodeParams(props)
-		if err != nil {
-			return err
-		}
 		setPropertiesUrl := updatePropertiesBaseUrl + "/" + item.GetFullUrl() + "?properties=" + encodedParam
 		log.Debug("Sending set properties request:", setPropertiesUrl)
-		resp, _, err := httputils.SendPut(setPropertiesUrl, nil, httpClientsDetails)
+		resp, body, err := httputils.SendPut(setPropertiesUrl, nil, httpClientsDetails)
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != 204 {
-			return fmt.Errorf("Coldn't set properties for: %v", item.GetFullUrl())
+		if err = httperrors.CheckResponseStatus(resp, body, 204); err != nil {
+			return err
 		}
 	}
 
-	log.Info("Done setting properties...")
+	log.Info("Done setting properties.")
 	return err
 }
