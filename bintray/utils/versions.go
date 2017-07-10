@@ -7,11 +7,13 @@ import (
 	"net/http"
 )
 
-func HeadVersion(versionDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (*http.Response, []byte, error) {
+func HeadVersion(versionDetails *VersionDetails, bintrayDetails *config.BintrayDetails) (resp *http.Response, body []byte, err error) {
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
 		versionDetails.Repo + "/" + versionDetails.Package + "/versions/" + versionDetails.Version
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
-	return httputils.SendHead(url, httpClientsDetails)
+
+	resp, body, err = httputils.SendHead(url, httpClientsDetails)
+	return
 }
 
 func CreateVersionJson(versionName string, flags *VersionFlags) string {

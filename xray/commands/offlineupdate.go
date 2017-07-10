@@ -144,7 +144,7 @@ func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error)
 		cliutils.CheckError(err)
 		return nil, nil, 0, err
 	}
-	if err = httperrors.CheckResponseStatusError(resp, body, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
 		cliutils.CheckError(errors.New("Response: " + err.Error()))
 		return nil, nil, 0, err
 	}

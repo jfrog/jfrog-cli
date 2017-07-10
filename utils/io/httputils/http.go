@@ -169,7 +169,7 @@ httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, 
 	}
 
 	defer resp.Body.Close()
-	if err = httperrors.CheckResponseStatusError(resp, nil, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, nil, 200); err != nil {
 		return
 	}
 
@@ -294,7 +294,7 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 		return nil, err
 	}
 
-	if err = httperrors.CheckResponseStatusError(resp, body, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
 		return nil, err
 	}
 
