@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"os"
 	"sort"
+	"github.com/jfrogdev/jfrog-cli-go/errors/httperrors"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadFlags) (err error) {
@@ -80,7 +81,7 @@ func prepareTasks(producer parallel.Runner, downloadSpec *utils.SpecFiles, fileC
 				return
 			}
 
-			err =  produceTasks(resultItems, fileSpec, producer, fileContextHandler, errorsQueue)
+			err = produceTasks(resultItems, fileSpec, producer, fileContextHandler, errorsQueue)
 			if err != nil {
 				errorsQueue.AddError(err)
 				return
@@ -228,7 +229,8 @@ func downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string,
 	}
 	if bulkDownload {
 		resp, err := httputils.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
-		if err != nil {
+		// Ignore response status errors to continue downloading
+		if err != nil && !httperrors.IsResponseStatusError(err) {
 			return err
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
@@ -268,10 +270,7 @@ func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if localFileDetails.Md5 != md5 || localFileDetails.Sha1 != sha1 {
-		return true, nil
-	}
-	return false, nil
+	return localFileDetails.Checksum.Md5 != md5 || localFileDetails.Checksum.Sha1 != sha1, nil
 }
 
 func removeIfSymlink(localSymlinkPath string) error {
@@ -338,6 +337,7 @@ func getArtifactSymlinkChecksum(properties []utils.Property) string {
 }
 
 type fileHandlerFunc func(DownloadData) parallel.TaskFunc
+
 func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, flags *DownloadFlags) fileHandlerFunc {
 	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
@@ -378,7 +378,7 @@ func createFileHandlerFunc(buildDependencies [][]utils.DependenciesBuildInfo, fl
 }
 
 func downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix string, downloadData DownloadData, flags *DownloadFlags) error {
-	shouldDownload, e := shouldDownloadFile(path.Join(localPath, downloadData.Dependency.Name), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
+	shouldDownload, e := shouldDownloadFile(path.Join(localPath, localFileName), downloadData.Dependency.Actual_Md5, downloadData.Dependency.Actual_Sha1)
 	if e != nil {
 		return e
 	}

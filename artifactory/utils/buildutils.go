@@ -14,13 +14,15 @@ import (
 	"strings"
 	"net/http"
 	"errors"
+	"encoding/base64"
 )
 
 const BUILD_INFO_DETAILS = "details"
 
 func getBuildDir(buildName, buildNumber string) (string, error) {
 	tempDir := os.TempDir()
-	buildsDir := tempDir + "/jfrog/builds/" + buildName + "_" + buildNumber + "/"
+	encodedDirName := base64.StdEncoding.EncodeToString([]byte(buildName + "_" + buildNumber))
+	buildsDir := tempDir + "/jfrog/builds/" + encodedDirName + "/"
 	err := os.MkdirAll(buildsDir, 0777)
 	if cliutils.CheckError(err) != nil {
 		return "", err
@@ -139,7 +141,7 @@ func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*BuildGeneralDe
 	return details, nil
 }
 
-func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) ( *http.Response, []byte, error) {
+func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
 	return httputils.SendPut(url + "api/build/", content, httpClientsDetails)
 }
 
@@ -174,7 +176,6 @@ type Vcs struct {
 	VcsUrl      string `json:"vcsUrl,omitempty"`
 	VcsRevision string `json:"vcsRevision,omitempty"`
 }
-
 
 type BuildGeneralDetails struct {
 	Timestamp time.Time `json:"Timestamp,omitempty"`
@@ -217,8 +218,8 @@ type BuildInfoFlags struct {
 }
 
 type build struct {
-	BuildName	string `json:"buildName"`
-	BuildNumber 	string `json:"buildNumber"`
+	BuildName   string `json:"buildName"`
+	BuildNumber string `json:"buildNumber"`
 }
 
 func (flags *BuildInfoFlags) GetArtifactoryDetails() *config.ArtifactoryDetails {
@@ -235,7 +236,7 @@ func (flags *BuildInfoFlags) IsDryRun() bool {
 // Result examples of parsing: "aaa/123" > "aaa"-"123", "aaa" > "aaa"-"LATEST", "aaa\\/aaa" > "aaa/aaa"-"LATEST",  "aaa/12\\/3" > "aaa"-"12/3".
 func getBuildNameAndNumber(buildIdentifier string, flags AqlSearchFlag) (string, string, error) {
 	const Latest = "LATEST"
-	const LastRelease  = "LAST_RELEASE"
+	const LastRelease = "LAST_RELEASE"
 	buildName, buildNumber := parseBuildNameAndNumber(buildIdentifier)
 
 	if buildNumber == Latest || buildNumber == LastRelease {
@@ -264,7 +265,7 @@ func parseBuildNameAndNumber(buildIdentifier string) (buildName string, buildNum
 	// to go back to the previous delimiter.
 	// If no proper delimiter was found the full string will be the build name.
 	for i := len(buildAsArray) - 1; i >= 1; i-- {
-		buildNumberArray = append([]string{buildAsArray[i]},  buildNumberArray...)
+		buildNumberArray = append([]string{buildAsArray[i]}, buildNumberArray...)
 		if !strings.HasSuffix(buildAsArray[i - 1], EscapeChar) {
 			buildName = strings.Join(buildAsArray[:i], Delimiter)
 			buildNumber = strings.Join(buildNumberArray, Delimiter)
@@ -336,7 +337,7 @@ func filterSearchByBuild(buildIdentifier string, resultsToFilter []AqlSearchResu
 		return nil, err
 	}
 
-	return filterSearchResultBySha(resultsToFilter, buildArtifactsSha) ,err
+	return filterSearchResultBySha(resultsToFilter, buildArtifactsSha), err
 }
 
 func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
@@ -348,7 +349,7 @@ func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
 	for _, element := range elements {
 		elementsMap[element.Actual_Sha1] = true
 	}
-	return elementsMap , nil
+	return elementsMap, nil
 }
 
 func filterSearchResultBySha(aqlSearchResultItemsToFilter []AqlSearchResultItem, shasToMatch map[string]bool) (filteredResults []AqlSearchResultItem) {

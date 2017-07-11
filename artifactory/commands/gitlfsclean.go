@@ -19,41 +19,35 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func GitLfsClean(gitPath string, flags *GitLfsCleanFlags) error {
+func PrepareGitLfsClean(gitPath string, flags *GitLfsCleanFlags) ([]utils.AqlSearchResultItem, *GitLfsCleanFlags, error) {
 	var err error
 	repo := flags.Repo
 	if gitPath == "" {
 		gitPath, err = os.Getwd()
 		if err != nil {
-			return cliutils.CheckError(err)
+			return nil, nil, cliutils.CheckError(err)
 		}
 	}
 	if len(repo) <= 0 {
 		repo, err = detectRepo(gitPath, flags.ArtDetails.Url)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 	}
 	log.Info("Searching files from Artifactory repository", repo, "...")
 	refsRegex := getRefsRegex(flags.Refs)
 	artifactoryLfsFiles, err := searchLfsFilesInArtifactory(repo, flags)
 	if err != nil {
-		return cliutils.CheckError(err)
+		return nil, nil, cliutils.CheckError(err)
 	}
 	log.Info("Collecting files to preserve from Git references matching the pattern", flags.Refs, "...")
 	gitLfsFiles, err := getLfsFilesFromGit(gitPath, refsRegex)
 	if err != nil {
-		return cliutils.CheckError(err)
+		return nil, nil, cliutils.CheckError(err)
 	}
 	filesToDelete := findFilesToDelete(artifactoryLfsFiles, gitLfsFiles)
 	log.Info("Found", len(gitLfsFiles), "files to keep, and", len(filesToDelete), "to clean")
-	if confirmDelete(filesToDelete, flags.Quiet) {
-		err = deleteLfsFilesFromArtifactory(repo, filesToDelete, flags)
-		if err != nil {
-			return cliutils.CheckError(err)
-		}
-	}
-	return nil
+	return filesToDelete, flags, nil
 }
 
 func lfsConfigUrlExtractor (conf *gitconfig.Config) (*url.URL, error) {
@@ -121,7 +115,7 @@ func getRefsRegex(refs string) string {
 	return replacer.Replace(regexp.QuoteMeta(refs))
 }
 
-func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlag) ([]utils.AqlSearchResultItem, error) {
+func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlags) ([]utils.AqlSearchResultItem, error) {
 	err := utils.PreCommandSetup(flags)
 	if err != nil {
 		return nil, err
@@ -130,9 +124,13 @@ func searchLfsFilesInArtifactory(repo string, flags utils.CommonFlag) ([]utils.A
 	return utils.AqlSearchDefaultReturnFields(spec.Get(0), flags)
 }
 
-func deleteLfsFilesFromArtifactory(repo string, files []utils.AqlSearchResultItem, flags utils.CommonFlag) error {
-	log.Info("Deleting", len(files), "files from", repo, "...")
-	return DeleteFiles(files, flags)
+func DeleteLfsFilesFromArtifactory(files []utils.AqlSearchResultItem, flags *GitLfsCleanFlags) error {
+	log.Info("Deleting", len(files), "files from", flags.Repo, "...")
+	err := DeleteFiles(files, flags)
+	if err != nil {
+		return cliutils.CheckError(err)
+	}
+	return nil
 }
 
 func findFilesToDelete(artifactoryLfsFiles []utils.AqlSearchResultItem, gitLfsFiles map[string]struct{}) []utils.AqlSearchResultItem {
@@ -213,22 +211,6 @@ func collectLfsFileFromGit(results map[string]struct{}, file *object.File) error
 		break
 	}
 	return nil
-}
-
-func confirmDelete(files []utils.AqlSearchResultItem, quiet bool) bool {
-	if len(files) < 1 {
-		return false
-	}
-	if quiet {
-		return true
-	}
-	for _, v := range files {
-		fmt.Println("  " + v.Name)
-	}
-	var confirm string
-	fmt.Print("Are you sure you want to delete the above files? (y/n): ")
-	fmt.Scanln(&confirm)
-	return cliutils.ConfirmAnswer(confirm)
 }
 
 type GitLfsCleanFlags struct {

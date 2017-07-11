@@ -28,8 +28,8 @@ func GetEncryptedPasswordFromArtifactory(artifactoryDetails *config.ArtifactoryD
 	return resp, string(body), err
 }
 
-func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails,
-details *fileutils.FileDetails, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
+func UploadFile(f *os.File, url string, artifactoryDetails *config.ArtifactoryDetails, details *fileutils.FileDetails,
+	httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
 	var err error
 	if details == nil {
 		details, err = fileutils.GetFileDetails(f.Name())
@@ -38,8 +38,8 @@ details *fileutils.FileDetails, httpClientsDetails httputils.HttpClientDetails) 
 		return nil, nil, err
 	}
 	headers := map[string]string{
-		"X-Checksum-Sha1": details.Sha1,
-		"X-Checksum-Md5":  details.Md5,
+		"X-Checksum-Sha1": details.Checksum.Sha1,
+		"X-Checksum-Md5":  details.Checksum.Md5,
 	}
 	AddAuthHeaders(headers, artifactoryDetails)
 	requestClientDetails := httpClientsDetails.Clone()
@@ -111,7 +111,7 @@ func initTransport(artDetails *config.ArtifactoryDetails) (error) {
 	return nil
 }
 
-func PreCommandSetup(flags CommonFlag) (err error) {
+func PreCommandSetup(flags CommonFlags) (err error) {
 	if flags.GetArtifactoryDetails().SshKeyPath != "" {
 		err = SshAuthentication(flags.GetArtifactoryDetails())
 		if err != nil {
@@ -132,7 +132,7 @@ func GetArtifactoryHttpClientDetails(artifactoryDetails *config.ArtifactoryDetai
 		User:      artifactoryDetails.User,
 		Password:  artifactoryDetails.Password,
 		ApiKey:    artifactoryDetails.ApiKey,
-		Headers:   artifactoryDetails.SshAuthHeaders,
+		Headers:   cliutils.CopyMap(artifactoryDetails.SshAuthHeaders),
 		Transport: artifactoryDetails.Transport}
 }
 
@@ -169,6 +169,9 @@ func EncodeParams(props string) (string, error) {
 	propList := strings.Split(props, ";")
 	result := []string{}
 	for _, prop := range propList {
+		if prop == "" {
+			continue
+		}
 		key, value, err := SplitProp(prop)
 		if err != nil {
 			return "", err
@@ -177,20 +180,6 @@ func EncodeParams(props string) (string, error) {
 	}
 
 	return strings.Join(result, ";"), nil
-}
-
-// Simple directory path - dir path without wildcards.
-func IsSimpleDirectoryPath(path string) bool {
-	return IsDirectoryPath(path) && !strings.Contains(path, "*")
-}
-
-func IsDirectoryPath(path string) bool {
-	return path != "" && strings.HasSuffix(path, "/")
-}
-
-type CommonFlag interface {
-	GetArtifactoryDetails() *config.ArtifactoryDetails
-	IsDryRun() bool
 }
 
 func SplitProp(prop string) (string, string, error) {
@@ -218,4 +207,22 @@ func IsSubPath(paths []string, index int, separator string) bool {
 		}
 	}
 	return false
+}
+
+type CommonFlags interface {
+	GetArtifactoryDetails() *config.ArtifactoryDetails
+	IsDryRun() bool
+}
+
+type CommonFlagsImpl struct {
+	ArtDetails *config.ArtifactoryDetails
+	DryRun     bool
+}
+
+func (flags *CommonFlagsImpl) GetArtifactoryDetails() *config.ArtifactoryDetails {
+	return flags.ArtDetails
+}
+
+func (flags *CommonFlagsImpl) IsDryRun() bool {
+	return flags.DryRun
 }

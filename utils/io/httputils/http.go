@@ -13,6 +13,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
 	"github.com/jfrogdev/jfrog-cli-go/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/types"
+	"github.com/jfrogdev/jfrog-cli-go/errors/httperrors"
 )
 
 func sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
@@ -24,7 +25,7 @@ func sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails H
 	return resp, redirectUrl, err
 }
 
-func Stream(url string, httpClientsDetails HttpClientDetails) (*http.Response,[]byte, string, error) {
+func Stream(url string, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 	return sendGetLeaveBodyOpen(url, true, httpClientsDetails)
 }
 
@@ -47,8 +48,8 @@ func SendDelete(url string, content []byte, httpClientsDetails HttpClientDetails
 	return
 }
 
-func SendHead(url string, httpClientsDetails HttpClientDetails) (resp *http.Response, err error) {
-	resp, _, _, err = Send("HEAD", url, nil, true, true, httpClientsDetails)
+func SendHead(url string, httpClientsDetails HttpClientDetails) (resp *http.Response, body []byte, err error) {
+	resp, body, _, err = Send("HEAD", url, nil, true, true, httpClientsDetails)
 	return
 }
 
@@ -65,9 +66,7 @@ func getHttpClient(transport *http.Transport) *http.Client {
 	return client
 }
 
-func Send(method string, url string, content []byte, allowRedirect bool,
-closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
-
+func Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 	var req *http.Request
 	var err error
 	if content != nil {
@@ -78,16 +77,17 @@ closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, s
 	if cliutils.CheckError(err) != nil {
 		return nil, nil, "", err
 	}
+
 	return doRequest(req, allowRedirect, closeBody, httpClientsDetails)
 }
 
-func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails)  (resp *http.Response, respBody []byte, redirectUrl string, err error)  {
+func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	req.Close = true
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 	copyHeaders(httpClientsDetails, req)
 
-	client := getHttpClient(httpClientsDetails.Transport);
+	client := getHttpClient(httpClientsDetails.Transport)
 	if !allowRedirect {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			redirectUrl = req.URL.String()
@@ -141,7 +141,7 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 
-	client := getHttpClient(httpClientsDetails.Transport);
+	client := getHttpClient(httpClientsDetails.Transport)
 	resp, err := client.Do(req)
 	if cliutils.CheckError(err) != nil {
 		return nil, nil, err
@@ -151,7 +151,6 @@ func UploadFile(f *os.File, url string, httpClientsDetails HttpClientDetails) (*
 	defer resp.Body.Close()
 	return resp, body, nil
 }
-
 
 func DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails HttpClientDetails) (*http.Response, error) {
 	resp, _, err := downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails)
@@ -164,26 +163,30 @@ func DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClient
 
 func downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
 httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
+	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+	if err = httperrors.CheckResponseStatus(resp, nil, 200); err != nil {
+		return
+	}
 
 	fileName, err = fileutils.CreateFilePath(localPath, fileName)
 	if err != nil {
 		return
 	}
+
 	out, err := os.Create(fileName)
 	err = cliutils.CheckError(err)
 	if err != nil {
 		return
 	}
+
 	defer out.Close()
-	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
-	if err == nil {
-		defer resp.Body.Close()
-		_, err = io.Copy(out, resp.Body)
-		err = cliutils.CheckError(err)
-		if err != nil {
-			return
-		}
-	}
+	_, err = io.Copy(out, resp.Body)
+	err = cliutils.CheckError(err)
 	return
 }
 
@@ -286,13 +289,15 @@ httpClientsDetails HttpClientDetails) error {
 }
 
 func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) (*fileutils.FileDetails, error) {
-	resp, err := SendHead(downloadUrl, httpClientsDetails)
+	resp, body, err := SendHead(downloadUrl, httpClientsDetails)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == 404 {
-		return nil, errors.New("response: " + resp.Status)
+
+	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
+		return nil, err
 	}
+
 	fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -300,8 +305,8 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 	}
 
 	fileDetails := new(fileutils.FileDetails)
-	fileDetails.Md5 = resp.Header.Get("X-Checksum-Md5")
-	fileDetails.Sha1 = resp.Header.Get("X-Checksum-Sha1")
+	fileDetails.Checksum.Md5 = resp.Header.Get("X-Checksum-Md5")
+	fileDetails.Checksum.Sha1 = resp.Header.Get("X-Checksum-Sha1")
 	fileDetails.Size = fileSize
 	fileDetails.AcceptRanges = types.CreateBoolEnum()
 	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")

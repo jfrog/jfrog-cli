@@ -41,9 +41,9 @@ func TestBintrayPackages(t *testing.T) {
 	initBintrayTest(t)
 
 	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/testPackage"
-	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 	bintrayCli.Exec("package-show", packagePath)
-	bintrayCli.Exec("package-update", packagePath, "--licenses=GPL-3.0 --vcs-url=other.url.com")
+	bintrayCli.Exec("package-update", packagePath, "--licenses=GPL-3.0", "--vcs-url=other.url.com")
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 
 	cleanBintrayTest()
@@ -55,10 +55,10 @@ func TestBintrayVersions(t *testing.T) {
 	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/testPackage"
 	versionPath := packagePath + "/1.0"
 
-	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
-	bintrayCli.Exec("version-create", versionPath, "--desc=versionDescription --vcs-tag=vcs.tag")
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
+	bintrayCli.Exec("version-create", versionPath, "--desc=versionDescription", "--vcs-tag=vcs.tag")
 	bintrayCli.Exec("version-show", versionPath)
-	bintrayCli.Exec("version-update", versionPath, "--desc=newVersionDescription --vcs-tag=new.vcs.tag")
+	bintrayCli.Exec("version-update", versionPath, "--desc=newVersionDescription", "--vcs-tag=new.vcs.tag")
 	bintrayCli.Exec("version-publish", versionPath)
 	bintrayCli.Exec("version-delete", versionPath, "--quiet=true")
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -77,13 +77,14 @@ func TestBintraySimpleUpload(t *testing.T) {
 	createPackageAndVersion(packagePath, versionPath)
 	//Upload file
 	fileName := "a1.in"
+	path := "some/path/in/bintray/"
 	uploadFilePath := tests.GetTestResourcesPath() + "a/" + fileName
-	bintrayCli.Exec("upload", uploadFilePath, versionPath)
+	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
 
 	//Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
 		Repo:       tests.BintrayRepo1,
-		Path:       fileName,
+		Path:       path + fileName,
 		Package:    packageName,
 		Name:       fileName,
 		Version:    "1.0",
@@ -101,7 +102,7 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
 	versionName := "1.0"
 	versionPath := packagePath + "/" + versionName
-	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 
 	//Upload file
 	fileName := "a1.in"
@@ -138,7 +139,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
 	versionName := "1.0"
 	versionPath := packagePath + "/" + versionName
-	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 	bintrayCli.Exec("upload", testFileRel, versionPath, "--recursive=false")
 
 	//Check file uploaded
@@ -163,9 +164,9 @@ func TestBintrayUploadOverride(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=false --publish=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true", "--recursive=false", "--publish=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/b/b1.in", versionPath, "a1.in", "--flat=true --recursive=false --override=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/b/b1.in", versionPath, "a1.in", "--flat=true", "--recursive=false", "--override=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursiveModified, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -419,9 +420,11 @@ func deleteBintrayRepo() {
 
 	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
 	if cliutils.CheckError(err) != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
-	if (resp.StatusCode != 200 && resp.StatusCode != 404) {
+
+	if resp.StatusCode != 200 && resp.StatusCode != 404 {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)

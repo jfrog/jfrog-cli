@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"regexp"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
+	"fmt"
 )
 
 const CliAgent = "jfrog-cli-go"
@@ -75,6 +76,12 @@ func Exit(exitCode ExitCode, msg string) {
 	os.Exit(exitCode.Code)
 }
 
+func PrintHelpAndExitWithError(msg string, context *cli.Context) {
+	log.Error(msg + " " + GetDocumentationMessage())
+	cli.ShowCommandHelp(context, context.Command.Name)
+	os.Exit(ExitCodeError.Code)
+}
+
 func AddTrailingSlashIfNeeded(url string) string {
 	if url != "" && !strings.HasSuffix(url, "/") {
 		url += "/"
@@ -134,7 +141,14 @@ func MapToJson(m map[string]string) string {
 	return json
 }
 
-func ConfirmAnswer(answer string) bool {
+func InteractiveConfirm(message string) bool {
+	var confirm string
+	fmt.Print(message + " (y/n): ")
+	fmt.Scanln(&confirm)
+	return confirmAnswer(confirm)
+}
+
+func confirmAnswer(answer string) bool {
 	answer = strings.ToLower(answer)
 	return answer == "y" || answer == "yes"
 }
@@ -148,7 +162,7 @@ func GetLogMsgPrefix(threadId int, dryRun bool) string {
 }
 
 func GetVersion() string {
-	return "1.9.0"
+	return "1.10.0"
 }
 
 func GetConfigVersion() string {
@@ -266,7 +280,7 @@ func StringToBool(boolVal string, defaultValue bool) (bool, error) {
 }
 
 func GetDocumentationMessage() string {
-	return "You can read the documentation at https://github.com/jfrogdev/jfrog-cli-go/blob/master/README.md"
+	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
 }
 
 func PathToRegExp(localPath string) string {
@@ -344,6 +358,43 @@ func SumTrueValues(boolArr []bool) int {
 	return counter
 }
 
+func SpecVarsStringToMap(rawVars string) map[string]string {
+	if len(rawVars) == 0 {
+		return nil
+	}
+	varCandidates := strings.Split(rawVars, ";")
+	varsList := []string{}
+	for _, v := range varCandidates {
+		if len(varsList) > 0 && isEndsWithEscapeChar(varsList[len(varsList) - 1]) {
+			currentLastVar := varsList[len(varsList) - 1]
+			varsList[len(varsList) - 1] = strings.TrimSuffix(currentLastVar, "\\") + ";" + v
+			continue
+		}
+		varsList = append(varsList, v)
+	}
+	return varsAsMap(varsList)
+}
+
+func CopyMap(src map[string]string) (dst map[string]string) {
+	for k, v := range src {
+		dst[k] = v
+	}
+	return
+}
+
+func isEndsWithEscapeChar(lastVar string) bool {
+	return strings.HasSuffix(lastVar, "\\")
+}
+
+func varsAsMap(vars []string) map[string]string {
+	result := map[string]string{}
+	for _, v := range vars {
+		keyVal := strings.SplitN(v, "=", 2)
+		result[keyVal[0]] = keyVal[1]
+	}
+	return result
+}
+
 type Credentials interface {
 	SetUser(string)
 	SetPassword(string)
@@ -356,4 +407,3 @@ type Artifact struct {
 	TargetPath string
 	Symlink    string
 }
-
