@@ -23,7 +23,7 @@ func SetProps(spec *utils.SpecFiles, flags utils.CommonFlags, props string) erro
 		return err
 	}
 	for _, item := range resultItems {
-		log.Info("Setting properties to:", item.GetFullUrl())
+		log.Info("Setting properties on", item.GetFullUrl())
 		httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 		setPropertiesUrl := updatePropertiesBaseUrl + "/" + item.GetFullUrl() + "?properties=" + encodedParam
 		log.Debug("Sending set properties request:", setPropertiesUrl)

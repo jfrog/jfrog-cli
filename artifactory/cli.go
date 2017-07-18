@@ -128,6 +128,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:      "set-props",
+			Flags:     getSetPropertiesFlags(),
+			Aliases:   []string{"sp"},
+			Usage:     setprops.Description,
+			HelpName:  common.CreateUsage("rt set-props", setprops.Description, setprops.Usage),
+			UsageText: setprops.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				setPropsCmd(c)
+			},
+		},
+		{
 			Name:      "build-publish",
 			Flags:     getBuildPublishFlags(),
 			Aliases:   []string{"bp"},
@@ -209,18 +221,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				gitLfsCleanCmd(c)
-			},
-		},
-		{
-			Name:      "set-props",
-			Flags:     getSetPropertiesFlags(),
-			Aliases:   []string{"sp"},
-			Usage:     setprops.Description,
-			HelpName:  common.CreateUsage("rt set-props", setprops.Description, setprops.Usage),
-			UsageText: setprops.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
-			Action: func(c *cli.Context) {
-				setPropsCmd(c)
 			},
 		},
 	}
