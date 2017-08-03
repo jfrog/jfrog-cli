@@ -25,6 +25,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildclean"
 	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildpromote"
 	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/builddistribute"
+	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/buildaddartifact"
 	"github.com/jfrogdev/jfrog-cli-go/docs/artifactory/gitlfsclean"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/docs/artifactory/config"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -209,6 +210,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
+			},
+		},
+		{
+			Name:      "build-add-artifact",
+			Flags:     getServerFlags(),
+			Aliases:   []string{"baa"},
+			Usage:     buildaddartifact.Description,
+			HelpName:  common.CreateUsage("rt build-add-artifact", buildaddartifact.Description, buildaddartifact.Usage),
+			UsageText: buildaddartifact.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				buildAddArtifactCmd(c)
 			},
 		},
 		{
@@ -1031,6 +1044,16 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func buildAddArtifactCmd(c *cli.Context) {
+	if c.NArg() != 3 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	buildAddArtifactFlags, err := createBuildAddArtifactFlags(c)
+	cliutils.ExitOnErr(err)
+	err = commands.BuildAddArtifact(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2), buildAddArtifactFlags)
+	cliutils.ExitOnErr(err)
+}
+
 func gitLfsCleanCmd(c *cli.Context) {
 	if c.NArg() > 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1314,6 +1337,12 @@ func createBuildDistributionFlags(c *cli.Context) (distributeFlags *commands.Bui
 	distributeFlags.DryRun = c.Bool("dry-run")
 
 	distributeFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createBuildAddArtifactFlags(c *cli.Context) (addArtifactsFlags *commands.BuildAddArtifactFlags, err error) {
+	addArtifactsFlags = new(commands.BuildAddArtifactFlags)
+	addArtifactsFlags.ArtDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
