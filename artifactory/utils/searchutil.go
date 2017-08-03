@@ -75,7 +75,7 @@ func aqlSearch(aqlQuery string, flags AqlSearchFlag) ([]AqlSearchResultItem, err
 
 func execAqlSearch(aqlQuery string, flags AqlSearchFlag) ([]byte, error) {
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
-	log.Debug("Searching Artifactory using AQL query: ", aqlQuery)
+	log.Debug("Searching Artifactory using AQL query:\n", aqlQuery)
 
 	httpClientsDetails := GetArtifactoryHttpClientDetails(flags.GetArtifactoryDetails())
 	resp, body, err := httputils.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)

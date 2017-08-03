@@ -49,7 +49,7 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 	first := strings.Index(str[strings.Index(str, "{") + 1 :], "{")
 	last := strings.LastIndex(str, "}")
 
-	aql.ItemsFind = cliutils.StripChars(str[first:last], "\n\t ")
+	aql.ItemsFind = str[first:last]
 	return nil
 }
 

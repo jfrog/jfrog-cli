@@ -327,16 +327,6 @@ func GetTestsFileSeperator() string {
 	return "/"
 }
 
-// Remove all chars from the given string.
-func StripChars(str, chr string) string {
-	return strings.Map(func(r rune) rune {
-		if strings.IndexRune(chr, r) < 0 {
-			return r
-		}
-		return -1
-	}, str)
-}
-
 func MergeMaps(src map[string]string, dst map[string]string) {
 	for k, v := range src {
 		dst[k] = v
