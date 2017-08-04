@@ -957,6 +957,34 @@ func TestArtifactoryPublishBuildInfo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildAddArtifact(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "10"
+	artifactsToUpload := []string{"../testsdata/a/a1.in",
+	                              "../testsdata/a/a2.in",
+	                              "../testsdata/a/a3.in"}
+	uploadTargetPath := tests.Repo1 + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator()
+
+	for _, artifactToUpload := range artifactsToUpload {
+		artifactoryCli.Exec("upload", artifactToUpload, uploadTargetPath)
+		artifactoryCli.Exec("build-add-artifact", buildName, buildNumber, uploadTargetPath + filepath.Base(artifactToUpload))
+	}
+
+	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
+	isExistInArtifactoryByProps([]string{uploadTargetPath + "a1.in",
+	                                     uploadTargetPath + "a2.in",
+	                                     uploadTargetPath + "a3.in"}, tests.Repo1 + "/*", props, t)
+
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+	artifactoryCli.Exec("download", "--spec=" + tests.GetFilePath(tests.BuildDownloadSpec))
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsListsIdentical(tests.BuildDownload, paths, t)
+
+	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"

@@ -13,7 +13,7 @@ import (
 )
 
 func BuildAddArtifact(buildName, buildNumber, artifactPath string, flags *BuildAddArtifactFlags) (err error) {
-	log.Info("Adding artifact '" + artifactPath + "' to build info " + buildName + " #" + buildNumber)
+	log.Info("Adding artifact '" + artifactPath + "' to build info " + buildName + " #" + buildNumber + "...")
 	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
 		return
 	}
