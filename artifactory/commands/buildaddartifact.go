@@ -14,6 +14,7 @@ import (
 
 func BuildAddArtifact(buildName, buildNumber, artifactPath string, flags *BuildAddArtifactFlags) (err error) {
 	log.Info("Adding artifact '" + artifactPath + "' to build info " + buildName + " #" + buildNumber + "...")
+	
 	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
 		return
 	}
@@ -26,11 +27,7 @@ func BuildAddArtifact(buildName, buildNumber, artifactPath string, flags *BuildA
 		return
 	}
 
-	populateFunc := func(wrapper *utils.ArtifactBuildInfoWrapper) {
-		wrapper.Artifacts = []utils.ArtifactsBuildInfo{utils.CreateArtifactsBuildInfo(fileName, details)}
-	}
-
-	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc); if err != nil {
+	err = savePartialArtifactBuildInfo(buildName, buildNumber, fileName, details); if err != nil {
 		return
 	}
 
@@ -85,6 +82,14 @@ func setBuildNameAndNumber(buildName, buildNumber, artifactPath string, flags *B
 		return err
 	}
 	return nil
+}
+
+func savePartialArtifactBuildInfo(buildName, buildNumber, fileName string, details *fileutils.FileDetails) error {
+	populateFunc := func(wrapper *utils.ArtifactBuildInfoWrapper) {
+		wrapper.Artifacts = []utils.ArtifactsBuildInfo{utils.CreateArtifactsBuildInfo(fileName, details)}
+	}
+
+	return utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)
 }
 
 type fileInfoResult struct {
