@@ -12,30 +12,38 @@ import (
 	"path/filepath"
 )
 
-func BuildAddArtifact(buildName, buildNumber, artifact string, flags *BuildAddArtifactFlags) (err error) {
-	log.Info("Adding artifact '" + artifact + "' to " + buildName + "#" + buildNumber)
+func BuildAddArtifact(buildName, buildNumber, artifactPath string, flags *BuildAddArtifactFlags) (err error) {
+	log.Info("Adding artifact '" + artifactPath + "' to build info " + buildName + " #" + buildNumber)
 	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
 		return
 	}
 
-	fileName, details, err := getFileInfo(artifact, flags)
-	if err != nil {
-		return err
+	fileName, details, err := getFileInfo(artifactPath, flags); if err != nil {
+		return
+	}
+
+	err = setBuildNameAndNumber(buildName, buildNumber, artifactPath, flags); if err != nil {
+		return
 	}
 
 	populateFunc := func(wrapper *utils.ArtifactBuildInfoWrapper) {
 		wrapper.Artifacts = []utils.ArtifactsBuildInfo{utils.CreateArtifactsBuildInfo(fileName, details)}
 	}
-	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)
+
+	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc); if err != nil {
+		return
+	}
+
+	log.Info("Successfully added artifact to build info")
 
 	return
 }
 
-func getFileInfo(artifact string, flags *BuildAddArtifactFlags) (fileName string, details *fileutils.FileDetails, err error) {
-	apiUrl := flags.ArtDetails.Url + "api/storage/" + artifact
-	log.Debug("Retrieving file info through URL: " + apiUrl)
+func getFileInfo(artifactPath string, flags *BuildAddArtifactFlags) (fileName string, details *fileutils.FileDetails, err error) {
+	getFileInfoUrl := flags.ArtDetails.Url + "api/storage/" + artifactPath
+	log.Debug("Retrieving file info through URL: " + getFileInfoUrl)
 	httpClientsDetails := utils.GetArtifactoryHttpClientDetails(flags.ArtDetails)
-	resp, body, _, err := httputils.SendGet(apiUrl, true, httpClientsDetails)
+	resp, body, _, err := httputils.SendGet(getFileInfoUrl, true, httpClientsDetails)
 	if err != nil {
 		return "", nil, err
 	}
@@ -63,6 +71,20 @@ func getFileInfo(artifact string, flags *BuildAddArtifactFlags) (fileName string
 						"  Sha1 checksum = " + details.Checksum.Sha1 + "\n" +
 						"  Md5 checksum  = " + details.Checksum.Md5)
 	return
+}
+
+func setBuildNameAndNumber(buildName, buildNumber, artifactPath string, flags *BuildAddArtifactFlags) error {
+	log.Info("Setting build.name and build.number properties")
+
+	// Not all Artifactory versions (e.g. 4.7.5 rev 40176) seem to support setting multiple
+	// properties at once. Hence setting build.number and build.name separately.
+	err := utils.SetProps(artifactPath, "build.name=" + buildName, flags.ArtDetails); if err != nil {
+		return err
+	}
+	err = utils.SetProps(artifactPath, "build.number=" + buildNumber, flags.ArtDetails); if err != nil {
+		return err
+	}
+	return nil
 }
 
 type fileInfoResult struct {
