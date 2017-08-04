@@ -67,9 +67,9 @@ func getFileInfo(artifactPath string, flags *BuildAddArtifactFlags) (fileName st
 	details.Size = int64(0)
 
 	log.Debug("Successfully retrieved file info:\n" +
-						"  fileName      = " + fileName + "\n" +
-						"  Sha1 checksum = " + details.Checksum.Sha1 + "\n" +
-						"  Md5 checksum  = " + details.Checksum.Md5)
+	          "  fileName      = " + fileName + "\n" +
+	          "  Sha1 checksum = " + details.Checksum.Sha1 + "\n" +
+	          "  Md5 checksum  = " + details.Checksum.Md5)
 	return
 }
 
