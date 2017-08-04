@@ -424,7 +424,7 @@ func uploadFile(localPath, targetPath, props string, flags *UploadFlags, minChec
 		return utils.ArtifactsBuildInfo{}, false, err
 	}
 	logUploadResponse(logMsgPrefix, resp, body, checksumDeployed, flags)
-	artifact := createBuildArtifactItem(fileName, details)
+	artifact := utils.CreateArtifactsBuildInfo(fileName, details)
 	return artifact, flags.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200, nil
 }
 
@@ -493,16 +493,6 @@ func createSymlinkFileDetails() *fileutils.FileDetails {
 	details.Checksum.Sha1, _ = fileutils.GetSha1(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
 	details.Size = int64(0)
 	return details
-}
-
-func createBuildArtifactItem(fileName string, details *fileutils.FileDetails) utils.ArtifactsBuildInfo {
-	return utils.ArtifactsBuildInfo{
-		Name: fileName,
-		BuildInfoCommon : &utils.BuildInfoCommon{
-			Sha1: details.Checksum.Sha1,
-			Md5: details.Checksum.Md5,
-		},
-	}
 }
 
 func addExplodeHeader(httpClientsDetails *httputils.HttpClientDetails, isExplode bool) {
