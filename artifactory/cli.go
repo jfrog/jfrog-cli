@@ -1150,6 +1150,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 		}
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
+	if strings.HasPrefix(details.Url, "ssh://") {
+		details.Ssh = true
+	}
 	return details, nil
 }
 

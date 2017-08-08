@@ -112,7 +112,7 @@ func initTransport(artDetails *config.ArtifactoryDetails) (error) {
 }
 
 func PreCommandSetup(flags CommonFlags) (err error) {
-	if flags.GetArtifactoryDetails().SshKeyPath != "" {
+	if flags.GetArtifactoryDetails().Ssh {
 		err = SshAuthentication(flags.GetArtifactoryDetails())
 		if err != nil {
 			return
