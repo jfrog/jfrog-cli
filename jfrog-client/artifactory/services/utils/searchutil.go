@@ -86,7 +86,7 @@ func aqlSearch(aqlQuery string, flags CommonConf) ([]ResultItem, error) {
 func execAqlSearch(aqlQuery string, flags CommonConf) ([]byte, error) {
 	client := flags.GetJfrogHttpClient()
 	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
-	log.Debug("Searching Artifactory using AQL query: ", aqlQuery)
+	log.Debug("Searching Artifactory using AQL query:\n", aqlQuery)
 
 	httpClientsDetails := flags.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
 	resp, body, err := client.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
