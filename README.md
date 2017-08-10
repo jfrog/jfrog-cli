@@ -32,7 +32,7 @@ Navigate to the directory where you want to create the jfrog-cli-go project, and
 
 To download the jfrog-cli-go project, execute the following command:
 ````
-go get github.com/jfrogdev/jfrog-cli-go/jfrog
+go get github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog
 ````
 Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
 
@@ -41,7 +41,7 @@ Go will download and build the project on your machine. Once complete, you will 
 ### Artifactory Integration tests
 To run Artifactory integration tests execute the following command: 
 ````
-go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -test.artifactory=true -test.bintray=false
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=true -test.bintray=false
 ````
 Optional flags:
 
@@ -64,7 +64,7 @@ Bintray tests credentials are taken from the CLI configuration. If non configure
 
 To run Bintray tests execute the following command: 
 ````
-go test -v github.com/jfrogdev/jfrog-cli-go/jfrog -test.artifactory=false -test.bintray=true
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.bintray=true
 ````
 Flags:
 
@@ -80,12 +80,13 @@ Flags:
 To execute all the JFrog CLI unit tests run the following command:
 #### Windows
 ````
-jfrogdev\jfrog-cli-go> for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog"') do @go test %G
+jfrogdev\jfrog-cli-go>for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog-cli/jfrog/" ^| find /
+i /v "jfrog-cli-go/jfrog-cli/docs"') do @go test %G
 ````
 
 #### Unix
 ```
-jfrogdev/jfrog-cli-go$ go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog)
+jfrogdev/jfrog-cli-go$ go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog-cli/jfrog | grep -v jfrog-cli-go/jfrog-cli/docs)
 ```
 
 # Pull Requests
