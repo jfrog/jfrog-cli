@@ -1,0 +1,145 @@
+package rtinstances
+
+import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"encoding/json"
+	"io/ioutil"
+	"errors"
+	"fmt"
+	"os"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+)
+
+func AttachLic(instanceName string, flags *AttachLicFlags) error {
+	prepareLicenseFile(flags.LicensePath, flags.Override)
+	postContent := utils.LicenseRequestContent{
+		Name: 	  	 instanceName,
+		NodeID:	     flags.NodeId,
+		Deploy:	     flags.Deploy}
+	requestContent, err := json.Marshal(postContent)
+	if err != nil {
+		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
+	}
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses";
+	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
+	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+    if err != nil {
+        return err
+    }
+	if resp.StatusCode != 200 {
+		if flags.LicensePath != "" {
+			os.Remove(flags.LicensePath)
+		}
+		return errorutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
+	}
+	fmt.Println("Mission Control response: " + resp.Status)
+	if flags.LicensePath == "" {
+	    var m Message
+	    m, err = extractJsonValue(body)
+		if err != nil {
+		    return err
+		}
+		requestContent, err = json.Marshal(m)
+		err = errorutils.CheckError(err)
+		if err != nil {
+		    return err
+		}
+		fmt.Println(string(requestContent))
+	} else {
+	    var licenseKey []byte
+		licenseKey, err = getLicenseFromJson(body)
+		if err != nil {
+		    return err
+		}
+		err = saveLicense(flags.LicensePath, licenseKey)
+	}
+	return nil
+}
+
+func getLicenseFromJson(body []byte) (licenseKey []byte, err error) {
+    var m Message
+    m, err = extractJsonValue(body)
+    if err != nil {
+        return
+    }
+	licenseKey = []byte(m.LicenseKey)
+	return
+}
+
+func extractJsonValue(body []byte) (m Message, err error) {
+	data := &Data{}
+	err = json.Unmarshal(body, &data);
+	err = errorutils.CheckError(err)
+	if err != nil {
+	    return
+	}
+	m = data.Data
+	return
+}
+
+func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
+	if filepath == "" {
+		return
+	}
+	var dir bool
+	dir, err = fileutils.IsDir(filepath)
+	if err != nil {
+	    return
+	}
+	if dir {
+		err = errorutils.CheckError(errors.New(filepath + " is a directory."))
+        if err != nil {
+            return
+        }
+	}
+	var exists bool
+	exists, err = fileutils.IsFileExists(filepath)
+	if err != nil {
+	    return
+	}
+	if !overrideFile && exists {
+		err = errorutils.CheckError(errors.New("File already exist, in case you wish to override the file use --override flag"))
+        if err != nil {
+            return
+        }
+	}
+	_, directory := fileutils.GetFileAndDirFromPath(filepath)
+	isPathExists := fileutils.IsPathExists(directory)
+	if !isPathExists {
+		os.MkdirAll(directory, 0700)
+	}
+	err = ioutil.WriteFile(filepath, nil, 0777)
+	err = errorutils.CheckError(err)
+	return
+}
+
+func saveLicense(filepath string, content []byte) (err error) {
+	if filepath == "" {
+		return
+	}
+	err = ioutil.WriteFile(filepath, content, 0777)
+	err = errorutils.CheckError(err)
+	return
+}
+
+type AttachLicFlags struct {
+	MissionControlDetails *config.MissionControlDetails
+	LicensePath 	      string
+	NodeId 			      string
+	BucketKey 			  string
+	BucketId 			  string
+	Override 			  bool
+	Deploy 			  	  bool
+}
+
+type Message struct {
+	LicenseKey string `json:"licenseKey,omitempty"`
+}
+
+type Data struct {
+	Data Message
+}
