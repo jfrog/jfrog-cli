@@ -26,16 +26,6 @@ func IndentJson(jsonStr []byte) string {
 	return string(jsonStr)
 }
 
-// Remove all chars from the given string.
-func StripChars(str, chr string) string {
-	return strings.Map(func(r rune) rune {
-		if strings.IndexRune(chr, r) < 0 {
-			return r
-		}
-		return -1
-	}, str)
-}
-
 func PathToRegExp(localPath string) string {
 	var SPECIAL_CHARS = []string{".", "+"}
 	for _, char := range SPECIAL_CHARS {
