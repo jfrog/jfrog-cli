@@ -10,7 +10,7 @@ import (
 )
 
 func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultIt
 
 func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, flags *GitLfsCleanConfiguration) error {
 	cliutils.CliLogger.Info("Deleting", len(files), "files from", flags.Repo, "...")
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
 	}

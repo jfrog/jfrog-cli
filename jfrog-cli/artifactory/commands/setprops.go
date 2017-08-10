@@ -8,7 +8,7 @@ import (
 )
 
 func SetProps(spec *utils.SpecFiles, props string, artDetails *config.ArtifactoryDetails) error {
-	servicesManager, err := utils.CreateDefaultServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return err
 	}

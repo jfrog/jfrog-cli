@@ -8,7 +8,7 @@ import (
 
 // Moves the artifacts using the specified move pattern.
 func Move(moveSpec *utils.SpecFiles, artDetails *config.ArtifactoryDetails) error {
-	servicesManager, err := utils.CreateDefaultServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return err
 	}

@@ -283,5 +283,5 @@ func (flags *CommonConfImpl) IsDryRun() bool {
 }
 
 func (flags *CommonConfImpl) GetJfrogHttpClient() *httpclient.HttpClient {
-	return httpclient.NewDefaultJforgHttpClient()
+	return httpclient.NewDefaultHttpClient()
 }

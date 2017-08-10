@@ -6,6 +6,7 @@ import (
 )
 
 var CliLogger log.Log
+
 func init() {
 	if CliLogger == nil {
 		CliLogger = NewCliLogger()
@@ -14,18 +15,15 @@ func init() {
 
 func NewCliLogger() log.Log {
 	logger := log.NewDefaultLogger()
-	loglevel := os.Getenv("JFROG_CLI_LOG_LEVEL")
-	if loglevel == "ERROR" {
+	switch logLevel := os.Getenv("JFROG_CLI_LOG_LEVEL"); logLevel {
+	case "ERROR":
 		logger.SetLogLevel(log.ERROR)
-	}
-	if loglevel == "WARN" {
+	case "WARN":
 		logger.SetLogLevel(log.WARN)
-	}
-	if loglevel == "INFO" {
-		logger.SetLogLevel(log.INFO)
-	}
-	if loglevel == "DEBUG" {
+	case "DEBUG":
 		logger.SetLogLevel(log.DEBUG)
+	default:
+		logger.SetLogLevel(log.INFO)
 	}
 	return logger
 }

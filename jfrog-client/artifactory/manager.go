@@ -18,13 +18,13 @@ func NewArtifactoryService(config ArtifactoryConfig) (*ArtifactoryServicesManage
 	var err error
 	manager := &ArtifactoryServicesManager{config: config}
 	if config.GetCertifactesPath() == "" {
-		manager.client = httpclient.NewDefaultJforgHttpClient()
+		manager.client = httpclient.NewDefaultHttpClient()
 	} else {
 		transport, err := cert.GetTransportWithLoadedCert(config.GetCertifactesPath())
 		if err != nil {
 			return nil, err
 		}
-		manager.client = httpclient.NewJforgHttpClient(&http.Client{Transport: transport})
+		manager.client = httpclient.NewHttpClient(&http.Client{Transport: transport})
 	}
 	if config.GetLogger() != nil {
 		log.SetLogger(config.GetLogger())

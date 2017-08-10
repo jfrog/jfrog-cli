@@ -8,7 +8,7 @@ import (
 
 // Copies the artifacts using the specified move pattern.
 func Copy(copySpec *utils.SpecFiles, artDetails *config.ArtifactoryDetails) error {
-	servicesManager, err := utils.CreateDefaultServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return err
 	}

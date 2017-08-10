@@ -7,7 +7,7 @@ import (
 )
 
 func BuildPromote(flags *BuildPromotionConfiguration) error {
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
 	}

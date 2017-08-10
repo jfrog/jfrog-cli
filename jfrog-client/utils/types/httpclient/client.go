@@ -22,11 +22,11 @@ type HttpClient struct {
 	Client *http.Client
 }
 
-func NewDefaultJforgHttpClient() *HttpClient {
+func NewDefaultHttpClient() *HttpClient {
 	return &HttpClient{Client: &http.Client{}}
 }
 
-func NewJforgHttpClient(client *http.Client) *HttpClient {
+func NewHttpClient(client *http.Client) *HttpClient {
 	return &HttpClient{Client: client}
 }
 

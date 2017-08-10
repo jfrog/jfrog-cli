@@ -2,7 +2,6 @@ package utils
 
 import (
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
 
 const (

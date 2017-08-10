@@ -9,7 +9,7 @@ import (
 )
 
 func Delete(deleteSpec *utils.SpecFiles, flags *DeleteConfiguration) (err error) {
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func Delete(deleteSpec *utils.SpecFiles, flags *DeleteConfiguration) (err error)
 }
 
 func DeleteFiles(resultItems []clientutils.ResultItem, flags *DeleteConfiguration) error {
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func DeleteFiles(resultItems []clientutils.ResultItem, flags *DeleteConfiguratio
 }
 
 func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteConfiguration) ([]clientutils.ResultItem, error) {
-	servicesManager, err := utils.CreateDefaultServiceManager(flags.ArtDetails, flags.DryRun)
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return nil, err
 	}

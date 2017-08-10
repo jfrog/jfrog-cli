@@ -22,7 +22,7 @@ func init() {
 	RtUrl = flag.String("rt.url", "http://localhost:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
-	RtTargetRepo = flag.String("rt.targetRepo", "Copy/", "Artifactory target repo")
+	RtTargetRepo = flag.String("rt.targetRepo", "jfrog-cli-tests-repo1/", "Artifactory target repo")
 }
 
 func TestMain(m *testing.M) {
@@ -40,23 +40,23 @@ func InitArtifactoryServiceManager() {
 }
 
 func createArtifactorySearchManager() {
-	testsSearchService = NewSearchService(httpclient.NewDefaultJforgHttpClient())
+	testsSearchService = NewSearchService(httpclient.NewDefaultHttpClient())
 	testsSearchService.ArtDetails = getArtDetails()
 }
 
 func createArtifactoryDeleteManager() {
-	testsDeleteService = NewDeleteService(httpclient.NewDefaultJforgHttpClient())
+	testsDeleteService = NewDeleteService(httpclient.NewDefaultHttpClient())
 	testsDeleteService.ArtDetails = getArtDetails()
 }
 
 func createArtifactoryUploadManager() {
-	testsUploadService = NewUploadService(httpclient.NewDefaultJforgHttpClient())
+	testsUploadService = NewUploadService(httpclient.NewDefaultHttpClient())
 	testsUploadService.ArtDetails = getArtDetails()
 	testsUploadService.Threads = 3
 }
 
 func createArtifactoryDownloadManager() {
-	testsDownloadService = NewDownloadService(httpclient.NewDefaultJforgHttpClient())
+	testsDownloadService = NewDownloadService(httpclient.NewDefaultHttpClient())
 	testsDownloadService.ArtDetails = getArtDetails()
 	testsDownloadService.SetThreads(3)
 }

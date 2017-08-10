@@ -12,7 +12,7 @@ type SearchResult struct {
 }
 
 func Search(searchSpec *utils.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
-	servicesManager, err := utils.CreateDefaultServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return nil, err
 	}

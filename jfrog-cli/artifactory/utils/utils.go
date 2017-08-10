@@ -28,12 +28,12 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth *auth.ArtifactoryDetail
 		return nil, "", err
 	}
 	transport, err := cert.GetTransportWithLoadedCert(securityDir)
-	client := httpclient.NewJforgHttpClient(&http.Client{Transport: transport})
+	client := httpclient.NewHttpClient(&http.Client{Transport: transport})
 	resp, body, _, err := client.SendGet(apiUrl, true, httpClientsDetails)
 	return resp, string(body), err
 }
 
-func CreateDefaultServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
 	certPath, err := GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err

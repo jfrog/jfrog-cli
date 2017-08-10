@@ -158,7 +158,7 @@ func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.H
 		return nil, nil, err
 	}
 	transport, err := cert.GetTransportWithLoadedCert(securityDir)
-	client := httpclient.NewJforgHttpClient(&http.Client{Transport: transport})
+	client := httpclient.NewHttpClient(&http.Client{Transport: transport})
 	return client.SendPut(url+"api/build/", content, httpClientsDetails)
 }
 
