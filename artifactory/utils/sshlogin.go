@@ -6,9 +6,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 	"errors"
 	"io"
 	"io/ioutil"
+	"net"
+	"os"
 	"regexp"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -21,27 +24,21 @@ func SshAuthentication(details *config.ArtifactoryDetails) error {
 	}
 
 	log.Info("Performing SSH authentication...")
-	if details.SshKeyPath == "" {
-		err := cliutils.CheckError(errors.New("Cannot invoke the SshAuthentication function with no SSH key path. "))
-        if err != nil {
-            return err
-        }
+
+	var sshAuth ssh.AuthMethod
+	if details.SshKeyPath != "" {
+		sshAuth, err = SshAuthPublicKey(details.SshKeyPath)
+	} else {
+		sshAuth, err = SshAuthAgent()
+	}
+	if err != nil {
+		return err
 	}
 
-	buffer, err := ioutil.ReadFile(details.SshKeyPath)
-	err = cliutils.CheckError(err)
-	if err != nil {
-	    return err
-	}
-	key, err := ssh.ParsePrivateKey(buffer)
-	err = cliutils.CheckError(err)
-	if err != nil {
-	    return err
-	}
 	sshConfig := &ssh.ClientConfig{
 		User: "admin",
 		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(key),
+			sshAuth,
 		},
 		HostKeyCallback : ssh.InsecureIgnoreHostKey(),
 	}
@@ -122,4 +119,26 @@ func parseUrl(url string) (protocol, host string, port int, err error) {
 type SshAuthResult struct {
 	Href    string
 	Headers map[string]string
+}
+
+func SshAuthPublicKey(file string) (ssh.AuthMethod, error) {
+	buffer, err := ioutil.ReadFile(file)
+	err = cliutils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
+	key, err := ssh.ParsePrivateKey(buffer)
+	err = cliutils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
+	return ssh.PublicKeys(key), nil
+}
+
+func SshAuthAgent() (ssh.AuthMethod, error) {
+	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		return nil, err
+	}
+	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers), nil
 }
