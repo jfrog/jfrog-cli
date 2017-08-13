@@ -30,7 +30,7 @@ func uploadDummyFile(t *testing.T) {
 	pattern := filepath.Join(workingDir, "*")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: *RtTargetRepo + "test/"}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: RtTargetRepo + "test/"}
 	up.Flat = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
 	if uploaded != 1 {
@@ -42,7 +42,7 @@ func uploadDummyFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: *RtTargetRepo + "b.in"}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: RtTargetRepo + "b.in"}
 	up.Flat = true
 	_, uploaded, failed, err = testsUploadService.UploadFiles(up)
 	if uploaded != 1 {
@@ -63,7 +63,7 @@ func flatDownload(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(workingDir)
-	downloadPattern := *RtTargetRepo + "*"
+	downloadPattern := RtTargetRepo + "*"
 	downloadTarget := workingDir + string(filepath.Separator)
 	_, err = testsDownloadService.DownloadFiles(&DownloadParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: downloadPattern, Recursive: true, Target: downloadTarget}, Flat: true})
 	if err != nil {
@@ -102,7 +102,7 @@ func recursiveDownload(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(workingDir)
-	downloadPattern := *RtTargetRepo + "*"
+	downloadPattern := RtTargetRepo + "*"
 	downloadTarget := workingDir + string(filepath.Separator)
 	_, err = testsDownloadService.DownloadFiles(&DownloadParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: downloadPattern, Recursive: true, Target: downloadTarget}, Flat: true})
 	if err != nil {
@@ -143,7 +143,7 @@ func placeholderDownload(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(workingDir)
-	downloadPattern := *RtTargetRepo + "(*).in"
+	downloadPattern := RtTargetRepo + "(*).in"
 	downloadTarget := workingDir + string(filepath.Separator) + "{1}" + string(filepath.Separator)
 	_, err = testsDownloadService.DownloadFiles(&DownloadParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: downloadPattern, Recursive: true, Target: downloadTarget}, Flat: true})
 	if err != nil {
@@ -165,7 +165,7 @@ func includeDirsDownload(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(workingDir)
-	downloadPattern := *RtTargetRepo + "*"
+	downloadPattern := RtTargetRepo + "*"
 	downloadTarget := workingDir + string(filepath.Separator)
 	_, err = testsDownloadService.DownloadFiles(&DownloadParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: downloadPattern, IncludeDirs: true, Recursive: false, Target: downloadTarget} , Flat: false})
 	if err != nil {

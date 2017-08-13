@@ -28,7 +28,7 @@ func flatUpload(t *testing.T) {
 	pattern := filepath.Join(workingDir, "out", "*")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: *RtTargetRepo}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: RtTargetRepo}
 	up.Flat = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
 	if uploaded != 1 {
@@ -40,7 +40,7 @@ func flatUpload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: *RtTargetRepo}})
+	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: RtTargetRepo}})
 	if err != nil {
 		t.Error(err)
 	}
@@ -65,7 +65,7 @@ func recursiveUpload(t *testing.T) {
 	pattern := filepath.Join(workingDir, "*")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: *RtTargetRepo}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: RtTargetRepo}
 	up.Flat = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
 	if uploaded != 1 {
@@ -77,7 +77,7 @@ func recursiveUpload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: *RtTargetRepo}})
+	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: RtTargetRepo}})
 	if err != nil {
 		t.Error(err)
 	}
@@ -105,7 +105,7 @@ func placeholderUpload(t *testing.T) {
 	pattern := filepath.Join(workingDir, "(*).in")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: *RtTargetRepo + "{1}"}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, Recursive: true, Target: RtTargetRepo + "{1}"}
 	up.Flat = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
 	if uploaded != 1 {
@@ -117,7 +117,7 @@ func placeholderUpload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: *RtTargetRepo}})
+	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: RtTargetRepo}})
 	if err != nil {
 		t.Error(err)
 	}
@@ -145,7 +145,7 @@ func includeDirsUpload(t *testing.T) {
 	pattern := filepath.Join(workingDir, "*")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, IncludeDirs: true, Recursive: false, Target: *RtTargetRepo}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, IncludeDirs: true, Recursive: false, Target: RtTargetRepo}
 	up.Flat = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
 	if uploaded != 0 {
@@ -157,7 +157,7 @@ func includeDirsUpload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: *RtTargetRepo, IncludeDirs: true}})
+	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: RtTargetRepo, IncludeDirs: true}})
 	if err != nil {
 		t.Error(err)
 	}
@@ -198,7 +198,7 @@ func explodeUpload(t *testing.T) {
 	pattern := filepath.Join(workingDir, "*.zip")
 	pattern = strings.Replace(pattern, "\\", "\\\\", -1)
 	up := &UploadParamsImp{}
-	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, IncludeDirs: true, Recursive: false, Target: *RtTargetRepo}
+	up.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{Pattern: pattern, IncludeDirs: true, Recursive: false, Target: RtTargetRepo}
 	up.Flat = true
 	up.ExplodeArchive = true
 	_, uploaded, failed, err := testsUploadService.UploadFiles(up)
@@ -211,7 +211,7 @@ func explodeUpload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: *RtTargetRepo, IncludeDirs: true}})
+	items, err := testsSearchService.Search(&utils.SearchParamsImpl{ArtifactoryCommonParams: &utils.ArtifactoryCommonParams{Pattern: RtTargetRepo, IncludeDirs: true}})
 	if err != nil {
 		t.Error(err)
 	}

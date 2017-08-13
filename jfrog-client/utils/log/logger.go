@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-var logger Log
+var Logger Log
 type LogLevelType int
 const (
 	ERROR LogLevelType = iota
@@ -15,8 +15,8 @@ const (
 )
 
 func init() {
-	if logger == nil {
-		logger = NewDefaultLogger()
+	if Logger == nil {
+		Logger = NewDefaultLogger()
 	}
 }
 
@@ -29,7 +29,7 @@ type JfrogLogger struct {
 }
 
 func SetLogger(newLogger Log) {
-	logger = newLogger
+	Logger = newLogger
 }
 
 func NewDefaultLogger() (logger *JfrogLogger) {
@@ -47,23 +47,23 @@ func (logger *JfrogLogger) SetLogLevel(LevelEnum LogLevelType) {
 }
 
 func GetLogLevel() LogLevelType {
-	return logger.GetLogLevel()
+	return Logger.GetLogLevel()
 }
 
 func Debug(a ...interface{}) {
-	logger.Debug(a...)
+	Logger.Debug(a...)
 }
 
 func Info(a ...interface{}) {
-	logger.Info(a...)
+	Logger.Info(a...)
 }
 
 func Warn(a ...interface{}) {
-	logger.Warn(a...)
+	Logger.Warn(a...)
 }
 
 func Error(a ...interface{}) {
-	logger.Error(a...)
+	Logger.Error(a...)
 }
 
 func (logger JfrogLogger) GetLogLevel() LogLevelType {
@@ -101,4 +101,17 @@ type Log interface {
 	Info(a ...interface{})
 	Warn(a ...interface{})
 	Error(a ...interface{})
+}
+
+func GetCliLogLevel(logLevel string) LogLevelType {
+	switch logLevel {
+	case "ERROR":
+		return ERROR
+	case "WARN":
+		return WARN
+	case "DEBUG":
+		return DEBUG
+	default:
+		return INFO
+	}
 }

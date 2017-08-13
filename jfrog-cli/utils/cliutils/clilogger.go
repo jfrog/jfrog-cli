@@ -11,19 +11,12 @@ func init() {
 	if CliLogger == nil {
 		CliLogger = NewCliLogger()
 	}
+	// TODO - Remove this when all the command uses the new CliLogger
+	log.Logger.SetLogLevel(log.GetCliLogLevel(os.Getenv("JFROG_CLI_LOG_LEVEL")))
 }
 
 func NewCliLogger() log.Log {
 	logger := log.NewDefaultLogger()
-	switch logLevel := os.Getenv("JFROG_CLI_LOG_LEVEL"); logLevel {
-	case "ERROR":
-		logger.SetLogLevel(log.ERROR)
-	case "WARN":
-		logger.SetLogLevel(log.WARN)
-	case "DEBUG":
-		logger.SetLogLevel(log.DEBUG)
-	default:
-		logger.SetLogLevel(log.INFO)
-	}
+	logger.SetLogLevel(log.GetCliLogLevel(os.Getenv("JFROG_CLI_LOG_LEVEL")))
 	return logger
 }
