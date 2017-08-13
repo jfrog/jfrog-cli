@@ -17,8 +17,19 @@ import (
 	"strings"
 	"encoding/json"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	cliproxy "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"crypto/tls"
+	"time"
+	"net/url"
+	"os/exec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"net/http"
+	"net"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"strconv"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -264,6 +275,224 @@ func TestArtifactoryUploadandExplode(t *testing.T) {
 	artifactoryCli.Exec("upload", "../testsdata/a.zip", "jfrog-cli-tests-repo1", "--explode=true")
 	isExistInArtifactory(tests.ExplodeUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
 	cleanArtifactoryTest()
+}
+
+// Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
+func TestArtifactorySelfSignedCert(t *testing.T) {
+	initArtifactoryTest(t)
+	path, err := ioutil.TempDir("", "jfrog.cli.test.")
+	err = errorutils.CheckError(err)
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.RemoveAll(path)
+	os.Setenv("JFROG_CLI_HOME", path)
+	go cliproxy.StartLocalReverseHttpProxy(*tests.RtUrl)
+
+	// The two certificate files are created by the reverse proxy on startup in the current directory.
+	defer os.Remove(certificate.KEY_FILE)
+	defer os.Remove(certificate.CERT_FILE)
+	// Let's wait for the reverse proxy to start up.
+	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false)
+	if err != nil {
+		t.Error(err)
+	}
+	parsedUrl, err := url.Parse(*tests.RtUrl)
+	rtDetails := &config.ArtifactoryDetails{Url: "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()}
+	if *tests.RtApiKey != "" {
+		rtDetails.ApiKey = *tests.RtApiKey
+	} else {
+		rtDetails.User = *tests.RtUser
+		rtDetails.Password = *tests.RtPassword
+	}
+	_, err = commands.Search(spec, rtDetails)
+	// The server is using self-sign certificate
+	// Without loading the certificated we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
+	if _, ok := err.(*url.Error); !ok {
+
+		t.Error("Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
+	}
+
+	securityDirPath, err := utils.GetJfrogSecurityDir()
+	if err != nil {
+		t.Error(err)
+	}
+	// We need to copy the server certificate to the Cli security dir.
+	err = fileutils.CopyFile(securityDirPath, certificate.KEY_FILE)
+	if err != nil {
+		t.Error(err)
+	}
+	err = fileutils.CopyFile(securityDirPath, certificate.CERT_FILE)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = commands.Search(spec, rtDetails)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanArtifactoryTest()
+}
+
+func getExternalIP() (string, error) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue // interface down
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loopback interface
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return "", err
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			ip = ip.To4()
+			if ip == nil {
+				continue // not an ipv4 address
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", errors.New("are you connected to the network?")
+}
+
+// Due the fact that go read the HTTP_PROXY and the HTTPS_PROXY
+// argument only once we can't set the env var for specific test.
+// We need to start a new process with the env var set to the value we want.
+// We decide which var to set by the rtUrl scheme.
+func TestArtifactoryProxy(t *testing.T) {
+	rtUrl, err := url.Parse(*tests.RtUrl)
+	if err != nil {
+		t.Error(err)
+	}
+	var command *exec.Cmd
+	var port string
+	if rtUrl.Scheme == "https" {
+		command = exec.Command("go", "test", "-run=TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator", "-test.artifactoryProxy=true", "-rt.url="+*tests.RtUrl, "-rt.password="+*tests.RtPassword, "-rt.apikey="+*tests.RtApiKey)
+		port = cliproxy.GetProxyHttpsPort()
+		command.Env = append (os.Environ(), "HTTPS_PROXY=localhost:" + port)
+	} else {
+		command = exec.Command("go", "test", "-run=TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator", "-test.artifactoryProxy=true", "-rt.url="+*tests.RtUrl, "-rt.password="+*tests.RtPassword, "-rt.apikey="+*tests.RtApiKey)
+		port = cliproxy.GetProxyHttpPort()
+		command.Env = append (os.Environ(), "HTTP_PROXY=http://localhost:" + port)
+	}
+	output, err := command.Output()
+	if err != nil {
+		t.Error(err)
+	}
+	cliutils.CliLogger.Info(string(output))
+}
+
+// Skip test if test.artifactoryProxy flag set to false.
+// Should be run only by @TestArtifactoryProxy test.
+func TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator(t *testing.T) {
+	if !*tests.TestArtifactoryProxy {
+		t.SkipNow()
+	}
+	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false)
+	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
+	checkForErrDueToMissingProxy(spec, rtDetails, t)
+	go cliproxy.StartHttpProxy()
+	// Let's wait for the reverse proxy to start up.
+	checkIfServerIsUp(cliproxy.GetProxyHttpPort(), "http")
+	_, err := commands.Search(spec, rtDetails)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+// Skip test if test.artifactoryProxy flag set to false.
+// Should be run only by @TestArtifactoryProxy test.
+func TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator(t *testing.T) {
+	if !*tests.TestArtifactoryProxy {
+		t.SkipNow()
+	}
+	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false)
+	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
+	checkForErrDueToMissingProxy(spec, rtDetails, t)
+	go cliproxy.StartHttpsProxy()
+	// Let's wait for the reverse proxy to start up.
+	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "http")
+	_, err := commands.Search(spec, rtDetails)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
+	rtUrl, err := url.Parse(*tests.RtUrl)
+	if err != nil {
+		t.Error(err)
+	}
+	rtHost, port, err := net.SplitHostPort(rtUrl.Host)
+	if rtHost == "localhost" || rtHost == "127.0.0.1" {
+		externalIp, err := getExternalIP()
+		if err != nil {
+			t.Error(err)
+		}
+		rtUrl.Host = externalIp + ":" + port
+	}
+	return rtUrl.String()
+}
+
+func checkForErrDueToMissingProxy(spec *utils.SpecFiles, rtDetails *config.ArtifactoryDetails, t *testing.T) {
+	_, err := commands.Search(spec, rtDetails)
+	_, isUrlErr := err.(*url.Error)
+	if err == nil || !isUrlErr {
+		t.Error("Expected the request to fails, since the proxy is down.", err)
+	}
+}
+
+func getRtDetailsForProxyTest(proxyRtUrl string) *config.ArtifactoryDetails {
+	rtDetails := &config.ArtifactoryDetails{Url: proxyRtUrl}
+	if *tests.RtApiKey != "" {
+		rtDetails.ApiKey = *tests.RtApiKey
+	} else {
+		rtDetails.User = *tests.RtUser
+		rtDetails.Password = *tests.RtPassword
+	}
+	return rtDetails
+}
+
+func checkIfServerIsUp(port, proxyScheme string) error {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	attempt := 0
+	for attempt < 10 {
+		cliutils.CliLogger.Info("Checking if proxy server is up and running.", strconv.Itoa(attempt +1), "attempt.", "URL:", proxyScheme + "://localhost:" + port)
+		resp, err := client.Get(proxyScheme + "://localhost:" + port)
+		if err != nil {
+			attempt++
+			time.Sleep(time.Second)
+			continue
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
+
+		return nil
+	}
+	return fmt.Errorf("Failed while waiting for the proxy server to be accessible.")
 }
 
 func TestArtifactorySetProperties(t *testing.T) {

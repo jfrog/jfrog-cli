@@ -26,14 +26,16 @@ var BtKey *string
 var BtOrganization *string
 var TestArtifactory *bool
 var TestBintray *bool
+var TestArtifactoryProxy *bool
 
 func init() {
 	PrintSearchResult = flag.Bool("printSearchResult", false, "Set to true for printing search results")
-	RtUrl = flag.String("rt.url", "http://localhost:8081/artifactory/", "Artifactory url")
+	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
+	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")

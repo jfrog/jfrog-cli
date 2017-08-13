@@ -92,7 +92,6 @@ func (jc *HttpClient) doRequest(req *http.Request, allowRedirect bool, closeBody
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 	copyHeaders(httpClientsDetails, req)
-
 	client := jc.Client
 	if !allowRedirect {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {

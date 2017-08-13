@@ -232,14 +232,17 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 }
 
 func GetJfrogHomeDir() (string, error) {
-	userDir := fileutils.GetHomeDir()
-	if userDir == "" {
-		err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
-        if err != nil {
-            return "", err
-        }
+	var userDir string
+	if userDir = os.Getenv("JFROG_CLI_HOME"); userDir == "" {
+		userDir = fileutils.GetHomeDir()
+		if userDir == "" {
+			err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
+			if err != nil {
+				return "", err
+			}
+		}
 	}
-	return userDir + "/.jfrog/", nil
+	return userDir + "/.jfrog/" , nil
 }
 
 func getConFilePath() (string, error) {

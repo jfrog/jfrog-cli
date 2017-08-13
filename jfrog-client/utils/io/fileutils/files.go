@@ -454,3 +454,22 @@ type ChecksumDetails struct {
 	Md5          string
 	Sha1         string
 }
+
+func CopyFile(dst, src string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+	fileName, _ := GetFileAndDirFromPath(src)
+	dstPath, err := CreateFilePath(dst, fileName)
+	if err != nil {
+		return err
+	}
+	dstFile, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	io.Copy(dstFile, srcFile)
+	return nil
+}

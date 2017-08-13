@@ -22,22 +22,27 @@ func (builder *ArtifactoryServicesConfigBuilder) SetArtDetails(artDetails *auth.
 }
 
 func (builder *ArtifactoryServicesConfigBuilder) SetCertifactesPath(certifactesPath string) *ArtifactoryServicesConfigBuilder {
+	builder.certifactesPath = certifactesPath
 	return builder
 }
 
 func (builder *ArtifactoryServicesConfigBuilder) SetNumOfThreadPerOperation(threads int) *ArtifactoryServicesConfigBuilder {
+	builder.threads = threads
 	return builder
 }
 
 func (builder *ArtifactoryServicesConfigBuilder) SetMinSplitSize(splitSize int64) *ArtifactoryServicesConfigBuilder {
+	builder. minSplitSize = splitSize
 	return builder
 }
 
 func (builder *ArtifactoryServicesConfigBuilder) SetSplitCount(splitCount int) *ArtifactoryServicesConfigBuilder {
+	builder.splitCount = splitCount
 	return builder
 }
 
 func (builder *ArtifactoryServicesConfigBuilder) SetMinChecksumDeploy(minChecksumDeploy int64) *ArtifactoryServicesConfigBuilder {
+	builder.minChecksumDeploy = minChecksumDeploy
 	return builder
 }
 
@@ -72,6 +77,8 @@ func (builder *ArtifactoryServicesConfigBuilder) Build() (ArtifactoryConfig, err
 	c.minSplitSize = builder.minSplitSize
 	c.splitCount = builder.splitCount
 	c.logger = builder.logger
+	c.certifactesPath = builder.certifactesPath
+	c.dryRun = builder.isDryRun
 	return c, nil
 }
 

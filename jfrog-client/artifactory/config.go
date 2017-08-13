@@ -13,7 +13,6 @@ type artifactoryServicesConfig struct {
 	minSplitSize      int64
 	splitCount        int
 	minChecksumDeploy int64
-	isDryRun          bool
 	logger            log.Log
 }
 
@@ -22,7 +21,7 @@ func (config *artifactoryServicesConfig) GetUrl() string {
 }
 
 func (config *artifactoryServicesConfig) IsDryRun() bool {
-	return config.isDryRun
+	return config.dryRun
 }
 
 func (config *artifactoryServicesConfig) GetPassword() string {

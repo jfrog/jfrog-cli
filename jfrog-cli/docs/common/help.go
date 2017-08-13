@@ -12,4 +12,10 @@ const GlobalEnvVars string =
 		[Default: true]
 		If true, JFrog CLI prompts for product server details and saves them in its config file.
 		To avoid having automation scripts interrupted, set this value to false, and instead,
-		provide product server details using the config command.`
+		provide product server details using the config command.
+
+	JFROG_CLI_HOME
+		[Default: ~/.jfrog]
+		This variable determines the path to the cli home directory.
+		The home directory is used to save the cli configuration.
+		`
