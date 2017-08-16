@@ -1,16 +1,16 @@
 # Jfrog Client
 
-## Examples:
+## General
     This section includes a few usage examples of the Jfrog client APIs from your application code.
 
 ### Setting up Artifactory details
  ```
     rtDetails := new(auth.ArtifactoryDetails)
- 	rtDetails.Url = artifactoryDetails.Url
- 	rtDetails.SshKeysPath = artifactoryDetails.SshKeyPath
- 	rtDetails.ApiKey = artifactoryDetails.ApiKey
- 	rtDetails.User = artifactoryDetails.User
- 	rtDetails.Password = artifactoryDetails.Password
+    rtDetails.Url = artifactoryDetails.Url
+    rtDetails.SshKeysPath = artifactoryDetails.SshKeyPath
+    rtDetails.ApiKey = artifactoryDetails.ApiKey
+    rtDetails.User = artifactoryDetails.User
+    rtDetails.Password = artifactoryDetails.Password
  ```
 
 ### Setting up Artifactory service manager

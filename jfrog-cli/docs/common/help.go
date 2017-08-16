@@ -16,6 +16,5 @@ const GlobalEnvVars string =
 
 	JFROG_CLI_HOME
 		[Default: ~/.jfrog]
-		This variable determines the path to the cli home directory.
-		The home directory is used to save the cli configuration.
+		Defines the JFrog CLI home directory path.
 		`
