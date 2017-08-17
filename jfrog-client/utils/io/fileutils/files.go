@@ -3,9 +3,6 @@ package fileutils
 import (
 	"bufio"
 	"bytes"
-	"crypto/md5"
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -15,10 +12,10 @@ import (
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types"
 	"path"
-	"sync"
 	"path/filepath"
 	"archive/zip"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 )
 
 const SYMLINK_FILE_CONTENT = ""
@@ -55,7 +52,7 @@ func IsPathSymlink(path string) bool {
 }
 
 func IsFileSymlink(file os.FileInfo) bool {
-	return file.Mode() & os.ModeSymlink != 0
+	return file.Mode()&os.ModeSymlink != 0
 }
 
 func IsDir(path string) (bool, error) {
@@ -80,7 +77,7 @@ func GetFileAndDirFromPath(path string) (fileName, dir string) {
 		index = index2
 	}
 	if index != -1 {
-		fileName = path[index + 1:]
+		fileName = path[index+1:]
 		dir = path[:index]
 		return
 	}
@@ -123,7 +120,7 @@ func ListFiles(path string, includeDirs bool) ([]string, error) {
 	}
 	fileList := []string{}
 	files, _ := ioutil.ReadDir(path)
-	path = strings.TrimPrefix(path, "." + sep)
+	path = strings.TrimPrefix(path, "."+sep)
 
 	for _, f := range files {
 		filePath := path + f.Name()
@@ -319,71 +316,15 @@ func GetFileDetails(filePath string) (*FileDetails, error) {
 }
 
 func calcChecksumDetails(filePath string) (ChecksumDetails, error) {
-	checksumArray := []struct {
-		calc  func(string) (string, error)
-		value string
-		err   error
-	}{{calc: CalcMd5}, {calc: CalcSha1}}
-
-	var wg sync.WaitGroup
-	for i, checksum := range checksumArray {
-		wg.Add(1)
-		go func(i int, calc func(string) (string, error)) {
-			checksumArray[i].value, checksumArray[i].err = calc(filePath)
-			wg.Done()
-		}(i, checksum.calc)
-	}
-	wg.Wait()
-
-	for _, checksum := range checksumArray {
-		if checksum.err != nil {
-			return ChecksumDetails{}, checksum.err
-		}
-	}
-	return ChecksumDetails{Md5: checksumArray[0].value, Sha1: checksumArray[1].value}, nil
-}
-
-func CalcSha1(filePath string) (string, error) {
 	file, err := os.Open(filePath)
-	errorutils.CheckError(err)
 	if err != nil {
-		return "", err
+		return ChecksumDetails{}, err
 	}
-	defer file.Close()
-	return GetSha1(file)
-}
-
-func GetSha1(input io.Reader) (string, error) {
-	var resSha1 []byte
-	hashSha1 := sha1.New()
-	_, err := io.Copy(hashSha1, input)
-	err = errorutils.CheckError(err)
+	checksumInfo, err := checksum.Calc(file)
 	if err != nil {
-		return "", err
+		return ChecksumDetails{}, err
 	}
-	return hex.EncodeToString(hashSha1.Sum(resSha1)), nil
-}
-
-func CalcMd5(filePath string) (string, error) {
-	var err error
-	file, err := os.Open(filePath)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	return GetMd5(file)
-}
-
-func GetMd5(input io.Reader) (string, error) {
-	var resMd5 []byte
-	hashMd5 := md5.New()
-	_, err := io.Copy(hashMd5, input)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hashMd5.Sum(resMd5)), nil
+	return ChecksumDetails{Md5: checksumInfo[checksum.MD5], Sha1: checksumInfo[checksum.SHA1], Sha256: checksumInfo[checksum.SHA256]}, nil
 }
 
 func ZipFolderFiles(source, target string) (err error) {
@@ -451,8 +392,9 @@ type FileDetails struct {
 }
 
 type ChecksumDetails struct {
-	Md5          string
-	Sha1         string
+	Md5    string
+	Sha1   string
+	Sha256 string
 }
 
 func CopyFile(dst, src string) error {

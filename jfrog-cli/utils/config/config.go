@@ -323,6 +323,10 @@ func (artifactoryDetails *ArtifactoryDetails) GetApiKey() string {
 	return artifactoryDetails.ApiKey
 }
 
+func (artifactoryDetails *ArtifactoryDetails) GetUrl() string {
+	return artifactoryDetails.Url
+}
+
 func (artifactoryDetails *ArtifactoryDetails) GetUser() string {
 	return artifactoryDetails.User
 }

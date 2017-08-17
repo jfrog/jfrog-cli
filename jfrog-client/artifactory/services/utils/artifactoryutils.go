@@ -29,6 +29,7 @@ func UploadFile(f *os.File, url string, artifactoryDetails *auth.ArtifactoryDeta
 		return nil, nil, err
 	}
 	headers := map[string]string{
+		"X-Checksum":      details.Checksum.Sha256,
 		"X-Checksum-Sha1": details.Checksum.Sha1,
 		"X-Checksum-Md5":  details.Checksum.Md5,
 	}

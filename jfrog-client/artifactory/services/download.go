@@ -16,6 +16,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 )
 
 type DownloadService struct {
@@ -286,10 +287,17 @@ func createLocalSymlink(localPath, localFileName, symlinkArtifact string, symlin
 		if !fileutils.IsPathExists(symlinkArtifact) {
 			return errorutils.CheckError(errors.New("Symlink validation failed, target doesn't exist: " + symlinkArtifact))
 		}
-		sha1, err := fileutils.CalcSha1(symlinkArtifact)
+		file, err := os.Open(symlinkArtifact)
+		errorutils.CheckError(err)
 		if err != nil {
 			return err
 		}
+		defer file.Close()
+		checksumInfo, err := checksum.Calc(file, checksum.SHA1)
+		if err != nil {
+			return err
+		}
+		sha1 := checksumInfo[checksum.SHA1]
 		if sha1 != symlinkContentChecksum {
 			return errorutils.CheckError(errors.New("Symlink validation failed for target: " + symlinkArtifact))
 		}

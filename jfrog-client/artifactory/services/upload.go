@@ -20,6 +20,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"path/filepath"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 )
 
 type UploadService struct {
@@ -137,10 +138,17 @@ func addSymlinkProps(artifact clientutils.Artifact, uploadParams UploadParams) (
 			return "", err
 		}
 		if !fileInfo.IsDir() {
-			sha1, err := fileutils.CalcSha1(artifact.LocalPath)
+			file, err := os.Open(artifact.LocalPath)
+			errorutils.CheckError(err)
 			if err != nil {
 				return "", err
 			}
+			defer file.Close()
+			checksumInfo, err := checksum.Calc(file, checksum.SHA1)
+			if err != nil {
+				return "", err
+			}
+			sha1 := checksumInfo[checksum.SHA1]
 			sha1Property = ";" + utils.SYMLINK_SHA1 + "=" + sha1
 		}
 		artifactProps += utils.ARTIFACTORY_SYMLINK + "=" + artifactSymlink + sha1Property
@@ -389,7 +397,7 @@ func (us *UploadService) uploadFile(localPath, targetPath, props string, uploadP
 			return utils.FileInfo{}, false, err
 		}
 	} else {
-		resp, details, body, err = us.doUpload(file, localPath, targetPath, logMsgPrefix, httpClientsDetails, fileInfo, uploadParams)
+		resp, details, body, checksumDeployed, err = us.doUpload(file, localPath, targetPath, logMsgPrefix, httpClientsDetails, fileInfo, uploadParams)
 	}
 	if err != nil {
 		return utils.FileInfo{}, false, err
@@ -400,12 +408,15 @@ func (us *UploadService) uploadFile(localPath, targetPath, props string, uploadP
 }
 
 func (us *UploadService) uploadSymlink(targetPath string, httpClientsDetails httputils.HttpClientDetails, uploadParams UploadParams) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
-	details = createSymlinkFileDetails()
+	details, err = createSymlinkFileDetails()
+	if err != nil {
+		return
+	}
 	resp, body, err = utils.UploadFile(nil, targetPath, us.ArtDetails, details, httpClientsDetails, us.client)
 	return
 }
 
-func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, fileInfo os.FileInfo, uploadParams UploadParams) (*http.Response, *fileutils.FileDetails, []byte, error) {
+func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, fileInfo os.FileInfo, uploadParams UploadParams) (*http.Response, *fileutils.FileDetails, []byte, bool, error) {
 	var details *fileutils.FileDetails
 	var checksumDeployed bool
 	var resp *http.Response
@@ -415,7 +426,7 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 	if fileInfo.Size() >= us.MinChecksumDeploy && !uploadParams.IsExplodeArchive() {
 		resp, details, body, err = us.tryChecksumDeploy(localPath, targetPath, httpClientsDetails, us.client)
 		if err != nil {
-			return resp, details, body, err
+			return resp, details, body, checksumDeployed, err
 		}
 		checksumDeployed = !us.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
 	}
@@ -423,23 +434,16 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 		var body []byte
 		resp, body, err = utils.UploadFile(file, targetPath, us.ArtDetails, details, httpClientsDetails, us.client)
 		if err != nil {
-			return resp, details, body, err
+			return resp, details, body, checksumDeployed, err
 		}
 		if resp.StatusCode != 201 && resp.StatusCode != 200 {
 			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 		}
 	}
-	if !us.DryRun {
-		var strChecksumDeployed string
-		if checksumDeployed {
-			strChecksumDeployed = " (Checksum deploy)"
-		}
-		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status, strChecksumDeployed)
-	}
 	if details == nil {
 		details, err = fileutils.GetFileDetails(localPath)
 	}
-	return resp, details, body, err
+	return resp, details, body, checksumDeployed, err
 }
 
 func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, checksumDeployed, isDryRun bool) {
@@ -458,21 +462,28 @@ func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, ch
 }
 
 // When handling symlink we want to simulate the creation of  empty file
-func createSymlinkFileDetails() *fileutils.FileDetails {
+func createSymlinkFileDetails() (*fileutils.FileDetails, error) {
+	checksumInfo, err := checksum.Calc(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
+	if err != nil {
+		return nil, err
+	}
+
 	details := new(fileutils.FileDetails)
-	details.Checksum.Md5, _ = fileutils.GetMd5(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
-	details.Checksum.Sha1, _ = fileutils.GetSha1(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
+	details.Checksum.Md5 = checksumInfo[checksum.MD5]
+	details.Checksum.Sha1 = checksumInfo[checksum.SHA1]
+	details.Checksum.Sha256 = checksumInfo[checksum.SHA256]
 	details.Size = int64(0)
-	return details
+	return details, nil
 }
 
 func createBuildArtifactItem(details *fileutils.FileDetails, fileName, localPath, targetPath string) utils.FileInfo {
 	return utils.FileInfo{
-		LocalPath: filepath.Join(localPath, fileName),
+		LocalPath:       filepath.Join(localPath, fileName),
 		ArtifactoryPath: targetPath,
 		FileHashes: &utils.FileHashes{
-			Sha1: details.Checksum.Sha1,
-			Md5:  details.Checksum.Md5,
+			Sha256: details.Checksum.Sha256,
+			Sha1:   details.Checksum.Sha1,
+			Md5:    details.Checksum.Md5,
 		},
 	}
 }
@@ -492,6 +503,7 @@ func (us *UploadService) tryChecksumDeploy(filePath, targetPath string,
 	}
 	headers := make(map[string]string)
 	headers["X-Checksum-Deploy"] = "true"
+	headers["X-Checksum"] = details.Checksum.Sha256
 	headers["X-Checksum-Sha1"] = details.Checksum.Sha1
 	headers["X-Checksum-Md5"] = details.Checksum.Md5
 	requestClientDetails := httpClientsDetails.Clone()
