@@ -975,8 +975,7 @@ func TestArtifactoryBuildAddArtifact(t *testing.T) {
 
 	// verify build info is correct
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsListsIdentical([]string{tests.Out,
-																	tests.Out + fileutils.GetFileSeperator() + "a1.in"}, paths, t)
+	tests.IsListsIdentical([]string{tests.Out, tests.Out + fileutils.GetFileSeperator() + "a1.in"}, paths, t)
 
 	deleteBuild(buildName)
 	cleanArtifactoryTest()
