@@ -92,12 +92,22 @@ func BuildAccessKeyJson(flags *AccessKeyFlags) (string, error) {
 		return "", err
 	}
 
+	var whiteCidrs []string
+	if flags.WhiteCidrs != "" {
+		whiteCidrs = strings.Split(flags.WhiteCidrs, ",")
+	}
+
+	var blackCidrs []string
+	if flags.BlackCidrs != "" {
+		blackCidrs = strings.Split(flags.BlackCidrs, ",")
+	}
+
 	data := AccessKeyConfig{
-		Id:             flags.Id,
-		Expiry:         flags.Expiry,
-		WhiteCidrs:     strings.Split(flags.WhiteCidrs, ","),
-		BlackCidrs:     strings.Split(flags.BlackCidrs, ","),
-		ApiOnly:        apiOnly,
+		Id:         flags.Id,
+		Expiry:     flags.Expiry,
+		WhiteCidrs: whiteCidrs,
+		BlackCidrs: blackCidrs,
+		ApiOnly:    apiOnly,
 		ExistenceCheck: ExistenceCheckConfig{
 			Url:             flags.ExistenceCheckUrl,
 			Cache_for_secs:  flags.ExistenceCheckCache},
