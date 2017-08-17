@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"time"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 )
 
 // App is the main structure of a cli application. It is recommended that
@@ -86,6 +87,7 @@ func NewApp() *App {
 		Action:       helpCommand.Action,
 		Compiled:     compileTime(),
 		Writer:       os.Stdout,
+		ArgsUsage:    common.CreateEnvVars(),
 	}
 }
 

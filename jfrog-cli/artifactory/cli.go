@@ -421,7 +421,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are moved. The property format is build-name/build-number.",
 		},
 	}...)
 
@@ -457,7 +457,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are copied. The property format is build-name/build-number.",
 		},
 	}...)
 }
@@ -492,7 +492,7 @@ func getDeleteFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are deleted. The property format is build-name/build-number.",
 		},
 	}...)
 }
@@ -518,7 +518,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number.",
 		},
 	}...)
 }

@@ -15,7 +15,7 @@ var AppHelpTemplate = `NAME:
    {{.Name}} - {{.Usage}}
 
 USAGE:
-   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .Flags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}{{end}}
+   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .Flags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
    {{if .Version}}
 VERSION:
    {{.Version}}
@@ -28,7 +28,9 @@ COMMANDS:
    {{end}}{{end}}{{if .Flags}}
 GLOBAL OPTIONS:
    {{range .Flags}}{{.}}
-   {{end}}{{end}}{{if .Copyright }}
+   {{end}}
+Environment Variables:
+{{.ArgsUsage}}{{end}}{{if .Copyright }}
 COPYRIGHT:
    {{.Copyright}}
    {{end}}
@@ -58,14 +60,16 @@ var SubcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Usage}}
 
 USAGE:
-   {{.HelpName}} command{{if .Flags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}
+   {{.HelpName}} command{{if .Flags}} [command options]{{end}}[arguments...]
 
 COMMANDS:
    {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
    {{end}}{{if .Flags}}
 OPTIONS:
    {{range .Flags}}{{.}}
-   {{end}}{{end}}
+   {{end}}
+Environment Variables:
+{{.ArgsUsage}}{{end}}
 `
 
 var helpCommand = Command{
