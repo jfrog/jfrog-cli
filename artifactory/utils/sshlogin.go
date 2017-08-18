@@ -6,12 +6,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/utils/config"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
+	"github.com/jfrogdev/jfrog-cli-go/artifactory/utils/sshagent"
 	"errors"
 	"io"
 	"io/ioutil"
-	"net"
-	"os"
 	"regexp"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils/log"
@@ -27,9 +25,9 @@ func SshAuthentication(details *config.ArtifactoryDetails) error {
 
 	var sshAuth ssh.AuthMethod
 	if details.SshKeyPath != "" {
-		sshAuth, err = SshAuthPublicKey(details.SshKeyPath)
+		sshAuth, err = sshAuthPublicKey(details.SshKeyPath)
 	} else {
-		sshAuth, err = SshAuthAgent()
+		sshAuth, err = sshAuthAgent()
 	}
 	if err != nil {
 		return err
@@ -121,7 +119,7 @@ type SshAuthResult struct {
 	Headers map[string]string
 }
 
-func SshAuthPublicKey(file string) (ssh.AuthMethod, error) {
+func sshAuthPublicKey(file string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(file)
 	err = cliutils.CheckError(err)
 	if err != nil {
@@ -135,10 +133,10 @@ func SshAuthPublicKey(file string) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(key), nil
 }
 
-func SshAuthAgent() (ssh.AuthMethod, error) {
-	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+func sshAuthAgent() (ssh.AuthMethod, error) {
+	sshAgent, err := sshagent.SshAgent()
 	if err != nil {
 		return nil, err
 	}
-	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers), nil
+	return ssh.PublicKeysCallback(sshAgent.Signers), nil
 }
