@@ -26,7 +26,7 @@ install:
 #  - glide install
   
 build_script: 
-  - go build -o %APP_SHORT_NAME%.exe --ldflags "-X main.VERSION=%VERSION%" jfrog/main.go
+  - go build -o %APP_SHORT_NAME%.exe --ldflags "-X main.VERSION=%VERSION%" jfrog-cli/jfrog/main.go
   - go-msi make --msi %APPVEYOR_BUILD_FOLDER%\%APP%-%GOARCH%-%VERSION%.msi --version %VERSION% --arch %GOARCH%
   - go-msi choco --path wix.json --version %VERSION% --input %APP%-%GOARCH%-%VERSION%.msi
   

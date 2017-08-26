@@ -40,12 +40,11 @@ install:
 
 script: 
   - mkdir -p build/$OSARCH
-  - GOOS=linux GOARCH=$GOARCH go build --ldflags "-X main.VERSION=$VERSION" -o build/$OSARCH/$APP_SHORT_NAME jfrog/main.go
+  - GOOS=linux GOARCH=$GOARCH go build --ldflags "-X main.VERSION=$VERSION" -o build/$OSARCH/$APP_SHORT_NAME jfrog-cli/jfrog/main.go
   - go-bin-deb generate --file deb.json -a $OSARCH --version $VERSION -o $APP-$OSARCH-$VERSION.deb
   - docker run -v $PWD:/mnt/travis $DOCKER_IMAGE /bin/sh -c "cd /mnt/travis && go-bin-rpm generate --file rpm.json -a $OSARCH --version $VERSION -o $APP-$OSARCH-$VERSION.rpm"
 
 after_success: 
-  -  mv jfrog jfrog_dir
   -  ln -s build/$OSARCH/jfrog jfrog
   - ./jfrog bt config --user $BT_USER --key $BT_KEY --licenses MIT
   - ./jfrog bt upload --override=true --publish=true --deb=unstable/main/$OSARCH $APP-$OSARCH-$VERSION.deb $BT_SUBJECT/$BT_REPO_DEB/$APP/$VERSION pool/j/$APP/
