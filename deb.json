@@ -1,0 +1,23 @@
+{
+  "name": "jfrog-cli-go",
+  "maintainer": "JFrogDev <support@jfrog.com>",
+  "description": "A CLI client for accessing Artifactory, Bintray and Mission Control",
+  "changelog-cmd": "changelog debian --vars='{\"name\":\"!name!\"}'",
+  "homepage": "http://github.com/jfrogdev/!name!",
+  "files": [
+    {
+      "from": "build/!arch!/jfrog",
+      "to": "/usr/bin",
+      "base" : "build/!arch!/",
+      "fperm": "0755"
+    }
+  ],
+  "copyrights": [
+    {
+      "files": "*",
+      "copyright": "2017 JFrogDev <support@jfrog.com>",
+      "license": "Apache License 2.0",
+      "file": "LICENSE"
+    }
+  ]
+}

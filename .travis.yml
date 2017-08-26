@@ -1,0 +1,54 @@
+sudo: required
+
+services:
+  - docker
+
+language: go
+go:
+  - 1.8
+
+env:
+  matrix:
+    - GOARCH=amd64 OSARCH=amd64
+    - GOARCH=386 OSARCH=i386
+  global:
+    - APP=${TRAVIS_REPO_SLUG#*/}
+    - APP_SHORT_NAME=jfrog
+    - VERSION=1.10.2
+    - BT_REPO_RPM=public-rpm
+    - BT_REPO_DEB=public-deb
+    - BT_REPO_TARGZ=public-targz
+    - BT_SUBJECT=bincrafters
+    - ORIGINAL_AUTHOR=jfrogdev
+    - DOCKER_IMAGE=bincrafters/go-bin-rpm
+
+before_install:
+  - sudo add-apt-repository 'deb https://dl.bintray.com/bincrafters/public-deb unstable main'
+  - sudo apt-get -qq update
+  - mkdir -p $GOPATH/bin
+  - cd ~
+  - curl https://glide.sh/get | sh
+  - cd $HOME/gopath/src/github.com
+  - mv $BT_SUBJECT $ORIGINAL_AUTHOR
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/$ORIGINAL_AUTHOR/$APP
+  
+install:
+  - cd $TRAVIS_BUILD_DIR
+#  - glide install
+#  - go install
+  - sudo apt-get install --allow-unauthenticated fakeroot go-bin-deb changelog
+
+script: 
+  - mkdir -p build/$OSARCH
+  - GOOS=linux GOARCH=$GOARCH go build --ldflags "-X main.VERSION=$VERSION" -o build/$OSARCH/$APP_SHORT_NAME jfrog/main.go
+  - go-bin-deb generate --file deb.json -a $OSARCH --version $VERSION -o $APP-$OSARCH-$VERSION.deb
+  - docker run -v $PWD:/mnt/travis $DOCKER_IMAGE /bin/sh -c "cd /mnt/travis && go-bin-rpm generate --file rpm.json -a $OSARCH --version $VERSION -o $APP-$OSARCH-$VERSION.rpm"
+
+after_success: 
+  -  mv jfrog jfrog_dir
+  -  ln -s build/$OSARCH/jfrog jfrog
+  - ./jfrog bt config --user $BT_USER --key $BT_KEY --licenses MIT
+  - ./jfrog bt upload --override=true --publish=true --deb=unstable/main/$OSARCH $APP-$OSARCH-$VERSION.deb $BT_SUBJECT/$BT_REPO_DEB/$APP/$VERSION pool/j/$APP/
+  - ./jfrog bt upload --override=true --publish=true $APP-$OSARCH-$VERSION.rpm $BT_SUBJECT/$BT_REPO_RPM/$APP/$VERSION
+  #- ./jfrog bt upload --override=true --publish=true $APP-$OSARCH-$VERSION.tar.gz $BT_SUBJECT/$BT_REPO_TARGZ/$APP/$VERSION
+  

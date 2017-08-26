@@ -1,0 +1,39 @@
+image: Visual Studio 2017
+
+clone_folder: c:\gopath\src\github.com\jfrogdev\jfrog-cli-go
+
+environment:
+  APP: jfrog-cli-go
+  APP_SHORT_NAME : jfrog
+  VERSION: 1.10.2
+  MSVC_DEFAULT_OPTIONS : ON
+  BT_REPO_MSI : public-msi
+  BT_REPO_CHOCO : public-choco
+  BT_SUBJECT : bincrafters
+  GOPATH: c:\gopath
+  
+  matrix:
+    - GOARCH: 386
+      
+configuration:
+  - Release
+
+install: 
+  - choco install go-msi
+  - set PATH=%WIX%\bin;C:\PROGRA~1\go-msi;%PATH%
+  - set PATH=%GOPATH%\bin\windows_386;%GOPATH%\bin;c:\go\bin;%PATH%
+#  - go get -u github.com/Masterminds/glide
+#  - glide install
+  
+build_script: 
+  - go build -o %APP_SHORT_NAME%.exe --ldflags "-X main.VERSION=%VERSION%" jfrog/main.go
+  - go-msi make --msi %APPVEYOR_BUILD_FOLDER%\%APP%-%GOARCH%-%VERSION%.msi --version %VERSION% --arch %GOARCH%
+  - go-msi choco --path wix.json --version %VERSION% --input %APP%-%GOARCH%-%VERSION%.msi
+  
+deploy_script:
+  - set VCS_URL=https://github.com/%APPVEYOR_REPO_NAME%
+  - jfrog bt config --user %BT_USER% --key %BT_KEY% --licenses MIT
+  - jfrog bt upload --override=true --publish=true %APP%-%GOARCH%-%VERSION%.msi %BT_SUBJECT%/%BT_REPO_MSI%/%APP%/%VERSION%
+  - jfrog bt upload --override=true --publish=true %APP%.%VERSION%.nupkg %BT_SUBJECT%/%BT_REPO_CHOCO%/%APP%/%VERSION%
+
+   

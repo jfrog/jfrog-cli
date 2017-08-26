@@ -1,0 +1,32 @@
+{
+  "product": "jfrog-cli-go",
+  "company": "JFrog",
+  "license": "LICENSE",
+  "upgrade-code": "",
+  "files": {
+    "guid": "",
+    "items": [
+      "jfrog.exe"
+    ]
+  },
+  "env": {
+    "guid": "",
+    "vars": [
+      {
+        "name": "PATH",
+        "value": "[INSTALLDIR]",
+        "permanent": "no",
+        "system": "no",
+        "action": "set",
+        "part": "last"
+      }
+    ]
+  },
+  "shortcuts": {},
+  "choco": {
+    "description": "A CLI client for accessing Artifactory, Bintray and Mission Control",
+    "project-url": "https://github.com/jfrogdev/jfrog-cli-go",
+    "tags": "jfrog, cli",
+    "license-url": "https://github.com/jfrogdev/jfrog-cli-go/blob/master/LICENSE"
+  }
+}

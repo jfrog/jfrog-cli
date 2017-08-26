@@ -1,0 +1,16 @@
+{
+  "name": "jfrog-cli-go",
+  "summary": "JFrog CLI",
+  "description": "A CLI client for accessing Artifactory, Bintray and Mission Control",
+  "changelog-cmd": "changelog rpm",
+  "license": "LICENSE",
+  "url": "https://github.com/jfrogdev/!name!",
+  "files": [
+    {
+      "from": "build/!arch!/jfrog",
+      "to": "%{_bindir}/",
+      "base": "build/!arch!/",
+      "type": ""
+    }
+  ]
+}
