@@ -16,6 +16,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 )
 
 const BUILD_INFO_DETAILS = "details"
@@ -57,6 +58,7 @@ func saveBuildData(action interface{}, buildName, buildNumber string) (err error
 	if err != nil {
 		return err
 	}
+	cliutils.CliLogger.Debug("Creating temp build file at: " + dirPath)
 	tmpfile, err := ioutil.TempFile(dirPath, "temp")
 	if err != nil {
 		return err
