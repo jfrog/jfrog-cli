@@ -99,7 +99,7 @@ func (m *gitManager) readUrl() {
 	m.url = originUrl
 }
 
-func (m *gitManager) getWorkingBranchFilePath() (refUrl string, err error) {
+func (m *gitManager) getRevisionOrBranchPath() (revision, refUrl string, err error) {
 	dotGitPath := filepath.Join(m.path, "HEAD")
 	file, e := os.Open(dotGitPath)
 	if cliutils.CheckError(e) != nil {
@@ -115,6 +115,7 @@ func (m *gitManager) getWorkingBranchFilePath() (refUrl string, err error) {
 			refUrl = strings.TrimSpace(strings.SplitAfter(text, ":")[1])
 			break
 		}
+		revision = text
 	}
 	if err = scanner.Err(); err != nil {
 		cliutils.CheckError(err)
@@ -127,9 +128,15 @@ func (m *gitManager) readRevision() {
 	if m.err != nil {
 		return
 	}
-	ref, err := m.getWorkingBranchFilePath()
+	// This function will either return the revision or the branch ref:
+	revision, ref, err := m.getRevisionOrBranchPath()
 	if err != nil {
 		m.err = err
+		return
+	}
+	// If the revision was returned, then we're done:
+	if revision != "" {
+		m.revision = revision
 		return
 	}
 	dotGitPath := filepath.Join(m.path, ref)
@@ -141,7 +148,6 @@ func (m *gitManager) readRevision() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var revision string
 	for scanner.Scan() {
 		text := scanner.Text()
 		revision = strings.TrimSpace(text)
