@@ -138,6 +138,20 @@ func getBuildNameAndNumber(buildIdentifier string, flags CommonConf) (string, st
 	return buildName, buildNumber, nil
 }
 
+func getBuildNameAndNumberFromProps(properties []Property) (buildName string, buildNumber string) {
+	for _, property := range properties {
+		if property.Key == "build.name" {
+			buildName = property.Value
+		} else if property.Key == "build.number" {
+			buildNumber = property.Value
+		}
+		if len(buildName) > 0 && len(buildNumber) > 0 {
+			return buildName, buildNumber
+		}
+	}
+	return
+}
+
 func parseBuildNameAndNumber(buildIdentifier string) (buildName string, buildNumber string) {
 	const Delimiter = "/"
 	const EscapeChar = "\\"
@@ -220,7 +234,7 @@ func createBodyForLatestBuildRequest(buildName, buildNumber string) (body []byte
 	return
 }
 
-func filterSearchByBuild(buildIdentifier string, resultsToFilter []ResultItem, flags CommonConf) ([]ResultItem, error) {
+func filterSearchByBuild(buildIdentifier string, itemsToFilter []ResultItem, flags CommonConf) ([]ResultItem, error) {
 	buildName, buildNumber, err := getBuildNameAndNumber(buildIdentifier, flags)
 	if err != nil {
 		return nil, err
@@ -235,7 +249,7 @@ func filterSearchByBuild(buildIdentifier string, resultsToFilter []ResultItem, f
 		return nil, err
 	}
 
-	return filterSearchResultBySha(resultsToFilter, buildArtifactsSha), err
+	return filterSearchResults(&itemsToFilter, &buildArtifactsSha, buildName, buildNumber), err
 }
 
 func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
@@ -250,13 +264,48 @@ func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
 	return elementsMap, nil
 }
 
-func filterSearchResultBySha(aqlSearchResultItemsToFilter []ResultItem, shasToMatch map[string]bool) (filteredResults []ResultItem) {
-	for _, resultToFilter := range aqlSearchResultItemsToFilter {
-		if _, matched := shasToMatch[resultToFilter.Actual_Sha1]; matched {
-			filteredResults = append(filteredResults, resultToFilter)
+/*
+ * Filter search results by the following priorities:
+ * 1st priority: Match {Sha1, build name, build number}
+ * 2nd priority: Match {Sha1, build name}
+ * 3rd priority: Match {Sha1}
+ */
+func filterSearchResults(itemsToFilter *[]ResultItem, buildArtifactsSha *map[string]bool, buildName, buildNumber string) []ResultItem {
+	filteredResults := []ResultItem{}
+	firstPriority := map[string][]ResultItem{}
+	secondPriority := map[string][]ResultItem{}
+	thirdPriority := map[string][]ResultItem{}
+
+	// Step 1 - Populate 3 priorities mappings.
+	for _, item := range *itemsToFilter {
+		if _, ok := (*buildArtifactsSha)[item.Actual_Sha1]; !ok {
+			continue
+		}
+		resultBuildName, resultBuildNumber := getBuildNameAndNumberFromProps(item.Properties)
+		isBuildNameMatched := resultBuildName == buildName
+		if isBuildNameMatched && resultBuildNumber == buildNumber {
+			firstPriority[item.Actual_Sha1] = append(firstPriority[item.Actual_Sha1], item)
+			continue
+		}
+		if isBuildNameMatched {
+			secondPriority[item.Actual_Sha1] = append(secondPriority[item.Actual_Sha1], item)
+			continue
+		}
+		thirdPriority[item.Actual_Sha1] = append(thirdPriority[item.Actual_Sha1], item)
+	}
+
+	// Step 2 - Append mappings to the final results, respectively.
+	for shaToMatch := range *buildArtifactsSha {
+		if _, ok := firstPriority[shaToMatch]; ok {
+			filteredResults = append(filteredResults, firstPriority[shaToMatch]...)
+		} else if _, ok := secondPriority[shaToMatch]; ok {
+			filteredResults = append(filteredResults, secondPriority[shaToMatch]...)
+		} else if _, ok := thirdPriority[shaToMatch]; ok {
+			filteredResults = append(filteredResults, thirdPriority[shaToMatch]...)
 		}
 	}
-	return
+
+	return filteredResults
 }
 
 type CommonConf interface {

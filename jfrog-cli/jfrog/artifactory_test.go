@@ -1199,25 +1199,107 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	specFile := tests.GetFilePath(tests.BuildDownloadSpec)
 
-	//upload files with buildName and buildNumber
+	// Upload files with buildName and buildNumber
 	specFileA := tests.GetFilePath(tests.SplittedUploadSpecA)
 	specFileB := tests.GetFilePath(tests.SplittedUploadSpecB)
 	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+buildName, "--build-number="+buildNumberA)
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+buildName, "--build-number="+buildNumberB)
 
-	//publish buildInfo
+	// Publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
 	// Download by build number
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
-	//validate files are downloaded by build number
+	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.IsListsIdentical(tests.BuildDownload, paths, t)
 
-	//cleanup
+	// Cleanup
 	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+// Upload a file to build A.
+// Verify that it doesn't exist in B.
+func TestArtifactoryDownloadArtifactDoesntExistInBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNameA, buildNumberA := "cli-test-build1", "10"
+	specFile := tests.GetFilePath(tests.BuildDownloadSpecNoBuildNumber)
+
+	// Upload a file
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a10.in", "--build-name="+buildNameA, "--build-number="+buildNumberA)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildNameA, buildNumberA)
+
+	// Download from different build number
+	artifactoryCli.Exec("download", "--spec="+specFile)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsListsIdentical(tests.BuildDownloadDoesntExist, paths, t)
+
+	// Cleanup
+	deleteBuild(buildNameA)
+	cleanArtifactoryTest()
+}
+
+// Upload a file to 2 different builds.
+// Verify that we don't download files with same sha and different build name and build number.
+func TestArtifactoryDownloadByShaAndBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
+	specFile := tests.GetFilePath(tests.BuildDownloadSpecNoBuildNumber)
+
+	// Upload 3 similar files to 3 different builds
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a10.in", "--build-name="+buildNameB, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a11.in", "--build-name="+buildNameA, "--build-number="+buildNumberB)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a12.in", "--build-name="+buildNameA, "--build-number="+buildNumberC)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildNameB, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildNameA, buildNumberB)
+	artifactoryCli.Exec("build-publish", buildNameA, buildNumberC)
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--spec="+specFile)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsListsIdentical(tests.BuildDownloadByShaAndBuild, paths, t)
+
+	// Cleanup
+	deleteBuild(buildNameA)
+	deleteBuild(buildNameB)
+	cleanArtifactoryTest()
+}
+
+// Upload a file to 2 different builds.
+// Verify that we don't download files with same sha and build name and different build number.
+func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
+	specFile := tests.GetFilePath(tests.BuildDownloadSpecNoBuildNumber)
+
+	// Upload 3 similar files to 2 different builds
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a10.in", "--build-name="+buildNameB, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a11.in", "--build-name="+buildNameB, "--build-number="+buildNumberB)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a12.in", "--build-name="+buildNameA, "--build-number="+buildNumberC)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildNameA, buildNumberC)
+	artifactoryCli.Exec("build-publish", buildNameB, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildNameB, buildNumberB)
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--spec="+specFile)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsListsIdentical(tests.BuildDownloadByShaAndBuildName, paths, t)
+
+	// Cleanup
+	deleteBuild(buildNameA)
+	deleteBuild(buildNameB)
 	cleanArtifactoryTest()
 }
 

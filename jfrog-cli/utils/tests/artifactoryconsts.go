@@ -5,34 +5,35 @@ import (
 )
 
 const (
-	Repo1                      = "jfrog-cli-tests-repo1"
-	Repo2                      = "jfrog-cli-tests-repo2"
-	Lfs_Repo                   = "jfrog-cli-lfs-repo"
-	Out                        = "out"
-	DownloadSpec               = "download_spec.json"
-	BuildDownloadSpec          = "build_download_spec.json"
-	SimpleUploadSpec           = "simple_upload_spec.json"
-	UploadEmptyDirs            = "upload_empty_dir_spec.json"
-	DownloadEmptyDirs          = "download_empty_dir_spec.json"
-	SplittedUploadSpecA        = "splitted_upload_spec_a.json"
-	SplittedUploadSpecB        = "splitted_upload_spec_b.json"
-	UploadSpec                 = "upload_spec.json"
-	DeleteSpec                 = "delete_spec.json"
-	DeleteComplexSpec          = "delete_complex_spec.json"
-	MoveCopyDeleteSpec         = "move_copy_delete_spec.json"
-	PrepareCopy                = "prepare_copy.json"
-	Search                     = "search.json"
-	SearchRepo2                = "search_repo2.json"
-	SearchTxt                  = "search_txt.json"
-	SearchMoveDeleteRepoSpec   = "search_move_delete_repo_spec.json"
-	CopyByBuildSpec            = "move_copy_delete_by_build_spec.json"
-	CpMvDlByBuildAssertSpec    = "copy_by_build_assert_spec.json"
-	GitLfsAssertSpec           = "git_lfs_assert_spec.json"
-	MoveRepositoryConfig       = "move_repository_config.json"
-	SpecsTestRepositoryConfig  = "specs_test_repository_config.json"
-	GitLfsTestRepositoryConfig = "git_lfs_test_repository_config.json"
-	RepoDetailsUrl             = "api/repositories/"
-	CopyItemsSpec             = "copy_items_spec.json"
+	Repo1                          = "jfrog-cli-tests-repo1"
+	Repo2                          = "jfrog-cli-tests-repo2"
+	Lfs_Repo                       = "jfrog-cli-lfs-repo"
+	Out                            = "out"
+	DownloadSpec                   = "download_spec.json"
+	BuildDownloadSpec              = "build_download_spec.json"
+	BuildDownloadSpecNoBuildNumber = "build_download_spec_no_build_number.json"
+	SimpleUploadSpec               = "simple_upload_spec.json"
+	UploadEmptyDirs                = "upload_empty_dir_spec.json"
+	DownloadEmptyDirs              = "download_empty_dir_spec.json"
+	SplittedUploadSpecA            = "splitted_upload_spec_a.json"
+	SplittedUploadSpecB            = "splitted_upload_spec_b.json"
+	UploadSpec                     = "upload_spec.json"
+	DeleteSpec                     = "delete_spec.json"
+	DeleteComplexSpec              = "delete_complex_spec.json"
+	MoveCopyDeleteSpec             = "move_copy_delete_spec.json"
+	PrepareCopy                    = "prepare_copy.json"
+	Search                         = "search.json"
+	SearchRepo2                    = "search_repo2.json"
+	SearchTxt                      = "search_txt.json"
+	SearchMoveDeleteRepoSpec       = "search_move_delete_repo_spec.json"
+	CopyByBuildSpec                = "move_copy_delete_by_build_spec.json"
+	CpMvDlByBuildAssertSpec        = "copy_by_build_assert_spec.json"
+	GitLfsAssertSpec               = "git_lfs_assert_spec.json"
+	MoveRepositoryConfig           = "move_repository_config.json"
+	SpecsTestRepositoryConfig      = "specs_test_repository_config.json"
+	GitLfsTestRepositoryConfig     = "git_lfs_test_repository_config.json"
+	RepoDetailsUrl                 = "api/repositories/"
+	CopyItemsSpec                  = "copy_items_spec.json"
 )
 
 var TxtUploadExpectedRepo1 = []string{
@@ -314,6 +315,26 @@ var BuildDownload = []string{
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a1.in",
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a2.in",
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a3.in",
+}
+
+var BuildDownloadDoesntExist = []string{
+	Out,
+}
+
+var BuildDownloadByShaAndBuild = []string{
+	Out,
+	Out + fileutils.GetFileSeperator() + "download",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a10.in",
+}
+
+var BuildDownloadByShaAndBuildName = []string{
+	Out,
+	Out + fileutils.GetFileSeperator() + "download",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a11.in",
 }
 
 var BuildSimpleDownload = []string{
