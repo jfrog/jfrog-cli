@@ -8,9 +8,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 )
 
-const helpTemplate string =
+const commandHelpTemplate string =
 `{{.HelpName}}{{if .UsageText}}
 Arguments:
 {{.UsageText}}
@@ -23,6 +24,48 @@ Environment Variables:
 
 `
 
+const appHelpTemplate string =
+`NAME:
+   {{.Name}} - {{.Usage}}
+
+USAGE:
+   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .Flags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
+   {{if .Version}}
+VERSION:
+   {{.Version}}
+   {{end}}{{if len .Authors}}
+AUTHOR(S):
+   {{range .Authors}}{{ . }}{{end}}
+   {{end}}{{if .Commands}}
+COMMANDS:
+   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
+   {{end}}{{end}}{{if .Flags}}
+GLOBAL OPTIONS:
+   {{range .Flags}}{{.}}
+   {{end}}
+Environment Variables:
+` + common.GlobalEnvVars + `{{end}}
+
+`
+
+const subcommandHelpTemplate =
+`NAME:
+   {{.HelpName}} - {{.Usage}}
+
+USAGE:
+   {{.HelpName}} command{{if .Flags}} [command options]{{end}}[arguments...]
+
+COMMANDS:
+   {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
+   {{end}}{{if .Flags}}
+OPTIONS:
+   {{range .Flags}}{{.}}
+   {{end}}
+Environment Variables:
+` + common.GlobalEnvVars + `{{end}}
+
+`
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "jfrog"
@@ -30,7 +73,9 @@ func main() {
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()
-	cli.CommandHelpTemplate = helpTemplate
+	cli.CommandHelpTemplate = commandHelpTemplate
+	cli.AppHelpTemplate = appHelpTemplate
+	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	app.Run(args)
 }
 
