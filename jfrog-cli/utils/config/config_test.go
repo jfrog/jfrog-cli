@@ -167,11 +167,11 @@ func assertionHelper(configV1 *ConfigV1, t *testing.T) {
 		t.Error(errors.New("Empty Artifactory config!."))
 	}
 	if len(rtConverted) != 1 {
-		t.Error(errors.New("Convertion failed!"))
+		t.Error(errors.New("Conversion failed!"))
 	}
 	rtConfigType := reflect.TypeOf(rtConverted)
 	if rtConfigType.String() != "[]*config.ArtifactoryDetails" {
-		t.Error(errors.New("Coudln't convert to Array."))
+		t.Error(errors.New("Couldn't convert to Array."))
 	}
 	if rtConverted[0].IsDefault != true {
 		t.Error(errors.New("Should be default."))

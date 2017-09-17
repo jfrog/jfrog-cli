@@ -3,6 +3,7 @@ package utils
 import (
 	"strings"
 	"path/filepath"
+	"fmt"
 )
 
 // Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
@@ -25,12 +26,12 @@ func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
 		return "", err
 	}
 
-	json := "{\"repo\": \"" + repo + "\"," + propsQuery + "\"$or\": ["
+	json := `{"repo": "` + repo + `",` + propsQuery + `"$or": [`
 	if size == 0 {
-		json += "{" + buildInnerQuery(".", searchPattern, itemType, true) + "}"
+		json += "{" + buildInnerQuery(".", searchPattern, itemType, true, params.ExcludePatterns) + "}"
 	} else {
 		for i := 0; i < size; i++ {
-			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType, includeRoot) + "}"
+			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType, includeRoot, params.ExcludePatterns) + "}"
 			if i+1 < size {
 				json += ","
 			}
@@ -79,20 +80,43 @@ func buildPropsQuery(props string) (string, error) {
 	return query, nil
 }
 
-func buildInnerQuery(path, name, itemType string, includeRoot bool) string {
+func buildInnerQuery(path, name, itemType string, includeRoot bool, excludeInput []string) string {
 	itemTypeQuery := ""
+	innerQueryPattern := ""
 	if itemType != "" {
-		itemTypeQuery = ",\"type\": {\"$eq\": \"" + itemType + "\"}"
+		itemTypeQuery = `,"type": {"$eq": "` + itemType + `"}`
 	}
 	nePath := ""
 	if !includeRoot {
-		nePath = "\"path\": {\"$ne\": \".\"},"
+		nePath = `"path": {"$ne": "."},`
 	}
 
-	query := "\"$and\": [{\"path\": {\"$match\": \"" + path + "\"}," + nePath +
-			"\"name\": {\"$match\": \"" + name + "\"}" + itemTypeQuery + "}]"
+	if len(excludeInput) > 0 {
+		excludePathPattern, excludeNamePattern := createExcludeQuery(excludeInput)
+		innerQueryPattern = `"$and": [` +
+								`{"$and": [` +
+									`{"path": {"$match": "%s"}%s}], %s` +
+								`"$and": [` +
+									`{"name": {"$match": "%s"}%s}]%s` +
+								`}]`
+		return fmt.Sprintf(innerQueryPattern, path, excludePathPattern, nePath, name, excludeNamePattern, itemTypeQuery)
+	}
 
-	return query
+	innerQueryPattern = `"$and": [` +
+							`{` +
+								`"path": {"$match": "%s"},%s` +
+								`"name": {"$match": "%s"}%s` +
+							`}]`
+	return fmt.Sprintf(innerQueryPattern, path, nePath, name, itemTypeQuery)
+}
+
+func createExcludeQuery(excludeInput []string) (string, string) {
+	excludePathPattern, excludeNamePattern := "", ""
+	for _, singleExcludePattern := range excludeInput {
+		excludePathPattern += fmt.Sprintf(`, "path": {"$nmatch": "%s"}`, singleExcludePattern)
+		excludeNamePattern += fmt.Sprintf(`, "name": {"$nmatch": "%s"}`, singleExcludePattern)
+	}
+	return excludePathPattern, excludeNamePattern
 }
 
 // We need to translate the provided download pattern to an AQL query.

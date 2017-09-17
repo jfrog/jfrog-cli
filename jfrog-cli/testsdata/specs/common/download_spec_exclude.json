@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/data/",
+      "target": "out/download/aql_by_artifacts/",
+      "excludePatterns": ["*a1.in", "*a3.in", null, "*c2.in"]
+    }
+  ]
+}

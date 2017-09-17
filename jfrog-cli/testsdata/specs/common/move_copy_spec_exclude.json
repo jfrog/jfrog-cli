@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/data/",
+      "target": "jfrog-cli-tests-repo2/",
+      "excludePatterns": ["*b*", "*c*"]
+    }
+  ]
+}

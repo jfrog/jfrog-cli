@@ -17,14 +17,15 @@ type Aql struct {
 }
 
 type ArtifactoryCommonParams struct {
-	Aql         Aql
-	Pattern     string
-	Target      string
-	Props       string
-	Build       string
-	Recursive   bool
-	IncludeDirs bool
-	Regexp      bool
+	Aql             Aql
+	Pattern         string
+	Target          string
+	Props           string
+	Build           string
+	Recursive       bool
+	IncludeDirs     bool
+	Regexp          bool
+	ExcludePatterns []string
 }
 
 type FileGetter interface {
@@ -39,6 +40,7 @@ type FileGetter interface {
 	IsRegexp() bool
 	IsRecursive() bool
 	IsIncludeDirs() bool
+	GetExcludePatterns() []string
 }
 
 func (params *ArtifactoryCommonParams) GetPattern() string {
@@ -83,6 +85,10 @@ func (params ArtifactoryCommonParams) IsIncludeDirs() bool {
 
 func (params *ArtifactoryCommonParams) SetProps(props string) {
 	params.Props = props
+}
+
+func (params *ArtifactoryCommonParams) GetExcludePatterns() []string {
+	return params.ExcludePatterns
 }
 
 func (aql *Aql) UnmarshalJSON(value []byte) error {

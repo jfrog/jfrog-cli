@@ -21,6 +21,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"fmt"
 )
 
 type UploadService struct {
@@ -232,7 +233,8 @@ func getUploadPaths(rootPath string, isRecursive, includeDirs, isSymlink bool) (
 }
 
 func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploadDescriptor, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) error {
-	r, err := regexp.Compile(uploadParams.GetPattern())
+	excludePathPattern := prepareExcludePathPattern(uploadParams.GetExcludePatterns(), uploadMetaData.IsRegexp)
+	patternRegex, err := regexp.Compile(uploadParams.GetPattern())
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
@@ -255,10 +257,15 @@ func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploa
 		if isDir && !uploadParams.IsIncludeDirs() && !isSymlinkFlow {
 			continue
 		}
-		groups := r.FindStringSubmatch(path)
+		groups := patternRegex.FindStringSubmatch(path)
+		excludedPath, err := isPathExcluded(path, excludePathPattern)
+		if err != nil {
+			return err
+		}
+
 		size := len(groups)
-		target := uploadParams.GetTarget()
-		if size > 0 {
+		if !excludedPath && size > 0 {
+			target := uploadParams.GetTarget()
 			tempPaths := paths
 			tempIndex := index
 			// In case we need to upload directories with flat=true, we want to avoid the creation of unnecessary paths in Artifactory.
@@ -270,13 +277,38 @@ func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploa
 				tempIndex = len(foldersPaths) - 1
 			}
 			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow, paths: tempPaths,
-				groups:                         groups, index: tempIndex, size: size, uploadParams: uploadParams, uploadMetaData: uploadMetaData,
-				producer:                       producer, artifactHandlerFunc: artifactHandlerFunc, errorsQueue: errorsQueue,
+				groups: groups, index: tempIndex, size: size, uploadParams: uploadParams, uploadMetaData: uploadMetaData,
+				producer: producer, artifactHandlerFunc: artifactHandlerFunc, errorsQueue: errorsQueue,
 			}
 			createUploadTask(taskData)
 		}
 	}
 	return nil
+}
+
+func prepareExcludePathPattern(excludePatterns []string, isRegex bool) string {
+	excludePathPattern := ""
+	if len(excludePatterns) > 0 {
+		for _, singleExcludePattern := range excludePatterns {
+			if len(singleExcludePattern) > 0 {
+				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
+				singleExcludePattern = cliutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
+				excludePathPattern += fmt.Sprintf(`(%s)|`, singleExcludePattern)
+			}
+		}
+		if len(excludePathPattern) > 0 {
+			excludePathPattern = excludePathPattern[:len(excludePathPattern)-1]
+		}
+	}
+	return excludePathPattern
+}
+
+func isPathExcluded(path string, excludePathPattern string) (bool, error) {
+	excludedPath, err := false, error(nil)
+	if len(excludePathPattern) > 0 {
+		excludedPath, err = regexp.MatchString(excludePathPattern, path)
+	}
+	return excludedPath, errorutils.CheckError(err)
 }
 
 type uploadTaskData struct {

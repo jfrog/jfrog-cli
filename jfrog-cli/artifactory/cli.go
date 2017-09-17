@@ -322,6 +322,10 @@ func getUploadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
 		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		},
 	}...)
 }
 
@@ -388,6 +392,10 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
 		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		},
 	}...)
 }
 
@@ -422,6 +430,10 @@ func getMoveFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are moved. The property format is build-name/build-number.",
+		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
 	}...)
 
@@ -459,6 +471,10 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are copied. The property format is build-name/build-number.",
 		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		},
 	}...)
 }
 
@@ -494,6 +510,10 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are deleted. The property format is build-name/build-number.",
 		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		},
 	}...)
 }
 
@@ -520,6 +540,10 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number.",
 		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		},
 	}...)
 }
 
@@ -541,6 +565,10 @@ func getSetPropertiesFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "include-dirs",
 			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
 	}...)
 }
@@ -857,10 +885,10 @@ func moveCmd(c *cli.Context) {
 	var moveSpec *utils.SpecFiles
 	if c.IsSet("spec") {
 		var err error
-		moveSpec, err = getMoveSpec(c)
+		moveSpec, err = getCopyMoveSpec(c)
 		cliutils.ExitOnErr(err)
 	} else {
-		moveSpec = createDefaultMoveSpec(c)
+		moveSpec = createDefaultCopyMoveSpec(c)
 	}
 
 	artDetails, err := createArtifactoryDetails(c, true)
@@ -880,10 +908,10 @@ func copyCmd(c *cli.Context) {
 	var copySpec *utils.SpecFiles
 	if c.IsSet("spec") {
 		var err error
-		copySpec, err = getMoveSpec(c)
+		copySpec, err = getCopyMoveSpec(c)
 		cliutils.ExitOnErr(err)
 	} else {
-		copySpec = createDefaultMoveSpec(c)
+		copySpec = createDefaultCopyMoveSpec(c)
 	}
 
 	artDetails, err := createArtifactoryDetails(c, true)
@@ -1176,18 +1204,20 @@ func getDebFlag(c *cli.Context) (deb string) {
 	return deb
 }
 
-func createDefaultMoveSpec(c *cli.Context) *utils.SpecFiles {
+func createDefaultCopyMoveSpec(c *cli.Context) *utils.SpecFiles {
 	pattern := c.Args().Get(0)
 	target := c.Args().Get(1)
 	props := c.String("props")
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, true)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, true, excludePatterns)
 }
 
-func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
+func getCopyMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
@@ -1198,7 +1228,9 @@ func getMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&searchSpec.Get(i).Flat, c, "flat")
+		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
 	}
+	err = utils.ValidateSpec(searchSpec.Files, true)
 	return
 }
 
@@ -1207,8 +1239,10 @@ func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 	props := c.String("props")
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false, excludePatterns)
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1222,7 +1256,9 @@ func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
 		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
 	}
+	err = utils.ValidateSpec(searchSpec.Files, false)
 	return
 }
 
@@ -1239,8 +1275,10 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	props := c.String("props")
 	build := c.String("build")
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false, excludePatterns)
 }
 
 func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
@@ -1249,8 +1287,10 @@ func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
 	build := c.String("build")
 	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, includeDirs)
+	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, includeDirs, excludePatterns)
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1335,8 +1375,10 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
 	flat := cliutils.GetBoolFlagValue(c, "flat", false)
 	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, includeDirs)
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, includeDirs, excludePatterns)
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
@@ -1353,7 +1395,9 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) 
 		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
 		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&downloadSpec.Get(i).IncludeDirs, c, "include-dirs")
+		overrideArrayIfSet(&downloadSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
 	}
+	err = utils.ValidateSpec(downloadSpec.Files, false)
 	return
 }
 
@@ -1384,8 +1428,9 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 	flat := cliutils.GetBoolFlagValue(c, "flat", true)
 	regexp := c.Bool("regexp")
 	isIncludeDirs := c.Bool("include-dirs")
-
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp, isIncludeDirs)
+	var excludePatterns []string
+	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
+	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp, isIncludeDirs, excludePatterns)
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
@@ -1393,7 +1438,6 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 	if err != nil {
 		return
 	}
-	fixWinUploadFilesPath(uploadSpec)
 	//Override spec with CLI options
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
@@ -1402,7 +1446,10 @@ func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
 		overrideStringIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
 		overrideStringIfSet(&uploadSpec.Get(i).IncludeDirs, c, "include-dirs")
+		overrideArrayIfSet(&uploadSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
 	}
+	fixWinUploadFilesPath(uploadSpec)
+	err = utils.ValidateSpec(uploadSpec.Files, true)
 	return
 }
 
@@ -1410,6 +1457,9 @@ func fixWinUploadFilesPath(uploadSpec *utils.SpecFiles) {
 	if runtime.GOOS == "windows" {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
+			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
+				uploadSpec.Files[i].ExcludePatterns[j] = strings.Replace(excludePattern, "\\", "\\\\", -1)
+			}
 		}
 	}
 }
@@ -1458,8 +1508,19 @@ func validateConfigFlags(configFlag *commands.ConfigFlags) {
 	}
 }
 
+// If `fieldName` exist in the cli args, read it to `field` as a string.
 func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
 	if c.IsSet(fieldName) {
 		*field = c.String(fieldName)
+	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
+func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = nil
+		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
+			*field = append(*field, singleValue)
+		}
 	}
 }

@@ -15,8 +15,8 @@ const (
 	SimpleUploadSpec               = "simple_upload_spec.json"
 	UploadEmptyDirs                = "upload_empty_dir_spec.json"
 	DownloadEmptyDirs              = "download_empty_dir_spec.json"
-	SplittedUploadSpecA            = "splitted_upload_spec_a.json"
-	SplittedUploadSpecB            = "splitted_upload_spec_b.json"
+	SplitUploadSpecA               = "split_upload_spec_a.json"
+	SplitUploadSpecB               = "split_upload_spec_b.json"
 	UploadSpec                     = "upload_spec.json"
 	DeleteSpec                     = "delete_spec.json"
 	DeleteComplexSpec              = "delete_complex_spec.json"
@@ -34,6 +34,11 @@ const (
 	GitLfsTestRepositoryConfig     = "git_lfs_test_repository_config.json"
 	RepoDetailsUrl                 = "api/repositories/"
 	CopyItemsSpec                  = "copy_items_spec.json"
+	DownloadSpecExclude            = "download_spec_exclude.json"
+	MoveCopySpecExclude            = "move_copy_spec_exclude.json"
+	DelSpecExclude                 = "delete_spec_exclude.json"
+	UploadSpecExclude              = "upload_spec_exclude.json"
+	UploadSpecExcludeRegex         = "upload_spec_exclude_regex.json"
 )
 
 var TxtUploadExpectedRepo1 = []string{
@@ -54,6 +59,13 @@ var SimpleUploadExpectedRepo1 = []string{
 
 var SimpleUploadSpecialCharNoRegexExpectedRepo1 = []string{
 	Repo1 + "/a1.in",
+}
+
+var UploadSpecExcludeRepo1 = []string {
+	Repo1 + "/a1.in",
+	Repo1 + "/b1.in",
+	Repo1 + "/c2.in",
+	Repo1 + "/c3.in",
 }
 
 var SingleFileCopy = []string{
@@ -229,6 +241,18 @@ var BuildMoveExpected = []string{
 	Repo2 + "/data/a3.in",
 }
 
+var BuildCopyExclude = []string{
+	Repo1 + "/data/a1.in",
+	Repo1 + "/data/a2.in",
+	Repo1 + "/data/a3.in",
+	Repo1 + "/data/b1.in",
+	Repo1 + "/data/b2.in",
+	Repo1 + "/data/b3.in",
+	Repo2 + "/data/a1.in",
+	Repo2 + "/data/a2.in",
+	Repo2 + "/data/a3.in",
+}
+
 var BuildDeleteExpected = []string{
 	Repo1 + "/data/b1.in",
 	Repo1 + "/data/b2.in",
@@ -343,6 +367,32 @@ var BuildSimpleDownload = []string{
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build",
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator() + "data",
 	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
+}
+
+var BuildExcludeDownload = []string{
+	Out,
+	Out + fileutils.GetFileSeperator() + "download",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a3.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b2.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b3.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c1.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c3.in",
+}
+
+var BuildExcludeDownloadBySpec = []string{
+	Out,
+	Out + fileutils.GetFileSeperator() + "download",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a2.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b2.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b3.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c1.in",
+	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c3.in",
 }
 
 var MassiveUpload = []string{

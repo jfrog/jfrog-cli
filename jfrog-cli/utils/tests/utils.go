@@ -59,7 +59,7 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 	compare(expected, actual, t)
 }
 
-func IsListsIdentical(expected, actual []string, t *testing.T) {
+func AreListsIdentical(expected, actual []string, t *testing.T) {
 	if len(actual) != len(expected)  {
 		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
 	}
