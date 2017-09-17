@@ -1230,7 +1230,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) *utils.SpecFiles {
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, true, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, false, true)
 }
 
 func getCopyMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1258,7 +1258,7 @@ func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, false)
 }
 
 func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1294,7 +1294,7 @@ func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, false, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, false)
 }
 
 func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
@@ -1306,7 +1306,7 @@ func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, "", props, build, recursive, false, false, includeDirs, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, includeDirs)
 }
 
 func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
@@ -1394,7 +1394,7 @@ func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
 
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, false, includeDirs, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, false, includeDirs)
 }
 
 func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
@@ -1447,7 +1447,7 @@ func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
 	isIncludeDirs := c.Bool("include-dirs")
 	var excludePatterns []string
 	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-	return utils.CreateSpec(pattern, target, props, build, recursive, flat, regexp, isIncludeDirs, excludePatterns)
+	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, regexp, isIncludeDirs)
 }
 
 func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {

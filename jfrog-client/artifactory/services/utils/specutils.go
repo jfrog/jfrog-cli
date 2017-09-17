@@ -19,19 +19,20 @@ type Aql struct {
 type ArtifactoryCommonParams struct {
 	Aql             Aql
 	Pattern         string
+	ExcludePatterns []string
 	Target          string
 	Props           string
 	Build           string
 	Recursive       bool
 	IncludeDirs     bool
 	Regexp          bool
-	ExcludePatterns []string
 }
 
 type FileGetter interface {
 	GetAql() Aql
 	GetPattern() string
 	SetPattern(pattern string)
+	GetExcludePatterns() []string
 	GetTarget() string
 	SetTarget(target string)
 	GetProps() string
@@ -40,7 +41,6 @@ type FileGetter interface {
 	IsRegexp() bool
 	IsRecursive() bool
 	IsIncludeDirs() bool
-	GetExcludePatterns() []string
 }
 
 func (params *ArtifactoryCommonParams) GetPattern() string {

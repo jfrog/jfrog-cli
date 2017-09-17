@@ -52,11 +52,12 @@ func replaceSpecVars(content []byte, specVars map[string]string) []byte {
 	return content
 }
 
-func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, includeDirs bool, excludePatterns []string) (spec *SpecFiles) {
+func CreateSpec(pattern string, excludePatterns []string, target, props, build string, recursive, flat, regexp, includeDirs bool) (spec *SpecFiles) {
 	spec = &SpecFiles{
 		Files: []File{
 			{
 				Pattern:         pattern,
+				ExcludePatterns: excludePatterns,
 				Target:          target,
 				Props:           props,
 				Build:           build,
@@ -64,7 +65,6 @@ func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, i
 				Flat:            strconv.FormatBool(flat),
 				Regexp:          strconv.FormatBool(regexp),
 				IncludeDirs:     strconv.FormatBool(includeDirs),
-				ExcludePatterns: excludePatterns,
 			},
 		},
 	}
@@ -74,6 +74,7 @@ func CreateSpec(pattern, target, props, build string, recursive, flat, regexp, i
 type File struct {
 	Aql             utils.Aql
 	Pattern         string
+	ExcludePatterns []string
 	Target          string
 	Props           string
 	Build           string
@@ -81,7 +82,6 @@ type File struct {
 	Flat            string
 	Regexp          string
 	IncludeDirs     string
-	ExcludePatterns [] string
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
@@ -172,10 +172,10 @@ func (f *File) toArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params := new(utils.ArtifactoryCommonParams)
 	params.Aql = f.Aql
 	params.Pattern = f.Pattern
+	params.ExcludePatterns = f.ExcludePatterns
 	params.Target = f.Target
 	params.Props = f.Props
 	params.Build = f.Build
-	params.ExcludePatterns = f.ExcludePatterns
 	return params
 }
 

@@ -333,7 +333,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	defer os.Remove(certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false, []string{})
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -444,7 +444,7 @@ func TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator(t *testing.T) {
 		t.SkipNow()
 	}
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false, []string{})
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
 	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
 	checkForErrDueToMissingProxy(spec, rtDetails, t)
 	go cliproxy.StartHttpProxy()
@@ -463,7 +463,7 @@ func TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator(t *testing.T) {
 		t.SkipNow()
 	}
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", "", "", "", true, false, false, false, []string{})
+	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
 	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
 	checkForErrDueToMissingProxy(spec, rtDetails, t)
 	go cliproxy.StartHttpsProxy()
@@ -2038,7 +2038,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 }
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
-	searchSpec := utils.CreateSpec(pattern, "", props, "", true, false, false, false, []string{})
+	searchSpec := utils.CreateSpec(pattern, []string{}, "", props, "", true, false, false, false)
 	results, err := commands.Search(searchSpec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
