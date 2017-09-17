@@ -34,9 +34,16 @@ func (jc *HttpClient) sendGetLeaveBodyOpen(url string, allowRedirect bool, httpC
 	return jc.Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
 }
 
-func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (*http.Response, string, error) {
-	resp, _, redirectUrl, err := jc.sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
-	return resp, redirectUrl, err
+func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails,currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
+	for i := 0; i < retries+ 1; i ++ {
+		resp, _, redirectUrl, err = jc.sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
+		if resp != nil && resp.StatusCode <= 500 {
+			// No error and status <= 500
+			return
+		}
+		log.Warn("Download attempt #", i, "of part", currentSplit, "of", url, "failed.")
+	}
+	return
 }
 
 func (jc *HttpClient) Stream(url string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, string, error) {
@@ -157,18 +164,18 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 	return resp, body, nil
 }
 
-func (jc *HttpClient) DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, error) {
-	resp, _, err := jc.downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails)
+func (jc *HttpClient) DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails httputils.HttpClientDetails, retries int) (*http.Response, error) {
+	resp, _, err := jc.downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails, retries)
 	return resp, err
 }
 
 func (jc *HttpClient) DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, string, error) {
-	return jc.downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails)
+	return jc.downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails, 0)
 }
 
 func (jc *HttpClient) downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
-	httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
-	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
+	httpClientsDetails httputils.HttpClientDetails, retries int) (resp *http.Response, redirectUrl string, err error) {
+	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails, 0, retries)
 	if err != nil {
 		return
 	}
@@ -212,7 +219,7 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 		}
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
-			e := jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails)
+			e := jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
 			if e != nil {
 				err = e
 			}
@@ -257,7 +264,7 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 }
 
 func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string,
-	httpClientsDetails httputils.HttpClientDetails) error {
+	httpClientsDetails httputils.HttpClientDetails, retries int) (err error) {
 
 	tempLocalPath, err := fileutils.GetTempDirPath()
 	if err != nil {
@@ -271,7 +278,7 @@ func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, en
 	}
 	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
 
-	resp, _, err := jc.sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
+	resp, _, err := jc.sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails, currentSplit, retries)
 	err = errorutils.CheckError(err)
 	if err != nil {
 		return err
@@ -342,4 +349,5 @@ type ConcurrentDownloadFlags struct {
 	FileSize     int64
 	SplitCount   int
 	Flat         bool
+	Retries      int
 }

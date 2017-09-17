@@ -39,8 +39,9 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadConfiguration) error
 		if err != nil {
 			return err
 		}
-		currentBuildDependencies, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat:flat})
+		currentBuildDependencies, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat:flat, Retries: flags.Retries})
 		if err != nil {
+			cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 			return err
 		}
 		filesInfo = append(filesInfo, currentBuildDependencies...)
@@ -78,6 +79,7 @@ type DownloadConfiguration struct {
 	Symlink         bool
 	ValidateSymlink bool
 	ArtDetails      *config.ArtifactoryDetails
+	Retries         int
 }
 
 func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration) (*artifactory.ArtifactoryServicesManager, error) {
@@ -88,7 +90,7 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
 		SetArtDetails(artDetails.CreateArtAuthConfig()).
 		SetDryRun(flags.DryRun).
-		SetCertifactesPath(certPath).
+		SetCertificatesPath(certPath).
 		SetSplitCount(flags.SplitCount).
 		SetMinSplitSize(flags.MinSplitSize).
 		SetNumOfThreadPerOperation(flags.Threads).

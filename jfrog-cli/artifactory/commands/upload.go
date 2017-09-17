@@ -99,7 +99,7 @@ func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *Upl
 	servicesConfig, err := new(artifactory.ArtifactoryServicesConfigBuilder).
 		SetArtDetails(artDetails.CreateArtAuthConfig()).
 		SetDryRun(flags.DryRun).
-		SetCertifactesPath(certPath).
+		SetCertificatesPath(certPath).
 		SetMinChecksumDeploy(minChecksumDeploySize).
 		SetNumOfThreadPerOperation(flags.Threads).
 		SetLogger(cliutils.CliLogger).

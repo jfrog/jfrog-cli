@@ -17,6 +17,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"net/http"
 )
 
 type DownloadService struct {
@@ -26,6 +27,7 @@ type DownloadService struct {
 	Threads      int
 	MinSplitSize int64
 	SplitCount   int
+	Retries      int
 }
 
 func NewDownloadService(client *httpclient.HttpClient) *DownloadService {
@@ -217,7 +219,7 @@ func (ds *DownloadService) getFileRemoteDetails(downloadPath string, downloadPar
 	return details, nil
 }
 
-func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) error {
+func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) (err error) {
 	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
 	bulkDownload := ds.SplitCount == 0 || ds.MinSplitSize < 0 || ds.MinSplitSize*1000 > downloadFileDetails.Size
 	if !bulkDownload {
@@ -228,23 +230,23 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails
 		bulkDownload = !acceptRange
 	}
 	if bulkDownload {
-		resp, err := ds.client.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails)
-		// Ignore response status errors to continue downloading
-		if err != nil && !httperrors.IsResponseStatusError(err) {
-			return err
+		var resp *http.Response
+		resp, err = ds.client.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails, downloadParams.GetRetries())
+		if resp != nil {
+			log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 		}
-		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 	} else {
 		concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
 			DownloadPath: downloadFileDetails.DownloadPath,
 			FileName:     downloadFileDetails.LocalFileName,
 			LocalPath:    downloadFileDetails.LocalPath,
 			FileSize:     downloadFileDetails.Size,
-			SplitCount:   ds.SplitCount}
+			SplitCount:   ds.SplitCount,
+			Retries:      downloadParams.GetRetries()}
 
-		ds.client.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
+		err = ds.client.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 	}
-	return nil
+	return
 }
 
 func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *DownloadFileDetails, downloadParams DownloadParams) (bool, error) {
@@ -375,10 +377,13 @@ func (ds *DownloadService) createFileHandlerFunc(buildDependencies [][]utils.Fil
 			}
 			dependency := createDependencyFileInfo(downloadData.Dependency, localPath, localFileName)
 			e = ds.downloadFileIfNeeded(downloadPath, localPath, localFileName, logMsgPrefix, downloadData, downloadParams)
-			if e != nil {
+
+			if e == nil {
+				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
+			} else if !httperrors.IsResponseStatusError(e) {
+				// Ignore response status errors to continue downloading
 				return e
 			}
-			buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
 			return nil
 		}
 	}
@@ -443,6 +448,7 @@ type DownloadParams interface {
 	ValidateSymlinks() bool
 	GetFile() *utils.ArtifactoryCommonParams
 	IsFlat() bool
+	GetRetries() int
 }
 
 type DownloadParamsImpl struct {
@@ -450,6 +456,7 @@ type DownloadParamsImpl struct {
 	Symlink         bool
 	ValidateSymlink bool
 	Flat            bool
+	Retries         int
 }
 
 func (ds *DownloadParamsImpl) IsFlat() bool {
@@ -466,4 +473,8 @@ func (ds *DownloadParamsImpl) IsSymlink() bool {
 
 func (ds *DownloadParamsImpl) ValidateSymlinks() bool {
 	return ds.ValidateSymlink
+}
+
+func (ds *DownloadParamsImpl) GetRetries() int {
+	return ds.Retries
 }

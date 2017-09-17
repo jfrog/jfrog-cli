@@ -41,7 +41,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	authConfig := artDetails.CreateArtAuthConfig()
 	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
 		SetArtDetails(authConfig).
-		SetCertifactesPath(certPath).
+		SetCertificatesPath(certPath).
 		SetDryRun(isDryRun).
 		SetLogger(cliutils.CliLogger).
 		Build()

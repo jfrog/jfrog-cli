@@ -380,6 +380,10 @@ func getDownloadFlags() []cli.Flag {
 			Value: "",
 			Usage: "[Default: 3] Number of artifacts to download in parallel.",
 		},
+		cli.StringFlag{
+			Name:  "retries",
+			Usage: "[Default: 3] Number of download retries.",
+		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -747,6 +751,18 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
 			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+		}
+	}
+	return
+}
+
+func getRetries(c *cli.Context) (retries int) {
+	retries = 3
+	var err error
+	if c.String("retries") != "" {
+		retries, err = strconv.Atoi(c.String("retries"))
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, "The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage())
 		}
 	}
 	return
@@ -1410,6 +1426,7 @@ func createDownloadFlags(c *cli.Context) (*commands.DownloadConfiguration, error
 	downloadFlags.Threads = getThreadsCount(c)
 	downloadFlags.BuildName = getBuildName(c)
 	downloadFlags.BuildNumber = getBuildNumber(c)
+	downloadFlags.Retries = getRetries(c)
 	downloadFlags.Symlink = true
 	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
