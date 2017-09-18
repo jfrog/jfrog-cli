@@ -28,11 +28,8 @@ func UploadFile(f *os.File, url string, artifactoryDetails *auth.ArtifactoryDeta
 	if err != nil {
 		return nil, nil, err
 	}
-	headers := map[string]string{
-		"X-Checksum":      details.Checksum.Sha256,
-		"X-Checksum-Sha1": details.Checksum.Sha1,
-		"X-Checksum-Md5":  details.Checksum.Md5,
-	}
+	headers := make(map[string]string)
+	AddChecksumHeaders(headers, details)
 	AddAuthHeaders(headers, artifactoryDetails)
 	requestClientDetails := httpClientsDetails.Clone()
 	utils.MergeMaps(headers, requestClientDetails.Headers)
@@ -40,14 +37,21 @@ func UploadFile(f *os.File, url string, artifactoryDetails *auth.ArtifactoryDeta
 	return client.UploadFile(f, url, *requestClientDetails)
 }
 
-func AddAuthHeaders(headers map[string]string, artifactoryDetails *auth.ArtifactoryDetails) map[string]string {
+func AddChecksumHeaders(headers map[string]string, fileDetails *fileutils.FileDetails) {
+	AddHeader("X-Checksum-Sha1", fileDetails.Checksum.Sha1, &headers)
+	AddHeader("X-Checksum-Md5", fileDetails.Checksum.Md5, &headers)
+	if len(fileDetails.Checksum.Sha256) > 0 {
+		AddHeader("X-Checksum", fileDetails.Checksum.Sha256, &headers)
+	}
+}
+
+func AddAuthHeaders(headers map[string]string, artifactoryDetails *auth.ArtifactoryDetails) {
 	if headers == nil {
 		headers = make(map[string]string)
 	}
 	if artifactoryDetails.GetSshAuthHeaders() != nil {
 		utils.MergeMaps(artifactoryDetails.GetSshAuthHeaders(), headers)
 	}
-	return headers
 }
 
 func SetContentType(contentType string, headers *map[string]string) {

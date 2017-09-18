@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/md5"
 	"crypto/sha1"
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -24,15 +23,16 @@ const (
 var algorithmFunc = map[Algorithm](func() hash.Hash){
 	MD5:    md5.New,
 	SHA1:   sha1.New,
-	SHA256: sha256.New,
+	// TODO - Uncomment `Sha256` population when Artifactory support Sha256 checksum validation
+	//SHA256: sha256.New,
 }
 
 // Calc all hashes at once using AsyncMultiWriter therefore the file is read only once.
 func Calc(reader io.Reader, checksumType ...Algorithm) (map[Algorithm]string, error) {
 	hashes := getChecksumByAlgorithm(checksumType ...)
 	var multiWriter io.Writer
-	pagesize := os.Getpagesize()
-	sizedReader := bufio.NewReaderSize(reader, pagesize)
+	pageSize := os.Getpagesize()
+	sizedReader := bufio.NewReaderSize(reader, pageSize)
 	var hashWriter []io.Writer
 	for _, v := range hashes {
 		hashWriter = append(hashWriter, v)

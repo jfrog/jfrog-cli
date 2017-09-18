@@ -493,7 +493,7 @@ func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, ch
 	}
 }
 
-// When handling symlink we want to simulate the creation of  empty file
+// When handling symlink we want to simulate the creation of empty file
 func createSymlinkFileDetails() (*fileutils.FileDetails, error) {
 	checksumInfo, err := checksum.Calc(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
 	if err != nil {
@@ -534,10 +534,8 @@ func (us *UploadService) tryChecksumDeploy(filePath, targetPath string,
 		return
 	}
 	headers := make(map[string]string)
-	headers["X-Checksum-Deploy"] = "true"
-	headers["X-Checksum"] = details.Checksum.Sha256
-	headers["X-Checksum-Sha1"] = details.Checksum.Sha1
-	headers["X-Checksum-Md5"] = details.Checksum.Md5
+	utils.AddHeader("X-Checksum-Deploy", "true", &headers)
+	utils.AddChecksumHeaders(headers, details)
 	requestClientDetails := httpClientsDetails.Clone()
 	clientutils.MergeMaps(headers, requestClientDetails.Headers)
 	if us.DryRun {
