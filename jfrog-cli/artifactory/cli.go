@@ -1319,6 +1319,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
 		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
 		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
+		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
 	}
 	return
 }
