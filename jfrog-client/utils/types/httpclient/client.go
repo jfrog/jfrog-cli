@@ -12,7 +12,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
@@ -300,29 +299,16 @@ func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, en
 	return err
 }
 
-func (jc *HttpClient) GetRemoteFileDetails(downloadUrl string, httpClientsDetails httputils.HttpClientDetails) (*fileutils.FileDetails, error) {
+func (jc *HttpClient) IsAcceptRanges(downloadUrl string, httpClientsDetails httputils.HttpClientDetails) (bool, error) {
 	resp, body, err := jc.SendHead(downloadUrl, httpClientsDetails)
-	if err != nil {
-		return nil, err
+	if errorutils.CheckError(err) != nil {
+		return false, err
 	}
 
-	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
-		return nil, err
+	if err = httperrors.CheckResponseStatus(resp, body, 200); errorutils.CheckError(err) != nil {
+		return false, err
 	}
-
-	fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return nil, err
-	}
-
-	fileDetails := new(fileutils.FileDetails)
-	fileDetails.Checksum.Md5 = resp.Header.Get("X-Checksum-Md5")
-	fileDetails.Checksum.Sha1 = resp.Header.Get("X-Checksum-Sha1")
-	fileDetails.Size = fileSize
-	fileDetails.AcceptRanges = types.CreateBoolEnum()
-	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")
-	return fileDetails, nil
+	return resp.Header.Get("Accept-Ranges") == "bytes", nil
 }
 
 func setAuthentication(req *http.Request, httpClientsDetails httputils.HttpClientDetails) {

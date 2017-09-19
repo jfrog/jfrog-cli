@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
@@ -197,33 +196,20 @@ func createDependencyFileInfo(resultItem utils.ResultItem, localPath, localFileN
 	return fileInfo
 }
 
-func createDownloadFileDetails(downloadPath, localPath, localFileName string, acceptRanges *types.BoolEnum, size int64) (details *DownloadFileDetails) {
+func createDownloadFileDetails(downloadPath, localPath, localFileName string, size int64) (details *DownloadFileDetails) {
 	details = &DownloadFileDetails{
 		DownloadPath:  downloadPath,
 		LocalPath:     localPath,
 		LocalFileName: localFileName,
-		AcceptRanges:  acceptRanges,
 		Size:          size}
 	return
-}
-
-func (ds *DownloadService) getFileRemoteDetails(downloadPath string, downloadParams DownloadParams) (*fileutils.FileDetails, error) {
-	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
-	details, err := ds.client.GetRemoteFileDetails(downloadPath, httpClientsDetails)
-	if err != nil {
-		err = errorutils.CheckError(errors.New("Artifactory " + err.Error()))
-		if err != nil {
-			return details, err
-		}
-	}
-	return details, nil
 }
 
 func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) (err error) {
 	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
 	bulkDownload := ds.SplitCount == 0 || ds.MinSplitSize < 0 || ds.MinSplitSize*1000 > downloadFileDetails.Size
 	if !bulkDownload {
-		acceptRange, err := ds.isFileAcceptRange(downloadFileDetails, downloadParams)
+		acceptRange, err := ds.isFileAcceptRange(downloadFileDetails)
 		if err != nil {
 			return err
 		}
@@ -249,15 +235,9 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails
 	return
 }
 
-func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *DownloadFileDetails, downloadParams DownloadParams) (bool, error) {
-	if downloadFileDetails.AcceptRanges == nil {
-		details, err := ds.getFileRemoteDetails(downloadFileDetails.DownloadPath, downloadParams)
-		if err != nil {
-			return false, err
-		}
-		return details.AcceptRanges.GetValue(), nil
-	}
-	return downloadFileDetails.AcceptRanges.GetValue(), nil
+func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *DownloadFileDetails) (bool, error) {
+	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
+	return ds.client.IsAcceptRanges(downloadFileDetails.DownloadPath, httpClientsDetails)
 }
 
 func shouldDownloadFile(localFilePath, md5, sha1 string) (bool, error) {
@@ -398,7 +378,7 @@ func (ds *DownloadService) downloadFileIfNeeded(downloadPath, localPath, localFi
 		log.Debug(logMsgPrefix, "File already exists locally.")
 		return nil
 	}
-	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, nil, downloadData.Dependency.Size)
+	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, downloadData.Dependency.Size)
 	return ds.downloadFile(downloadFileDetails, logMsgPrefix, downloadParams)
 }
 
@@ -431,7 +411,6 @@ type DownloadFileDetails struct {
 	DownloadPath  string          `json:"DownloadPath,omitempty"`
 	LocalPath     string          `json:"LocalPath,omitempty"`
 	LocalFileName string          `json:"LocalFileName,omitempty"`
-	AcceptRanges  *types.BoolEnum `json:"AcceptRanges,omitempty"`
 	Size          int64           `json:"Size,omitempty"`
 }
 

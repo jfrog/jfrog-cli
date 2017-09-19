@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -300,18 +299,19 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 		return nil, err
 	}
 
-	fileSize, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return nil, err
+	fileSize := int64(0)
+	contentLength := resp.Header.Get("Content-Length")
+	if len(contentLength) > 0 {
+		fileSize, err = strconv.ParseInt(contentLength, 10, 64)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	fileDetails := new(fileutils.FileDetails)
 	fileDetails.Checksum.Md5 = resp.Header.Get("X-Checksum-Md5")
 	fileDetails.Checksum.Sha1 = resp.Header.Get("X-Checksum-Sha1")
 	fileDetails.Size = fileSize
-	fileDetails.AcceptRanges = types.CreateBoolEnum()
-	fileDetails.AcceptRanges.SetValue(resp.Header.Get("Accept-Ranges") == "bytes")
 	return fileDetails, nil
 }
 

@@ -10,7 +10,6 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types"
 	"path"
 	"path/filepath"
 	"archive/zip"
@@ -388,7 +387,6 @@ func ZipFolderFiles(source, target string) (err error) {
 type FileDetails struct {
 	Checksum     ChecksumDetails
 	Size         int64
-	AcceptRanges *types.BoolEnum
 }
 
 type ChecksumDetails struct {
