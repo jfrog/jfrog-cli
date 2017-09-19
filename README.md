@@ -47,12 +47,12 @@ Optional flags:
 
 | Flag | Description |
 | --- | --- |
-| `-rt.url` | [Default: http://localhost:8081/artifatory] Artifactory URL. |
+| `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
 | `-rt.user` | [Default: admin] Artifactory username. |
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
 
-* Artifactory url: http://localhost:8081/artifatory
+* Artifactory url: http://localhost:8081/artifactory
 * User: admin
 * Password: password
 
