@@ -157,6 +157,16 @@ type ArtifactsBuildInfo struct {
 	*BuildInfoCommon
 }
 
+func CreateArtifactsBuildInfo(fileName string, details *fileutils.FileDetails) ArtifactsBuildInfo {
+	return ArtifactsBuildInfo{
+		Name: fileName,
+		BuildInfoCommon : &BuildInfoCommon{
+			Sha1: details.Checksum.Sha1,
+			Md5: details.Checksum.Md5,
+		},
+	}
+}
+
 type DependenciesBuildInfo struct {
 	Id string `json:"id,omitempty"`
 	*BuildInfoCommon
