@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+        "regexp"
 	"strconv"
 	"sync"
 	"github.com/jfrogdev/jfrog-cli-go/utils/cliutils"
@@ -244,7 +245,7 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		if err != nil {
 			return err
 		}
-		tempFilePath += "/" + flags.FileName + "_" + strconv.Itoa(i)
+		tempFilePath += "/" + escapeWinPath(flags.FileName) + "_" + strconv.Itoa(i)
 		fileutils.AppendFile(tempFilePath, destFile)
 	}
 	log.Info(logMsgPrefix + "Done downloading.")
@@ -259,7 +260,7 @@ httpClientsDetails HttpClientDetails) error {
 		return err
 	}
 	if !flags.Flat {
-		tempLocalPath += "/" + flags.LocalPath
+		tempLocalPath += "/" + escapeWinPath(flags.LocalPath)
 	}
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
@@ -286,6 +287,10 @@ httpClientsDetails HttpClientDetails) error {
 	_, err = io.Copy(out, resp.Body)
 	err = cliutils.CheckError(err)
 	return err
+}
+
+func escapeWinPath(path string) string {
+	return regexp.MustCompile(`^([a-zA-Z]):(\\|/)`).ReplaceAllString(path, "$1$2")
 }
 
 func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) (*fileutils.FileDetails, error) {

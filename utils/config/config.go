@@ -280,6 +280,7 @@ type ArtifactoryDetails struct {
 	User           string            `json:"user,omitempty"`
 	Password       string            `json:"password,omitempty"`
 	ApiKey         string            `json:"apiKey,omitempty"`
+	IsSsh          bool              `json:"isSsh,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
