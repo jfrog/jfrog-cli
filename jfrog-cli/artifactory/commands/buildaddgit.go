@@ -3,6 +3,7 @@ package commands
 import (
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
 func BuildAddGit(buildName, buildNumber, dotGitPath string) (err error) {
@@ -21,10 +22,10 @@ func BuildAddGit(buildName, buildNumber, dotGitPath string) (err error) {
 		return
 	}
 
-	populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
-		tempWrapper.Vcs = &utils.Vcs{
-			VcsUrl: gitManager.GetUrl() + ".git",
-			VcsRevision: gitManager.GetRevision(),
+	populateFunc := func(partial *buildinfo.Partial) {
+		partial.Vcs = &buildinfo.Vcs{
+			Url:      gitManager.GetUrl() + ".git",
+			Revision: gitManager.GetRevision(),
 		}
 	}
 	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)

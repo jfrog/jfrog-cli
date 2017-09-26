@@ -13,6 +13,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"path/filepath"
 )
 
 var UserAgent string
@@ -221,9 +222,9 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		return err
 	}
 
-	if !flags.Flat && flags.LocalPath != "" {
+	if flags.LocalPath != "" {
 		os.MkdirAll(flags.LocalPath, 0777)
-		flags.FileName = flags.LocalPath + "/" + flags.FileName
+		flags.FileName = filepath.Join(flags.LocalPath, flags.FileName)
 	}
 
 	if fileutils.IsPathExists(flags.FileName) {
@@ -259,9 +260,8 @@ httpClientsDetails HttpClientDetails) error {
 	if err != nil {
 		return err
 	}
-	if !flags.Flat {
-		tempLocalPath += "/" + flags.LocalPath
-	}
+	tempLocalPath = filepath.Join(tempLocalPath, flags.LocalPath)
+
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
 	}
@@ -274,7 +274,7 @@ httpClientsDetails HttpClientDetails) error {
 	}
 	defer resp.Body.Close()
 
-	log.Info(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
+	log.Debug(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
 	os.MkdirAll(tempLocalPath, 0777)
 	filePath := tempLocalPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
 

@@ -1,0 +1,23 @@
+apply plugin: 'groovy'
+apply plugin: 'idea'
+
+version = 1.0
+task initProject(description: 'Initialize project directory structure.') << {
+    // Default package to be created in each src dir.
+    def defaultPackage = 'org/jfrog/minimal-project'
+
+    ['java', 'groovy', 'resources'].each {
+        // convention.sourceSets contains the directory structure
+        // for our Groovy project. So we use this struture
+        // and make a directory for each node.
+        sourceSets*."${it}".srcDirs*.each { dir ->
+            def newDir = new File(dir, defaultPackage)
+            logger.info "Creating directory $newDir"  // gradle -i shows this message.
+            newDir.mkdirs()  // Create dir.
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.0'
+}

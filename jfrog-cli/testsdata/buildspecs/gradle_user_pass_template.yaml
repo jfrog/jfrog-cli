@@ -1,0 +1,13 @@
+version: 1
+type: gradle
+
+resolver:
+    repo: jfrog-cli-jcenter-remote
+    username: ${RT_USERNAME}
+    password: ${RT_PASSWORD}
+    url: ${RT_URL}
+deployer:
+    repo: jfrog-cli-tests-repo1
+    username: ${RT_USERNAME}
+    password: ${RT_PASSWORD}
+    url: ${RT_URL}

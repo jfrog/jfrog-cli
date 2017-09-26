@@ -9,6 +9,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
 func Download(downloadSpec *utils.SpecFiles, flags *DownloadConfiguration) error {
@@ -49,22 +50,23 @@ func Download(downloadSpec *utils.SpecFiles, flags *DownloadConfiguration) error
 	cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
 	if isCollectBuildInfo && !flags.DryRun {
-		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
-			tempWrapper.Dependencies = buildDependencies
+		populateFunc := func(partial *buildinfo.Partial) {
+			partial.Dependencies = buildDependencies
 		}
 		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
 	}
 	return err
 }
 
-func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []utils.DependenciesBuildInfo {
-	buildDependecies := make([]utils.DependenciesBuildInfo, len(filesInfo))
+func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buildinfo.Dependencies {
+	buildDependecies := make([]buildinfo.Dependencies, len(filesInfo))
 	for i, fileInfo := range filesInfo {
-		dependency := new(utils.DependenciesBuildInfo)
-		dependency.FileHashes = fileInfo.FileHashes
+		dependency := buildinfo.Dependencies{Checksum: &buildinfo.Checksum{}}
+		dependency.Md5 = fileInfo.Md5
+		dependency.Sha1 = fileInfo.Sha1
 		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.ArtifactoryPath)
 		dependency.Id = filename
-		buildDependecies[i] = *dependency
+		buildDependecies[i] = dependency
 	}
 	return buildDependecies
 }

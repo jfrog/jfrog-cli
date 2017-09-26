@@ -14,6 +14,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
+const BINTRAY_API_URL = "https://bintray.com/api/v1/"
+const BINTRAY_DOWNLOAD_SERVER_URL = "https://dl.bintray.com/"
+
 func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *PathDetails, targetPath string,
 	flags *DownloadFlags, logMsgPrefix string) (err error) {
 
@@ -79,6 +82,7 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 		// concurrently from the DSN URL.
 		// 'err' is not nil in case 'redirectUrl' was returned.
 		if redirectUrl != "" {
+			err = nil
 			concurrentDownloadFlags := httputils.ConcurrentDownloadFlags{
 				DownloadPath: redirectUrl,
 				FileName:     localFileName,

@@ -1,0 +1,9 @@
+version: 1
+type: gradle
+
+resolver:
+    repo: jfrog-cli-jcenter-remote
+    serverID: default
+deployer:
+    repo: jfrog-cli-tests-repo1
+    serverID: default

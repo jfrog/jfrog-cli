@@ -1340,11 +1340,11 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) (*config.BintrayDe
 	}
 	apiUrl := os.Getenv("JFROG_CLI_BINTRAY_API_URL")
 	if apiUrl == "" {
-		apiUrl = "https://bintray.com/api/v1/"
+		apiUrl = utils.BINTRAY_API_URL
 	}
 	downloadServerUrl := os.Getenv("JFROG_CLI_BINTRAY_DOWNLOAD_URL")
 	if downloadServerUrl == "" {
-		downloadServerUrl = "https://dl.bintray.com/"
+		downloadServerUrl = utils.BINTRAY_DOWNLOAD_SERVER_URL
 	}
 	apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
 	downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)

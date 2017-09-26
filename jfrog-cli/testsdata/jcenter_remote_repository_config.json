@@ -1,0 +1,6 @@
+{
+  "key": "jfrog-cli-jcenter-remote",
+  "rclass": "remote",
+  "packageType": "maven",
+  "url": "https://jcenter.bintray.com"
+}

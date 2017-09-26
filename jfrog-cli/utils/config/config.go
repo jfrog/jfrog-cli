@@ -9,12 +9,17 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/buger/jsonparser"
+	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"path"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
-const DefaultServerId = "Default-Server"
+const DEFAULT_SERVER_ID = "Default-Server"
+const JFROG_HOME_ENV = "JFROG_CLI_HOME"
+const JFROG_CONFIG_FILE = "jfrog-cli.conf"
+const JFROG_DEPENDENCIES = "dependencies"
 
 func IsArtifactoryConfExists() (bool, error) {
     conf, err := readConf()
@@ -157,7 +162,7 @@ func saveConfig(config *ConfigV1) error {
 	if err != nil {
 		return err
 	}
-	path, err := getConFilePath()
+	path, err := getConfFilePath()
 	if err != nil {
 		return err
 	}
@@ -173,7 +178,7 @@ func saveConfig(config *ConfigV1) error {
 			return err
 		}
 	}
-	path, err = getConFilePath()
+	path, err = getConfFilePath()
 	if err != nil {
 		return err
 	}
@@ -182,7 +187,7 @@ func saveConfig(config *ConfigV1) error {
 }
 
 func readConf() (*ConfigV1, error) {
-	confFilePath, err := getConFilePath()
+	confFilePath, err := getConfFilePath()
 	if err != nil {
 		return nil, err
 	}
@@ -232,26 +237,35 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 }
 
 func GetJfrogHomeDir() (string, error) {
-	var userDir string
-	if userDir = os.Getenv("JFROG_CLI_HOME"); userDir == "" {
-		userDir = fileutils.GetHomeDir()
-		if userDir == "" {
-			err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
-			if err != nil {
-				return "", err
-			}
+	if os.Getenv(JFROG_HOME_ENV) != "" {
+		return path.Join(os.Getenv(JFROG_HOME_ENV), ".jfrog"), nil
+	}
+
+	userDir := fileutils.GetHomeDir()
+	if userDir == "" {
+		err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
+		if err != nil {
+			return "", err
 		}
 	}
-	return userDir + "/.jfrog/" , nil
+	return path.Join(userDir, ".jfrog"), nil
 }
 
-func getConFilePath() (string, error) {
+func GetJfrogDependenciesPath() (string, error) {
+	jfrogHome, err := GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(jfrogHome, JFROG_DEPENDENCIES), nil
+}
+
+func getConfFilePath() (string, error) {
 	confPath, err := GetJfrogHomeDir()
     if err != nil {
         return "", err
     }
 	os.MkdirAll(confPath, 0777)
-	return confPath + "jfrog-cli.conf", nil
+	return filepath.Join(confPath, JFROG_CONFIG_FILE), nil
 }
 
 type ConfigV1 struct {
@@ -273,7 +287,7 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 	config.MissionControl = o.MissionControl
 	if o.Artifactory != nil {
 		o.Artifactory.IsDefault = true
-		o.Artifactory.ServerId = DefaultServerId
+		o.Artifactory.ServerId = DEFAULT_SERVER_ID
 		config.Artifactory = []*ArtifactoryDetails{o.Artifactory}
 	}
 	return config

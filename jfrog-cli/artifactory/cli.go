@@ -31,6 +31,11 @@ import (
 	rtclientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvn"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 )
 
 func GetCommands() []cli.Command {
@@ -225,6 +230,52 @@ func GetCommands() []cli.Command {
 				gitLfsCleanCmd(c)
 			},
 		},
+		{
+			Name:      "mvn",
+			Flags:     getBuildToolFlags(),
+			Usage:     mvn.Description,
+			HelpName:  common.CreateUsage("rt mvn", mvn.Description, mvn.Usage),
+			UsageText: mvn.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				mvnCmd(c)
+			},
+		},
+		{
+			Name:      "mvn-config",
+			Flags:     getBuildToolFlags(),
+			Aliases:   []string{"mvnc"},
+			Usage:     mvnconfig.Description,
+			HelpName:  common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
+			UsageText: mvnconfig.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				createMvnConfigCmd(c)
+			},
+		},
+		{
+			Name:      "gradle",
+			Flags:     getBuildToolFlags(),
+			Usage:     gradle.Description,
+			HelpName:  common.CreateUsage("rt gradle", gradle.Description, gradle.Usage),
+			UsageText: gradle.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				gradleCmd(c)
+			},
+		},
+		{
+			Name:      "gradle-config",
+			Flags:     getBuildToolFlags(),
+			Aliases:   []string{"gradlec"},
+			Usage:     gradleconfig.Description,
+			HelpName:  common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
+			UsageText: gradleconfig.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				createGradleConfigCmd(c)
+			},
+		},
 	}
 }
 
@@ -273,11 +324,11 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name, providing this flag will record all uploaded artifacts for later build info publication.",
+			Usage: "[Optional] Build name. Providing this option will record all uploaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number, providing this flag will record all uploaded artifacts for later build info publication.",
+			Usage: "[Optional] Build number. Providing this option will record all uploaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -341,11 +392,11 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name, providing this flag will record all downloaded artifacts for later build info publication.",
+			Usage: "[Optional] Build name. Providing this option will record all downloaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number, providing this flag will record all downloaded artifacts for later build info publication.",
+			Usage: "[Optional] Build number. Providing this option will record all downloaded artifacts for later build info publication.",
 		},
 		cli.StringFlag{
 			Name:  "props",
@@ -401,6 +452,19 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
 	}...)
+}
+
+func getBuildToolFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "build-name",
+			Usage: "[Optional] Providing this option will collect and record build info for this build name.",
+		},
+		cli.StringFlag{
+			Name:  "build-number",
+			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.",
+		},
+	}
 }
 
 func getMoveFlags() []cli.Flag {
@@ -836,6 +900,46 @@ func configCmd(c *cli.Context) {
 	validateConfigFlags(configFlags)
 	cliutils.ExitOnErr(err)
 	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
+	cliutils.ExitOnErr(err)
+}
+
+func mvnCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	flags, err := createBuildToolFlags(c)
+	cliutils.ExitOnErr(err)
+
+	err = commands.Mvn(c.Args().Get(0), c.Args().Get(1), flags)
+	cliutils.ExitOnErr(err)
+}
+
+func gradleCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	flags, err := createBuildToolFlags(c)
+	cliutils.ExitOnErr(err)
+
+	err = commands.Gradle(c.Args().Get(0), c.Args().Get(1), flags)
+	cliutils.ExitOnErr(err)
+}
+
+func createGradleConfigCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Config file path argument is missing.", c)
+	}
+	err := commands.CreateGradleBuildConfig(c.Args().Get(0))
+	cliutils.ExitOnErr(err)
+}
+
+func createMvnConfigCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Config file path argument is missing.", c)
+	}
+	err := commands.CreateMvnBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1324,8 +1428,8 @@ func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
 	return
 }
 
-func createBuildInfoFlags(c *cli.Context) (flags *utils.BuildInfoFlags, artDetails *config.ArtifactoryDetails, err error) {
-	flags = new(utils.BuildInfoFlags)
+func createBuildInfoFlags(c *cli.Context) (flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails, err error) {
+	flags = new(buildinfo.Flags)
 	artDetails, err = createArtifactoryDetailsByFlags(c, true)
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
@@ -1507,6 +1611,16 @@ func createUploadFlags(c *cli.Context) (*commands.UploadConfiguration, error) {
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	uploadFlags.ArtDetails = artDetails
 	return uploadFlags, err
+}
+
+func createBuildToolFlags(c *cli.Context) (buildConfigFlags *utils.BuildConfigFlags, err error) {
+	buildConfigFlags = new(utils.BuildConfigFlags)
+	buildConfigFlags.BuildName = getBuildName(c)
+	buildConfigFlags.BuildNumber = getBuildNumber(c)
+	if (buildConfigFlags.BuildName == "" && buildConfigFlags.BuildNumber != "") || (buildConfigFlags.BuildName != "" && buildConfigFlags.BuildNumber == "") {
+		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
+	}
+	return
 }
 
 func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err error) {

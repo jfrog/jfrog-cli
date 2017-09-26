@@ -10,32 +10,34 @@ import (
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	clientuils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
-func BuildPublish(buildName, buildNumber string, flags *utils.BuildInfoFlags, artDetails *config.ArtifactoryDetails) error {
+func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) error {
 	artAuth := artDetails.CreateArtAuthConfig()
 	flags.SetArtifactoryDetails(artAuth)
-	buildInfoData, err := utils.ReadBuildInfoFiles(buildName, buildNumber)
+
+	buildInfo, err := createGenericBuildInfo(buildName, buildNumber, flags)
 	if err != nil {
 		return err
 	}
 
-	if len(buildInfoData) == 0 {
-		return errorutils.CheckError(fmt.Errorf("Can't find any files related to build name: %q, number: %q", buildName, buildNumber))
-	}
-	sort.Sort(buildInfoData)
-	buildInfo, err := createBuildInfo(buildName, buildNumber, buildInfoData, flags)
+	generatedBuildsInfo, err := utils.GetGeneratedBuildsInfo(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
+
+	for _, v := range generatedBuildsInfo {
+		buildInfo.Append(v)
+	}
+
 	return sendBuildInfo(buildName, buildNumber, buildInfo, flags)
 }
 
-func sendBuildInfo(buildName, buildNumber string, buildInfo *BuildInfo, flags *utils.BuildInfoFlags) error {
+func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo, flags *buildinfo.Flags) error {
 	marshaledBuildInfo, err := json.Marshal(buildInfo)
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -63,8 +65,14 @@ func sendBuildInfo(buildName, buildNumber string, buildInfo *BuildInfo, flags *u
 	return nil
 }
 
-func createBuildInfo(buildName, buildNumber string, buildInfoRawData utils.BuildInfoData, flags *utils.BuildInfoFlags) (*BuildInfo, error) {
-	buildInfo := newBuildInfo()
+func createGenericBuildInfo(buildName, buildNumber string, flags *buildinfo.Flags) (*buildinfo.BuildInfo, error) {
+	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber)
+	if err != nil {
+		return nil, err
+	}
+	sort.Sort(partials)
+
+	buildInfo := buildinfo.New()
 	buildInfo.Name = buildName
 	buildInfo.Number = buildNumber
 	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
@@ -72,43 +80,45 @@ func createBuildInfo(buildName, buildNumber string, buildInfoRawData utils.Build
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	artifactsSet, dependenciesSet, env, vcs, err := prepareBuildInfoData(buildInfoRawData, createIncludeFilter(flags), createExcludeFilter(flags))
+	artifactsSet, dependenciesSet, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags), createExcludeFilter(flags))
 	if err != nil {
 		return nil, err
 	}
 	if len(env) != 0 {
 		buildInfo.Properties = env
 	}
-	buildInfo.artifactoryPrincipal = flags.GetArtifactoryDetails().GetUser()
-	if vcs != (utils.Vcs{}) {
-		buildInfo.VcsRevision = vcs.VcsRevision
-		buildInfo.VcsUrl = vcs.VcsUrl
+	buildInfo.ArtifactoryPrincipal = flags.GetArtifactoryDetails().GetUser()
+	if vcs != (buildinfo.Vcs{}) {
+		buildInfo.Revision = vcs.Revision
+		buildInfo.Url = vcs.Url
 	}
-	module := createModule(buildName, artifactsSet, dependenciesSet)
-	buildInfo.Modules = append(buildInfo.Modules, module)
+	if len(artifactsSet) > 0 || len(dependenciesSet) > 0 {
+		module := createModule(buildName, artifactsSet, dependenciesSet)
+		buildInfo.Modules = append(buildInfo.Modules, module)
+	}
 	return buildInfo, nil
 }
 
-func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfoData, includeFilter, excludeFilter filterFunc) ([]utils.ArtifactsBuildInfo, []utils.DependenciesBuildInfo, utils.BuildEnv, utils.Vcs, error) {
-	var artifacts []utils.ArtifactsBuildInfo
-	var dependencies []utils.DependenciesBuildInfo
-	var env utils.BuildEnv
-	var vcs utils.Vcs
+func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Artifacts, []buildinfo.Dependencies, buildinfo.Env, buildinfo.Vcs, error) {
+	var artifacts []buildinfo.Artifacts
+	var dependencies []buildinfo.Dependencies
+	var env buildinfo.Env
+	var vcs buildinfo.Vcs
 	env = make(map[string]string)
-	for _, buildInfoData := range artifactsDataWrapper {
+	for _, partial := range partials {
 		switch {
-		case buildInfoData.Artifacts != nil:
-			for _, v := range buildInfoData.Artifacts {
+		case partial.Artifacts != nil:
+			for _, v := range partial.Artifacts {
 				artifacts = append(artifacts, v)
 			}
-		case buildInfoData.Dependencies != nil:
-			for _, v := range buildInfoData.Dependencies {
+		case partial.Dependencies != nil:
+			for _, v := range partial.Dependencies {
 				dependencies = append(dependencies, v)
 			}
-		case buildInfoData.Vcs != nil:
-			vcs = *buildInfoData.Vcs
-		case buildInfoData.Env != nil:
-			envAfterIncludeFilter, e := includeFilter(buildInfoData.Env)
+		case partial.Vcs != nil:
+			vcs = *partial.Vcs
+		case partial.Env != nil:
+			envAfterIncludeFilter, e := includeFilter(partial.Env)
 			if errorutils.CheckError(e) != nil {
 				return artifacts, dependencies, env, vcs, e
 			}
@@ -124,66 +134,29 @@ func prepareBuildInfoData(artifactsDataWrapper utils.BuildInfoData, includeFilte
 	return artifacts, dependencies, env, vcs, nil
 }
 
-func createModule(buildName string, artifacts []utils.ArtifactsBuildInfo, dependencies []utils.DependenciesBuildInfo) (module *Modules) {
-	module = createDefaultModule(buildName)
+func createModule(buildName string, artifacts []buildinfo.Artifacts, dependencies []buildinfo.Dependencies) *buildinfo.Module {
+	module := createDefaultModule(buildName)
 	if artifacts != nil && len(artifacts) > 0 {
 		module.Artifacts = append(module.Artifacts, artifacts...)
 	}
 	if dependencies != nil && len(dependencies) > 0 {
 		module.Dependencies = append(module.Dependencies, dependencies...)
 	}
-	return
+	return module
 }
 
-type BuildInfo struct {
-	Name                 string           `json:"name,omitempty"`
-	Number               string           `json:"number,omitempty"`
-	Agent                *CliAgent        `json:"agent,omitempty"`
-	BuildAgent           *CliAgent        `json:"buildAgent,omitempty"`
-	Modules              []*Modules       `json:"modules,omitempty"`
-	Started              string           `json:"started,omitempty"`
-	Properties           utils.BuildEnv   `json:"properties,omitempty"`
-	artifactoryPrincipal string           `json:"artifactoryPrincipal,omitempty"`
-	VcsUrl               string           `json:"vcsUrl,omitempty"`
-	VcsRevision          string           `json:"vcsRevision,omitempty"`
-}
-
-type CliAgent struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
-}
-
-type Modules struct {
-	Properties   map[string][]string                 `json:"properties,omitempty"`
-	Id           string                        	     `json:"id,omitempty"`
-	Artifacts    []utils.ArtifactsBuildInfo    `json:"artifacts,omitempty"`
-	Dependencies []utils.DependenciesBuildInfo `json:"dependencies,omitempty"`
-}
-
-func newBuildInfo() (buildInfo *BuildInfo) {
-	buildInfo = new(BuildInfo)
-	buildInfo.Agent = new(CliAgent)
-	buildInfo.Agent.Name = cliutils.CliAgent
-	buildInfo.Agent.Version = cliutils.GetVersion()
-	buildInfo.BuildAgent = new(CliAgent)
-	buildInfo.BuildAgent.Name = "GENERIC"
-	buildInfo.BuildAgent.Version = cliutils.GetVersion()
-	buildInfo.Modules = make([]*Modules, 0)
-	return
-}
-
-func createDefaultModule(buildName string) (module *Modules) {
-	module = new(Modules)
-	module.Id = buildName
-	module.Properties = make(map[string][]string)
-	module.Artifacts = make([]utils.ArtifactsBuildInfo, 0)
-	module.Dependencies = make([]utils.DependenciesBuildInfo, 0)
-	return
+func createDefaultModule(buildName string) *buildinfo.Module {
+	return &buildinfo.Module{
+		Id:           buildName,
+		Properties:   map[string][]string{},
+		Artifacts:    []buildinfo.Artifacts{},
+		Dependencies: []buildinfo.Dependencies{},
+	}
 }
 
 type filterFunc func(map[string]string) (map[string]string, error)
 
-func createIncludeFilter(flags *utils.BuildInfoFlags) filterFunc {
+func createIncludeFilter(flags *buildinfo.Flags) filterFunc {
 	includePatterns := strings.Split(flags.EnvInclude, ";")
 	return func(tempMap map[string]string) (map[string]string, error) {
 		result := make(map[string]string)
@@ -203,7 +176,7 @@ func createIncludeFilter(flags *utils.BuildInfoFlags) filterFunc {
 	}
 }
 
-func createExcludeFilter(flags *utils.BuildInfoFlags) filterFunc {
+func createExcludeFilter(flags *buildinfo.Flags) filterFunc {
 	excludePattern := strings.Split(flags.EnvExclude, ";")
 	return func(tempMap map[string]string) (map[string]string, error) {
 		result := make(map[string]string)

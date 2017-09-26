@@ -13,6 +13,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -75,22 +76,23 @@ func Upload(uploadSpec *utils.SpecFiles, flags *UploadConfiguration) (totalUploa
 
 	if isCollectBuildInfo && !flags.DryRun {
 		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
-		populateFunc := func(tempWrapper *utils.ArtifactBuildInfoWrapper) {
-			tempWrapper.Artifacts = buildArtifacts
+		populateFunc := func(partial *buildinfo.Partial) {
+			partial.Artifacts = buildArtifacts
 		}
 		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
 	}
 	return
 }
 
-func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []utils.ArtifactsBuildInfo {
-	buildArtifacts := make([]utils.ArtifactsBuildInfo, len(filesInfo))
+func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildinfo.Artifacts {
+	buildArtifacts := make([]buildinfo.Artifacts, len(filesInfo))
 	for i, fileInfo := range filesInfo {
-		artifact := new(utils.ArtifactsBuildInfo)
-		artifact.FileHashes = fileInfo.FileHashes
+		artifact := buildinfo.Artifacts{Checksum: &buildinfo.Checksum{}}
+		artifact.Sha1 = fileInfo.Sha1
+		artifact.Md5 = fileInfo.Md5
 		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.LocalPath)
 		artifact.Name = filename
-		buildArtifacts[i] = *artifact
+		buildArtifacts[i] = artifact
 	}
 	return buildArtifacts
 }

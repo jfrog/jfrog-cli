@@ -16,7 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"encoding/json"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	rtutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	cliproxy "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
@@ -30,6 +30,8 @@ import (
 	"net"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"strconv"
+	"bytes"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -53,7 +55,10 @@ func InitArtifactoryTests() {
 	}
 
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
-	createReposIfNeeded()
+	if err := createReposIfNeeded(); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 	cleanArtifactoryTest()
 }
 
@@ -540,13 +545,13 @@ func TestArtifactorySetProperties(t *testing.T) {
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/a.*", "prop=val")
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
 	flags.SetArtifactoryDetails(artifactoryDetails.CreateArtAuthConfig())
-	var resultItems []clientutils.ResultItem
+	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		params, err := spec.Get(i).ToArtifatorySetPropsParams()
 		if err != nil {
 			t.Error(err)
 		}
-		currentResultItems, err := clientutils.SearchBySpecFiles(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 		}
@@ -576,13 +581,13 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
 	flags.SetArtifactoryDetails(artifactoryDetails.CreateArtAuthConfig())
-	var resultItems []clientutils.ResultItem
+	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		params, err := spec.Get(i).ToArtifatorySetPropsParams()
 		if err != nil {
 			t.Error(err)
 		}
-		currentResultItems, err := clientutils.SearchBySpecFiles(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 		}
@@ -1113,7 +1118,7 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
 	dirInnerPath := fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
 	canonicalPath := tests.Out + dirInnerPath
-	fmt.Println()
+
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
@@ -1910,8 +1915,138 @@ func TestReadGitConfig(t *testing.T) {
 	}
 }
 
+func TestMavenBuildWithServerID(t *testing.T) {
+	initArtifactoryTest(t)
+	if *tests.RtApiKey != "" {
+		t.Skip("Mvn does not support api key, skipping...")
+	}
+
+	pomPath := createMavenProject(t)
+	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
+	createJfrogHomeConfig(t)
+
+	runAndValidateMaven(pomPath, configFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func TestMavenBuildWithCredentials(t *testing.T) {
+	initArtifactoryTest(t)
+	if *tests.RtApiKey != "" {
+		t.Skip("Mvn does not support api key, skipping...")
+	}
+
+	pomPath := createMavenProject(t)
+	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUseramePasswordTemplate)
+	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
+	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.MavenUseramePasswordTemplate, true)
+	if err != nil {
+		t.Error(err)
+	}
+
+	runAndValidateMaven(pomPath, configFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
+	mavenFlags := &utils.BuildConfigFlags{}
+	err := commands.Mvn("clean install -f"+pomPath, configFilePath, mavenFlags)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.MavenDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+}
+
+func TestGradleBuildWithServerID(t *testing.T) {
+	initArtifactoryTest(t)
+	if *tests.RtApiKey != "" {
+		t.Skip("Gradle does not support api key, skipping...")
+	}
+
+	buildGradlePath := createGradleProject(t)
+	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
+	createJfrogHomeConfig(t)
+
+	runAndValidateGradle(buildGradlePath, configFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func TestGradleBuildWithCredentials(t *testing.T) {
+	initArtifactoryTest(t)
+	if *tests.RtApiKey != "" {
+		t.Skip("Gradle does not support api key, skipping...")
+	}
+
+	buildGradlePath := createGradleProject(t)
+	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
+	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
+	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.GradleUseramePasswordTemplate, true)
+	if err != nil {
+		t.Error(err)
+	}
+
+	runAndValidateGradle(buildGradlePath, configFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {
+	buildConfigFlags := &utils.BuildConfigFlags{}
+	err := commands.Gradle("clean artifactoryPublish -b "+buildGradlePath, configFilePath, buildConfigFlags)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GradleDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+}
+
+func createGradleProject(t *testing.T) string {
+	srcBuildFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "build.gradle")
+	targetPomPath := filepath.Join(tests.Out, "gradleproject")
+	buildGradlePath, err := copyTemplateFile(srcBuildFile, targetPomPath, "build.gradle", false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	srcSettingsFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "settings.gradle")
+	_, err = copyTemplateFile(srcSettingsFile, targetPomPath, "settings.gradle", false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	return buildGradlePath
+}
+
+func createMavenProject(t *testing.T) string {
+	srcPomFile := filepath.Join(tests.GetTestResourcesPath(), "mavenproject", "pom.xml")
+	targetPomPath := filepath.Join(tests.Out, "mavenproject")
+	pomPath, err := copyTemplateFile(srcPomFile, targetPomPath, "pom.xml", false)
+	if err != nil {
+		t.Error(err)
+	}
+	return pomPath
+}
+
+func createJfrogHomeConfig(t *testing.T) {
+	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JFROG_CONFIG_FILE)
+
+	err := os.Setenv(config.JFROG_HOME_ENV, filepath.Join(tests.Out, "jfroghome"))
+	jfrogHomePath, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JFROG_CONFIG_FILE, true)
+	if err != nil {
+		t.Error(err)
+	}
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
+	err := deleteRepos()
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 func initArtifactoryTest(t *testing.T) {
@@ -1924,8 +2059,35 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
+	os.Unsetenv(config.JFROG_HOME_ENV)
 	cleanArtifactory()
 	tests.CleanFileSystem()
+}
+
+func copyTemplateFile(srcFile, destPath, destFileName string, replaceCredentials bool) (string, error) {
+	content, err := fileutils.ReadFile(srcFile)
+	if err != nil {
+		return "", err
+	}
+
+	err = os.MkdirAll(destPath, 0777)
+	if err != nil {
+		return "", err
+	}
+
+	if replaceCredentials {
+		content = bytes.Replace(content, []byte("${RT_URL}"), []byte(*tests.RtUrl), -1)
+		content = bytes.Replace(content, []byte("${RT_API_KEY}"), []byte(*tests.RtApiKey), -1)
+		content = bytes.Replace(content, []byte("${RT_USERNAME}"), []byte(*tests.RtUser), -1)
+		content = bytes.Replace(content, []byte("${RT_PASSWORD}"), []byte(*tests.RtPassword), -1)
+	}
+
+	destFile := filepath.Join(destPath, destFileName)
+	err = ioutil.WriteFile(destFile, content, 0644)
+	if err != nil {
+		return "", err
+	}
+	return destFile, nil
 }
 
 func prepUploadFiles() {
@@ -1940,7 +2102,7 @@ func prepCopyFiles() {
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 }
 
-func getPathsToDelete(specFile string) []clientutils.ResultItem {
+func getPathsToDelete(specFile string) []rtutils.ResultItem {
 	deleteSpec, _ := utils.CreateSpecFromFile(specFile, nil)
 	artifactsToDelete, _ := commands.GetPathsToDelete(deleteSpec, &commands.DeleteConfiguration{ArtDetails: artifactoryDetails})
 	return artifactsToDelete
@@ -1958,6 +2120,19 @@ func deleteBuild(buildName string) {
 	}
 }
 
+func execDeleteRepoRest(repoName string) error {
+	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
+	resp, body, err := httputils.SendDelete(*tests.RtUrl+"api/repositories/"+repoName, nil, artHttpDetails)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		return errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	}
+	log.Info("Repository", repoName, "was deleted.")
+	return nil
+}
+
 func execCreateRepoRest(repoConfig, repoName string) error {
 	content, err := ioutil.ReadFile(repoConfig)
 	if err != nil {
@@ -1965,40 +2140,49 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	}
 	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
 	artHttpDetails.Headers = map[string]string{"Content-Type": "application/json"}
-	resp, _, err := httputils.SendPut(*tests.RtUrl+"api/repositories/"+repoName, content, artHttpDetails)
+	resp, body, err := httputils.SendPut(*tests.RtUrl+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return errors.New("Fail to create repository. Reason local repository with key: " + repoName + " already exist\n")
+		return errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 	}
 	log.Info("Repository", repoName, "was created.")
 	return nil
 }
 
 func createReposIfNeeded() error {
-	var err error
-	var repoConfig string
-	if !isRepoExist(tests.Repo1) {
-		repoConfig = tests.GetTestResourcesPath() + tests.SpecsTestRepositoryConfig
-		err = execCreateRepoRest(repoConfig, tests.Repo1)
-		if err != nil {
-			return err
+	repos := map[string]string{
+		tests.Repo1:             tests.SpecsTestRepositoryConfig,
+		tests.Repo2:             tests.MoveRepositoryConfig,
+		tests.Lfs_Repo:          tests.GitLfsTestRepositoryConfig,
+		tests.JcenterRemoteRepo: tests.JcenterRemoteRepositoryConfig,
+	}
+	for repoName, configFile := range repos {
+		if !isRepoExist(repoName) {
+			repoConfig := tests.GetTestResourcesPath() + configFile
+			err := execCreateRepoRest(repoConfig, repoName)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
+}
 
-	if !isRepoExist(tests.Repo2) {
-		repoConfig = tests.GetTestResourcesPath() + tests.MoveRepositoryConfig
-		err = execCreateRepoRest(repoConfig, tests.Repo2)
-		if err != nil {
-			return err
-		}
+func deleteRepos() error {
+	repos := []string{
+		tests.Repo1,
+		tests.Repo2,
+		tests.Lfs_Repo,
+		tests.JcenterRemoteRepo,
 	}
-	if !isRepoExist(tests.Lfs_Repo) {
-		repoConfig = tests.GetTestResourcesPath() + tests.GitLfsTestRepositoryConfig
-		err = execCreateRepoRest(repoConfig, tests.Lfs_Repo)
-		if err != nil {
-			return err
+	for _, repoName := range repos {
+		if isRepoExist(repoName) {
+			err := execDeleteRepoRest(repoName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -2017,8 +2201,8 @@ func searchInArtifactory(specFile string) (result []commands.SearchResult, err e
 	return
 }
 
-func getSpecAndCommonFlags(specFile string) (*utils.SpecFiles, clientutils.CommonConf) {
-	searchFlags := new(clientutils.CommonConfImpl)
+func getSpecAndCommonFlags(specFile string) (*utils.SpecFiles, rtutils.CommonConf) {
+	searchFlags := new(rtutils.CommonConfImpl)
 	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
 	return searchSpec, searchFlags
 }
@@ -2050,6 +2234,7 @@ func isRepoExist(repoName string) bool {
 	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
 	resp, _, _, err := httputils.SendGet(*tests.RtUrl+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 

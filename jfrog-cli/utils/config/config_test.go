@@ -85,7 +85,7 @@ func TestConfigV1Covert(t *testing.T) {
 			  "url": "http://localhost:8080/artifactory/",
 			  "user": "user",
 			  "password": "password",
-			  "serverId": "` + DefaultServerId + `",
+			  "serverId": "` + DEFAULT_SERVER_ID + `",
 			  "isDefault": true
 			}
 		  ],
@@ -176,8 +176,8 @@ func assertionHelper(configV1 *ConfigV1, t *testing.T) {
 	if rtConverted[0].IsDefault != true {
 		t.Error(errors.New("Should be default."))
 	}
-	if rtConverted[0].ServerId != DefaultServerId {
-		t.Error(errors.New("serverId should be " + DefaultServerId + "."))
+	if rtConverted[0].ServerId != DEFAULT_SERVER_ID {
+		t.Error(errors.New("serverId should be " + DEFAULT_SERVER_ID + "."))
 	}
 	if rtConverted[0].Url != "http://localhost:8080/artifactory/" {
 		t.Error(errors.New("Url shouldn't change."))

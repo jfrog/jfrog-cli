@@ -7,6 +7,7 @@ import (
 const (
 	Repo1                          = "jfrog-cli-tests-repo1"
 	Repo2                          = "jfrog-cli-tests-repo2"
+	JcenterRemoteRepo             = "jfrog-cli-jcenter-remote"
 	Lfs_Repo                       = "jfrog-cli-lfs-repo"
 	Out                            = "out"
 	DownloadSpec                   = "download_spec.json"
@@ -23,6 +24,7 @@ const (
 	MoveCopyDeleteSpec             = "move_copy_delete_spec.json"
 	PrepareCopy                    = "prepare_copy.json"
 	Search                         = "search.json"
+	SearchAllRepo1                = "search_all_repo1.json"
 	SearchRepo2                    = "search_repo2.json"
 	SearchTxt                      = "search_txt.json"
 	SearchMoveDeleteRepoSpec       = "search_move_delete_repo_spec.json"
@@ -32,8 +34,13 @@ const (
 	MoveRepositoryConfig           = "move_repository_config.json"
 	SpecsTestRepositoryConfig      = "specs_test_repository_config.json"
 	GitLfsTestRepositoryConfig     = "git_lfs_test_repository_config.json"
+	JcenterRemoteRepositoryConfig = "jcenter_remote_repository_config.json"
 	RepoDetailsUrl                 = "api/repositories/"
 	CopyItemsSpec                  = "copy_items_spec.json"
+	MavenServerIDConfig            = "maven_server_id.yaml"
+	MavenUseramePasswordTemplate   = "maven_user_pass_template.yaml"
+	GradleServerIDConfig           = "gradle_server_id.yaml"
+	GradleUseramePasswordTemplate  = "gradle_user_pass_template.yaml"
 	DownloadSpecExclude            = "download_spec_exclude.json"
 	MoveCopySpecExclude            = "move_copy_spec_exclude.json"
 	DelSpecExclude                 = "delete_spec_exclude.json"
@@ -559,4 +566,13 @@ var DeleteDisplyedFiles = []string{
 	Repo2 + "/flat_nonrecursive_source/a/b/b1.in",
 	Repo2 + "/flat_nonrecursive_source/a/b/b2.in",
 	Repo2 + "/flat_nonrecursive_source/a/b/b3.in",
+}
+
+var MavenDeployedArtifacts = []string{
+	Repo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
+	Repo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
+}
+
+var GradleDeployedArtifacts = []string{
+	Repo1 + "/minimal-example/1.0/minimal-example-1.0.jar",
 }

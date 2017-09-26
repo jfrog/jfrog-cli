@@ -10,7 +10,6 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
-	"path"
 	"path/filepath"
 	"archive/zip"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -90,7 +89,7 @@ func GetLocalPathAndFile(originalFileName, relativePath, targetPath string, flat
 	targetFileName, targetDirPath := GetFileAndDirFromPath(targetPath)
 	localTargetPath = targetDirPath
 	if !flat {
-		localTargetPath = path.Join(targetDirPath, relativePath)
+		localTargetPath = filepath.Join(targetDirPath, relativePath)
 	}
 
 	fileName = originalFileName

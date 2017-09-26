@@ -34,7 +34,7 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
-		details, err = encryptPassword(details)
+		details, err = EncryptPassword(details)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 // 1. The serverId argument sent.
 // 2. details.ServerId
 // 3. defaultDetails.ServerId
-// 4. config.DefaultServerId
+// 4. config.DEFAULT_SERVER_ID
 func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails) string {
 	if serverId != "" {
 		return serverId
@@ -88,7 +88,7 @@ func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaul
 	if defaultDetails.ServerId != "" {
 		return defaultDetails.ServerId
 	}
-	return config.DefaultServerId
+	return config.DEFAULT_SERVER_ID
 }
 
 func handleEmptyDefaultDetails(serverId string, configurations []*config.ArtifactoryDetails, details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, []*config.ArtifactoryDetails, *config.ArtifactoryDetails, error) {
@@ -262,27 +262,17 @@ func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
 	return config.GetArtifactorySpecificConfig(serverId)
 }
 
-func encryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, error) {
+func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, error) {
 	if details.Password == "" {
 		return details, nil
 	}
 	cliutils.CliLogger.Info("Encrypting password...")
 	artAuth := details.CreateArtAuthConfig()
-	response, encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth)
+	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth)
 	if err != nil {
 		return nil, err
 	}
-	switch response.StatusCode {
-        case 409:
-            message := "\nYour Artifactory server is not configured to encrypt passwords.\n" +
-                "You may use \"art config --enc-password=false\""
-            err = errorutils.CheckError(errors.New(message))
-        case 200:
-            details.Password = encPassword
-            cliutils.CliLogger.Info("Done encrypting password.")
-        default:
-            err = errorutils.CheckError(errors.New("\nArtifactory response: " + response.Status))
-	}
+	details.Password = encPassword
 	return details, err
 }
 
