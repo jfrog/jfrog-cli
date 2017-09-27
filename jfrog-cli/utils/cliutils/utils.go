@@ -137,7 +137,7 @@ func confirmAnswer(answer string) bool {
 }
 
 func GetVersion() string {
-	return "1.10.1"
+	return "1.11.0"
 }
 
 func GetConfigVersion() string {

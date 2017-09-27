@@ -87,10 +87,9 @@ func Bool2Int(b bool) int {
 	return 0
 }
 
-func
-ReplaceTildeWithUserHome(path string) string {
+func ReplaceTildeWithUserHome(path string) string {
 	if len(path) > 1 && path[0:1] == "~" {
-		return GetUserHomeDir() + path[1:len(path)]
+		return GetUserHomeDir() + path[1:]
 	}
 	return path
 }

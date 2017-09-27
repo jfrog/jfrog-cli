@@ -1589,7 +1589,7 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true")
 
 	// Download by pattern
-	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1 out/download/aql_by_artifacts/", "--exclude-patterns=*a1.in;*a2.*;*c2*")
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1 out/download/aql_by_artifacts/", "--exclude-patterns=*/a1.in;*a2.*;data/c2.in")
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -1606,8 +1606,8 @@ func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
 	// Upload files
 	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
 	specFileB := tests.GetFilePath(tests.SplitUploadSpecB)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true")
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
 
 	// Download by spec
 	artifactoryCli.Exec("download", "--spec="+specFile)
@@ -1626,8 +1626,8 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 	////upload files with buildName and buildNumber
 	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
 	specFileB := tests.GetFilePath(tests.SplitUploadSpecB)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true")
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
 
 	// Download by spec
 	specFile := tests.GetFilePath(tests.DownloadSpecExclude)

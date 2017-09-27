@@ -233,7 +233,7 @@ func getUploadPaths(rootPath string, isRecursive, includeDirs, isSymlink bool) (
 }
 
 func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploadDescriptor, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) error {
-	excludePathPattern := prepareExcludePathPattern(uploadParams.GetExcludePatterns(), uploadMetaData.IsRegexp)
+	excludePathPattern := prepareExcludePathPattern(uploadParams.GetExcludePatterns(), uploadMetaData.IsRegexp, uploadParams.IsRecursive())
 	patternRegex, err := regexp.Compile(uploadParams.GetPattern())
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -286,13 +286,16 @@ func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploa
 	return nil
 }
 
-func prepareExcludePathPattern(excludePatterns []string, isRegex bool) string {
+func prepareExcludePathPattern(excludePatterns []string, isRegex, isRecursive bool) string {
 	excludePathPattern := ""
 	if len(excludePatterns) > 0 {
 		for _, singleExcludePattern := range excludePatterns {
 			if len(singleExcludePattern) > 0 {
 				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
 				singleExcludePattern = cliutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
+				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeperator()){
+					singleExcludePattern += "*"
+				}
 				excludePathPattern += fmt.Sprintf(`(%s)|`, singleExcludePattern)
 			}
 		}
@@ -303,12 +306,11 @@ func prepareExcludePathPattern(excludePatterns []string, isRegex bool) string {
 	return excludePathPattern
 }
 
-func isPathExcluded(path string, excludePathPattern string) (bool, error) {
-	excludedPath, err := false, error(nil)
+func isPathExcluded(path string, excludePathPattern string) (excludedPath bool, err error) {
 	if len(excludePathPattern) > 0 {
 		excludedPath, err = regexp.MatchString(excludePathPattern, path)
 	}
-	return excludedPath, errorutils.CheckError(err)
+	return
 }
 
 type uploadTaskData struct {

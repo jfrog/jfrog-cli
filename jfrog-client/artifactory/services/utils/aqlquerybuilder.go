@@ -12,27 +12,30 @@ func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
 	if params.IncludeDirs {
 		itemType = "any"
 	}
-	searchPattern := prepareSearchPattern(params.Pattern)
-	index := strings.Index(searchPattern, "/")
+	searchPattern := prepareSearchPattern(params.Pattern, true)
+	repoIndex := strings.Index(searchPattern, "/")
 
-	repo := searchPattern[:index]
-	searchPattern = searchPattern[index+1:]
+	repo := searchPattern[:repoIndex]
+	searchPattern = searchPattern[repoIndex+1:]
 
-	pairs := createPathFilePairs(searchPattern, params.Recursive)
+	pathFilePairs := createPathFilePairs(searchPattern, params.Recursive)
 	includeRoot := strings.LastIndex(searchPattern, "/") < 0
-	size := len(pairs)
+	pathPairsSize := len(pathFilePairs)
 	propsQuery, err := buildPropsQuery(params.Props)
 	if err != nil {
 		return "", err
 	}
+	itemTypeQuery := buildItemTypeQuery(itemType)
+	nePath := buildNePath(pathPairsSize == 0 || includeRoot)
+	excludeQuery := createExcludeQuery(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive)
 
-	json := `{"repo": "` + repo + `",` + propsQuery + `"$or": [`
-	if size == 0 {
-		json += "{" + buildInnerQuery(".", searchPattern, itemType, true, params.ExcludePatterns) + "}"
+	json := `{"repo": "` + repo + `",` + propsQuery + itemTypeQuery + nePath + excludeQuery + `"$or": [`
+	if pathPairsSize == 0 {
+		json += buildInnerQuery(".", searchPattern)
 	} else {
-		for i := 0; i < size; i++ {
-			json += "{" + buildInnerQuery(pairs[i].path, pairs[i].file, itemType, includeRoot, params.ExcludePatterns) + "}"
-			if i+1 < size {
+		for i := 0; i < pathPairsSize; i++ {
+			json += buildInnerQuery(pathFilePairs[i].path, pathFilePairs[i].file)
+			if i+1 < pathPairsSize {
 				json += ","
 			}
 		}
@@ -49,9 +52,8 @@ func createAqlQueryForBuild(buildName, buildNumber string) string {
 			"]}).include(\"name\",\"repo\",\"path\",\"actual_sha1\")"
 }
 
-func prepareSearchPattern(pattern string) string {
-	index := strings.Index(pattern, "/")
-	if index < 0 {
+func prepareSearchPattern(pattern string, repositoryExists bool) string {
+	if repositoryExists && !strings.Contains(pattern, "/") {
 		pattern += "/"
 	}
 	if strings.HasSuffix(pattern, "/") {
@@ -80,43 +82,47 @@ func buildPropsQuery(props string) (string, error) {
 	return query, nil
 }
 
-func buildInnerQuery(path, name, itemType string, includeRoot bool, excludeInput []string) string {
-	itemTypeQuery := ""
-	innerQueryPattern := ""
+func buildItemTypeQuery(itemType string) string {
 	if itemType != "" {
-		itemTypeQuery = `,"type": {"$eq": "` + itemType + `"}`
+		return `"type": {"$eq": "` + itemType + `"},`
 	}
-	nePath := ""
-	if !includeRoot {
-		nePath = `"path": {"$ne": "."},`
-	}
-
-	if len(excludeInput) > 0 {
-		excludePathPattern, excludeNamePattern := createExcludeQuery(excludeInput)
-		innerQueryPattern = `"$and": [` +
-								`{"$and": [` +
-									`{"path": {"$match": "%s"}%s}], %s` +
-								`"$and": [` +
-									`{"name": {"$match": "%s"}%s}]%s` +
-								`}]`
-		return fmt.Sprintf(innerQueryPattern, path, excludePathPattern, nePath, name, excludeNamePattern, itemTypeQuery)
-	}
-
-	innerQueryPattern = `"$and": [` +
-							`{` +
-								`"path": {"$match": "%s"},%s` +
-								`"name": {"$match": "%s"}%s` +
-							`}]`
-	return fmt.Sprintf(innerQueryPattern, path, nePath, name, itemTypeQuery)
+	return ""
 }
 
-func createExcludeQuery(excludeInput []string) (string, string) {
-	excludePathPattern, excludeNamePattern := "", ""
-	for _, singleExcludePattern := range excludeInput {
-		excludePathPattern += fmt.Sprintf(`, "path": {"$nmatch": "%s"}`, singleExcludePattern)
-		excludeNamePattern += fmt.Sprintf(`, "name": {"$nmatch": "%s"}`, singleExcludePattern)
+func buildNePath(includeRoot bool) string {
+	if !includeRoot {
+		return `"path": {"$ne": "."},`
 	}
-	return excludePathPattern, excludeNamePattern
+	return ""
+}
+
+func buildInnerQuery(path, name string) string {
+	innerQueryPattern := `{"$and":` +
+							`[{` +
+								`"path": {"$match": "%s"},` +
+								`"name": {"$match": "%s"}` +
+							`}]}`
+	return fmt.Sprintf(innerQueryPattern, path, name)
+}
+
+func createExcludeQuery(excludePatterns []string, useLocalPath bool) string {
+	if excludePatterns == nil {
+		return ""
+	}
+	excludeQuery := ""
+	var excludePairs []PathFilePair
+	for _, excludePattern := range excludePatterns {
+		excludePairs = append(excludePairs, createPathFilePairs(prepareSearchPattern(excludePattern, false), useLocalPath)...)
+	}
+
+	for _, excludePair := range excludePairs {
+		excludePath := excludePair.path
+		if excludePath == "." {
+			excludePath = "*"
+		}
+		excludeQuery += fmt.Sprintf(`"$or": [{"path": {"$nmatch": "%s"}, "name": {"$nmatch": "%s"}}],`, excludePath, excludePair.file)
+	}
+	return excludeQuery
 }
 
 // We need to translate the provided download pattern to an AQL query.
