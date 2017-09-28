@@ -1,8 +1,8 @@
 package mvn
 
-const Description = "Run Maven."
+const Description = "Run Maven build."
 
-var Usage = []string{"jfrog mvn <goals and options> <config file path> [command options]"}
+var Usage = []string{`jfrog rt mvn "<goals and options>" <config file path> [command options]`, `jfrog rt mvn "<goals and options> -f path/to/pom.xml" <config file path> [command options]`}
 
 const Arguments string =
 `	goals and options

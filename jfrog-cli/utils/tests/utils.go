@@ -27,6 +27,8 @@ var BtOrganization *string
 var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
+var TestMaven *bool
+var TestGradle *bool
 
 func init() {
 	PrintSearchResult = flag.Bool("printSearchResult", false, "Set to true for printing search results")
@@ -40,6 +42,8 @@ func init() {
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")
 	BtOrganization = flag.String("bt.organization", "", "Bintray organization")
+	TestMaven = flag.Bool("test.maven", true, "Test maven build")
+	TestGradle = flag.Bool("test.gradle", true, "Test gradle build")
 }
 
 func CleanFileSystem() {

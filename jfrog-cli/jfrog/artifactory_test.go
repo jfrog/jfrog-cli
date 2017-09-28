@@ -41,6 +41,18 @@ func InitArtifactoryTests() {
 	if !*tests.TestArtifactory {
 		return
 	}
+	if *tests.TestMaven {
+		mavenHome := os.Getenv("M2_HOME")
+		if len(mavenHome) == 0 {
+			cliutils.Exit(cliutils.ExitCodeError, "The integration tests include tests for the Maven functionality. Please set the M2_HOME environment variable or alternatively, run the tests again with `-test.maven=false`.")
+		}
+	}
+	if *tests.TestGradle {
+		_, err := utils.GetGradleExecPath(false)
+		if err != nil {
+			cliutils.Exit(cliutils.ExitCodeError, "The integration tests include tests for the Gradle functionality. Please add the gradle executable to your PATH environment variable, or alternatively, run the tests again with `-test.gradle=false`.")
+		}
+	}
 
 	artifactoryDetails = new(config.ArtifactoryDetails)
 	cred := "--url=" + *tests.RtUrl
@@ -420,6 +432,7 @@ func getExternalIP() (string, error) {
 // We need to start a new process with the env var set to the value we want.
 // We decide which var to set by the rtUrl scheme.
 func TestArtifactoryProxy(t *testing.T) {
+	initArtifactoryTest(t)
 	rtUrl, err := url.Parse(*tests.RtUrl)
 	if err != nil {
 		t.Error(err)
@@ -1031,7 +1044,7 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Delete by pattern
-	artifactoryCli.Exec("del", "jfrog-cli-tests-repo1/data/", "--quiet=true", "--exclude-patterns=*b1.in;*b2.in;b3.in;*c1.in")
+	artifactoryCli.Exec("del", "jfrog-cli-tests-repo1/data/", "--quiet=true", "--exclude-patterns=*b1.in;*b2.in;*b3.in;*c1.in")
 
 	// Validate files are deleted
 	isExistInArtifactory(tests.BuildDeleteExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
@@ -1917,9 +1930,7 @@ func TestReadGitConfig(t *testing.T) {
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initArtifactoryTest(t)
-	if *tests.RtApiKey != "" {
-		t.Skip("Mvn does not support api key, skipping...")
-	}
+	skipMavenTestIfNeeded(t)
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
@@ -1931,9 +1942,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 func TestMavenBuildWithCredentials(t *testing.T) {
 	initArtifactoryTest(t)
-	if *tests.RtApiKey != "" {
-		t.Skip("Mvn does not support api key, skipping...")
-	}
+	skipMavenTestIfNeeded(t)
 
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUseramePasswordTemplate)
@@ -1956,11 +1965,18 @@ func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	isExistInArtifactory(tests.MavenDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
 }
 
+func skipMavenTestIfNeeded(t *testing.T) {
+	if !*tests.TestMaven {
+		t.Skip("Maven is not being tested, skipping...")
+	}
+	if *tests.RtApiKey != "" {
+		t.Skip("Maven does not support api key, skipping...")
+	}
+}
+
 func TestGradleBuildWithServerID(t *testing.T) {
 	initArtifactoryTest(t)
-	if *tests.RtApiKey != "" {
-		t.Skip("Gradle does not support api key, skipping...")
-	}
+	skipGradleTestIfNeeded(t)
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
@@ -1972,9 +1988,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 func TestGradleBuildWithCredentials(t *testing.T) {
 	initArtifactoryTest(t)
-	if *tests.RtApiKey != "" {
-		t.Skip("Gradle does not support api key, skipping...")
-	}
+	skipGradleTestIfNeeded(t)
 
 	buildGradlePath := createGradleProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
@@ -1995,6 +2009,15 @@ func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) 
 		t.Error(err)
 	}
 	isExistInArtifactory(tests.GradleDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+}
+
+func skipGradleTestIfNeeded(t *testing.T) {
+	if !*tests.TestGradle {
+		t.Skip("Gradle is not being tested, skipping...")
+	}
+	if *tests.RtApiKey != "" {
+		t.Skip("Gradle does not support api key, skipping...")
+	}
 }
 
 func createGradleProject(t *testing.T) string {
@@ -2051,7 +2074,7 @@ func CleanArtifactoryTests() {
 
 func initArtifactoryTest(t *testing.T) {
 	if !*tests.TestArtifactory {
-		t.Skip("Artifactory is not beeing tested, skipping...")
+		t.Skip("Artifactory is not being tested, skipping...")
 	}
 }
 

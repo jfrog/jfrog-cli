@@ -33,11 +33,11 @@ func CreateMvnBuildConfig(configFilePath string) error {
 			// If there are no available repos pass empty array.
 			availableRepos = []string{}
 		}
-		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set repository for release dependencies resolution (press Tab for options): ", availableRepos)
+		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", availableRepos)
 		if err != nil {
 			return err
 		}
-		configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set repository for snapshot dependencies resolution (press Tab for options): ", availableRepos)
+		configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set resolution repository for snapshot dependencies (press Tab for options): ", availableRepos)
 		if err != nil {
 			return err
 		}
