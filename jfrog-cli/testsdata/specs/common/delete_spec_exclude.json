@@ -2,7 +2,7 @@
   "files": [
     {
       "pattern": "jfrog-cli-tests-repo1/data/",
-      "excludePatterns": ["*b1.in", "*b2.in", "b3.in", "*c1.in"]
+      "excludePatterns": ["*b1.in", "*b2.in", "*b3.in", "*c1.in"]
     }
   ]
 }

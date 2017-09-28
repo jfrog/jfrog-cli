@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"io/ioutil"
 	"strings"
-	"runtime"
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
@@ -66,7 +65,7 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 		return nil, err
 	}
 
-	runConfig.gradle, err = getGradleExecPath(vConfig.GetBool(USE_WRAPPER))
+	runConfig.gradle, err = utils.GetGradleExecPath(vConfig.GetBool(USE_WRAPPER))
 	if err != nil {
 		return nil, err
 	}
@@ -99,20 +98,6 @@ func getInitScript(dependenciesPath string) (string, error) {
 
 	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", dependenciesPath, -1)
 	return initScript, errorutils.CheckError(ioutil.WriteFile(initScript, []byte(initScriptContent), 0644))
-}
-
-func getGradleExecPath(useWrapper bool) (string, error) {
-	if useWrapper {
-		if runtime.GOOS == "windows" {
-			return "gradlew.bat", nil
-		}
-		return "./gradlew", nil
-	}
-	gradleExec, err := exec.LookPath("gradle")
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	return gradleExec, nil
 }
 
 type gradleRunConfig struct {

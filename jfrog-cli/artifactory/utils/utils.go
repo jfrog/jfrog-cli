@@ -16,6 +16,7 @@ import (
 	"errors"
 	"path"
 	"net/url"
+	"runtime"
 )
 
 func GetJfrogSecurityDir() (string, error) {
@@ -101,6 +102,20 @@ func RunCmd(config CmdConfig) error {
 	}
 
 	return nil
+}
+
+func GetGradleExecPath(useWrapper bool) (string, error) {
+	if useWrapper {
+		if runtime.GOOS == "windows" {
+			return "gradlew.bat", nil
+		}
+		return "./gradlew", nil
+	}
+	gradleExec, err := exec.LookPath("gradle")
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return gradleExec, nil
 }
 
 type CmdConfig interface {
