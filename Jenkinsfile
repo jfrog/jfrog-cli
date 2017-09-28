@@ -17,9 +17,9 @@ node {
         withEnv(["GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
 
             stage 'Go get'
-            sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/jfrog'
+            sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog'
             if (BRANCH?.trim()) {
-                dir("src/github.com/jfrogdev/jfrog-cli-go/jfrog") {
+                dir("src/github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog") {
                     sh "git checkout $BRANCH"
                     sh 'go install'
                 }
@@ -43,7 +43,7 @@ def uploadToBintray(pkg, fileExtension) {
 }
 
 def buildAndUpload(goos, goarch, pkg, fileExtension) {
-    sh "env GOOS=$goos GOARCH=$goarch go build github.com/jfrogdev/jfrog-cli-go/jfrog"
+    sh "env GOOS=$goos GOARCH=$goarch go build github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog"
     def extension = fileExtension == null ? '' : fileExtension
     uploadToBintray(pkg, extension)
     sh "rm jfrog$extension"
