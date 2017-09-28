@@ -27,7 +27,7 @@ func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
 	}
 	itemTypeQuery := buildItemTypeQuery(itemType)
 	nePath := buildNePath(pathPairsSize == 0 || includeRoot)
-	excludeQuery := createExcludeQuery(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive)
+	excludeQuery := createExcludeQuery(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
 	json := `{"repo": "` + repo + `",` + propsQuery + itemTypeQuery + nePath + excludeQuery + `"$or": [`
 	if pathPairsSize == 0 {
@@ -105,19 +105,19 @@ func buildInnerQuery(path, name string) string {
 	return fmt.Sprintf(innerQueryPattern, path, name)
 }
 
-func createExcludeQuery(excludePatterns []string, useLocalPath bool) string {
+func createExcludeQuery(excludePatterns []string, useLocalPath, recursive bool) string {
 	if excludePatterns == nil {
 		return ""
 	}
 	excludeQuery := ""
 	var excludePairs []PathFilePair
 	for _, excludePattern := range excludePatterns {
-		excludePairs = append(excludePairs, createPathFilePairs(prepareSearchPattern(excludePattern, false), useLocalPath)...)
+		excludePairs = append(excludePairs, createPathFilePairs(prepareSearchPattern(excludePattern, false), recursive)...)
 	}
 
 	for _, excludePair := range excludePairs {
 		excludePath := excludePair.path
-		if excludePath == "." {
+		if !useLocalPath && excludePath == "." {
 			excludePath = "*"
 		}
 		excludeQuery += fmt.Sprintf(`"$or": [{"path": {"$nmatch": "%s"}, "name": {"$nmatch": "%s"}}],`, excludePath, excludePair.file)
