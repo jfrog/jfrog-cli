@@ -26,7 +26,7 @@ func IsArtifactoryConfExists() (bool, error) {
     if err != nil {
         return false, err
     }
-	return conf.Artifactory != nil, nil
+	return conf.Artifactory != nil && len(conf.Artifactory) > 0, nil
 }
 
 func IsMissionControlConfExists() (bool, error) {
@@ -84,6 +84,16 @@ func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetai
 		}
 	}
 	return new(ArtifactoryDetails)
+}
+
+func GetAndRemoveConfiguration(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, []*ArtifactoryDetails) {
+	for i, conf := range configs {
+		if conf.ServerId == serverName {
+			configs = append(configs[:i], configs[i+1:]...)
+			return conf, configs
+		}
+	}
+	return nil, configs
 }
 
 func GetAllArtifactoryConfigs() ([]*ArtifactoryDetails, error) {

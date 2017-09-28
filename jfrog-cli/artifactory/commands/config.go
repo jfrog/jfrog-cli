@@ -15,8 +15,10 @@ import (
 
 func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
 shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
-
-	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails)
+	if details == nil {
+		details = new(config.ArtifactoryDetails)
+	}
+	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails, interactive)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +28,11 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 			return nil, err
 		}
 	}
-	serverId = resolveServerId(serverId, details, defaultDetails)
+
+	if len(configurations) == 1 {
+		details.IsDefault = true
+	}
+
 	err = checkSingleAuthMethod(details)
 	if err != nil {
 		return nil, err
@@ -39,37 +45,42 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 			return nil, err
 		}
 	}
-	populateConfigDetails(serverId, details, defaultDetails)
 	err = config.SaveArtifactoryConf(configurations)
 	return details, err
 }
 
-func populateConfigDetails(serverId string, details, defaultDetails *config.ArtifactoryDetails) {
-	if defaultDetails == nil {
-		defaultDetails = new(config.ArtifactoryDetails)
-	}
-	isDefault := defaultDetails.IsDefault
-	*defaultDetails = *details
-	defaultDetails.IsDefault = isDefault
-	defaultDetails.ServerId = serverId
-}
-
-func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
+func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails, interactive bool) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
+	// Get configurations list
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
 		return details, defaultDetails, configurations, err
 	}
-	if details == nil {
-		details = new(config.ArtifactoryDetails)
-	}
+
+	// Get default server details
 	if defaultDetails == nil {
-		defaultDetails, configurations, details, err = handleEmptyDefaultDetails(serverId, configurations, details)
-	} else {
-		// We got here from offer config flow
-		configurations = append(configurations, defaultDetails)
-		defaultDetails.IsDefault = true
+		defaultDetails, err = config.GetDefaultArtifactoryConf(configurations)
+		if err != nil {
+			return details, defaultDetails, configurations, err
+		}
 	}
 
+	// Get server id
+	if interactive && serverId == "" {
+		ioutils.ScanFromConsole("Artifactory server ID", &serverId, defaultDetails.ServerId)
+	}
+	details.ServerId = resolveServerId(serverId, details, defaultDetails)
+
+	// Remove and get the server details from the configurations list
+	tempConfiguration, configurations := config.GetAndRemoveConfiguration(details.ServerId, configurations)
+
+	// Change default server details if the server was exist in the configurations list
+	if tempConfiguration != nil {
+		defaultDetails = tempConfiguration
+		details.IsDefault = tempConfiguration.IsDefault
+	}
+
+	// Append the configuration to the configurations list
+	configurations = append(configurations, details)
 	return details, defaultDetails, configurations, err
 }
 
@@ -91,33 +102,9 @@ func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaul
 	return config.DEFAULT_SERVER_ID
 }
 
-func handleEmptyDefaultDetails(serverId string, configurations []*config.ArtifactoryDetails, details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, []*config.ArtifactoryDetails, *config.ArtifactoryDetails, error) {
-	var defaultDetails *config.ArtifactoryDetails
-	var err error
-	// If we don't have serverId we need to search for the default server
-	if serverId == "" {
-		defaultDetails, err = config.GetDefaultArtifactoryConf(configurations)
-		// No default was found
-		if err == nil && defaultDetails.IsEmpty() {
-			configurations = append(configurations, defaultDetails)
-		}
-	} else {
-		defaultDetails = config.GetArtifactoryConfByServerId(serverId, configurations)
-		// No server with serverId was found
-		if defaultDetails.IsEmpty() {
-			defaultDetails.IsDefault = len(configurations) == 0
-			configurations = append(configurations, defaultDetails)
-		}
-	}
-	return defaultDetails, configurations, details, err
-}
-
 func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {
 	if details.Url == "" {
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
-	}
-	if details.ServerId == "" {
-		ioutils.ScanFromConsole("Artifactory server ID", &details.ServerId, defaultDetails.ServerId)
 	}
 	if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
 		err := readSshKeyPathFromConsole(details, defaultDetails)
