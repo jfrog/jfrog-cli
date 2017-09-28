@@ -8,7 +8,7 @@ import (
 func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local", Target: "", Props: "", Build: "", Recursive: true, Regexp: false, IncludeDirs: false}
 	aqlResult, _ := createAqlBodyForItem(&params)
-	expected := "{\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"*\"},\"name\": {\"$match\": \"*\"}}]}]}"
+	expected := `{"repo": "repo-local","$or": [{"$and":[{"path": {"$match": "*"},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
@@ -18,8 +18,7 @@ func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
 func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local2/a*b*c/dd/", Target: "", Props: "", Build: "", Recursive: true, Regexp: false, IncludeDirs: false}
 	aqlResult, _ := createAqlBodyForItem(&params)
-	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]},{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd/*\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
-
+	expected := `{"repo": "repo-local2","path": {"$ne": "."},"$or": [{"$and":[{"path": {"$match": "a*b*c/dd"},"name": {"$match": "*"}}]},{"$and":[{"path": {"$match": "a*b*c/dd/*"},"name": {"$match": "*"}}]}]}`
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
 	}
@@ -28,7 +27,7 @@ func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
 func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local", Target: "", Props: "", Build: "", Recursive: false, Regexp: false, IncludeDirs: false}
 	aqlResult, _ := createAqlBodyForItem(&params)
-	expected := "{\"repo\": \"repo-local\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
+	expected := `{"repo": "repo-local","$or": [{"$and":[{"path": {"$match": "."},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
@@ -38,7 +37,7 @@ func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
 	specFile := ArtifactoryCommonParams{Pattern:"repo-local2/a*b*c/dd/", Target:"", Props:"", Build:"", Recursive:false, Regexp:false, IncludeDirs:false}
 	aqlResult, _ := createAqlBodyForItem(&specFile)
-	expected := "{\"repo\": \"repo-local2\",\"$or\": [{\"$and\": [{\"path\": {\"$match\": \"a*b*c/dd\"},\"path\": {\"$ne\": \".\"},\"name\": {\"$match\": \"*\"}}]}]}"
+	expected := `{"repo": "repo-local2","path": {"$ne": "."},"$or": [{"$and":[{"path": {"$match": "a*b*c/dd"},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
