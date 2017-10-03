@@ -17,6 +17,7 @@ import (
 	"path"
 	"net/url"
 	"runtime"
+	"path/filepath"
 )
 
 func GetJfrogSecurityDir() (string, error) {
@@ -24,7 +25,7 @@ func GetJfrogSecurityDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return confPath + "security/", nil
+	return filepath.Join(confPath, "security"), nil
 }
 
 func GetEncryptedPasswordFromArtifactory(artifactoryAuth *auth.ArtifactoryDetails) (string, error) {
