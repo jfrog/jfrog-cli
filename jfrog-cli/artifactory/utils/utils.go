@@ -21,11 +21,11 @@ import (
 )
 
 func GetJfrogSecurityDir() (string, error) {
-	confPath, err := config.GetJfrogHomeDir()
+	homeDir, err := config.GetJfrogHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(confPath, "security"), nil
+	return filepath.Join(homeDir, "security"), nil
 }
 
 func GetEncryptedPasswordFromArtifactory(artifactoryAuth *auth.ArtifactoryDetails) (string, error) {
