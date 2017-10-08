@@ -101,7 +101,7 @@ func createMvnRunConfig(goals, configPath string, flags *utils.BuildConfigFlags,
 	}
 
 	if len(plexusClassworlds) != 1 {
-		return nil, errorutils.CheckError(errors.New("Couldn't find plexus-classworlds-x.x.x.jar in Maven installation path, please check M2_HOME environmetn variable."))
+		return nil, errorutils.CheckError(errors.New("couldn't find plexus-classworlds-x.x.x.jar in Maven installation path, please check M2_HOME environment variable"))
 	}
 
 	var currentWorkdir string
