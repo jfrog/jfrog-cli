@@ -17,20 +17,17 @@ import (
 
 const VULNERABILITY = "__vuln"
 const COMPONENT = "__comp"
-const JXRAY_BASR_URL = "https://jxray.jfrog.io/api/v1/updates/"
-const ONBOARDING_URL = JXRAY_BASR_URL + "onboarding"
-
-var updatesUrl = ONBOARDING_URL
 
 func OfflineUpdate(flags *OfflineUpdatesFlags) error {
-	if err := buildUpdatesUrl(flags); err != nil {
-		return err
-	}
-	vulnerabilities, components, last_update, err := getFilesList(flags)
+	updatesUrl, err := buildUpdatesUrl(flags)
 	if err != nil {
 		return err
 	}
-	zipSuffix := "_" + strconv.FormatInt(last_update, 10)
+	vulnerabilities, components, lastUpdate, err := getFilesList(updatesUrl, flags)
+	if err != nil {
+		return err
+	}
+	zipSuffix := "_" + strconv.FormatInt(lastUpdate, 10)
 	xrayTempDir, err := getXrayTempDir()
 	if err != nil {
 		return err
@@ -42,7 +39,7 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 			return err
 		}
 	} else {
-		log.Info("There aren't new vulnerabilities.")
+		log.Info("There are no new vulnerabilities.")
 	}
 
 	if len(components) > 0 {
@@ -52,17 +49,25 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 			return err
 		}
 	} else {
-		log.Info("There aren't new components.")
+		log.Info("There are no new components.")
 	}
 
 	return nil
 }
 
-func buildUpdatesUrl(flags *OfflineUpdatesFlags) (err error) {
+func getUpdatesBaseUrl() string {
+	url := os.Getenv("JFROG_CLI_JXRAY_UPDATES_API_URL")
+	if url != "" {
+		return url
+	}
+	return "https://jxray.jfrog.io/api/v1/updates/onboarding"
+}
+
+func buildUpdatesUrl(flags *OfflineUpdatesFlags) (string, error) {
 	var queryParams string
 	if flags.From > 0 && flags.To > 0 {
-		if err = validateDates(flags.From, flags.To); err != nil {
-			return
+		if err := validateDates(flags.From, flags.To); err != nil {
+			return "", err
 		}
 		queryParams += fmt.Sprintf("from=%v&to=%v", flags.From, flags.To)
 	}
@@ -72,25 +77,23 @@ func buildUpdatesUrl(flags *OfflineUpdatesFlags) (err error) {
 		}
 		queryParams += fmt.Sprintf("version=%v", flags.Version)
 	}
+	url := getUpdatesBaseUrl()
 	if queryParams != "" {
-		updatesUrl += "?" + queryParams
+		url += "?" + queryParams
 	}
-
-	return
+	return url, nil
 }
 
-func validateDates(from, to int64) (err error) {
+func validateDates(from, to int64) error {
 	if from < 0 || to < 0 {
-		err = errors.New("Invalid dates")
-		errorutils.CheckError(err)
-		return
+		err := errors.New("Invalid dates")
+		return errorutils.CheckError(err)
 	}
 	if from > to {
-		err = errors.New("Invalid dates range.")
-		errorutils.CheckError(err)
-		return
+		err := errors.New("Invalid dates range.")
+		return errorutils.CheckError(err)
 	}
-	return
+	return nil
 }
 
 func getXrayTempDir() (string, error) {
@@ -113,8 +116,8 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 			err = cerr
 		}
 	}()
-	for i, url := range urlsList {
-		fileName := filesPrefix + strconv.Itoa(i) + ".json"
+	for _, url := range urlsList {
+		fileName := fileutils.GetFileNameFromUrl(url)
 		log.Info("Downloading", url)
 		_, err := httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
 		if err != nil {
@@ -130,7 +133,7 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 	return nil
 }
 
-func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error) {
+func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilities []string, components []string, lastUpdate int64, err error) {
 	log.Info("Getting updates...")
 	headers := make(map[string]string)
 	headers["X-Xray-License"] = flags.License
@@ -140,21 +143,20 @@ func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error)
 	resp, body, _, err := httputils.SendGet(updatesUrl, false, httpClientDetails)
 	if err != nil {
 		errorutils.CheckError(err)
-		return nil, nil, 0, err
+		return
 	}
 	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
 		errorutils.CheckError(errors.New("Response: " + err.Error()))
-		return nil, nil, 0, err
+		return
 	}
 
 	var urls FilesList
 	err = json.Unmarshal(body, &urls)
 	if err != nil {
 		err = errorutils.CheckError(errors.New("Failed parsing json response: " + string(body)))
-		return nil, nil, 0, err
+		return
 	}
 
-	var vulnerabilities, components []string
 	for _, v := range urls.Urls {
 		if strings.Contains(v, VULNERABILITY) {
 			vulnerabilities = append(vulnerabilities, v)
@@ -162,7 +164,8 @@ func getFilesList(flags *OfflineUpdatesFlags) ([]string, []string, int64, error)
 			components = append(components, v)
 		}
 	}
-	return vulnerabilities, components, urls.Last_update, nil
+	lastUpdate = urls.Last_update
+	return
 }
 
 type OfflineUpdatesFlags struct {
