@@ -8,6 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"errors"
+	"os"
 )
 
 const BUILD_CONF_VERSION = 1
@@ -32,23 +33,36 @@ func (server *ServerConfig) Set(config *viper.Viper) error {
 	return nil
 }
 
-func VerifyConfigOverride(configFilePath string) bool {
+func VerifyConfigFile(configFilePath string) error {
 	exists, err := fileutils.IsFileExists(configFilePath)
 	if err != nil {
-		return false
+		return err
 	}
-	if !exists {
-		return true
+	if exists {
+		yesNoPrompt := &prompt.YesNo{
+			Msg:     "Configuration file already exists at " + configFilePath + ". Override it (y/n) [${default}]? ",
+			Default: "n",
+			Label:   "override",
+		}
+		err = yesNoPrompt.Read()
+		if err != nil {
+			return err
+		}
+
+		if !yesNoPrompt.Result.GetBool("override") {
+			return errorutils.CheckError(errors.New("Operation canceled."))
+		}
+		return nil
 	}
-	yesNoPrompt := &prompt.YesNo{
-		Msg:     "Configuration file already exists at " + configFilePath + ". Override it (y/n) [${default}]? ",
-		Default: "n",
-		Label:   "answer",
+
+	// Create config file to make sure the path is valid
+	f, err := os.OpenFile(configFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
-	if yesNoPrompt.Read() != nil {
-		return false
-	}
-	return yesNoPrompt.Result.GetBool("answer")
+	f.Close()
+	// The file will be written at the end of successful configuration command.
+	return errorutils.CheckError(os.Remove(configFilePath))
 }
 
 func ReadArtifactoryServer(msg string) (*viper.Viper, error) {
@@ -90,10 +104,12 @@ func ReadRepo(msg string, repos []string) (string, error) {
 	if len(repos) > 0 {
 		repo.ConfirmationMsg = "No such repository, continue anyway (y/n) [${default}]? "
 		repo.ConfirmationDefault = "n"
+	} else {
+		repo.ErrMsg = "Repository name cannot be empty."
 	}
 	err := repo.Read()
 	if err != nil {
-		return "", errorutils.CheckError(err)
+		return "", err
 	}
 	return repo.GetResults().GetString(utils.REPO), nil
 }

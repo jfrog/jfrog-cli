@@ -12,9 +12,8 @@ import (
 )
 
 func CreateGradleBuildConfig(configFilePath string) error {
-	if !prompt.VerifyConfigOverride(configFilePath) {
-		log.Info("Operation canceled.")
-		return nil
+	if err := prompt.VerifyConfigFile(configFilePath); err != nil {
+		return err
 	}
 
 	configResult := &GradleBuildConfig{}
@@ -166,6 +165,6 @@ type GradleDeployer struct {
 }
 
 type GradleRepo struct {
-	Repo   string       `yaml:"repo,omitempty"`
+	Repo   string              `yaml:"repo,omitempty"`
 	Server prompt.ServerConfig `yaml:"server,inline"`
 }

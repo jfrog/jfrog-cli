@@ -111,13 +111,13 @@ func (autocomplete *Autocomplete) Read() error {
 	for {
 		line, err := l.Readline()
 		line = strings.TrimSpace(line)
-		if err != nil {
-			return errorutils.CheckError(err)
+		if errorutils.CheckError(err) != nil {
+			return err
 		}
 		if line == "" && autocomplete.Default != "" {
 			line = autocomplete.Default
 		}
-		if len(autocomplete.Options) == 0 {
+		if line != "" && len(autocomplete.Options) == 0 {
 			autocomplete.set(autocomplete.Label, line)
 			return nil
 		}
@@ -156,8 +156,8 @@ func (simple *Simple) Read() error {
 	defer l.Close()
 
 	line, err := l.Readline()
-	if err != nil {
-		return errorutils.CheckError(err)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
 
 	line = strings.TrimSpace(line)
@@ -175,7 +175,7 @@ func (simple *Simple) GetResults() *viper.Viper {
 
 func (yesNo *YesNo) Read() error {
 	result, err := readYesNoQuestion(yesNo.Msg, yesNo.Default)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 
@@ -209,7 +209,7 @@ func (yesNo *YesNo) GetResults() *viper.Viper {
 func (array *Array) Read() error {
 	for _, v := range array.Prompts {
 		err := v.Read()
-		if err != nil {
+		if errorutils.CheckError(err) != nil {
 			return err
 		}
 	}
@@ -244,10 +244,10 @@ func readYesNoQuestion(prompt, defaultVal string) (bool, error) {
 
 	for {
 		line, err := l.Readline()
-		line = strings.TrimSpace(line)
-		if err != nil {
-			return false, errorutils.CheckError(err)
+		if errorutils.CheckError(err) != nil {
+			return false, err
 		}
+		line = strings.TrimSpace(line)
 		if line == "" {
 			line = defaultVal
 		}
@@ -274,7 +274,7 @@ func createAutocompletePrompt(msg string, completer readline.AutoCompleter, mask
 
 func parseYesNo(s string) (bool, error) {
 	matchedYes, err := regexp.MatchString("^yes$|^y$", strings.ToLower(s))
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return matchedYes, err
 	}
 	if matchedYes {
@@ -282,7 +282,7 @@ func parseYesNo(s string) (bool, error) {
 	}
 
 	matchedNo, err := regexp.MatchString("^no$|^n$", strings.ToLower(s))
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return matchedNo, err
 	}
 	if matchedNo {

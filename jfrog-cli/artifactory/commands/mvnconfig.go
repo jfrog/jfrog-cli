@@ -10,9 +10,8 @@ import (
 )
 
 func CreateMvnBuildConfig(configFilePath string) error {
-	if !prompt.VerifyConfigOverride(configFilePath) {
-		log.Info("Operation canceled.")
-		return nil
+	if err := prompt.VerifyConfigFile(configFilePath); err != nil {
+		return err
 	}
 
 	configResult := &MavenBuildConfig{}
