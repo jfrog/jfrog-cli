@@ -80,7 +80,7 @@ func createGenericBuildInfo(buildName, buildNumber string, flags *buildinfo.Flag
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	artifactsSet, dependenciesSet, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags), createExcludeFilter(flags))
+	artifactsSet, dependenciesSet, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags.EnvInclude), createExcludeFilter(flags.EnvExclude))
 	if err != nil {
 		return nil, err
 	}
@@ -156,13 +156,13 @@ func createDefaultModule(buildName string) *buildinfo.Module {
 
 type filterFunc func(map[string]string) (map[string]string, error)
 
-func createIncludeFilter(flags *buildinfo.Flags) filterFunc {
-	includePatterns := strings.Split(flags.EnvInclude, ";")
+func createIncludeFilter(pattern string) filterFunc {
+	includePattern := strings.Split(pattern, ";")
 	return func(tempMap map[string]string) (map[string]string, error) {
 		result := make(map[string]string)
 		for k, v := range tempMap {
-			for _, filterPattern := range includePatterns {
-				bool, err := filepath.Match(filterPattern, k)
+			for _, filterPattern := range includePattern {
+				bool, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}
@@ -176,14 +176,14 @@ func createIncludeFilter(flags *buildinfo.Flags) filterFunc {
 	}
 }
 
-func createExcludeFilter(flags *buildinfo.Flags) filterFunc {
-	excludePattern := strings.Split(flags.EnvExclude, ";")
+func createExcludeFilter(pattern string) filterFunc {
+	excludePattern := strings.Split(pattern, ";")
 	return func(tempMap map[string]string) (map[string]string, error) {
 		result := make(map[string]string)
 		for k, v := range tempMap {
 			include := true
 			for _, filterPattern := range excludePattern {
-				bool, err := filepath.Match(filterPattern, k)
+				bool, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}

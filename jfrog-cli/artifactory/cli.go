@@ -653,7 +653,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "env-exclude",
-			Usage: "[Default: *password*;*secret*;*key*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be eccluded.",
+			Usage: "[Default: *password*;*secret*;*key*;*token*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be excluded.",
 		},
 	}...)
 }
@@ -1438,7 +1438,7 @@ func createBuildInfoFlags(c *cli.Context) (flags *buildinfo.Flags, artDetails *c
 		flags.EnvInclude = "*"
 	}
 	if len(flags.EnvExclude) == 0 {
-		flags.EnvExclude = "*password*;*secret*;*key*"
+		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return
 }
