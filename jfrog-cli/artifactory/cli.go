@@ -929,7 +929,7 @@ func gradleCmd(c *cli.Context) {
 
 func createGradleConfigCmd(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Config file path argument is missing.", c)
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	err := commands.CreateGradleBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
@@ -937,7 +937,7 @@ func createGradleConfigCmd(c *cli.Context) {
 
 func createMvnConfigCmd(c *cli.Context) {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Config file path argument is missing.", c)
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	err := commands.CreateMvnBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)

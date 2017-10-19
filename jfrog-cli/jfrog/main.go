@@ -76,7 +76,8 @@ func main() {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
-	app.Run(args)
+	err := app.Run(args)
+	cliutils.ExitOnErr(err)
 }
 
 func getCommands() []cli.Command {
