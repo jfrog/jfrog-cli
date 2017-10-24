@@ -165,6 +165,10 @@ func (f *File) ToArtifatorySetPropsParams() (*utils.ArtifactoryCommonParams, err
 		return nil, err
 	}
 	params.Recursive = recursive
+	params.IncludeDirs, err = cliutils.StringToBool(f.IncludeDirs, false)
+	if err != nil {
+		return nil, err
+	}
 	return params, nil
 }
 
