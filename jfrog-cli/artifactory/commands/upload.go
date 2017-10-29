@@ -14,11 +14,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *utils.SpecFiles, flags *UploadConfiguration) (totalUploaded, totalFailed int, err error) {
+func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUploaded, totalFailed int, err error) {
 	certPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
 		return 0, 0, err

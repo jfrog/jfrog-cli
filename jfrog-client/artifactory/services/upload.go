@@ -293,7 +293,7 @@ func prepareExcludePathPattern(excludePatterns []string, isRegex, isRecursive bo
 			if len(singleExcludePattern) > 0 {
 				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
 				singleExcludePattern = cliutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
-				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeperator()){
+				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeparator()){
 					singleExcludePattern += "*"
 				}
 				excludePathPattern += fmt.Sprintf(`(%s)|`, singleExcludePattern)
@@ -348,7 +348,7 @@ func createUploadTask(taskData *uploadTaskData) error {
 	}
 	uploadData := UploadData{Artifact: artifact, Props: props}
 	if taskData.isDir && taskData.uploadParams.IsIncludeDirs() && !taskData.isSymlinkFlow {
-		if taskData.path != "." && (taskData.index == 0 || !utils.IsSubPath(taskData.paths, taskData.index, fileutils.GetFileSeperator())) {
+		if taskData.path != "." && (taskData.index == 0 || !utils.IsSubPath(taskData.paths, taskData.index, fileutils.GetFileSeparator())) {
 			uploadData.IsDir = true
 		} else {
 			return nil

@@ -1,51 +1,52 @@
 package tests
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"path/filepath"
 )
 
 const (
-	Repo1                          = "jfrog-cli-tests-repo1"
-	Repo2                          = "jfrog-cli-tests-repo2"
-	JcenterRemoteRepo              = "jfrog-cli-jcenter-remote"
-	Lfs_Repo                       = "jfrog-cli-lfs-repo"
-	Out                            = "out"
-	DownloadSpec                   = "download_spec.json"
-	BuildDownloadSpec              = "build_download_spec.json"
-	BuildDownloadSpecNoBuildNumber = "build_download_spec_no_build_number.json"
-	SimpleUploadSpec               = "simple_upload_spec.json"
-	UploadEmptyDirs                = "upload_empty_dir_spec.json"
-	DownloadEmptyDirs              = "download_empty_dir_spec.json"
-	SplitUploadSpecA               = "split_upload_spec_a.json"
-	SplitUploadSpecB               = "split_upload_spec_b.json"
-	UploadSpec                     = "upload_spec.json"
-	DeleteSpec                     = "delete_spec.json"
-	DeleteComplexSpec              = "delete_complex_spec.json"
-	MoveCopyDeleteSpec             = "move_copy_delete_spec.json"
-	PrepareCopy                    = "prepare_copy.json"
-	Search                         = "search.json"
-	SearchAllRepo1                 = "search_all_repo1.json"
-	SearchRepo2                    = "search_repo2.json"
-	SearchTxt                      = "search_txt.json"
-	SearchMoveDeleteRepoSpec       = "search_move_delete_repo_spec.json"
-	CopyByBuildSpec                = "move_copy_delete_by_build_spec.json"
-	CpMvDlByBuildAssertSpec        = "copy_by_build_assert_spec.json"
-	GitLfsAssertSpec               = "git_lfs_assert_spec.json"
-	MoveRepositoryConfig           = "move_repository_config.json"
-	SpecsTestRepositoryConfig      = "specs_test_repository_config.json"
-	GitLfsTestRepositoryConfig     = "git_lfs_test_repository_config.json"
-	JcenterRemoteRepositoryConfig  = "jcenter_remote_repository_config.json"
-	RepoDetailsUrl                 = "api/repositories/"
-	CopyItemsSpec                  = "copy_items_spec.json"
-	MavenServerIDConfig            = "maven_server_id.yaml"
-	MavenUseramePasswordTemplate   = "maven_user_pass_template.yaml"
-	GradleServerIDConfig           = "gradle_server_id.yaml"
-	GradleUseramePasswordTemplate  = "gradle_user_pass_template.yaml"
-	DownloadSpecExclude            = "download_spec_exclude.json"
-	MoveCopySpecExclude            = "move_copy_spec_exclude.json"
-	DelSpecExclude                 = "delete_spec_exclude.json"
-	UploadSpecExclude              = "upload_spec_exclude.json"
-	UploadSpecExcludeRegex         = "upload_spec_exclude_regex.json"
+	Repo1                                  = "jfrog-cli-tests-repo1"
+	Repo2                                  = "jfrog-cli-tests-repo2"
+	JcenterRemoteRepo                      = "jfrog-cli-jcenter-remote"
+	Lfs_Repo                               = "jfrog-cli-lfs-repo"
+	Out                                    = "out"
+	DownloadSpec                           = "download_spec.json"
+	BuildDownloadSpec                      = "build_download_spec.json"
+	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
+	SimpleUploadSpec                       = "simple_upload_spec.json"
+	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
+	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
+	SplitUploadSpecA                       = "split_upload_spec_a.json"
+	SplitUploadSpecB                       = "split_upload_spec_b.json"
+	UploadSpec                             = "upload_spec.json"
+	DeleteSpec                             = "delete_spec.json"
+	DeleteComplexSpec                      = "delete_complex_spec.json"
+	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
+	PrepareCopy                            = "prepare_copy.json"
+	Search                                 = "search.json"
+	SearchAllRepo1                         = "search_all_repo1.json"
+	SearchRepo2                            = "search_repo2.json"
+	SearchTxt                              = "search_txt.json"
+	SearchMoveDeleteRepoSpec               = "search_move_delete_repo_spec.json"
+	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
+	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
+	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
+	MoveRepositoryConfig                   = "move_repository_config.json"
+	SpecsTestRepositoryConfig              = "specs_test_repository_config.json"
+	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
+	JcenterRemoteRepositoryConfig          = "jcenter_remote_repository_config.json"
+	RepoDetailsUrl                         = "api/repositories/"
+	CopyItemsSpec                          = "copy_items_spec.json"
+	MavenServerIDConfig                    = "maven_server_id.yaml"
+	MavenUseramePasswordTemplate           = "maven_user_pass_template.yaml"
+	GradleServerIDConfig                   = "gradle_server_id.yaml"
+	GradleUseramePasswordTemplate          = "gradle_user_pass_template.yaml"
+	DownloadSpecExclude                    = "download_spec_exclude.json"
+	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
+	DelSpecExclude                         = "delete_spec_exclude.json"
+	UploadSpecExclude                      = "upload_spec_exclude.json"
+	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
+	BuildDownloadSpecNoBuildNumberWithSort = "build_download_spec_no_build_number_with_sort.json"
 )
 
 var TxtUploadExpectedRepo1 = []string{
@@ -267,85 +268,85 @@ var BuildDeleteExpected = []string{
 }
 
 var MassiveDownload = []string{
-	Out + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "3_only_flat_recursive" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "3_only_flat_recursive" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "3_only_flat_recursive" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "c2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_flat" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "defaults_recursive_nonflat" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_nonrecursive" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_nonrecursive" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_nonrecursive" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "c2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "flat_recursive" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_nonrecursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_nonrecursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_nonrecursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "nonflat_recursive" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "properties" + fileutils.GetFileSeperator() + "downloadTestResources" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "c3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "rename" + fileutils.GetFileSeperator() + "a1.out",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_placeholder" + fileutils.GetFileSeperator() + "a",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_placeholder" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "a1.in",
+	filepath.Join(Out, "a1.in"),
+	filepath.Join(Out, "a2.in"),
+	filepath.Join(Out, "a3.in"),
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "3_only_flat_recursive", "a3.in"),
+	filepath.Join(Out, "download", "3_only_flat_recursive", "b3.in"),
+	filepath.Join(Out, "download", "3_only_flat_recursive", "c3.in"),
+	filepath.Join(Out, "download", "aql", "downloadTestResources", "a"),
+	filepath.Join(Out, "download", "aql", "downloadTestResources", "a", "a1.in"),
+	filepath.Join(Out, "download", "aql_flat", "a1.in"),
+	filepath.Join(Out, "download", "aql_flat", "a2.in"),
+	filepath.Join(Out, "download", "aql_flat", "a3.in"),
+	filepath.Join(Out, "download", "aql_flat", "b1.in"),
+	filepath.Join(Out, "download", "aql_flat", "b2.in"),
+	filepath.Join(Out, "download", "aql_flat", "b3.in"),
+	filepath.Join(Out, "download", "aql_flat", "c1.in"),
+	filepath.Join(Out, "download", "aql_flat", "c2.in"),
+	filepath.Join(Out, "download", "aql_flat", "c3.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a1.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a2.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a3.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b1.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b2.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b3.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c1.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c2.in"),
+	filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c3.in"),
+	filepath.Join(Out, "download", "flat_nonrecursive", "a1.in"),
+	filepath.Join(Out, "download", "flat_nonrecursive", "a2.in"),
+	filepath.Join(Out, "download", "flat_nonrecursive", "a3.in"),
+	filepath.Join(Out, "download", "flat_recursive", "a1.in"),
+	filepath.Join(Out, "download", "flat_recursive", "a2.in"),
+	filepath.Join(Out, "download", "flat_recursive", "a3.in"),
+	filepath.Join(Out, "download", "flat_recursive", "b1.in"),
+	filepath.Join(Out, "download", "flat_recursive", "b2.in"),
+	filepath.Join(Out, "download", "flat_recursive", "b3.in"),
+	filepath.Join(Out, "download", "flat_recursive", "c1.in"),
+	filepath.Join(Out, "download", "flat_recursive", "c2.in"),
+	filepath.Join(Out, "download", "flat_recursive", "c3.in"),
+	filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a1.in"),
+	filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a2.in"),
+	filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a3.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a1.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a2.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a3.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b1.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b2.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b3.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c1.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c2.in"),
+	filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c3.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a1.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a2.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a3.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b1.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b2.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b3.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c1.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c2.in"),
+	filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c3.in"),
+	filepath.Join(Out, "download", "rename", "a1.out"),
+	filepath.Join(Out, "download", "simple", "a1.in"),
+	filepath.Join(Out, "download", "simple_placeholder", "a"),
+	filepath.Join(Out, "download", "simple_placeholder", "a", "a1.in"),
 }
 
 var BuildDownload = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a3.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "aql_by_build"),
+	filepath.Join(Out, "download", "aql_by_build", "data"),
+	filepath.Join(Out, "download", "aql_by_build", "data", "a1.in"),
+	filepath.Join(Out, "download", "aql_by_build", "data", "a2.in"),
+	filepath.Join(Out, "download", "aql_by_build", "data", "a3.in"),
 }
 
 var BuildDownloadDoesntExist = []string{
@@ -354,52 +355,52 @@ var BuildDownloadDoesntExist = []string{
 
 var BuildDownloadByShaAndBuild = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a10.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "aql_by_build"),
+	filepath.Join(Out, "download", "aql_by_build", "data"),
+	filepath.Join(Out, "download", "aql_by_build", "data", "a10.in"),
 }
 
 var BuildDownloadByShaAndBuildName = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a11.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "aql_by_build"),
+	filepath.Join(Out, "download", "aql_by_build", "data"),
+	filepath.Join(Out, "download", "aql_by_build", "data", "a11.in"),
 }
 
 var BuildSimpleDownload = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "simple_by_build" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "simple_by_build"),
+	filepath.Join(Out, "download", "simple_by_build", "data"),
+	filepath.Join(Out, "download", "simple_by_build", "data", "b1.in"),
 }
 
 var BuildExcludeDownload = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c3.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "aql_by_artifacts"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "a3.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b1.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b2.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b3.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "c1.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "c3.in"),
 }
 
 var BuildExcludeDownloadBySpec = []string{
 	Out,
-	Out + fileutils.GetFileSeperator() + "download",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "a2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b2.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "b3.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c1.in",
-	Out + fileutils.GetFileSeperator() + "download" + fileutils.GetFileSeperator() + "aql_by_artifacts" + fileutils.GetFileSeperator() + "data" + fileutils.GetFileSeperator() + "c3.in",
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "aql_by_artifacts"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "a2.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b1.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b2.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "b3.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "c1.in"),
+	filepath.Join(Out, "download", "aql_by_artifacts", "data", "c3.in"),
 }
 
 var MassiveUpload = []string{
@@ -575,4 +576,25 @@ var MavenDeployedArtifacts = []string{
 
 var GradleDeployedArtifacts = []string{
 	Repo1 + "/minimal-example/1.0/minimal-example-1.0.jar",
+}
+
+var SortAndLimit = []string{
+	Out,
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "sort_limit"),
+	filepath.Join(Out, "download", "sort_limit", "data"),
+	filepath.Join(Out, "download", "sort_limit", "data", "a1.in"),
+	filepath.Join(Out, "download", "sort_limit", "data", "b"),
+	filepath.Join(Out, "download", "sort_limit", "data", "b", "c"),
+	filepath.Join(Out, "download", "sort_limit", "data", "b", "c", "c1.in"),
+	filepath.Join(Out, "download", "sort_limit", "data", "b", "c", "c2.in"),
+	filepath.Join(Out, "download", "sort_limit", "data", "b", "c", "c3.in"),
+}
+
+var BuildDownloadByShaAndBuildNameWithSort = []string{
+	Out,
+	filepath.Join(Out, "download"),
+	filepath.Join(Out, "download", "sort_limit_by_build"),
+	filepath.Join(Out, "download", "sort_limit_by_build", "data"),
+	filepath.Join(Out, "download", "sort_limit_by_build", "data", "a11.in"),
 }

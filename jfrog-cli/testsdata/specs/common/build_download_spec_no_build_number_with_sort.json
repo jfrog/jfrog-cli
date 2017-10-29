@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "aql": {
+        "items.find": {
+          "repo": "jfrog-cli-tests-repo1",
+          "$or": [
+            {
+              "$and": [
+                {
+                  "path": {
+                    "$match": "."
+                  },
+                  "name": {
+                    "$match": "*"
+                  }
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "path": {
+                    "$match": "*"
+                  },
+                  "name": {
+                    "$match": "*"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "target": "out/download/sort_limit_by_build/",
+      "build": "cli-test-build2"
+    }
+  ]
+}

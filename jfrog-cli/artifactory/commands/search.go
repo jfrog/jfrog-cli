@@ -5,13 +5,14 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 type SearchResult struct {
 	Path string `json:"path,omitempty"`
 }
 
-func Search(searchSpec *utils.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
+func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return nil, err

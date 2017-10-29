@@ -223,10 +223,10 @@ func TestBintrayFileDownloads(t *testing.T) {
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a1.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "x.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "zc.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "fullpatha1.in",
+		filepath.Join(tests.Out, "bintray", "a1.in"),
+		filepath.Join(tests.Out, "bintray", "x.in"),
+		filepath.Join(tests.Out, "bintray", "zc.in"),
+		filepath.Join(tests.Out, "bintray", "a", "fullpatha1.in"),
 	}
 	tests.IsExistLocally(expected, paths, t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -246,15 +246,15 @@ func TestBintrayVersionDownloads(t *testing.T) {
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
 	expected := []string{
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a1.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a2.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "a3.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b1.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b2.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "b3.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c1.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c2.in",
-		tests.Out + fileutils.GetFileSeperator() + "bintray" + fileutils.GetFileSeperator() + "c3.in",
+		filepath.Join(tests.Out, "bintray", "a1.in"),
+		filepath.Join(tests.Out, "bintray", "a2.in"),
+		filepath.Join(tests.Out, "bintray", "a3.in"),
+		filepath.Join(tests.Out, "bintray", "b1.in"),
+		filepath.Join(tests.Out, "bintray", "b2.in"),
+		filepath.Join(tests.Out, "bintray", "b3.in"),
+		filepath.Join(tests.Out, "bintray", "c1.in"),
+		filepath.Join(tests.Out, "bintray", "c2.in"),
+		filepath.Join(tests.Out, "bintray", "c3.in"),
 	}
 	tests.IsExistLocally(expected, paths, t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")

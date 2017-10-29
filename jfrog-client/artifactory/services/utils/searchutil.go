@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"encoding/json"
 	"strings"
-	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"errors"
 	"sort"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"encoding/json"
+	"strconv"
 )
 
 type SearchParams interface {
@@ -48,7 +48,7 @@ func SearchBySpecFiles(searchParams SearchParams, flags CommonConf) ([]ResultIte
 }
 
 func AqlSearchDefaultReturnFields(specFile *ArtifactoryCommonParams, flags CommonConf) ([]ResultItem, error) {
-	query, err := createAqlBodyForItem(specFile)
+	query, err := createAqlBodyForSpec(specFile)
 	if err != nil {
 		return nil, err
 	}
@@ -57,15 +57,19 @@ func AqlSearchDefaultReturnFields(specFile *ArtifactoryCommonParams, flags Commo
 }
 
 func AqlSearchBySpec(specFile *ArtifactoryCommonParams, flags CommonConf) ([]ResultItem, error) {
-	aqlBody := specFile.Aql.ItemsFind
-	query := "items.find(" + aqlBody + ").include(" + strings.Join(GetDefaultQueryReturnFields(), ",") + ")"
+	query := buildQueryFromSpecFile(specFile)
 	results, err := aqlSearch(query, flags)
 	if err != nil {
 		return nil, err
 	}
-	buildIdentifier := specFile.Build
-	if buildIdentifier != "" && len(results) > 0 {
-		results, err = filterSearchByBuild(buildIdentifier, results, flags)
+	if specFile.Build != "" && len(results) > 0 {
+		results, err = filterSearchByBuild(specFile, results, flags)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if specIncludesSortOrLimit(specFile) {
+		err = searchAndAddPropsToAqlResult(results, specFile.Aql.ItemsFind, "symlink.dest", "*", flags)
 		if err != nil {
 			return nil, err
 		}
@@ -99,10 +103,6 @@ func execAqlSearch(aqlQuery string, flags CommonConf) ([]byte, error) {
 
 	log.Debug("Artifactory response: ", resp.Status)
 	return body, err
-}
-
-func GetDefaultQueryReturnFields() []string {
-	return []string{"\"name\"", "\"repo\"", "\"path\"", "\"actual_md5\"", "\"actual_sha1\"", "\"size\"", "\"property\"", "\"type\""}
 }
 
 func LogSearchResults(numOfArtifacts int) {

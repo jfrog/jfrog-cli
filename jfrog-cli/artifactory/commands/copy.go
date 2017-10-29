@@ -4,10 +4,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 // Copies the artifacts using the specified move pattern.
-func Copy(copySpec *utils.SpecFiles, artDetails *config.ArtifactoryDetails) error {
+func Copy(copySpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) error {
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return err

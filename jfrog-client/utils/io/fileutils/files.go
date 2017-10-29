@@ -20,7 +20,7 @@ const SYMLINK_FILE_CONTENT = ""
 
 var tempDirPath string
 
-func GetFileSeperator() string {
+func GetFileSeparator() string {
 	if runtime.GOOS == "windows" {
 		return "\\"
 	}
@@ -125,7 +125,7 @@ func ListFilesRecursiveWalkIntoDirSymlink(path string, walkIntoDirSymlink bool) 
 
 // Return the list of files and directories in the specified path
 func ListFiles(path string, includeDirs bool) ([]string, error) {
-	sep := GetFileSeperator()
+	sep := GetFileSeparator()
 	if !strings.HasSuffix(path, sep) {
 		path += sep
 	}

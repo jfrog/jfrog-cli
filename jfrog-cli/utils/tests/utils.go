@@ -101,15 +101,15 @@ func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult,
 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
-	fileSepatatr := fileutils.GetFileSeperator()
-	index := strings.LastIndex(dir, fileSepatatr)
+	fileSeparator := fileutils.GetFileSeparator()
+	index := strings.LastIndex(dir, fileSeparator)
 	dir = dir[:index]
-	return dir + fileutils.GetFileSeperator() + "testsdata" + fileutils.GetFileSeperator()
+	return dir + fileutils.GetFileSeparator() + "testsdata" + fileutils.GetFileSeparator()
 }
 
 func getFileByOs(fileName string) string {
 	var currentOs string;
-	fileSepatatr := fileutils.GetFileSeperator()
+	fileSepatatr := fileutils.GetFileSeparator()
 	if runtime.GOOS == "windows" {
 		currentOs = "win"
 	} else {
@@ -119,7 +119,7 @@ func getFileByOs(fileName string) string {
 }
 
 func GetFilePath(fileName string) string {
-	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeperator() + fileName
+	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeparator() + fileName
 	isExists, _ := fileutils.IsFileExists(filePath)
 	if isExists {
 		return filePath

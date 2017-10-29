@@ -22,6 +22,9 @@ type ArtifactoryCommonParams struct {
 	ExcludePatterns []string
 	Target          string
 	Props           string
+	SortOrder       string
+	SortBy          []string
+	Limit           int
 	Build           string
 	Recursive       bool
 	IncludeDirs     bool
@@ -36,6 +39,9 @@ type FileGetter interface {
 	GetTarget() string
 	SetTarget(target string)
 	GetProps() string
+	GetSortOrder() string
+	GetSortBy() []string
+	GetLimit() int
 	GetBuild() string
 	GetSpecType() (specType SpecType)
 	IsRegexp() bool
@@ -85,6 +91,18 @@ func (params ArtifactoryCommonParams) IsIncludeDirs() bool {
 
 func (params *ArtifactoryCommonParams) SetProps(props string) {
 	params.Props = props
+}
+
+func (params *ArtifactoryCommonParams) GetSortBy() []string {
+	return params.SortBy
+}
+
+func (params *ArtifactoryCommonParams) GetSortOrder() string {
+	return params.SortOrder
+}
+
+func (params *ArtifactoryCommonParams) GetLimit() int {
+	return params.Limit
 }
 
 func (params *ArtifactoryCommonParams) GetExcludePatterns() []string {

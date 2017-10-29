@@ -3,11 +3,13 @@ package utils
 import (
 	"testing"
 	"path/filepath"
+	"strings"
+	"strconv"
 )
 
 func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local", Target: "", Props: "", Build: "", Recursive: true, Regexp: false, IncludeDirs: false}
-	aqlResult, _ := createAqlBodyForItem(&params)
+	aqlResult, _ := createAqlBodyForSpec(&params)
 	expected := `{"repo": "repo-local","$or": [{"$and":[{"path": {"$match": "*"},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
@@ -17,7 +19,7 @@ func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
 
 func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local2/a*b*c/dd/", Target: "", Props: "", Build: "", Recursive: true, Regexp: false, IncludeDirs: false}
-	aqlResult, _ := createAqlBodyForItem(&params)
+	aqlResult, _ := createAqlBodyForSpec(&params)
 	expected := `{"repo": "repo-local2","path": {"$ne": "."},"$or": [{"$and":[{"path": {"$match": "a*b*c/dd"},"name": {"$match": "*"}}]},{"$and":[{"path": {"$match": "a*b*c/dd/*"},"name": {"$match": "*"}}]}]}`
 	if aqlResult != expected {
 		t.Error("Unexpected download AQL query built. \nExpected: " + expected + " \nGot:      " + aqlResult)
@@ -26,7 +28,7 @@ func TestBuildAqlSearchQueryRecursiveWildcard(t *testing.T) {
 
 func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 	params := ArtifactoryCommonParams{Pattern: "repo-local", Target: "", Props: "", Build: "", Recursive: false, Regexp: false, IncludeDirs: false}
-	aqlResult, _ := createAqlBodyForItem(&params)
+	aqlResult, _ := createAqlBodyForSpec(&params)
 	expected := `{"repo": "repo-local","$or": [{"$and":[{"path": {"$match": "."},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
@@ -36,7 +38,7 @@ func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 
 func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
 	specFile := ArtifactoryCommonParams{Pattern:"repo-local2/a*b*c/dd/", Target:"", Props:"", Build:"", Recursive:false, Regexp:false, IncludeDirs:false}
-	aqlResult, _ := createAqlBodyForItem(&specFile)
+	aqlResult, _ := createAqlBodyForSpec(&specFile)
 	expected := `{"repo": "repo-local2","path": {"$ne": "."},"$or": [{"$and":[{"path": {"$match": "a*b*c/dd"},"name": {"$match": "*"}}]}]}`
 
 	if aqlResult != expected {
@@ -92,5 +94,75 @@ func validatePathPairs(actual, expected []PathFilePair, pattern string, t *testi
 		if found == false {
 			t.Error("Wrong path pairs for pattern: " + pattern + " , missing ", pair)
 		}
+	}
+}
+
+func TestArtifactoryCommonParams(t *testing.T) {
+	artifactoryParams := ArtifactoryCommonParams{}
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), false, t)
+
+	artifactoryParams.SortBy = []string{"Vava", "Bubu"}
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), true, t)
+
+	artifactoryParams.SortBy = nil
+	artifactoryParams.Limit = 0
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), false, t)
+
+	artifactoryParams.Limit = -3
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), false, t)
+
+	artifactoryParams.Limit = 3
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), true, t)
+
+	artifactoryParams.SortBy = []string{"Vava", "Bubu"}
+	assertIsSortLimitSpecBool(specIncludesSortOrLimit(&artifactoryParams), true, t)
+}
+
+func assertIsSortLimitSpecBool(actual, expected bool, t *testing.T) {
+	if actual != expected {
+		t.Error("The function specIncludesSortOrLimit() expected to return " + strconv.FormatBool(expected) + " but returned " + strconv.FormatBool(actual) + ".")
+	}
+}
+
+func TestGetQueryReturnFields(t *testing.T) {
+	artifactoryParams := ArtifactoryCommonParams{}
+	minimalFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type"}
+
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "property"), t)
+
+	artifactoryParams.SortBy = []string{"Vava"}
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "Vava"), t)
+
+	artifactoryParams.SortBy = []string{"Vava", "Bubu"}
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "Vava", "Bubu"), t)
+}
+
+func assertEqualFieldsList(actual, expected []string, t *testing.T) {
+	if len(actual) != len(expected) {
+		t.Error("The function getQueryReturnFields() expected to return the array:\n" + strings.Join(expected[:],",") + ".\nbut returned:\n" + strings.Join(actual[:],",") + ".")
+	}
+	for _, v := range actual {
+		isFound := false
+		for _, t := range expected {
+			if v == t {
+				isFound = true
+				break
+			}
+		}
+		if !isFound {
+			t.Error("The function getQueryReturnFields() expected to return the array:\n'" + strings.Join(expected[:],",") + "'.\nbut returned:\n'" + strings.Join(actual[:],",") + "'.\n" +
+				"The field " + v + "is missing!")
+		}
+	}
+}
+
+func TestBuildSortBody(t *testing.T) {
+	assertSortBody(buildSortQueryPart([]string{"bubu"}, ""), `"$asc":["bubu"]`, t)
+	assertSortBody(buildSortQueryPart([]string{"bubu", "kuku"}, ""), `"$asc":["bubu","kuku"]`, t)
+}
+
+func assertSortBody(actual, expected string, t *testing.T) {
+	if actual != expected {
+		t.Error("The function buildSortQueryPart expected to return the string:\n'" + expected + "'.\nbut returned:\n'" + actual + "'.")
 	}
 }

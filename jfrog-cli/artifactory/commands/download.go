@@ -10,9 +10,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
-func Download(downloadSpec *utils.SpecFiles, flags *DownloadConfiguration) error {
+func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error {
 	servicesManager, err := createDownloadServiceManager(flags.ArtDetails, flags)
 	if err != nil {
 		return err

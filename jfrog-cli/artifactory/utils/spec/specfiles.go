@@ -1,14 +1,13 @@
-package utils
+package spec
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"encoding/json"
-	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"encoding/json"
 	"fmt"
 	"bytes"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"errors"
 )
 
@@ -52,31 +51,15 @@ func replaceSpecVars(content []byte, specVars map[string]string) []byte {
 	return content
 }
 
-func CreateSpec(pattern string, excludePatterns []string, target, props, build string, recursive, flat, regexp, includeDirs bool) (spec *SpecFiles) {
-	spec = &SpecFiles{
-		Files: []File{
-			{
-				Pattern:         pattern,
-				ExcludePatterns: excludePatterns,
-				Target:          target,
-				Props:           props,
-				Build:           build,
-				Recursive:       strconv.FormatBool(recursive),
-				Flat:            strconv.FormatBool(flat),
-				Regexp:          strconv.FormatBool(regexp),
-				IncludeDirs:     strconv.FormatBool(includeDirs),
-			},
-		},
-	}
-	return spec
-}
-
 type File struct {
 	Aql             utils.Aql
 	Pattern         string
 	ExcludePatterns []string
 	Target          string
 	Props           string
+	SortOrder       string
+	SortBy          []string
+	Limit           int
 	Build           string
 	Recursive       string
 	Flat            string
@@ -180,6 +163,9 @@ func (f *File) toArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.Target = f.Target
 	params.Props = f.Props
 	params.Build = f.Build
+	params.SortOrder = f.SortOrder
+	params.SortBy = f.SortBy
+	params.Limit = f.Limit
 	return params
 }
 
@@ -192,18 +178,32 @@ func ValidateSpec(files []File, isTargetMandatory bool) error {
 		isPattern := len(file.Pattern) > 0
 		isExcludePattern := len(file.ExcludePatterns) > 0 && len(file.ExcludePatterns[0]) > 0
 		isTarget := len(file.Target) > 0
+		isSortOrder := len(file.SortOrder) > 0
+		isSortBy := len(file.SortBy) > 0
+		isLimit := file.Limit > 0
+		isBuild := len(file.Build) > 0
+		isValidSortOrder := file.SortOrder == "asc" || file.SortOrder == "desc"
 
 		if isTargetMandatory && !isTarget {
-			return errors.New("Spec must include the target values")
+			return errors.New("Spec must include the target properties")
 		}
 		if !isAql && !isPattern {
-			return errors.New("Spec must include either the aql or pattern values")
+			return errors.New("Spec must include either the aql or pattern properties")
 		}
 		if isAql && isPattern {
-			return errors.New("Spec cannot include both the aql and pattern values")
+			return errors.New("Spec cannot include both the aql and pattern properties")
 		}
 		if isAql && isExcludePattern {
-			return errors.New("Spec cannot include both the aql and exclude-patterns values")
+			return errors.New("Spec cannot include both the aql and exclude-patterns properties")
+		}
+		if isBuild && isLimit {
+			return errors.New("Spec cannot include both the 'build' and 'limit' properties")
+		}
+		if !isSortBy && isSortOrder {
+			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
+		}
+		if isSortOrder && !isValidSortOrder {
+			return errors.New("The value of 'sort-order'can only be 'asc' or 'desc'.")
 		}
 	}
 	return nil

@@ -5,9 +5,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
-func SetProps(spec *utils.SpecFiles, props string, artDetails *config.ArtifactoryDetails) error {
+func SetProps(spec *spec.SpecFiles, props string, artDetails *config.ArtifactoryDetails) error {
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return err

@@ -4,10 +4,11 @@ import (
 	"strings"
 	"path/filepath"
 	"fmt"
+	"strconv"
 )
 
 // Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
-func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
+func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 	var itemType string
 	if params.IncludeDirs {
 		itemType = "any"
@@ -21,20 +22,20 @@ func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
 	pathFilePairs := createPathFilePairs(searchPattern, params.Recursive)
 	includeRoot := strings.LastIndex(searchPattern, "/") < 0
 	pathPairsSize := len(pathFilePairs)
-	propsQuery, err := buildPropsQuery(params.Props)
+	propsQueryPart, err := buildPropsQueryPart(params.Props)
 	if err != nil {
 		return "", err
 	}
-	itemTypeQuery := buildItemTypeQuery(itemType)
-	nePath := buildNePath(pathPairsSize == 0 || includeRoot)
-	excludeQuery := createExcludeQuery(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
+	itemTypeQuery := buildItemTypeQueryPart(itemType)
+	nePath := buildNePathPart(pathPairsSize == 0 || includeRoot)
+	excludeQuery := buildExcludeQueryPart(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
-	json := `{"repo": "` + repo + `",` + propsQuery + itemTypeQuery + nePath + excludeQuery + `"$or": [`
+	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart + itemTypeQuery + nePath + excludeQuery)
 	if pathPairsSize == 0 {
-		json += buildInnerQuery(".", searchPattern)
+		json += buildInnerQueryPart(".", searchPattern)
 	} else {
 		for i := 0; i < pathPairsSize; i++ {
-			json += buildInnerQuery(pathFilePairs[i].path, pathFilePairs[i].file)
+			json += buildInnerQueryPart(pathFilePairs[i].path, pathFilePairs[i].file)
 			if i+1 < pathPairsSize {
 				json += ","
 			}
@@ -45,11 +46,13 @@ func createAqlBodyForItem(params *ArtifactoryCommonParams) (string, error) {
 }
 
 func createAqlQueryForBuild(buildName, buildNumber string) string {
-	return "items.find(" +
-			"{\"$and\": [" +
-				"{\"artifact.module.build.name\": {\"$eq\": \"" + buildName + "\"}}," +
-				"{\"artifact.module.build.number\": {\"$eq\": \"" + buildNumber + "\"}}" +
-			"]}).include(\"name\",\"repo\",\"path\",\"actual_sha1\")"
+	buildQueryPart :=
+		`items.find({
+			"$and" : [
+				{"artifact.module.build.name": {"$eq": "%s"}},
+				{"artifact.module.build.number": {"$eq": "%s"}}
+			]})%s`
+	return fmt.Sprintf(buildQueryPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name","repo","path","actual_sha1"}))
 }
 
 func prepareSearchPattern(pattern string, repositoryExists bool) string {
@@ -66,7 +69,7 @@ func prepareSearchPattern(pattern string, repositoryExists bool) string {
 	return pattern
 }
 
-func buildPropsQuery(props string) (string, error) {
+func buildPropsQueryPart(props string) (string, error) {
 	if props == "" {
 		return "", nil
 	}
@@ -77,26 +80,29 @@ func buildPropsQuery(props string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		query += "\"@" + key + "\": {\"$match\" : \"" + value + "\"},"
+		query += buildKeyValQueryPart(key, value) + `,`
 	}
 	return query, nil
 }
+func buildKeyValQueryPart(key string, value string) string {
+	return fmt.Sprintf(`"@%s": {"$match" : "%s"}`, key, value)
+}
 
-func buildItemTypeQuery(itemType string) string {
+func buildItemTypeQueryPart(itemType string) string {
 	if itemType != "" {
-		return `"type": {"$eq": "` + itemType + `"},`
+		return fmt.Sprintf(`"type": {"$eq": "%s"},`, itemType)
 	}
 	return ""
 }
 
-func buildNePath(includeRoot bool) string {
+func buildNePathPart(includeRoot bool) string {
 	if !includeRoot {
 		return `"path": {"$ne": "."},`
 	}
 	return ""
 }
 
-func buildInnerQuery(path, name string) string {
+func buildInnerQueryPart(path, name string) string {
 	innerQueryPattern := `{"$and":` +
 							`[{` +
 								`"path": {"$match": "%s"},` +
@@ -105,7 +111,7 @@ func buildInnerQuery(path, name string) string {
 	return fmt.Sprintf(innerQueryPattern, path, name)
 }
 
-func createExcludeQuery(excludePatterns []string, useLocalPath, recursive bool) string {
+func buildExcludeQueryPart(excludePatterns []string, useLocalPath, recursive bool) string {
 	if excludePatterns == nil {
 		return ""
 	}
@@ -244,4 +250,83 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 type PathFilePair struct {
 	path string
 	file string
+}
+
+func getQueryReturnFields(specFile *ArtifactoryCommonParams) []string {
+	returnFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type"}
+	if specIncludesSortOrLimit(specFile) {
+		return appendMissingFields(specFile.SortBy, returnFields)
+	}
+	return append(returnFields, "property")
+}
+
+func specIncludesSortOrLimit(specFile *ArtifactoryCommonParams) bool {
+	return len(specFile.SortBy) > 0 || specFile.Limit > 0
+}
+
+func appendMissingFields(fields []string, defaultFields []string) []string {
+	for _, field := range fields {
+		if !stringIsInSlice(field, defaultFields) {
+			defaultFields = append(defaultFields, field)
+		}
+	}
+	return defaultFields
+}
+
+func stringIsInSlice(string string, strings []string) bool {
+	for _, v := range strings {
+		if v == string {
+			return true
+		}
+	}
+	return false
+}
+
+func prepareFieldsForQuery(fields []string) []string {
+	for i, val := range fields {
+		fields[i] = `"` + val + `"`
+	}
+	return fields
+}
+
+func buildSortQueryPart(sortFields []string, sortOrder string) string {
+	if sortOrder == "" {
+		sortOrder = "asc"
+	}
+	return fmt.Sprintf(`"$%s":[%s]`, sortOrder, strings.Join(prepareFieldsForQuery(sortFields), `,`))
+}
+
+func buildQueryFromSpecFile(specFile *ArtifactoryCommonParams) string {
+	aqlBody := specFile.Aql.ItemsFind
+	query := fmt.Sprintf(`items.find(%s)%s`, aqlBody, buildIncludeQueryPart(getQueryReturnFields(specFile)))
+	query = appendSortQueryPart(specFile, query)
+	return appendLimitQueryPart(specFile, query)
+}
+
+func appendLimitQueryPart(specFile *ArtifactoryCommonParams, query string) string {
+	if specFile.Limit > 0 {
+		query = fmt.Sprintf(`%s.limit(%s)`, query, strconv.Itoa(specFile.Limit))
+	}
+	return query
+}
+
+func appendSortQueryPart(specFile *ArtifactoryCommonParams, query string) string {
+	if len(specFile.SortBy) > 0 {
+		query = fmt.Sprintf(`%s.sort({%s})`, query, buildSortQueryPart(specFile.SortBy, specFile.SortOrder))
+	}
+	return query
+}
+
+func createPropsQuery(aqlBody, propKey, propVal string) string {
+	propKeyValQueryPart := buildKeyValQueryPart(propKey, propVal)
+	propsQuery :=
+		`items.find({
+			"$and" :[%s,{%s}]
+		})%s`
+	return fmt.Sprintf(propsQuery, aqlBody, propKeyValQueryPart, buildIncludeQueryPart([]string {"name", "repo", "path", "actual_sha1", "property"}))
+}
+
+func buildIncludeQueryPart(fieldsToInclude []string) string {
+	fieldsToInclude = prepareFieldsForQuery(fieldsToInclude)
+	return fmt.Sprintf(`.include(%s)`, strings.Join(fieldsToInclude, `,`))
 }

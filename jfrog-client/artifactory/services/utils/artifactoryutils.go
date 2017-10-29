@@ -14,6 +14,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
+	"sync"
 )
 
 const ARTIFACTORY_SYMLINK = "symlink.dest"
@@ -238,25 +239,93 @@ func createBodyForLatestBuildRequest(buildName, buildNumber string) (body []byte
 	return
 }
 
-func filterSearchByBuild(buildIdentifier string, itemsToFilter []ResultItem, flags CommonConf) ([]ResultItem, error) {
-	buildName, buildNumber, err := getBuildNameAndNumber(buildIdentifier, flags)
-	if err != nil {
-		return nil, err
-	}
-	query := createAqlQueryForBuild(buildName, buildNumber)
-	aqlResponse, err := execAqlSearch(query, flags)
-	if err != nil {
-		return nil, err
-	}
-	buildArtifactsSha, err := extractSearchResponseShas(aqlResponse)
+func filterSearchByBuild(specFile *ArtifactoryCommonParams, itemsToFilter []ResultItem, flags CommonConf) ([]ResultItem, error) {
+	buildName, buildNumber, err := getBuildNameAndNumber(specFile.Build, flags)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterSearchResults(&itemsToFilter, &buildArtifactsSha, buildName, buildNumber), err
+	buildAqlResponse, err := fetchBuildArtifactsSha1(specFile.Aql.ItemsFind, buildName, buildNumber, itemsToFilter, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterBuildAqlSearchResults(&itemsToFilter, &buildAqlResponse, buildName, buildNumber), err
 }
 
-func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
+// This function adds to @itemsToFilter the "build.name" property and returns all the artifacts that associated with
+// the provided @buildName and @buildNumber.
+func fetchBuildArtifactsSha1(aqlBody, buildName, buildNumber string, itemsToFilter []ResultItem, flags CommonConf) (map[string]bool, error) {
+	var wg sync.WaitGroup
+	var addPropsErr error
+	var aqlSearchErr error
+	var buildAqlResponse []byte
+
+	wg.Add(2)
+	go func() {
+		addPropsErr = searchAndAddPropsToAqlResult(itemsToFilter, aqlBody, "build.name", buildName, flags)
+		wg.Done()
+	}()
+
+	go func() {
+		buildQuery := createAqlQueryForBuild(buildName, buildNumber)
+		buildAqlResponse, aqlSearchErr = execAqlSearch(buildQuery, flags)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	if aqlSearchErr != nil {
+		return nil, aqlSearchErr
+	}
+	if addPropsErr != nil {
+		return nil, addPropsErr
+	}
+
+	buildArtifactsSha, err := extractSha1FromAqlResponse(buildAqlResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return buildArtifactsSha, nil
+}
+
+func searchAndAddPropsToAqlResult(itemsToFilter []ResultItem, aqlBody, filterByPropName, filterByPropValue string, flags CommonConf) error {
+	propsAqlResponseJson, err := execAqlSearch(createPropsQuery(aqlBody, filterByPropName, filterByPropValue), flags)
+	if err != nil {
+		return err
+	}
+	propsAqlResponse, err := parseAqlSearchResponse(propsAqlResponseJson)
+	if err != nil {
+		return err
+	}
+	addPropsToAqlResult(itemsToFilter, propsAqlResponse)
+	return nil
+}
+
+func addPropsToAqlResult(items []ResultItem, props []ResultItem) {
+	propsMap := createPropsMap(props)
+	for i := range items {
+		props, propsExists := propsMap[getResultItemKey(items[i])]
+		if propsExists {
+			items[i].Properties = props
+		}
+	}
+}
+
+func createPropsMap(items []ResultItem) (propsMap map[string][]Property) {
+	propsMap = make(map[string][]Property)
+	for _, item := range items {
+		propsMap[getResultItemKey(item)] = item.Properties
+	}
+	return
+}
+
+func getResultItemKey(item ResultItem) string {
+	return item.Repo + item.Path + item.Name + item.Actual_Sha1
+}
+
+func extractSha1FromAqlResponse(resp []byte) (map[string]bool, error) {
 	elements, err := parseAqlSearchResponse(resp)
 	if err != nil {
 		return nil, err
@@ -274,7 +343,7 @@ func extractSearchResponseShas(resp []byte) (map[string]bool, error) {
  * 2nd priority: Match {Sha1, build name}
  * 3rd priority: Match {Sha1}
  */
-func filterSearchResults(itemsToFilter *[]ResultItem, buildArtifactsSha *map[string]bool, buildName, buildNumber string) []ResultItem {
+func filterBuildAqlSearchResults(itemsToFilter *[]ResultItem, buildArtifactsSha *map[string]bool, buildName, buildNumber string) []ResultItem {
 	filteredResults := []ResultItem{}
 	firstPriority := map[string][]ResultItem{}
 	secondPriority := map[string][]ResultItem{}

@@ -6,9 +6,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
-func Delete(deleteSpec *utils.SpecFiles, flags *DeleteConfiguration) (err error) {
+func Delete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) (err error) {
 	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
@@ -42,7 +43,7 @@ func DeleteFiles(resultItems []clientutils.ResultItem, flags *DeleteConfiguratio
 	return servicesManager.DeleteFiles(deleteItems)
 }
 
-func GetPathsToDelete(deleteSpec *utils.SpecFiles, flags *DeleteConfiguration) ([]clientutils.ResultItem, error) {
+func GetPathsToDelete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) ([]clientutils.ResultItem, error) {
 	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return nil, err

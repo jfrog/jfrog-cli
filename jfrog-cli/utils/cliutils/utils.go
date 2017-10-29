@@ -202,13 +202,6 @@ func PrepareLocalPathForUpload(localPath string, useRegExp bool) string {
 	return localPath
 }
 
-func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
-	if c.IsSet(flagName) {
-		return c.Bool(flagName)
-	}
-	return defValue
-}
-
 func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
 	envVarValue := os.Getenv(flagName)
 	if envVarValue == "" {

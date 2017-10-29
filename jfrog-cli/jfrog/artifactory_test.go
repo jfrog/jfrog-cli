@@ -32,6 +32,7 @@ import (
 	"strconv"
 	"bytes"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -350,7 +351,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	defer os.Remove(certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
 	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
+	spec := spec.NewBuilder().Pattern("jfrog-cli-tests-repo1/*.zip").Recursive(true).BuildSpec()
 	if err != nil {
 		t.Error(err)
 	}
@@ -462,7 +463,7 @@ func TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator(t *testing.T) {
 		t.SkipNow()
 	}
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
+	spec := spec.NewBuilder().Pattern("jfrog-cli-tests-repo1/*.zip").Recursive(true).BuildSpec()
 	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
 	checkForErrDueToMissingProxy(spec, rtDetails, t)
 	go cliproxy.StartHttpProxy()
@@ -481,7 +482,7 @@ func TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator(t *testing.T) {
 		t.SkipNow()
 	}
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := utils.CreateSpec("jfrog-cli-tests-repo1/*.zip", []string{}, "", "", "", true, false, false, false)
+	spec := spec.NewBuilder().Pattern("jfrog-cli-tests-repo1/*.zip").Recursive(true).BuildSpec()
 	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
 	checkForErrDueToMissingProxy(spec, rtDetails, t)
 	go cliproxy.StartHttpsProxy()
@@ -509,7 +510,7 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	return rtUrl.String()
 }
 
-func checkForErrDueToMissingProxy(spec *utils.SpecFiles, rtDetails *config.ArtifactoryDetails, t *testing.T) {
+func checkForErrDueToMissingProxy(spec *spec.SpecFiles, rtDetails *config.ArtifactoryDetails, t *testing.T) {
 	_, err := commands.Search(spec, rtDetails)
 	_, isUrlErr := err.(*url.Error)
 	if err == nil || !isUrlErr {
@@ -631,13 +632,13 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t)
 
-	testFileRel := "~" + fileutils.GetFileSeperator() + "cliTestFile.txt"
+	testFileRel := "~" + fileutils.GetFileSeparator() + "cliTestFile.txt"
 	testFileAbs := fileutils.GetHomeDir() + "/cliTestFile.txt"
 
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbs, d1, 0644)
 	if err != nil {
-		t.Error("Couldn't create file:", err)
+		t.Error("Coudln't create file:", err)
 	}
 
 	artifactoryCli.Exec("upload", testFileRel, tests.Repo1, "--recursive=false")
@@ -1129,21 +1130,21 @@ func TestArtifactoryMassiveUploadSpec(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
 	canonicalPath := tests.Out + dirInnerPath
 
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true", "--recursive=true", "--flat=false")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true", "--recursive=true", "--flat=false")
 	err = os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
 	expectedPath := []string{tests.Out, "inner", "folder", "out", "inner", "folder"}
-	if !fileutils.IsPathExists(strings.Join(expectedPath, fileutils.GetFileSeperator())) {
+	if !fileutils.IsPathExists(strings.Join(expectedPath, fileutils.GetFileSeparator())) {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1152,20 +1153,20 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 
 func TestArtifactoryFlatFolderUpload(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
 	canonicalPath := tests.Out + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	err = os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
 	}
 	// Non flat download
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
-	if !fileutils.IsPathExists(canonicalPath + fileutils.GetFileSeperator() + "folder") {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
+	if !fileutils.IsPathExists(canonicalPath + fileutils.GetFileSeparator() + "folder") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1177,8 +1178,8 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUpload(t *testing.T) {
 	initArtifactoryTest(t)
 	// 'c' folder is defined as bottom chain directory therefor should be uploaded when using flat=true even though 'c' is not empty
 	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"*"), tests.Repo1, "--include-dirs=true", "--flat=true")
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1189,9 +1190,9 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUpload(t *testing.T) {
 func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 	initArtifactoryTest(t)
 	// 'c' folder is defined as bottom chain directory therefor should be uploaded when using flat=true even though 'c' is not empty
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"*"+fileutils.GetFileSeperator()+"c"), tests.Repo1, "--include-dirs=true", "--flat=true")
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--recursive=true")
-	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"*"+fileutils.GetFileSeparator()+"c"), tests.Repo1, "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--recursive=true")
+	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1202,35 +1203,35 @@ func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 	initArtifactoryTest(t)
 	// 'c' folder is defined as bottom chain directory therefor should be uploaded when using flat=true even though 'c' is not empty
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"(*)"+fileutils.GetFileSeperator()+"*"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"(*)"+fileutils.GetFileSeparator()+"*"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	// Download without include-dirs
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--recursive=true", "--flat=true")
-	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--recursive=true", "--flat=true")
+	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("'c' folder shouldn't be exist.")
 	}
 	err := os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true", "--flat=true")
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true", "--flat=true")
 	// Inner folder with files in it
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("'c' folder should exist.")
 	}
 	// Empty inner folder
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "folder") {
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "folder") {
 		t.Error("'folder' folder should exist.")
 	}
 	// Folder on root with files
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "a+a") {
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "a+a") {
 		t.Error("'a+a' folder should be exist.")
 	}
 	// None bottom directory - shouldn't exist.
-	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "a") {
+	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "a") {
 		t.Error("'a' folder shouldn't be exist.")
 	}
 	// None bottom directory - shouldn't exist.
-	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "b") {
+	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "b") {
 		t.Error("'b' folder shouldn't be exist.")
 	}
 	//cleanup
@@ -1240,9 +1241,9 @@ func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 func TestArtifactoryIncludeDirFlatNonEmptyFolderUploadMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t)
 	// 'c' folder is defined as bottom chain directory therefor should be uploaded when using flat=true even though 'c' is not empty
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"*"+fileutils.GetFileSeperator()+"c"), tests.Repo1, "--include-dirs=true", "--flat=true")
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"*"+fileutils.GetFileSeparator()+"c"), tests.Repo1, "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1252,7 +1253,7 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUploadMatchingPattern(t *testing
 // Test the definition of bottom chain directories  - are directories which do not include other directories which match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *testing.T) {
 	initArtifactoryTest(t)
-	path := tests.FixWinPath(tests.GetTestResourcesPath() + fileutils.GetFileSeperator() + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "d")
+	path := tests.FixWinPath(tests.GetTestResourcesPath() + fileutils.GetFileSeparator() + "a" + fileutils.GetFileSeparator() + "b" + fileutils.GetFileSeparator() + "c" + fileutils.GetFileSeparator() + "d")
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
 		t.Error(err.Error())
@@ -1264,11 +1265,11 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *test
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
-	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "c") {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
+	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("'c' folder shouldn't be exsit")
 	}
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()) + "d") {
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "d") {
 		t.Error("bottom chian directory, 'd', is missing")
 	}
 	//cleanup
@@ -1278,8 +1279,8 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *test
 // Test the definition of bottom chain directories  - are directories which do not include other directories which match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlaceHolders(t *testing.T) {
 	initArtifactoryTest(t)
-	seperator := fileutils.GetFileSeperator()
-	relativePaths := seperator + "a" + fileutils.GetFileSeperator() + "b" + fileutils.GetFileSeperator() + "c" + fileutils.GetFileSeperator() + "d"
+	separator := fileutils.GetFileSeparator()
+	relativePaths := separator + "a" + fileutils.GetFileSeparator() + "b" + fileutils.GetFileSeparator() + "c" + fileutils.GetFileSeparator() + "d"
 	path := tests.FixWinPath(tests.GetTestResourcesPath() + relativePaths)
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
@@ -1287,12 +1288,12 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 	}
 	// We created a empty child folder to 'c' therefor 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
 	// 'd' should uploaded and 'c' shouldn't
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"(*)"+fileutils.GetFileSeperator()+"*"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"(*)"+fileutils.GetFileSeparator()+"*"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	err = os.RemoveAll(path)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--recursive=true")
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true")
 	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + relativePaths)) {
 		t.Error("bottom chian directory, 'd', is missing")
 	}
@@ -1303,21 +1304,21 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 
 func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
 	canonicalPath := tests.Out + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
 	// Flat true by default for upload, by using placeholder we indeed create folders hierarchy in Artifactory inner/folder/folder
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()+"(*)"), tests.Repo1+"/{1}/", "--include-dirs=true")
 	err = os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
 	}
 	// Only the inner folder should be downland e.g 'folder'
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true", "--flat=true")
-	if !fileutils.IsPathExists(tests.Out + fileutils.GetFileSeperator() + "folder") && fileutils.IsPathExists(tests.Out+fileutils.GetFileSeperator()+"inner") {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--flat=true")
+	if !fileutils.IsPathExists(tests.Out + fileutils.GetFileSeparator() + "folder") && fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"inner") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1326,7 +1327,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := "empty" + fileutils.GetFileSeperator() + "folder"
+	dirInnerPath := "empty" + fileutils.GetFileSeparator() + "folder"
 	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
@@ -1340,7 +1341,7 @@ func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	}
 	specFile = tests.GetFilePath(tests.DownloadEmptyDirs)
 	artifactoryCli.Exec("download", "--spec="+specFile)
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + fileutils.GetFileSeperator() + "folder")) {
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + fileutils.GetFileSeparator() + "folder")) {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -1349,18 +1350,18 @@ func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 
 func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
 	initArtifactoryTest(t)
-	canonicalPath := tests.Out + fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	canonicalPath := tests.Out + fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), tests.Repo1, "--recursive=true", "--include-dirs=true")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), tests.Repo1, "--recursive=true", "--include-dirs=true")
 	err = os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), "--include-dirs=true")
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + fileutils.GetFileSeperator() + "folder")) {
+	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true")
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out + fileutils.GetFileSeparator() + "folder")) {
 		t.Error("Failed to download folder from Artifatory")
 	}
 	if fileutils.IsPathExists(canonicalPath) {
@@ -1372,12 +1373,12 @@ func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
 
 func TestArtifactoryFolderDownloadNonRecursive(t *testing.T) {
 	initArtifactoryTest(t)
-	canonicalPath := tests.Out + fileutils.GetFileSeperator() + "inner" + fileutils.GetFileSeperator() + "folder"
+	canonicalPath := tests.Out + fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeperator()), tests.Repo1, "--recursive=true", "--include-dirs=true", "--flat=false")
+	artifactoryCli.Exec("upload", tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), tests.Repo1, "--recursive=true", "--include-dirs=true", "--flat=false")
 	err = os.RemoveAll(tests.Out)
 	if err != nil {
 		t.Error(err.Error())
@@ -1580,8 +1581,8 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/a1.in "+tests.Out+fileutils.GetFileSeperator()+"download"+fileutils.GetFileSeperator()+"simple_by_build"+fileutils.GetFileSeperator(), "--build="+buildName)
-	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in "+tests.Out+fileutils.GetFileSeperator()+"download"+fileutils.GetFileSeperator()+"simple_by_build"+fileutils.GetFileSeperator(), "--build="+buildName)
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/a1.in "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName)
+	artifactoryCli.Exec("download jfrog-cli-tests-repo1/data/b1.in "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName)
 
 	//validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -1649,6 +1650,120 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	tests.AreListsIdentical(tests.BuildExcludeDownload, paths, t)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+//Sort and limit changes the way properties are used so this should be tested with symlinks and search by build
+
+// Upload symlink by full path to Artifactory and the link content checksum
+// Download the symlink which was uploaded with limit param.
+// validate the symlink content checksum.
+func TestArtifactoryLimitWithSimlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath() + "a/", "a1.in")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("u", link + " " + tests.Repo1 + " --symlinks=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1 + "/link " + tests.GetTestResourcesPath() + "a/ --validate-symlinks=true --limit=1")
+	validateSortLimitWithSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+// Upload symlink by full path to Artifactory and the link content checksum
+// Download the symlink which was uploaded with limit param.
+// validate the symlink content checksum.
+func TestArtifactorySortWithSimlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+	localFile := filepath.Join(tests.GetTestResourcesPath() + "a/", "a1.in")
+	link := filepath.Join(tests.GetTestResourcesPath() + "a/", "link")
+	err := os.Symlink(localFile, link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("u", link + " " + tests.Repo1 + " --symlinks=true")
+	err = os.Remove(link)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	artifactoryCli.Exec("dl", tests.Repo1+"/link " + tests.GetTestResourcesPath() + "a/ --validate-symlinks=true --sort-by=created")
+	validateSortLimitWithSymLink(link, localFile, t)
+	os.Remove(link)
+	cleanArtifactoryTest()
+}
+
+func validateSortLimitWithSymLink(localLinkPath, localFilePath string, t *testing.T) {
+	exists := fileutils.IsPathSymlink(localLinkPath)
+	if !exists {
+		t.Error(errors.New("Faild to download symlinks from artifactory with Sort/Limit flag"))
+	}
+	symlinks, err := filepath.EvalSymlinks(localLinkPath)
+	if err != nil {
+		t.Error(errors.New("Can't eval symlinks with Sort/Limit flag"))
+	}
+	if symlinks != localFilePath {
+		t.Error(errors.New("Symlinks wasn't created as expected with Sort/Limit flag. expected:" + localFilePath + " actual: " + symlinks))
+	}
+}
+
+// Upload a file to 2 different builds.
+// Verify that we don't download files with same sha and build name and different build number when sort is configured.
+func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
+	specFile := tests.GetFilePath(tests.BuildDownloadSpecNoBuildNumberWithSort)
+
+	// Upload 3 similar files to 2 different builds
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a10.in", "--build-name=" + buildNameB, "--build-number=" + buildNumberA)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a11.in", "--build-name=" + buildNameB, "--build-number=" + buildNumberB)
+	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/data/a12.in", "--build-name=" + buildNameA, "--build-number=" + buildNumberC)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildNameA, buildNumberC)
+	artifactoryCli.Exec("build-publish", buildNameB, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildNameB, buildNumberB)
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--sort-by=created --spec=" + specFile)
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.AreListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths, t)
+
+	// Cleanup
+	deleteBuild(buildNameA)
+	deleteBuild(buildNameB)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySortAndLimit(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload all testdata/a/ files
+	artifactoryCli.Exec("upload", "../testsdata/a/(*)", "jfrog-cli-tests-repo1/data/{1}")
+
+	// Download 1 sorted by name asc
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=name", "--limit=1")
+
+	// Download 3 sorted by depth desc
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=depth", "--limit=3", "--sort-order=desc")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.AreListsIdentical(tests.SortAndLimit, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2126,7 +2241,7 @@ func prepCopyFiles() {
 }
 
 func getPathsToDelete(specFile string) []rtutils.ResultItem {
-	deleteSpec, _ := utils.CreateSpecFromFile(specFile, nil)
+	deleteSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	artifactsToDelete, _ := commands.GetPathsToDelete(deleteSpec, &commands.DeleteConfiguration{ArtDetails: artifactoryDetails})
 	return artifactsToDelete
 }
@@ -2213,20 +2328,20 @@ func deleteRepos() error {
 
 func cleanArtifactory() {
 	deleteFlags := new(commands.DeleteConfiguration)
-	deleteSpec, _ := utils.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec), nil)
+	deleteSpec, _ := spec.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec), nil)
 	deleteFlags.ArtDetails = artifactoryDetails
 	commands.Delete(deleteSpec, deleteFlags)
 }
 
 func searchInArtifactory(specFile string) (result []commands.SearchResult, err error) {
-	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
+	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	result, err = commands.Search(searchSpec, artifactoryDetails)
 	return
 }
 
-func getSpecAndCommonFlags(specFile string) (*utils.SpecFiles, rtutils.CommonConf) {
+func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf) {
 	searchFlags := new(rtutils.CommonConfImpl)
-	searchSpec, _ := utils.CreateSpecFromFile(specFile, nil)
+	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	return searchSpec, searchFlags
 }
 
@@ -2245,7 +2360,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 }
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
-	searchSpec := utils.CreateSpec(pattern, []string{}, "", props, "", true, false, false, false)
+	searchSpec := spec.NewBuilder().Pattern(pattern).Props(props).Recursive(true).BuildSpec()
 	results, err := commands.Search(searchSpec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)

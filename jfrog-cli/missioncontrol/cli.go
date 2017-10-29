@@ -304,7 +304,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	    return
 	}
 	flags.LicensePath = c.String("license-path")
-	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeperator()) {
+	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeparator()) {
 		cliutils.Exit(cliutils.ExitCodeError, "The --license-path option cannot be a directory")
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {

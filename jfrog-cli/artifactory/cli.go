@@ -36,6 +36,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 func GetCommands() []cli.Command {
@@ -312,6 +313,23 @@ func getServerFlags() []cli.Flag {
 	)
 }
 
+func getSortLimitFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "sort-by",
+			Usage: "[Optional] A list of Semicolon-separated fields to sort by. The fields must be part of the 'item' entity. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields",
+		},
+		cli.StringFlag{
+			Name:  "sort-order",
+			Usage: "[Default: asc] The order by which fields specified in the 'sort by' should be sorted. Accepts 'asc' or 'desc'.",
+		},
+		cli.StringFlag{
+			Name:  "limit",
+			Usage: "[Optional] The maximum number of items to fetch. Usually used with the 'sort-by' option.",
+		},
+	}
+}
+
 func getUploadFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
@@ -381,7 +399,8 @@ func getUploadFlags() []cli.Flag {
 }
 
 func getDownloadFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	downloadFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(downloadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a File Spec.",
@@ -468,7 +487,8 @@ func getBuildToolFlags() []cli.Flag {
 }
 
 func getMoveFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	moveFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(moveFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a File Spec.",
@@ -508,7 +528,8 @@ func getMoveFlags() []cli.Flag {
 }
 
 func getCopyFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	copyFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(copyFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a File Spec.",
@@ -547,7 +568,8 @@ func getCopyFlags() []cli.Flag {
 }
 
 func getDeleteFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	deleteFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(deleteFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a File Spec.",
@@ -586,7 +608,8 @@ func getDeleteFlags() []cli.Flag {
 }
 
 func getSearchFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	searchFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(searchFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
 			Usage: "[Optional] Path to a File Spec.",
@@ -616,7 +639,8 @@ func getSearchFlags() []cli.Flag {
 }
 
 func getSetPropertiesFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
+	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(propsFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
@@ -751,20 +775,17 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getCommonFlags()...)
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, includeConfig)
-	if err != nil {
-		return nil, err
-	}
+func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
+	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
 	}
-	return artDetails, nil
+	return artDetails
 }
 
 func getSplitCount(c *cli.Context) (splitCount int) {
-	var err error
 	splitCount = 3
+	var err error
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
@@ -860,7 +881,7 @@ func configCmd(c *cli.Context) {
 	}
 
 	var serverId string
-	configFlags, err := createConfigFlags(c)
+	configFlags := createConfigFlags(c)
 	if len(c.Args()) == 2 {
 		serverId = c.Args()[1]
 		validateServerId(serverId)
@@ -890,7 +911,6 @@ func configCmd(c *cli.Context) {
 			return
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig(configFlags.Interactive)
-			cliutils.ExitOnErr(nil)
 			return
 		} else {
 			serverId = c.Args()[0]
@@ -898,8 +918,7 @@ func configCmd(c *cli.Context) {
 		}
 	}
 	validateConfigFlags(configFlags)
-	cliutils.ExitOnErr(err)
-	_, err = commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
+	_, err := commands.Config(configFlags.ArtDetails, nil, configFlags.Interactive, configFlags.EncPassword, serverId)
 	cliutils.ExitOnErr(err)
 }
 
@@ -907,11 +926,8 @@ func mvnCmd(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-
-	flags, err := createBuildToolFlags(c)
-	cliutils.ExitOnErr(err)
-
-	err = commands.Mvn(c.Args().Get(0), c.Args().Get(1), flags)
+	flags := createBuildToolFlags(c)
+	err := commands.Mvn(c.Args().Get(0), c.Args().Get(1), flags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -919,11 +935,8 @@ func gradleCmd(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-
-	flags, err := createBuildToolFlags(c)
-	cliutils.ExitOnErr(err)
-
-	err = commands.Gradle(c.Args().Get(0), c.Args().Get(1), flags)
+	flags := createBuildToolFlags(c)
+	err := commands.Gradle(c.Args().Get(0), c.Args().Get(1), flags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -951,18 +964,16 @@ func downloadCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var downloadSpec *utils.SpecFiles
+	var downloadSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		downloadSpec, err = getDownloadSpec(c)
-		cliutils.ExitOnErr(err)
+		downloadSpec = getDownloadSpec(c)
 	} else {
+		validateCommonContext(c)
 		downloadSpec = createDefaultDownloadSpec(c)
 	}
 
-	flags, err := createDownloadFlags(c)
-	cliutils.ExitOnErr(err)
-	err = commands.Download(downloadSpec, flags)
+	flags := createDownloadFlags(c)
+	err := commands.Download(downloadSpec, flags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -974,16 +985,13 @@ func uploadCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var uploadSpec *utils.SpecFiles
+	var uploadSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		uploadSpec, err = getUploadSpec(c)
-		cliutils.ExitOnErr(err)
+		uploadSpec = getUploadSpec(c)
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
-	flags, err := createUploadFlags(c)
-	cliutils.ExitOnErr(err)
+	flags := createUploadFlags(c)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
@@ -1002,18 +1010,16 @@ func moveCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var moveSpec *utils.SpecFiles
+	var moveSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		moveSpec, err = getCopyMoveSpec(c)
-		cliutils.ExitOnErr(err)
+		moveSpec = getCopyMoveSpec(c)
 	} else {
+		validateCommonContext(c)
 		moveSpec = createDefaultCopyMoveSpec(c)
 	}
 
-	artDetails, err := createArtifactoryDetails(c, true)
-	cliutils.ExitOnErr(err)
-	err = commands.Move(moveSpec, artDetails)
+	artDetails := createArtifactoryDetails(c, true)
+	err := commands.Move(moveSpec, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1025,18 +1031,16 @@ func copyCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var copySpec *utils.SpecFiles
+	var copySpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		copySpec, err = getCopyMoveSpec(c)
-		cliutils.ExitOnErr(err)
+		copySpec = getCopyMoveSpec(c)
 	} else {
+		validateCommonContext(c)
 		copySpec = createDefaultCopyMoveSpec(c)
 	}
 
-	artDetails, err := createArtifactoryDetails(c, true)
-	cliutils.ExitOnErr(err)
-	err = commands.Copy(copySpec, artDetails)
+	artDetails := createArtifactoryDetails(c, true)
+	err := commands.Copy(copySpec, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1048,42 +1052,38 @@ func deleteCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var deleteSpec *utils.SpecFiles
+	var deleteSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		deleteSpec, err = getDeleteSpec(c)
-		cliutils.ExitOnErr(err)
+		deleteSpec = getDeleteSpec(c)
 	} else {
+		validateCommonContext(c)
 		deleteSpec = createDefaultDeleteSpec(c)
 	}
 
-	flags, err := createDeleteFlags(c)
-	cliutils.ExitOnErr(err)
+	flags := createDeleteFlags(c)
 	if !c.Bool("quiet") {
-		err = deleteIfConfirmed(deleteSpec, flags)
-		cliutils.ExitOnErr(err)
+		deleteIfConfirmed(deleteSpec, flags)
 	} else {
-		err = commands.Delete(deleteSpec, flags)
+		err := commands.Delete(deleteSpec, flags)
 		cliutils.ExitOnErr(err)
 	}
 }
 
-func deleteIfConfirmed(deleteSpec *utils.SpecFiles, flags *commands.DeleteConfiguration) error {
+func deleteIfConfirmed(deleteSpec *spec.SpecFiles, flags *commands.DeleteConfiguration) {
 	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
-	if err != nil {
-		return err
-	}
+	cliutils.ExitOnErr(err)
 	if len(pathsToDelete) < 1 {
-		return nil
+		return
 	}
 	for _, v := range pathsToDelete {
 		fmt.Println("  " + v.GetItemRelativePath())
 	}
 	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
 	if !confirmed {
-		return nil
+		return
 	}
-	return commands.DeleteFiles(pathsToDelete, flags)
+	err = commands.DeleteFiles(pathsToDelete, flags)
+	cliutils.ExitOnErr(err)
 }
 
 func searchCmd(c *cli.Context) {
@@ -1094,17 +1094,15 @@ func searchCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var searchSpec *utils.SpecFiles
+	var searchSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		var err error
-		searchSpec, err = getSearchSpec(c)
-		cliutils.ExitOnErr(err)
+		searchSpec = getSearchSpec(c)
 	} else {
+		validateCommonContext(c)
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
-	artDetails, err := createArtifactoryDetails(c, true)
-	cliutils.ExitOnErr(err)
+	artDetails := createArtifactoryDetails(c, true)
 	SearchResult, err := commands.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(SearchResult)
@@ -1117,19 +1115,18 @@ func setPropsCmd(c *cli.Context) {
 	if c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
+	validateCommonContext(c)
 	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
 	properties := c.Args()[1]
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	cliutils.ExitOnErr(err)
-	err = commands.SetProps(setPropertiesSpec, properties, artDetails)
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	err := commands.SetProps(setPropertiesSpec, properties, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
 func buildPublishCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-	buildInfoFlags, artDetails, err := createBuildInfoFlags(c)
-	cliutils.ExitOnErr(err)
-	err = commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags, artDetails)
+	buildInfoFlags, artDetails := createBuildInfoFlags(c)
+	err := commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), buildInfoFlags, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1161,15 +1158,11 @@ func buildPromoteCmd(c *cli.Context) {
 	if c.NArg() != 3 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	buildPromoteFlags, err := createBuildPromoteFlags(c)
-	if err != nil {
-		cliutils.ExitOnErr(err)
-	}
-
+	buildPromoteFlags := createBuildPromoteFlags(c)
 	buildPromoteFlags.BuildName = c.Args().Get(0)
 	buildPromoteFlags.BuildNumber = c.Args().Get(1)
 	buildPromoteFlags.TargetRepo = c.Args().Get(2)
-	err = commands.BuildPromote(buildPromoteFlags)
+	err := commands.BuildPromote(buildPromoteFlags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1177,15 +1170,11 @@ func buildDistributeCmd(c *cli.Context) {
 	if c.NArg() != 3 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	buildDistributeFlags, err := createBuildDistributionFlags(c)
-	if err != nil {
-		cliutils.ExitOnErr(err)
-	}
-
+	buildDistributeFlags := createBuildDistributionFlags(c)
 	buildDistributeFlags.BuildName = c.Args().Get(0)
 	buildDistributeFlags.BuildNumber = c.Args().Get(1)
 	buildDistributeFlags.TargetRepo = c.Args().Get(2)
-	err = commands.BuildDistribute(buildDistributeFlags)
+	err := commands.BuildDistribute(buildDistributeFlags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1197,8 +1186,7 @@ func gitLfsCleanCmd(c *cli.Context) {
 	if c.NArg() == 1 {
 		dotGitPath = c.Args().Get(0)
 	}
-	gitLfsCleanFlags, err := createGitLfsCleanFlags(c)
-	cliutils.ExitOnErr(err)
+	gitLfsCleanFlags := createGitLfsCleanFlags(c)
 	gitLfsCleanFlags.GitLfsCleanParamsImpl.GitPath = dotGitPath
 	filesToDelete, err := commands.PrepareGitLfsClean(gitLfsCleanFlags)
 	cliutils.ExitOnErr(err)
@@ -1230,20 +1218,18 @@ func validateBuildInfoArgument(c *cli.Context) {
 	}
 }
 
-func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error) {
+func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 	var exists bool
-	exists, err = config.IsArtifactoryConfExists()
-	if err != nil {
-		return
-	}
+	exists, err := config.IsArtifactoryConfExists()
+	cliutils.ExitOnErr(err)
 	if exists {
 		return
 	}
+
 	var val bool
 	val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
-	if err != nil {
-		return
-	}
+	cliutils.ExitOnErr(err)
+
 	if !val {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
@@ -1257,26 +1243,21 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails, err error)
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
-	details, err = createArtifactoryDetails(c, false)
-	if err != nil {
-		return
-	}
+	details = createArtifactoryDetails(c, false)
 	encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
 	details, err = commands.Config(nil, details, true, encPassword, "")
+	cliutils.ExitOnErr(err)
 	return
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
+func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails) {
 	if includeConfig {
-		details, err := offerConfig(c)
-		if err != nil {
-			return nil, err
-		}
+		details := offerConfig(c)
 		if details != nil {
-			return details, nil
+			return details
 		}
 	}
-	details := new(config.ArtifactoryDetails)
+	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
 	details.ApiKey = c.String("apikey")
 	details.User = c.String("user")
@@ -1286,9 +1267,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 
 	if includeConfig {
 		confDetails, err := commands.GetConfig(c.String("server-id"))
-		if err != nil {
-			return nil, err
-		}
+		cliutils.ExitOnErr(err)
+
 		if details.Url == "" {
 			details.Url = confDetails.Url
 		}
@@ -1309,7 +1289,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (*config.Artif
 		}
 	}
 	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
-	return details, nil
+	return
 }
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
@@ -1324,113 +1304,108 @@ func getDebFlag(c *cli.Context) (deb string) {
 	return deb
 }
 
-func createDefaultCopyMoveSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := c.Args().Get(0)
-	target := c.Args().Get(1)
-	props := c.String("props")
-	build := c.String("build")
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	flat := cliutils.GetBoolFlagValue(c, "flat", false)
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-
-	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, false, true)
+func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Flat(cliutils.GetBoolFlagValue(c, "flat", false)).
+		IncludeDirs(true).
+		Target(c.Args().Get(1)).
+		BuildSpec()
 }
 
-func getCopyMoveSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	//Override spec with CLI options
-	for i := 0; i < len(searchSpec.Files); i++ {
-		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
-		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
-		overrideStringIfSet(&searchSpec.Get(i).Flat, c, "flat")
-		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
-	}
-	err = utils.ValidateSpec(searchSpec.Files, true)
-	return
-}
-
-func createDefaultDeleteSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := c.Args().Get(0)
-	props := c.String("props")
-	build := c.String("build")
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-
-	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, false)
-}
-
-func getDeleteSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
+func getCopyMoveSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
+	searchSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
 
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
-		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
-		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
-		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
+		overrideFieldsIfSet(searchSpec.Get(i), c)
 	}
-	err = utils.ValidateSpec(searchSpec.Files, false)
+	err = spec.ValidateSpec(searchSpec.Files, true)
+	cliutils.ExitOnErr(err)
 	return
 }
 
-func createDeleteFlags(c *cli.Context) (*commands.DeleteConfiguration, error) {
-	deleteFlags := new(commands.DeleteConfiguration)
+func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		BuildSpec()
+}
+
+func getDeleteSpec(c *cli.Context) (deleteSpec *spec.SpecFiles) {
+	deleteSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
+
+	//Override spec with CLI options
+	for i := 0; i < len(deleteSpec.Files); i++ {
+		overrideFieldsIfSet(deleteSpec.Get(i), c)
+	}
+	err = spec.ValidateSpec(deleteSpec.Files, false)
+	cliutils.ExitOnErr(err)
+	return
+}
+
+func createDeleteFlags(c *cli.Context) (deleteFlags *commands.DeleteConfiguration) {
+	deleteFlags = new(commands.DeleteConfiguration)
 	deleteFlags.DryRun = c.Bool("dry-run")
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	deleteFlags.ArtDetails = artDetails
-	return deleteFlags, err
+	deleteFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
 }
 
-func createDefaultSearchSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := c.Args().Get(0)
-	props := c.String("props")
-	build := c.String("build")
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-
-	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, false)
+func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		BuildSpec()
 }
 
-func createDefaultSetPropertiesSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := c.Args().Get(0)
-	props := c.String("props")
-	build := c.String("build")
-	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-
-	return utils.CreateSpec(pattern, excludePatterns, "", props, build, recursive, false, false, includeDirs)
+func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		IncludeDirs(cliutils.GetBoolFlagValue(c, "include-dirs", false)).
+		BuildSpec()
 }
 
-func getSearchSpec(c *cli.Context) (searchSpec *utils.SpecFiles, err error) {
-	searchSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
+func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
+	searchSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
 	//Override spec with CLI options
 	for i := 0; i < len(searchSpec.Files); i++ {
-		overrideStringIfSet(&searchSpec.Get(i).Props, c, "props")
-		overrideStringIfSet(&searchSpec.Get(i).Build, c, "build")
-		overrideStringIfSet(&searchSpec.Get(i).Recursive, c, "recursive")
-		overrideArrayIfSet(&searchSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
+		overrideFieldsIfSet(searchSpec.Get(i), c)
 	}
 	return
 }
 
-func createBuildInfoFlags(c *cli.Context) (flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails, err error) {
+func createBuildInfoFlags(c *cli.Context) (flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) {
 	flags = new(buildinfo.Flags)
-	artDetails, err = createArtifactoryDetailsByFlags(c, true)
+	artDetails = createArtifactoryDetailsByFlags(c, true)
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
 	flags.EnvExclude = c.String("env-exclude")
@@ -1443,38 +1418,36 @@ func createBuildInfoFlags(c *cli.Context) (flags *buildinfo.Flags, artDetails *c
 	return
 }
 
-func createBuildPromoteFlags(c *cli.Context) (*commands.BuildPromotionConfiguration, error) {
+func createBuildPromoteFlags(c *cli.Context) (promoteFlags *commands.BuildPromotionConfiguration) {
 	promotionParamsImpl := new(services.PromotionParamsImpl)
 	promotionParamsImpl.Comment = c.String("comment")
 	promotionParamsImpl.SourceRepo = c.String("source-repo")
 	promotionParamsImpl.Status = c.String("status")
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
-	promoteFlags := new(commands.BuildPromotionConfiguration)
+	promoteFlags = new(commands.BuildPromotionConfiguration)
 	promoteFlags.DryRun = c.Bool("dry-run")
 	promoteFlags.PromotionParamsImpl = promotionParamsImpl
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	promoteFlags.ArtDetails = artDetails
-	return promoteFlags, err
+	promoteFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
 }
 
-func createBuildDistributionFlags(c *cli.Context) (*commands.BuildDistributionConfiguration, error) {
+func createBuildDistributionFlags(c *cli.Context) (distributeFlags *commands.BuildDistributionConfiguration) {
 	distributeParamsImpl := new(services.BuildDistributionParamsImpl)
 	distributeParamsImpl.Publish = cliutils.GetBoolFlagValue(c, "publish", true)
 	distributeParamsImpl.OverrideExistingFiles = c.Bool("override")
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeFlags := new(commands.BuildDistributionConfiguration)
+	distributeFlags = new(commands.BuildDistributionConfiguration)
 	distributeFlags.DryRun = c.Bool("dry-run")
 	distributeFlags.BuildDistributionParamsImpl = distributeParamsImpl
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	distributeFlags.ArtDetails = artDetails
-	return distributeFlags, err
+	distributeFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
 }
 
-func createGitLfsCleanFlags(c *cli.Context) (*commands.GitLfsCleanConfiguration, error) {
-	gitLfsCleanFlags := new(commands.GitLfsCleanConfiguration)
+func createGitLfsCleanFlags(c *cli.Context) (gitLfsCleanFlags *commands.GitLfsCleanConfiguration) {
+	gitLfsCleanFlags = new(commands.GitLfsCleanConfiguration)
 	refs := c.String("refs")
 	if len(refs) == 0 {
 		refs = "refs/remotes/*"
@@ -1483,47 +1456,43 @@ func createGitLfsCleanFlags(c *cli.Context) (*commands.GitLfsCleanConfiguration,
 	gitLfsCleanFlags.GitLfsCleanParamsImpl = &services.GitLfsCleanParamsImpl{Repo:repo, Refs:refs}
 	gitLfsCleanFlags.Quiet = c.Bool("quiet")
 	gitLfsCleanFlags.DryRun = c.Bool("dry-run")
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	gitLfsCleanFlags.ArtDetails = artDetails
-	return gitLfsCleanFlags, err
+	gitLfsCleanFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
 }
 
-func createDefaultDownloadSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := strings.TrimPrefix(c.Args().Get(0), "/")
-	target := c.Args().Get(1)
-	props := c.String("props")
-	build := c.String("build")
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	flat := cliutils.GetBoolFlagValue(c, "flat", false)
-	includeDirs := cliutils.GetBoolFlagValue(c, "include-dirs", false)
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-
-	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, false, includeDirs)
+func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Flat(cliutils.GetBoolFlagValue(c, "flat", false)).
+		IncludeDirs(cliutils.GetBoolFlagValue(c, "include-dirs", false)).
+		Target(c.Args().Get(1)).
+		BuildSpec()
 }
 
-func getDownloadSpec(c *cli.Context) (downloadSpec *utils.SpecFiles, err error) {
-	downloadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
+func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
+	downloadSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
+
 	fixWinDownloadFilesPath(downloadSpec)
 	//Override spec with CLI options
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
-		overrideStringIfSet(&downloadSpec.Get(i).Props, c, "props")
-		overrideStringIfSet(&downloadSpec.Get(i).Build, c, "build")
-		overrideStringIfSet(&downloadSpec.Get(i).Flat, c, "flat")
-		overrideStringIfSet(&downloadSpec.Get(i).Recursive, c, "recursive")
-		overrideStringIfSet(&downloadSpec.Get(i).IncludeDirs, c, "include-dirs")
-		overrideArrayIfSet(&downloadSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
+		overrideFieldsIfSet(downloadSpec.Get(i), c)
 	}
-	err = utils.ValidateSpec(downloadSpec.Files, false)
+	err = spec.ValidateSpec(downloadSpec.Files, false)
+	cliutils.ExitOnErr(err)
 	return
 }
 
-func createDownloadFlags(c *cli.Context) (*commands.DownloadConfiguration, error) {
-	downloadFlags := new(commands.DownloadConfiguration)
+func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadConfiguration) {
+	downloadFlags = new(commands.DownloadConfiguration)
 	downloadFlags.DryRun = c.Bool("dry-run")
 	downloadFlags.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadFlags.MinSplitSize = getMinSplit(c)
@@ -1536,46 +1505,42 @@ func createDownloadFlags(c *cli.Context) (*commands.DownloadConfiguration, error
 	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
 		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	downloadFlags.ArtDetails = artDetails
-	return downloadFlags, err
-}
-
-func createDefaultUploadSpec(c *cli.Context) *utils.SpecFiles {
-	pattern := c.Args().Get(0)
-	target := strings.TrimPrefix(c.Args().Get(1), "/")
-	props := c.String("props")
-	build := c.String("build")
-	recursive := cliutils.GetBoolFlagValue(c, "recursive", true)
-	flat := cliutils.GetBoolFlagValue(c, "flat", true)
-	regexp := c.Bool("regexp")
-	isIncludeDirs := c.Bool("include-dirs")
-	var excludePatterns []string
-	overrideArrayIfSet(&excludePatterns, c, "exclude-patterns")
-	return utils.CreateSpec(pattern, excludePatterns, target, props, build, recursive, flat, regexp, isIncludeDirs)
-}
-
-func getUploadSpec(c *cli.Context) (uploadSpec *utils.SpecFiles, err error) {
-	uploadSpec, err = utils.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	//Override spec with CLI options
-	for i := 0; i < len(uploadSpec.Files); i++ {
-		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
-		overrideStringIfSet(&uploadSpec.Get(i).Props, c, "props")
-		overrideStringIfSet(&uploadSpec.Get(i).Flat, c, "flat")
-		overrideStringIfSet(&uploadSpec.Get(i).Recursive, c, "recursive")
-		overrideStringIfSet(&uploadSpec.Get(i).Regexp, c, "regexp")
-		overrideStringIfSet(&uploadSpec.Get(i).IncludeDirs, c, "include-dirs")
-		overrideArrayIfSet(&uploadSpec.Get(i).ExcludePatterns, c, "exclude-patterns")
-	}
-	fixWinUploadFilesPath(uploadSpec)
-	err = utils.ValidateSpec(uploadSpec.Files, true)
+	downloadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
-func fixWinUploadFilesPath(uploadSpec *utils.SpecFiles) {
+func createDefaultUploadSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(0)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Limit(getLimitFromContext(c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Flat(cliutils.GetBoolFlagValue(c, "flat", true)).
+		Regexp(c.Bool("regexp")).
+		IncludeDirs(c.Bool("include-dirs")).
+		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
+		BuildSpec()
+}
+
+func getUploadSpec(c *cli.Context) (uploadSpec *spec.SpecFiles) {
+	uploadSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
+	//Override spec with CLI options
+	for i := 0; i < len(uploadSpec.Files); i++ {
+		uploadSpec.Get(i).Target = strings.TrimPrefix(uploadSpec.Get(i).Target, "/")
+		overrideFieldsIfSet(uploadSpec.Get(i), c)
+	}
+	fixWinUploadFilesPath(uploadSpec)
+	err = spec.ValidateSpec(uploadSpec.Files, true)
+	cliutils.ExitOnErr(err)
+	return
+}
+
+func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
 	if runtime.GOOS == "windows" {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
@@ -1586,7 +1551,7 @@ func fixWinUploadFilesPath(uploadSpec *utils.SpecFiles) {
 	}
 }
 
-func fixWinDownloadFilesPath(uploadSpec *utils.SpecFiles) {
+func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
 	if runtime.GOOS == "windows" {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Target = strings.Replace(file.Target, "\\", "\\\\", -1)
@@ -1594,8 +1559,8 @@ func fixWinDownloadFilesPath(uploadSpec *utils.SpecFiles) {
 	}
 }
 
-func createUploadFlags(c *cli.Context) (*commands.UploadConfiguration, error) {
-	uploadFlags := new(commands.UploadConfiguration)
+func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadConfiguration) {
+	uploadFlags = new(commands.UploadConfiguration)
 	buildName := getBuildName(c)
 	buildNumber := getBuildNumber(c)
 	if (buildName == "" && buildNumber != "") || (buildName != "" && buildNumber == "") {
@@ -1608,12 +1573,11 @@ func createUploadFlags(c *cli.Context) (*commands.UploadConfiguration, error) {
 	uploadFlags.Symlink = c.Bool("symlinks")
 	uploadFlags.Threads = getThreadsCount(c)
 	uploadFlags.Deb = getDebFlag(c)
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
-	uploadFlags.ArtDetails = artDetails
-	return uploadFlags, err
+	uploadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
 }
 
-func createBuildToolFlags(c *cli.Context) (buildConfigFlags *utils.BuildConfigFlags, err error) {
+func createBuildToolFlags(c *cli.Context) (buildConfigFlags *utils.BuildConfigFlags) {
 	buildConfigFlags = new(utils.BuildConfigFlags)
 	buildConfigFlags.BuildName = getBuildName(c)
 	buildConfigFlags.BuildNumber = getBuildNumber(c)
@@ -1623,12 +1587,9 @@ func createBuildToolFlags(c *cli.Context) (buildConfigFlags *utils.BuildConfigFl
 	return
 }
 
-func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags, err error) {
+func createConfigFlags(c *cli.Context) (configFlag *commands.ConfigFlags) {
 	configFlag = new(commands.ConfigFlags)
-	configFlag.ArtDetails, err = createArtifactoryDetails(c, false)
-	if err != nil {
-		return
-	}
+	configFlag.ArtDetails = createArtifactoryDetails(c, false)
 	configFlag.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
 	configFlag.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
 	return
@@ -1655,4 +1616,42 @@ func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
 			*field = append(*field, singleValue)
 		}
 	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as a int.
+func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.Int(fieldName)
+	}
+}
+
+func validateCommonContext(c *cli.Context) {
+	if c.IsSet("build") && c.IsSet("limit") {
+		cliutils.Exit(cliutils.ExitCodeError, "The 'limit' option cannot be used together with the 'build' option")
+	} else
+	if c.IsSet("sort-order") && !c.IsSet("sort-by") {
+		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option cannot be used without the 'sort-by' option")
+	} else
+	if c.IsSet("sort-order") && !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
+		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option can only accept 'asc' or 'desc' as values")
+	}
+}
+
+func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
+	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
+	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
+	overrideIntIfSet(&spec.Limit, c, "limit")
+	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
+	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.Recursive, c, "recursive")
+	overrideStringIfSet(&spec.Flat, c, "flat")
+	overrideStringIfSet(&spec.Regexp, c, "regexp")
+	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
+}
+
+func getLimitFromContext(c *cli.Context) (limit int) {
+	limit, err := cliutils.GetIntFlagValue(c, "limit", 0)
+	cliutils.ExitOnErr(err)
+	return
 }
