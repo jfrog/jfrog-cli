@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 

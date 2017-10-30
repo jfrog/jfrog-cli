@@ -16,6 +16,9 @@ func TestMain(m *testing.M) {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
+	if *tests.TestBuildTools {
+		InitBuildToolsTests()
+	}
 
 	result := m.Run()
 
@@ -24,6 +27,9 @@ func TestMain(m *testing.M) {
 	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
+	}
+	if *tests.TestBuildTools {
+		CleanBuildToolsTests()
 	}
 
 	os.Exit(result)

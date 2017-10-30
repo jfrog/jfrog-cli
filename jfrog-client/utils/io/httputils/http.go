@@ -14,6 +14,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"path/filepath"
+	"encoding/base64"
 )
 
 var UserAgent string
@@ -196,6 +197,7 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 	var wg sync.WaitGroup
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
+	chuckPaths := make([]string, flags.SplitCount)
 	var err error
 	for i := 0; i < flags.SplitCount; i++ {
 		if err != nil {
@@ -209,9 +211,10 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		}
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
-			e := downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails)
-			if e != nil {
-				err = e
+			var downloadErr error
+			chuckPaths[i], downloadErr = downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails)
+			if downloadErr != nil {
+				err = downloadErr
 			}
 			wg.Done()
 		}(start, end, i)
@@ -242,23 +245,18 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 	}
 	defer destFile.Close()
 	for i := 0; i < flags.SplitCount; i++ {
-		tempFilePath, err := fileutils.GetTempDirPath()
-		if err != nil {
-			return err
-		}
-		tempFilePath += "/" + flags.FileName + "_" + strconv.Itoa(i)
-		fileutils.AppendFile(tempFilePath, destFile)
+		fileutils.AppendFile(chuckPaths[i], destFile)
 	}
 	log.Info(logMsgPrefix + "Done downloading.")
 	return nil
 }
 
 func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string,
-httpClientsDetails HttpClientDetails) error {
+	httpClientsDetails HttpClientDetails) (string, error) {
 
 	tempLocalPath, err := fileutils.GetTempDirPath()
 	if err != nil {
-		return err
+		return "", err
 	}
 	tempLocalPath = filepath.Join(tempLocalPath, flags.LocalPath)
 
@@ -270,23 +268,22 @@ httpClientsDetails HttpClientDetails) error {
 	resp, _, err := sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
 	err = errorutils.CheckError(err)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	log.Debug(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
 	os.MkdirAll(tempLocalPath, 0777)
-	filePath := tempLocalPath + "/" + flags.FileName + "_" + strconv.Itoa(currentSplit)
+	filePath := filepath.Join(tempLocalPath, base64.StdEncoding.EncodeToString([]byte(flags.FileName)) + "_" + strconv.Itoa(currentSplit))
 
 	out, err := os.Create(filePath)
 	err = errorutils.CheckError(err)
 	defer out.Close()
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = io.Copy(out, resp.Body)
-	err = errorutils.CheckError(err)
-	return err
+	return filePath, errorutils.CheckError(err)
 }
 
 func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) (*fileutils.FileDetails, error) {

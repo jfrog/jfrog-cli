@@ -23,56 +23,66 @@ import (
 	"crypto/tls"
 	"time"
 	"net/url"
-	"os/exec"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"net/http"
 	"net"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"strconv"
 	"bytes"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"os/exec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
 var artifactoryCli *tests.JfrogCli
 var artifactoryDetails *config.ArtifactoryDetails
+var artAuth *auth.ArtifactoryDetails
+var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	if *tests.TestMaven {
-		mavenHome := os.Getenv("M2_HOME")
-		if len(mavenHome) == 0 {
-			cliutils.Exit(cliutils.ExitCodeError, "The integration tests include tests for the Maven functionality. Please set the M2_HOME environment variable or alternatively, run the tests again with `-test.maven=false`.")
-		}
-	}
-	if *tests.TestGradle {
-		_, err := utils.GetGradleExecPath(false)
-		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The integration tests include tests for the Gradle functionality. Please add the gradle executable to your PATH environment variable, or alternatively, run the tests again with `-test.gradle=false`.")
-		}
-	}
-
-	artifactoryDetails = new(config.ArtifactoryDetails)
-	cred := "--url=" + *tests.RtUrl
-	artifactoryDetails.Url = *tests.RtUrl
-	if *tests.RtApiKey != "" {
-		cred += " --apikey=" + *tests.RtApiKey
-		artifactoryDetails.ApiKey = *tests.RtApiKey
-	} else {
-		cred += " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
-		artifactoryDetails.User = *tests.RtUser
-		artifactoryDetails.Password = *tests.RtPassword
-	}
-
+	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
 	if err := createReposIfNeeded(); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 	cleanArtifactoryTest()
+}
+
+func authenticate() string {
+	artifactoryDetails = &config.ArtifactoryDetails{Url: cliutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	cred := "--url=" + *tests.RtUrl
+	if artifactoryDetails.IsSsh() {
+		if *tests.RtSshKeyPath != "" {
+			cred += " --ssh-key-path=" + *tests.RtSshKeyPath
+		}
+		if *tests.RtSshPassphrase != "" {
+			cred += " --ssh-passphrase=" + *tests.RtSshPassphrase
+		}
+	} else {
+		if *tests.RtApiKey != "" {
+			cred += " --apikey=" + *tests.RtApiKey
+			artifactoryDetails.ApiKey = *tests.RtApiKey
+		} else {
+			cred += " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+			artifactoryDetails.User = *tests.RtUser
+			artifactoryDetails.Password = *tests.RtPassword
+		}
+	}
+	var err error
+	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, "Failed while attempting to authenticate with Artifactory: " + err.Error())
+	}
+	artifactoryDetails.SshAuthHeaders = artAuth.SshAuthHeaders
+	artifactoryDetails.Url = artAuth.Url
+	artHttpDetails = artAuth.CreateArtifactoryHttpClientDetails()
+	return cred
 }
 
 func TestArtifactorySimpleUploadSpec(t *testing.T) {
@@ -87,10 +97,14 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
 	const rtServerId = "rtTestServerId"
+	var passphrase string
+	if *tests.RtSshPassphrase != "" {
+		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
+	}
 	artifactoryCli.Exec("c", rtServerId, "--interactive=false")
 	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", "")
 	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
-	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+rtServerId)
+	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+rtServerId, passphrase)
 	isExistInArtifactory(tests.SimpleUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
 	artifactoryCommandExecutor.Exec("c", "delete", rtServerId, "--interactive=false")
 	cleanArtifactoryTest()
@@ -344,7 +358,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	}
 	defer os.RemoveAll(path)
 	os.Setenv("JFROG_CLI_HOME", path)
-	go cliproxy.StartLocalReverseHttpProxy(*tests.RtUrl)
+	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	defer os.Remove(certificate.KEY_FILE)
@@ -355,19 +369,12 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	parsedUrl, err := url.Parse(*tests.RtUrl)
-	rtDetails := &config.ArtifactoryDetails{Url: "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()}
-	if *tests.RtApiKey != "" {
-		rtDetails.ApiKey = *tests.RtApiKey
-	} else {
-		rtDetails.User = *tests.RtUser
-		rtDetails.Password = *tests.RtPassword
-	}
-	_, err = commands.Search(spec, rtDetails)
+	parsedUrl, err := url.Parse(artifactoryDetails.Url)
+	artifactoryDetails.Url = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
+	_, err = commands.Search(spec, artifactoryDetails)
 	// The server is using self-sign certificate
 	// Without loading the certificated we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
 	if _, ok := err.(*url.Error); !ok {
-
 		t.Error("Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
 	}
 
@@ -384,10 +391,11 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = commands.Search(spec, rtDetails)
+	_, err = commands.Search(spec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
+	artifactoryDetails.Url = artAuth.Url
 	cleanArtifactoryTest()
 }
 
@@ -434,21 +442,27 @@ func getExternalIP() (string, error) {
 // We decide which var to set by the rtUrl scheme.
 func TestArtifactoryProxy(t *testing.T) {
 	initArtifactoryTest(t)
-	rtUrl, err := url.Parse(*tests.RtUrl)
+	rtUrl, err := url.Parse(artifactoryDetails.Url)
 	if err != nil {
 		t.Error(err)
 	}
-	var command *exec.Cmd
-	var port string
+	var proxyTestArgs []string
+	var httpProxyEnv string
+	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url="+*tests.RtUrl, "-rt.password="+*tests.RtPassword, "-rt.apikey="+*tests.RtApiKey, "-rt.sshKeyPath="+*tests.RtSshKeyPath, "-rt.sshPassphrase="+*tests.RtSshPassphrase}
 	if rtUrl.Scheme == "https" {
-		command = exec.Command("go", "test", "-run=TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator", "-test.artifactoryProxy=true", "-rt.url="+*tests.RtUrl, "-rt.password="+*tests.RtPassword, "-rt.apikey="+*tests.RtApiKey)
-		port = cliproxy.GetProxyHttpsPort()
-		command.Env = append (os.Environ(), "HTTPS_PROXY=localhost:" + port)
+		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
+		httpProxyEnv = "HTTPS_PROXY=localhost:" + cliproxy.GetProxyHttpsPort()
 	} else {
-		command = exec.Command("go", "test", "-run=TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator", "-test.artifactoryProxy=true", "-rt.url="+*tests.RtUrl, "-rt.password="+*tests.RtPassword, "-rt.apikey="+*tests.RtApiKey)
-		port = cliproxy.GetProxyHttpPort()
-		command.Env = append (os.Environ(), "HTTP_PROXY=http://localhost:" + port)
+		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpProxyEnvironmentVariableDelegator"}, testArgs...)
+		httpProxyEnv = "HTTP_PROXY=localhost:" + cliproxy.GetProxyHttpPort()
 	}
+	runProxyTest(t, proxyTestArgs, httpProxyEnv)
+	cleanArtifactoryTest()
+}
+
+func runProxyTest(t *testing.T, proxyTestArgs []string, httpProxyEnv string) {
+	command := exec.Command("go", proxyTestArgs...)
+	command.Env = append(os.Environ(), httpProxyEnv)
 	output, err := command.Output()
 	if err != nil {
 		t.Error(err)
@@ -456,46 +470,44 @@ func TestArtifactoryProxy(t *testing.T) {
 	cliutils.CliLogger.Info(string(output))
 }
 
-// Skip test if test.artifactoryProxy flag set to false.
 // Should be run only by @TestArtifactoryProxy test.
-func TestArtifactory_HTTP_PROXY_EnvironmentVariableDelegator(t *testing.T) {
-	if !*tests.TestArtifactoryProxy {
-		t.SkipNow()
-	}
-	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
-	spec := spec.NewBuilder().Pattern("jfrog-cli-tests-repo1/*.zip").Recursive(true).BuildSpec()
-	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
-	checkForErrDueToMissingProxy(spec, rtDetails, t)
-	go cliproxy.StartHttpProxy()
-	// Let's wait for the reverse proxy to start up.
-	checkIfServerIsUp(cliproxy.GetProxyHttpPort(), "http")
-	_, err := commands.Search(spec, rtDetails)
-	if err != nil {
-		t.Error(err)
-	}
+func TestArtifactoryHttpProxyEnvironmentVariableDelegator(t *testing.T) {
+	testArtifactoryProxy(t, false)
 }
 
-// Skip test if test.artifactoryProxy flag set to false.
 // Should be run only by @TestArtifactoryProxy test.
-func TestArtifactory_HTTPS_PROXY_EnvironmentVariableDelegator(t *testing.T) {
+func TestArtifactoryHttpsProxyEnvironmentVariableDelegator(t *testing.T) {
+	testArtifactoryProxy(t, true)
+}
+
+func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	if !*tests.TestArtifactoryProxy {
 		t.SkipNow()
 	}
+	authenticate()
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
 	spec := spec.NewBuilder().Pattern("jfrog-cli-tests-repo1/*.zip").Recursive(true).BuildSpec()
-	rtDetails := getRtDetailsForProxyTest(proxyRtUrl)
-	checkForErrDueToMissingProxy(spec, rtDetails, t)
-	go cliproxy.StartHttpsProxy()
+	artifactoryDetails.Url = proxyRtUrl
+	checkForErrDueToMissingProxy(spec, t)
+	var port string
+	if isHttps {
+		go cliproxy.StartHttpsProxy()
+		port = cliproxy.GetProxyHttpsPort()
+	} else {
+		go cliproxy.StartHttpProxy()
+		port = cliproxy.GetProxyHttpPort()
+	}
 	// Let's wait for the reverse proxy to start up.
-	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "http")
-	_, err := commands.Search(spec, rtDetails)
+	checkIfServerIsUp(port, "http")
+	_, err := commands.Search(spec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
+	artifactoryDetails.Url = artAuth.Url
 }
 
 func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
-	rtUrl, err := url.Parse(*tests.RtUrl)
+	rtUrl, err := url.Parse(artifactoryDetails.Url)
 	if err != nil {
 		t.Error(err)
 	}
@@ -510,23 +522,12 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 	return rtUrl.String()
 }
 
-func checkForErrDueToMissingProxy(spec *spec.SpecFiles, rtDetails *config.ArtifactoryDetails, t *testing.T) {
-	_, err := commands.Search(spec, rtDetails)
+func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
+	_, err := commands.Search(spec, artifactoryDetails)
 	_, isUrlErr := err.(*url.Error)
 	if err == nil || !isUrlErr {
 		t.Error("Expected the request to fails, since the proxy is down.", err)
 	}
-}
-
-func getRtDetailsForProxyTest(proxyRtUrl string) *config.ArtifactoryDetails {
-	rtDetails := &config.ArtifactoryDetails{Url: proxyRtUrl}
-	if *tests.RtApiKey != "" {
-		rtDetails.ApiKey = *tests.RtApiKey
-	} else {
-		rtDetails.User = *tests.RtUser
-		rtDetails.Password = *tests.RtPassword
-	}
-	return rtDetails
 }
 
 func checkIfServerIsUp(port, proxyScheme string) error {
@@ -558,7 +559,7 @@ func TestArtifactorySetProperties(t *testing.T) {
 	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/a.in")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/a.*", "prop=val")
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artifactoryDetails.CreateArtAuthConfig())
+	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		params, err := spec.Get(i).ToArtifatorySetPropsParams()
@@ -594,7 +595,7 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artifactoryDetails.CreateArtAuthConfig())
+	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		params, err := spec.Get(i).ToArtifatorySetPropsParams()
@@ -638,7 +639,7 @@ func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbs, d1, 0644)
 	if err != nil {
-		t.Error("Coudln't create file:", err)
+		t.Error("Couldn't create file:", err)
 	}
 
 	artifactoryCli.Exec("upload", testFileRel, tests.Repo1, "--recursive=false")
@@ -961,14 +962,13 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	specFile := tests.GetFilePath(tests.MoveCopyDeleteSpec)
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, _, _, _ := httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != 200 {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
-	resp, _, _, _ = httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != 404 {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
@@ -981,8 +981,7 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, body, _, err := httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -995,8 +994,7 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, body, _, err := httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 200 {
 		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -1022,12 +1020,11 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 
 	artifactoryCli.Exec("delete", "--spec="+tests.GetFilePath(tests.DeleteSpec), "--quiet=true")
 
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, body, _, err := httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
-	resp, body, _, err = httputils.SendGet(*tests.RtUrl+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != 404 {
 		t.Error("Couldn't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
 	}
@@ -1971,8 +1968,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	//publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	_, body, _, err := httputils.SendGet(*tests.RtUrl+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
+	_, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2043,125 +2039,6 @@ func TestReadGitConfig(t *testing.T) {
 	}
 }
 
-func TestMavenBuildWithServerID(t *testing.T) {
-	initArtifactoryTest(t)
-	skipMavenTestIfNeeded(t)
-
-	pomPath := createMavenProject(t)
-	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-	createJfrogHomeConfig(t)
-
-	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanArtifactoryTest()
-}
-
-func TestMavenBuildWithCredentials(t *testing.T) {
-	initArtifactoryTest(t)
-	skipMavenTestIfNeeded(t)
-
-	pomPath := createMavenProject(t)
-	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUseramePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.MavenUseramePasswordTemplate, true)
-	if err != nil {
-		t.Error(err)
-	}
-
-	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanArtifactoryTest()
-}
-
-func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	mavenFlags := &utils.BuildConfigFlags{}
-	err := commands.Mvn("clean install -f"+pomPath, configFilePath, mavenFlags)
-	if err != nil {
-		t.Error(err)
-	}
-	isExistInArtifactory(tests.MavenDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
-}
-
-func skipMavenTestIfNeeded(t *testing.T) {
-	if !*tests.TestMaven {
-		t.Skip("Maven is not being tested, skipping...")
-	}
-	if *tests.RtApiKey != "" {
-		t.Skip("Maven does not support api key, skipping...")
-	}
-}
-
-func TestGradleBuildWithServerID(t *testing.T) {
-	initArtifactoryTest(t)
-	skipGradleTestIfNeeded(t)
-
-	buildGradlePath := createGradleProject(t)
-	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
-	createJfrogHomeConfig(t)
-
-	runAndValidateGradle(buildGradlePath, configFilePath, t)
-	cleanArtifactoryTest()
-}
-
-func TestGradleBuildWithCredentials(t *testing.T) {
-	initArtifactoryTest(t)
-	skipGradleTestIfNeeded(t)
-
-	buildGradlePath := createGradleProject(t)
-	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.GradleUseramePasswordTemplate, true)
-	if err != nil {
-		t.Error(err)
-	}
-
-	runAndValidateGradle(buildGradlePath, configFilePath, t)
-	cleanArtifactoryTest()
-}
-
-func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {
-	buildConfigFlags := &utils.BuildConfigFlags{}
-	err := commands.Gradle("clean artifactoryPublish -b "+buildGradlePath, configFilePath, buildConfigFlags)
-	if err != nil {
-		t.Error(err)
-	}
-	isExistInArtifactory(tests.GradleDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
-}
-
-func skipGradleTestIfNeeded(t *testing.T) {
-	if !*tests.TestGradle {
-		t.Skip("Gradle is not being tested, skipping...")
-	}
-	if *tests.RtApiKey != "" {
-		t.Skip("Gradle does not support api key, skipping...")
-	}
-}
-
-func createGradleProject(t *testing.T) string {
-	srcBuildFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "build.gradle")
-	targetPomPath := filepath.Join(tests.Out, "gradleproject")
-	buildGradlePath, err := copyTemplateFile(srcBuildFile, targetPomPath, "build.gradle", false)
-	if err != nil {
-		t.Error(err)
-	}
-
-	srcSettingsFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "settings.gradle")
-	_, err = copyTemplateFile(srcSettingsFile, targetPomPath, "settings.gradle", false)
-	if err != nil {
-		t.Error(err)
-	}
-
-	return buildGradlePath
-}
-
-func createMavenProject(t *testing.T) string {
-	srcPomFile := filepath.Join(tests.GetTestResourcesPath(), "mavenproject", "pom.xml")
-	targetPomPath := filepath.Join(tests.Out, "mavenproject")
-	pomPath, err := copyTemplateFile(srcPomFile, targetPomPath, "pom.xml", false)
-	if err != nil {
-		t.Error(err)
-	}
-	return pomPath
-}
-
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JFROG_CONFIG_FILE)
 
@@ -2181,8 +2058,7 @@ func createJfrogHomeConfig(t *testing.T) {
 
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
-	err := deleteRepos()
-	if err != nil {
+	if err := deleteRepos(); err != nil {
 		log.Error(err)
 	}
 }
@@ -2247,8 +2123,7 @@ func getPathsToDelete(specFile string) []rtutils.ResultItem {
 }
 
 func deleteBuild(buildName string) {
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, body, err := httputils.SendDelete(*tests.RtUrl+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
+	resp, body, err := httputils.SendDelete(artifactoryDetails.Url+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 	}
@@ -2259,8 +2134,7 @@ func deleteBuild(buildName string) {
 }
 
 func execDeleteRepoRest(repoName string) error {
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, body, err := httputils.SendDelete(*tests.RtUrl+"api/repositories/"+repoName, nil, artHttpDetails)
+	resp, body, err := httputils.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
 		return err
 	}
@@ -2276,9 +2150,8 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	if err != nil {
 		return err
 	}
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	artHttpDetails.Headers = map[string]string{"Content-Type": "application/json"}
-	resp, body, err := httputils.SendPut(*tests.RtUrl+"api/repositories/"+repoName, content, artHttpDetails)
+	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
+	resp, body, err := httputils.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		return err
 	}
@@ -2369,8 +2242,7 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 }
 
 func isRepoExist(repoName string) bool {
-	artHttpDetails := artifactoryDetails.CreateArtAuthConfig().CreateArtifactoryHttpClientDetails()
-	resp, _, _, err := httputils.SendGet(*tests.RtUrl+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
+	resp, _, _, err := httputils.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)

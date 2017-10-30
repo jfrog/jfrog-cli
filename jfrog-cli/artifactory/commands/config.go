@@ -8,9 +8,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
-	"strings"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
 )
 
 func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
@@ -106,10 +106,19 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 	if details.Url == "" {
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 	}
-	if strings.Index(details.Url, "ssh://") == 0 || strings.Index(details.Url, "SSH://") == 0 {
-		err := readSshKeyPathFromConsole(details, defaultDetails)
-		if err != nil {
+	if details.IsSsh() {
+		useAgentPrompt := &prompt.YesNo {
+			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
+			Label:   "useSshAgent",
+			Default: "n",
+		}
+		if err := useAgentPrompt.Read(); err != nil {
 			return err
+		}
+		if !useAgentPrompt.GetResults().GetBool("useSshAgent") {
+			if err := readSshKeyPathFromConsole(details, defaultDetails); err != nil {
+				return err
+			}
 		}
 	} else {
 		if details.ApiKey == "" && details.Password == "" {
@@ -254,7 +263,10 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 		return details, nil
 	}
 	cliutils.CliLogger.Info("Encrypting password...")
-	artAuth := details.CreateArtAuthConfig()
+	artAuth, err := details.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth)
 	if err != nil {
 		return nil, err
@@ -264,7 +276,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) (err error) {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.SshKeyPath != ""}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.IsSsh()}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		err = errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
 	}

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
@@ -64,9 +64,12 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	authConfig := artDetails.CreateArtAuthConfig()
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
-		SetArtDetails(authConfig).
+		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetDryRun(isDryRun).
 		SetLogger(cliutils.CliLogger).

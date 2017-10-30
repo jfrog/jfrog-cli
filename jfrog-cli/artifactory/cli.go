@@ -302,6 +302,10 @@ func getCommonFlags() []cli.Flag {
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path.",
 		},
+		cli.StringFlag{
+			Name: "ssh-passphrase",
+			Usage: "[Optional] SSH key passphrase.",
+		},
 	}
 }
 
@@ -1263,6 +1267,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.User = c.String("user")
 	details.Password = c.String("password")
 	details.SshKeyPath = c.String("ssh-key-path")
+	details.SshPassphrase = c.String("ssh-passphrase")
 	details.ServerId = c.String("server-id")
 
 	if includeConfig {

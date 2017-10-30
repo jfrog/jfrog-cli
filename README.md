@@ -41,7 +41,7 @@ Go will download and build the project on your machine. Once complete, you will 
 ### Artifactory Integration tests
 To run Artifactory integration tests execute the following command: 
 ````
-go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=true -test.bintray=false
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog
 ````
 Optional flags:
 
@@ -58,6 +58,19 @@ Optional flags:
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
+  
+#### Build tools Integration tests
+* `M2_HOME` environment variable should be set to the local maven installation path.
+* `gradle` executable should exist in the execution path. 
+* `java` executable should exist in the execution path. To use different `Java` version, set `JAVA_HOME` environment variable.
+
+
+To run build tools integration tests execute the following command:
+````
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.buildTools=true
+````
+##### Limitation
+* Currently, build integration support only http(s) connections to Artifactory using username and password.
 
 ### Bintray Integration tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
@@ -80,13 +93,13 @@ Flags:
 To execute all the JFrog CLI unit tests run the following command:
 #### Windows
 ````
-jfrogdev\jfrog-cli-go>for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog-cli/jfrog/" ^| find /
+for /f "" %G in ('go list ./... ^| find /i /v "/vendor/" ^| find /i /v "jfrog-cli-go/jfrog-cli/jfrog/" ^| find /
 i /v "jfrog-cli-go/jfrog-cli/docs"') do @go test %G
 ````
 
 #### Unix
 ```
-jfrogdev/jfrog-cli-go$ go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog-cli/jfrog | grep -v jfrog-cli-go/jfrog-cli/docs)
+go test $(go list ./... | grep -v vendor | grep -v jfrog-cli-go/jfrog-cli/jfrog | grep -v jfrog-cli-go/jfrog-cli/docs)
 ```
 
 # Pull Requests

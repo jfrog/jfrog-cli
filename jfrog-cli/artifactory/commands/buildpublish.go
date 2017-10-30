@@ -17,7 +17,10 @@ import (
 )
 
 func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) error {
-	artAuth := artDetails.CreateArtAuthConfig()
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return err
+	}
 	flags.SetArtifactoryDetails(artAuth)
 
 	buildInfo, err := createGenericBuildInfo(buildName, buildNumber, flags)

@@ -9,7 +9,6 @@ type ArtifactoryConfig interface {
 	GetUrl() string
 	GetPassword() string
 	GetApiKey() string
-	GetSshKeyPath() string
 	GetCertifactesPath() string
 	GetNumOfThreadPerOperation() int
 	GetMinSplitSize() int64

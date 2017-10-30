@@ -99,8 +99,12 @@ func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildin
 }
 
 func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, minChecksumDeploySize int64) (artifactory.ArtifactoryConfig, error) {
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	servicesConfig, err := new(artifactory.ArtifactoryServicesConfigBuilder).
-		SetArtDetails(artDetails.CreateArtAuthConfig()).
+		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetMinChecksumDeploy(minChecksumDeploySize).

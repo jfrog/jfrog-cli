@@ -10,20 +10,11 @@ type ArtifactoryDetails struct {
 	User           string            `json:"-"`
 	Password       string            `json:"-"`
 	ApiKey         string            `json:"-"`
-	SshKeysPath    string            `json:"-"`
 	SshAuthHeaders map[string]string `json:"-"`
 }
 
-func (rt *ArtifactoryDetails) SshAuthentication() (map[string]string, error) {
-	if rt.SshKeysPath == "" {
-		return nil, nil
-	}
-	baseUrl, sshHeaders, err := sshAuthentication(rt.Url, rt.SshKeysPath)
-	if err != nil {
-		return nil, err
-	}
-	rt.Url = baseUrl
-	return sshHeaders, nil
+func (rt *ArtifactoryDetails) SshAuthentication(sshKey, sshPassphrase []byte) (map[string]string, string, error) {
+	return sshAuthentication(rt.Url, sshKey, sshPassphrase)
 }
 
 func (rt *ArtifactoryDetails) GetSshAuthHeaders() map[string]string {

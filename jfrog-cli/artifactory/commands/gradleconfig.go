@@ -88,7 +88,7 @@ func readGradleGlobalConfig() (*viper.Viper, error) {
 	globalOptions := &promptreader.Array{
 		Prompts: []promptreader.Prompt{
 			&promptreader.YesNo{
-				Msg:     "Is the Gradle Artifactory Plugin already applied in the build script? (y/n) [${default}]? ",
+				Msg:     "Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ",
 				Default: "n",
 				Label:   USE_PLUGIN,
 			},

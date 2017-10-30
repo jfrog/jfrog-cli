@@ -9,7 +9,7 @@ import (
 	"errors"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )

@@ -32,10 +32,6 @@ func (config *artifactoryServicesConfig) GetApiKey() string {
 	return config.ApiKey
 }
 
-func (config *artifactoryServicesConfig) GetSshKeyPath() string {
-	return config.SshKeysPath
-}
-
 func (config *artifactoryServicesConfig) GetCertifactesPath() string {
 	return config.certifactesPath
 }

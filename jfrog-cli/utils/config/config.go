@@ -13,6 +13,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"path"
+	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
+	"encoding/pem"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -309,6 +312,8 @@ type ArtifactoryDetails struct {
 	Password       string            `json:"password,omitempty"`
 	ApiKey         string            `json:"apiKey,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
+	SshPassphrase  string            `json:"SshPassphrase,omitempty"`
+	SshAuthHeaders map[string]string `json:"SshAuthHeaders,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
 }
@@ -359,14 +364,88 @@ func (artifactoryDetails *ArtifactoryDetails) GetPassword() string {
 	return artifactoryDetails.Password
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() *auth.ArtifactoryDetails {
+func (artifactoryDetails *ArtifactoryDetails) IsSsh() bool {
+	return strings.HasPrefix(strings.ToLower(artifactoryDetails.Url), "ssh://")
+}
+
+func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
+	return len(artifactoryDetails.SshAuthHeaders) > 0
+}
+
+func (artifactoryDetails *ArtifactoryDetails) sshAuthenticationRequired() bool {
+	return !artifactoryDetails.SshAuthHeaderSet() && artifactoryDetails.IsSsh()
+}
+
+func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (*auth.ArtifactoryDetails, error) {
 	artAuth := new(auth.ArtifactoryDetails)
 	artAuth.Url = artifactoryDetails.Url
-	artAuth.SshKeysPath = artifactoryDetails.SshKeyPath
+	artAuth.SshAuthHeaders = artifactoryDetails.SshAuthHeaders
 	artAuth.ApiKey = artifactoryDetails.ApiKey
 	artAuth.User = artifactoryDetails.User
 	artAuth.Password = artifactoryDetails.Password
-	return artAuth
+	if artifactoryDetails.sshAuthenticationRequired() {
+		var sshKey, sshPassphrase []byte
+		var err error
+		if len(artifactoryDetails.SshKeyPath) > 0 {
+			sshKey, sshPassphrase, err = readSshKeyAndPassphrase(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
+			if err != nil {
+				return nil, err
+			}
+		}
+		sshAuth, baseUrl, err := artAuth.SshAuthentication(sshKey, sshPassphrase)
+		if err != nil {
+			return nil, err
+		}
+		artAuth.SshAuthHeaders = sshAuth
+		// Change the url to http
+		artAuth.Url = baseUrl
+	}
+	return artAuth, nil
+}
+
+func readSshKeyAndPassphrase(sshKeyPath, sshPassphrase string) ([]byte, []byte, error) {
+	sshKey, err := ioutil.ReadFile(sshKeyPath)
+	if errorutils.CheckError(err) != nil {
+		return nil, nil, err
+	}
+	if len(sshPassphrase) == 0 {
+		encryptedKey, err := isEncrypted(sshKey)
+		if errorutils.CheckError(err) != nil {
+			return nil, nil, err
+		}
+		if encryptedKey {
+			sshPassphrase, err = readSshPassphrase(sshKeyPath)
+			if errorutils.CheckError(err) != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	return sshKey, []byte(sshPassphrase), err
+}
+
+func readSshPassphrase(sshKeyPath string) (string, error) {
+	offerConfig, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	if err != nil || !offerConfig {
+		return "", err
+	}
+	simplePrompt := &prompt.Simple {
+		Msg:     "Enter passphrase for key '" + sshKeyPath + "': ",
+		Mask:    true,
+		Label:   "sshPassphrase",
+	}
+	if err = simplePrompt.Read(); err != nil {
+		return "", err
+	}
+	return simplePrompt.GetResults().GetString("sshPassphrase"), nil
+}
+
+func isEncrypted(buffer []byte) (bool, error) {
+	block, _ := pem.Decode(buffer)
+	if block == nil {
+		return false, errors.New("SSH: no key found")
+	}
+	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
 }
 
 func (missionControlDetails *MissionControlDetails) SetUser(username string) {

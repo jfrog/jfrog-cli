@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/types/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )

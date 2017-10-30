@@ -21,14 +21,15 @@ var RtUrl *string
 var RtUser *string
 var RtPassword *string
 var RtApiKey *string
+var RtSshKeyPath *string
+var RtSshPassphrase *string
 var BtUser *string
 var BtKey *string
 var BtOrganization *string
 var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
-var TestMaven *bool
-var TestGradle *bool
+var TestBuildTools *bool
 
 func init() {
 	PrintSearchResult = flag.Bool("printSearchResult", false, "Set to true for printing search results")
@@ -36,14 +37,15 @@ func init() {
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
+	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
+	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray password")
 	BtOrganization = flag.String("bt.organization", "", "Bintray organization")
-	TestMaven = flag.Bool("test.maven", true, "Test maven build")
-	TestGradle = flag.Bool("test.gradle", true, "Test gradle build")
+	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven and Gradle builds")
 }
 
 func CleanFileSystem() {
@@ -104,18 +106,18 @@ func GetTestResourcesPath() string {
 	fileSeparator := fileutils.GetFileSeparator()
 	index := strings.LastIndex(dir, fileSeparator)
 	dir = dir[:index]
-	return dir + fileutils.GetFileSeparator() + "testsdata" + fileutils.GetFileSeparator()
+	return dir + fileSeparator + "testsdata" + fileSeparator
 }
 
 func getFileByOs(fileName string) string {
 	var currentOs string;
-	fileSepatatr := fileutils.GetFileSeparator()
+	fileSeparator := fileutils.GetFileSeparator()
 	if runtime.GOOS == "windows" {
 		currentOs = "win"
 	} else {
 		currentOs = "unix"
 	}
-	return GetTestResourcesPath() + "specs" + fileSepatatr + currentOs + fileSepatatr + fileName
+	return GetTestResourcesPath() + "specs" + fileSeparator + currentOs + fileSeparator + fileName
 }
 
 func GetFilePath(fileName string) string {

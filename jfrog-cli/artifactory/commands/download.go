@@ -90,8 +90,12 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
 	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
-		SetArtDetails(artDetails.CreateArtAuthConfig()).
+		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetSplitCount(flags.SplitCount).

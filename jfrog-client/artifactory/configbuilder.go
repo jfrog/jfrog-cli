@@ -54,13 +54,6 @@ func (builder *ArtifactoryServicesConfigBuilder) SetDryRun(dryRun bool) *Artifac
 func (builder *ArtifactoryServicesConfigBuilder) Build() (ArtifactoryConfig, error) {
 	c := &artifactoryServicesConfig{}
 	c.ArtifactoryDetails = builder.ArtifactoryDetails
-	if builder.SshKeysPath != "" {
-		header, err := builder.ArtifactoryDetails.SshAuthentication()
-		if err != nil {
-			return nil, err
-		}
-		c.SshAuthHeaders = header
-	}
 
 	if builder.threads == 0 {
 		c.threads = 3

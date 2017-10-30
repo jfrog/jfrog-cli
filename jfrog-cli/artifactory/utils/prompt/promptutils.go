@@ -137,5 +137,9 @@ func GetRepositories(resolveRes *viper.Viper, repoTypes ...utils.RepoType) ([]st
 		return []string{}, err
 	}
 	artDetails = config.GetArtifactoryConfByServerId(resolveRes.GetString(utils.SERVER_ID), serversId)
-	return utils.GetRepositories(artDetails.CreateArtAuthConfig(), repoTypes...)
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+	return utils.GetRepositories(artAuth, repoTypes...)
 }
