@@ -46,6 +46,12 @@ func (sm *ArtifactoryServicesManager) PromoteBuild(params services.PromotionPara
 	return promotionService.BuildPromote(params)
 }
 
+func (sm *ArtifactoryServicesManager) XrayScanBuild(params services.XrayScanParams) ([]byte, error) {
+	xrayScanService := services.NewXrayScanService(sm.client)
+	xrayScanService.ArtDetails = sm.config.GetArtDetails()
+	return xrayScanService.ScanBuild(params)
+}
+
 func (sm *ArtifactoryServicesManager) GetPathsToDelete(params services.DeleteParams) ([]utils.ResultItem, error) {
 	deleteService := services.NewDeleteService(sm.client)
 	deleteService.DryRun = sm.config.IsDryRun()

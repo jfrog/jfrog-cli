@@ -20,10 +20,7 @@ import (
 	cliproxy "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"crypto/tls"
-	"time"
 	"net/url"
-	"net/http"
 	"net"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"strconv"
@@ -32,8 +29,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"os/exec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"os/exec"
+	"crypto/tls"
+	"time"
+	"net/http"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -58,23 +59,15 @@ func InitArtifactoryTests() {
 func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: cliutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if artifactoryDetails.IsSsh() {
-		if *tests.RtSshKeyPath != "" {
-			cred += " --ssh-key-path=" + *tests.RtSshKeyPath
-		}
-		if *tests.RtSshPassphrase != "" {
-			cred += " --ssh-passphrase=" + *tests.RtSshPassphrase
-		}
-	} else {
+	if !artifactoryDetails.IsSsh() {
 		if *tests.RtApiKey != "" {
-			cred += " --apikey=" + *tests.RtApiKey
 			artifactoryDetails.ApiKey = *tests.RtApiKey
 		} else {
-			cred += " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
 			artifactoryDetails.User = *tests.RtUser
 			artifactoryDetails.Password = *tests.RtPassword
 		}
 	}
+	cred += getArtifactoryTestCredentials()
 	var err error
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, "Failed while attempting to authenticate with Artifactory: " + err.Error())
@@ -82,6 +75,27 @@ func authenticate() string {
 	artifactoryDetails.SshAuthHeaders = artAuth.SshAuthHeaders
 	artifactoryDetails.Url = artAuth.Url
 	artHttpDetails = artAuth.CreateArtifactoryHttpClientDetails()
+	return cred
+}
+
+func getArtifactoryTestCredentials() string {
+	if artifactoryDetails.IsSsh() {
+		return getSshCredentials()
+	}
+	if *tests.RtApiKey != "" {
+		return " --apikey=" + *tests.RtApiKey
+	}
+	return " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+}
+
+func getSshCredentials() string {
+	cred := ""
+	if *tests.RtSshKeyPath != "" {
+		cred += " --ssh-key-path=" + *tests.RtSshKeyPath
+	}
+	if *tests.RtSshPassphrase != "" {
+		cred += " --ssh-passphrase=" + *tests.RtSshPassphrase
+	}
 	return cred
 }
 
@@ -552,6 +566,16 @@ func checkIfServerIsUp(port, proxyScheme string) error {
 		return nil
 	}
 	return fmt.Errorf("Failed while waiting for the proxy server to be accessible.")
+}
+
+func TestXrayScanBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	xrayServerPort := xray.StartXrayMockServer()
+	serverUrl := "--url=http://localhost:" + strconv.Itoa(xrayServerPort)
+	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
+	artifactoryCommandExecutor.Exec("build-scan", xray.CleanScanBuildName, "3")
+
+	cleanArtifactoryTest()
 }
 
 func TestArtifactorySetProperties(t *testing.T) {

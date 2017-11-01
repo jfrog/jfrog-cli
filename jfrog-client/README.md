@@ -141,3 +141,11 @@
     setPropsParams := &services.SetPropsParamsImpl{Items:items, Props:prop}
     rtManager.SetProps(setPropsParams)
 ```
+
+#### Xray Scan
+```
+    xrayScanParams := new(services.XrayScanParamsImpl)
+    xrayScanParams.BuildName = buildName
+    xrayScanParams.BuildNumber = buildNumber
+    rtManager.XrayScanBuild(params)
+```

@@ -36,6 +36,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 )
 
@@ -181,6 +182,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildAddGitCmd(c)
+			},
+		},
+		{
+			Name:      "build-scan",
+			Flags:     getServerFlags(),
+			Aliases:   []string{"bs"},
+			Usage:     buildscan.Description,
+			HelpName:  common.CreateUsage("rt build-scan", buildscan.Description, buildscan.Usage),
+			UsageText: buildscan.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				buildScanCmd(c)
 			},
 		},
 		{
@@ -1149,6 +1162,14 @@ func buildAddGitCmd(c *cli.Context) {
 		dotGitPath = c.Args().Get(2)
 	}
 	err := commands.BuildAddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	cliutils.ExitOnErr(err)
+}
+
+func buildScanCmd(c *cli.Context) {
+	validateBuildInfoArgument(c)
+
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	err := commands.BuildScan(c.Args().Get(0), c.Args().Get(1), artDetails)
 	cliutils.ExitOnErr(err)
 }
 
