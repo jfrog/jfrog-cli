@@ -51,6 +51,8 @@ Optional flags:
 | `-rt.user` | [Default: admin] Artifactory username. |
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
+| `-rt.sshKeyPath` | [Optional] Ssh key file path. |
+| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 
 * Artifactory url: http://localhost:8081/artifactory
 * User: admin

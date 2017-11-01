@@ -10,16 +10,20 @@ import (
 	"regexp"
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
 const (
 	VENDOR_TESTS = "vendor"
 	INTEGRATION_TESTS = "jfrog-cli-go/jfrog-cli/jfrog"
 	DOCS_TEST = "jfrog-cli-go/jfrog-cli/docs"
+	JFROG_HOME_TEST = ".jfrogTest"
 )
 
 func TestMain(m *testing.M) {
+	setJfrogHome()
 	runUnitTests()
+	unsetJfrogHome()
 	setupIntegrationTests()
 	result := m.Run()
 	tearDownIntegrationTests()
@@ -75,5 +79,17 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestBuildTools {
 		CleanBuildToolsTests()
+	}
+}
+
+func setJfrogHome() {
+	if err := os.Setenv(config.JFROG_HOME_ENV, JFROG_HOME_TEST); err != nil {
+		os.Exit(1)
+	}
+}
+
+func unsetJfrogHome() {
+	if err := os.Unsetenv(config.JFROG_HOME_ENV); err != nil {
+		os.Exit(1)
 	}
 }

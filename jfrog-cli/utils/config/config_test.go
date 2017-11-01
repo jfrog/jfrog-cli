@@ -5,11 +5,9 @@ import (
 	"errors"
 	"encoding/json"
 	"reflect"
-	"os"
 )
 
 func TestCovertConfigV0ToV1(t *testing.T) {
-	setJfrogHome(t)
 	configV0 := `
 		{
 		  "artifactory": {
@@ -37,7 +35,6 @@ func TestCovertConfigV0ToV1(t *testing.T) {
 }
 
 func TestCovertConfigV0ToV1EmptyArtifactory(t *testing.T) {
-	setJfrogHome(t)
 	configV0 := `
 		{
 		  "bintray": {
@@ -59,7 +56,6 @@ func TestCovertConfigV0ToV1EmptyArtifactory(t *testing.T) {
 }
 
 func TestConfigV1EmptyArtifactory(t *testing.T) {
-	setJfrogHome(t)
 	configV0 := `
 		{
 		  "bintray": {
@@ -82,7 +78,6 @@ func TestConfigV1EmptyArtifactory(t *testing.T) {
 }
 
 func TestConfigV1Covert(t *testing.T) {
-	setJfrogHome(t)
 	config := `
 		{
 		  "artifactory": [
@@ -115,7 +110,6 @@ func TestConfigV1Covert(t *testing.T) {
 }
 
 func TestGetArtifactoriesFromConfig(t *testing.T) {
-	setJfrogHome(t)
 	config := `
 		{
 		  "artifactory": [
@@ -193,12 +187,5 @@ func assertionHelper(configV1 *ConfigV1, t *testing.T) {
 	}
 	if rtConverted[0].Password != "password" {
 		t.Error(errors.New("Password shouldn't change."))
-	}
-}
-
-func setJfrogHome(t *testing.T) {
-	err := os.Setenv(JFROG_HOME_ENV, ".jfrogTest")
-	if err != nil {
-		t.Error(err.Error())
 	}
 }
