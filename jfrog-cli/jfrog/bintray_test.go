@@ -34,8 +34,8 @@ func InitBintrayTests() {
 
 func initBintrayOrg() {
 	bintrayOrganization = bintrayConfig.User
-	if *tests.BtOrganization != "" {
-		bintrayOrganization = *tests.BtOrganization
+	if *tests.BtOrg != "" {
+		bintrayOrganization = *tests.BtOrg
 	}
 }
 

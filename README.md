@@ -39,6 +39,7 @@ Go will download and build the project on your machine. Once complete, you will 
 # Tests
 
 ### Artifactory tests
+#### General tests
 To run Artifactory tests execute the following command: 
 ````
 go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog
@@ -51,7 +52,7 @@ Optional flags:
 | `-rt.user` | [Default: admin] Artifactory username. |
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
-| `-rt.sshKeyPath` | [Optional] Ssh key file path. |
+| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://<domain>:port |
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 
 * Artifactory url: http://localhost:8081/artifactory
@@ -62,10 +63,9 @@ Optional flags:
   Once the tests are completed, the content of these repositories will be deleted.
   
 #### Build tools tests
-* `M2_HOME` environment variable should be set to the local maven installation path.
-* `gradle` executable should exist in the execution path. 
-* `java` executable should exist in the execution path. To use different `Java` version, set `JAVA_HOME` environment variable.
-
+* The *M2_HOME* environment variable should be set to the local maven installation path.
+* The *gradle* executable path should be included as part of the *PATH* environment variable.
+* The *java* executable be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
 To run build tools tests execute the following command:
 ````
@@ -86,7 +86,8 @@ Flags:
 | Flag | Description |
 | --- | --- |
 | `-bt.user` | [Mandatory if not configured] Bintray username. |
-| `-bt.key` | [Mandatory if not configured] Bintray API key |
+| `-bt.key` | [Mandatory if not configured] Bintray API key. |
+| `-bt.org` | [Optional] Bintray organization. If not configured, *-bt.user* is used as the organization name. |
 
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.

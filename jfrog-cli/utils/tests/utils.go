@@ -25,7 +25,7 @@ var RtSshKeyPath *string
 var RtSshPassphrase *string
 var BtUser *string
 var BtKey *string
-var BtOrganization *string
+var BtOrg *string
 var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
@@ -43,8 +43,8 @@ func init() {
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
-	BtKey = flag.String("bt.key", "", "Bintray password")
-	BtOrganization = flag.String("bt.organization", "", "Bintray organization")
+	BtKey = flag.String("bt.key", "", "Bintray API Key")
+	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven and Gradle builds")
 }
 
