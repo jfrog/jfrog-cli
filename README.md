@@ -52,12 +52,9 @@ Optional flags:
 | `-rt.user` | [Default: admin] Artifactory username. |
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
-| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://<domain>:port |
+| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 
-* Artifactory url: http://localhost:8081/artifactory
-* User: admin
-* Password: password
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.

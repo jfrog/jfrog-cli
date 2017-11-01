@@ -16,6 +16,7 @@ import (
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
 	"encoding/pem"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -404,7 +405,7 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (*auth.Artif
 }
 
 func readSshKeyAndPassphrase(sshKeyPath, sshPassphrase string) ([]byte, []byte, error) {
-	sshKey, err := ioutil.ReadFile(sshKeyPath)
+	sshKey, err := ioutil.ReadFile(utils.ReplaceTildeWithUserHome(sshKeyPath))
 	if errorutils.CheckError(err) != nil {
 		return nil, nil, err
 	}
