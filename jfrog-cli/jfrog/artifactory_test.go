@@ -2064,14 +2064,14 @@ func TestReadGitConfig(t *testing.T) {
 }
 
 func createJfrogHomeConfig(t *testing.T) {
-	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JFROG_CONFIG_FILE)
+	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
 
-	err := os.Setenv(config.JFROG_HOME_ENV, filepath.Join(tests.Out, "jfroghome"))
+	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
 	jfrogHomePath, err := config.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JFROG_CONFIG_FILE, true)
+	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2097,7 +2097,7 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	os.Unsetenv(config.JFROG_HOME_ENV)
+	os.Unsetenv(config.JfrogHomeEnv)
 	cleanArtifactory()
 	tests.CleanFileSystem()
 }

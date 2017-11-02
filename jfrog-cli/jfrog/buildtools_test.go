@@ -139,7 +139,7 @@ func cleanBuildToolsTest() {
 	if !*tests.TestBuildTools {
 		return
 	}
-	os.Unsetenv(config.JFROG_HOME_ENV)
+	os.Unsetenv(config.JfrogHomeEnv)
 	cleanArtifactory()
 	tests.CleanFileSystem()
 }

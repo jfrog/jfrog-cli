@@ -149,3 +149,24 @@
     xrayScanParams.BuildNumber = buildNumber
     rtManager.XrayScanBuild(params)
 ```
+
+#### Tests
+To run tests execute the following command: 
+````
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services
+````
+Optional flags:
+
+| Flag | Description |
+| --- | --- |
+| `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
+| `-rt.user` | [Default: admin] Artifactory username. |
+| `-rt.password` | [Default: password] Artifactory password. |
+| `-rt.apikey` | [Optional] Artifactory API key. |
+| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
+| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
+| `-log-level` | [Default: INFO] Sets the log level. |
+
+
+* Running the tests will create the repository: `jfrog-cli-tests-repo1`.<br/>
+  Once the tests are completed, the content of this repository will be deleted.

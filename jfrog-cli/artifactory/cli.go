@@ -334,11 +334,11 @@ func getSortLimitFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "sort-by",
-			Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'item' entity. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields",
+			Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields",
 		},
 		cli.StringFlag{
 			Name:  "sort-order",
-			Usage: "[Default: asc] The order by which fields specified in the 'sort by' should be sorted. Accepts 'asc' or 'desc'.",
+			Usage: "[Default: asc] The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.",
 		},
 		cli.StringFlag{
 			Name:  "limit",

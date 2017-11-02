@@ -99,7 +99,7 @@ func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaul
 	if defaultDetails.ServerId != "" {
 		return defaultDetails.ServerId
 	}
-	return config.DEFAULT_SERVER_ID
+	return config.DefaultServerId
 }
 
 func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {

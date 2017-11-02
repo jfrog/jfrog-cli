@@ -15,12 +15,16 @@ import (
 	"path/filepath"
 	"strings"
 	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
 )
 
 var RtUrl *string
 var RtUser *string
 var RtPassword *string
 var RtApiKey *string
+var RtSshKeyPath *string
+var RtSshPassphrase *string
 var LogLevel *string
 var testsUploadService *UploadService
 var testsSearchService *SearchService
@@ -28,9 +32,10 @@ var testsDeleteService *DeleteService
 var testsDownloadService *DownloadService
 
 const (
-	RtTargetRepo = "jfrog-cli-tests-repo1/"
+	RtTargetRepo              = "jfrog-cli-tests-repo1/"
 	SpecsTestRepositoryConfig = "specs_test_repository_config.json"
 	RepoDetailsUrl            = "api/repositories/"
+	ClientIntegrationTests    = "jfrog-cli-go/jfrog-client/artifactory/services"
 )
 
 func init() {
@@ -38,10 +43,14 @@ func init() {
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
-	LogLevel = flag.String("log-level", "INFO", "Set's the log level")
+	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
+	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
+	LogLevel = flag.String("log-level", "INFO", "Sets the log level")
 }
 
 func TestMain(m *testing.M) {
+	packages := tests.ExcludeTestsPackage(tests.GetPackages(), ClientIntegrationTests)
+	tests.RunTests(packages)
 	flag.Parse()
 	log.Logger.SetLogLevel(log.GetCliLogLevel(*LogLevel))
 	*RtUrl = cliutils.AddTrailingSlashIfNeeded(*RtUrl)
@@ -81,14 +90,21 @@ func createArtifactoryDownloadManager() {
 }
 
 func getArtDetails() *auth.ArtifactoryDetails {
-	rtDetails := &auth.ArtifactoryDetails{Url: *RtUrl}
-	if *RtApiKey != "" {
-		rtDetails.ApiKey = *RtApiKey
-	} else {
-		rtDetails.User = *RtUser
-		rtDetails.Password = *RtPassword
+	rtDetails := &config.ArtifactoryDetails{Url: *RtUrl, SshKeyPath: *RtSshKeyPath, SshPassphrase: *RtSshPassphrase}
+	if !rtDetails.IsSsh() {
+		if *RtApiKey != "" {
+			rtDetails.ApiKey = *RtApiKey
+		} else {
+			rtDetails.User = *RtUser
+			rtDetails.Password = *RtPassword
+		}
 	}
-	return rtDetails
+	artAuth, err := rtDetails.CreateArtAuthConfig()
+	if err != nil {
+		log.Error("Failed while attempting to authenticate with Artifactory: " + err.Error())
+		os.Exit(1)
+	}
+	return artAuth
 }
 
 func artifactoryCleanUp(t *testing.T) {
@@ -128,9 +144,11 @@ func createReposIfNeeded() error {
 }
 
 func isRepoExist(repoName string) bool {
-	artHttpDetails := getArtDetails().CreateArtifactoryHttpClientDetails()
-	resp, _, _, err := httputils.SendGet(*RtUrl+RepoDetailsUrl+repoName, true, artHttpDetails)
+	artDetails := getArtDetails()
+	artHttpDetails := artDetails.CreateArtifactoryHttpClientDetails()
+	resp, _, _, err := httputils.SendGet(artDetails.Url+RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 

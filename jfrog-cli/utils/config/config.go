@@ -20,10 +20,12 @@ import (
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
-const DEFAULT_SERVER_ID = "Default-Server"
-const JFROG_HOME_ENV = "JFROG_CLI_HOME"
-const JFROG_CONFIG_FILE = "jfrog-cli.conf"
-const JFROG_DEPENDENCIES = "dependencies"
+const (
+	DefaultServerId = "Default-Server"
+	JfrogHomeEnv = "JFROG_CLI_HOME"
+	JfrogConfigFile = "jfrog-cli.conf"
+	JfrogDependencies = "dependencies"
+)
 
 func IsArtifactoryConfExists() (bool, error) {
     conf, err := readConf()
@@ -251,8 +253,8 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 }
 
 func GetJfrogHomeDir() (string, error) {
-	if os.Getenv(JFROG_HOME_ENV) != "" {
-		return path.Join(os.Getenv(JFROG_HOME_ENV), ".jfrog"), nil
+	if os.Getenv(JfrogHomeEnv) != "" {
+		return path.Join(os.Getenv(JfrogHomeEnv), ".jfrog"), nil
 	}
 
 	userDir := fileutils.GetHomeDir()
@@ -270,7 +272,7 @@ func GetJfrogDependenciesPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(jfrogHome, JFROG_DEPENDENCIES), nil
+	return filepath.Join(jfrogHome, JfrogDependencies), nil
 }
 
 func getConfFilePath() (string, error) {
@@ -279,7 +281,7 @@ func getConfFilePath() (string, error) {
         return "", err
     }
 	os.MkdirAll(confPath, 0777)
-	return filepath.Join(confPath, JFROG_CONFIG_FILE), nil
+	return filepath.Join(confPath, JfrogConfigFile), nil
 }
 
 type ConfigV1 struct {
@@ -301,7 +303,7 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 	config.MissionControl = o.MissionControl
 	if o.Artifactory != nil {
 		o.Artifactory.IsDefault = true
-		o.Artifactory.ServerId = DEFAULT_SERVER_ID
+		o.Artifactory.ServerId = DefaultServerId
 		config.Artifactory = []*ArtifactoryDetails{o.Artifactory}
 	}
 	return config
