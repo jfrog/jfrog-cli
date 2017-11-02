@@ -47,11 +47,11 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 
 func createAqlQueryForBuild(buildName, buildNumber string) string {
 	buildQueryPart :=
-		`items.find({
-			"$and" : [
-				{"artifact.module.build.name": {"$eq": "%s"}},
-				{"artifact.module.build.number": {"$eq": "%s"}}
-			]})%s`
+		`items.find({` +
+			`"$and" : [` +
+				`{"artifact.module.build.name": {"$eq": "%s"}},` +
+				`{"artifact.module.build.number": {"$eq": "%s"}}` +
+			`]})%s`
 	return fmt.Sprintf(buildQueryPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name","repo","path","actual_sha1"}))
 }
 
@@ -289,13 +289,6 @@ func prepareFieldsForQuery(fields []string) []string {
 	return fields
 }
 
-func buildSortQueryPart(sortFields []string, sortOrder string) string {
-	if sortOrder == "" {
-		sortOrder = "asc"
-	}
-	return fmt.Sprintf(`"$%s":[%s]`, sortOrder, strings.Join(prepareFieldsForQuery(sortFields), `,`))
-}
-
 func buildQueryFromSpecFile(specFile *ArtifactoryCommonParams) string {
 	aqlBody := specFile.Aql.ItemsFind
 	query := fmt.Sprintf(`items.find(%s)%s`, aqlBody, buildIncludeQueryPart(getQueryReturnFields(specFile)))
@@ -317,12 +310,19 @@ func appendSortQueryPart(specFile *ArtifactoryCommonParams, query string) string
 	return query
 }
 
+func buildSortQueryPart(sortFields []string, sortOrder string) string {
+	if sortOrder == "" {
+		sortOrder = "asc"
+	}
+	return fmt.Sprintf(`"$%s":[%s]`, sortOrder, strings.Join(prepareFieldsForQuery(sortFields), `,`))
+}
+
 func createPropsQuery(aqlBody, propKey, propVal string) string {
 	propKeyValQueryPart := buildKeyValQueryPart(propKey, propVal)
 	propsQuery :=
-		`items.find({
-			"$and" :[%s,{%s}]
-		})%s`
+		`items.find({` +
+			`"$and" :[%s,{%s}]` +
+		`})%s`
 	return fmt.Sprintf(propsQuery, aqlBody, propKeyValQueryPart, buildIncludeQueryPart([]string {"name", "repo", "path", "actual_sha1", "property"}))
 }
 
