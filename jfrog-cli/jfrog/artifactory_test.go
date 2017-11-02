@@ -1230,10 +1230,6 @@ func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
 		t.Error("'c' folder shouldn't be exist.")
 	}
-	err := os.RemoveAll(tests.Out)
-	if err != nil {
-		t.Error(err.Error())
-	}
 	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--recursive=true", "--flat=true")
 	// Inner folder with files in it
 	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "c") {
@@ -1775,9 +1771,13 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload all testdata/a/ files
-	artifactoryCli.Exec("upload", "../testsdata/a/(*)", "jfrog-cli-tests-repo1/data/{1}")
-
+	filePath := "../testsdata/a/(*)"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a\\(*)")
+	}
+	artifactoryCli.Exec("upload", filePath, "jfrog-cli-tests-repo1/data/{1}")
 	// Download 1 sorted by name asc
+
 	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=name", "--limit=1")
 
 	// Download 3 sorted by depth desc
