@@ -66,7 +66,7 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 }
 
 func AreListsIdentical(expected, actual []string, t *testing.T) {
-	if len(actual) != len(expected)  {
+	if len(actual) != len(expected) {
 		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
 	}
 	compare(expected, actual, t)
@@ -78,7 +78,7 @@ func compare(expected, actual []string, t *testing.T) {
 			if v == r {
 				break
 			}
-			if i == len(actual) - 1 {
+			if i == len(actual)-1 {
 				t.Error("Missing file : " + v)
 			}
 		}
@@ -94,9 +94,22 @@ func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult,
 			if v == r.Path {
 				break
 			}
-			if i == len(actual) - 1 {
+			if i == len(actual)-1 {
 				t.Error("Missing file: " + v)
 			}
+		}
+	}
+
+	for _, r := range actual {
+		found := false
+		for _, v := range expected {
+			if v == r.Path {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Unexpected file: " + r.Path)
 		}
 	}
 }
@@ -183,7 +196,7 @@ type gitManager struct {
 }
 
 func GitExecutor(dotGitPath string) *gitManager {
-	return &gitManager{dotGitPath:dotGitPath}
+	return &gitManager{dotGitPath: dotGitPath}
 }
 
 func (m *gitManager) GetUrl() (string, string, error) {

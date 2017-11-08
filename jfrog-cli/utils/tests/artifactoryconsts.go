@@ -458,7 +458,10 @@ var MassiveUpload = []string{
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c1.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
-	Repo1 + "/spec-copy-test/properties/testsdata/a+a/a1.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
+	Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a#1.in",
+	Repo1 + "/spec-copy-test/copy-to-existing/a#1.in",
 	Repo1 + "/spec-copy-test/simple/a1.in",
 }
 
@@ -472,7 +475,8 @@ var PropsExpected = []string{
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/b3.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
 	Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
-	Repo1 + "/spec-copy-test/properties/testsdata/a+a/a1.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
+	Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
 }
 
 var Delete1 = []string{

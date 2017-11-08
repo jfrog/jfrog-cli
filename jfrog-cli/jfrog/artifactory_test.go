@@ -126,9 +126,9 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 
 func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1)
@@ -136,11 +136,34 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadPathWithSpecialCharsAsNoRegex(t *testing.T) {
+	initArtifactoryTest(t)
+	filePath := "../testsdata/a$+~&^a#/a*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
+	}
+	artifactoryCli.Exec("upload", filePath, tests.Repo1, "--flat=false")
+
+	filePath = "../testsdata/c#/a#1.in"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\c#\\a#1.in")
+	}
+	artifactoryCli.Exec("upload", filePath, tests.Repo1, "--flat=false")
+
+	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/a$+~&^a#/a*", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/c#/a#1.in", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally([]string{"out/a1.in", "out/a#1.in"}, paths, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
@@ -151,9 +174,9 @@ func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 
 func TestAqlFindingItemOnRoot(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
@@ -171,9 +194,9 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 
 func TestArtifactoryDirectoryCopy(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
@@ -184,9 +207,9 @@ func TestArtifactoryDirectoryCopy(t *testing.T) {
 
 func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
@@ -197,9 +220,9 @@ func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
 
 func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
@@ -210,9 +233,9 @@ func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 
 func TestArtifactoryCopyPathsTwice(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
 
@@ -249,9 +272,9 @@ func TestArtifactoryCopyPathsTwice(t *testing.T) {
 
 func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
@@ -262,9 +285,9 @@ func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 
 func TestArtifactoryCopyAnyItemUsingWildcardFlat(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
@@ -276,9 +299,9 @@ func TestArtifactoryCopyAnyItemUsingWildcardFlat(t *testing.T) {
 
 func TestArtifactoryCopyAnyItemRecursive(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/a/b/", )
@@ -290,9 +313,9 @@ func TestArtifactoryCopyAnyItemRecursive(t *testing.T) {
 
 func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
@@ -303,9 +326,9 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 
 func TestArtifactoryCopyAnyItemUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	var filePath = "../testsdata/a+a/a*"
+	var filePath = "../testsdata/a$+~&^a#/a*"
 	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a+a\\a*")
+		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
 	specFile := tests.GetFilePath(tests.CopyItemsSpec)
@@ -322,8 +345,8 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	// Upload files
 	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
 	specFileB := tests.GetFilePath(tests.SplitUploadSpecB)
-	artifactoryCli.Exec("upload", "--spec=" + specFileA)
-	artifactoryCli.Exec("upload", "--spec=" + specFileB)
+	artifactoryCli.Exec("upload", "--spec="+specFileA)
+	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Copy by pattern
 	artifactoryCli.Exec("cp", "jfrog-cli-tests-repo1/data/ jfrog-cli-tests-repo2/", "--exclude-patterns=*b*;*c*")
@@ -1240,8 +1263,8 @@ func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 		t.Error("'folder' folder should exist.")
 	}
 	// Folder on root with files
-	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "a+a") {
-		t.Error("'a+a' folder should be exist.")
+	if !fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "a$+~&^a#") {
+		t.Error("'a$+~&^a#' folder should be exist.")
 	}
 	// None bottom directory - shouldn't exist.
 	if fileutils.IsPathExists(tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()) + "a") {
@@ -2098,6 +2121,7 @@ func cleanArtifactoryTest() {
 		return
 	}
 	os.Unsetenv(config.JfrogHomeEnv)
+	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()
 }

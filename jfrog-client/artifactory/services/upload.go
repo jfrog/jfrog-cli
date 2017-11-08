@@ -293,7 +293,7 @@ func prepareExcludePathPattern(excludePatterns []string, isRegex, isRecursive bo
 			if len(singleExcludePattern) > 0 {
 				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
 				singleExcludePattern = cliutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
-				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeparator()){
+				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeparator()) {
 					singleExcludePattern += "*"
 				}
 				excludePathPattern += fmt.Sprintf(`(%s)|`, singleExcludePattern)

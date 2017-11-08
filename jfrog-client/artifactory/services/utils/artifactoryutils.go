@@ -67,7 +67,8 @@ func AddHeader(headerName, headerValue string, headers *map[string]string) {
 }
 
 func BuildArtifactoryUrl(baseUrl, path string, params map[string]string) (string, error) {
-	escapedUrl, err := url.Parse(baseUrl+path)
+	u := url.URL{Path: path}
+	escapedUrl, err := url.Parse(baseUrl + u.String())
 	err = errorutils.CheckError(err)
 	if err != nil {
 		return "", err

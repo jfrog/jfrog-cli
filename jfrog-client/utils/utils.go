@@ -27,9 +27,9 @@ func IndentJson(jsonStr []byte) string {
 }
 
 func PathToRegExp(localPath string) string {
-	var SPECIAL_CHARS = []string{".", "+"}
+	var SPECIAL_CHARS = []string{".", "^", "$", "+"}
 	for _, char := range SPECIAL_CHARS {
-		localPath = strings.Replace(localPath, char, "\\" + char, -1)
+		localPath = strings.Replace(localPath, char, "\\"+char, -1)
 	}
 	var wildcard = ".*"
 	localPath = strings.Replace(localPath, "*", wildcard, -1)
@@ -39,7 +39,6 @@ func PathToRegExp(localPath string) string {
 	localPath = "^" + localPath + "$"
 	return localPath
 }
-
 
 // Replaces matched regular expression from sourceString to corresponding {i} at destString.
 // For example:
@@ -58,7 +57,7 @@ func ReformatRegexp(regexpString, sourceString, destString string) (string, erro
 	if size > 0 {
 		for i := 1; i < size; i++ {
 			group := strings.Replace(groups[i], "\\", "/", -1)
-			target = strings.Replace(target, "{" + strconv.Itoa(i) + "}", group, -1)
+			target = strings.Replace(target, "{"+strconv.Itoa(i)+"}", group, -1)
 		}
 	}
 	return target, nil

@@ -407,10 +407,10 @@ func createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix string, downlo
 }
 
 type DownloadFileDetails struct {
-	DownloadPath  string          `json:"DownloadPath,omitempty"`
-	LocalPath     string          `json:"LocalPath,omitempty"`
-	LocalFileName string          `json:"LocalFileName,omitempty"`
-	Size          int64           `json:"Size,omitempty"`
+	DownloadPath  string `json:"DownloadPath,omitempty"`
+	LocalPath     string `json:"LocalPath,omitempty"`
+	LocalFileName string `json:"LocalFileName,omitempty"`
+	Size          int64  `json:"Size,omitempty"`
 }
 
 type DownloadData struct {

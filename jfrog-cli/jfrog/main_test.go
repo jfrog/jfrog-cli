@@ -5,21 +5,9 @@ import (
 	"flag"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	clientTests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
-)
-
-const (
-	JfrogTestsHome      = ".jfrogTest"
-	CliIntegrationTests = "jfrog-cli-go/jfrog-cli/jfrog"
 )
 
 func TestMain(m *testing.M) {
-	setJfrogHome()
-	packages := clientTests.GetPackages()
-	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
-	clientTests.RunTests(packages)
-	unsetJfrogHome()
 	setupIntegrationTests()
 	result := m.Run()
 	tearDownIntegrationTests()
@@ -48,17 +36,5 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestBuildTools {
 		CleanBuildToolsTests()
-	}
-}
-
-func setJfrogHome() {
-	if err := os.Setenv(config.JfrogHomeEnv, JfrogTestsHome); err != nil {
-		os.Exit(1)
-	}
-}
-
-func unsetJfrogHome() {
-	if err := os.Unsetenv(config.JfrogHomeEnv); err != nil {
-		os.Exit(1)
 	}
 }
