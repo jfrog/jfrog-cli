@@ -18,7 +18,7 @@ var lStat = os.Lstat
 func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]bool, walkIntoDirSymlink bool) error {
 	realPath, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		return err
+		realPath = path
 	}
 	isRealPathDir, err := IsDir(realPath)
 	if err != nil {
@@ -48,7 +48,7 @@ func walk(path string, info os.FileInfo, walkFn WalkFunc, visited map[string]boo
 		filename := filepath.Join(path, name)
 		realPath, err = filepath.EvalSymlinks(filename)
 		if err != nil {
-			return err
+			realPath = filename
 		}
 
 		if walkIntoDirSymlink && visited[realPath] {

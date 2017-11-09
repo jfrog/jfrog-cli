@@ -16,11 +16,10 @@ import (
 	"time"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"fmt"
 )
 
 func Upload(versionDetails *utils.VersionDetails, localPath, uploadPath string,
-uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
+	uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 
 	if uploadFlags.BintrayDetails.User == "" {
 		uploadFlags.BintrayDetails.User = versionDetails.Subject
@@ -41,7 +40,7 @@ uploadFlags *UploadFlags) (totalUploaded, totalFailed int, err error) {
 	}
 
 	baseUrl := uploadFlags.BintrayDetails.ApiUrl + "content/" + versionDetails.Subject + "/" +
-			versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
+		versionDetails.Repo + "/" + versionDetails.Package + "/" + versionDetails.Version + "/"
 
 	totalUploaded, totalFailed, err = uploadFiles(artifacts, baseUrl, uploadFlags)
 	return
@@ -117,8 +116,8 @@ func getMatrixParams(flags *UploadFlags) string {
 func getDebianMatrixParams(debianPropsStr string) string {
 	debProps := strings.Split(debianPropsStr, "/")
 	return ";deb_distribution=" + debProps[0] +
-			";deb_component=" + debProps[1] +
-			";deb_architecture=" + debProps[2]
+		";deb_component=" + debProps[1] +
+		";deb_architecture=" + debProps[2]
 }
 
 func getDebianDefaultPath(debianPropsStr, packageName string) string {
@@ -128,7 +127,7 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
 }
 
 func uploadFile(artifact clientutils.Artifact, url, logMsgPrefix string, bintrayDetails *config.BintrayDetails) (bool, error) {
-	log.Info(logMsgPrefix + "Uploading artifact:", artifact.LocalPath)
+	log.Info(logMsgPrefix+"Uploading artifact:", artifact.LocalPath)
 
 	f, err := os.Open(artifact.LocalPath)
 	err = errorutils.CheckError(err)
@@ -141,7 +140,7 @@ func uploadFile(artifact clientutils.Artifact, url, logMsgPrefix string, bintray
 	if err != nil {
 		return false, err
 	}
-	log.Debug(logMsgPrefix + "Bintray response:", resp.Status)
+	log.Debug(logMsgPrefix+"Bintray response:", resp.Status)
 	if resp.StatusCode != 201 && resp.StatusCode != 200 {
 		log.Error(logMsgPrefix + "Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 	}
@@ -182,11 +181,11 @@ func verifyRepoExists(versionDetails *utils.VersionDetails, uploadFlags *UploadF
 
 func promptPackageNotExist(versionDetails *utils.VersionDetails) error {
 	msg := "It looks like package '" + versionDetails.Package +
-			"' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
-			"You can create the package by running the package-create command. For example:\n" +
-			"jfrog bt pc " +
-			versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
-			" --vcs-url=https://github.com/example"
+		"' does not exist in the '" + versionDetails.Repo + "' repository.\n" +
+		"You can create the package by running the package-create command. For example:\n" +
+		"jfrog bt pc " +
+		versionDetails.Subject + "/" + versionDetails.Repo + "/" + versionDetails.Package +
+		" --vcs-url=https://github.com/example"
 
 	conf, err := config.ReadBintrayConf()
 	if err != nil {
@@ -220,7 +219,7 @@ func createVersionIfNeeded(versionDetails *utils.VersionDetails, uploadFlags *Up
 			return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		}
 		log.Debug("Bintray response:", resp.Status)
-		log.Info("Created version", versionDetails.Version + ".")
+		log.Info("Created version", versionDetails.Version+".")
 	} else if resp.StatusCode != 200 {
 		err = errorutils.CheckError(errors.New("Bintray response: " + resp.Status))
 	}
@@ -272,7 +271,6 @@ func getFilesToUpload(localPath, targetPath, packageName string, flags *UploadFl
 		return append(artifacts, artifact), nil
 	}
 
-	fmt.Println(localPath)
 	r, err := regexp.Compile(localPath)
 	err = errorutils.CheckError(err)
 	if err != nil {

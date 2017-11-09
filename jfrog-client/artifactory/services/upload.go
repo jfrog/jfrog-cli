@@ -253,18 +253,31 @@ func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploa
 		if err != nil {
 			return err
 		}
-		isSymlinkFlow := uploadParams.IsSymlink() && fileutils.IsPathSymlink(path)
-		if isDir && !uploadParams.IsIncludeDirs() && !isSymlinkFlow {
-			continue
-		}
-		groups := patternRegex.FindStringSubmatch(path)
+
 		excludedPath, err := isPathExcluded(path, excludePathPattern)
 		if err != nil {
 			return err
 		}
 
+		if excludedPath {
+			continue
+		}
+
+		isSymlinkFlow := uploadParams.IsSymlink() && fileutils.IsPathSymlink(path)
+		if isSymlinkFlow {
+			_, err := filepath.EvalSymlinks(path)
+			if err != nil {
+				return err
+			}
+		}
+
+		if isDir && !uploadParams.IsIncludeDirs() && !isSymlinkFlow {
+			continue
+		}
+
+		groups := patternRegex.FindStringSubmatch(path)
 		size := len(groups)
-		if !excludedPath && size > 0 {
+		if size > 0 {
 			target := uploadParams.GetTarget()
 			tempPaths := paths
 			tempIndex := index

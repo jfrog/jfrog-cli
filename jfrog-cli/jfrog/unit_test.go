@@ -5,6 +5,8 @@ import (
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	clientTests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"path/filepath"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 const (
@@ -13,20 +15,28 @@ const (
 )
 
 func TestUnitTests(t *testing.T) {
-	setJfrogHome()
+	homePath, err := filepath.Abs(JfrogTestsHome)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	setJfrogHome(homePath)
 	packages := clientTests.GetPackages()
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
 	clientTests.RunTests(packages)
-	unsetJfrogHome()
+	cleanUnitTestsJfrogHome(homePath)
 }
 
-func setJfrogHome() {
-	if err := os.Setenv(config.JfrogHomeEnv, JfrogTestsHome); err != nil {
+func setJfrogHome(homePath string) {
+	if err := os.Setenv(config.JfrogHomeEnv, homePath); err != nil {
+		log.Error(err)
 		os.Exit(1)
 	}
 }
 
-func unsetJfrogHome() {
+func cleanUnitTestsJfrogHome(homePath string) {
+	os.RemoveAll(homePath)
 	if err := os.Unsetenv(config.JfrogHomeEnv); err != nil {
 		os.Exit(1)
 	}

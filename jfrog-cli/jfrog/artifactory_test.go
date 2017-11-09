@@ -859,6 +859,27 @@ func TestSimpleSymlinkHandling(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Testing exclude pattern with symlinks.
+// This test should not upload any files.
+func TestExcludeBrokenSymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	initArtifactoryTest(t)
+
+	// Creating broken symlink
+	os.Mkdir(tests.Out, 0777)
+	linkToNonExistingPath := filepath.Join(tests.Out, "link_to_non_existing_path")
+	err := os.Symlink("non_existing_path", linkToNonExistingPath)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// This command should succeed because all artifacts are excluded.
+	artifactoryCli.Exec("u", filepath.Join(tests.Out, "*"), tests.Repo1, "--symlinks=true", "--exclude-patterns=*")
+	cleanArtifactoryTest()
+}
+
 // Upload symlink to Artifactory using wildcard pattern and the link content checksum
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
