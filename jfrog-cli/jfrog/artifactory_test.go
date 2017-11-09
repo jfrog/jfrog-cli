@@ -154,7 +154,7 @@ func TestArtifactoryDownloadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/c#/a#1.in", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsExistLocally([]string{"out/a1.in", "out/a#1.in"}, paths, t)
+	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a1.in", tests.Out + fileutils.GetFileSeparator() + "a#1.in"}, paths, t)
 
 	cleanArtifactoryTest()
 }
