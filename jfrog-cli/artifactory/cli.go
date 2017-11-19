@@ -316,7 +316,7 @@ func getCommonFlags() []cli.Flag {
 			Usage: "[Optional] SSH key file path.",
 		},
 		cli.StringFlag{
-			Name: "ssh-passphrase",
+			Name:  "ssh-passphrase",
 			Usage: "[Optional] SSH key passphrase.",
 		},
 	}
@@ -343,6 +343,10 @@ func getSortLimitFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "limit",
 			Usage: "[Optional] The maximum number of items to fetch. Usually used with the 'sort-by' option.",
+		},
+		cli.StringFlag{
+			Name:  "offset",
+			Usage: "[Optional] The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.",
 		},
 	}
 }
@@ -913,7 +917,7 @@ func configCmd(c *cli.Context) {
 				cliutils.ExitOnErr(commands.DeleteConfig(serverId))
 				return
 			}
-			var confirmed =	cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?")
+			var confirmed = cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?")
 			if !confirmed {
 				return
 			}
@@ -1335,7 +1339,8 @@ func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1364,7 +1369,8 @@ func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1397,7 +1403,8 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1410,7 +1417,8 @@ func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1491,7 +1499,8 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1540,7 +1549,8 @@ func createDefaultUploadSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
 		Build(c.String("build")).
-		Limit(getLimitFromContext(c)).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
@@ -1652,12 +1662,15 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 }
 
 func validateCommonContext(c *cli.Context) {
+	if c.IsSet("build") && c.IsSet("offset") {
+		cliutils.Exit(cliutils.ExitCodeError, "The 'offset' option cannot be used together with the 'build' option")
+	}
 	if c.IsSet("build") && c.IsSet("limit") {
 		cliutils.Exit(cliutils.ExitCodeError, "The 'limit' option cannot be used together with the 'build' option")
-	} else
+	}
 	if c.IsSet("sort-order") && !c.IsSet("sort-by") {
 		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option cannot be used without the 'sort-by' option")
-	} else
+	}
 	if c.IsSet("sort-order") && !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
 		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option can only accept 'asc' or 'desc' as values")
 	}
@@ -1666,6 +1679,7 @@ func validateCommonContext(c *cli.Context) {
 func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
 	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
+	overrideIntIfSet(&spec.Offset, c, "offset")
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
@@ -1676,8 +1690,8 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 }
 
-func getLimitFromContext(c *cli.Context) (limit int) {
-	limit, err := cliutils.GetIntFlagValue(c, "limit", 0)
+func getIntValue(key string, c *cli.Context) int {
+	value, err := cliutils.GetIntFlagValue(c, key, 0)
 	cliutils.ExitOnErr(err)
-	return
+	return value
 }

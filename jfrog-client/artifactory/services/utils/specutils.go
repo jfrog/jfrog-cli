@@ -24,6 +24,7 @@ type ArtifactoryCommonParams struct {
 	Props           string
 	SortOrder       string
 	SortBy          []string
+	Offset          int
 	Limit           int
 	Build           string
 	Recursive       bool
@@ -41,6 +42,7 @@ type FileGetter interface {
 	GetProps() string
 	GetSortOrder() string
 	GetSortBy() []string
+	GetOffset() int
 	GetLimit() int
 	GetBuild() string
 	GetSpecType() (specType SpecType)
@@ -99,6 +101,10 @@ func (params *ArtifactoryCommonParams) GetSortBy() []string {
 
 func (params *ArtifactoryCommonParams) GetSortOrder() string {
 	return params.SortOrder
+}
+
+func (params *ArtifactoryCommonParams) GetOffset() int {
+	return params.Offset
 }
 
 func (params *ArtifactoryCommonParams) GetLimit() int {

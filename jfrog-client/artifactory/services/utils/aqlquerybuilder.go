@@ -293,7 +293,15 @@ func buildQueryFromSpecFile(specFile *ArtifactoryCommonParams) string {
 	aqlBody := specFile.Aql.ItemsFind
 	query := fmt.Sprintf(`items.find(%s)%s`, aqlBody, buildIncludeQueryPart(getQueryReturnFields(specFile)))
 	query = appendSortQueryPart(specFile, query)
+	query = appendOffsetQueryPart(specFile, query)
 	return appendLimitQueryPart(specFile, query)
+}
+
+func appendOffsetQueryPart(specFile *ArtifactoryCommonParams, query string) string {
+	if specFile.Offset > 0 {
+		query = fmt.Sprintf(`%s.offset(%s)`, query, strconv.Itoa(specFile.Offset))
+	}
+	return query
 }
 
 func appendLimitQueryPart(specFile *ArtifactoryCommonParams, query string) string {

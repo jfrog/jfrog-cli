@@ -59,6 +59,7 @@ type File struct {
 	Props           string
 	SortOrder       string
 	SortBy          []string
+	Offset          int
 	Limit           int
 	Build           string
 	Recursive       string
@@ -165,6 +166,7 @@ func (f *File) toArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.Build = f.Build
 	params.SortOrder = f.SortOrder
 	params.SortBy = f.SortBy
+	params.Offset = f.Offset
 	params.Limit = f.Limit
 	return params
 }
@@ -180,6 +182,7 @@ func ValidateSpec(files []File, isTargetMandatory bool) error {
 		isTarget := len(file.Target) > 0
 		isSortOrder := len(file.SortOrder) > 0
 		isSortBy := len(file.SortBy) > 0
+		isOffset := file.Offset > 0
 		isLimit := file.Limit > 0
 		isBuild := len(file.Build) > 0
 		isValidSortOrder := file.SortOrder == "asc" || file.SortOrder == "desc"
@@ -195,6 +198,9 @@ func ValidateSpec(files []File, isTargetMandatory bool) error {
 		}
 		if isAql && isExcludePattern {
 			return errors.New("Spec cannot include both the aql and exclude-patterns properties")
+		}
+		if isBuild && isOffset {
+			return errors.New("Spec cannot include both the 'build' and 'offset' properties")
 		}
 		if isBuild && isLimit {
 			return errors.New("Spec cannot include both the 'build' and 'limit' properties")

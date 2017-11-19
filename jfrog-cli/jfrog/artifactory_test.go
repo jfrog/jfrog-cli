@@ -35,6 +35,7 @@ import (
 	"time"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
+	"path"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -1811,29 +1812,6 @@ func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactorySortAndLimit(t *testing.T) {
-	initArtifactoryTest(t)
-
-	// Upload all testdata/a/ files
-	filePath := "../testsdata/a/(*)"
-	if runtime.GOOS == "windows" {
-		filePath = tests.FixWinPath("..\\testsdata\\a\\(*)")
-	}
-	artifactoryCli.Exec("upload", filePath, "jfrog-cli-tests-repo1/data/{1}")
-	// Download 1 sorted by name asc
-
-	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=name", "--limit=1")
-
-	// Download 3 sorted by depth desc
-	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=depth", "--limit=3", "--sort-order=desc")
-
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.SortAndLimit, paths, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
 func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
@@ -1857,6 +1835,60 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 
 	//cleanup
 	deleteBuild(buildName)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySortAndLimit(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload all testdata/a/ files
+	filePath := "../testsdata/a/(*)"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a\\(*)")
+	}
+	artifactoryCli.Exec("upload", filePath, "jfrog-cli-tests-repo1/data/{1}")
+
+	// Download 1 sorted by name asc
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=name", "--limit=1")
+
+	// Download 3 sorted by depth desc
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=depth", "--limit=3", "--sort-order=desc")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.AreListsIdentical(tests.SortAndLimit, paths, t)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryOffset(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload all testdata/a/ files
+	filePath := "../testsdata/a/*"
+	if runtime.GOOS == "windows" {
+		filePath = tests.FixWinPath("..\\testsdata\\a\\*")
+	}
+
+	artifactoryCli.Exec("upload", filePath, path.Join(tests.Repo1, "offset_test")+"/", "--flat=true")
+
+	// Downloading files one by one, to check that the offset is working as expected.
+	// Download only the first file, expecting to download a1.in
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/offset_test/", tests.Out + "/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=0")
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a1.in"}, paths, t)
+
+	// Download the second file, expecting to download a2.in
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/offset_test/", tests.Out + "/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=1")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a2.in"}, paths, t)
+
+	// Download the third file, expecting to download a3.in
+	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/offset_test/", tests.Out + "/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=2")
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a3.in"}, paths, t)
+
+	// Cleanup
 	cleanArtifactoryTest()
 }
 

@@ -9,6 +9,7 @@ type builder struct {
 	props           string
 	sortOrder       string
 	sortBy          []string
+	offset          int
 	limit           int
 	build           string
 	recursive       bool
@@ -51,6 +52,11 @@ func (b *builder) SortBy(sortBy []string) *builder {
 	return b
 }
 
+func (b *builder) Offset(offset int) *builder {
+	b.offset = offset
+	return b
+}
+
 func (b *builder) Limit(limit int) *builder {
 	b.limit = limit
 	return b
@@ -81,7 +87,7 @@ func (b *builder) IncludeDirs(includeDirs bool) *builder {
 	return b
 }
 
-func (b *builder) BuildSpec()  *SpecFiles {
+func (b *builder) BuildSpec() *SpecFiles {
 	return &SpecFiles{
 		Files: []File{
 			{
@@ -91,6 +97,7 @@ func (b *builder) BuildSpec()  *SpecFiles {
 				Props:           b.props,
 				SortOrder:       b.sortOrder,
 				SortBy:          b.sortBy,
+				Offset:          b.offset,
 				Limit:           b.limit,
 				Build:           b.build,
 				Recursive:       strconv.FormatBool(b.recursive),
