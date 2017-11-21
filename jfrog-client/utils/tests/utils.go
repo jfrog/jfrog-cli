@@ -7,7 +7,6 @@ import (
 	"os"
 	"bufio"
 	"strings"
-	"regexp"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
@@ -31,24 +30,27 @@ func StartHttpServer(handlers HttpServerHandlers) (int, error) {
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
-func GetPackages() []string {
-	cmd := exec.Command("go", "list", "../...")
+func GetTestPackages(searchPattern string) []string {
+	// Get all packages with test files.
+	cmd := exec.Command("go", "list", "-f", "{{.ImportPath}} {{.TestGoFiles}}", searchPattern)
 	packages, _ := cmd.Output()
 
 	scanner := bufio.NewScanner(strings.NewReader(string(packages)))
 	var unitTests []string
 	for scanner.Scan() {
-		unitTests = append(unitTests, scanner.Text())
+		fields := strings.Split(scanner.Text(), " ")
+		// Skip if package does not contain test files.
+		if len(fields) > 1 && len(fields[1]) > 2 {
+			unitTests = append(unitTests, fields[0])
+		}
 	}
 	return unitTests
 }
 
-
 func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 	var res []string
 	for _, packageName := range packages {
-		excludedTest, _ := regexp.MatchString(packageToExclude, packageName)
-		if !excludedTest {
+		if packageName != packageToExclude {
 			res = append(res, packageName)
 		}
 	}
@@ -56,6 +58,9 @@ func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 }
 
 func RunTests(tests []string) {
+	if len(tests) == 0 {
+		return
+	}
 	tests = append([]string{"test", "-v"}, tests...)
 	cmd := exec.Command("go", tests...)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
