@@ -8,6 +8,8 @@ import (
 	"bufio"
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"path/filepath"
 )
 
 type HttpServerHandlers map[string]func(w http.ResponseWriter, r *http.Request)
@@ -57,14 +59,30 @@ func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 	return res
 }
 
-func RunTests(tests []string) {
+func RunTests(tests []string) error {
 	if len(tests) == 0 {
-		return
+		return nil
 	}
 	tests = append([]string{"test", "-v"}, tests...)
 	cmd := exec.Command("go", tests...)
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+
+	tempDirPath := filepath.Join(os.TempDir(), "jfrog_temp")
+	exitOnErr(fileutils.CreateDirIfNotExist(tempDirPath))
+
+	f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
+	exitOnErr(err)
+
+	cmd.Stdout, cmd.Stderr = f, f
 	if err := cmd.Run(); err != nil {
+		log.Error("Unit tests failed, full report available at the following path:", f.Name())
+		exitOnErr(err)
+	}
+	log.Info("Full unit testing report available at the following path:", f.Name())
+	return nil
+}
+
+func exitOnErr(err error) {
+	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
