@@ -85,33 +85,6 @@ func IsWildcardPattern(pattern string) bool {
 	return strings.Contains(pattern, "*") || strings.HasSuffix(pattern, "/") || !strings.Contains(pattern, "/")
 }
 
-func EncodeParams(props string) (string, error) {
-	propList := strings.Split(props, ";")
-	result := []string{}
-	for _, prop := range propList {
-		if prop == "" {
-			continue
-		}
-		key, value, err := SplitProp(prop)
-		if err != nil {
-			return "", err
-		}
-		result = append(result, url.QueryEscape(key)+"="+url.QueryEscape(value))
-	}
-
-	return strings.Join(result, ";"), nil
-}
-
-func SplitProp(prop string) (string, string, error) {
-	splitIndex := strings.Index(prop, "=")
-	if splitIndex < 1 || len(prop[splitIndex+1:]) < 1 {
-		err := errorutils.CheckError(errors.New("Invalid property: " + prop))
-		return "", "", err
-	}
-	return prop[:splitIndex], prop[splitIndex+1:], nil
-
-}
-
 // @paths - sorted array
 // @index - index of the current path which we want to check if it a prefix of any of the other previous paths
 // @separator - file separator

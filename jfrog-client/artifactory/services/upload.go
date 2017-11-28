@@ -15,13 +15,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"net/http"
 )
 
 type UploadService struct {
@@ -385,17 +385,12 @@ func getUploadTarget(isFlat bool, path, target string) string {
 }
 
 func addPropsToTargetPath(targetPath, props, debConfig string) (string, error) {
-	if props != "" {
-		encodedProp, err := utils.EncodeParams(props)
-		if err != nil {
-			return "", err
-		}
-		targetPath += ";" + encodedProp
+	propsStr := strings.Join([]string{props, getDebianProps(debConfig)}, ";")
+	properties, err := utils.ParseProperties(propsStr, utils.SplitCommas)
+	if err != nil {
+		return "", err
 	}
-	if debConfig != "" {
-		targetPath += getDebianMatrixParams(debConfig)
-	}
-	return targetPath, nil
+	return targetPath + ";" + properties.ToEncodedString(), nil
 }
 
 func prepareUploadData(targetPath, localPath, props string, uploadParams UploadParams, logMsgPrefix string) (os.FileInfo, string, string, error) {
@@ -562,11 +557,17 @@ func (us *UploadService) tryChecksumDeploy(filePath, targetPath string,
 	return
 }
 
-func getDebianMatrixParams(debianPropsStr string) string {
+func getDebianProps(debianPropsStr string) string {
+	if debianPropsStr == "" {
+		return ""
+	}
+	result := ""
 	debProps := strings.Split(debianPropsStr, "/")
-	return ";deb.distribution=" + debProps[0] +
-		";deb.component=" + debProps[1] +
-		";deb.architecture=" + debProps[2]
+	for k, v := range []string{"deb.distribution", "deb.component", "deb.architecture"} {
+		debProp := strings.Join([]string{v, debProps[k]}, "=")
+		result = strings.Join([]string{result, debProp}, ";")
+	}
+	return result
 }
 
 type UploadParamsImp struct {

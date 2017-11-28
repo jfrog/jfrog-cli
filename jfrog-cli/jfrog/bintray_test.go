@@ -270,7 +270,7 @@ func CleanBintrayTests() {
 
 func initBintrayTest(t *testing.T) {
 	if !*tests.TestBintray {
-		t.Skip("Bintray is not beeing tested, skipping...")
+		t.Skip("Bintray is not being tested, skipping...")
 	}
 }
 

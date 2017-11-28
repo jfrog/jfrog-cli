@@ -32,10 +32,11 @@ func (sp *SetPropsService) IsDryRun() bool {
 func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) error {
 	updatePropertiesBaseUrl := sp.GetArtifactoryDetails().Url + "api/storage"
 	log.Info("Setting properties...")
-	encodedParam, err := utils.EncodeParams(setPropsParams.GetProps())
+	props, err := utils.ParseProperties(setPropsParams.GetProps(), utils.JoinCommas)
 	if err != nil {
 		return err
 	}
+	encodedParam :=  props.ToEncodedString()
 	for _, item := range setPropsParams.GetItems() {
 		log.Info("Setting properties on:", item.GetItemRelativePath())
 		httpClientsDetails := sp.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()

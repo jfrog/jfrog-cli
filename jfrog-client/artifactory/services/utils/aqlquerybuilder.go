@@ -30,7 +30,7 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 	nePath := buildNePathPart(pathPairsSize == 0 || includeRoot)
 	excludeQuery := buildExcludeQueryPart(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
-	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart + itemTypeQuery + nePath + excludeQuery)
+	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart+itemTypeQuery+nePath+excludeQuery)
 	if pathPairsSize == 0 {
 		json += buildInnerQueryPart(".", searchPattern)
 	} else {
@@ -49,10 +49,10 @@ func createAqlQueryForBuild(buildName, buildNumber string) string {
 	buildQueryPart :=
 		`items.find({` +
 			`"$and" : [` +
-				`{"artifact.module.build.name": {"$eq": "%s"}},` +
-				`{"artifact.module.build.number": {"$eq": "%s"}}` +
+			`{"artifact.module.build.name": {"$eq": "%s"}},` +
+			`{"artifact.module.build.number": {"$eq": "%s"}}` +
 			`]})%s`
-	return fmt.Sprintf(buildQueryPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name","repo","path","actual_sha1"}))
+	return fmt.Sprintf(buildQueryPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name", "repo", "path", "actual_sha1"}))
 }
 
 func prepareSearchPattern(pattern string, repositoryExists bool) string {
@@ -73,17 +73,17 @@ func buildPropsQueryPart(props string) (string, error) {
 	if props == "" {
 		return "", nil
 	}
-	propList := strings.Split(props, ";")
+	properties, err := ParseProperties(props, JoinCommas)
+	if err != nil {
+		return "", err
+	}
 	query := ""
-	for _, prop := range propList {
-		key, value, err := SplitProp(prop)
-		if err != nil {
-			return "", err
-		}
-		query += buildKeyValQueryPart(key, value) + `,`
+	for _, v := range properties.Properties {
+		query += buildKeyValQueryPart(v.Key, v.Value) + `,`
 	}
 	return query, nil
 }
+
 func buildKeyValQueryPart(key string, value string) string {
 	return fmt.Sprintf(`"@%s": {"$match" : "%s"}`, key, value)
 }
@@ -142,25 +142,25 @@ func buildExcludeQueryPart(excludePatterns []string, useLocalPath, recursive boo
 // Each struct represent a possible path and folder name pair to be included in AQL query with an "or" relationship.
 func createPathFolderPairs(searchPattern string) []PathFilePair {
 	// Remove parenthesis
-	searchPattern = searchPattern[:len(searchPattern) - 1]
+	searchPattern = searchPattern[:len(searchPattern)-1]
 	searchPattern = strings.Replace(searchPattern, "(", "", -1)
 	searchPattern = strings.Replace(searchPattern, ")", "", -1)
 
 	index := strings.Index(searchPattern, "/")
-	searchPattern = searchPattern[index + 1:]
+	searchPattern = searchPattern[index+1:]
 
 	index = strings.LastIndex(searchPattern, "/")
 	lastSlashPath := searchPattern
 	path := "."
 	if index != -1 {
-		lastSlashPath = searchPattern[index + 1:]
+		lastSlashPath = searchPattern[index+1:]
 		path = searchPattern[:index]
 	}
 
-	pairs := []PathFilePair{{path:path, file:lastSlashPath}}
+	pairs := []PathFilePair{{path: path, file: lastSlashPath}}
 	for i := 0; i < len(lastSlashPath); i++ {
 		if string(lastSlashPath[i]) == "*" {
-			pairs = append(pairs, PathFilePair{path:filepath.Join(path, lastSlashPath[:i + 1]), file:lastSlashPath[i:]})
+			pairs = append(pairs, PathFilePair{path: filepath.Join(path, lastSlashPath[:i+1]), file: lastSlashPath[i:]})
 		}
 	}
 	return pairs
@@ -215,8 +215,8 @@ func createPathFilePairs(pattern string, recursive bool) []PathFilePair {
 	size := len(sections)
 	for i := 0; i < size; i++ {
 		options := []string{}
-		if i + 1 < size {
-			options = append(options, sections[i] + "*/")
+		if i+1 < size {
+			options = append(options, sections[i]+"*/")
 		}
 		for _, option := range options {
 			str := ""

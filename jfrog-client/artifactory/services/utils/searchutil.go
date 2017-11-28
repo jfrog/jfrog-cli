@@ -137,11 +137,6 @@ type ResultItem struct {
 	Type        string
 }
 
-type Property struct {
-	Key   string
-	Value string
-}
-
 func (item ResultItem) GetItemRelativePath() string {
 	if item.Path == "." {
 		return item.Repo + "/" + item.Name
