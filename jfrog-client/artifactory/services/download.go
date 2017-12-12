@@ -70,15 +70,12 @@ func (ds *DownloadService) setMinSplitSize(minSplitSize int64) {
 
 func (ds *DownloadService) DownloadFiles(downloadParams DownloadParams) ([]utils.FileInfo, error) {
 	buildDependencies := make([][]utils.FileInfo, ds.GetThreads())
-	producerConsumer := parallel.NewBounedRunner(ds.GetThreads(), true)
+	producerConsumer := parallel.NewBounedRunner(ds.GetThreads(), false)
 	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := ds.createFileHandlerFunc(buildDependencies, downloadParams)
 	log.Info("Searching items to download...")
 	ds.prepareTasks(producerConsumer, fileHandlerFunc, errorsQueue, downloadParams)
 	err := performTasks(producerConsumer, errorsQueue)
-	if err != nil {
-		return nil, err
-	}
 	return utils.StripThreadId(buildDependencies), err
 }
 
@@ -98,7 +95,6 @@ func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHan
 			errorsQueue.AddError(err)
 			return
 		}
-
 		err = produceTasks(resultItems, downloadParams, producer, fileContextHandler, errorsQueue)
 		if err != nil {
 			errorsQueue.AddError(err)
@@ -361,6 +357,7 @@ func (ds *DownloadService) createFileHandlerFunc(buildDependencies [][]utils.Fil
 				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
 			} else if !httperrors.IsResponseStatusError(e) {
 				// Ignore response status errors to continue downloading
+				log.Error(logMsgPrefix,"Received an error: "+ e.Error())
 				return e
 			}
 			return nil
