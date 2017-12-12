@@ -11,6 +11,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	 "errors"
 )
 
 func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error {
@@ -32,6 +33,7 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error 
 		defer fileutils.RemoveTempDir()
 	}
 	var filesInfo []clientutils.FileInfo
+	var errorList [] error
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		params, err := downloadSpec.Get(i).ToArtifatoryDownloadParams()
 		if err != nil {
@@ -42,11 +44,14 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error 
 			return err
 		}
 		currentBuildDependencies, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat:flat, Retries: flags.Retries})
+		filesInfo = append(filesInfo, currentBuildDependencies...)
 		if err != nil {
 			cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
-			return err
+			errorList = append(errorList, err)
 		}
-		filesInfo = append(filesInfo, currentBuildDependencies...)
+	}
+	if errorList != nil {
+		return errors.New("Download finished with errors. Please review the logs")
 	}
 	cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
