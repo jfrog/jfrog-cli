@@ -135,6 +135,7 @@ func (r *runner) Done() {
 	select {
 	case <-r.cancel:
 	//Already canceled
+		close(r.tasks)
 	default:
 		close(r.tasks)
 	}
