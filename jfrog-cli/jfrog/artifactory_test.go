@@ -1268,6 +1268,13 @@ func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 // Test the definition of bottom chain directories  - are directories which do not include other directories which match the pattern
 func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 	initArtifactoryTest(t)
+	dirInnerPath := "empty" + fileutils.GetFileSeparator() + "folder"
+	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
+	err := os.MkdirAll(canonicalPath, 0777)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
 	// 'c' folder is defined as bottom chain directory therefor should be uploaded when using flat=true even though 'c' is not empty
 	artifactoryCli.Exec("upload", tests.FixWinPath(tests.GetTestResourcesPath()+"(*)"+fileutils.GetFileSeparator()+"*"), tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	// Download without include-dirs
