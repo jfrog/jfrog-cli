@@ -8,7 +8,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -23,8 +22,7 @@ func CreateVersion(versionDetails *utils.VersionDetails, flags *utils.VersionFla
 		return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created version", versionDetails.Version + ", details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }
 

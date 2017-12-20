@@ -11,12 +11,12 @@ import (
 	"strings"
 )
 
-const STREAM_URL = "%vstream/%v"
-const TIMEOUT = 90
-const TIMEOUT_DURATION = TIMEOUT * time.Second
-const ON_ERROR_RECONNECT_DURATION = 3 * time.Second
+const streamUrl = "%vstream/%v"
+const timeout = 90
+const timeoutDuration = timeout * time.Second
+const onErrorReconnectDuration = 3 * time.Second
 
-func Stream(streamDetails *StreamDetails, writer io.Writer) (err error) {
+func Stream(streamDetails *StreamDetails, writer io.Writer) {
 	var resp *http.Response
 	var connected bool
 	lastServerInteraction := time.Now()
@@ -28,7 +28,7 @@ func Stream(streamDetails *StreamDetails, writer io.Writer) (err error) {
 			var connectionEstablished bool
 			connectionEstablished, resp = streamManager.Connect()
 			if !connectionEstablished {
-				time.Sleep(ON_ERROR_RECONNECT_DURATION)
+				time.Sleep(onErrorReconnectDuration)
 				continue
 			}
 			lastServerInteraction = time.Now()
@@ -37,18 +37,18 @@ func Stream(streamDetails *StreamDetails, writer io.Writer) (err error) {
 		}
 	}()
 
-	for err == nil {
+	for true {
 		if !connected {
-			time.Sleep(TIMEOUT_DURATION)
+			time.Sleep(timeoutDuration)
 			continue
 		}
-		if time.Since(lastServerInteraction) < TIMEOUT_DURATION {
-			time.Sleep(TIMEOUT_DURATION - time.Now().Sub(lastServerInteraction))
+		if time.Since(lastServerInteraction) < timeoutDuration {
+			time.Sleep(timeoutDuration - time.Now().Sub(lastServerInteraction))
 			continue
 		}
 		if resp != nil {
 			resp.Body.Close()
-			time.Sleep(TIMEOUT_DURATION)
+			time.Sleep(timeoutDuration)
 			continue
 		}
 	}
@@ -69,7 +69,7 @@ func buildIncludeFilterMap(filterPattern string) map[string]struct{} {
 }
 func createStreamManager(streamDetails *StreamDetails) *helpers.StreamManager {
 	return &helpers.StreamManager{
-		Url: fmt.Sprintf(STREAM_URL, streamDetails.BintrayDetails.ApiUrl, streamDetails.Subject),
+		Url: fmt.Sprintf(streamUrl, streamDetails.BintrayDetails.ApiUrl, streamDetails.Subject),
 		HttpClientDetails: utils.GetBintrayHttpClientDetails(streamDetails.BintrayDetails),
 		IncludeFilter: buildIncludeFilterMap(streamDetails.Include)}
 }

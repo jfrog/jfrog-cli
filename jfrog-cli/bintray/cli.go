@@ -802,6 +802,7 @@ func downloadVersion(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
 	downloaded, failed, err := commands.DownloadVersion(versionDetails, targetPath, flags)
+	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
 		if downloaded > 0 {
@@ -830,6 +831,7 @@ func upload(c *cli.Context) {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
 	uploaded, failed, err := commands.Upload(versionDetails, localPath, uploadPath, uploadFlags)
+	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
 		if uploaded > 0 {
@@ -856,7 +858,8 @@ func downloadFile(c *cli.Context) {
 	if err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, err.Error())
 	}
-	err = commands.DownloadFile(pathDetails, targetPath, flags)
+	downloaded, failed, err := commands.DownloadFile(pathDetails, targetPath, flags)
+	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
@@ -932,10 +935,7 @@ func stream(c *cli.Context) {
 		Subject: c.Args().Get(0),
 		Include: c.String("include"),
 	}
-	err = commands.Stream(streamDetails, os.Stdout)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "")
-	}
+	commands.Stream(streamDetails, os.Stdout)
 }
 
 func gpgSignVersion(c *cli.Context) {
@@ -1340,11 +1340,11 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) (*config.BintrayDe
 	}
 	apiUrl := os.Getenv("JFROG_CLI_BINTRAY_API_URL")
 	if apiUrl == "" {
-		apiUrl = utils.BINTRAY_API_URL
+		apiUrl = utils.BintrayApiUrl
 	}
 	downloadServerUrl := os.Getenv("JFROG_CLI_BINTRAY_DOWNLOAD_URL")
 	if downloadServerUrl == "" {
-		downloadServerUrl = utils.BINTRAY_DOWNLOAD_SERVER_URL
+		downloadServerUrl = utils.BintrayDownloadServerUrl
 	}
 	apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
 	downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)

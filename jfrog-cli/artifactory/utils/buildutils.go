@@ -15,14 +15,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 const BUILD_INFO_DETAILS = "details"
 const BUILD_TEMP_PATH = "jfrog/builds/"
-
 
 func getBuildDir(buildName, buildNumber string) (string, error) {
 	tempDir := os.TempDir()
@@ -48,7 +47,7 @@ func getGenericBuildDir(buildName, buildNumber string) (string, error) {
 	return buildDir, nil
 }
 
-func saveBuildData(action interface{}, buildName, buildNumber string) (err error) {
+func saveBuildData(action interface{}, buildName, buildNumber string) error {
 	b, err := json.Marshal(&action)
 	err = errorutils.CheckError(err)
 	if err != nil {
@@ -64,14 +63,14 @@ func saveBuildData(action interface{}, buildName, buildNumber string) (err error
 	if err != nil {
 		return err
 	}
-	cliutils.CliLogger.Debug("Creating temp build file at: " + dirPath)
-	tmpfile, err := ioutil.TempFile(dirPath, "temp")
+	log.Debug("Creating temp build file at: " + dirPath)
+	tempFile, err := ioutil.TempFile(dirPath, "temp")
 	if err != nil {
 		return err
 	}
-	defer tmpfile.Close()
-	_, err = tmpfile.Write([]byte(content.String()))
-	return
+	defer tempFile.Close()
+	_, err = tempFile.Write([]byte(content.String()))
+	return err
 }
 
 func SaveBuildGeneralDetails(buildName, buildNumber string) error {

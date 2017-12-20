@@ -7,7 +7,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -32,8 +31,7 @@ func SignVersion(urlSigningDetails *utils.PathDetails, flags *UrlSigningFlags) e
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Signed URL", path + ", details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }
 

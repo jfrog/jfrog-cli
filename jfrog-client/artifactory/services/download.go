@@ -68,21 +68,22 @@ func (ds *DownloadService) setMinSplitSize(minSplitSize int64) {
 	ds.MinSplitSize = minSplitSize
 }
 
-func (ds *DownloadService) DownloadFiles(downloadParams DownloadParams) ([]utils.FileInfo, error) {
+func (ds *DownloadService) DownloadFiles(downloadParams DownloadParams) ([]utils.FileInfo, int, error) {
 	buildDependencies := make([][]utils.FileInfo, ds.GetThreads())
 	producerConsumer := parallel.NewBounedRunner(ds.GetThreads(), true)
 	errorsQueue := utils.NewErrorsQueue(1)
 	fileHandlerFunc := ds.createFileHandlerFunc(buildDependencies, downloadParams)
 	log.Info("Searching items to download...")
-	ds.prepareTasks(producerConsumer, fileHandlerFunc, errorsQueue, downloadParams)
+	expectedChan := make(chan int, 1)
+	ds.prepareTasks(producerConsumer, fileHandlerFunc, expectedChan, errorsQueue, downloadParams)
 	err := performTasks(producerConsumer, errorsQueue)
 	if err != nil {
-		return nil, err
+		return nil, <-expectedChan, err
 	}
-	return utils.StripThreadId(buildDependencies), err
+	return utils.StripThreadId(buildDependencies), <-expectedChan, err
 }
 
-func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue, downloadParams DownloadParams) {
+func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHandler fileHandlerFunc, expectedChan chan int, errorsQueue *utils.ErrorsQueue, downloadParams DownloadParams) {
 	go func() {
 		defer producer.Done()
 		var err error
@@ -98,12 +99,12 @@ func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHan
 			errorsQueue.AddError(err)
 			return
 		}
-
-		err = produceTasks(resultItems, downloadParams, producer, fileContextHandler, errorsQueue)
+		tasks, err := produceTasks(resultItems, downloadParams, producer, fileContextHandler, errorsQueue)
 		if err != nil {
 			errorsQueue.AddError(err)
 			return
 		}
+		expectedChan <- tasks
 	}()
 }
 
@@ -111,7 +112,7 @@ func (ds *DownloadService) collectFilesUsingWildcardPattern(downloadParams Downl
 	return utils.AqlSearchDefaultReturnFields(downloadParams.GetFile(), ds)
 }
 
-func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, producer parallel.Runner, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) error {
+func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, producer parallel.Runner, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) (int, error) {
 	flat := downloadParams.IsFlat()
 	// Collect all folders path which might be needed to create.
 	// key = folder path, value = the necessary data for producing create folder task.
@@ -120,6 +121,8 @@ func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, produ
 	alreadyCreatedDirs := make(map[string]bool)
 	// Store all the keys of directoriesData as an array.
 	var directoriesDataKeys []string
+	// Task counter
+	var tasksCount int
 	for _, v := range items {
 		tempData := DownloadData{
 			Dependency:   v,
@@ -130,6 +133,7 @@ func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, produ
 		if v.Type != "folder" {
 			// Add a task, task is a function of type TaskFunc which later on will be executed by other go routine, the communication is done using channels.
 			// The second argument is a error handling func in case the taskFunc return an error.
+			tasksCount++
 			producer.AddTaskWithError(fileHandler(tempData), errorsQueue.AddError)
 			// We don't want to create directories which are created explicitly by download files when the --include-dirs flag is used.
 			alreadyCreatedDirs[v.Path] = true
@@ -139,7 +143,7 @@ func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, produ
 	}
 
 	addCreateDirsTasks(directoriesDataKeys, alreadyCreatedDirs, producer, fileHandler, directoriesData, errorsQueue, flat)
-	return nil
+	return tasksCount, nil
 }
 
 // Extract for the aqlResultItem the directory path, store the path the directoriesDataKeys and in the directoriesData map.
@@ -174,13 +178,13 @@ func addCreateDirsTasks(directoriesDataKeys []string, alreadyCreatedDirs map[str
 			}
 		}
 	}
+	return
 }
 
-func performTasks(consumer parallel.Runner, errorsQueue *utils.ErrorsQueue) (err error) {
+func performTasks(consumer parallel.Runner, errorsQueue *utils.ErrorsQueue) error {
 	// Blocked until finish consuming
 	consumer.Run()
-	err = errorsQueue.GetError()
-	return
+	return errorsQueue.GetError()
 }
 
 func createDependencyFileInfo(resultItem utils.ResultItem, localPath, localFileName string) utils.FileInfo {
@@ -204,7 +208,7 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, si
 	return
 }
 
-func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) (err error) {
+func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) error {
 	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
 	bulkDownload := ds.SplitCount == 0 || ds.MinSplitSize < 0 || ds.MinSplitSize*1000 > downloadFileDetails.Size
 	if !bulkDownload {
@@ -216,22 +220,22 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails
 	}
 	if bulkDownload {
 		var resp *http.Response
-		resp, err = ds.client.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails, downloadParams.GetRetries())
+		resp, err := ds.client.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails, downloadParams.GetRetries())
 		if resp != nil {
 			log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 		}
-	} else {
-		concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
-			DownloadPath: downloadFileDetails.DownloadPath,
-			FileName:     downloadFileDetails.LocalFileName,
-			LocalPath:    downloadFileDetails.LocalPath,
-			FileSize:     downloadFileDetails.Size,
-			SplitCount:   ds.SplitCount,
-			Retries:      downloadParams.GetRetries()}
-
-		err = ds.client.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
+		return err
 	}
-	return
+
+	concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
+		DownloadPath: downloadFileDetails.DownloadPath,
+		FileName:     downloadFileDetails.LocalFileName,
+		LocalPath:    downloadFileDetails.LocalPath,
+		FileSize:     downloadFileDetails.Size,
+		SplitCount:   ds.SplitCount,
+		Retries:      downloadParams.GetRetries()}
+
+	return ds.client.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 }
 
 func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *DownloadFileDetails) (bool, error) {

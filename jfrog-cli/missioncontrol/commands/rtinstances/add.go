@@ -7,8 +7,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func AddInstance(instanceName string, flags *AddInstanceFlags) error {
@@ -23,17 +23,17 @@ func AddInstance(instanceName string, flags *AddInstanceFlags) error {
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances";
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 	    return err
 	}
-	if resp.StatusCode == 201 || resp.StatusCode == 204 {
-		fmt.Println("Mission Control response: " + resp.Status)
-	} else {
+	if resp.StatusCode != 201 && resp.StatusCode != 204 {
 		return errorutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
+
+	log.Debug("Mission Control response: " + resp.Status)
 	return nil
 }
 

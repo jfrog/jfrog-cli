@@ -9,9 +9,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"errors"
-	"fmt"
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func AttachLic(instanceName string, flags *AttachLicFlags) error {
@@ -24,7 +24,7 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses";
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
     if err != nil {
@@ -36,7 +36,7 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 		}
 		return errorutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
-	fmt.Println("Mission Control response: " + resp.Status)
+	log.Debug("Mission Control response: " + resp.Status)
 	if flags.LicensePath == "" {
 	    var m Message
 	    m, err = extractJsonValue(body)
@@ -48,7 +48,7 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 		if err != nil {
 		    return err
 		}
-		fmt.Println(string(requestContent))
+		log.Output(string(requestContent))
 	} else {
 	    var licenseKey []byte
 		licenseKey, err = getLicenseFromJson(body)
@@ -72,7 +72,7 @@ func getLicenseFromJson(body []byte) (licenseKey []byte, err error) {
 
 func extractJsonValue(body []byte) (m Message, err error) {
 	data := &Data{}
-	err = json.Unmarshal(body, &data);
+	err = json.Unmarshal(body, &data)
 	err = errorutils.CheckError(err)
 	if err != nil {
 	    return

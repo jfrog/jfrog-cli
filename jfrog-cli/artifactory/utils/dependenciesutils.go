@@ -21,7 +21,7 @@ func DownloadFromBintray(downloadPath, filename, version, targetPath string) err
 		return nil
 	}
 
-	bintrayConfig := &config.BintrayDetails{ApiUrl: btutils.BINTRAY_API_URL, DownloadServerUrl: btutils.BINTRAY_DOWNLOAD_SERVER_URL}
+	bintrayConfig := &config.BintrayDetails{ApiUrl: btutils.BintrayApiUrl, DownloadServerUrl: btutils.BintrayDownloadServerUrl}
 	downloadFlags := &btutils.DownloadFlags{
 		BintrayDetails:     bintrayConfig,
 		Threads:            3,
@@ -36,5 +36,6 @@ func DownloadFromBintray(downloadPath, filename, version, targetPath string) err
 	if err != nil {
 		return err
 	}
-	return commands.DownloadFile(pathDetails, targetFile, downloadFlags)
+	_, _, err = commands.DownloadFile(pathDetails, targetFile, downloadFlags)
+	return err
 }

@@ -74,7 +74,7 @@ func (ps *PromoteService) BuildPromote(promotionParams PromotionParams) error {
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
-	log.Info("Promoted build", promotionParams.GetBuildName(), "#"+promotionParams.GetBuildNumber(), "to:", promotionParams.GetTargetRepo(), "repository.")
+	log.Info("Promoted build", promotionParams.GetBuildName()+"/"+promotionParams.GetBuildNumber(), "to:", promotionParams.GetTargetRepo(), "repository.")
 	return nil
 }
 

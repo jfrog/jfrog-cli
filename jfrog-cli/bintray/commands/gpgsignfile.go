@@ -6,7 +6,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -34,7 +33,6 @@ func GpgSignFile(pathDetails *utils.PathDetails, passphrase string, bintrayDetai
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("GPG signed file", pathDetails.Path, ", details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }

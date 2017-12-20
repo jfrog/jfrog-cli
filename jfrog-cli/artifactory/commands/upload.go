@@ -12,9 +12,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -52,21 +52,24 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		params, err := uploadSpec.Get(i).ToArtifatoryUploadParams()
 		if err != nil {
-			return 0, 0, err
+			log.Error(err)
+			continue
 		}
 		uploadParamImp.ArtifactoryCommonParams = params
 		flat, err := uploadSpec.Get(i).IsFlat(true)
 		if err != nil {
-			return 0, 0, err
+			log.Error(err)
+			continue
 		}
 		uploadParamImp.Flat = flat
 		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParamImp)
-		if err != nil {
-			return 0, 0, err
-		}
 		filesInfo = append(filesInfo, artifacts...)
 		totalFailed += failed
 		totalUploaded += uploaded
+		if err != nil {
+			log.Error(err)
+			continue
+		}
 	}
 	if err != nil {
 		return 0, 0, err
@@ -109,7 +112,7 @@ func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *Upl
 		SetCertificatesPath(certPath).
 		SetMinChecksumDeploy(minChecksumDeploySize).
 		SetNumOfThreadPerOperation(flags.Threads).
-		SetLogger(cliutils.CliLogger).
+		SetLogger(log.Logger).
 		Build()
 	return servicesConfig, err
 }
@@ -135,23 +138,23 @@ func getMinChecksumDeploySize() (int64, error) {
 	return minSize * 1000, nil
 }
 
-func addBuildProps(props *string, buildName, buildNumber string) (err error) {
+func addBuildProps(props *string, buildName, buildNumber string) error {
 	if buildName == "" || buildNumber == "" {
-		return
+		return nil
 	}
 	buildProps := "build.name=" + buildName
 	buildProps += ";build.number=" + buildNumber
 	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
 	if err != nil {
-		return
+		return err
 	}
-	buildProps += ";build.timestamp=" + strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano() / int64(time.Millisecond), 10)
+	buildProps += ";build.timestamp=" + strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10)
 	*props = addProps(*props, buildProps)
-	return
+	return nil
 }
 
 func addProps(oldProps, additionalProps string) string {
-	if len(oldProps) > 0 && !strings.HasSuffix(oldProps, ";")  && len(additionalProps) > 0 {
+	if len(oldProps) > 0 && !strings.HasSuffix(oldProps, ";") && len(additionalProps) > 0 {
 		oldProps += ";"
 	}
 	return oldProps + additionalProps
@@ -166,5 +169,5 @@ type UploadConfiguration struct {
 	DryRun                bool
 	Symlink               bool
 	ExplodeArchive        bool
-    ArtDetails            *config.ArtifactoryDetails
+	ArtDetails            *config.ArtifactoryDetails
 }

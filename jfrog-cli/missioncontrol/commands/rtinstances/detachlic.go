@@ -8,8 +8,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func DetachLic(instanceName string, flags *DetachLicFlags) error {
@@ -21,7 +21,7 @@ func DetachLic(instanceName string, flags *DetachLicFlags) error {
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + bucketId + "/licenses";
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + bucketId + "/licenses"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendDelete(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
@@ -30,7 +30,7 @@ func DetachLic(instanceName string, flags *DetachLicFlags) error {
 	if resp.StatusCode != 200 {
 		return errorutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
-	fmt.Println("Mission Control response: " + resp.Status)
+	log.Debug("Mission Control response: " + resp.Status)
 	return nil
 }
 

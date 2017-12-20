@@ -36,5 +36,5 @@ func TestReadMissionControlHttpMessage (t *testing.T){
 	errorMessage = ReadMissionControlHttpMessage(resp)
 	if expected != errorMessage {
 		t.Error("Unexpected error message. Expected: \n" + expected + "\n Got \n" + errorMessage)
-	};
+	}
 }

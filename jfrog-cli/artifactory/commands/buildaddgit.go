@@ -4,22 +4,25 @@ import (
 	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-func BuildAddGit(buildName, buildNumber, dotGitPath string) (err error) {
-	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
-		return
+func BuildAddGit(buildName, buildNumber, dotGitPath string) error {
+	log.Info("Collecting git revision and remote url...")
+	err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return err
 	}
 	if dotGitPath == "" {
 		dotGitPath, err = os.Getwd()
 		if err != nil {
-			return
+			return err
 		}
 	}
 	gitManager := utils.NewGitManager(dotGitPath)
 	err = gitManager.ReadGitConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	populateFunc := func(partial *buildinfo.Partial) {
@@ -28,6 +31,11 @@ func BuildAddGit(buildName, buildNumber, dotGitPath string) (err error) {
 			Revision: gitManager.GetRevision(),
 		}
 	}
+
 	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)
-	return
+	if err != nil {
+		return err
+	}
+	log.Info("Collected git revision and remote url for", buildName+"/"+buildNumber+".")
+	return nil
 }

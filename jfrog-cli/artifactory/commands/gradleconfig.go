@@ -24,8 +24,8 @@ func CreateGradleBuildConfig(configFilePath string) error {
 	if err != nil {
 		return err
 	}
-	configResult.UsePlugin = vConfig.GetBool(USE_PLUGIN)
-	configResult.UseWrapper = vConfig.GetBool(USE_WRAPPER)
+	configResult.UsePlugin = vConfig.GetBool(usePlugin)
+	configResult.UseWrapper = vConfig.GetBool(useWrapper)
 
 	vConfig, err = prompt.ReadArtifactoryServer("Resolve dependencies from Artifactory (y/n) [${default}]? ")
 	if err != nil {
@@ -90,12 +90,12 @@ func readGradleGlobalConfig() (*viper.Viper, error) {
 			&promptreader.YesNo{
 				Msg:     "Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ",
 				Default: "n",
-				Label:   USE_PLUGIN,
+				Label:   usePlugin,
 			},
 			&promptreader.YesNo{
 				Msg:     "Use Gradle wrapper (y/n) [${default}]? ",
 				Default: "n",
-				Label:   USE_WRAPPER,
+				Label:   useWrapper,
 			},
 		},
 	}

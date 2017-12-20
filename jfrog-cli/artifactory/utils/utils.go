@@ -9,7 +9,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -18,6 +17,7 @@ import (
 	"net/url"
 	"runtime"
 	"path/filepath"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func GetJfrogSecurityDir() (string, error) {
@@ -52,7 +52,7 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth *auth.ArtifactoryDetail
 
 	if resp.StatusCode == http.StatusConflict {
 		message := "\nYour Artifactory server is not configured to encrypt passwords.\n" +
-				"You may use \"art config --enc-password=false\""
+			"You may use \"art config --enc-password=false\""
 		return "", errorutils.CheckError(errors.New(message))
 	}
 
@@ -72,7 +72,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetDryRun(isDryRun).
-		SetLogger(cliutils.CliLogger).
+		SetLogger(log.Logger).
 		Build()
 	if err != nil {
 		return nil, err

@@ -76,11 +76,11 @@ func (ds *DistributeService) BuildDistribute(params BuildDistributionParams) err
 
 	log.Debug("Artifactory response:", resp.Status)
 	if params.IsAsync() && !ds.IsDryRun() {
-		log.Info("Asynchronously distributed build", params.GetBuildName(), "#"+params.GetBuildNumber(), "to:", params.GetTargetRepo(), "repository, logs are avalable in Artifactory.")
+		log.Info("Asynchronously distributed build", params.GetBuildName()+"/"+params.GetBuildNumber(), "to:", params.GetTargetRepo(), "repository, logs are avalable in Artifactory.")
 		return nil
 	}
 
-	log.Info(dryRun+"Distributed build", params.GetBuildName(), "#"+params.GetBuildNumber(), "to:", params.GetTargetRepo(), "repository.")
+	log.Info(dryRun+"Distributed build", params.GetBuildName()+"/"+params.GetBuildNumber(), "to:", params.GetTargetRepo(), "repository.")
 	return nil
 }
 
@@ -139,11 +139,11 @@ func (bd *BuildDistributionParamsImpl) GetBuildNumber() string {
 }
 
 type BuildDistributionBody struct {
-	SourceRepos           []string  `json:"sourceRepos,omitempty"`
-	TargetRepo            string    `json:"targetRepo,omitempty"`
-	GpgPassphrase         string    `json:"gpgPassphrase,omitempty"`
-	Publish               bool      `json:"publish"`
-	OverrideExistingFiles bool      `json:"overrideExistingFiles,omitempty"`
-	Async                 bool      `json:"async,omitempty"`
-	DryRun                bool      `json:"dryRun,omitempty"`
+	SourceRepos           []string `json:"sourceRepos,omitempty"`
+	TargetRepo            string   `json:"targetRepo,omitempty"`
+	GpgPassphrase         string   `json:"gpgPassphrase,omitempty"`
+	Publish               bool     `json:"publish"`
+	OverrideExistingFiles bool     `json:"overrideExistingFiles,omitempty"`
+	Async                 bool     `json:"async,omitempty"`
+	DryRun                bool     `json:"dryRun,omitempty"`
 }

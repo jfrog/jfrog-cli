@@ -49,8 +49,8 @@ func offlineUpdateFlags() []cli.Flag {
 
 func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags, err error) {
 	flags = new(commands.OfflineUpdatesFlags)
-	flags.Version = c.String("version");
-	flags.License = c.String("license-id");
+	flags.Version = c.String("version")
+	flags.License = c.String("license-id")
 	if len(flags.License) < 1 {
 		cliutils.Exit(cliutils.ExitCodeError, "The --license-id option is mandatory.")
 	}

@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*config.BintrayDetails, error) {
@@ -51,13 +51,13 @@ func ShowConfig() error {
 		return err
 	}
 	if details.User != "" {
-		fmt.Println("User: " + details.User)
+		log.Output("User: " + details.User)
 	}
 	if details.Key != "" {
-		fmt.Println("Key: ***")
+		log.Output("Key: ***")
 	}
 	if details.DefPackageLicenses != "" {
-		fmt.Println("Default package license: " + details.DefPackageLicenses)
+		log.Output("Default package license: " + details.DefPackageLicenses)
 	}
 	return nil
 }

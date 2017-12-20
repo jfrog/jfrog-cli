@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
 )
@@ -114,14 +113,17 @@ func artifactoryCleanUp(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	var deleteItems []DeleteItem = make([]DeleteItem, len(toDelete))
+	deleteItems := make([]DeleteItem, len(toDelete))
 	for i, item := range toDelete {
 		deleteItems[i] = item
 	}
-	err = testsDeleteService.DeleteFiles(deleteItems, testsDeleteService)
+	deletedCount, err := testsDeleteService.DeleteFiles(deleteItems, testsDeleteService)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
+	}
+	if len(toDelete) != deletedCount {
+		t.Errorf("Failed to delete files from Artifactory expected %d items to be deleted got %d.", len(toDelete), deletedCount)
 	}
 }
 
@@ -136,7 +138,7 @@ func createReposIfNeeded() error {
 		repoConfig = filepath.Join(getTestDataPath(), "reposconfig", SpecsTestRepositoryConfig)
 		err = execCreateRepoRest(repoConfig, repo)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			return err
 		}
 	}

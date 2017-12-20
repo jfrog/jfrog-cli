@@ -6,7 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {
@@ -18,13 +18,13 @@ func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultIt
 }
 
 func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, flags *GitLfsCleanConfiguration) error {
-	cliutils.CliLogger.Info("Deleting", len(files), "files from", flags.Repo, "...")
+	log.Info("Deleting", len(files), "files from", flags.Repo, "...")
 	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return err
 	}
 	deleteItems := utils.ConvertResultItemArrayToDeleteItemArray(files)
-	err = servicesManager.DeleteFiles(deleteItems)
+	_, err = servicesManager.DeleteFiles(deleteItems)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}

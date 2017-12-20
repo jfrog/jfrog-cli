@@ -8,47 +8,51 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error {
+func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, int, error) {
 	servicesManager, err := createDownloadServiceManager(flags.ArtDetails, flags)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	isCollectBuildInfo := len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0
 	if isCollectBuildInfo && !flags.DryRun {
 		if err = utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {
-			return err
+			return 0, 0, err
 		}
 	}
 	if !flags.DryRun {
 		err = fileutils.CreateTempDirPath()
 		if err != nil {
-			return err
+			return 0, 0, err
 		}
 		defer fileutils.RemoveTempDir()
 	}
 	var filesInfo []clientutils.FileInfo
+	var totalExpected int
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		params, err := downloadSpec.Get(i).ToArtifatoryDownloadParams()
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
 		flat, err := downloadSpec.Get(i).IsFlat(false)
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
-		currentBuildDependencies, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat:flat, Retries: flags.Retries})
-		if err != nil {
-			cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
-			return err
-		}
+		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat: flat, Retries: flags.Retries})
+		totalExpected += expected
 		filesInfo = append(filesInfo, currentBuildDependencies...)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
 	}
-	cliutils.CliLogger.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
+	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
 	if isCollectBuildInfo && !flags.DryRun {
 		populateFunc := func(partial *buildinfo.Partial) {
@@ -56,7 +60,8 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) error 
 		}
 		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
 	}
-	return err
+
+	return len(filesInfo), totalExpected - len(filesInfo), err
 }
 
 func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buildinfo.Dependencies {
@@ -101,7 +106,7 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 		SetSplitCount(flags.SplitCount).
 		SetMinSplitSize(flags.MinSplitSize).
 		SetNumOfThreadPerOperation(flags.Threads).
-		SetLogger(cliutils.CliLogger).
+		SetLogger(log.Logger).
 		Build()
 	if err != nil {
 		return nil, err

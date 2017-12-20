@@ -13,12 +13,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
-const GRADLE_EXTRACTOR_DEPENDENCY_VERSION = "4.5.0"
-const GRADLE_INIT_SCRIPT_TEMPLATE = "gradle.init"
+const gradleExtractorDependencyVersion = "4.5.0"
+const gradleInitScriptTemplate = "gradle.init"
 
-const USE_PLUGIN = "useplugin"
-const USE_WRAPPER = "usewrapper"
-const GRADLE_BUILD_INFO_PROPERTIES = "buildInfoConfig.propertiesFile"
+const usePlugin = "useplugin"
+const useWrapper = "usewrapper"
+const gradleBuildInfoProperties = "buildInfoConfig.propertiesFile"
 
 func Gradle(tasks, configPath string, flags *utils.BuildConfigFlags) error {
 	log.Info("Running Gradle...")
@@ -32,7 +32,7 @@ func Gradle(tasks, configPath string, flags *utils.BuildConfigFlags) error {
 		return err
 	}
 
-	defer os.Remove(gradleRunConfig.env[GRADLE_BUILD_INFO_PROPERTIES])
+	defer os.Remove(gradleRunConfig.env[gradleBuildInfoProperties])
 	if err := utils.RunCmd(gradleRunConfig); err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func downloadGradleDependencies() (string, error) {
 
 	filename := "build-info-extractor-gradle-${version}-uber.jar"
 	downloadPath := filepath.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/${version}/", filename)
-	err = utils.DownloadFromBintray(downloadPath, filename, GRADLE_EXTRACTOR_DEPENDENCY_VERSION, dependenciesPath)
+	err = utils.DownloadFromBintray(downloadPath, filename, gradleExtractorDependencyVersion, dependenciesPath)
 	if err != nil {
 		return "", err
 	}
@@ -65,17 +65,17 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 		return nil, err
 	}
 
-	runConfig.gradle, err = utils.GetGradleExecPath(vConfig.GetBool(USE_WRAPPER))
+	runConfig.gradle, err = utils.GetGradleExecPath(vConfig.GetBool(useWrapper))
 	if err != nil {
 		return nil, err
 	}
 
-	runConfig.env[GRADLE_BUILD_INFO_PROPERTIES], err = utils.CreateBuildInfoPropertiesFile(flags.BuildName, flags.BuildNumber, vConfig, utils.GRADLE)
+	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(flags.BuildName, flags.BuildNumber, vConfig, utils.GRADLE)
 	if err != nil {
 		return nil, err
 	}
 
-	if !vConfig.GetBool(USE_PLUGIN) {
+	if !vConfig.GetBool(usePlugin) {
 		runConfig.initScript, err = getInitScript(dependenciesPath)
 		if err != nil {
 			return nil, err
@@ -86,7 +86,7 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 }
 
 func getInitScript(dependenciesPath string) (string, error) {
-	initScript := filepath.Join(dependenciesPath, GRADLE_INIT_SCRIPT_TEMPLATE)
+	initScript := filepath.Join(dependenciesPath, gradleInitScriptTemplate)
 	dependenciesPath, err := filepath.Abs(dependenciesPath)
 	if err != nil {
 		return "", errorutils.CheckError(err)

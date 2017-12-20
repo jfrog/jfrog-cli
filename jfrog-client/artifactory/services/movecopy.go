@@ -45,28 +45,21 @@ func (mc *MoveCopyService) GetJfrogHttpClient() *httpclient.HttpClient {
 	return mc.client
 }
 
-func (mc *MoveCopyService) MoveCopyServiceMoveFilesWrapper(moveSpec MoveCopyParams) (err error) {
-	var successCount int
-	var failedCount int
-
-	var successPartial, failedPartial int
+func (mc *MoveCopyService) MoveCopyServiceMoveFilesWrapper(moveSpec MoveCopyParams) (successCount, failedCount int, err error) {
 	switch moveSpec.GetSpecType() {
 	case utils.WILDCARD, utils.SIMPLE:
-		successPartial, failedPartial, err = mc.moveWildcard(moveSpec)
+		successCount, failedCount, err = mc.moveWildcard(moveSpec)
 	case utils.AQL:
-		successPartial, failedPartial, err = mc.moveAql(moveSpec)
+		successCount, failedCount, err = mc.moveAql(moveSpec)
 	}
-	successCount += successPartial
-	failedCount += failedPartial
 	if err != nil {
-		return
+		return 0, 0, err
 	}
 
-	log.Info(moveMsgs[mc.moveType].MovedMsg, strconv.Itoa(successCount), "artifacts.")
+	log.Debug(moveMsgs[mc.moveType].MovedMsg, strconv.Itoa(successCount), "artifacts.")
 	if failedCount > 0 {
 		err = errorutils.CheckError(errors.New("Failed " + moveMsgs[mc.moveType].MovingMsg + " " + strconv.Itoa(failedCount) + " artifacts."))
 	}
-
 	return
 }
 
@@ -114,10 +107,10 @@ func (mc *MoveCopyService) moveFiles(regexpPath string, resultItems []utils.Resu
 				destPathLocal = clientutils.TrimPath(destPathLocal + "/" + v.Path + "/")
 			}
 		}
-		destFile, e := clientutils.ReformatRegexp(regexpPath, v.GetItemRelativePath(), destPathLocal)
-		if e != nil {
-			err = e
-			return
+		destFile, err := clientutils.ReformatRegexp(regexpPath, v.GetItemRelativePath(), destPathLocal)
+		if err != nil {
+			log.Error(err)
+			continue
 		}
 		if strings.HasSuffix(destFile, "/") {
 			if v.Type != "folder" {
@@ -126,10 +119,10 @@ func (mc *MoveCopyService) moveFiles(regexpPath string, resultItems []utils.Resu
 				mc.createPathForMoveAction(destFile)
 			}
 		}
-		success, e := mc.moveFile(v.GetItemRelativePath(), destFile)
-		if e != nil {
-			err = e
-			return
+		success, err := mc.moveFile(v.GetItemRelativePath(), destFile)
+		if err != nil {
+			log.Error(err)
+			continue
 		}
 
 		successCount += clientutils.Bool2Int(success)
@@ -198,8 +191,8 @@ func createPathInArtifactory(destPath string, conf utils.CommonConf) (bool, erro
 }
 
 var moveMsgs = map[MoveType]MoveOptions{
-	MOVE: MoveOptions{MovingMsg: "Moving", MovedMsg: "Moved"},
-	COPY: MoveOptions{MovingMsg: "Copying", MovedMsg: "Copied"},
+	MOVE: {MovingMsg: "Moving", MovedMsg: "Moved"},
+	COPY: {MovingMsg: "Copying", MovedMsg: "Copied"},
 }
 
 type MoveOptions struct {

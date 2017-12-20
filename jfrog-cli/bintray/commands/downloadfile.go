@@ -6,7 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-func DownloadFile(pathDetails *utils.PathDetails, targetPath string, flags *utils.DownloadFlags) (err error) {
+func DownloadFile(pathDetails *utils.PathDetails, targetPath string, flags *utils.DownloadFlags) (totalDownloded, totalFailed int, err error) {
 	fileutils.CreateTempDirPath()
 	defer fileutils.RemoveTempDir()
 
@@ -15,8 +15,8 @@ func DownloadFile(pathDetails *utils.PathDetails, targetPath string, flags *util
 	}
 	err = utils.DownloadBintrayFile(flags.BintrayDetails, pathDetails, targetPath, flags, "")
 	if err != nil {
-		return
+		return 0, 1, err
 	}
 	log.Info("Downloaded 1 artifact.")
-	return
+	return 1, 0, nil
 }

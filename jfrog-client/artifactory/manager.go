@@ -59,14 +59,14 @@ func (sm *ArtifactoryServicesManager) GetPathsToDelete(params services.DeletePar
 	return deleteService.GetPathsToDelete(params)
 }
 
-func (sm *ArtifactoryServicesManager) DeleteFiles(resultItems []services.DeleteItem) error {
+func (sm *ArtifactoryServicesManager) DeleteFiles(resultItems []services.DeleteItem) (int, error) {
 	deleteService := services.NewDeleteService(sm.client)
 	deleteService.DryRun = sm.config.IsDryRun()
 	deleteService.ArtDetails = sm.config.GetArtDetails()
 	return deleteService.DeleteFiles(resultItems, deleteService)
 }
 
-func (sm *ArtifactoryServicesManager) DownloadFiles(params services.DownloadParams) ([]utils.FileInfo, error) {
+func (sm *ArtifactoryServicesManager) DownloadFiles(params services.DownloadParams) ([]utils.FileInfo, int, error) {
 	downloadService := services.NewDownloadService(sm.client)
 	downloadService.DryRun = sm.config.IsDryRun()
 	downloadService.ArtDetails = sm.config.GetArtDetails()
@@ -89,7 +89,7 @@ func (sm *ArtifactoryServicesManager) Search(params utils.SearchParams) ([]utils
 	return searchService.Search(params)
 }
 
-func (sm *ArtifactoryServicesManager) SetProps(params services.SetPropsParams) error {
+func (sm *ArtifactoryServicesManager) SetProps(params services.SetPropsParams) (int, error) {
 	setPropsService := services.NewSetPropsService(sm.client)
 	setPropsService.ArtDetails = sm.config.GetArtDetails()
 	return setPropsService.SetProps(params)
@@ -102,13 +102,13 @@ func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) 
 	return uploadService.UploadFiles(params)
 }
 
-func (sm *ArtifactoryServicesManager) Copy(params services.MoveCopyParams) error {
+func (sm *ArtifactoryServicesManager) Copy(params services.MoveCopyParams) (successCount, failedCount int, err error) {
 	copyService := services.NewMoveCopyService(sm.client, services.COPY)
 	copyService.ArtDetails = sm.config.GetArtDetails()
 	return copyService.MoveCopyServiceMoveFilesWrapper(params)
 }
 
-func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) error {
+func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) (successCount, failedCount int, err error) {
 	moveService := services.NewMoveCopyService(sm.client, services.MOVE)
 	moveService.ArtDetails = sm.config.GetArtDetails()
 	return moveService.MoveCopyServiceMoveFilesWrapper(params)

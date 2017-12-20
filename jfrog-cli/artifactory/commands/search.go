@@ -4,8 +4,8 @@ import (
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type SearchResult struct {
@@ -17,7 +17,7 @@ func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (
 	if err != nil {
 		return nil, err
 	}
-	cliutils.CliLogger.Info("Searching artifacts...")
+	log.Info("Searching artifacts...")
 	var resultItems []clientutils.ResultItem
 	for i := 0; i < len(searchSpec.Files); i++ {
 		params, err := searchSpec.Get(i).ToArtifatorySearchParams()

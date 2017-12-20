@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
@@ -11,6 +10,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
@@ -107,7 +107,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 	}
 	if details.IsSsh() {
-		useAgentPrompt := &prompt.YesNo {
+		useAgentPrompt := &prompt.YesNo{
 			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
 			Label:   "useSshAgent",
 			Default: "n",
@@ -139,10 +139,10 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	details.SshKeyPath = clientutils.ReplaceTildeWithUserHome(details.SshKeyPath)
 	exists, err := fileutils.IsFileExists(details.SshKeyPath)
 	if err != nil {
-	    return err
+		return err
 	}
 	if !exists {
-		cliutils.CliLogger.Warn("Could not find SSH key file at:", details.SshKeyPath)
+		log.Warn("Could not find SSH key file at:", details.SshKeyPath)
 	}
 	return nil
 }
@@ -169,25 +169,25 @@ func ShowConfig(serverName string) error {
 func printConfigs(configuration []*config.ArtifactoryDetails) {
 	for _, details := range configuration {
 		if details.ServerId != "" {
-			fmt.Println("Server ID: " + details.ServerId)
+			log.Output("Server ID: " + details.ServerId)
 		}
 		if details.Url != "" {
-			fmt.Println("Url: " + details.Url)
+			log.Output("Url: " + details.Url)
 		}
 		if details.ApiKey != "" {
-			fmt.Println("API key: " + details.ApiKey)
+			log.Output("API key: " + details.ApiKey)
 		}
 		if details.User != "" {
-			fmt.Println("User: " + details.User)
+			log.Output("User: " + details.User)
 		}
 		if details.Password != "" {
-			fmt.Println("Password: ***")
+			log.Output("Password: ***")
 		}
 		if details.SshKeyPath != "" {
-			fmt.Println("SSH key file path: " + details.SshKeyPath)
+			log.Output("SSH key file path: " + details.SshKeyPath)
 		}
-		fmt.Println("Default: ", details.IsDefault)
-		fmt.Println()
+		log.Output("Default: ", details.IsDefault)
+		log.Output()
 	}
 }
 
@@ -212,7 +212,7 @@ func DeleteConfig(serverName string) error {
 	if isFoundName {
 		return config.SaveArtifactoryConf(configurations)
 	}
-	cliutils.CliLogger.Info("\"" + serverName + "\" configuration could not be found.\n")
+	log.Info("\"" + serverName + "\" configuration could not be found.\n")
 	return nil
 }
 
@@ -239,7 +239,7 @@ func Use(serverName string) error {
 	if isFoundName {
 		return config.SaveArtifactoryConf(configurations)
 	} else {
-		cliutils.CliLogger.Info("Couldn't find matching server, no changes were made.")
+		log.Info("Couldn't find matching server, no changes were made.")
 	}
 	return nil
 }
@@ -262,7 +262,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if details.Password == "" {
 		return details, nil
 	}
-	cliutils.CliLogger.Info("Encrypting password...")
+	log.Info("Encrypting password...")
 	artAuth, err := details.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
@@ -275,12 +275,12 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	return details, err
 }
 
-func checkSingleAuthMethod(details *config.ArtifactoryDetails) (err error) {
+func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.IsSsh()}
 	if cliutils.SumTrueValues(boolArr) > 1 {
-		err = errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
+		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
 	}
-	return
+	return nil
 }
 
 type ConfigFlags struct {

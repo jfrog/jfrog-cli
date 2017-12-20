@@ -5,7 +5,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -27,8 +26,7 @@ func UpdateEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Updated entitlement, details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return err
 }
 

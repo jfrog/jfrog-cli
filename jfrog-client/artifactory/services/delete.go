@@ -60,11 +60,12 @@ func (ds *DeleteService) GetPathsToDelete(deleteParams DeleteParams) (resultItem
 	return
 }
 
-func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.CommonConf) error {
+func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.CommonConf) (int, error) {
+	deletedCount := 0
 	for _, v := range deleteItems {
 		fileUrl, err := utils.BuildArtifactoryUrl(conf.GetArtifactoryDetails().Url, v.GetItemRelativePath(), make(map[string]string))
 		if err != nil {
-			return err
+			return deletedCount, err
 		}
 		if conf.IsDryRun() {
 			log.Info("[Dry run] Deleting:", v.GetItemRelativePath())
@@ -75,15 +76,17 @@ func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.Common
 		httpClientsDetails := conf.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
 		resp, body, err := ds.client.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
 		if resp.StatusCode != 204 {
-			return errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
+			log.Error(errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))))
+			continue
 		}
-
+		deletedCount++
 		log.Debug("Artifactory response:", resp.Status)
 	}
-	return nil
+	return deletedCount, nil
 }
 
 type DeleteConfiguration struct {

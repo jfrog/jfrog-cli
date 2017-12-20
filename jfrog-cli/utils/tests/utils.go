@@ -6,7 +6,6 @@ import (
 	"flag"
 	"strings"
 	"os"
-	"fmt"
 	"runtime"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -16,7 +15,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
-var PrintSearchResult *bool
 var RtUrl *string
 var RtUser *string
 var RtPassword *string
@@ -32,7 +30,6 @@ var TestArtifactoryProxy *bool
 var TestBuildTools *bool
 
 func init() {
-	PrintSearchResult = flag.Bool("printSearchResult", false, "Set to true for printing search results")
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
@@ -123,7 +120,7 @@ func GetTestResourcesPath() string {
 }
 
 func getFileByOs(fileName string) string {
-	var currentOs string;
+	var currentOs string
 	fileSeparator := fileutils.GetFileSeparator()
 	if runtime.GOOS == "windows" {
 		currentOs = "win"
@@ -183,7 +180,7 @@ func (cli *JfrogCli) Exec(args ...string) {
 		os.Args = append(os.Args, strings.Split(cli.suffix, spaceSplit)...)
 	}
 
-	fmt.Println("[Command]", strings.Join(os.Args, " "))
+	log.Info("[Command]", strings.Join(os.Args, " "))
 	cli.main()
 }
 

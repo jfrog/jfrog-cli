@@ -11,6 +11,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/summary"
 )
 
 const CliAgent = "jfrog-cli-go"
@@ -23,6 +24,7 @@ const CmdXray = "xr"
 
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
+
 const OnErrorPanic OnError = "panic"
 
 func init() {
@@ -68,6 +70,23 @@ func Exit(exitCode ExitCode, msg string) {
 	os.Exit(exitCode.Code)
 }
 
+// Print summary report.
+// The given error will pass through and be returned as is if no other errors are raised.
+func PrintSummaryReport(success, failed int, err error) error {
+	summaryReport := summary.New(err)
+	summaryReport.Totals.Success = success
+	summaryReport.Totals.Failure = failed
+	if err == nil && summaryReport.Totals.Failure != 0 {
+		summaryReport.Status = summary.Failure
+	}
+	content, mErr := summaryReport.Marshal()
+	if errorutils.CheckError(mErr) != nil {
+		return mErr
+	}
+	log.Output(utils.IndentJson(content))
+	return err
+}
+
 func PrintHelpAndExitWithError(msg string, context *cli.Context) {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
@@ -92,7 +111,7 @@ func BuildListString(listStr string) string {
 	str := "[\""
 	for i := 0; i < size; i++ {
 		str += split[i]
-		if i + 1 < size {
+		if i+1 < size {
 			str += "\",\""
 		}
 	}
@@ -208,7 +227,7 @@ func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
 		return defValue, nil
 	}
 	val, err := strconv.ParseBool(envVarValue)
-	err = CheckErrorWithMessage(err, "can't parse environment variable " + flagName)
+	err = CheckErrorWithMessage(err, "can't parse environment variable "+flagName)
 	return val, err
 }
 
@@ -247,9 +266,9 @@ func SpecVarsStringToMap(rawVars string) map[string]string {
 	varCandidates := strings.Split(rawVars, ";")
 	varsList := []string{}
 	for _, v := range varCandidates {
-		if len(varsList) > 0 && isEndsWithEscapeChar(varsList[len(varsList) - 1]) {
-			currentLastVar := varsList[len(varsList) - 1]
-			varsList[len(varsList) - 1] = strings.TrimSuffix(currentLastVar, "\\") + ";" + v
+		if len(varsList) > 0 && isEndsWithEscapeChar(varsList[len(varsList)-1]) {
+			currentLastVar := varsList[len(varsList)-1]
+			varsList[len(varsList)-1] = strings.TrimSuffix(currentLastVar, "\\") + ";" + v
 			continue
 		}
 		varsList = append(varsList, v)
@@ -258,9 +277,9 @@ func SpecVarsStringToMap(rawVars string) map[string]string {
 }
 
 func CopyMap(src map[string]string) (dst map[string]string) {
-    if dst == nil {
-        dst = make(map[string]string)
-    }
+	if dst == nil {
+		dst = make(map[string]string)
+	}
 	for k, v := range src {
 		dst[k] = v
 	}

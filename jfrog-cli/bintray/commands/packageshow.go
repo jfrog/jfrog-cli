@@ -6,12 +6,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
 
-func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) (err error) {
+func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.BintrayDetails) error {
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = packageDetails.Subject
 	}
@@ -26,7 +25,6 @@ func ShowPackage(packageDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Package", packageDetails.Package, "details:")
-	fmt.Println(clientutils.IndentJson(body))
-	return
+	log.Output(clientutils.IndentJson(body))
+	return nil
 }

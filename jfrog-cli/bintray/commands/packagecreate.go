@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"errors"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -22,8 +21,7 @@ func CreatePackage(packageDetails *utils.VersionDetails, flags *utils.PackageFla
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created package", packageDetails.Package + ", details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }
 

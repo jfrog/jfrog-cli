@@ -85,7 +85,7 @@ func (us *UploadService) performUploadTasks(consumer parallel.Runner, uploadSumm
 	totalUploaded = sumIntArray(uploadSummery.UploadCount)
 	totalUploadAttempted := sumIntArray(uploadSummery.TotalCount)
 
-	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
+	log.Debug("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
 	totalFailed = totalUploadAttempted - totalUploaded
 	if totalFailed > 0 {
 		log.Error("Failed uploading", strconv.Itoa(totalFailed), "artifacts.")

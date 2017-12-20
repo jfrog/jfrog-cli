@@ -14,11 +14,11 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
-const BINTRAY_API_URL = "https://bintray.com/api/v1/"
-const BINTRAY_DOWNLOAD_SERVER_URL = "https://dl.bintray.com/"
+const BintrayApiUrl = "https://bintray.com/api/v1/"
+const BintrayDownloadServerUrl = "https://dl.bintray.com/"
 
 func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *PathDetails, targetPath string,
-	flags *DownloadFlags, logMsgPrefix string) (err error) {
+	flags *DownloadFlags, logMsgPrefix string) error {
 
 	cleanPath := strings.Replace(pathDetails.Path, "(", "", -1)
 	cleanPath = strings.Replace(cleanPath, ")", "", -1)
@@ -33,31 +33,29 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 	log.Info(logMsgPrefix + "Downloading", downloadPath)
 
 	httpClientsDetails := GetBintrayHttpClientDetails(bintrayDetails)
-	var details *fileutils.FileDetails
-	details, err = httputils.GetRemoteFileDetails(url, httpClientsDetails)
+	details, err := httputils.GetRemoteFileDetails(url, httpClientsDetails)
 	if err != nil {
 		err = errorutils.CheckError(errors.New("Bintray " + err.Error()))
 		if err != nil {
-			return
+			return err
 		}
 	}
 
 	regexpPattern := utils.PathToRegExp(pathDetails.Path)
-	placeHolderTarget, e := utils.ReformatRegexp(regexpPattern, cleanPath, targetPath)
-	if e != nil {
-		err = e
-		return
+	placeHolderTarget, err := utils.ReformatRegexp(regexpPattern, cleanPath, targetPath)
+	if err != nil {
+		return err
 	}
 
 	localPath, localFileName := fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, flags.Flat)
 	var shouldDownload bool
 	shouldDownload, err = shouldDownloadFile(path.Join(localPath, localFileName), details)
 	if err != nil {
-		return
+		return err
 	}
 	if !shouldDownload {
 		log.Info(logMsgPrefix, "File already exists locally.")
-		return
+		return nil
 	}
 
 	// Check if the file should be downloaded concurrently.
@@ -94,12 +92,12 @@ func DownloadBintrayFile(bintrayDetails *config.BintrayDetails, pathDetails *Pat
 			httputils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 		} else {
 			if errorutils.CheckError(err) != nil {
-				return
+				return err
 			}
-			log.Info(logMsgPrefix, "Bintray response:", resp.Status)
+			log.Debug(logMsgPrefix, "Bintray response:", resp.Status)
 		}
 	}
-	return
+	return nil
 }
 
 func shouldDownloadFile(localFilePath string, remoteFileDetails *fileutils.FileDetails) (bool, error) {

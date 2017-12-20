@@ -38,6 +38,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func GetCommands() []cli.Command {
@@ -326,8 +327,7 @@ func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), cli.StringFlag{
 		Name:  "server-id",
 		Usage: "[Optional] Artifactory server ID configured using the config command.",
-	},
-	)
+	})
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -810,7 +810,7 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. "+cliutils.GetDocumentationMessage())
 		}
 		if splitCount > 15 {
 			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
@@ -856,7 +856,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. "+cliutils.GetDocumentationMessage())
 		}
 	}
 	return
@@ -868,7 +868,7 @@ func getRetries(c *cli.Context) (retries int) {
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+			cliutils.Exit(cliutils.ExitCodeError, "The '--retries' option should have a numeric value. "+cliutils.GetDocumentationMessage())
 		}
 	}
 	return
@@ -910,7 +910,7 @@ func configCmd(c *cli.Context) {
 			artDetails, err := config.GetArtifactorySpecificConfig(serverId)
 			cliutils.ExitOnErr(err)
 			if artDetails.IsEmpty() {
-				cliutils.CliLogger.Info("\"" + serverId + "\" configuration could not be found.")
+				log.Info("\"" + serverId + "\" configuration could not be found.")
 				return
 			}
 			if !configFlags.Interactive {
@@ -994,7 +994,8 @@ func downloadCmd(c *cli.Context) {
 	}
 
 	flags := createDownloadFlags(c)
-	err := commands.Download(downloadSpec, flags)
+	downloaded, failed, err := commands.Download(downloadSpec, flags)
+	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1014,6 +1015,7 @@ func uploadCmd(c *cli.Context) {
 	}
 	flags := createUploadFlags(c)
 	uploaded, failed, err := commands.Upload(uploadSpec, flags)
+	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
 		if uploaded > 0 {
@@ -1040,7 +1042,8 @@ func moveCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	err := commands.Move(moveSpec, artDetails)
+	moveCount, failed, err := commands.Move(moveSpec, artDetails)
+	err = cliutils.PrintSummaryReport(moveCount, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1061,7 +1064,8 @@ func copyCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	err := commands.Copy(copySpec, artDetails)
+	copyCount, failed, err := commands.Copy(copySpec, artDetails)
+	err = cliutils.PrintSummaryReport(copyCount, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1082,29 +1086,23 @@ func deleteCmd(c *cli.Context) {
 	}
 
 	flags := createDeleteFlags(c)
-	if !c.Bool("quiet") {
-		deleteIfConfirmed(deleteSpec, flags)
-	} else {
-		err := commands.Delete(deleteSpec, flags)
+	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
+	cliutils.ExitOnErr(err)
+	if c.Bool("quiet") || confirmDelete(pathsToDelete) {
+		success, failed, err := commands.DeleteFiles(pathsToDelete, flags)
+		err = cliutils.PrintSummaryReport(success, failed, err)
 		cliutils.ExitOnErr(err)
 	}
 }
 
-func deleteIfConfirmed(deleteSpec *spec.SpecFiles, flags *commands.DeleteConfiguration) {
-	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, flags)
-	cliutils.ExitOnErr(err)
+func confirmDelete(pathsToDelete []rtclientutils.ResultItem) bool {
 	if len(pathsToDelete) < 1 {
-		return
+		return false
 	}
 	for _, v := range pathsToDelete {
 		fmt.Println("  " + v.GetItemRelativePath())
 	}
-	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
-	if !confirmed {
-		return
-	}
-	err = commands.DeleteFiles(pathsToDelete, flags)
-	cliutils.ExitOnErr(err)
+	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
 }
 
 func searchCmd(c *cli.Context) {
@@ -1129,7 +1127,7 @@ func searchCmd(c *cli.Context) {
 	result, err := json.Marshal(SearchResult)
 	cliutils.ExitOnErr(err)
 
-	fmt.Println(string(clientutils.IndentJson(result)))
+	log.Output(string(clientutils.IndentJson(result)))
 }
 
 func setPropsCmd(c *cli.Context) {
@@ -1140,7 +1138,8 @@ func setPropsCmd(c *cli.Context) {
 	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
 	properties := c.Args()[1]
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	err := commands.SetProps(setPropertiesSpec, properties, artDetails)
+	success, failed, err := commands.SetProps(setPropertiesSpec, properties, artDetails)
+	err = cliutils.PrintSummaryReport(success, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1264,9 +1263,9 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 		return
 	}
 	msg := "The CLI commands require the Artifactory URL and authentication details\n" +
-			"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-			"You can also configure these parameters later using the 'config' command.\n" +
-			"Configure now?"
+		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
+		"You can also configure these parameters later using the 'config' command.\n" +
+		"Configure now?"
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
@@ -1487,7 +1486,7 @@ func createGitLfsCleanFlags(c *cli.Context) (gitLfsCleanFlags *commands.GitLfsCl
 		refs = "refs/remotes/*"
 	}
 	repo := c.String("repo")
-	gitLfsCleanFlags.GitLfsCleanParamsImpl = &services.GitLfsCleanParamsImpl{Repo:repo, Refs:refs}
+	gitLfsCleanFlags.GitLfsCleanParamsImpl = &services.GitLfsCleanParamsImpl{Repo: repo, Refs: refs}
 	gitLfsCleanFlags.Quiet = c.Bool("quiet")
 	gitLfsCleanFlags.DryRun = c.Bool("dry-run")
 	gitLfsCleanFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)

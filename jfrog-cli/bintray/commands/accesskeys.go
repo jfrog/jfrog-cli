@@ -8,7 +8,6 @@ import (
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"encoding/json"
 	"strings"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -24,12 +23,11 @@ func ShowAccessKeys(bintrayDetails *config.BintrayDetails, org string) error {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Access keys details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }
 
-func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
+func ShowAccessKey(flags *AccessKeyFlags, org string) error {
 	url := GetAccessKeyPath(flags.BintrayDetails, flags.Id, org)
 	httpClientsDetails := utils.GetBintrayHttpClientDetails(flags.BintrayDetails)
 	log.Info("Getting access key...")
@@ -39,12 +37,11 @@ func ShowAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Access keys details:")
-	fmt.Println(clientutils.IndentJson(body))
-	return
+	log.Output(clientutils.IndentJson(body))
+	return nil
 }
 
-func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
+func CreateAccessKey(flags *AccessKeyFlags, org string) error {
 	data, err := BuildAccessKeyJson(flags)
 	if err != nil {
 		return err
@@ -54,16 +51,15 @@ func CreateAccessKey(flags *AccessKeyFlags, org string) (err error) {
 	log.Info("Creating access key...")
 	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
-		return
+		return err
 	}
 	if resp.StatusCode != 201 {
 		return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Created access key, details:")
-	fmt.Println(clientutils.IndentJson(body))
-	return
+	log.Output(clientutils.IndentJson(body))
+	return nil
 }
 
 func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
@@ -83,8 +79,7 @@ func UpdateAccessKey(flags *AccessKeyFlags, org string) error {
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Updated access key, details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }
 

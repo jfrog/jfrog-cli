@@ -196,7 +196,7 @@ func removeInstance(c *cli.Context) {
 	if size != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	instanceName := c.Args()[0];
+	instanceName := c.Args()[0]
 	if !c.Bool("quiet") {
 		confirmed := cliutils.InteractiveConfirm("Remove Instance,  " + instanceName + "?")
 		if !confirmed {
@@ -286,7 +286,7 @@ func configure(c *cli.Context) {
 
 func createDetachLicFlags(c *cli.Context) (flags *rtinstances.DetachLicFlags, err error) {
 	flags = new(rtinstances.DetachLicFlags)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, true);
+	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 	    return
 	}

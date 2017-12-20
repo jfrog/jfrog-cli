@@ -29,13 +29,14 @@ func (sp *SetPropsService) IsDryRun() bool {
 	return false
 }
 
-func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) error {
+func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) (int, error) {
 	updatePropertiesBaseUrl := sp.GetArtifactoryDetails().Url + "api/storage"
 	log.Info("Setting properties...")
 	props, err := utils.ParseProperties(setPropsParams.GetProps(), utils.JoinCommas)
 	if err != nil {
-		return err
+		return 0, err
 	}
+	successCount := 0
 	encodedParam :=  props.ToEncodedString()
 	for _, item := range setPropsParams.GetItems() {
 		log.Info("Setting properties on:", item.GetItemRelativePath())
@@ -44,15 +45,18 @@ func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) error {
 		log.Debug("Sending set properties request:", setPropertiesUrl)
 		resp, body, err := sp.client.SendPut(setPropertiesUrl, nil, httpClientsDetails)
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
 		if err = httperrors.CheckResponseStatus(resp, body, 204); err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
+		successCount++
 	}
 
 	log.Info("Done setting properties.")
-	return err
+	return successCount, err
 }
 
 type SetPropsParams interface {

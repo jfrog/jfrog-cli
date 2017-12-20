@@ -338,7 +338,7 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
-	if (resp.StatusCode != 200) {
+	if resp.StatusCode != 200 {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)
@@ -407,7 +407,7 @@ func createBintrayRepo() {
 		os.Exit(1)
 	}
 
-	if (resp.StatusCode != 200 && resp.StatusCode != 201 && resp.StatusCode != 409) {
+	if resp.StatusCode != 200 && resp.StatusCode != 201 && resp.StatusCode != 409 {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)

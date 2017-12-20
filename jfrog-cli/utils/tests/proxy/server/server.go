@@ -12,25 +12,26 @@ import (
 	"net"
 	"log"
 	"crypto/tls"
+	clilog "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)
 
 func handleReverseProxyHttps(reverseProxy *httputil.ReverseProxy) httpResponse {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		cliutils.CliLogger.Info("*********************************************************")
-		cliutils.CliLogger.Info("Scheme:  ", "HTTPS")
-		cliutils.CliLogger.Info("Host:    ", req.Host)
-		cliutils.CliLogger.Info("Method:  ", req.Method)
-		cliutils.CliLogger.Info("URI:     ", req.RequestURI)
-		cliutils.CliLogger.Info("Agent:   ", req.UserAgent())
-		cliutils.CliLogger.Info("*********************************************************")
+		clilog.Info("*********************************************************")
+		clilog.Info("Scheme:  ", "HTTPS")
+		clilog.Info("Host:    ", req.Host)
+		clilog.Info("Method:  ", req.Method)
+		clilog.Info("URI:     ", req.RequestURI)
+		clilog.Info("Agent:   ", req.UserAgent())
+		clilog.Info("*********************************************************")
 		reverseProxy.ServeHTTP(rw, req)
 	}
 }
 
 func getReverseProxyHandler(targetUrl string) (*httputil.ReverseProxy, error) {
-	cliutils.CliLogger.Info("target url:", targetUrl)
+	clilog.Info("Reverse proxy URL:", targetUrl)
 	var err error
 	var target *url.URL
 	target, err = url.Parse(targetUrl)
@@ -89,7 +90,7 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		t := &http.Transport{}
 		resp, err := t.RoundTrip(r)
 		if err != nil {
-			cliutils.CliLogger.Error(err)
+			clilog.Error(err)
 		}
 		origBody := resp.Body
 		defer origBody.Close()
@@ -97,7 +98,7 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(resp.StatusCode)
 		_, err = io.Copy(w, resp.Body)
 		if err := resp.Body.Close(); err != nil {
-			cliutils.CliLogger.Error("Can't close response body %v", err)
+			clilog.Error("Can't close response body %v", err)
 		}
 	}
 }
@@ -113,7 +114,7 @@ func (t *testProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Host = "https://" + r.Host
 		targetSiteCon, err := net.Dial("tcp", host)
 		if err != nil {
-			cliutils.CliLogger.Error(err)
+			clilog.Error(err)
 			return
 		}
 		hij, ok := w.(http.Hijacker)
@@ -139,7 +140,7 @@ func (t *testProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func copyAndClose(dst, src *net.TCPConn) {
 	if _, err := io.Copy(dst, src); err != nil {
-		cliutils.CliLogger.Error(err)
+		clilog.Error(err)
 	}
 	dst.CloseWrite()
 	src.CloseRead()

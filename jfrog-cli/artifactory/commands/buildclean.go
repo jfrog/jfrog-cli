@@ -2,15 +2,15 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-func BuildClean(buildName, buildNumber string) (err error) {
-	cliutils.CliLogger.Info("Cleanning build info...")
-	err = utils.RemoveBuildDir(buildName, buildNumber);
+func BuildClean(buildName, buildNumber string) error {
+	log.Info("Cleaning build info...")
+	err := utils.RemoveBuildDir(buildName, buildNumber)
 	if err != nil {
-		return
+		return err
 	}
-	cliutils.CliLogger.Info("Cleaned build info", buildName, "#" + buildNumber + ".")
-	return err
+	log.Info("Cleaned build info", buildName+"/"+buildNumber+".")
+	return nil
 }

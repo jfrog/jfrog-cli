@@ -6,7 +6,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
@@ -15,10 +14,8 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	if bintrayDetails.User == "" {
 		bintrayDetails.User = versionDetails.Subject
 	}
-	version := versionDetails.Version
 	if versionDetails.Version == "" {
 		versionDetails.Version = "_latest"
-		version = "latest"
 	}
 
 	url := bintrayDetails.ApiUrl + "packages/" + versionDetails.Subject + "/" +
@@ -33,7 +30,6 @@ func ShowVersion(versionDetails *utils.VersionDetails, bintrayDetails *config.Bi
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Version", version, "details:")
-	fmt.Println(clientutils.IndentJson(body))
+	log.Output(clientutils.IndentJson(body))
 	return nil
 }

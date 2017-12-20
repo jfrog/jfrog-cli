@@ -1,14 +1,17 @@
 package log
 
 import (
-	"os"
+	"io"
 	"log"
+	"os"
 )
 
 var Logger Log
-type LogLevelType int
+
+type LevelType int
+
 const (
-	ERROR LogLevelType = iota
+	ERROR LevelType = iota
 	WARN
 	INFO
 	DEBUG
@@ -16,37 +19,52 @@ const (
 
 func init() {
 	if Logger == nil {
-		Logger = NewDefaultLogger()
+		Logger = NewLogger()
 	}
 }
 
-type JfrogLogger struct {
-	LogLevel LogLevelType
-	DebugLog *log.Logger
-	InfoLog  *log.Logger
-	WarnLog  *log.Logger
-	ErrorLog *log.Logger
+func NewLogger() Log {
+	logger := new(jfrogLogger)
+	logLevel := os.Getenv("JFROG_CLI_LOG_LEVEL")
+	if logLevel != "" {
+		logger.SetLogLevel(GetCliLogLevel(logLevel))
+	} else {
+		logger.SetLogLevel(INFO)
+	}
+	logger.SetOutputWriter(os.Stdout)
+	logger.SetStderrWriter(os.Stderr)
+	return logger
+}
+
+type jfrogLogger struct {
+	LogLevel  LevelType
+	OutputLog *log.Logger
+	DebugLog  *log.Logger
+	InfoLog   *log.Logger
+	WarnLog   *log.Logger
+	ErrorLog  *log.Logger
 }
 
 func SetLogger(newLogger Log) {
 	Logger = newLogger
 }
 
-func NewDefaultLogger() (logger *JfrogLogger) {
-	logger = new(JfrogLogger)
-	logger.SetLogLevel(INFO)
-	return
-}
-
-func (logger *JfrogLogger) SetLogLevel(LevelEnum LogLevelType) {
+func (logger *jfrogLogger) SetLogLevel(LevelEnum LevelType) {
 	logger.LogLevel = LevelEnum
-	logger.DebugLog = log.New(os.Stdout, "[Debug] ", 0)
-	logger.InfoLog = log.New(os.Stdout, "[Info] ", 0)
-	logger.WarnLog = log.New(os.Stdout, "[Warn] ", 0)
-	logger.ErrorLog = log.New(os.Stderr, "[Error] ", 0)
 }
 
-func GetLogLevel() LogLevelType {
+func (logger *jfrogLogger) SetOutputWriter(writer io.Writer) {
+	logger.OutputLog = log.New(writer, "", 0)
+}
+
+func (logger *jfrogLogger) SetStderrWriter(writer io.Writer) {
+	logger.DebugLog = log.New(writer, "[Debug] ", 0)
+	logger.InfoLog = log.New(writer, "[Info] ", 0)
+	logger.WarnLog = log.New(writer, "[Warn] ", 0)
+	logger.ErrorLog = log.New(writer, "[Error] ", 0)
+}
+
+func GetLogLevel() LevelType {
 	return Logger.GetLogLevel()
 }
 
@@ -66,44 +84,56 @@ func Error(a ...interface{}) {
 	Logger.Error(a...)
 }
 
-func (logger JfrogLogger) GetLogLevel() LogLevelType {
+func Output(a ...interface{}) {
+	Logger.Output(a...)
+}
+
+func (logger jfrogLogger) GetLogLevel() LevelType {
 	return logger.LogLevel
 }
 
-func (logger JfrogLogger) Debug(a ...interface{}) {
+func (logger jfrogLogger) Debug(a ...interface{}) {
 	if logger.GetLogLevel() >= DEBUG {
 		logger.DebugLog.Println(a...)
 	}
 }
 
-func (logger JfrogLogger) Info(a ...interface{}) {
+func (logger jfrogLogger) Info(a ...interface{}) {
 	if logger.GetLogLevel() >= INFO {
 		logger.InfoLog.Println(a...)
 	}
 }
 
-func (logger JfrogLogger) Warn(a ...interface{}) {
+func (logger jfrogLogger) Warn(a ...interface{}) {
 	if logger.GetLogLevel() >= WARN {
 		logger.WarnLog.Println(a...)
 	}
 }
 
-func (logger JfrogLogger) Error(a ...interface{}) {
+func (logger jfrogLogger) Error(a ...interface{}) {
 	if logger.GetLogLevel() >= ERROR {
 		logger.ErrorLog.Println(a...)
 	}
 }
 
+func (logger jfrogLogger) Output(a ...interface{}) {
+	logger.OutputLog.Println(a...)
+}
+
 type Log interface {
-	GetLogLevel() LogLevelType
-	SetLogLevel(LogLevelType)
+	GetLogLevel() LevelType
+	SetLogLevel(LevelType)
+	SetOutputWriter(writer io.Writer)
+	SetStderrWriter(writer io.Writer)
+
 	Debug(a ...interface{})
 	Info(a ...interface{})
 	Warn(a ...interface{})
 	Error(a ...interface{})
+	Output(a ...interface{})
 }
 
-func GetCliLogLevel(logLevel string) LogLevelType {
+func GetCliLogLevel(logLevel string) LevelType {
 	switch logLevel {
 	case "ERROR":
 		return ERROR

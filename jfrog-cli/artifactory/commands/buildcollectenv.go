@@ -8,20 +8,21 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
-func BuildCollectEnv(buildName, buildNumber string) (err error) {
+func BuildCollectEnv(buildName, buildNumber string) error {
 	log.Info("Collecting environment variables...")
-	if err = utils.SaveBuildGeneralDetails(buildName, buildNumber); err != nil {
-		return
+	err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return err
 	}
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Env = getEnvVariables()
 	}
 	err = utils.SavePartialBuildInfo(buildName, buildNumber, populateFunc)
 	if err != nil {
-		return
+		return err
 	}
 	log.Info("Collected environment variables for", buildName+"/"+buildNumber+".")
-	return
+	return nil
 }
 
 func getEnvVariables() buildinfo.Env {

@@ -2,7 +2,6 @@ package xray
 
 import (
 	"net/http"
-	"io"
 	"fmt"
 	"github.com/buger/jsonparser"
 	"io/ioutil"
@@ -16,11 +15,6 @@ const (
 	FatalScanBuildName  = "fatalBuildName"
 	VulnerableBuildName = "vulnerableBuildName"
 )
-
-type flushWriter struct {
-	f http.Flusher
-	w io.Writer
-}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)

@@ -6,7 +6,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	clientuitls "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
@@ -27,8 +26,7 @@ func DeleteEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) e
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Deleted entitlement, details:")
-	fmt.Println(clientuitls.IndentJson(body))
+	log.Output(clientuitls.IndentJson(body))
 	return nil
 }
 

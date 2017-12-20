@@ -7,7 +7,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"strings"
 	"runtime"
-	"fmt"
 )
 
 func TestExtractRepo(t *testing.T) {
@@ -33,7 +32,6 @@ func TestExtractRepo(t *testing.T) {
 func TestGetLfsFilesFromGit(t *testing.T) {
 	fileId := "4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e"
 	gitPath := getCliDotGitPath(t)
-	fmt.Println(gitPath)
 	refs := strings.Join([]string{"refs", "heads", "*"}, "/")
 	if runtime.GOOS == "windows" {
 		refs = strings.Join([]string{"refs", "heads", "*"}, "\\\\")

@@ -5,9 +5,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"errors"
-	"fmt"
 	"net/url"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func GetConfig() (*config.MissionControlDetails, error) {
@@ -17,16 +17,16 @@ func GetConfig() (*config.MissionControlDetails, error) {
 func ShowConfig() error {
 	details, err := config.ReadMissionControlConf()
 	if err != nil {
-	    return err
+		return err
 	}
 	if details.Url != "" {
-		fmt.Println("Url: " + details.Url)
+		log.Output("Url: " + details.Url)
 	}
 	if details.User != "" {
-		fmt.Println("User: " + details.User)
+		log.Output("User: " + details.User)
 	}
 	if details.Password != "" {
-		fmt.Println("Password: ***")
+		log.Output("Password: ***")
 	}
 	return nil
 }
@@ -50,7 +50,7 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 		if conf.Url == "" {
 			ioutils.ScanFromConsole("Mission Control URL", &conf.Url, defaultDetails.Url)
 			var u *url.URL
-			u, err = url.Parse(conf.Url);
+			u, err = url.Parse(conf.Url)
 			err = errorutils.CheckError(err)
 			if err != nil {
 			    return

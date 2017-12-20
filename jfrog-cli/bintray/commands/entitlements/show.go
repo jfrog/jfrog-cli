@@ -7,7 +7,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	clientuitls "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
@@ -27,8 +26,7 @@ func ShowEntitlements(bintrayDetails *config.BintrayDetails, details *utils.Vers
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Entitlements details:")
-	fmt.Println(clientuitls.IndentJson(body))
+	log.Output(clientuitls.IndentJson(body))
 	return nil
 }
 
@@ -48,8 +46,7 @@ func ShowEntitlement(flags *EntitlementFlags, details *utils.VersionDetails) err
 	}
 
 	log.Debug("Bintray response:", resp.Status)
-	log.Info("Entitlement details:")
-	fmt.Println(clientuitls.IndentJson(body))
+	log.Output(clientuitls.IndentJson(body))
 	return nil
 }
 

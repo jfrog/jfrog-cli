@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"bytes"
 	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type SpecFiles struct {
@@ -41,13 +42,13 @@ func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *
 }
 
 func replaceSpecVars(content []byte, specVars map[string]string) []byte {
-	cliutils.CliLogger.Debug("Replacing variables in the provided File Spec: \n" + string(content))
+	log.Debug("Replacing variables in the provided File Spec: \n" + string(content))
 	for key, val := range specVars {
 		key = "${" + key + "}"
-		cliutils.CliLogger.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
+		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
 		content = bytes.Replace(content, []byte(key), []byte(val), -1)
 	}
-	cliutils.CliLogger.Debug("The reformatted File Spec is: \n" + string(content))
+	log.Debug("The reformatted File Spec is: \n" + string(content))
 	return content
 }
 

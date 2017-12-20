@@ -69,7 +69,7 @@ totalFailed int, err error) {
 					uploaded, e := uploadFile(artifacts[j], url, logMsgPrefix, flags.BintrayDetails)
 					if e != nil {
 						err = e
-						break;
+						break
 					}
 					if uploaded {
 						uploadCount[threadId]++
@@ -88,7 +88,7 @@ totalFailed int, err error) {
 	for _, i := range uploadCount {
 		totalUploaded += i
 	}
-	log.Info("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
+	log.Debug("Uploaded", strconv.Itoa(totalUploaded), "artifacts.")
 	totalFailed = size - totalUploaded
 	if totalFailed > 0 {
 		log.Error("Failed uploading", strconv.Itoa(totalFailed), "artifacts.")
