@@ -120,7 +120,7 @@ func (aql *Aql) UnmarshalJSON(value []byte) error {
 	first := strings.Index(str[strings.Index(str, "{")+1:], "{")
 	last := strings.LastIndex(str, "}")
 
-	aql.ItemsFind = str[first:last]
+	aql.ItemsFind = str[first+1:last]
 	return nil
 }
 
