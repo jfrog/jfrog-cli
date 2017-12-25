@@ -362,6 +362,7 @@ func (ds *DownloadService) createFileHandlerFunc(buildDependencies [][]utils.Fil
 				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
 			} else if !httperrors.IsResponseStatusError(e) {
 				// Ignore response status errors to continue downloading
+				log.Error(logMsgPrefix,"Received an error: "+ e.Error())
 				return e
 			}
 			return nil
