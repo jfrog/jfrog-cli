@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"os/exec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"fmt"
 )
 
 var RtUrl *string
@@ -42,7 +43,7 @@ func init() {
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
-	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven and Gradle builds")
+	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 }
 
 func CleanFileSystem() {
@@ -84,7 +85,7 @@ func compare(expected, actual []string, t *testing.T) {
 
 func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
+		t.Error(fmt.Sprintf("Unexpected behavior, expected - %s: \n%s\nfound - %s: \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

@@ -65,7 +65,6 @@
 ```
     params := new(utils.ArtifactoryCommonParams)
     params.Pattern = "filePattern"
-    params.Target = "DownloadTarget"
     deleteParams := &services.DeleteParamsImpl{}
     deleteParams.ArtifactoryCommonParams = params
     rtManager.DownloadFiles(deleteParamsImpl)
@@ -140,6 +139,11 @@
     prop := "key=value"
     setPropsParams := &services.SetPropsParamsImpl{Items:items, Props:prop}
     rtManager.SetProps(setPropsParams)
+```
+
+#### Execute AQL
+```
+    rtManager.Aql(aql string)
 ```
 
 #### Xray Scan

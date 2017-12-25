@@ -7,8 +7,11 @@ import (
 const (
 	Repo1                                  = "jfrog-cli-tests-repo1"
 	Repo2                                  = "jfrog-cli-tests-repo2"
-	JcenterRemoteRepo                      = "jfrog-cli-jcenter-remote"
-	Lfs_Repo                               = "jfrog-cli-lfs-repo"
+	JcenterRemoteRepo                      = "jfrog-cli-tests-jcenter-remote"
+	LfsRepo                                = "jfrog-cli-tests-lfs-repo"
+	NpmLocalRepo                           = "jfrog-cli-tests-npm-local-repo"
+	NpmRemoteRepo                          = "jfrog-cli-tests-npm-remote-repo"
+	NpmBuildName                           = "cli-npm-test-build"
 	Out                                    = "out"
 	DownloadSpec                           = "download_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
@@ -35,10 +38,12 @@ const (
 	SpecsTestRepositoryConfig              = "specs_test_repository_config.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	JcenterRemoteRepositoryConfig          = "jcenter_remote_repository_config.json"
+	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
+	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	CopyItemsSpec                          = "copy_items_spec.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
-	MavenUseramePasswordTemplate           = "maven_user_pass_template.yaml"
+	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
 	GradleUseramePasswordTemplate          = "gradle_user_pass_template.yaml"
 	DownloadSpecExclude                    = "download_spec_exclude.json"
@@ -237,7 +242,7 @@ var BuildCopyExpected = []string{
 }
 
 var GitLfsExpected = []string{
-	Lfs_Repo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
+	LfsRepo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
 }
 
 var BuildMoveExpected = []string{
@@ -580,6 +585,14 @@ var MavenDeployedArtifacts = []string{
 
 var GradleDeployedArtifacts = []string{
 	Repo1 + "/minimal-example/1.0/minimal-example-1.0.jar",
+}
+
+var NpmDeployedScopedArtifacts = []string{
+	NpmLocalRepo + "/@jfrog/jfrog-cli-tests/-/@jfrog/jfrog-cli-tests-1.0.0.tgz",
+}
+
+var NpmDeployedArtifacts = []string{
+	NpmLocalRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
 }
 
 var SortAndLimit = []string{

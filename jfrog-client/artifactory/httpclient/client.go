@@ -31,7 +31,7 @@ func NewHttpClient(client *http.Client) *HttpClient {
 	return &HttpClient{Client: client}
 }
 
-func (jc *HttpClient) sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, string, error) {
+func (jc *HttpClient) sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	return jc.Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
 }
 
@@ -51,7 +51,7 @@ func (jc *HttpClient) Stream(url string, httpClientsDetails httputils.HttpClient
 	return jc.sendGetLeaveBodyOpen(url, true, httpClientsDetails)
 }
 
-func (jc *HttpClient) SendGet(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, string, error) {
+func (jc *HttpClient) SendGet(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	return jc.Send("GET", url, nil, allowRedirect, true, httpClientsDetails)
 }
 
@@ -80,9 +80,8 @@ func (jc *HttpClient) SendPut(url string, content []byte, httpClientsDetails htt
 	return
 }
 
-func (jc *HttpClient) Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, string, error) {
+func (jc *HttpClient) Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	var req *http.Request
-	var err error
 	if content != nil {
 		req, err = http.NewRequest(method, url, bytes.NewBuffer(content))
 	} else {

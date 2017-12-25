@@ -56,7 +56,7 @@ func (us *UploadService) setMinChecksumDeploy(minChecksumDeploy int64) {
 	us.MinChecksumDeploy = minChecksumDeploy
 }
 
-func (us *UploadService) UploadFiles(uploadParams UploadParams) ([]utils.FileInfo, int, int, error) {
+func (us *UploadService) UploadFiles(uploadParams UploadParams) (artifactsFileInfo []utils.FileInfo, totalUploaded, totalFailed int, err error) {
 	uploadSummery := uploadResult{
 		UploadCount: make([]int, us.Threads),
 		TotalCount:  make([]int, us.Threads),

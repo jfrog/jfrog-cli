@@ -15,8 +15,8 @@ import (
 	"errors"
 	"path"
 	"net/url"
-	"runtime"
 	"path/filepath"
+	"io"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
@@ -94,8 +94,19 @@ func RunCmd(config CmdConfig) error {
 	}
 
 	cmd := config.GetCmd()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if config.GetStdWriter() == nil {
+		cmd.Stdout = os.Stdout
+	} else {
+		cmd.Stdout = config.GetStdWriter()
+		defer config.GetStdWriter().Close()
+	}
+
+	if config.GetErrWriter() == nil {
+		cmd.Stderr = os.Stderr
+	} else {
+		cmd.Stderr = config.GetErrWriter()
+		defer config.GetErrWriter().Close()
+	}
 	err := cmd.Start()
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -108,21 +119,9 @@ func RunCmd(config CmdConfig) error {
 	return nil
 }
 
-func GetGradleExecPath(useWrapper bool) (string, error) {
-	if useWrapper {
-		if runtime.GOOS == "windows" {
-			return "gradlew.bat", nil
-		}
-		return "./gradlew", nil
-	}
-	gradleExec, err := exec.LookPath("gradle")
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	return gradleExec, nil
-}
-
 type CmdConfig interface {
 	GetCmd() *exec.Cmd
 	GetEnv() map[string]string
+	GetStdWriter() io.WriteCloser
+	GetErrWriter() io.WriteCloser
 }

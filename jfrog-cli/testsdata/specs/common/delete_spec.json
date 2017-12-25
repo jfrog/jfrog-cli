@@ -9,7 +9,7 @@
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-lfs-repo/",
+      "pattern": "jfrog-cli-tests-lfs-repo/",
       "recursive": "true"
     }
   ]

@@ -89,13 +89,19 @@ func (sm *ArtifactoryServicesManager) Search(params utils.SearchParams) ([]utils
 	return searchService.Search(params)
 }
 
+func (sm *ArtifactoryServicesManager) Aql(aql string) ([]byte, error) {
+	aqlService := services.NewAqlService(sm.client)
+	aqlService.ArtDetails = sm.config.GetArtDetails()
+	return aqlService.ExecAql(aql)
+}
+
 func (sm *ArtifactoryServicesManager) SetProps(params services.SetPropsParams) (int, error) {
 	setPropsService := services.NewSetPropsService(sm.client)
 	setPropsService.ArtDetails = sm.config.GetArtDetails()
 	return setPropsService.SetProps(params)
 }
 
-func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) ([]utils.FileInfo, int, int, error) {
+func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) (artifactsFileInfo []utils.FileInfo, totalUploaded, totalFailed int, err error) {
 	uploadService := services.NewUploadService(sm.client)
 	sm.setCommonServiceConfig(uploadService)
 	uploadService.MinChecksumDeploy = sm.config.GetMinChecksumDeploy()

@@ -243,7 +243,7 @@ func fetchBuildArtifactsSha1(aqlBody, buildName, buildNumber string, itemsToFilt
 
 	go func() {
 		buildQuery := createAqlQueryForBuild(buildName, buildNumber)
-		buildAqlResponse, aqlSearchErr = execAqlSearch(buildQuery, flags)
+		buildAqlResponse, aqlSearchErr = ExecAql(buildQuery, flags)
 		wg.Done()
 	}()
 
@@ -265,7 +265,7 @@ func fetchBuildArtifactsSha1(aqlBody, buildName, buildNumber string, itemsToFilt
 }
 
 func searchAndAddPropsToAqlResult(itemsToFilter []ResultItem, aqlBody, filterByPropName, filterByPropValue string, flags CommonConf) error {
-	propsAqlResponseJson, err := execAqlSearch(createPropsQuery(aqlBody, filterByPropName, filterByPropValue), flags)
+	propsAqlResponseJson, err := ExecAql(createPropsQuery(aqlBody, filterByPropName, filterByPropValue), flags)
 	if err != nil {
 		return err
 	}

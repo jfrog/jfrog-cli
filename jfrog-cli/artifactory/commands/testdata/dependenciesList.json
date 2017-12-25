@@ -1,0 +1,94 @@
+{
+  "@jfrog/npm_scoped": {
+    "version": "1.0.0",
+    "from": "@jfrog/npm_scoped@^1.0.0",
+    "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/@jfrog/npm_scoped/-/@jfrog/npm_scoped-1.0.0.tgz",
+    "dependencies": {
+      "xpm": {
+        "version": "0.1.1",
+        "from": "xpm@^0.1.1",
+        "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/xpm/-/xpm-0.1.1.tgz",
+        "dependencies": {
+          "@ilg/cli-start-options": {
+            "version": "0.1.19",
+            "from": "@ilg/cli-start-options@~0.1.0",
+            "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/@ilg/cli-start-options/-/cli-start-options-0.1.19.tgz",
+            "dependencies": {
+              "@ilg/es6-promisifier": {
+                "version": "0.1.9",
+                "from": "@ilg/es6-promisifier@~0.1.1",
+                "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/@ilg/es6-promisifier/-/es6-promisifier-0.1.9.tgz"
+              },
+              "wscript-avoider": {
+                "version": "3.0.2",
+                "from": "wscript-avoider@~3.0.0",
+                "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/wscript-avoider/-/wscript-avoider-3.0.2.tgz"
+              }
+            }
+          },
+          "shopify-liquid": {
+            "version": "1.d7.9",
+            "from": "shopify-liquid@~1.7.7",
+            "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/shopify-liquid/-/shopify-liquid-1.7.9.tgz"
+          }
+        }
+      }
+    }
+  },
+  "find": {
+    "version": "0.2.7",
+    "from": "git+https://github.com/yuanchuan/find.git",
+    "resolved": "git+https://github.com/yuanchuan/find.git#52ea1ddc600d0bddc92db72deb105b426f5224e7",
+    "dependencies": {
+      "nub": {
+        "version": "1.0.0",
+        "from": "nub@^1.0.0",
+        "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/nub/-/nub-1.0.0.tgz"
+      }
+    }
+  },
+  "jquery": {
+    "version": "3.2.0",
+    "from": "jquery@3.2.0",
+    "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/jquery/-/jquery-3.2.0.tgz"
+  },
+  "nedb": {
+    "version": "1.0.2",
+    "from": "file:../nedb-1.0.2.tgz",
+    "resolved": "/Users/diman/sandbox/npm/nedb-1.0.2.tgz",
+    "dependencies": {
+      "async": {
+        "version": "0.2.10",
+        "from": "async@0.2.10",
+        "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/async/-/async-0.2.10.tgz"
+      },
+      "binary-search-tree": {
+        "version": "0.2.4",
+        "from": "binary-search-tree@0.2.4",
+        "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/binary-search-tree/-/binary-search-tree-0.2.4.tgz",
+        "dependencies": {
+          "underscore": {
+            "version": "1.4.4",
+            "from": "underscore@~1.4.4",
+            "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/underscore/-/underscore-1.4.4.tgz"
+          }
+        }
+      }
+    }
+  },
+  "nub": {
+    "version": "1.0.0",
+    "from": "nub@^1.0.0",
+    "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/nub/-/nub-1.0.0.tgz"
+  },
+  "xml": {
+    "version": "1.0.1",
+    "from": "xml@^1.0.1",
+    "resolved": "http://localhost:8081/artifactory/api/npm/npm-virtual/xml/-/xml-1.0.1.tgz"
+  },
+  "yaml": {
+    "version": "0.2.3",
+    "from": "git+https://github.com/tj/js-yaml.git",
+    "resolved": "git+https://github.com/tj/js-yaml.git#d04d224f72815c5869a07461117294887e5a866b"
+  }
+}

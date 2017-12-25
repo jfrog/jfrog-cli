@@ -11,6 +11,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"runtime"
+	"io"
 )
 
 const gradleExtractorDependencyVersion = "4.5.0"
@@ -65,7 +67,7 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 		return nil, err
 	}
 
-	runConfig.gradle, err = utils.GetGradleExecPath(vConfig.GetBool(useWrapper))
+	runConfig.gradle, err = getGradleExecPath(vConfig.GetBool(useWrapper))
 	if err != nil {
 		return nil, err
 	}
@@ -119,4 +121,26 @@ func (config *gradleRunConfig) GetCmd() *exec.Cmd {
 
 func (config *gradleRunConfig) GetEnv() map[string]string {
 	return config.env
+}
+
+func (config *gradleRunConfig) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (config *gradleRunConfig) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+func getGradleExecPath(useWrapper bool) (string, error) {
+	if useWrapper {
+		if runtime.GOOS == "windows" {
+			return "gradlew.bat", nil
+		}
+		return "./gradlew", nil
+	}
+	gradleExec, err := exec.LookPath("gradle")
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return gradleExec, nil
 }

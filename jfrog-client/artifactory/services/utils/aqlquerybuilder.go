@@ -30,7 +30,7 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 	nePath := buildNePathPart(pathPairsSize == 0 || includeRoot)
 	excludeQuery := buildExcludeQueryPart(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
-	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart+itemTypeQuery+nePath+excludeQuery)
+	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart + itemTypeQuery + nePath + excludeQuery)
 	if pathPairsSize == 0 {
 		json += buildInnerQueryPart(".", searchPattern)
 	} else {
@@ -46,13 +46,21 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 }
 
 func createAqlQueryForBuild(buildName, buildNumber string) string {
-	buildQueryPart :=
+	itemsPart :=
 		`items.find({` +
-			`"$and" : [` +
-			`{"artifact.module.build.name": {"$eq": "%s"}},` +
-			`{"artifact.module.build.number": {"$eq": "%s"}}` +
-			`]})%s`
-	return fmt.Sprintf(buildQueryPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name", "repo", "path", "actual_sha1"}))
+				`"artifact.module.build.name": "%s",` +
+				`"artifact.module.build.number": "%s"` +
+			`})%s`
+	return fmt.Sprintf(itemsPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name","repo","path","actual_sha1"}))
+}
+
+func CreateAqlQueryForNpm(npmName, npmVersion string) string {
+	itemsPart :=
+		`items.find({` +
+				`"@npm.name": "%s",` +
+				`"@npm.version": "%s"` +
+			`})%s`
+	return fmt.Sprintf(itemsPart, npmName, npmVersion, buildIncludeQueryPart([]string{"name", "actual_sha1", "actual_md5"}))
 }
 
 func prepareSearchPattern(pattern string, repositoryExists bool) string {

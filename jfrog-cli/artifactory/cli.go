@@ -38,6 +38,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
@@ -258,7 +261,6 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "mvn-config",
-			Flags:     getBuildToolFlags(),
 			Aliases:   []string{"mvnc"},
 			Usage:     mvnconfig.Description,
 			HelpName:  common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
@@ -281,7 +283,6 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "gradle-config",
-			Flags:     getBuildToolFlags(),
 			Aliases:   []string{"gradlec"},
 			Usage:     gradleconfig.Description,
 			HelpName:  common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
@@ -291,10 +292,34 @@ func GetCommands() []cli.Command {
 				createGradleConfigCmd(c)
 			},
 		},
+		{
+			Name:      "npm-install",
+			Flags:     getNpmFlags(),
+			Aliases:   []string{"npmi"},
+			Usage:     npminstall.Description,
+			HelpName:  common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
+			UsageText: npminstall.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				npmInstallCmd(c)
+			},
+		},
+		{
+			Name:      "npm-publish",
+			Flags:     getNpmFlags(),
+			Aliases:   []string{"npmp"},
+			Usage:     npmpublish.Description,
+			HelpName:  common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
+			UsageText: npmpublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				npmPublishCmd(c)
+			},
+		},
 	}
 }
 
-func getCommonFlags() []cli.Flag {
+func getBaseFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
@@ -312,6 +337,11 @@ func getCommonFlags() []cli.Flag {
 			Name:  "apikey",
 			Usage: "[Optional] Artifactory API key.",
 		},
+	}
+}
+
+func getCommonFlags() []cli.Flag {
+	return append(getBaseFlags(),
 		cli.StringFlag{
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path.",
@@ -319,8 +349,7 @@ func getCommonFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "ssh-passphrase",
 			Usage: "[Optional] SSH key passphrase.",
-		},
-	}
+		})
 }
 
 func getServerFlags() []cli.Flag {
@@ -505,6 +534,24 @@ func getBuildToolFlags() []cli.Flag {
 			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.",
 		},
 	}
+}
+
+func getNpmFlags() []cli.Flag {
+	npmFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "npm-args",
+			Usage: "[Optional] Any npm arguments and options.",
+		},
+	}
+	npmFlags = append(npmFlags, getBaseFlags()...)
+	serverFlag := []cli.Flag{
+		cli.StringFlag{
+			Name:  "server-id",
+			Usage: "[Optional] Artifactory server ID configured using the config command.",
+		},
+	}
+	npmFlags = append(npmFlags, serverFlag...)
+	return append(npmFlags, getBuildToolFlags()...)
 }
 
 func getMoveFlags() []cli.Flag {
@@ -698,7 +745,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "env-exclude",
-			Usage: "[Default: *password*;*secret*;*key*;*token*] List of patterns in the form of \"value1;value2;...\"  environment variables match those patterns will be excluded.",
+			Usage: "[Default: *password*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.",
 		},
 	}...)
 }
@@ -834,22 +881,6 @@ func getThreadsCount(c *cli.Context) (threads int) {
 	return
 }
 
-func getBuildName(c *cli.Context) (buildName string) {
-	buildName = ""
-	if c.String("build-name") != "" {
-		buildName = c.String("build-name")
-	}
-	return
-}
-
-func getBuildNumber(c *cli.Context) (buildNumber string) {
-	buildNumber = ""
-	if c.String("build-number") != "" {
-		buildNumber = c.String("build-number")
-	}
-	return
-}
-
 func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	minSplitSize = 5120
 	var err error
@@ -958,6 +989,24 @@ func gradleCmd(c *cli.Context) {
 	}
 	flags := createBuildToolFlags(c)
 	err := commands.Gradle(c.Args().Get(0), c.Args().Get(1), flags)
+	cliutils.ExitOnErr(err)
+}
+
+func npmInstallCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	flags := createNpmFlags(c)
+	err := commands.NpmInstall(c.Args().Get(0), flags)
+	cliutils.ExitOnErr(err)
+}
+
+func npmPublishCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	flags := createNpmFlags(c)
+	err := commands.NpmPublish(c.Args().Get(0), flags)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1532,13 +1581,11 @@ func createDownloadFlags(c *cli.Context) (downloadFlags *commands.DownloadConfig
 	downloadFlags.MinSplitSize = getMinSplit(c)
 	downloadFlags.SplitCount = getSplitCount(c)
 	downloadFlags.Threads = getThreadsCount(c)
-	downloadFlags.BuildName = getBuildName(c)
-	downloadFlags.BuildNumber = getBuildNumber(c)
+	downloadFlags.BuildName = c.String("build-name")
+	downloadFlags.BuildNumber = c.String("build-number")
 	downloadFlags.Retries = getRetries(c)
 	downloadFlags.Symlink = true
-	if (downloadFlags.BuildName == "" && downloadFlags.BuildNumber != "") || (downloadFlags.BuildName != "" && downloadFlags.BuildNumber == "") {
-		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
-	}
+	validateBuildParams(downloadFlags.BuildName, downloadFlags.BuildNumber)
 	downloadFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
@@ -1596,11 +1643,9 @@ func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
 
 func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadConfiguration) {
 	uploadFlags = new(commands.UploadConfiguration)
-	buildName := getBuildName(c)
-	buildNumber := getBuildNumber(c)
-	if (buildName == "" && buildNumber != "") || (buildName != "" && buildNumber == "") {
-		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
-	}
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	validateBuildParams(buildName, buildNumber)
 	uploadFlags.BuildName = buildName
 	uploadFlags.BuildNumber = buildNumber
 	uploadFlags.DryRun = c.Bool("dry-run")
@@ -1614,11 +1659,21 @@ func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadConfiguratio
 
 func createBuildToolFlags(c *cli.Context) (buildConfigFlags *utils.BuildConfigFlags) {
 	buildConfigFlags = new(utils.BuildConfigFlags)
-	buildConfigFlags.BuildName = getBuildName(c)
-	buildConfigFlags.BuildNumber = getBuildNumber(c)
-	if (buildConfigFlags.BuildName == "" && buildConfigFlags.BuildNumber != "") || (buildConfigFlags.BuildName != "" && buildConfigFlags.BuildNumber == "") {
-		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
+	buildConfigFlags.BuildName = c.String("build-name")
+	buildConfigFlags.BuildNumber = c.String("build-number")
+	validateBuildParams(buildConfigFlags.BuildName, buildConfigFlags.BuildNumber)
+	return
+}
+
+func createNpmFlags(c *cli.Context) (npmFlags *npm.CliFlags) {
+	npmFlags = new(npm.CliFlags)
+	npmFlags.BuildName = c.String("build-name")
+	npmFlags.BuildNumber = c.String("build-number")
+	validateBuildParams(npmFlags.BuildName, npmFlags.BuildNumber)
+	npmFlags.NpmArgs = c.String("npm-args")
+	if c.String("npm-args") != "" {
 	}
+	npmFlags.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
@@ -1672,6 +1727,12 @@ func validateCommonContext(c *cli.Context) {
 	}
 	if c.IsSet("sort-order") && !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
 		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option can only accept 'asc' or 'desc' as values")
+	}
+}
+
+func validateBuildParams(buildName, buildNumber string) {
+	if (buildName == "" && buildNumber != "") || (buildName != "" && buildNumber == "") {
+		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
 	}
 }
 

@@ -19,6 +19,7 @@ type DeleteService struct {
 func NewDeleteService(client *httpclient.HttpClient) *DeleteService {
 	return &DeleteService{client: client}
 }
+
 func (ds *DeleteService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
 	return ds.ArtDetails
 }

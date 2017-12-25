@@ -6,6 +6,8 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"os"
+	"io"
 )
 
 func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials) error {
@@ -39,4 +41,24 @@ func ScanFromConsole(caption string, scanInto *string, defaultValue string) {
 	if *scanInto == "" {
 		*scanInto = defaultValue
 	}
+}
+
+func CopyFile(src, dst string, fileMode os.FileMode) error {
+	from, err := os.Open(src)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	defer from.Close()
+
+	to, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, fileMode)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	defer to.Close()
+
+	if _, err = io.Copy(to, from); err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	return errorutils.CheckError(os.Chmod(dst, fileMode))
 }

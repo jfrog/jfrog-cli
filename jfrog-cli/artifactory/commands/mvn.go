@@ -13,11 +13,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"io"
 )
 
-const MAVEN_EXTRACTOR_DEPENDENCY_VERSION = "2.7.0"
-const CLASSWORLD_CONF_FILE_NAME = "classworlds.conf"
-const MAVEN_HOME = "M2_HOME"
+const MavenExtractorDependencyVersion = "2.7.0"
+const ClasswordConfFileName = "classworlds.conf"
+const MavenHome = "M2_HOME"
 
 func Mvn(goals, configPath string, flags *utils.BuildConfigFlags) error {
 	log.Info("Running Mvn...")
@@ -46,10 +47,10 @@ func Mvn(goals, configPath string, flags *utils.BuildConfigFlags) error {
 }
 
 func validateMavenInstallation() error {
-	log.Info("Checking prerequisites...")
-	mavenHome := os.Getenv(MAVEN_HOME)
+	log.Debug("Checking prerequisites.")
+	mavenHome := os.Getenv(MavenHome)
 	if mavenHome == "" {
-		return errorutils.CheckError(errors.New(MAVEN_HOME + " environment variable is not set"))
+		return errorutils.CheckError(errors.New(MavenHome + " environment variable is not set"))
 	}
 	return nil
 }
@@ -62,7 +63,7 @@ func downloadDependencies() (string, error) {
 
 	filename := "/build-info-extractor-maven3-${version}-uber.jar"
 	downloadPath := filepath.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-maven3/${version}/", filename)
-	err = utils.DownloadFromBintray(downloadPath, filename, MAVEN_EXTRACTOR_DEPENDENCY_VERSION, dependenciesPath)
+	err = utils.DownloadFromBintray(downloadPath, filename, MavenExtractorDependencyVersion, dependenciesPath)
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +73,7 @@ func downloadDependencies() (string, error) {
 }
 
 func createClassworldsConfig(dependenciesPath string) error {
-	classworldsPath := filepath.Join(dependenciesPath, CLASSWORLD_CONF_FILE_NAME)
+	classworldsPath := filepath.Join(dependenciesPath, ClasswordConfFileName)
 
 	if fileutils.IsPathExists(classworldsPath) {
 		return nil
@@ -134,7 +135,7 @@ func createMvnRunConfig(goals, configPath string, flags *utils.BuildConfigFlags,
 		java:                   javaExecPath,
 		pluginDependencies:     dependenciesPath,
 		plexusClassworlds:      plexusClassworlds[0],
-		cleassworldsConfig:     filepath.Join(dependenciesPath, CLASSWORLD_CONF_FILE_NAME),
+		cleassworldsConfig:     filepath.Join(dependenciesPath, ClasswordConfFileName),
 		mavenHome:              mavenHome,
 		workspace:              currentWorkdir,
 		goals:                  goals,
@@ -159,6 +160,14 @@ func (config *mvnRunConfig) GetCmd() *exec.Cmd {
 
 func (config *mvnRunConfig) GetEnv() map[string]string {
 	return map[string]string{}
+}
+
+func (config *mvnRunConfig) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (config *mvnRunConfig) GetErrWriter() io.WriteCloser {
+	return nil
 }
 
 type mvnRunConfig struct {

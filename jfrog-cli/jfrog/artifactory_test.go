@@ -50,10 +50,7 @@ func InitArtifactoryTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
-	if err := createReposIfNeeded(); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
 
@@ -536,8 +533,11 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 		port = cliproxy.GetProxyHttpPort()
 	}
 	// Let's wait for the reverse proxy to start up.
-	checkIfServerIsUp(port, "http")
-	_, err := commands.Search(spec, artifactoryDetails)
+	err := checkIfServerIsUp(port, "http")
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = commands.Search(spec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2021,15 +2021,15 @@ func TestGitLfsCleanup(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		filePath = tests.FixWinPath("..\\testsdata\\gitlfs\\(4b)(*)")
 	}
-	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo+"/objects/4b/f4/{2}{1}")
-	artifactoryCli.Exec("upload", filePath, tests.Lfs_Repo+"/objects/4b/f4/")
+	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/{2}{1}")
+	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/")
 	separator := "/"
 	if runtime.GOOS == "windows" {
 		separator = "\\"
 	}
 	refs := strings.Join([]string{"refs", "heads", "*"}, separator)
 	dotGitPath := getCliDotGitPath(t)
-	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.Lfs_Repo, "--refs="+refs, "--quiet=true")
+	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.LfsRepo, "--refs="+refs, "--quiet=true")
 	isExistInArtifactory(tests.GitLfsExpected, tests.GetFilePath(tests.GitLfsAssertSpec), t)
 	cleanArtifactoryTest()
 }
@@ -2234,9 +2234,7 @@ func createJfrogHomeConfig(t *testing.T) {
 
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
-	if err := deleteRepos(); err != nil {
-		log.Error(err)
-	}
+	deleteRepos()
 }
 
 func initArtifactoryTest(t *testing.T) {
@@ -2310,70 +2308,72 @@ func deleteBuild(buildName string) {
 	}
 }
 
-func execDeleteRepoRest(repoName string) error {
+func execDeleteRepoRest(repoName string) {
 	resp, body, err := httputils.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
-		return err
+		log.Error(err)
+		return
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
+		return
 	}
 	log.Info("Repository", repoName, "was deleted.")
-	return nil
 }
 
-func execCreateRepoRest(repoConfig, repoName string) error {
+func execCreateRepoRest(repoConfig, repoName string) {
 	content, err := ioutil.ReadFile(repoConfig)
 	if err != nil {
-		return err
+		log.Error(err)
+		os.Exit(1)
+		return
 	}
 	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
 	resp, body, err := httputils.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
-		return err
+		log.Error(err)
+		os.Exit(1)
+		return
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
+		os.Exit(1)
+		return
 	}
 	log.Info("Repository", repoName, "was created.")
-	return nil
 }
 
-func createReposIfNeeded() error {
+func createReposIfNeeded() {
 	repos := map[string]string{
 		tests.Repo1:             tests.SpecsTestRepositoryConfig,
 		tests.Repo2:             tests.MoveRepositoryConfig,
-		tests.Lfs_Repo:          tests.GitLfsTestRepositoryConfig,
+		tests.LfsRepo:           tests.GitLfsTestRepositoryConfig,
 		tests.JcenterRemoteRepo: tests.JcenterRemoteRepositoryConfig,
+		tests.NpmLocalRepo:      tests.NpmLocalRepositoryConfig,
+		tests.NpmRemoteRepo:     tests.NpmRemoteRepositoryConfig,
 	}
 	for repoName, configFile := range repos {
 		if !isRepoExist(repoName) {
 			repoConfig := tests.GetTestResourcesPath() + configFile
-			err := execCreateRepoRest(repoConfig, repoName)
-			if err != nil {
-				return err
-			}
+			execCreateRepoRest(repoConfig, repoName)
 		}
 	}
-	return nil
 }
 
-func deleteRepos() error {
+func deleteRepos() {
 	repos := []string{
 		tests.Repo1,
 		tests.Repo2,
-		tests.Lfs_Repo,
+		tests.LfsRepo,
 		tests.JcenterRemoteRepo,
+		tests.NpmLocalRepo,
+		tests.NpmRemoteRepo,
 	}
 	for _, repoName := range repos {
 		if isRepoExist(repoName) {
-			err := execDeleteRepoRest(repoName)
-			if err != nil {
-				return err
-			}
+			execDeleteRepoRest(repoName)
 		}
 	}
-	return nil
 }
 
 func cleanArtifactory() {

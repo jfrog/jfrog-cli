@@ -1,5 +1,5 @@
 {
-  "key": "jfrog-cli-jcenter-remote",
+  "key": "jfrog-cli-tests-jcenter-remote",
   "rclass": "remote",
   "packageType": "maven",
   "url": "https://jcenter.bintray.com"
