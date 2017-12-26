@@ -159,8 +159,11 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 		return nil, nil, err
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
+	if errorutils.CheckError(err) != nil {
+		return nil, nil, err
+	}
 	return resp, body, nil
 }
 

@@ -311,15 +311,12 @@ func GetFileDetails(filePath string) (*FileDetails, error) {
 	details.Checksum, err = calcChecksumDetails(filePath)
 
 	file, err := os.Open(filePath)
-	err = errorutils.CheckError(err)
-	if err != nil {
+	defer file.Close()
+	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}
-	defer file.Close()
-
 	fileInfo, err := file.Stat()
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}
 	details.Size = fileInfo.Size()
@@ -328,7 +325,8 @@ func GetFileDetails(filePath string) (*FileDetails, error) {
 
 func calcChecksumDetails(filePath string) (ChecksumDetails, error) {
 	file, err := os.Open(filePath)
-	if err != nil {
+	defer file.Close()
+	if errorutils.CheckError(err) != nil {
 		return ChecksumDetails{}, err
 	}
 	checksumInfo, err := checksum.Calc(file)
