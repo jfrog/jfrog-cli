@@ -78,10 +78,8 @@ func (us *UploadService) prepareUploadTasks(producer parallel.Runner, uploadPara
 func (us *UploadService) performUploadTasks(consumer parallel.Runner, uploadSummery *uploadResult, errorsQueue *utils.ErrorsQueue) (artifactsFileInfo []utils.FileInfo, totalUploaded, totalFailed int, err error) {
 	// Blocking until we finish consuming for some reason
 	consumer.Run()
-	if e := errorsQueue.GetError(); e != nil {
-		err = e
-		return
-	}
+	err = errorsQueue.GetError()
+
 	totalUploaded = sumIntArray(uploadSummery.UploadCount)
 	totalUploadAttempted := sumIntArray(uploadSummery.TotalCount)
 
@@ -653,6 +651,7 @@ func (us *UploadService) createArtifactHandlerFunc(uploadResult *uploadResult, u
 			var uploaded bool
 			var target string
 			var artifactFileInfo utils.FileInfo
+			uploadResult.TotalCount[threadId]++
 			logMsgPrefix := clientutils.GetLogMsgPrefix(threadId, us.DryRun)
 			target, e = utils.BuildArtifactoryUrl(us.ArtDetails.Url, artifact.Artifact.TargetPath, make(map[string]string))
 			if e != nil {
@@ -666,7 +665,6 @@ func (us *UploadService) createArtifactHandlerFunc(uploadResult *uploadResult, u
 				uploadResult.UploadCount[threadId]++
 				uploadResult.FileInfo[threadId] = append(uploadResult.FileInfo[threadId], artifactFileInfo)
 			}
-			uploadResult.TotalCount[threadId]++
 			return
 		}
 	}
