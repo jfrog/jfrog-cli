@@ -63,7 +63,7 @@ func (us *UploadService) UploadFiles(uploadParams UploadParams) (artifactsFileIn
 		FileInfo:    make([][]utils.FileInfo, us.Threads),
 	}
 	artifactHandlerFunc := us.createArtifactHandlerFunc(&uploadSummery, uploadParams)
-	producerConsumer := parallel.NewBounedRunner(us.Threads, true)
+	producerConsumer := parallel.NewBounedRunner(us.Threads, false)
 	errorsQueue := utils.NewErrorsQueue(1)
 	us.prepareUploadTasks(producerConsumer, uploadParams, artifactHandlerFunc, errorsQueue)
 	return us.performUploadTasks(producerConsumer, &uploadSummery, errorsQueue)

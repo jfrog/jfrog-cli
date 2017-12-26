@@ -34,15 +34,17 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, 
 	}
 	var filesInfo []clientutils.FileInfo
 	var totalExpected int
-	var isErrorOccurred = false
+	var errorOccurred = false
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		params, err := downloadSpec.Get(i).ToArtifatoryDownloadParams()
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 		flat, err := downloadSpec.Get(i).IsFlat(false)
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
@@ -50,13 +52,12 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, 
 		totalExpected += expected
 		filesInfo = append(filesInfo, currentBuildDependencies...)
 		if err != nil {
-			isErrorOccurred = true
+			errorOccurred = true
 			log.Error(err)
-			log.Info("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 			continue
 		}
 	}
-	if isErrorOccurred {
+	if errorOccurred {
 		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors. Please review the logs")
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")

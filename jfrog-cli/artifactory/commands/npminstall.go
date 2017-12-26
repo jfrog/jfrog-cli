@@ -211,7 +211,7 @@ func (npmi *npmInstall) collectDependenciesChecksums() error {
 		return err
 	}
 
-	producerConsumer := parallel.NewBounedRunner(3, true)
+	producerConsumer := parallel.NewBounedRunner(3, false)
 	errorsQueue := serviceutils.NewErrorsQueue(1)
 	handlerFunc := npmi.createGetDependencyInfoFunc(servicesManager)
 	go func() {

@@ -15,6 +15,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"errors"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -28,7 +29,6 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 	if err != nil {
 		return 0, 0, err
 	}
-
 	servicesConfig, err := createUploadServiceConfig(flags.ArtDetails, flags, certPath, minChecksumDeploySize)
 	if err != nil {
 		return 0, 0, err
@@ -49,15 +49,18 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 
 	uploadParamImp := createBaseUploadParams(flags)
 	var filesInfo []clientutils.FileInfo
+	var errorOccurred = false
 	for i := 0; i < len(uploadSpec.Files); i++ {
 		params, err := uploadSpec.Get(i).ToArtifatoryUploadParams()
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 		uploadParamImp.ArtifactoryCommonParams = params
 		flat, err := uploadSpec.Get(i).IsFlat(true)
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
@@ -67,17 +70,18 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 		totalFailed += failed
 		totalUploaded += uploaded
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 	}
-	if err != nil {
-		return 0, 0, err
+	if errorOccurred {
+		err = errors.New("Upload finished with errors. Please review the logs")
+		return
 	}
 	if totalFailed > 0 {
 		return
 	}
-
 	if isCollectBuildInfo && !flags.DryRun {
 		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
