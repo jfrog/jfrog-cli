@@ -131,7 +131,7 @@ func TestNpm(t *testing.T) {
 
 		// make sure npmrc file was not changed (if existed)
 		postTestFileInfo, postTestFileInfoErr := os.Stat(".npmrc")
-		validateNpmrcFileInfo(t, npmTest, npmrcFileInfo , postTestFileInfo, err, postTestFileInfoErr)
+		validateNpmrcFileInfo(t, npmTest, npmrcFileInfo, postTestFileInfo, err, postTestFileInfoErr)
 	}
 
 	err = os.Chdir(wd)
@@ -288,6 +288,11 @@ func validateInstall(t *testing.T, npmTestParams npmTestParams) {
 	}
 
 	buildInfoJson := getBuildInfo(t, npmTestParams)
+	if buildInfoJson.BuildInfo.Modules == nil || len(buildInfoJson.BuildInfo.Modules) == 0 {
+		// Case no module was created
+		t.Errorf("npm install test with the arguments: \n%s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
+			npmTestParams, expectedDependencies, buildInfoJson.BuildInfo)
+	}
 	if len(expectedDependencies) != len(buildInfoJson.BuildInfo.Modules[0].Dependencies) {
 		// The checksums are ignored when comparing the actual and the expected
 		t.Errorf("npm install test with the arguments: \n%s \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
@@ -351,6 +356,11 @@ func validateScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 func validateCommonPublish(t *testing.T, npmTestParams npmTestParams) {
 	buildInfoJson := getBuildInfo(t, npmTestParams)
 	expectedArtifactName := "jfrog-cli-tests-1.0.0.tgz"
+	if buildInfoJson.BuildInfo.Modules == nil || len(buildInfoJson.BuildInfo.Modules) == 0 {
+		// Case no module was created
+		t.Errorf("npm publish test with the arguments: \n%s \nexpected to have module with the following artifact: \n%s \nbut has no modules: \n%s",
+			npmTestParams, expectedArtifactName, buildInfoJson.BuildInfo)
+	}
 	if len(buildInfoJson.BuildInfo.Modules[0].Artifacts) != 1 {
 		// The checksums are ignored when comparing the actual and the expected
 		t.Errorf("npm publish test with the arguments: \n%s \nexpected to have the following artifact: \n%s \nbut has: \n%s",

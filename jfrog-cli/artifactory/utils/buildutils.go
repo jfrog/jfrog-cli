@@ -20,13 +20,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-const BUILD_INFO_DETAILS = "details"
-const BUILD_TEMP_PATH = "jfrog/builds/"
+const BuildInfoDetails = "details"
+const BuildTempPath = "jfrog/builds/"
 
 func getBuildDir(buildName, buildNumber string) (string, error) {
 	tempDir := os.TempDir()
 	encodedDirName := base64.StdEncoding.EncodeToString([]byte(buildName + "_" + buildNumber))
-	buildsDir := filepath.Join(tempDir, BUILD_TEMP_PATH, encodedDirName)
+	buildsDir := filepath.Join(tempDir, BuildTempPath, encodedDirName)
 	err := os.MkdirAll(buildsDir, 0777)
 	if errorutils.CheckError(err) != nil {
 		return "", err
@@ -34,12 +34,12 @@ func getBuildDir(buildName, buildNumber string) (string, error) {
 	return buildsDir, nil
 }
 
-func getGenericBuildDir(buildName, buildNumber string) (string, error) {
+func getPartialsBuildDir(buildName, buildNumber string) (string, error) {
 	buildDir, err := getBuildDir(buildName, buildNumber)
 	if err != nil {
 		return "", err
 	}
-	buildDir = filepath.Join(buildDir, "generic")
+	buildDir = filepath.Join(buildDir, "partials")
 	err = os.MkdirAll(buildDir, 0777)
 	if errorutils.CheckError(err) != nil {
 		return "", err
@@ -59,11 +59,11 @@ func saveBuildData(action interface{}, buildName, buildNumber string) error {
 	if err != nil {
 		return err
 	}
-	dirPath, err := getGenericBuildDir(buildName, buildNumber)
+	dirPath, err := getPartialsBuildDir(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
-	log.Debug("Creating temp build file at: " + dirPath)
+	log.Debug("Creating temp build file at:", dirPath)
 	tempFile, err := ioutil.TempFile(dirPath, "temp")
 	if err != nil {
 		return err
@@ -74,11 +74,12 @@ func saveBuildData(action interface{}, buildName, buildNumber string) error {
 }
 
 func SaveBuildGeneralDetails(buildName, buildNumber string) error {
-	genericBuildDir, err := getGenericBuildDir(buildName, buildNumber)
+	partialsBuildDir, err := getPartialsBuildDir(buildName, buildNumber)
+	log.Debug("Saving build general details at: " + partialsBuildDir)
 	if err != nil {
 		return err
 	}
-	detailsFilePath := filepath.Join(genericBuildDir, BUILD_INFO_DETAILS)
+	detailsFilePath := filepath.Join(partialsBuildDir, BuildInfoDetails)
 	var exists bool
 	exists, err = fileutils.IsFileExists(detailsFilePath)
 	if err != nil {
@@ -143,11 +144,11 @@ func GetGeneratedBuildsInfo(buildName, buildNumber string) ([]*buildinfo.BuildIn
 
 func ReadPartialBuildInfoFiles(buildName, buildNumber string) (buildinfo.Partials, error) {
 	var partials buildinfo.Partials
-	genericBuildDir, err := getGenericBuildDir(buildName, buildNumber)
+	partialsBuildDir, err := getPartialsBuildDir(buildName, buildNumber)
 	if err != nil {
 		return nil, err
 	}
-	buildFiles, err := fileutils.ListFiles(genericBuildDir, false)
+	buildFiles, err := fileutils.ListFiles(partialsBuildDir, false)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func ReadPartialBuildInfoFiles(buildName, buildNumber string) (buildinfo.Partial
 		if dir {
 			continue
 		}
-		if strings.HasSuffix(buildFile, BUILD_INFO_DETAILS) {
+		if strings.HasSuffix(buildFile, BuildInfoDetails) {
 			continue
 		}
 		content, err := fileutils.ReadFile(buildFile)
@@ -175,11 +176,11 @@ func ReadPartialBuildInfoFiles(buildName, buildNumber string) (buildinfo.Partial
 }
 
 func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*buildinfo.General, error) {
-	genericBuildDir, err := getGenericBuildDir(buildName, buildNumber)
+	partialsBuildDir, err := getPartialsBuildDir(buildName, buildNumber)
 	if err != nil {
 		return nil, err
 	}
-	generalDetailsFilePath := filepath.Join(genericBuildDir, BUILD_INFO_DETAILS)
+	generalDetailsFilePath := filepath.Join(partialsBuildDir, BuildInfoDetails)
 	content, err := fileutils.ReadFile(generalDetailsFilePath)
 	if err != nil {
 		return nil, err

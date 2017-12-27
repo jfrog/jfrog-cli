@@ -10,7 +10,7 @@ func New() *BuildInfo {
 	return &BuildInfo{
 		Agent:      &Agent{Name: cliutils.CliAgent, Version: cliutils.GetVersion()},
 		BuildAgent: &Agent{Name: "GENERIC", Version: cliutils.GetVersion()},
-		Modules:    make([]*Module, 0),
+		Modules:    make([]Module, 0),
 		Vcs:        &Vcs{},
 	}
 }
@@ -20,14 +20,14 @@ func (targetBuildInfo *BuildInfo) Append(buildInfo *BuildInfo) {
 }
 
 type BuildInfo struct {
-	Name                 string    `json:"name,omitempty"`
-	Number               string    `json:"number,omitempty"`
-	Agent                *Agent    `json:"agent,omitempty"`
-	BuildAgent           *Agent    `json:"buildAgent,omitempty"`
-	Modules              []*Module `json:"modules,omitempty"`
-	Started              string    `json:"started,omitempty"`
-	Properties           Env       `json:"properties,omitempty"`
-	ArtifactoryPrincipal string    `json:"artifactoryPrincipal,omitempty"`
+	Name                 string   `json:"name,omitempty"`
+	Number               string   `json:"number,omitempty"`
+	Agent                *Agent   `json:"agent,omitempty"`
+	BuildAgent           *Agent   `json:"buildAgent,omitempty"`
+	Modules              []Module `json:"modules,omitempty"`
+	Started              string   `json:"started,omitempty"`
+	Properties           Env      `json:"properties,omitempty"`
+	ArtifactoryPrincipal string   `json:"artifactoryPrincipal,omitempty"`
 	*Vcs
 }
 
@@ -74,6 +74,7 @@ type Partial struct {
 	Env          Env            `json:"Env,omitempty"`
 	Timestamp    int64          `json:"Timestamp,omitempty"`
 	*Vcs
+	ModuleId     string         `json:"ModuleId,omitempty"`
 }
 
 func (partials Partials) Len() int {

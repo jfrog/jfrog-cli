@@ -81,7 +81,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 }
 
 func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultItem) ([]services.DeleteItem) {
-	var deleteItems []services.DeleteItem = make([]services.DeleteItem, len(resultItems))
+	deleteItems := make([]services.DeleteItem, len(resultItems))
 	for i, item := range resultItems {
 		deleteItems[i] = item
 	}

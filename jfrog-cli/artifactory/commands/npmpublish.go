@@ -16,7 +16,6 @@ import (
 	"io"
 	"compress/gzip"
 	"io/ioutil"
-	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	specutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
@@ -105,7 +104,7 @@ func (npmp *npmPublish) pack() error {
 		return err
 	}
 
-	npmp.packedFilePath = filepath.Join(npmp.workingDirectory, getExpectedPackedFileName(npmp.packageInfo))
+	npmp.packedFilePath = filepath.Join(npmp.workingDirectory, npmp.packageInfo.GetExpectedPackedFileName())
 	log.Debug("Created npm package at", npmp.packedFilePath)
 	return nil
 }
@@ -116,7 +115,7 @@ func (npmp *npmPublish) deploy(repo string, artDetails *config.ArtifactoryDetail
 		return err
 	}
 
-	target := fmt.Sprintf("%s/%s", repo, getDeployPath(npmp.packageInfo))
+	target := fmt.Sprintf("%s/%s", repo, npmp.packageInfo.GetDeployPath())
 	artifactsFileInfo, err := npmp.doDeploy(target, artDetails)
 	if err != nil {
 		return err
@@ -168,6 +167,7 @@ func (npmp *npmPublish) saveArtifactData() error {
 	buildArtifacts := convertFileInfoToBuildArtifacts(npmp.artifactData)
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Artifacts = buildArtifacts
+		partial.ModuleId = npmp.packageInfo.BuildInfoModuleId()
 	}
 	return buildUtils.SavePartialBuildInfo(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber, populateFunc)
 }
@@ -204,21 +204,13 @@ func (npmp *npmPublish) setPackageInfo() error {
 	}
 
 	if fileInfo.IsDir() {
-		return npmp.readPackageInfoFromPackageJson()
+		npmp.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npmp.publishPath)
+		return err
 	}
 	log.Debug("The provided path is not a directory, we assume this is a compressed npm package")
 	npmp.tarballProvided = true
 	npmp.packedFilePath = npmp.publishPath
 	return npmp.readPackageInfoFromTarball()
-}
-
-func (npmp *npmPublish) readPackageInfoFromPackageJson() error {
-	log.Debug("Reading info from package.json file:", filepath.Join(npmp.publishPath, "package.json"))
-	packageJson, err := ioutil.ReadFile(filepath.Join(npmp.publishPath, "package.json"))
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	return npmp.readPackageInfo(packageJson)
 }
 
 func (npmp *npmPublish) readPackageInfoFromTarball() error {
@@ -248,18 +240,10 @@ func (npmp *npmPublish) readPackageInfoFromTarball() error {
 				return errorutils.CheckError(err)
 			}
 
-			return errorutils.CheckError(npmp.readPackageInfo(packageJson))
+			npmp.packageInfo, err = npm.ReadPackageInfo(packageJson)
+			return err
 		}
 	}
-}
-
-func (npmp *npmPublish) readPackageInfo(data []byte) error {
-	parsedResult := new(packageInfo)
-	if err := json.Unmarshal(data, parsedResult); err != nil {
-		return errorutils.CheckError(err)
-	}
-	npmp.packageInfo = splitScopeFromName(parsedResult)
-	return nil
 }
 
 func deleteCreatedTarballAndError(packedFilePath string, currentError error) error {
@@ -278,45 +262,14 @@ func deleteCreatedTarball(packedFilePath string) error {
 	return nil
 }
 
-func splitScopeFromName(packageInfo *packageInfo) *packageInfo {
-	if strings.HasPrefix(packageInfo.Name, "@") && strings.Contains(packageInfo.Name, "/") {
-		splitValues := strings.Split(packageInfo.Name, "/")
-		packageInfo.scope = splitValues[0]
-		packageInfo.Name = splitValues[1]
-	}
-	return packageInfo
-}
-
-func getDeployPath(info *packageInfo) string {
-	fileName := fmt.Sprintf("%s-%s.tgz", info.Name, info.Version)
-	if info.scope == "" {
-		return fmt.Sprintf("%s/-/%s", info.Name, fileName)
-	}
-	return fmt.Sprintf("%s/%s/-/%s/%s", info.scope, info.Name, info.scope, fileName)
-}
-
-func getExpectedPackedFileName(info *packageInfo) string {
-	fileNameBase := fmt.Sprintf("%s-%s.tgz", info.Name, info.Version)
-	if info.scope == "" {
-		return fileNameBase
-	}
-	return fmt.Sprintf("%s-%s", strings.TrimPrefix(info.scope, "@"), fileNameBase)
-}
-
 type npmPublish struct {
 	executablePath   string
 	cliFlags         *npm.CliFlags
 	workingDirectory string
 	collectBuildInfo bool
 	packedFilePath   string
-	packageInfo      *packageInfo
+	packageInfo      *npm.PackageInfo
 	publishPath      string
 	tarballProvided  bool
 	artifactData     []specutils.FileInfo
-}
-
-type packageInfo struct {
-	Name    string `json:"name,omitempty"`
-	scope   string
-	Version string `json:"version,omitempty"`
 }

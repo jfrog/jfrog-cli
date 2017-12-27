@@ -540,7 +540,7 @@ func getNpmFlags() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
-			Usage: "[Optional] Any npm arguments and options.",
+			Usage: "[Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"",
 		},
 	}
 	npmFlags = append(npmFlags, getBaseFlags()...)

@@ -22,12 +22,14 @@ import (
 	cliutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
 	"github.com/mattn/go-shellwords"
-	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/version"
 )
 
-const NPMRC_FILE_NAME = ".npmrc"
-const NPMRC_BACKUP_FILE_NAME = "jfrog.npmrc.backup"
+const npmrcFileName = ".npmrc"
+const npmrcBackupFileName = "jfrog.npmrc.backup"
+const minSupportedArtifactoryVersion = "5.5.2"
+const minSupportedNpmVersion = "5.4.0"
 
 func NpmInstall(repo string, cliFlags *npm.CliFlags) (err error) {
 	log.Info("Running npm Install.")
@@ -94,9 +96,14 @@ func (npmi *npmInstall) preparePrerequisites(repo string) error {
 		return errorutils.CheckError(err)
 	}
 
-	npmAuth, err := getNpmAuth(npmi.artDetails)
+	npmAuth, artifactoryVersion, err := getArtifactoryDetails(npmi.artDetails)
 	if err != nil {
 		return err
+	}
+
+	npmi.npmAuth = string(npmAuth)
+	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 {
+		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 
 	if len(npmi.flags.BuildName) > 0 && len(npmi.flags.BuildNumber) > 0 {
@@ -104,9 +111,12 @@ func (npmi *npmInstall) preparePrerequisites(repo string) error {
 		if err := utils.SaveBuildGeneralDetails(npmi.flags.BuildName, npmi.flags.BuildNumber); err != nil {
 			return err
 		}
+
+		if npmi.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npmi.workingDirectory); err != nil {
+			return err
+		}
 	}
 
-	npmi.npmAuth = string(npmAuth)
 	npmi.registry = getNpmRepositoryUrl(repo, npmi.artDetails.Url)
 	return npmi.backupProjectNpmrc()
 }
@@ -116,12 +126,12 @@ func (npmi *npmInstall) preparePrerequisites(repo string) error {
 // This method restores the backed up file and deletes the one created by the command.
 func (npmi *npmInstall) restoreNpmrc() (err error) {
 	log.Debug("Restoring project .npmrc file")
-	if err = os.Remove(filepath.Join(npmi.workingDirectory, NPMRC_FILE_NAME)); err != nil {
+	if err = os.Remove(filepath.Join(npmi.workingDirectory, npmrcFileName)); err != nil {
 		return errorutils.CheckError(errors.New(createRestoreErrorPrefix(npmi.workingDirectory) + err.Error()))
 	}
 	log.Debug("Deleted the temporary .npmrc file successfully")
 
-	if _, err = os.Stat(filepath.Join(npmi.workingDirectory, NPMRC_BACKUP_FILE_NAME)); err != nil {
+	if _, err = os.Stat(filepath.Join(npmi.workingDirectory, npmrcBackupFileName)); err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
@@ -129,29 +139,29 @@ func (npmi *npmInstall) restoreNpmrc() (err error) {
 	}
 
 	if err = ioutils.CopyFile(
-		filepath.Join(npmi.workingDirectory, NPMRC_BACKUP_FILE_NAME),
-		filepath.Join(npmi.workingDirectory, NPMRC_FILE_NAME), npmi.npmrcFileMode); err != nil {
+		filepath.Join(npmi.workingDirectory, npmrcBackupFileName),
+		filepath.Join(npmi.workingDirectory, npmrcFileName), npmi.npmrcFileMode); err != nil {
 		return errorutils.CheckError(err)
 	}
 	log.Debug("Restored project .npmrc file successfully")
 
-	if err = os.Remove(filepath.Join(npmi.workingDirectory, NPMRC_BACKUP_FILE_NAME)); err != nil {
+	if err = os.Remove(filepath.Join(npmi.workingDirectory, npmrcBackupFileName)); err != nil {
 		return errorutils.CheckError(errors.New(createRestoreErrorPrefix(npmi.workingDirectory) + err.Error()))
 	}
-	log.Debug("Deleted project", NPMRC_BACKUP_FILE_NAME, "file successfully")
+	log.Debug("Deleted project", npmrcBackupFileName, "file successfully")
 	return nil
 }
 
 func createRestoreErrorPrefix(workingDirectory string) string {
 	return fmt.Sprintf("Error occurred while restoring project .npmrc file. "+
 		"Delete '%s' and move '%s' (if exists) to '%s' in order to restore the project. Failure cause: \n",
-		filepath.Join(workingDirectory, NPMRC_FILE_NAME),
-		filepath.Join(workingDirectory, NPMRC_BACKUP_FILE_NAME),
-		filepath.Join(workingDirectory, NPMRC_FILE_NAME))
+		filepath.Join(workingDirectory, npmrcFileName),
+		filepath.Join(workingDirectory, npmrcBackupFileName),
+		filepath.Join(workingDirectory, npmrcFileName))
 }
 
 // In order to make sure the install downloads the artifacts from Artifactory we creating in the project .npmrc file.
-// If such a file exists we storing a copy of it in NPMRC_BACKUP_FILE_NAME.
+// If such a file exists we storing a copy of it in npmrcBackupFileName.
 func (npmi *npmInstall) createTempNpmrc() error {
 	log.Debug("Creating project .npmrc file.")
 	data, err := npm.GetConfigList(npmi.flags.NpmArgs, npmi.executablePath)
@@ -164,7 +174,7 @@ func (npmi *npmInstall) createTempNpmrc() error {
 		return err
 	}
 
-	return errorutils.CheckError(ioutil.WriteFile(filepath.Join(npmi.workingDirectory, NPMRC_FILE_NAME), configData, npmi.npmrcFileMode))
+	return errorutils.CheckError(ioutil.WriteFile(filepath.Join(npmi.workingDirectory, npmrcFileName), configData, npmi.npmrcFileMode))
 }
 
 func (npmi *npmInstall) runInstall() error {
@@ -205,7 +215,7 @@ func (npmi *npmInstall) setDependenciesList() (err error) {
 }
 
 func (npmi *npmInstall) collectDependenciesChecksums() error {
-	log.Debug("Collecting dependencies checksums.")
+	log.Info("Collecting dependencies information, this might take several minuets...")
 	servicesManager, err := utils.CreateServiceManager(npmi.flags.ArtDetails, false)
 	if err != nil {
 		return err
@@ -229,6 +239,7 @@ func (npmi *npmInstall) saveDependenciesData() error {
 	dependencies, missingDependencies := npmi.transformDependencies()
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Dependencies = dependencies
+		partial.ModuleId = npmi.packageInfo.BuildInfoModuleId()
 	}
 
 	if err := utils.SavePartialBuildInfo(npmi.flags.BuildName, npmi.flags.BuildNumber, populateFunc); err != nil {
@@ -240,27 +251,21 @@ func (npmi *npmInstall) saveDependenciesData() error {
 		for _, dependency := range missingDependencies {
 			missingDependenciesText = append(missingDependenciesText, dependency.name+"-"+dependency.version)
 		}
-		log.Warn("Some npm dependencies could not be found in Artifactory and therefore are not included in the build-info. " +
-			"You can fix this, by moving aside your project's node_modules and also your npm cache directory and then run this command again. " +
-			"This will force npm to download all dependencies from Artifactory. Future builds will not need to download these dependencies again. " +
-			"Here are the missing dependencies:\n" + strings.Join(missingDependenciesText, "\n"))
+		log.Warn(strings.Join(missingDependenciesText, "\n"))
+		log.Warn("The npm dependencies above could not be found in Artifactory and therefore are not included in the build-info.\n" +
+			"You can fix this, by moving aside your project's node_modules and also your npm cache directories and then run this command again. " +
+			"This will force npm to download all dependencies from Artifactory. Future builds will not need to download these dependencies again.")
 	}
 	return nil
 }
 
 func (npmi *npmInstall) validateNpmVersion() error {
-	version, err := npm.Version(npmi.executablePath)
+	npmVersion, err := npm.Version(npmi.executablePath)
 	if err != nil {
 		return err
 	}
-	versionParts := strings.Split(string(version), ".")
-	versionInt, err := strconv.ParseInt(versionParts[0]+versionParts[1], 10, 32)
-	if err != nil {
-		return err
-	}
-
-	if versionInt < 54 {
-		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version 5.4.0 or higher."))
+	if version.Compare(string(npmVersion), minSupportedNpmVersion) < 0 {
+		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil
 }
@@ -268,7 +273,7 @@ func (npmi *npmInstall) validateNpmVersion() error {
 // To make npm do the resolution from Artifactory we are creating .npmrc file in the project dir.
 // If a .npmrc file already exists we will backup it and override while running the command
 func (npmi *npmInstall) backupProjectNpmrc() error {
-	fileInfo, err := os.Stat(filepath.Join(npmi.workingDirectory, NPMRC_FILE_NAME))
+	fileInfo, err := os.Stat(filepath.Join(npmi.workingDirectory, npmrcFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			npmi.npmrcFileMode = 0644
@@ -278,12 +283,12 @@ func (npmi *npmInstall) backupProjectNpmrc() error {
 	}
 
 	npmi.npmrcFileMode = fileInfo.Mode()
-	if err = ioutils.CopyFile(
-		filepath.Join(npmi.workingDirectory, NPMRC_FILE_NAME),
-		filepath.Join(npmi.workingDirectory, NPMRC_BACKUP_FILE_NAME), npmi.npmrcFileMode); err != nil {
+	src := filepath.Join(npmi.workingDirectory, npmrcFileName)
+	dst := filepath.Join(npmi.workingDirectory, npmrcBackupFileName)
+	if err = ioutils.CopyFile(src, dst, npmi.npmrcFileMode); err != nil {
 		return err
 	}
-	log.Debug("Project .npmrc file backed up successfully to", filepath.Join(npmi.workingDirectory, NPMRC_BACKUP_FILE_NAME))
+	log.Debug("Project .npmrc file backed up successfully to", filepath.Join(npmi.workingDirectory, npmrcBackupFileName))
 	return nil
 }
 
@@ -350,16 +355,13 @@ func (npmi *npmInstall) prepareDependencies(typeRestriction string) error {
 func (npmi *npmInstall) parseDependencies(data []byte, scope string) error {
 	var transitiveDependencies [][]byte
 	err := jsonparser.ObjectEach(data, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-		version, _, _, err := jsonparser.Get(data, string(key), "version")
-		if err != nil {
+		ver, _, _, err := jsonparser.Get(data, string(key), "version")
+		if err != nil && err != jsonparser.KeyPathNotFoundError {
 			return errorutils.CheckError(err)
-		}
-
-		dependencyKey := string(key) + "-" + string(version)
-		if npmi.dependencies[dependencyKey] == nil {
-			npmi.dependencies[dependencyKey] = &dependency{name: string(key), version: string(version), scopes: []string{scope}}
-		} else if !scopeAlreadyExists(scope, npmi.dependencies[dependencyKey].scopes) {
-			npmi.dependencies[dependencyKey].scopes = append(npmi.dependencies[dependencyKey].scopes, scope)
+		} else if err == jsonparser.KeyPathNotFoundError {
+			log.Warn(fmt.Sprintf("npm dependencies list contains the package '%s' without version information. The dependency will not be added to build-info.", string(key)))
+		} else {
+			npmi.appendDependency(key, ver, scope)
 		}
 		transitive, _, _, err := jsonparser.Get(data, string(key), "dependencies")
 		if err != nil && err.Error() != "Key path not found" {
@@ -385,15 +387,23 @@ func (npmi *npmInstall) parseDependencies(data []byte, scope string) error {
 	return nil
 }
 
+func (npmi *npmInstall) appendDependency(key []byte, ver []byte, scope string) {
+	dependencyKey := string(key) + "-" + string(ver)
+	if npmi.dependencies[dependencyKey] == nil {
+		npmi.dependencies[dependencyKey] = &dependency{name: string(key), version: string(ver), scopes: []string{scope}}
+	} else if !scopeAlreadyExists(scope, npmi.dependencies[dependencyKey].scopes) {
+		npmi.dependencies[dependencyKey].scopes = append(npmi.dependencies[dependencyKey].scopes, scope)
+	}
+}
+
 // Creates a function that fetches dependency data from Artifactory. Can be applied from a producer-consumer mechanism
 func (npmi *npmInstall) createGetDependencyInfoFunc(servicesManager *artifactory.ArtifactoryServicesManager) getDependencyInfoFunc {
 	return func(dependencyIndex string) parallel.TaskFunc {
 		return func(threadId int) error {
-			threadPrefix := fmt.Sprintf("[Thread - %s ]", threadId)
 			name := npmi.dependencies[dependencyIndex].name
-			version := npmi.dependencies[dependencyIndex].version
-			log.Debug(threadPrefix, "Fetching checksums for", name, "-", version)
-			result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForNpm(name, version))
+			ver := npmi.dependencies[dependencyIndex].version
+			log.Debug(cliutils.GetLogMsgPrefix(threadId, false), "Fetching checksums for", name, "-", ver)
+			result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForNpm(name, ver))
 			if err != nil {
 				return err
 			}
@@ -403,13 +413,13 @@ func (npmi *npmInstall) createGetDependencyInfoFunc(servicesManager *artifactory
 				return errorutils.CheckError(err)
 			}
 			if len(parsedResult.Results) == 0 {
-				log.Debug(threadPrefix, name, "-", version, "could not be found in Artifactory.")
+				log.Debug(cliutils.GetLogMsgPrefix(threadId, false), name, "-", ver, "could not be found in Artifactory.")
 				return nil
 			}
 			npmi.dependencies[dependencyIndex].artifactName = parsedResult.Results[0].Name
 			npmi.dependencies[dependencyIndex].checksum =
 				&buildinfo.Checksum{Sha1: parsedResult.Results[0].Actual_sha1, Md5: parsedResult.Results[0].Actual_md5}
-			log.Debug(threadPrefix, "Found", parsedResult.Results[0].Name,
+			log.Debug(cliutils.GetLogMsgPrefix(threadId, false), "Found", parsedResult.Results[0].Name,
 				"sha1:", parsedResult.Results[0].Actual_sha1,
 				"md5", parsedResult.Results[0].Actual_md5)
 			return nil
@@ -450,7 +460,7 @@ func (npmi *npmInstall) setArtifactoryAuth() error {
 }
 
 func removeNpmrcIfExists(workingDirectory string) error {
-	if _, err := os.Stat(filepath.Join(workingDirectory, NPMRC_FILE_NAME)); err != nil {
+	if _, err := os.Stat(filepath.Join(workingDirectory, npmrcFileName)); err != nil {
 		if os.IsNotExist(err) { // The file dose not exist, nothing to do.
 			return nil
 		}
@@ -458,7 +468,7 @@ func removeNpmrcIfExists(workingDirectory string) error {
 	}
 
 	log.Debug("Removing Existing .npmrc file")
-	return errorutils.CheckError(os.Remove(filepath.Join(workingDirectory, NPMRC_FILE_NAME)))
+	return errorutils.CheckError(os.Remove(filepath.Join(workingDirectory, npmrcFileName)))
 }
 
 func (npmi *npmInstall) setNpmExecutable() error {
@@ -475,18 +485,24 @@ func (npmi *npmInstall) setNpmExecutable() error {
 	return nil
 }
 
-func getNpmAuth(artDetails *auth.ArtifactoryDetails) ([]byte, error) {
+func getArtifactoryDetails(artDetails *auth.ArtifactoryDetails) (body []byte, artifactoryVersion string, err error) {
 	authApiUrl := artDetails.Url + "api/npm/auth"
 	log.Debug("Sending npm auth request")
 	client := httpclient.NewDefaultHttpClient()
 	resp, body, _, err := client.SendGet(authApiUrl, true, artDetails.CreateArtifactoryHttpClientDetails())
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+
 	if resp.StatusCode != 200 {
-		return nil, errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+		return nil, "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
-	return body, err
+
+	serverValues := strings.Split(resp.Header.Get("Server"), "/")
+	if len(serverValues) != 2 {
+		errorutils.CheckError(errors.New("Cannot parse Artifactory version from the server header."))
+	}
+	return body, strings.TrimSpace(serverValues[1]), err
 }
 
 func getNpmRepositoryUrl(repo, url string) string {
@@ -539,6 +555,7 @@ type npmInstall struct {
 	dependencies     map[string]*dependency
 	typeRestriction  string
 	artDetails       *auth.ArtifactoryDetails
+	packageInfo      *npm.PackageInfo
 }
 
 type dependency struct {

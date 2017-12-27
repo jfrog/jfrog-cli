@@ -13,6 +13,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"fmt"
 )
 
 func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) error {
@@ -22,7 +23,7 @@ func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDeta
 	}
 	flags.SetArtifactoryDetails(artAuth)
 
-	buildInfo, err := createGenericBuildInfo(buildName, buildNumber, flags)
+	buildInfo, err := createBuildInfoFromPartials(buildName, buildNumber, flags)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 	return nil
 }
 
-func createGenericBuildInfo(buildName, buildNumber string, flags *buildinfo.Flags) (*buildinfo.BuildInfo, error) {
+func createBuildInfoFromPartials(buildName, buildNumber string, flags *buildinfo.Flags) (*buildinfo.BuildInfo, error) {
 	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber)
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func createGenericBuildInfo(buildName, buildNumber string, flags *buildinfo.Flag
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	artifactsSet, dependenciesSet, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags.EnvInclude), createExcludeFilter(flags.EnvExclude))
+	modules, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags.EnvInclude), createExcludeFilter(flags.EnvExclude))
 	if err != nil {
 		return nil, err
 	}
@@ -94,50 +95,98 @@ func createGenericBuildInfo(buildName, buildNumber string, flags *buildinfo.Flag
 		buildInfo.Revision = vcs.Revision
 		buildInfo.Url = vcs.Url
 	}
-	if len(artifactsSet) > 0 || len(dependenciesSet) > 0 {
-		module := createModule(buildName, artifactsSet, dependenciesSet)
+	for _, module := range modules {
+		if module.Id == "" {
+			module.Id = buildName
+		}
 		buildInfo.Modules = append(buildInfo.Modules, module)
 	}
 	return buildInfo, nil
 }
 
-func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Artifacts, []buildinfo.Dependencies, buildinfo.Env, buildinfo.Vcs, error) {
-	var artifacts []buildinfo.Artifacts
-	var dependencies []buildinfo.Dependencies
-	var env buildinfo.Env
+func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, error) {
 	var vcs buildinfo.Vcs
-	env = make(map[string]string)
+	env := make(map[string]string)
+	partialModules := make(map[string]partialModule)
 	for _, partial := range partials {
 		switch {
 		case partial.Artifacts != nil:
-			for _, v := range partial.Artifacts {
-				artifacts = append(artifacts, v)
+			for _, artifact := range partial.Artifacts {
+				addArtifactToPartialModule(artifact, partial.ModuleId, partialModules)
 			}
 		case partial.Dependencies != nil:
-			for _, v := range partial.Dependencies {
-				dependencies = append(dependencies, v)
+			for _, dependency := range partial.Dependencies {
+				addDependencyToPartialModule(dependency, partial.ModuleId, partialModules)
 			}
 		case partial.Vcs != nil:
 			vcs = *partial.Vcs
 		case partial.Env != nil:
 			envAfterIncludeFilter, e := includeFilter(partial.Env)
 			if errorutils.CheckError(e) != nil {
-				return artifacts, dependencies, env, vcs, e
+				return partialModulesToModules(partialModules), env, vcs, e
 			}
 			envAfterExcludeFilter, e := excludeFilter(envAfterIncludeFilter)
 			if errorutils.CheckError(e) != nil {
-				return artifacts, dependencies, env, vcs, e
+				return partialModulesToModules(partialModules), env, vcs, e
 			}
 			for k, v := range envAfterExcludeFilter {
 				env[k] = v
 			}
 		}
 	}
-	return artifacts, dependencies, env, vcs, nil
+	return partialModulesToModules(partialModules), env, vcs, nil
 }
 
-func createModule(buildName string, artifacts []buildinfo.Artifacts, dependencies []buildinfo.Dependencies) *buildinfo.Module {
-	module := createDefaultModule(buildName)
+func partialModulesToModules(partialModules map[string]partialModule) []buildinfo.Module {
+	var modules []buildinfo.Module
+	for moduleId, singlePartialModule := range partialModules {
+		moduleArtifacts := artifactsMapToList(singlePartialModule.artifacts)
+		moduleDependencies := dependenciesMapToList(singlePartialModule.dependencies)
+		modules = append(modules, *createModule(moduleId, moduleArtifacts, moduleDependencies))
+	}
+	return modules
+}
+
+func addDependencyToPartialModule(dependency buildinfo.Dependencies, moduleId string, partialModules map[string]partialModule) {
+	// init map if needed
+	if partialModules[moduleId].dependencies == nil {
+		partialModules[moduleId] =
+			partialModule{artifacts: partialModules[moduleId].artifacts,
+				dependencies: make(map[string]buildinfo.Dependencies)}
+	}
+	key := fmt.Sprintf("%s-%s-%s-%s", dependency.Id, dependency.Sha1, dependency.Md5, dependency.Scopes)
+	partialModules[moduleId].dependencies[key] = dependency
+}
+
+func addArtifactToPartialModule(artifact buildinfo.Artifacts, moduleId string, partialModules map[string]partialModule) {
+	// init map if needed
+	if partialModules[moduleId].artifacts == nil {
+		partialModules[moduleId] =
+			partialModule{artifacts: make(map[string]buildinfo.Artifacts),
+				dependencies: partialModules[moduleId].dependencies}
+	}
+	key := fmt.Sprintf("%s-%s-%s", artifact.Name, artifact.Sha1, artifact.Md5)
+	partialModules[moduleId].artifacts[key] = artifact
+}
+
+func artifactsMapToList(artifactsMap map[string]buildinfo.Artifacts) []buildinfo.Artifacts {
+	var artifacts []buildinfo.Artifacts
+	for _, artifact := range artifactsMap {
+		artifacts = append(artifacts, artifact)
+	}
+	return artifacts
+}
+
+func dependenciesMapToList(dependenciesMap map[string]buildinfo.Dependencies) []buildinfo.Dependencies {
+	var dependencies []buildinfo.Dependencies
+	for _, dependency := range dependenciesMap {
+		dependencies = append(dependencies, dependency)
+	}
+	return dependencies
+}
+
+func createModule(moduleId string, artifacts []buildinfo.Artifacts, dependencies []buildinfo.Dependencies) *buildinfo.Module {
+	module := createDefaultModule(moduleId)
 	if artifacts != nil && len(artifacts) > 0 {
 		module.Artifacts = append(module.Artifacts, artifacts...)
 	}
@@ -147,9 +196,9 @@ func createModule(buildName string, artifacts []buildinfo.Artifacts, dependencie
 	return module
 }
 
-func createDefaultModule(buildName string) *buildinfo.Module {
+func createDefaultModule(moduleId string) *buildinfo.Module {
 	return &buildinfo.Module{
-		Id:           buildName,
+		Id:           moduleId,
 		Properties:   map[string][]string{},
 		Artifacts:    []buildinfo.Artifacts{},
 		Dependencies: []buildinfo.Dependencies{},
@@ -164,11 +213,11 @@ func createIncludeFilter(pattern string) filterFunc {
 		result := make(map[string]string)
 		for k, v := range tempMap {
 			for _, filterPattern := range includePattern {
-				bool, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
+				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}
-				if bool == true {
+				if matched {
 					result[k] = v
 					break
 				}
@@ -185,11 +234,11 @@ func createExcludeFilter(pattern string) filterFunc {
 		for k, v := range tempMap {
 			include := true
 			for _, filterPattern := range excludePattern {
-				bool, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
+				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}
-				if bool == true {
+				if matched {
 					include = false
 					break
 				}
@@ -200,4 +249,9 @@ func createExcludeFilter(pattern string) filterFunc {
 		}
 		return result, nil
 	}
+}
+
+type partialModule struct {
+	artifacts    map[string]buildinfo.Artifacts
+	dependencies map[string]buildinfo.Dependencies
 }
