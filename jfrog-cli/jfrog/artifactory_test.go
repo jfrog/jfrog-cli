@@ -36,6 +36,7 @@ import (
 	"net/http"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
 	"path"
+	"github.com/jfrogdev/gofrog/io"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -1251,6 +1252,42 @@ func TestArtifactoryIncludeDirFlatNonEmptyFolderUpload(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Test large file upload
+func TestArtifactoryLargeFileDownload(t *testing.T) {
+	initArtifactoryTest(t)
+	tempFile, err := fileutils.CreateFilePath(tests.Out, "largeTempFile.txt")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	MByte := 1024 * 1024
+	randFile, err := io.CreateRandFile(tempFile, MByte*100)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer randFile.File.Close()
+
+	absTargetPath, err := filepath.Abs(tests.Out)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	// Upload large file to Artifactory
+	artifactoryCli.Exec("upload", tempFile, path.Join(tests.Repo1, "largeFilePath", "largeFile.txt"))
+
+	// Download large file from Artifactory to absolute path
+	artifactoryCli.Exec("download", tests.Repo1, absTargetPath+fileutils.GetFileSeparator(), "--flat=true")
+	artifactoryCli.Exec("download", tests.Repo1, absTargetPath+fileutils.GetFileSeparator())
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	expected := []string{
+		filepath.Join(tests.Out, "largeFile.txt"),
+		filepath.Join(tests.Out, "largeFilePath", "largeFile.txt"),
+	}
+	tests.IsExistLocally(expected, paths, t)
+
+	//cleanup
+	cleanArtifactoryTest()
+}
+
 // Test the definition of bottom chain directories  - are directories which do not include other directories which match the pattern
 func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 	initArtifactoryTest(t)
@@ -1809,7 +1846,7 @@ func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
 	// Download by build number
 	artifactoryCli.Exec("download", "--sort-by=created --spec="+specFile)
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "download", "sort_limit_by_build"), false)
 	tests.AreListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths, t)
 
 	// Cleanup

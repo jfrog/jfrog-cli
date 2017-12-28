@@ -9,14 +9,12 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"encoding/base64"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"path/filepath"
 )
 
 type HttpClient struct {
@@ -35,8 +33,8 @@ func (jc *HttpClient) sendGetLeaveBodyOpen(url string, allowRedirect bool, httpC
 	return jc.Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
 }
 
-func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails,currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
-	for i := 0; i < retries+ 1; i ++ {
+func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails, currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
+	for i := 0; i < retries+1; i ++ {
 		resp, _, redirectUrl, err = jc.sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
 		if resp != nil && resp.StatusCode <= 500 {
 			// No error and status <= 500
@@ -268,33 +266,28 @@ func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, en
 	if err != nil {
 		return "", err
 	}
-	if !flags.Flat {
-		tempLocalPath = filepath.Join(tempLocalPath, flags.LocalPath)
+
+	tempFile, err := ioutil.TempFile(tempLocalPath, strconv.Itoa(currentSplit)+"_")
+	if errorutils.CheckError(err) != nil {
+		return "", err
 	}
+	defer tempFile.Close()
+
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
 	}
 	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
-
 	resp, _, err := jc.sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails, currentSplit, retries)
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	log.Info(logMsgPrefix+"["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLocalPath, 0777)
-	filePath := filepath.Join(tempLocalPath, base64.StdEncoding.EncodeToString([]byte(flags.FileName)) + "_" + strconv.Itoa(currentSplit))
 
-	out, err := os.Create(filePath)
-	err = errorutils.CheckError(err)
-	defer out.Close()
-	if err != nil {
-		return "", err
-	}
-	_, err = io.Copy(out, resp.Body)
-	return filePath, errorutils.CheckError(err)
+	_, err = io.Copy(tempFile, resp.Body)
+	return tempFile.Name(), errorutils.CheckError(err)
 }
 
 func (jc *HttpClient) IsAcceptRanges(downloadUrl string, httpClientsDetails httputils.HttpClientDetails) (bool, error) {

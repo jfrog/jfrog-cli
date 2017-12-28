@@ -609,8 +609,6 @@ var SortAndLimit = []string{
 }
 
 var BuildDownloadByShaAndBuildNameWithSort = []string{
-	Out,
-	filepath.Join(Out, "download"),
 	filepath.Join(Out, "download", "sort_limit_by_build"),
 	filepath.Join(Out, "download", "sort_limit_by_build", "data"),
 	filepath.Join(Out, "download", "sort_limit_by_build", "data", "a11.in"),

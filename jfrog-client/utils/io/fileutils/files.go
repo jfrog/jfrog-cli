@@ -181,7 +181,7 @@ func CreateFilePath(localPath, fileName string) (string, error) {
 		if errorutils.CheckError(err) != nil {
 			return "", err
 		}
-		fileName = localPath + "/" + fileName
+		fileName = filepath.Join(localPath, fileName)
 	}
 	return fileName, nil
 }
