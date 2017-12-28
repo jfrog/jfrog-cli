@@ -15,7 +15,7 @@ import (
 	"io"
 )
 
-const gradleExtractorDependencyVersion = "4.5.0"
+const gradleExtractorDependencyVersion = "4.6.0"
 const gradleInitScriptTemplate = "gradle.init"
 
 const usePlugin = "useplugin"

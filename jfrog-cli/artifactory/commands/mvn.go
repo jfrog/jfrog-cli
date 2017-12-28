@@ -16,7 +16,7 @@ import (
 	"io"
 )
 
-const MavenExtractorDependencyVersion = "2.7.0"
+const MavenExtractorDependencyVersion = "2.9.2"
 const ClasswordConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
