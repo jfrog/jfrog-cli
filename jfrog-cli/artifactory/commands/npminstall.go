@@ -51,7 +51,7 @@ func NpmInstall(repo string, cliFlags *npm.CliFlags) (err error) {
 	}
 
 	if !npmi.collectBuildInfo {
-		log.Info("Npm install finished successfully.")
+		log.Info("npm install finished successfully.")
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func NpmInstall(repo string, cliFlags *npm.CliFlags) (err error) {
 		return err
 	}
 
-	log.Info("Npm install finished successfully.")
+	log.Info("npm install finished successfully.")
 	return
 }
 
@@ -81,6 +81,56 @@ func (npmi *npmInstall) preparePrerequisites(repo string) error {
 		return err
 	}
 
+	if err := npmi.setWorkingDirectory(); err != nil {
+		return err
+	}
+
+	if err := npmi.prepareArtifactoryPrerequisites(repo); err != nil {
+		return err
+	}
+
+	if err := npmi.prepareBuildInfo(); err != nil {
+		return err
+	}
+
+	return npmi.backupProjectNpmrc()
+}
+
+func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error) {
+	npmAuth, artifactoryVersion, err := getArtifactoryDetails(npmi.artDetails)
+	if err != nil {
+		return err
+	}
+
+	npmi.npmAuth = string(npmAuth)
+	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 {
+		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+	}
+
+	if err = utils.CheckIfRepoExists(repo, npmi.artDetails); err!= nil {
+		return err
+	}
+
+	npmi.registry = getNpmRepositoryUrl(repo, npmi.artDetails.Url)
+	return nil
+}
+
+func (npmi *npmInstall) prepareBuildInfo() error {
+	var err error
+	if len(npmi.flags.BuildName) > 0 && len(npmi.flags.BuildNumber) > 0 {
+		npmi.collectBuildInfo = true
+		if err = utils.SaveBuildGeneralDetails(npmi.flags.BuildName, npmi.flags.BuildNumber); err != nil {
+			return err
+		}
+
+		if npmi.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npmi.workingDirectory); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (npmi *npmInstall) setWorkingDirectory() error {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -95,30 +145,7 @@ func (npmi *npmInstall) preparePrerequisites(repo string) error {
 	if err = npmi.setArtifactoryAuth(); err != nil {
 		return errorutils.CheckError(err)
 	}
-
-	npmAuth, artifactoryVersion, err := getArtifactoryDetails(npmi.artDetails)
-	if err != nil {
-		return err
-	}
-
-	npmi.npmAuth = string(npmAuth)
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 {
-		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
-	}
-
-	if len(npmi.flags.BuildName) > 0 && len(npmi.flags.BuildNumber) > 0 {
-		npmi.collectBuildInfo = true
-		if err := utils.SaveBuildGeneralDetails(npmi.flags.BuildName, npmi.flags.BuildNumber); err != nil {
-			return err
-		}
-
-		if npmi.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npmi.workingDirectory); err != nil {
-			return err
-		}
-	}
-
-	npmi.registry = getNpmRepositoryUrl(repo, npmi.artDetails.Url)
-	return npmi.backupProjectNpmrc()
+	return nil
 }
 
 // In order to make sure the install downloads the dependencies from Artifactory, we are creating a.npmrc file in the project's root directory.
@@ -221,7 +248,7 @@ func (npmi *npmInstall) collectDependenciesChecksums() error {
 		return err
 	}
 
-	producerConsumer := parallel.NewBounedRunner(3, false)
+	producerConsumer := parallel.NewBounedRunner(10, false)
 	errorsQueue := serviceutils.NewErrorsQueue(1)
 	handlerFunc := npmi.createGetDependencyInfoFunc(servicesManager)
 	go func() {
@@ -253,8 +280,7 @@ func (npmi *npmInstall) saveDependenciesData() error {
 		}
 		log.Warn(strings.Join(missingDependenciesText, "\n"))
 		log.Warn("The npm dependencies above could not be found in Artifactory and therefore are not included in the build-info.\n" +
-			"You can fix this, by moving aside your project's node_modules and also your npm cache directories and then run this command again. " +
-			"This will force npm to download all dependencies from Artifactory. Future builds will not need to download these dependencies again.")
+			"Make sure the dependencies are available in Artifactory for this build.")
 	}
 	return nil
 }
@@ -333,7 +359,7 @@ func (npmi *npmInstall) prepareDependencies(typeRestriction string) error {
 	// Run npm list
 	data, errData, err := npm.RunList(npmi.flags.NpmArgs+" -only="+typeRestriction, npmi.executablePath)
 	if err != nil {
-		return err
+		log.Warn("npm list command failed with error:", err.Error())
 	}
 	if len(errData) > 0 {
 		log.Warn("Some errors occurred while collecting dependencies info:\n" + string(errData))

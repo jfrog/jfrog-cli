@@ -18,7 +18,10 @@ import (
 	"path/filepath"
 	"io"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 )
+
+const repoDetailsUrl = "api/repositories/"
 
 func GetJfrogSecurityDir() (string, error) {
 	homeDir, err := config.GetJfrogHomeDir()
@@ -86,6 +89,31 @@ func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultIte
 		deleteItems[i] = item
 	}
 	return deleteItems
+}
+
+func isRepoExists(repository string, artDetails *auth.ArtifactoryDetails) (bool, error) {
+	artHttpDetails := artDetails.CreateArtifactoryHttpClientDetails()
+	resp, _, _, err := httputils.SendGet(artDetails.Url+repoDetailsUrl+repository, true, artHttpDetails)
+	if err != nil {
+		return false, errorutils.CheckError(err)
+	}
+
+	if resp.StatusCode != http.StatusBadRequest {
+		return true, nil
+	}
+	return false, nil
+}
+
+func CheckIfRepoExists(repository string, artDetails *auth.ArtifactoryDetails) error {
+	repoExists, err := isRepoExists(repository, artDetails)
+	if err != nil {
+		return err
+	}
+
+	if !repoExists {
+		return errorutils.CheckError(errors.New("The repository '" + repository + "' dose not exists."))
+	}
+	return nil
 }
 
 func RunCmd(config CmdConfig) error {

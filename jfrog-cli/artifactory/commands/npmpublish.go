@@ -16,18 +16,18 @@ import (
 	"io"
 	"compress/gzip"
 	"io/ioutil"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	clientutils"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	specutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	buildUtils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	 "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"time"
 	"strconv"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
 func NpmPublish(repo string, cliFlags *npm.CliFlags) (err error) {
-	log.Info("Running Npm Publish")
-	npmp := npmPublish{cliFlags: cliFlags}
+	log.Info("Running npm Publish")
+	npmp := npmPublish{cliFlags: cliFlags, repo: repo}
 	if err = npmp.preparePrerequisites(); err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func NpmPublish(repo string, cliFlags *npm.CliFlags) (err error) {
 		}
 	}
 
-	if err = npmp.deploy(repo, cliFlags.ArtDetails); err != nil {
+	if err = npmp.deploy(); err != nil {
 		if npmp.tarballProvided {
 			return err
 		}
@@ -53,7 +53,7 @@ func NpmPublish(repo string, cliFlags *npm.CliFlags) (err error) {
 	}
 
 	if !npmp.collectBuildInfo {
-		log.Info("Npm publish finished successfully.")
+		log.Info("npm publish finished successfully.")
 		return nil
 	}
 
@@ -61,7 +61,7 @@ func NpmPublish(repo string, cliFlags *npm.CliFlags) (err error) {
 		return err
 	}
 
-	log.Info("Npm publish finished successfully.")
+	log.Info("npm publish finished successfully.")
 	return nil
 }
 
@@ -95,6 +95,15 @@ func (npmp *npmPublish) preparePrerequisites() error {
 		return err
 	}
 
+	artDetails, err := npmp.cliFlags.ArtDetails.CreateArtAuthConfig()
+	if err != nil {
+		return err
+	}
+
+	if err = utils.CheckIfRepoExists(npmp.repo, artDetails); err != nil {
+		return err
+	}
+
 	return npmp.setPackageInfo()
 }
 
@@ -109,14 +118,14 @@ func (npmp *npmPublish) pack() error {
 	return nil
 }
 
-func (npmp *npmPublish) deploy(repo string, artDetails *config.ArtifactoryDetails) (err error) {
+func (npmp *npmPublish) deploy() (err error) {
 	log.Debug("Deploying npm package.")
 	if err = npmp.readPackageInfoFromTarball(); err != nil {
 		return err
 	}
 
-	target := fmt.Sprintf("%s/%s", repo, npmp.packageInfo.GetDeployPath())
-	artifactsFileInfo, err := npmp.doDeploy(target, artDetails)
+	target := fmt.Sprintf("%s/%s", npmp.repo, npmp.packageInfo.GetDeployPath())
+	artifactsFileInfo, err := npmp.doDeploy(target, npmp.cliFlags.ArtDetails)
 	if err != nil {
 		return err
 	}
@@ -126,7 +135,7 @@ func (npmp *npmPublish) deploy(repo string, artDetails *config.ArtifactoryDetail
 }
 
 func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDetails) (artifactsFileInfo []specutils.FileInfo, err error) {
-	servicesManager, err := buildUtils.CreateServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return nil, err
 	}
@@ -148,14 +157,14 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 
 	// We deploying only one Artifact which have to be deployed, in case of failure we should fail
 	if failed > 0 {
-		return nil, errorutils.CheckError(errors.New("Failed to upload the npm package to Artifactory. Please see Artifactory logs for more details."))
+		return nil, errorutils.CheckError(errors.New("Failed to upload the npm package to Artifactory. See Artifactory logs for more details."))
 	}
 	return artifactsFileInfo, nil
 }
 
 func getBuildTimestamp(buildName, buildNumber string) (timestamp string, err error) {
-	buildUtils.SaveBuildGeneralDetails(buildName, buildNumber)
-	buildDetails, err := buildUtils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	utils.SaveBuildGeneralDetails(buildName, buildNumber)
+	buildDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +178,7 @@ func (npmp *npmPublish) saveArtifactData() error {
 		partial.Artifacts = buildArtifacts
 		partial.ModuleId = npmp.packageInfo.BuildInfoModuleId()
 	}
-	return buildUtils.SavePartialBuildInfo(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber, populateFunc)
+	return utils.SavePartialBuildInfo(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber, populateFunc)
 }
 
 func (npmp *npmPublish) setPublishPath() error {
@@ -182,7 +191,7 @@ func (npmp *npmPublish) setPublishPath() error {
 	npmp.publishPath = npmp.workingDirectory
 	if len(splitFlags) > 0 && !strings.HasPrefix(strings.TrimSpace(splitFlags[0]), "-") {
 		path := strings.TrimSpace(splitFlags[0])
-		path = utils.ReplaceTildeWithUserHome(path)
+		path = clientutils.ReplaceTildeWithUserHome(path)
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -272,4 +281,5 @@ type npmPublish struct {
 	publishPath      string
 	tarballProvided  bool
 	artifactData     []specutils.FileInfo
+	repo             string
 }

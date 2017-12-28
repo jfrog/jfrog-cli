@@ -19,13 +19,9 @@ func RunList(flags, executablePath string) (stdResult, errResult []byte, err err
 
 	listCmd := createListCommand(executablePath, splitFlags)
 	outData, errData, err := listCmd.exec()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	log.Debug("npm list standard output is: \n" + string(outData))
-	log.Debug("npm list error output is: \n" + string(errData))
-	return outData, errData, nil
+	log.Debug("npm list standard output is:\n" + string(outData))
+	log.Debug("npm list error output is:\n" + string(errData))
+	return outData, errData, err
 }
 
 func (listCmd *listCommand) exec() (outData, errData []byte, err error) {
@@ -56,7 +52,7 @@ func (listCmd *listCommand) exec() (outData, errData []byte, err error) {
 	wg.Wait()
 	for _, err := range cmdErrors {
 		if err != nil {
-			return nil, nil, errorutils.CheckError(err)
+			return outData, errData, errorutils.CheckError(err)
 		}
 	}
 	return outData, errData, nil
