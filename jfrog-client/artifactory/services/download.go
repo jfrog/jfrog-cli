@@ -12,10 +12,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
+	"net/http"
 )
 
 type DownloadService struct {
@@ -196,16 +196,17 @@ func createDependencyFileInfo(resultItem utils.ResultItem, localPath, localFileN
 	return fileInfo
 }
 
-func createDownloadFileDetails(downloadPath, localPath, localFileName string, size int64) (details *DownloadFileDetails) {
-	details = &DownloadFileDetails{
+func createDownloadFileDetails(downloadPath, localPath, localFileName string, downloadData DownloadData) (details *httpclient.DownloadFileDetails) {
+	details = &httpclient.DownloadFileDetails{
+		FileName:      downloadData.Dependency.Name,
 		DownloadPath:  downloadPath,
 		LocalPath:     localPath,
 		LocalFileName: localFileName,
-		Size:          size}
+		Size:          downloadData.Dependency.Size}
 	return
 }
 
-func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) error {
+func (ds *DownloadService) downloadFile(downloadFileDetails *httpclient.DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) error {
 	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
 	bulkDownload := ds.SplitCount == 0 || ds.MinSplitSize < 0 || ds.MinSplitSize*1000 > downloadFileDetails.Size
 	if !bulkDownload {
@@ -217,7 +218,7 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails
 	}
 	if bulkDownload {
 		var resp *http.Response
-		resp, err := ds.client.DownloadFile(downloadFileDetails.DownloadPath, downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, httpClientsDetails, downloadParams.GetRetries())
+		resp, err := ds.client.DownloadFile(downloadFileDetails, logMsgPrefix, httpClientsDetails, downloadParams.GetRetries(), downloadParams.IsExplode())
 		if resp != nil {
 			log.Debug(logMsgPrefix, "Artifactory response:", resp.Status)
 		}
@@ -225,17 +226,19 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *DownloadFileDetails
 	}
 
 	concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
-		DownloadPath: downloadFileDetails.DownloadPath,
-		FileName:     downloadFileDetails.LocalFileName,
-		LocalPath:    downloadFileDetails.LocalPath,
-		FileSize:     downloadFileDetails.Size,
-		SplitCount:   ds.SplitCount,
-		Retries:      downloadParams.GetRetries()}
+		FileName:      downloadFileDetails.FileName,
+		DownloadPath:  downloadFileDetails.DownloadPath,
+		LocalFileName: downloadFileDetails.LocalFileName,
+		LocalPath:     downloadFileDetails.LocalPath,
+		FileSize:      downloadFileDetails.Size,
+		SplitCount:    ds.SplitCount,
+		Explode:       downloadParams.IsExplode(),
+		Retries:       downloadParams.GetRetries()}
 
 	return ds.client.DownloadFileConcurrently(concurrentDownloadFlags, logMsgPrefix, httpClientsDetails)
 }
 
-func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *DownloadFileDetails) (bool, error) {
+func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *httpclient.DownloadFileDetails) (bool, error) {
 	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
 	return ds.client.IsAcceptRanges(downloadFileDetails.DownloadPath, httpClientsDetails)
 }
@@ -379,7 +382,7 @@ func (ds *DownloadService) downloadFileIfNeeded(downloadPath, localPath, localFi
 		log.Debug(logMsgPrefix, "File already exists locally.")
 		return nil
 	}
-	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, downloadData.Dependency.Size)
+	downloadFileDetails := createDownloadFileDetails(downloadPath, localPath, localFileName, downloadData)
 	return ds.downloadFile(downloadFileDetails, logMsgPrefix, downloadParams)
 }
 
@@ -408,13 +411,6 @@ func createSymlinkIfNeeded(localPath, localFileName, logMsgPrefix string, downlo
 	return isSymlink, nil
 }
 
-type DownloadFileDetails struct {
-	DownloadPath  string `json:"DownloadPath,omitempty"`
-	LocalPath     string `json:"LocalPath,omitempty"`
-	LocalFileName string `json:"LocalFileName,omitempty"`
-	Size          int64  `json:"Size,omitempty"`
-}
-
 type DownloadData struct {
 	Dependency   utils.ResultItem
 	DownloadPath string
@@ -436,11 +432,16 @@ type DownloadParamsImpl struct {
 	Symlink         bool
 	ValidateSymlink bool
 	Flat            bool
+	Explode         bool
 	Retries         int
 }
 
 func (ds *DownloadParamsImpl) IsFlat() bool {
 	return ds.Flat
+}
+
+func (ds *DownloadParamsImpl) IsExplode() bool {
+	return ds.Explode
 }
 
 func (ds *DownloadParamsImpl) GetFile() *utils.ArtifactoryCommonParams {

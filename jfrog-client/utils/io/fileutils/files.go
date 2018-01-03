@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strings"
 	"path/filepath"
-	"archive/zip"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 )
@@ -334,64 +333,6 @@ func calcChecksumDetails(filePath string) (ChecksumDetails, error) {
 		return ChecksumDetails{}, err
 	}
 	return ChecksumDetails{Md5: checksumInfo[checksum.MD5], Sha1: checksumInfo[checksum.SHA1], Sha256: checksumInfo[checksum.SHA256]}, nil
-}
-
-func ZipFolderFiles(source, target string) (err error) {
-	zipFile, err := os.Create(target)
-	if err != nil {
-		errorutils.CheckError(err)
-		return
-	}
-	defer func() {
-		if cerr := zipFile.Close(); cerr != nil && err == nil {
-			err = cerr
-		}
-	}()
-
-	archive := zip.NewWriter(zipFile)
-	defer func() {
-		if cerr := archive.Close(); cerr != nil && err == nil {
-			err = cerr
-		}
-	}()
-
-	filepath.Walk(source, func(path string, info os.FileInfo, err error) (currentErr error) {
-		if info.IsDir() {
-			return
-		}
-
-		if err != nil {
-			currentErr = err
-			return
-		}
-
-		header, currentErr := zip.FileInfoHeader(info)
-		if currentErr != nil {
-			errorutils.CheckError(currentErr)
-			return
-		}
-
-		header.Method = zip.Deflate
-		writer, currentErr := archive.CreateHeader(header)
-		if currentErr != nil {
-			errorutils.CheckError(currentErr)
-			return
-		}
-
-		file, currentErr := os.Open(path)
-		if currentErr != nil {
-			errorutils.CheckError(currentErr)
-			return
-		}
-		defer func() {
-			if cerr := file.Close(); cerr != nil && currentErr == nil {
-				currentErr = cerr
-			}
-		}()
-		_, currentErr = io.Copy(writer, file)
-		return
-	})
-	return
 }
 
 type FileDetails struct {

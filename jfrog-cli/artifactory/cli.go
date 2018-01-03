@@ -509,6 +509,10 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
 		},
 		cli.BoolFlag{
+			Name:  "explode",
+			Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.",
+		},
+		cli.BoolFlag{
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
 		},
@@ -1554,6 +1558,7 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Flat(cliutils.GetBoolFlagValue(c, "flat", false)).
+		Explode(c.String("explode")).
 		IncludeDirs(cliutils.GetBoolFlagValue(c, "include-dirs", false)).
 		Target(c.Args().Get(1)).
 		BuildSpec()
@@ -1602,6 +1607,7 @@ func createDefaultUploadSpec(c *cli.Context) *spec.SpecFiles {
 		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Flat(cliutils.GetBoolFlagValue(c, "flat", true)).
+		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
@@ -1649,7 +1655,6 @@ func createUploadFlags(c *cli.Context) (uploadFlags *commands.UploadConfiguratio
 	uploadFlags.BuildName = buildName
 	uploadFlags.BuildNumber = buildNumber
 	uploadFlags.DryRun = c.Bool("dry-run")
-	uploadFlags.ExplodeArchive = c.Bool("explode")
 	uploadFlags.Symlink = c.Bool("symlinks")
 	uploadFlags.Threads = getThreadsCount(c)
 	uploadFlags.Deb = getDebFlag(c)
@@ -1746,6 +1751,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
+	overrideStringIfSet(&spec.Explode, c, "explode")
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 }

@@ -39,6 +39,7 @@ type FileGetter interface {
 	GetExcludePatterns() []string
 	GetTarget() string
 	SetTarget(target string)
+	IsExplode() bool
 	GetProps() string
 	GetSortOrder() string
 	GetSortBy() []string
@@ -69,6 +70,10 @@ func (params *ArtifactoryCommonParams) GetTarget() string {
 
 func (params *ArtifactoryCommonParams) GetProps() string {
 	return params.Props
+}
+
+func (params *ArtifactoryCommonParams) IsExplode() bool {
+	return params.Recursive
 }
 
 func (params *ArtifactoryCommonParams) IsRecursive() bool {

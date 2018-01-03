@@ -15,6 +15,9 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"path/filepath"
+	"github.com/mholt/archiver"
+	multifilereader "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io"
 )
 
 type HttpClient struct {
@@ -165,49 +168,96 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 	return resp, body, nil
 }
 
-func (jc *HttpClient) DownloadFile(downloadPath, localPath, fileName string, httpClientsDetails httputils.HttpClientDetails, retries int) (*http.Response, error) {
-	resp, _, err := jc.downloadFile(downloadPath, localPath, fileName, true, httpClientsDetails, retries)
+func (jc *HttpClient) DownloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, retries int, isExplode bool) (*http.Response, error) {
+	resp, _, err := jc.downloadFile(downloadFileDetails, logMsgPrefix, true, httpClientsDetails, retries, isExplode)
 	return resp, err
 }
 
 func (jc *HttpClient) DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, string, error) {
-	return jc.downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails, 0)
+	downloadFileDetails := &DownloadFileDetails{DownloadPath: downloadPath, LocalPath: localPath, FileName: fileName}
+	return jc.downloadFile(downloadFileDetails, "", false, httpClientsDetails, 0, false)
 }
 
-func (jc *HttpClient) downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
-	httpClientsDetails httputils.HttpClientDetails, retries int) (resp *http.Response, redirectUrl string, err error) {
-	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails, 0, retries)
+func (jc *HttpClient) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, allowRedirect bool,
+		httpClientsDetails httputils.HttpClientDetails, retries int, isExplode bool) (resp *http.Response, redirectUrl string, err error) {
+	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadFileDetails.DownloadPath, allowRedirect, httpClientsDetails, 0, retries)
 	if err != nil {
 		return
 	}
 
 	defer resp.Body.Close()
-	if err = httperrors.CheckResponseStatus(resp, nil, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, nil, http.StatusOK); err != nil {
 		return
 	}
 
-	fileName, err = fileutils.CreateFilePath(localPath, fileName)
+	isZip := fileutils.IsZip(downloadFileDetails.FileName)
+	arch := archiver.MatchingFormat(downloadFileDetails.FileName)
+
+	// If explode flag is true and the file is an archive but not zip, extract the file.
+	if isExplode && !isZip && arch != nil {
+		err = extractFile(downloadFileDetails, arch, resp.Body, logMsgPrefix)
+		return
+	}
+
+	// Save the file to the file system
+	err = saveToFile(downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, resp.Body)
 	if err != nil {
 		return
+	}
+
+	// Extract zip if necessary
+	// Extracting zip after download to prevent out of memory issues.
+	if isExplode && isZip {
+		err = extractZip(downloadFileDetails, logMsgPrefix)
+	}
+	return
+}
+
+func saveToFile(localPath, localFileName string, body io.ReadCloser) error {
+	fileName, err := fileutils.CreateFilePath(localPath, localFileName)
+	if err != nil {
+		return err
 	}
 
 	out, err := os.Create(fileName)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
 
 	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	err = errorutils.CheckError(err)
-	return
+	_, err = io.Copy(out, body)
+	return errorutils.CheckError(err)
+}
+
+func extractFile(downloadFileDetails *DownloadFileDetails, arch archiver.Archiver, reader io.Reader, logMsgPrefix string) error {
+	log.Info(logMsgPrefix+"Extracting archive:", downloadFileDetails.FileName, "to", downloadFileDetails.LocalPath)
+	err := fileutils.CreateDirIfNotExist(downloadFileDetails.LocalPath)
+	if err != nil {
+		return err
+	}
+	err = arch.Read(reader, downloadFileDetails.LocalPath)
+	return errorutils.CheckError(err)
+}
+
+func extractZip(downloadFileDetails *DownloadFileDetails, logMsgPrefix string) error {
+	fileName, err := fileutils.CreateFilePath(downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName)
+	if err != nil {
+		return err
+	}
+	log.Info(logMsgPrefix+"Extracting archive:", fileName, "to", downloadFileDetails.LocalPath)
+	err = archiver.Zip.Open(fileName, downloadFileDetails.LocalPath)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	err = os.Remove(fileName)
+	return errorutils.CheckError(err)
 }
 
 func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails) error {
 	var wg sync.WaitGroup
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
-	chuckPaths := make([]string, flags.SplitCount)
+	chunkedPaths := make([]string, flags.SplitCount)
 	var err error
 	for i := 0; i < flags.SplitCount; i++ {
 		if err != nil {
@@ -222,7 +272,7 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
 			var downloadErr error
-			chuckPaths[i], downloadErr = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
+			chunkedPaths[i], downloadErr = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
 			if downloadErr != nil {
 				err = downloadErr
 			}
@@ -237,28 +287,76 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 
 	if !flags.Flat && flags.LocalPath != "" {
 		os.MkdirAll(flags.LocalPath, 0777)
-		flags.FileName = flags.LocalPath + "/" + flags.FileName
+		flags.LocalFileName = filepath.Join(flags.LocalPath, flags.LocalFileName)
 	}
 
-	if fileutils.IsPathExists(flags.FileName) {
-		err := os.Remove(flags.FileName)
+	if fileutils.IsPathExists(flags.LocalFileName) {
+		err := os.Remove(flags.LocalFileName)
 		err = errorutils.CheckError(err)
 		if err != nil {
 			return err
 		}
 	}
 
-	destFile, err := os.Create(flags.FileName)
+	// Explode archive if necessary
+	if flags.Explode {
+		extracted, err := extractChunkedFile(chunkedPaths, flags, logMsgPrefix)
+		if extracted || err != nil {
+			return err
+		}
+	}
+
+	destFile, err := os.Create(flags.LocalFileName)
 	err = errorutils.CheckError(err)
 	if err != nil {
 		return err
 	}
 	defer destFile.Close()
 	for i := 0; i < flags.SplitCount; i++ {
-		fileutils.AppendFile(chuckPaths[i], destFile)
+		fileutils.AppendFile(chunkedPaths[i], destFile)
 	}
 	log.Info(logMsgPrefix + "Done downloading.")
 	return nil
+}
+
+func extractChunkedFile(chunkedPaths []string, flags ConcurrentDownloadFlags, logMsgPrefix string) (bool, error) {
+	if fileutils.IsZip(flags.FileName) {
+		multiReader, err := multifilereader.NewMultiFileReaderAt(chunkedPaths)
+		if errorutils.CheckError(err) != nil {
+			return false, err
+		}
+		log.Info(logMsgPrefix+"Extracting archive:", flags.FileName, "to", flags.LocalPath)
+		err = fileutils.Unzip(multiReader, multiReader.Size(), flags.LocalPath)
+		if errorutils.CheckError(err) != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	arch := archiver.MatchingFormat(flags.FileName)
+	if arch == nil {
+		log.Debug(logMsgPrefix+"Not an archive:", flags.FileName, "downloading file without extracting it.")
+		return false, nil
+	}
+
+	fileReaders := make([]io.Reader, len(chunkedPaths))
+	var err error
+	for k, v := range chunkedPaths {
+		f, err := os.Open(v)
+		fileReaders[k] = f
+		if err != nil {
+			return false, errorutils.CheckError(err)
+		}
+		defer f.Close()
+	}
+
+	multiReader := io.MultiReader(fileReaders...)
+	log.Info(logMsgPrefix+"Extracting archive:", flags.FileName, "to", flags.LocalPath)
+	err = arch.Read(multiReader, flags.LocalPath)
+	if err != nil {
+		return false, errorutils.CheckError(err)
+	}
+	return true, nil
 }
 
 func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentSplit int, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, retries int) (string, error) {
@@ -319,12 +417,22 @@ func addUserAgentHeader(req *http.Request) {
 	req.Header.Set("User-Agent", cliutils.CliAgent+"/"+cliutils.GetVersion())
 }
 
+type DownloadFileDetails struct {
+	FileName      string `json:"LocalFileName,omitempty"`
+	DownloadPath  string `json:"DownloadPath,omitempty"`
+	LocalPath     string `json:"LocalPath,omitempty"`
+	LocalFileName string `json:"LocalFileName,omitempty"`
+	Size          int64  `json:"Size,omitempty"`
+}
+
 type ConcurrentDownloadFlags struct {
-	DownloadPath string
-	FileName     string
-	LocalPath    string
-	FileSize     int64
-	SplitCount   int
-	Flat         bool
-	Retries      int
+	FileName      string
+	DownloadPath  string
+	LocalFileName string
+	LocalPath     string
+	FileSize      int64
+	SplitCount    int
+	Flat          bool
+	Explode       bool
+	Retries       int
 }

@@ -48,7 +48,15 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, 
 			log.Error(err)
 			continue
 		}
-		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat: flat, Retries: flags.Retries})
+
+		explode, err := downloadSpec.Get(i).IsExplode(false)
+		if err != nil {
+			errorOccurred = true
+			log.Error(err)
+			continue
+		}
+
+		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat: flat, Explode: explode, Retries: flags.Retries})
 		totalExpected += expected
 		filesInfo = append(filesInfo, currentBuildDependencies...)
 		if err != nil {

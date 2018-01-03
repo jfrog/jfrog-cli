@@ -6,6 +6,7 @@ type builder struct {
 	pattern         string
 	excludePatterns []string
 	target          string
+	explode         string
 	props           string
 	sortOrder       string
 	sortBy          []string
@@ -34,6 +35,11 @@ func (b *builder) ExcludePatterns(excludePatterns []string) *builder {
 
 func (b *builder) Target(target string) *builder {
 	b.target = target
+	return b
+}
+
+func (b *builder) Explode(explode string) *builder {
+	b.explode = explode
 	return b
 }
 
@@ -100,6 +106,7 @@ func (b *builder) BuildSpec() *SpecFiles {
 				Offset:          b.offset,
 				Limit:           b.limit,
 				Build:           b.build,
+				Explode:         b.explode,
 				Recursive:       strconv.FormatBool(b.recursive),
 				Flat:            strconv.FormatBool(b.flat),
 				Regexp:          strconv.FormatBool(b.regexp),

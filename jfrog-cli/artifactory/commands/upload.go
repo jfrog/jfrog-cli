@@ -65,6 +65,13 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 			continue
 		}
 		uploadParamImp.Flat = flat
+		explode, err := uploadSpec.Get(i).IsExplode(false)
+		if err != nil {
+			errorOccurred = true
+			log.Error(err)
+			continue
+		}
+		uploadParamImp.ExplodeArchive = explode
 		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParamImp)
 		filesInfo = append(filesInfo, artifacts...)
 		totalFailed += failed
@@ -125,7 +132,6 @@ func createBaseUploadParams(flags *UploadConfiguration) (*services.UploadParamsI
 	uploadParamImp := &services.UploadParamsImp{}
 	uploadParamImp.Deb = flags.Deb
 	uploadParamImp.Symlink = flags.Symlink
-	uploadParamImp.ExplodeArchive = flags.ExplodeArchive
 	return uploadParamImp
 }
 

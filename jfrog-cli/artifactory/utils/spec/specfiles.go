@@ -57,6 +57,7 @@ type File struct {
 	Pattern         string
 	ExcludePatterns []string
 	Target          string
+	Explode			string
 	Props           string
 	SortOrder       string
 	SortBy          []string
@@ -71,6 +72,10 @@ type File struct {
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
 	return cliutils.StringToBool(f.Flat, defaultValue)
+}
+
+func (f File) IsExplode(defaultValue bool) (bool, error) {
+	return cliutils.StringToBool(f.Explode, defaultValue)
 }
 
 func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error) {

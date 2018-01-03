@@ -37,6 +37,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
 	"path"
 	"github.com/jfrogdev/gofrog/io"
+	"github.com/mholt/archiver"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -377,10 +378,48 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryUploadandExplode(t *testing.T) {
+func TestArtifactoryUploadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
-	artifactoryCli.Exec("upload", "../testsdata/a.zip", "jfrog-cli-tests-repo1", "--explode=true")
+	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a.zip"), "jfrog-cli-tests-repo1", "--explode=true")
 	isExistInArtifactory(tests.ExplodeUploadExpectedRepo1, tests.GetFilePath(tests.Search), t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndExplode(t *testing.T) {
+	initArtifactoryTest(t)
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	if err != nil {
+		t.Error(err)
+	}
+	f0, err := io.CreateRandFile(filepath.Join(tests.Out, "randLargeFile0"), 100000)
+	if err != nil {
+		t.Error(err)
+	}
+	f0.Close()
+	f1, err := io.CreateRandFile(filepath.Join(tests.Out, "randLargeFile1"), 15000000)
+	if err != nil {
+		t.Error(err)
+	}
+	f1.Close()
+
+	err = archiver.Zip.Make(filepath.Join(tests.Out, "large.zip"), []string{f0.Name(), f1.Name()})
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a.zip"), "jfrog-cli-tests-repo1", "--flat=true")
+	artifactoryCli.Exec("upload", filepath.Join(tests.Out, "large.zip"), "jfrog-cli-tests-repo1", "--flat=true")
+	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a", "a1.in"), "jfrog-cli-tests-repo1", "--flat=true")
+	err = os.RemoveAll(tests.Out)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "*"), tests.Out+"/", "--explode=true")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "large.zip"), tests.Out+"/", "--explode=false")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally(tests.ExtractedDownlod, paths, t)
+
 	cleanArtifactoryTest()
 }
 
