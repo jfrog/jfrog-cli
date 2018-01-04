@@ -5,7 +5,7 @@ CLI_UNAME="na"
 
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
-    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/$latest/windows_amd64/jfrog.exe?bt_package=jfrog-cli-windows-amd64"
+    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/\$latest/jfrog-cli-windows-amd64/jfrog.exe?bt_package=jfrog-cli-windows-amd64"
     FILE_NAME="jfrog.exe"
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
