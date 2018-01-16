@@ -1,10 +1,10 @@
 package npm
 
 import (
-	"io"
-	"github.com/mattn/go-shellwords"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/mattn/go-shellwords"
+	"io"
 	"io/ioutil"
 )
 

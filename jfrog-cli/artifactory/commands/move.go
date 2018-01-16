@@ -2,9 +2,9 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 

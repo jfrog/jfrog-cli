@@ -1,12 +1,12 @@
 package utils
 
 import (
-	"os"
-	"strings"
 	"bufio"
-	"path/filepath"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type gitManager struct {

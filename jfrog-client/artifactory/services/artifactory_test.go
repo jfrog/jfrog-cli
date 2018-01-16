@@ -1,21 +1,21 @@
 package services
 
 import (
-	"testing"
-	"flag"
-	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"errors"
+	"flag"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
 	"io/ioutil"
+	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"testing"
 )
 
 var RtUrl *string
@@ -52,7 +52,9 @@ func TestMain(m *testing.M) {
 	tests.RunTests(packages)
 	flag.Parse()
 	log.Logger.SetLogLevel(log.GetCliLogLevel(*LogLevel))
-	*RtUrl = cliutils.AddTrailingSlashIfNeeded(*RtUrl)
+	if *RtUrl != "" && !strings.HasSuffix(*RtUrl, "/") {
+		*RtUrl += "/"
+	}
 	InitArtifactoryServiceManager()
 	createReposIfNeeded()
 	result := m.Run()
@@ -88,22 +90,31 @@ func createArtifactoryDownloadManager() {
 	testsDownloadService.SetThreads(3)
 }
 
-func getArtDetails() *auth.ArtifactoryDetails {
-	rtDetails := &config.ArtifactoryDetails{Url: *RtUrl, SshKeyPath: *RtSshKeyPath, SshPassphrase: *RtSshPassphrase}
-	if !rtDetails.IsSsh() {
+func getArtDetails() auth.ArtifactoryDetails {
+	rtDetails := auth.NewArtifactoryDetails()
+	rtDetails.SetUrl(*RtUrl)
+	if !httputils.IsSsh(rtDetails.GetUrl()) {
 		if *RtApiKey != "" {
-			rtDetails.ApiKey = *RtApiKey
+			rtDetails.SetApiKey(*RtApiKey)
 		} else {
-			rtDetails.User = *RtUser
-			rtDetails.Password = *RtPassword
+			rtDetails.SetUser(*RtUser)
+			rtDetails.SetPassword(*RtPassword)
 		}
+		return rtDetails
 	}
-	artAuth, err := rtDetails.CreateArtAuthConfig()
+
+	sshKey, err := ioutil.ReadFile(clientutils.ReplaceTildeWithUserHome(*RtSshKeyPath))
+	if err != nil {
+		log.Error("Failed while attempting to read SSH key: " + err.Error())
+		os.Exit(1)
+	}
+
+	err = rtDetails.AuthenticateSsh(sshKey, []byte(*RtSshPassphrase))
 	if err != nil {
 		log.Error("Failed while attempting to authenticate with Artifactory: " + err.Error())
 		os.Exit(1)
 	}
-	return artAuth
+	return rtDetails
 }
 
 func artifactoryCleanUp(t *testing.T) {
@@ -147,14 +158,14 @@ func createReposIfNeeded() error {
 
 func isRepoExist(repoName string) bool {
 	artDetails := getArtDetails()
-	artHttpDetails := artDetails.CreateArtifactoryHttpClientDetails()
-	resp, _, _, err := httputils.SendGet(artDetails.Url+RepoDetailsUrl+repoName, true, artHttpDetails)
+	artHttpDetails := artDetails.CreateHttpClientDetails()
+	resp, _, _, err := httputils.SendGet(artDetails.GetUrl()+RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
-	if resp.StatusCode != 400 {
+	if resp.StatusCode != http.StatusBadRequest {
 		return true
 	}
 	return false
@@ -165,14 +176,14 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	if err != nil {
 		return err
 	}
-	artHttpDetails := getArtDetails().CreateArtifactoryHttpClientDetails()
+	artHttpDetails := getArtDetails().CreateHttpClientDetails()
 
 	artHttpDetails.Headers = map[string]string{"Content-Type": "application/json"}
 	resp, _, err := httputils.SendPut(*RtUrl+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.New("Fail to create repository. Reason local repository with key: " + repoName + " already exist\n")
 	}
 	log.Info("Repository", repoName, "was created.")

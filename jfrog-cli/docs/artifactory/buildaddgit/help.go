@@ -4,8 +4,7 @@ const Description = "Capture git revision and remote url."
 
 var Usage = []string{"jfrog rt bag [command options] <build name> <build number> [Path To .git]"}
 
-const Arguments string =
-`	build name
+const Arguments string = `	build name
 		Build name.
 
 	build number

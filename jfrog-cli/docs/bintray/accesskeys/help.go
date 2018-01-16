@@ -5,8 +5,7 @@ const Description string = "Manage Access Keys."
 var Usage = []string{"jfrog bt acc-keys [command options]",
 	"jfrog bt acc-keys [command options] <action> <key ID>"}
 
-const Arguments string =
-`	none
+const Arguments string = `	none
 		If no arguments are provided, the command provides a list of all access keys active for the subject.
 
 	action

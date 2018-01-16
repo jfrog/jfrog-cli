@@ -4,8 +4,7 @@ const Description string = "Download Version files."
 
 var Usage = []string{"jfrog rt dlv [command options] <source path> [target path]"}
 
-const Arguments string =
-`	source path
+const Arguments string = `	source path
 		The path, in Bintray, to the version whose files should be downloaded.
 		Format: subject/repository/package/version/.
 

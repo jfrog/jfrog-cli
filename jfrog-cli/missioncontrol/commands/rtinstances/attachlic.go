@@ -1,25 +1,26 @@
 package rtinstances
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"encoding/json"
-	"io/ioutil"
-	"errors"
-	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
 
 func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	prepareLicenseFile(flags.LicensePath, flags.Override)
 	postContent := utils.LicenseRequestContent{
-		Name: 	  	 instanceName,
-		NodeID:	     flags.NodeId,
-		Deploy:	     flags.Deploy}
+		Name:   instanceName,
+		NodeID: flags.NodeId,
+		Deploy: flags.Deploy}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
@@ -27,10 +28,10 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
-    if err != nil {
-        return err
-    }
-	if resp.StatusCode != 200 {
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
 		if flags.LicensePath != "" {
 			os.Remove(flags.LicensePath)
 		}
@@ -38,22 +39,22 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 	}
 	log.Debug("Mission Control response: " + resp.Status)
 	if flags.LicensePath == "" {
-	    var m Message
-	    m, err = extractJsonValue(body)
+		var m Message
+		m, err = extractJsonValue(body)
 		if err != nil {
-		    return err
+			return err
 		}
 		requestContent, err = json.Marshal(m)
 		err = errorutils.CheckError(err)
 		if err != nil {
-		    return err
+			return err
 		}
 		log.Output(string(requestContent))
 	} else {
-	    var licenseKey []byte
+		var licenseKey []byte
 		licenseKey, err = getLicenseFromJson(body)
 		if err != nil {
-		    return err
+			return err
 		}
 		err = saveLicense(flags.LicensePath, licenseKey)
 	}
@@ -61,11 +62,11 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 }
 
 func getLicenseFromJson(body []byte) (licenseKey []byte, err error) {
-    var m Message
-    m, err = extractJsonValue(body)
-    if err != nil {
-        return
-    }
+	var m Message
+	m, err = extractJsonValue(body)
+	if err != nil {
+		return
+	}
 	licenseKey = []byte(m.LicenseKey)
 	return
 }
@@ -75,7 +76,7 @@ func extractJsonValue(body []byte) (m Message, err error) {
 	err = json.Unmarshal(body, &data)
 	err = errorutils.CheckError(err)
 	if err != nil {
-	    return
+		return
 	}
 	m = data.Data
 	return
@@ -88,24 +89,24 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 	var dir bool
 	dir, err = fileutils.IsDir(filepath)
 	if err != nil {
-	    return
+		return
 	}
 	if dir {
 		err = errorutils.CheckError(errors.New(filepath + " is a directory."))
-        if err != nil {
-            return
-        }
+		if err != nil {
+			return
+		}
 	}
 	var exists bool
 	exists, err = fileutils.IsFileExists(filepath)
 	if err != nil {
-	    return
+		return
 	}
 	if !overrideFile && exists {
 		err = errorutils.CheckError(errors.New("File already exist, in case you wish to override the file use --override flag"))
-        if err != nil {
-            return
-        }
+		if err != nil {
+			return
+		}
 	}
 	_, directory := fileutils.GetFileAndDirFromPath(filepath)
 	isPathExists := fileutils.IsPathExists(directory)
@@ -128,12 +129,12 @@ func saveLicense(filepath string, content []byte) (err error) {
 
 type AttachLicFlags struct {
 	MissionControlDetails *config.MissionControlDetails
-	LicensePath 	      string
-	NodeId 			      string
-	BucketKey 			  string
-	BucketId 			  string
-	Override 			  bool
-	Deploy 			  	  bool
+	LicensePath           string
+	NodeId                string
+	BucketKey             string
+	BucketId              string
+	Override              bool
+	Deploy                bool
 }
 
 type Message struct {

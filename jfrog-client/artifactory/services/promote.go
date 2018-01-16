@@ -2,19 +2,20 @@ package services
 
 import (
 	"encoding/json"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"path"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
+	"path"
 )
 
 type PromoteService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
@@ -22,11 +23,11 @@ func NewPromotionService(client *httpclient.HttpClient) *PromoteService {
 	return &PromoteService{client: client}
 }
 
-func (ps *PromoteService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (ps *PromoteService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return ps.ArtDetails
 }
 
-func (ps *PromoteService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (ps *PromoteService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	ps.ArtDetails = rt
 }
 
@@ -41,7 +42,7 @@ func (ps *PromoteService) BuildPromote(promotionParams PromotionParams) error {
 	}
 	log.Info(message)
 
-	promoteUrl := ps.ArtDetails.Url
+	promoteUrl := ps.ArtDetails.GetUrl()
 	restApi := path.Join("api/build/promote/", promotionParams.GetBuildName(), promotionParams.GetBuildNumber())
 	requestFullUrl, err := utils.BuildArtifactoryUrl(promoteUrl, restApi, make(map[string]string))
 	if err != nil {
@@ -61,7 +62,7 @@ func (ps *PromoteService) BuildPromote(promotionParams PromotionParams) error {
 		return errorutils.CheckError(err)
 	}
 
-	httpClientsDetails := ps.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := ps.ArtDetails.CreateHttpClientDetails()
 	utils.SetContentType("application/vnd.org.jfrog.artifactory.build.PromotionRequest+json", &httpClientsDetails.Headers)
 
 	resp, body, err := ps.client.SendPost(requestFullUrl, requestContent, httpClientsDetails)
@@ -69,7 +70,7 @@ func (ps *PromoteService) BuildPromote(promotionParams PromotionParams) error {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
 

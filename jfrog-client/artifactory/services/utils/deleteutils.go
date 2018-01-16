@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"regexp"
-	"strings"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"regexp"
+	"strings"
 )
 
 func WildcardToDirsPath(deletePattern, searchResult string) (string, error) {

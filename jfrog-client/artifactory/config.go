@@ -1,12 +1,12 @@
 package artifactory
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type artifactoryServicesConfig struct {
-	*auth.ArtifactoryDetails
+	auth.ArtifactoryDetails
 	certifactesPath   string
 	dryRun            bool
 	threads           int
@@ -17,7 +17,7 @@ type artifactoryServicesConfig struct {
 }
 
 func (config *artifactoryServicesConfig) GetUrl() string {
-	return config.Url
+	return config.GetUrl()
 }
 
 func (config *artifactoryServicesConfig) IsDryRun() bool {
@@ -25,11 +25,11 @@ func (config *artifactoryServicesConfig) IsDryRun() bool {
 }
 
 func (config *artifactoryServicesConfig) GetPassword() string {
-	return config.Password
+	return config.GetPassword()
 }
 
 func (config *artifactoryServicesConfig) GetApiKey() string {
-	return config.ApiKey
+	return config.GetApiKey()
 }
 
 func (config *artifactoryServicesConfig) GetCertifactesPath() string {
@@ -51,12 +51,10 @@ func (config *artifactoryServicesConfig) GetMinChecksumDeploy() int64 {
 	return config.minChecksumDeploy
 }
 
-func (config *artifactoryServicesConfig) GetArtDetails() *auth.ArtifactoryDetails {
+func (config *artifactoryServicesConfig) GetArtDetails() auth.ArtifactoryDetails {
 	return config.ArtifactoryDetails
 }
 
 func (config *artifactoryServicesConfig) GetLogger() log.Log {
 	return config.logger
 }
-
-

@@ -7,10 +7,10 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	inputDetails := config.ArtifactoryDetails{Url:"http://localhost:8080/artifactory",
-		User:"admin", Password:"password",
-		ApiKey:"", SshKeyPath:"", ServerId:"test",
-		IsDefault:false}
+	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
+		User: "admin", Password: "password",
+		ApiKey: "", SshKeyPath: "", ServerId: "test",
+		IsDefault: false}
 	_, err := Config(&inputDetails, nil, false, false, "test")
 	if err != nil {
 		t.Error(err.Error())

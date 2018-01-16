@@ -2,19 +2,21 @@ package httputils
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/errors/httperrors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
-	"strconv"
-	"sync"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"path/filepath"
-	"encoding/base64"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 var UserAgent string
@@ -59,6 +61,14 @@ func SendHead(url string, httpClientsDetails HttpClientDetails) (resp *http.Resp
 func SendPut(url string, content []byte, httpClientsDetails HttpClientDetails) (resp *http.Response, body []byte, err error) {
 	resp, body, _, err = Send("PUT", url, content, true, true, httpClientsDetails)
 	return
+}
+
+func IsSsh(urlPath string) bool {
+	u, err := url.Parse(urlPath)
+	if err != nil {
+		return false
+	}
+	return strings.ToLower(u.Scheme) == "ssh"
 }
 
 func getHttpClient(transport *http.Transport) *http.Client {
@@ -165,14 +175,14 @@ func DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClient
 }
 
 func downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
-httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
+	httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
 	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
 	if err != nil {
 		return
 	}
 
 	defer resp.Body.Close()
-	if err = httperrors.CheckResponseStatus(resp, nil, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, nil, http.StatusOK); err != nil {
 		return
 	}
 
@@ -206,7 +216,7 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		wg.Add(1)
 		start := chunkSize * int64(i)
 		end := chunkSize * (int64(i) + 1)
-		if i == flags.SplitCount - 1 {
+		if i == flags.SplitCount-1 {
 			end += mod
 		}
 		requestClientDetails := httpClientsDetails.Clone()
@@ -263,7 +273,7 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
 	}
-	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end - 1, 10)
+	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
 
 	resp, _, err := sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
 	err = errorutils.CheckError(err)
@@ -272,9 +282,9 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	}
 	defer resp.Body.Close()
 
-	log.Debug(logMsgPrefix + "[" + strconv.Itoa(currentSplit) + "]:", resp.Status + "...")
+	log.Debug(logMsgPrefix+"["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLocalPath, 0777)
-	filePath := filepath.Join(tempLocalPath, base64.StdEncoding.EncodeToString([]byte(flags.FileName)) + "_" + strconv.Itoa(currentSplit))
+	filePath := filepath.Join(tempLocalPath, base64.StdEncoding.EncodeToString([]byte(flags.FileName))+"_"+strconv.Itoa(currentSplit))
 
 	out, err := os.Create(filePath)
 	err = errorutils.CheckError(err)
@@ -292,7 +302,7 @@ func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetai
 		return nil, err
 	}
 
-	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, body, http.StatusOK); err != nil {
 		return nil, err
 	}
 

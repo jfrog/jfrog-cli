@@ -4,15 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
-	"path/filepath"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 )
 
 const SYMLINK_FILE_CONTENT = ""
@@ -336,8 +336,8 @@ func calcChecksumDetails(filePath string) (ChecksumDetails, error) {
 }
 
 type FileDetails struct {
-	Checksum     ChecksumDetails
-	Size         int64
+	Checksum ChecksumDetails
+	Size     int64
 }
 
 type ChecksumDetails struct {

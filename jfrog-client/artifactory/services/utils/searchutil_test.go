@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"testing"
 	"strconv"
+	"testing"
 )
 
 func TestGetFullUrl(t *testing.T) {

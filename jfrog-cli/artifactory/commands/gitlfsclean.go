@@ -1,11 +1,11 @@
 package commands
 
 import (
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
@@ -34,6 +34,6 @@ func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, flags *GitLfs
 type GitLfsCleanConfiguration struct {
 	*services.GitLfsCleanParamsImpl
 	ArtDetails *config.ArtifactoryDetails
-	Quiet bool
-	DryRun bool
+	Quiet      bool
+	DryRun     bool
 }

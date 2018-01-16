@@ -4,8 +4,7 @@ const Description string = "Upload files."
 
 var Usage = []string{"jfrog bt u [command options] <source path> <target location> [target path]"}
 
-const Arguments string =
-`	source path
+const Arguments string = `	source path
 		The first argument specifies the local file system path to artifacts which should be uploaded to Bintray.
 		You can specify multiple artifacts by using wildcards or a regular expression as designated by the --regexp command option.
 		If you have specified that you are using regular expressions, then the first one used in the argument must be enclosed in parenthesis.

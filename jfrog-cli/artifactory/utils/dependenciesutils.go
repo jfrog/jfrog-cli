@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"path/filepath"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	btutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/commands"
 )
 
 // Download file from Bintray.
@@ -21,21 +23,23 @@ func DownloadFromBintray(downloadPath, filename, version, targetPath string) err
 		return nil
 	}
 
-	bintrayConfig := &config.BintrayDetails{ApiUrl: btutils.BintrayApiUrl, DownloadServerUrl: btutils.BintrayDownloadServerUrl}
-	downloadFlags := &btutils.DownloadFlags{
-		BintrayDetails:     bintrayConfig,
-		Threads:            3,
-		MinSplitSize:       5120,
-		SplitCount:         3,
-		IncludeUnpublished: false,
-		Flat:               true}
+	bintrayConfig := auth.NewBintrayDetails()
+	config := bintray.NewConfigBuilder().
+		SetBintrayDetails(bintrayConfig).
+		Build()
 
 	downloadPath = strings.Replace(downloadPath, "${version}", version, -1)
 	downloadPath = strings.Replace(downloadPath, "${filename}", filename, -1)
-	pathDetails, err := btutils.CreatePathDetails(downloadPath)
+	pathDetails, err := utils.CreatePathDetails(downloadPath)
 	if err != nil {
 		return err
 	}
-	_, _, err = commands.DownloadFile(pathDetails, targetFile, downloadFlags)
+
+	params := &services.DownloadFileParams{}
+	params.PathDetails = pathDetails
+	params.TargetPath = targetFile
+	params.Flat = true
+
+	_, _, err = commands.DownloadFile(config, params)
 	return err
 }

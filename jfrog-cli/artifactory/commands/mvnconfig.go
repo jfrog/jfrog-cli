@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"gopkg.in/yaml.v2"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"io/ioutil"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/prompt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 func CreateMvnBuildConfig(configFilePath string) error {
@@ -81,8 +81,8 @@ func CreateMvnBuildConfig(configFilePath string) error {
 
 type MavenBuildConfig struct {
 	prompt.CommonConfig `yaml:"common,inline"`
-	Resolver MavenRepos `yaml:"resolver,omitempty"`
-	Deployer MavenRepos `yaml:"deployer,omitempty"`
+	Resolver            MavenRepos `yaml:"resolver,omitempty"`
+	Deployer            MavenRepos `yaml:"deployer,omitempty"`
 }
 
 type MavenRepos struct {

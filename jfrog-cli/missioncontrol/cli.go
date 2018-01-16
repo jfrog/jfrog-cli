@@ -2,19 +2,20 @@ package missioncontrol
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
+	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/add"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/attachlic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/detachlic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/remove"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/commands/rtinstances"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/add"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/remove"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/detachlic"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/attachlic"
-	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
 )
 
 func GetCommands() []cli.Command {
@@ -185,9 +186,9 @@ func addInstance(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	addInstanceFlags, err := createAddInstanceFlag(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	rtinstances.AddInstance(c.Args()[0], addInstanceFlags)
 }
 
@@ -204,9 +205,9 @@ func removeInstance(c *cli.Context) {
 		}
 	}
 	flags, err := createRemoveInstanceFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	rtinstances.Remove(instanceName, flags)
 }
 
@@ -216,9 +217,9 @@ func attachLicense(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createAttachLicFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	rtinstances.AttachLic(c.Args()[0], flags)
 }
 
@@ -228,32 +229,32 @@ func detachLicense(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createDetachLicFlags(c)
-    if err != nil {
-        cliutils.Exit(cliutils.ExitCodeError, err.Error())
-    }
+	if err != nil {
+		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+	}
 	rtinstances.DetachLic(c.Args()[0], flags)
 }
 
 func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
-    exists, err := config.IsMissionControlConfExists()
+	exists, err := config.IsMissionControlConfExists()
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if exists {
 		return nil, nil
 	}
 	val, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 	if !val {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
 	msg := "The CLI commands require the Mission Control URL and authentication details\n" +
-	"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-	"You can also configure these parameters later using the 'config' command.\n" +
-	"Configure now?"
+		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
+		"You can also configure these parameters later using the 'config' command.\n" +
+		"Configure now?"
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
@@ -261,8 +262,8 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	}
 	details, err := createMissionControlDetails(c, false)
 	if err != nil {
-	    return nil, err
-    }
+		return nil, err
+	}
 	return commands.Config(nil, details, true)
 }
 
@@ -279,7 +280,7 @@ func configure(c *cli.Context) {
 		}
 	} else {
 		flags, err := createConfigFlags(c)
-        cliutils.ExitOnErr(err)
+		cliutils.ExitOnErr(err)
 		commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
 	}
 }
@@ -288,9 +289,9 @@ func createDetachLicFlags(c *cli.Context) (flags *rtinstances.DetachLicFlags, er
 	flags = new(rtinstances.DetachLicFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
-	    return
+		return
 	}
-	if flags.BucketId = c.String("bucket-id"); flags.BucketId == ""{
+	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
 		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
 	}
 	flags.NodeId = c.String("node-id")
@@ -301,7 +302,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	flags = new(rtinstances.AttachLicFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
-	    return
+		return
 	}
 	flags.LicensePath = c.String("license-path")
 	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeparator()) {
@@ -321,7 +322,7 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 	flags.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, false)
 	if err != nil {
-	    return
+		return
 	}
 	if !flags.Interactive && flags.MissionControlDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
@@ -333,16 +334,16 @@ func createAddInstanceFlag(c *cli.Context) (flags *rtinstances.AddInstanceFlags,
 	flags = new(rtinstances.AddInstanceFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
-	    return
+		return
 	}
 	flags.ArtifactoryInstanceDetails = new(utils.ArtifactoryInstanceDetails)
-	if flags.ArtifactoryInstanceDetails.Url = c.String("rt-url"); flags.ArtifactoryInstanceDetails.Url == ""{
+	if flags.ArtifactoryInstanceDetails.Url = c.String("rt-url"); flags.ArtifactoryInstanceDetails.Url == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --rt-url option is mandatory")
 	}
-	if flags.ArtifactoryInstanceDetails.User = c.String("rt-user"); flags.ArtifactoryInstanceDetails.User == ""{
+	if flags.ArtifactoryInstanceDetails.User = c.String("rt-user"); flags.ArtifactoryInstanceDetails.User == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --rt-user option is mandatory")
 	}
-	if flags.ArtifactoryInstanceDetails.Password = c.String("rt-password"); flags.ArtifactoryInstanceDetails.Password == ""{
+	if flags.ArtifactoryInstanceDetails.Password = c.String("rt-password"); flags.ArtifactoryInstanceDetails.Password == "" {
 		cliutils.Exit(cliutils.ExitCodeError, "The --rt-password option is mandatory")
 	}
 	flags.Description = c.String("desc")
@@ -351,22 +352,22 @@ func createAddInstanceFlag(c *cli.Context) (flags *rtinstances.AddInstanceFlags,
 }
 
 func createRemoveInstanceFlags(c *cli.Context) (flags *rtinstances.RemoveFlags, err error) {
-    details, err := createMissionControlDetails(c, true)
-    if err != nil {
-        return
-    }
+	details, err := createMissionControlDetails(c, true)
+	if err != nil {
+		return
+	}
 	flags = &rtinstances.RemoveFlags{
 		MissionControlDetails: details,
-		Interactive:		   cliutils.GetBoolFlagValue(c, "interactive", true)}
+		Interactive:           cliutils.GetBoolFlagValue(c, "interactive", true)}
 
-    return
+	return
 }
 
 func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.MissionControlDetails, error) {
 	if includeConfig {
 		details, err := offerConfig(c)
 		if err != nil {
-		    return nil, err
+			return nil, err
 		}
 		if details != nil {
 			return details, nil
@@ -380,9 +381,9 @@ func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.Mi
 	if includeConfig {
 		if details.Url == "" || details.User == "" || details.Password == "" {
 			confDetails, err := commands.GetConfig()
-            if err != nil {
-                return nil, err
-            }
+			if err != nil {
+				return nil, err
+			}
 			if details.Url == "" {
 				details.Url = confDetails.Url
 			}
@@ -394,7 +395,6 @@ func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.Mi
 			}
 		}
 	}
-	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
+	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	return details, nil
 }
-

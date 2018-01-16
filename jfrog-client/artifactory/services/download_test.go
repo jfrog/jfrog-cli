@@ -1,14 +1,14 @@
 package services
 
 import (
-	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"io/ioutil"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"testing"
 )
 
 func TestArtifactoryDownload(t *testing.T) {

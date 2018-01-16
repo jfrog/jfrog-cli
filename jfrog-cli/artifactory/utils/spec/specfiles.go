@@ -1,14 +1,14 @@
 package spec
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"encoding/json"
-	"fmt"
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
@@ -57,7 +57,7 @@ type File struct {
 	Pattern         string
 	ExcludePatterns []string
 	Target          string
-	Explode			string
+	Explode         string
 	Props           string
 	SortOrder       string
 	SortBy          []string
@@ -71,29 +71,29 @@ type File struct {
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
-	return cliutils.StringToBool(f.Flat, defaultValue)
+	return clientutils.StringToBool(f.Flat, defaultValue)
 }
 
 func (f File) IsExplode(defaultValue bool) (bool, error) {
-	return cliutils.StringToBool(f.Explode, defaultValue)
+	return clientutils.StringToBool(f.Explode, defaultValue)
 }
 
 func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
 
-	recursive, err := cliutils.StringToBool(f.Recursive, true)
+	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
 	}
 	params.Recursive = recursive
 
-	regexp, err := cliutils.StringToBool(f.Regexp, false)
+	regexp, err := clientutils.StringToBool(f.Regexp, false)
 	if err != nil {
 		return nil, err
 	}
 	params.Regexp = regexp
 
-	includeDirs, err := cliutils.StringToBool(f.IncludeDirs, false)
+	includeDirs, err := clientutils.StringToBool(f.IncludeDirs, false)
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +103,13 @@ func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error
 
 func (f *File) ToArtifatoryDownloadParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
-	recursive, err := cliutils.StringToBool(f.Recursive, true)
+	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
 	}
 	params.Recursive = recursive
 
-	includeDirs, err := cliutils.StringToBool(f.IncludeDirs, false)
+	includeDirs, err := clientutils.StringToBool(f.IncludeDirs, false)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (f *File) ToArtifatoryDownloadParams() (*utils.ArtifactoryCommonParams, err
 
 func (f *File) ToArtifatoryDeleteParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
-	recursive, err := cliutils.StringToBool(f.Recursive, true)
+	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (f *File) ToArtifatoryDeleteParams() (*utils.ArtifactoryCommonParams, error
 
 func (f *File) ToArtifatorySearchParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
-	recursive, err := cliutils.StringToBool(f.Recursive, true)
+	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (f *File) ToArtifatorySearchParams() (*utils.ArtifactoryCommonParams, error
 
 func (f *File) ToArtifatoryMoveCopyParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
-	recursive, err := cliutils.StringToBool(f.Recursive, true)
+	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +150,12 @@ func (f *File) ToArtifatoryMoveCopyParams() (*utils.ArtifactoryCommonParams, err
 
 func (f *File) ToArtifatorySetPropsParams() (*utils.ArtifactoryCommonParams, error) {
 	params := f.toArtifactoryCommonParams()
-	recursive, err := cliutils.StringToBool(f.Recursive, false)
+	recursive, err := clientutils.StringToBool(f.Recursive, false)
 	if err != nil {
 		return nil, err
 	}
 	params.Recursive = recursive
-	params.IncludeDirs, err = cliutils.StringToBool(f.IncludeDirs, false)
+	params.IncludeDirs, err = clientutils.StringToBool(f.IncludeDirs, false)
 	if err != nil {
 		return nil, err
 	}

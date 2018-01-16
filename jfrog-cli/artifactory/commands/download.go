@@ -1,17 +1,17 @@
 package commands
 
 import (
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
-	"errors"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"strconv"
 )
 
 func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, int, error) {
@@ -115,17 +115,17 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
+	serviceConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetSplitCount(flags.SplitCount).
 		SetMinSplitSize(flags.MinSplitSize).
-		SetNumOfThreadPerOperation(flags.Threads).
+		SetThreads(flags.Threads).
 		SetLogger(log.Logger).
 		Build()
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.NewArtifactoryService(serviceConfig)
+	return artifactory.New(serviceConfig)
 }

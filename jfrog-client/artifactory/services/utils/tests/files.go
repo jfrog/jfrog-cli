@@ -1,9 +1,9 @@
 package tests
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"io/ioutil"
 )
 
 func CreateFileWithContent(fileName, relativePath string) (string, string, error) {

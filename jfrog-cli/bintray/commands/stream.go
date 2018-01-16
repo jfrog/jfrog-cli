@@ -1,14 +1,13 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/helpers"
 	"fmt"
-	"time"
-	"net/http"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/helpers"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/auth"
 	"io"
+	"net/http"
 	"strings"
+	"time"
 )
 
 const streamUrl = "%vstream/%v"
@@ -67,15 +66,16 @@ func buildIncludeFilterMap(filterPattern string) map[string]struct{} {
 	}
 	return result
 }
+
 func createStreamManager(streamDetails *StreamDetails) *helpers.StreamManager {
 	return &helpers.StreamManager{
-		Url: fmt.Sprintf(streamUrl, streamDetails.BintrayDetails.ApiUrl, streamDetails.Subject),
-		HttpClientDetails: utils.GetBintrayHttpClientDetails(streamDetails.BintrayDetails),
-		IncludeFilter: buildIncludeFilterMap(streamDetails.Include)}
+		Url:               fmt.Sprintf(streamUrl, streamDetails.BintrayDetails.GetApiUrl(), streamDetails.Subject),
+		HttpClientDetails: streamDetails.BintrayDetails.CreateHttpClientDetails(),
+		IncludeFilter:     buildIncludeFilterMap(streamDetails.Include)}
 }
 
 type StreamDetails struct {
-	BintrayDetails *config.BintrayDetails
+	BintrayDetails auth.BintrayDetails
 	Subject        string
 	Include        string
 }

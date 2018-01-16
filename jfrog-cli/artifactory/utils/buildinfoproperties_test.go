@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/spf13/viper"
 	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"testing"
 )
 
 func TestCreateDefaultPropertiesFile(t *testing.T) {

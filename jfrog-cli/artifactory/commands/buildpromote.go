@@ -17,5 +17,5 @@ func BuildPromote(flags *BuildPromotionConfiguration) error {
 type BuildPromotionConfiguration struct {
 	*services.PromotionParamsImpl
 	ArtDetails *config.ArtifactoryDetails
-	DryRun bool
+	DryRun     bool
 }

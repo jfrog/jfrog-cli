@@ -1,20 +1,21 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
 )
 
 func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
-shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
+	shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 	if details == nil {
 		details = new(config.ArtifactoryDetails)
 	}
@@ -38,7 +39,7 @@ shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
 		return nil, err
 	}
 
-	details.Url = cliutils.AddTrailingSlashIfNeeded(details.Url)
+	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
 		details, err = EncryptPassword(details)
 		if err != nil {
@@ -106,7 +107,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 	if details.Url == "" {
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 	}
-	if details.IsSsh() {
+	if httputils.IsSsh(details.Url) {
 		useAgentPrompt := &prompt.YesNo{
 			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
 			Label:   "useSshAgent",
@@ -276,7 +277,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", details.IsSsh()}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", httputils.IsSsh(details.Url)}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
 	}

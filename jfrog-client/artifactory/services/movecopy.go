@@ -1,17 +1,19 @@
 package services
 
 import (
-	"strings"
-	"strconv"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
+	"path"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -22,18 +24,18 @@ const (
 type MoveCopyService struct {
 	moveType   MoveType
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 }
 
 func NewMoveCopyService(client *httpclient.HttpClient, moveType MoveType) *MoveCopyService {
 	return &MoveCopyService{moveType: moveType, client: client}
 }
 
-func (mc *MoveCopyService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (mc *MoveCopyService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return mc.ArtDetails
 }
 
-func (mc *MoveCopyService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (mc *MoveCopyService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	mc.ArtDetails = rt
 }
 
@@ -140,24 +142,24 @@ func (mc *MoveCopyService) moveFile(sourcePath, destPath string) (bool, error) {
 
 	log.Info(message)
 
-	moveUrl := mc.GetArtifactoryDetails().Url
-	restApi := "api/" + string(mc.moveType) + "/" + sourcePath
+	moveUrl := mc.GetArtifactoryDetails().GetUrl()
+	restApi := path.Join("api", string(mc.moveType), sourcePath)
 	requestFullUrl, err := utils.BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
 	if err != nil {
 		return false, err
 	}
-	httpClientsDetails := mc.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := mc.GetArtifactoryDetails().CreateHttpClientDetails()
 	resp, body, err := httputils.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		log.Error("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
-	return resp.StatusCode == 200, nil
+	return resp.StatusCode == http.StatusOK, nil
 }
 
 // Create destPath in Artifactory
@@ -171,23 +173,23 @@ func (mc *MoveCopyService) createPathForMoveAction(destPath string) (bool, error
 }
 
 func createPathInArtifactory(destPath string, conf utils.CommonConf) (bool, error) {
-	rtUrl := conf.GetArtifactoryDetails().Url
+	rtUrl := conf.GetArtifactoryDetails().GetUrl()
 	requestFullUrl, err := utils.BuildArtifactoryUrl(rtUrl, destPath, map[string]string{})
 	if err != nil {
 		return false, err
 	}
-	httpClientsDetails := conf.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := conf.GetArtifactoryDetails().CreateHttpClientDetails()
 	resp, body, err := httputils.SendPut(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
 
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		log.Error("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
-	return resp.StatusCode == 200, nil
+	return resp.StatusCode == http.StatusOK, nil
 }
 
 var moveMsgs = map[MoveType]MoveOptions{

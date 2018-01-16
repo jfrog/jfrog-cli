@@ -2,20 +2,21 @@ package services
 
 import (
 	"encoding/json"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"path"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
+	"path"
+	"strings"
 )
 
 type DistributeService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
@@ -23,11 +24,11 @@ func NewDistributionService(client *httpclient.HttpClient) *DistributeService {
 	return &DistributeService{client: client}
 }
 
-func (ds *DistributeService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (ds *DistributeService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return ds.ArtDetails
 }
 
-func (ds *DistributeService) SetArtifactoryDetails(artDetails *auth.ArtifactoryDetails) {
+func (ds *DistributeService) SetArtifactoryDetails(artDetails auth.ArtifactoryDetails) {
 	ds.ArtDetails = artDetails
 }
 
@@ -43,7 +44,7 @@ func (ds *DistributeService) BuildDistribute(params BuildDistributionParams) err
 	message := "Distributing build..."
 	log.Info(dryRun + message)
 
-	distributeUrl := ds.ArtDetails.Url
+	distributeUrl := ds.ArtDetails.GetUrl()
 	restApi := path.Join("api/build/distribute/", params.GetBuildName(), params.GetBuildNumber())
 	requestFullUrl, err := utils.BuildArtifactoryUrl(distributeUrl, restApi, make(map[string]string))
 	if err != nil {
@@ -63,14 +64,14 @@ func (ds *DistributeService) BuildDistribute(params BuildDistributionParams) err
 		return errorutils.CheckError(err)
 	}
 
-	httpClientsDetails := ds.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := ds.GetArtifactoryDetails().CreateHttpClientDetails()
 	utils.SetContentType("application/json", &httpClientsDetails.Headers)
 
 	resp, body, err := ds.client.SendPost(requestFullUrl, requestContent, httpClientsDetails)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
 

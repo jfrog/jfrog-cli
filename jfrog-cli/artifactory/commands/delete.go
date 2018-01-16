@@ -1,11 +1,11 @@
 package commands
 
 import (
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )
 
 func Delete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) (successCount, failedCount int, err error) {

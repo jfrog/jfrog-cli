@@ -1,20 +1,21 @@
 package main
 
 import (
-	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"path"
-	"io/ioutil"
 	"encoding/json"
-	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path"
 	"path/filepath"
+	"strconv"
+	"testing"
 )
 
 var bintrayConfig *config.BintrayDetails
@@ -29,7 +30,7 @@ func InitBintrayTests() {
 	initBintrayOrg()
 	deleteBintrayRepo()
 	createBintrayRepo()
-	bintrayCli = tests.NewJfrogCli(main, "jfrog bt", "--user=" + bintrayConfig.User + " --key=" + bintrayConfig.Key)
+	bintrayCli = tests.NewJfrogCli(main, "jfrog bt", "--user="+bintrayConfig.User+" --key="+bintrayConfig.Key)
 }
 
 func initBintrayOrg() {
@@ -85,12 +86,12 @@ func TestBintraySimpleUpload(t *testing.T) {
 
 	//Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
-		Repo:       tests.BintrayRepo1,
-		Path:       path + fileName,
-		Package:    packageName,
-		Name:       fileName,
-		Version:    "1.0",
-		Sha1:       "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
+		Repo:    tests.BintrayRepo1,
+		Path:    path + fileName,
+		Package: packageName,
+		Name:    fileName,
+		Version: "1.0",
+		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -113,12 +114,12 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 
 	//Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
-		Repo:       tests.BintrayRepo1,
-		Path:       fileName,
-		Package:    packageName,
-		Name:       fileName,
-		Version:    "1.0",
-		Sha1:       "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
+		Repo:    tests.BintrayRepo1,
+		Path:    fileName,
+		Package: packageName,
+		Name:    fileName,
+		Version: "1.0",
+		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -147,12 +148,12 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 
 	//Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
-		Repo:       tests.BintrayRepo1,
-		Path:       filename,
-		Package:    packageName,
-		Name:       filename,
-		Version:    "1.0",
-		Sha1:       "8f93542443e98f41fe98e97d6d2a147193b1b005"}}
+		Repo:    tests.BintrayRepo1,
+		Path:    filename,
+		Package: packageName,
+		Name:    filename,
+		Version: "1.0",
+		Sha1:    "8f93542443e98f41fe98e97d6d2a147193b1b005"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
 	os.Remove(testFileAbs)
@@ -167,9 +168,9 @@ func TestBintrayUploadOverride(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true", "--recursive=false", "--publish=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/*", versionPath, "--flat=true", "--recursive=false", "--publish=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/b/b1.in", versionPath, "a1.in", "--flat=true", "--recursive=false", "--override=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/b/b1.in", versionPath, "a1.in", "--flat=true", "--recursive=false", "--override=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursiveModified, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -198,7 +199,7 @@ func TestBintrayLogs(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true --publish=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/*", versionPath, "--flat=true --recursive=true --publish=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("logs", packagePath)
 
@@ -213,15 +214,15 @@ func TestBintrayFileDownloads(t *testing.T) {
 	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/a1.in", versionPath, "--flat=false")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/*", versionPath, "--flat=true --recursive=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/a1.in", versionPath, "--flat=false")
 
-	bintrayCli.Exec("download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath + "/" + tests.GetTestResourcesPath()[1:] + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath+"/a1.in", tests.Out+"/bintray/", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath+"/b1.in", tests.Out+"/bintray/x.in", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath+"/(c)1.in", tests.Out+"/bintray/z{1}.in", "--unpublished=true")
+	bintrayCli.Exec("download-file", repositoryPath+"/"+tests.GetTestResourcesPath()[1:]+"(a)/a1.in", tests.Out+"/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
 	expected := []string{
 		filepath.Join(tests.Out, "bintray", "a1.in"),
 		filepath.Join(tests.Out, "bintray", "x.in"),
@@ -241,10 +242,10 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + "a/*", versionPath, "--flat=true --recursive=true")
-	bintrayCli.Exec("download-ver", versionPath, tests.Out + "/bintray/", "--unpublished=true")
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+"a/*", versionPath, "--flat=true --recursive=true")
+	bintrayCli.Exec("download-ver", versionPath, tests.Out+"/bintray/", "--unpublished=true")
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + "/bintray/", false)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
 	expected := []string{
 		filepath.Join(tests.Out, "bintray", "a1.in"),
 		filepath.Join(tests.Out, "bintray", "a2.in"),
@@ -306,8 +307,8 @@ func initBintrayCredentials() {
 		downloadServerUrl = "https://dl.bintray.com/"
 	}
 
-	apiUrl = cliutils.AddTrailingSlashIfNeeded(apiUrl)
-	downloadServerUrl = cliutils.AddTrailingSlashIfNeeded(downloadServerUrl)
+	apiUrl = utils.AddTrailingSlashIfNeeded(apiUrl)
+	downloadServerUrl = utils.AddTrailingSlashIfNeeded(downloadServerUrl)
 
 	bintrayConfig.ApiUrl = apiUrl
 	bintrayConfig.DownloadServerUrl = downloadServerUrl
@@ -322,7 +323,7 @@ func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.Pac
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath() + relPath, versionPath, flags)
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+relPath, versionPath, flags)
 	assertPackageFiles(expected, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 }
@@ -330,15 +331,15 @@ func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.Pac
 func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 	apiUrl := bintrayConfig.ApiUrl + path.Join("packages", bintrayOrganization, tests.BintrayRepo1, packageName, "files?include_unpublished=1")
 	clientDetails := httputils.HttpClientDetails{
-		User:       bintrayConfig.User,
-		Password:   bintrayConfig.Key,
-		Headers:    map[string]string{"Content-Type": "application/json"}}
+		User:     bintrayConfig.User,
+		Password: bintrayConfig.Key,
+		Headers:  map[string]string{"Content-Type": "application/json"}}
 
 	resp, body, _, err := httputils.SendGet(apiUrl, true, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)
@@ -398,16 +399,16 @@ func createBintrayRepo() {
 
 	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayOrganization, tests.BintrayRepo1)
 	clientDetails := httputils.HttpClientDetails{
-		User:       bintrayConfig.User,
-		Password:   bintrayConfig.Key,
-		Headers:    map[string]string{"Content-Type": "application/json"}}
+		User:     bintrayConfig.User,
+		Password: bintrayConfig.Key,
+		Headers:  map[string]string{"Content-Type": "application/json"}}
 
 	resp, body, err := httputils.SendPost(apiUrl, content, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
 
-	if resp.StatusCode != 200 && resp.StatusCode != 201 && resp.StatusCode != 409 {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)
@@ -417,9 +418,9 @@ func createBintrayRepo() {
 func deleteBintrayRepo() {
 	apiUrl := bintrayConfig.ApiUrl + path.Join("repos", bintrayOrganization, tests.BintrayRepo1)
 	clientDetails := httputils.HttpClientDetails{
-		User:       bintrayConfig.User,
-		Password:   bintrayConfig.Key,
-		Headers:    map[string]string{"Content-Type": "application/json"}}
+		User:     bintrayConfig.User,
+		Password: bintrayConfig.Key,
+		Headers:  map[string]string{"Content-Type": "application/json"}}
 
 	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
 	if errorutils.CheckError(err) != nil {
@@ -427,11 +428,9 @@ func deleteBintrayRepo() {
 		os.Exit(1)
 	}
 
-	if resp.StatusCode != 200 && resp.StatusCode != 404 {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 		log.Error(resp.Status)
 		log.Error(string(body))
 		os.Exit(1)
 	}
 }
-
-

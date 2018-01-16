@@ -1,26 +1,26 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"encoding/json"
+	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"net/url"
 	"os"
-	"errors"
 	"strings"
-	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"sync"
 )
 
 const ARTIFACTORY_SYMLINK = "symlink.dest"
 const SYMLINK_SHA1 = "symlink.destsha1"
 
-func UploadFile(f *os.File, url string, artifactoryDetails *auth.ArtifactoryDetails, details *fileutils.FileDetails,
+func UploadFile(f *os.File, url string, artifactoryDetails auth.ArtifactoryDetails, details *fileutils.FileDetails,
 	httpClientsDetails httputils.HttpClientDetails, client *httpclient.HttpClient) (*http.Response, []byte, error) {
 	var err error
 	if details == nil {
@@ -46,7 +46,7 @@ func AddChecksumHeaders(headers map[string]string, fileDetails *fileutils.FileDe
 	}
 }
 
-func AddAuthHeaders(headers map[string]string, artifactoryDetails *auth.ArtifactoryDetails) {
+func AddAuthHeaders(headers map[string]string, artifactoryDetails auth.ArtifactoryDetails) {
 	if headers == nil {
 		headers = make(map[string]string)
 	}
@@ -175,20 +175,20 @@ type build struct {
 }
 
 func getBuildNumberFromArtifactory(buildName, buildNumber string, flags CommonConf) (string, string, error) {
-	restUrl := flags.GetArtifactoryDetails().Url + "api/build/patternArtifacts"
+	restUrl := flags.GetArtifactoryDetails().GetUrl() + "api/build/patternArtifacts"
 	body, err := createBodyForLatestBuildRequest(buildName, buildNumber)
 	if err != nil {
 		return "", "", err
 	}
 	log.Debug("Getting build name and number from Artifactory: " + buildName + ", " + buildNumber)
-	httpClientsDetails := flags.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := flags.GetArtifactoryDetails().CreateHttpClientDetails()
 	SetContentType("application/json", &httpClientsDetails.Headers)
 	log.Debug("Sending post request to: " + restUrl + ", with the following body: " + string(body))
 	resp, body, err := httputils.SendPost(restUrl, body, httpClientsDetails)
 	if err != nil {
 		return "", "", err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return "", "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + utils.IndentJson(body)))
 	}
 	log.Debug("Artifactory response: ", resp.Status)
@@ -356,22 +356,22 @@ func filterBuildAqlSearchResults(itemsToFilter *[]ResultItem, buildArtifactsSha 
 }
 
 type CommonConf interface {
-	GetArtifactoryDetails() *auth.ArtifactoryDetails
-	SetArtifactoryDetails(rt *auth.ArtifactoryDetails)
+	GetArtifactoryDetails() auth.ArtifactoryDetails
+	SetArtifactoryDetails(rt auth.ArtifactoryDetails)
 	GetJfrogHttpClient() *httpclient.HttpClient
 	IsDryRun() bool
 }
 
 type CommonConfImpl struct {
-	artDetails *auth.ArtifactoryDetails
+	artDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
-func (flags *CommonConfImpl) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (flags *CommonConfImpl) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return flags.artDetails
 }
 
-func (flags *CommonConfImpl) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (flags *CommonConfImpl) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	flags.artDetails = rt
 }
 

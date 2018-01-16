@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"testing"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"path/filepath"
+	"testing"
 )
 
 func TestGetHomeDir(t *testing.T) {

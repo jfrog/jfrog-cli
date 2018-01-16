@@ -1,12 +1,21 @@
 package artifactory
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-type ArtifactoryServicesConfigBuilder struct {
-	*auth.ArtifactoryDetails
+func NewConfigBuilder() *artifactoryServicesConfigBuilder {
+	configBuilder := &artifactoryServicesConfigBuilder{}
+	configBuilder.threads = 3
+	configBuilder.minChecksumDeploy = 10240
+	configBuilder.splitCount = 3
+	configBuilder.minSplitSize = 5120
+	return configBuilder
+}
+
+type artifactoryServicesConfigBuilder struct {
+	auth.ArtifactoryDetails
 	certifactesPath   string
 	threads           int
 	minSplitSize      int64
@@ -16,57 +25,46 @@ type ArtifactoryServicesConfigBuilder struct {
 	logger            log.Log
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetArtDetails(artDetails *auth.ArtifactoryDetails) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetArtDetails(artDetails auth.ArtifactoryDetails) *artifactoryServicesConfigBuilder {
 	builder.ArtifactoryDetails = artDetails
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetCertificatesPath(certificatesPath string) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetCertificatesPath(certificatesPath string) *artifactoryServicesConfigBuilder {
 	builder.certifactesPath = certificatesPath
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetNumOfThreadPerOperation(threads int) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetThreads(threads int) *artifactoryServicesConfigBuilder {
 	builder.threads = threads
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetMinSplitSize(splitSize int64) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetMinSplitSize(splitSize int64) *artifactoryServicesConfigBuilder {
 	builder.minSplitSize = splitSize
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetSplitCount(splitCount int) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetSplitCount(splitCount int) *artifactoryServicesConfigBuilder {
 	builder.splitCount = splitCount
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetMinChecksumDeploy(minChecksumDeploy int64) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetMinChecksumDeploy(minChecksumDeploy int64) *artifactoryServicesConfigBuilder {
 	builder.minChecksumDeploy = minChecksumDeploy
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetDryRun(dryRun bool) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetDryRun(dryRun bool) *artifactoryServicesConfigBuilder {
 	builder.isDryRun = dryRun
 	return builder
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) Build() (ArtifactoryConfig, error) {
+func (builder *artifactoryServicesConfigBuilder) Build() (Config, error) {
 	c := &artifactoryServicesConfig{}
 	c.ArtifactoryDetails = builder.ArtifactoryDetails
-
-	if builder.threads == 0 {
-		c.threads = 3
-	} else {
-		c.threads = builder.threads
-	}
-
-	if builder.minChecksumDeploy == 0 {
-		c.minChecksumDeploy = 10240
-	} else {
-		c.minChecksumDeploy = builder.minChecksumDeploy
-	}
-
+	c.threads = builder.threads
+	c.minChecksumDeploy = builder.minChecksumDeploy
 	c.minSplitSize = builder.minSplitSize
 	c.splitCount = builder.splitCount
 	c.logger = builder.logger
@@ -75,7 +73,7 @@ func (builder *ArtifactoryServicesConfigBuilder) Build() (ArtifactoryConfig, err
 	return c, nil
 }
 
-func (builder *ArtifactoryServicesConfigBuilder) SetLogger(logger log.Log) *ArtifactoryServicesConfigBuilder {
+func (builder *artifactoryServicesConfigBuilder) SetLogger(logger log.Log) *artifactoryServicesConfigBuilder {
 	builder.logger = logger
 	return builder
 }

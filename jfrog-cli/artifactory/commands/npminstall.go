@@ -1,29 +1,30 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	serviceutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"os/exec"
-	"errors"
-	"os"
-	"path/filepath"
-	"io/ioutil"
 	"encoding/json"
-	"strings"
+	"errors"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/buger/jsonparser"
 	"github.com/jfrogdev/gofrog/parallel"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	cliutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/mattn/go-shellwords"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	serviceutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	cliutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/version"
+	"github.com/mattn/go-shellwords"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 const npmrcFileName = ".npmrc"
@@ -107,11 +108,11 @@ func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error)
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 
-	if err = utils.CheckIfRepoExists(repo, npmi.artDetails); err!= nil {
+	if err = utils.CheckIfRepoExists(repo, npmi.artDetails); err != nil {
 		return err
 	}
 
-	npmi.registry = getNpmRepositoryUrl(repo, npmi.artDetails.Url)
+	npmi.registry = getNpmRepositoryUrl(repo, npmi.artDetails.GetUrl())
 	return nil
 }
 
@@ -478,7 +479,7 @@ func (npmi *npmInstall) setArtifactoryAuth() error {
 	if err != nil {
 		return err
 	}
-	if authArtDetails.SshAuthHeaders != nil {
+	if authArtDetails.GetSshAuthHeaders() != nil {
 		return errorutils.CheckError(errors.New("SSH authentication is not supported in this command."))
 	}
 	npmi.artDetails = authArtDetails
@@ -511,16 +512,16 @@ func (npmi *npmInstall) setNpmExecutable() error {
 	return nil
 }
 
-func getArtifactoryDetails(artDetails *auth.ArtifactoryDetails) (body []byte, artifactoryVersion string, err error) {
-	authApiUrl := artDetails.Url + "api/npm/auth"
+func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (body []byte, artifactoryVersion string, err error) {
+	authApiUrl := artDetails.GetUrl() + "api/npm/auth"
 	log.Debug("Sending npm auth request")
 	client := httpclient.NewDefaultHttpClient()
-	resp, body, _, err := client.SendGet(authApiUrl, true, artDetails.CreateArtifactoryHttpClientDetails())
+	resp, body, _, err := client.SendGet(authApiUrl, true, artDetails.CreateHttpClientDetails())
 	if err != nil {
 		return nil, "", err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
@@ -580,7 +581,7 @@ type npmInstall struct {
 	collectBuildInfo bool
 	dependencies     map[string]*dependency
 	typeRestriction  string
-	artDetails       *auth.ArtifactoryDetails
+	artDetails       auth.ArtifactoryDetails
 	packageInfo      *npm.PackageInfo
 }
 

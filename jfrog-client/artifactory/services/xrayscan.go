@@ -2,15 +2,15 @@ package services
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"net/http"
-	"errors"
 	"time"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 )
 
 const SCAN_BUILD_API_URL = "api/xray/scanBuild"
@@ -22,23 +22,23 @@ const XRAY_FATAL_FAIL_STATUS = -1
 
 type XrayScanService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 }
 
 func NewXrayScanService(client *httpclient.HttpClient) *XrayScanService {
 	return &XrayScanService{client: client}
 }
 
-func (ps *XrayScanService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (ps *XrayScanService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return ps.ArtDetails
 }
 
-func (ps *XrayScanService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (ps *XrayScanService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	ps.ArtDetails = rt
 }
 
 func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) {
-	url := ps.ArtDetails.Url
+	url := ps.ArtDetails.GetUrl()
 	requestFullUrl, err := utils.BuildArtifactoryUrl(url, SCAN_BUILD_API_URL, make(map[string]string))
 	if err != nil {
 		return []byte{}, err
@@ -46,7 +46,7 @@ func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) 
 	data := XrayScanBody{
 		BuildName:   scanParams.GetBuildName(),
 		BuildNumber: scanParams.GetBuildNumber(),
-		Context:     cliutils.CliAgent,
+		Context:     clientutils.ClientAgent,
 	}
 
 	requestContent, err := json.Marshal(data)
@@ -54,7 +54,7 @@ func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) 
 		return []byte{}, errorutils.CheckError(err)
 	}
 
-	httpClientsDetails := ps.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := ps.ArtDetails.CreateHttpClientDetails()
 	utils.SetContentType("application/json", &httpClientsDetails.Headers)
 
 	connection := httputils.RetryableConnection{
@@ -113,7 +113,7 @@ func execScanRequest(url string, content []byte, httpClientsDetails httputils.Ht
 		return resp, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		err = errorutils.CheckError(errors.New("Artifactory Response: " + resp.Status))
 	}
 	return resp, err

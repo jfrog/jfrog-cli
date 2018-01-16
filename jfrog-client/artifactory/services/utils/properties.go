@@ -11,7 +11,7 @@ type PropertyParseOptions int
 
 const (
 	// Parsing properties l
-	SplitCommas  PropertyParseOptions = iota
+	SplitCommas PropertyParseOptions = iota
 	JoinCommas
 )
 

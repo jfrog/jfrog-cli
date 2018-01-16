@@ -2,10 +2,10 @@ package commands
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 )
 
 func BuildCollectEnv(buildName, buildNumber string) error {

@@ -3,18 +3,77 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
-	"regexp"
-	"strconv"
-	"runtime"
-	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"os"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
 )
 
-func MergeMaps(src map[string]string, dst map[string]string) {
-	for k, v := range src {
-		dst[k] = v
+const ClientAgent = "jfrog-cli-go"
+
+func GetVersion() string {
+	return "1.11.0"
+}
+
+// Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
+func GetRootPathForUpload(path string, useRegExp bool) string {
+	// The first step is to split the local path pattern into sections, by the file seperator.
+	seperator := "/"
+	sections := strings.Split(path, seperator)
+	if len(sections) == 1 {
+		seperator = "\\"
+		sections = strings.Split(path, seperator)
 	}
+
+	// Now we start building the root path, making sure to leave out the sub-directory that includes the pattern.
+	rootPath := ""
+	for _, section := range sections {
+		if section == "" {
+			continue
+		}
+		if useRegExp {
+			if strings.Index(section, "(") != -1 {
+				break
+			}
+		} else {
+			if strings.Index(section, "*") != -1 {
+				break
+			}
+		}
+		if rootPath != "" {
+			rootPath += seperator
+		}
+		if section == "~" {
+			rootPath += GetUserHomeDir()
+		} else {
+			rootPath += section
+		}
+	}
+	if len(sections) > 0 && sections[0] == "" {
+		rootPath = seperator + rootPath
+	}
+	if rootPath == "" {
+		return "."
+	}
+	return rootPath
+}
+
+func StringToBool(boolVal string, defaultValue bool) (bool, error) {
+	if len(boolVal) > 0 {
+		result, err := strconv.ParseBool(boolVal)
+		errorutils.CheckError(err)
+		return result, err
+	}
+	return defaultValue, nil
+}
+
+func AddTrailingSlashIfNeeded(url string) string {
+	if url != "" && !strings.HasSuffix(url, "/") {
+		url += "/"
+	}
+	return url
 }
 
 func IndentJson(jsonStr []byte) string {
@@ -24,6 +83,37 @@ func IndentJson(jsonStr []byte) string {
 		return content.String()
 	}
 	return string(jsonStr)
+}
+
+func MergeMaps(src map[string]string, dst map[string]string) {
+	for k, v := range src {
+		dst[k] = v
+	}
+}
+
+func CopyMap(src map[string]string) (dst map[string]string) {
+	if dst == nil {
+		dst = make(map[string]string)
+	}
+	for k, v := range src {
+		dst[k] = v
+	}
+	return
+}
+
+func PrepareLocalPathForUpload(localPath string, useRegExp bool) string {
+	if localPath == "./" || localPath == ".\\" {
+		return "^.*$"
+	}
+	if strings.HasPrefix(localPath, "./") {
+		localPath = localPath[2:]
+	} else if strings.HasPrefix(localPath, ".\\") {
+		localPath = localPath[3:]
+	}
+	if !useRegExp {
+		localPath = PathToRegExp(localPath)
+	}
+	return localPath
 }
 
 func PathToRegExp(localPath string) string {

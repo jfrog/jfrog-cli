@@ -1,18 +1,19 @@
 package services
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
 )
 
 type DeleteService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
@@ -20,11 +21,11 @@ func NewDeleteService(client *httpclient.HttpClient) *DeleteService {
 	return &DeleteService{client: client}
 }
 
-func (ds *DeleteService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (ds *DeleteService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return ds.ArtDetails
 }
 
-func (ds *DeleteService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (ds *DeleteService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	ds.ArtDetails = rt
 }
 
@@ -64,7 +65,7 @@ func (ds *DeleteService) GetPathsToDelete(deleteParams DeleteParams) (resultItem
 func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.CommonConf) (int, error) {
 	deletedCount := 0
 	for _, v := range deleteItems {
-		fileUrl, err := utils.BuildArtifactoryUrl(conf.GetArtifactoryDetails().Url, v.GetItemRelativePath(), make(map[string]string))
+		fileUrl, err := utils.BuildArtifactoryUrl(conf.GetArtifactoryDetails().GetUrl(), v.GetItemRelativePath(), make(map[string]string))
 		if err != nil {
 			return deletedCount, err
 		}
@@ -74,13 +75,13 @@ func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.Common
 		}
 
 		log.Info("Deleting:", v.GetItemRelativePath())
-		httpClientsDetails := conf.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+		httpClientsDetails := conf.GetArtifactoryDetails().CreateHttpClientDetails()
 		resp, body, err := ds.client.SendDelete(fileUrl, nil, httpClientsDetails)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		if resp.StatusCode != 204 {
+		if resp.StatusCode != http.StatusNoContent {
 			log.Error(errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))))
 			continue
 		}
@@ -91,15 +92,15 @@ func (ds *DeleteService) DeleteFiles(deleteItems []DeleteItem, conf utils.Common
 }
 
 type DeleteConfiguration struct {
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
-func (conf *DeleteConfiguration) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (conf *DeleteConfiguration) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return conf.ArtDetails
 }
 
-func (conf *DeleteConfiguration) SetArtifactoryDetails(art *auth.ArtifactoryDetails) {
+func (conf *DeleteConfiguration) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
 	conf.ArtDetails = art
 }
 

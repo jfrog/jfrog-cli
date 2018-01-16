@@ -3,24 +3,24 @@ package commands
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
-	"golang.org/x/crypto/ssh/terminal"
-	"syscall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"golang.org/x/crypto/ssh/terminal"
+	"syscall"
 )
 
 func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*config.BintrayDetails, error) {
-    if details == nil {
-        details = new(config.BintrayDetails)
-    }
+	if details == nil {
+		details = new(config.BintrayDetails)
+	}
 	if interactive {
-	    if defaultDetails == nil {
-	        var err error
-            defaultDetails, err = config.ReadBintrayConf()
+		if defaultDetails == nil {
+			var err error
+			defaultDetails, err = config.ReadBintrayConf()
 			if err != nil {
-			    return nil, err
+				return nil, err
 			}
-	    }
+		}
 		if details.User == "" {
 			ioutils.ScanFromConsole("User", &details.User, defaultDetails.User)
 		}
@@ -29,16 +29,16 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*
 			byteKey, err := terminal.ReadPassword(int(syscall.Stdin))
 			err = errorutils.CheckError(err)
 			if err != nil {
-			    return nil, err
+				return nil, err
 			}
 			details.Key = string(byteKey)
 			if details.Key == "" {
 				details.Key = defaultDetails.Key
 			}
 		}
-		if details.DefPackageLicenses == "" {
+		if details.DefPackageLicense == "" {
 			ioutils.ScanFromConsole("\nDefault package licenses",
-			    &details.DefPackageLicenses, defaultDetails.DefPackageLicenses)
+				&details.DefPackageLicense, defaultDetails.DefPackageLicense)
 		}
 	}
 	err := config.SaveBintrayConf(details)
@@ -56,8 +56,8 @@ func ShowConfig() error {
 	if details.Key != "" {
 		log.Output("Key: ***")
 	}
-	if details.DefPackageLicenses != "" {
-		log.Output("Default package license: " + details.DefPackageLicenses)
+	if details.DefPackageLicense != "" {
+		log.Output("Default package license: " + details.DefPackageLicense)
 	}
 	return nil
 }

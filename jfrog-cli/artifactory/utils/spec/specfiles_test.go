@@ -1,8 +1,8 @@
 package spec
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestReplaceSpecVars(t *testing.T) {
@@ -35,7 +35,7 @@ func TestReplaceSpecVars(t *testing.T) {
 	assertVariablesMap([]byte(""), actual, t)
 }
 
-func assertVariablesMap(expected, actual []byte, t *testing.T)  {
+func assertVariablesMap(expected, actual []byte, t *testing.T) {
 	if 0 != bytes.Compare(expected, actual) {
 		t.Error("Wrong matching expected: `" + string(expected) + "` Got `" + string(actual) + "`")
 	}

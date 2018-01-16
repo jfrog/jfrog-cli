@@ -5,31 +5,31 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum/utils"
+	"hash"
 	"io"
 	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"hash"
 )
 
 type Algorithm int
 
 const (
-	MD5    Algorithm = iota
+	MD5 Algorithm = iota
 	SHA1
 	SHA256
 )
 
 var algorithmFunc = map[Algorithm](func() hash.Hash){
-	MD5:    md5.New,
-	SHA1:   sha1.New,
+	MD5:  md5.New,
+	SHA1: sha1.New,
 	// TODO - Uncomment `Sha256` population when Artifactory support Sha256 checksum validation
 	//SHA256: sha256.New,
 }
 
 // Calc all hashes at once using AsyncMultiWriter therefore the file is read only once.
 func Calc(reader io.Reader, checksumType ...Algorithm) (map[Algorithm]string, error) {
-	hashes := getChecksumByAlgorithm(checksumType ...)
+	hashes := getChecksumByAlgorithm(checksumType...)
 	var multiWriter io.Writer
 	pageSize := os.Getpagesize()
 	sizedReader := bufio.NewReaderSize(reader, pageSize)
@@ -37,7 +37,7 @@ func Calc(reader io.Reader, checksumType ...Algorithm) (map[Algorithm]string, er
 	for _, v := range hashes {
 		hashWriter = append(hashWriter, v)
 	}
-	multiWriter = utils.AsyncMultiWriter(hashWriter ...)
+	multiWriter = utils.AsyncMultiWriter(hashWriter...)
 	_, err := io.Copy(multiWriter, sizedReader)
 	if errorutils.CheckError(err) != nil {
 		return nil, err

@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
 var envVars = map[string]string{"KeY": "key_val", "INClUdEd_VaR": "included_var", "EXCLUDED_pASSwoRd_var": "excluded_var"}

@@ -1,13 +1,13 @@
 package httputils
 
 import (
-	"time"
 	"bufio"
-	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"errors"
-	"io"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io"
+	"net/http"
+	"time"
 )
 
 type ConnectHandler func() (*http.Response, error)

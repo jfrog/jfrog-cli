@@ -1,13 +1,13 @@
 package npm
 
 import (
-	"path/filepath"
+	"encoding/json"
+	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
-	"encoding/json"
+	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 type PackageInfo struct {

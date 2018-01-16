@@ -2,25 +2,25 @@ package services
 
 import (
 	"fmt"
-	"net/url"
-	"os"
-	"path"
-	"regexp"
-	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	gitconfig "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"net/url"
+	"os"
+	"path"
+	"regexp"
+	"strings"
 )
 
 type GitLfsCleanService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 }
 
@@ -28,11 +28,11 @@ func NewGitLfsCleanService(client *httpclient.HttpClient) *GitLfsCleanService {
 	return &GitLfsCleanService{client: client}
 }
 
-func (glc *GitLfsCleanService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (glc *GitLfsCleanService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return glc.ArtDetails
 }
 
-func (glc *GitLfsCleanService) SetArtifactoryDetails(art *auth.ArtifactoryDetails) {
+func (glc *GitLfsCleanService) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
 	glc.ArtDetails = art
 }
 
@@ -55,7 +55,7 @@ func (glc *GitLfsCleanService) GetUnreferencedGitLfsFiles(gitLfsCleanParams GitL
 		}
 	}
 	if len(repo) <= 0 {
-		repo, err = detectRepo(gitPath, glc.ArtDetails.Url)
+		repo, err = detectRepo(gitPath, glc.ArtDetails.GetUrl())
 		if err != nil {
 			return nil, err
 		}

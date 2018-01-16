@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"io"
 	"sync"
-	"errors"
 )
 
 var ErrShortWrite = errors.New("short write")

@@ -9,7 +9,7 @@ func NewErrorsQueue(size int) *ErrorsQueue {
 	if size > 1 {
 		queueSize = size
 	}
-	return &ErrorsQueue{errorsChan:make(chan error, queueSize)}
+	return &ErrorsQueue{errorsChan: make(chan error, queueSize)}
 }
 
 func (errQueue *ErrorsQueue) AddError(err error) {

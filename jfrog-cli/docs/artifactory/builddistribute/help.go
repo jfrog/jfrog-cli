@@ -4,8 +4,7 @@ const Description = "This command is used to deploy builds from Artifactory to B
 
 var Usage = []string{"jfrog rt bd [command options] <build name> <build number> <target distribution repository>"}
 
-const Arguments string =
-`	build name
+const Arguments string = `	build name
 		Build name.
 
 	build number

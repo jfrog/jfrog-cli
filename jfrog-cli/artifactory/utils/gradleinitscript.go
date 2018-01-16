@@ -1,8 +1,6 @@
 package utils
 
-
-const GradleInitScript =
-`import org.jfrog.gradle.plugin.artifactory.ArtifactoryPlugin
+const GradleInitScript = `import org.jfrog.gradle.plugin.artifactory.ArtifactoryPlugin
 import org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask
 
 initscript {

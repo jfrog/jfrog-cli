@@ -5,8 +5,7 @@ const Description = "Upload files."
 var Usage = []string{"jfrog rt u [command options] <source pattern> <target pattern>",
 	"jfrog rt u --spec=<File Spec path> [command options]"}
 
-const Arguments string =
-`	source pattern
+const Arguments string = `	source pattern
 		Specifies the local file system path to artifacts which should be uploaded to Artifactory.
 		You can specify multiple artifacts by using wildcards or a regular expression as designated by the --regexp command option.
 		If you have specified that you are using regular expressions, then the first one used in the argument must be enclosed in parenthesis.
@@ -20,7 +19,6 @@ const Arguments string =
 		For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
 		tokens in the source path that are enclosed in parenthesis.`
 
-const EnvVar string =
-`	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
+const EnvVar string = `	JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB
 		[Default: 10]
 		Minimum file size in KB for which JFrog CLI performs checksum deploy optimization.`

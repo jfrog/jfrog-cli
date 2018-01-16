@@ -1,18 +1,19 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"encoding/json"
-	"io/ioutil"
-	"os"
 	"errors"
-	"strings"
-	"strconv"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const VULNERABILITY = "__vuln"
@@ -125,7 +126,7 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 		}
 	}
 	log.Info("Zipping files.")
-	err = fileutils.ZipFolderFiles(dataDir, filesPrefix + zipSuffix + ".zip")
+	err = fileutils.ZipFolderFiles(dataDir, filesPrefix+zipSuffix+".zip")
 	if err != nil {
 		return err
 	}
@@ -145,7 +146,7 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 		errorutils.CheckError(err)
 		return
 	}
-	if err = httperrors.CheckResponseStatus(resp, body, 200); err != nil {
+	if err = httperrors.CheckResponseStatus(resp, body, http.StatusOK); err != nil {
 		errorutils.CheckError(errors.New("Response: " + err.Error()))
 		return
 	}
@@ -169,10 +170,10 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 }
 
 type OfflineUpdatesFlags struct {
-	License   string
-	From      int64
-	To        int64
-	Version   string
+	License string
+	From    int64
+	To      int64
+	Version string
 }
 
 type FilesList struct {

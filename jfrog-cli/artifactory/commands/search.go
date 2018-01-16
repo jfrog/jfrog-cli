@@ -1,10 +1,10 @@
 package commands
 
 import (
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 

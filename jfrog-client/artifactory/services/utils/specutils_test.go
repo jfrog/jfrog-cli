@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"testing"
 	"encoding/json"
+	"testing"
 )
 
 func TestAqlUnmarshalJSON(t *testing.T) {

@@ -1,12 +1,12 @@
 package services
 
 import (
-	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"os"
 	"path/filepath"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"strings"
 	"runtime"
+	"strings"
+	"testing"
 )
 
 func TestExtractRepo(t *testing.T) {

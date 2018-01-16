@@ -5,8 +5,7 @@ const Description string = "Manage Entitlements."
 var Usage = []string{"jfrog bt ent [command options] <scope>",
 	"jfrog bt ent [command options] <action> <action scope>"}
 
-const Arguments string =
-`	scope
+const Arguments string = `	scope
 		A scope can be specified as one of the following:
 			- subject/repository.
 			- subject/repository/package.

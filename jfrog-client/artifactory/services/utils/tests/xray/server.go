@@ -1,12 +1,12 @@
 package xray
 
 import (
-	"net/http"
 	"fmt"
 	"github.com/buger/jsonparser"
-	"io/ioutil"
-	clienttests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	clienttests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"io/ioutil"
+	"net/http"
 	"os"
 )
 

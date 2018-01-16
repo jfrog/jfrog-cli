@@ -1,18 +1,18 @@
 package httputils
 
 import (
-	"testing"
-	"fmt"
-	"time"
-	"io"
-	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"errors"
-	"strconv"
-	"io/ioutil"
-	"os"
+	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+	"testing"
+	"time"
 )
 
 const SUCCESS_RESPONSE = "successful response"
@@ -198,7 +198,7 @@ func execGet(port int, path string, c *testContext) (*http.Response, error) {
 	}
 	c.tryNum++
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		err = errorutils.CheckError(errors.New("Response: " + resp.Status))
 	}
 

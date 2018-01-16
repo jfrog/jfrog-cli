@@ -1,9 +1,9 @@
 package npm
 
 import (
-	"github.com/mattn/go-shellwords"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/mattn/go-shellwords"
 )
 
 func Pack(npmFlags, executablePath string) error {

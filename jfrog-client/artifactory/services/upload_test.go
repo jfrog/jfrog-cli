@@ -1,13 +1,13 @@
 package services
 
 import (
-	"testing"
-	"path/filepath"
-	"os"
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
 )
 
 func TestArtifactoryUpload(t *testing.T) {
@@ -20,7 +20,7 @@ func TestArtifactoryUpload(t *testing.T) {
 
 func TestDebianProperties(t *testing.T) {
 	var debianPaths = []struct {
-		in  string
+		in       string
 		expected string
 	}{
 		{"dist/comp/arch", ";deb.distribution=dist;deb.component=comp;deb.architecture=arch"},
@@ -248,4 +248,3 @@ func explodeUpload(t *testing.T) {
 	}
 	artifactoryCleanUp(t)
 }
-

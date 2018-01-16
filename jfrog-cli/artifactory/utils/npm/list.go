@@ -1,13 +1,13 @@
 package npm
 
 import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/mattn/go-shellwords"
-	"sync"
 	"io"
 	"io/ioutil"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"sync"
 )
 
 func RunList(flags, executablePath string) (stdResult, errResult []byte, err error) {

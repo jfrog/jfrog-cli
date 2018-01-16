@@ -1,10 +1,10 @@
 package config
 
 import (
-	"testing"
-	"errors"
 	"encoding/json"
+	"errors"
 	"reflect"
+	"testing"
 )
 
 func TestCovertConfigV0ToV1(t *testing.T) {

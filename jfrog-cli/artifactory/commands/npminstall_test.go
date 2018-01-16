@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"testing"
-	"strings"
 	"io/ioutil"
+	"strings"
+	"testing"
 )
 
 func TestPrepareConfigData(t *testing.T) {

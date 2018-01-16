@@ -74,7 +74,7 @@ var SimpleUploadSpecialCharNoRegexExpectedRepo1 = []string{
 	Repo1 + "/a1.in",
 }
 
-var UploadSpecExcludeRepo1 = []string {
+var UploadSpecExcludeRepo1 = []string{
 	Repo1 + "/a1.in",
 	Repo1 + "/b1.in",
 	Repo1 + "/c2.in",

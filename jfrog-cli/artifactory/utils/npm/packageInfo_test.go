@@ -1,8 +1,8 @@
 package npm
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
 func TestReadPackageInfoFromPackageJson(t *testing.T) {

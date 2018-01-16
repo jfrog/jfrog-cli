@@ -4,8 +4,7 @@ const Description = "Set properties on existing files in Artifactory."
 
 var Usage = []string{"jfrog rt sp [command options] <artifacts pattern> <artifact properties>"}
 
-const Arguments string =
-`	artifacts pattern
+const Arguments string = `	artifacts pattern
 		Artifacts that match the pattern will be set with the specified properties.
 
 	artifact properties

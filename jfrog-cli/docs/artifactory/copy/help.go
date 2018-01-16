@@ -5,8 +5,7 @@ const Description = "Copy files."
 var Usage = []string{"jfrog rt cp [command options] <source pattern> <target pattern>",
 	"jfrog rt cp --spec=<File Spec path> [command options]"}
 
-const Arguments string =
-`	source Pattern
+const Arguments string = `	source Pattern
 		Specifies the source path in Artifactory, from which the artifacts should be copied,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 

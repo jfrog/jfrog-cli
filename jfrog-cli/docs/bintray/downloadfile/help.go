@@ -4,8 +4,7 @@ const Description string = "Download file."
 
 var Usage = []string{"jfrog bt dlf [command options] <source path> [target path]"}
 
-const Arguments string =
-`	source path
+const Arguments string = `	source path
 		The path, in Bintray, to the file that should be downloaded.
 		Format: subject/repository/path.
 

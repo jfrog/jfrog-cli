@@ -1,8 +1,8 @@
 package io
 
 import (
-	"os"
 	"io"
+	"os"
 	"sort"
 )
 

@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"testing"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
+	"testing"
 )
 
 func TestBuildAqlSearchQueryRecursiveSimple(t *testing.T) {
@@ -37,7 +37,7 @@ func TestBuildAqlSearchQueryNonRecursiveSimple(t *testing.T) {
 }
 
 func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
-	specFile := ArtifactoryCommonParams{Pattern:"repo-local2/a*b*c/dd/", Target:"", Props:"", Build:"", Recursive:false, Regexp:false, IncludeDirs:false}
+	specFile := ArtifactoryCommonParams{Pattern: "repo-local2/a*b*c/dd/", Target: "", Props: "", Build: "", Recursive: false, Regexp: false, IncludeDirs: false}
 	aqlResult, _ := createAqlBodyForSpec(&specFile)
 	expected := `{"repo": "repo-local2","path": {"$ne": "."},"$or": [{"$and":[{"path": {"$match": "a*b*c/dd"},"name": {"$match": "*"}}]}]}`
 
@@ -47,12 +47,12 @@ func TestBuildAqlSearchQueryNonRecursiveWildcard(t *testing.T) {
 }
 
 func TestCreatePathFilePairs(t *testing.T) {
-	pairs := []PathFilePair{{".","a"}}
-	validatePathPairs(createPathFilePairs("a", true), pairs,"a", t)
-	pairs = []PathFilePair{{"a","*"}, {"a/*","*"}}
-	validatePathPairs(createPathFilePairs("a/*", true), pairs,"a/*",  t)
-	pairs = []PathFilePair{{"a","a*b"}, {"a/a*","*b"}}
-	validatePathPairs(createPathFilePairs("a/a*b", true), pairs,"a/a*b", t)
+	pairs := []PathFilePair{{".", "a"}}
+	validatePathPairs(createPathFilePairs("a", true), pairs, "a", t)
+	pairs = []PathFilePair{{"a", "*"}, {"a/*", "*"}}
+	validatePathPairs(createPathFilePairs("a/*", true), pairs, "a/*", t)
+	pairs = []PathFilePair{{"a", "a*b"}, {"a/a*", "*b"}}
+	validatePathPairs(createPathFilePairs("a/a*b", true), pairs, "a/a*b", t)
 	pairs = []PathFilePair{{"a", "a*b*"}, {"a/a*", "*b*"}, {"a/a*b*", "*"}}
 	validatePathPairs(createPathFilePairs("a/a*b*", true), pairs, "a/a*b*", t)
 	pairs = []PathFilePair{{"a/a*b*/a", "b"}}
@@ -74,9 +74,9 @@ func TestCreatePathFilePairs(t *testing.T) {
 }
 
 func TestCreatePathFolderPairs(t *testing.T) {
-	pairs := []PathFilePair{{"*","*"}, {filepath.Join("*", "*"),"*"}}
+	pairs := []PathFilePair{{"*", "*"}, {filepath.Join("*", "*"), "*"}}
 	validatePathPairs(createPathFolderPairs("repo/*/*/"), pairs, "repo/*/*/", t)
-	pairs = []PathFilePair{{".","*"}, {"*","*"}}
+	pairs = []PathFilePair{{".", "*"}, {"*", "*"}}
 	validatePathPairs(createPathFolderPairs("repo/*/"), pairs, "repo/*/", t)
 }
 
@@ -86,13 +86,13 @@ func validatePathPairs(actual, expected []PathFilePair, pattern string, t *testi
 	}
 	for _, pair := range expected {
 		found := false
-		for _,testPair := range actual {
-			if pair.path == testPair.path && pair.file== testPair.file {
+		for _, testPair := range actual {
+			if pair.path == testPair.path && pair.file == testPair.file {
 				found = true
 			}
 		}
 		if found == false {
-			t.Error("Wrong path pairs for pattern: " + pattern + " , missing ", pair)
+			t.Error("Wrong path pairs for pattern: "+pattern+" , missing ", pair)
 		}
 	}
 }
@@ -139,7 +139,7 @@ func TestGetQueryReturnFields(t *testing.T) {
 
 func assertEqualFieldsList(actual, expected []string, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error("The function getQueryReturnFields() expected to return the array:\n" + strings.Join(expected[:],",") + ".\nbut returned:\n" + strings.Join(actual[:],",") + ".")
+		t.Error("The function getQueryReturnFields() expected to return the array:\n" + strings.Join(expected[:], ",") + ".\nbut returned:\n" + strings.Join(actual[:], ",") + ".")
 	}
 	for _, v := range actual {
 		isFound := false
@@ -150,7 +150,7 @@ func assertEqualFieldsList(actual, expected []string, t *testing.T) {
 			}
 		}
 		if !isFound {
-			t.Error("The function getQueryReturnFields() expected to return the array:\n'" + strings.Join(expected[:],",") + "'.\nbut returned:\n'" + strings.Join(actual[:],",") + "'.\n" +
+			t.Error("The function getQueryReturnFields() expected to return the array:\n'" + strings.Join(expected[:], ",") + "'.\nbut returned:\n'" + strings.Join(actual[:], ",") + "'.\n" +
 				"The field " + v + "is missing!")
 		}
 	}

@@ -4,15 +4,15 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"os"
 )
 
-const commandHelpTemplate string =
-`{{.HelpName}}{{if .UsageText}}
+const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
 Arguments:
 {{.UsageText}}
 {{end}}{{if .Flags}}
@@ -24,8 +24,7 @@ Environment Variables:
 
 `
 
-const appHelpTemplate string =
-`NAME:
+const appHelpTemplate string = `NAME:
    {{.Name}} - {{.Usage}}
 
 USAGE:
@@ -48,8 +47,7 @@ Environment Variables:
 
 `
 
-const subcommandHelpTemplate =
-`NAME:
+const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Usage}}
 
 USAGE:
@@ -70,7 +68,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "jfrog"
 	app.Usage = "See https://github.com/jfrogdev/jfrog-cli-go for usage instructions."
-	app.Version = cliutils.GetVersion()
+	app.Version = utils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()
 	cli.CommandHelpTemplate = commandHelpTemplate
@@ -83,23 +81,23 @@ func main() {
 func getCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:  	     cliutils.CmdArtifactory,
+			Name:        cliutils.CmdArtifactory,
 			Usage:       "Artifactory commands",
 			Subcommands: artifactory.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdBintray,
-			Usage: 	     "Bintray commands",
+			Usage:       "Bintray commands",
 			Subcommands: bintray.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdMissionControl,
-			Usage: 	     "Mission Control commands",
+			Usage:       "Mission Control commands",
 			Subcommands: missioncontrol.GetCommands(),
 		},
 		{
 			Name:        cliutils.CmdXray,
-			Usage: 	     "Xray commands",
+			Usage:       "Xray commands",
 			Subcommands: xray.GetCommands(),
 		},
 	}

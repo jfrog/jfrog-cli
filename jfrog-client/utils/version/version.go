@@ -1,8 +1,8 @@
 package version
 
 import (
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // If ver1 == ver2 returns 0

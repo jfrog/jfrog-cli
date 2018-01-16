@@ -1,12 +1,12 @@
 package main
 
 import (
-	"testing"
-	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	clientTests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
-	"path/filepath"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	clientTests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 const (

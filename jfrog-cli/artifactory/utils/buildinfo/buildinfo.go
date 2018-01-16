@@ -1,15 +1,15 @@
 package buildinfo
 
 import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"time"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 )
 
 func New() *BuildInfo {
 	return &BuildInfo{
-		Agent:      &Agent{Name: cliutils.CliAgent, Version: cliutils.GetVersion()},
-		BuildAgent: &Agent{Name: "GENERIC", Version: cliutils.GetVersion()},
+		Agent:      &Agent{Name: utils.ClientAgent, Version: utils.GetVersion()},
+		BuildAgent: &Agent{Name: "GENERIC", Version: utils.GetVersion()},
 		Modules:    make([]Module, 0),
 		Vcs:        &Vcs{},
 	}
@@ -74,7 +74,7 @@ type Partial struct {
 	Env          Env            `json:"Env,omitempty"`
 	Timestamp    int64          `json:"Timestamp,omitempty"`
 	*Vcs
-	ModuleId     string         `json:"ModuleId,omitempty"`
+	ModuleId string `json:"ModuleId,omitempty"`
 }
 
 func (partials Partials) Len() int {
@@ -94,17 +94,17 @@ type General struct {
 }
 
 type Flags struct {
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (flags *Flags) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (flags *Flags) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return flags.ArtDetails
 }
 
-func (flags *Flags) SetArtifactoryDetails(artDetails *auth.ArtifactoryDetails) {
+func (flags *Flags) SetArtifactoryDetails(artDetails auth.ArtifactoryDetails) {
 	flags.ArtDetails = artDetails
 }
 

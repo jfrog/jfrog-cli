@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"strings"
-	"path/filepath"
 	"fmt"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // Returns an AQL body string to search file in Artifactory according the the specified arguments requirements.
@@ -30,7 +30,7 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 	nePath := buildNePathPart(pathPairsSize == 0 || includeRoot)
 	excludeQuery := buildExcludeQueryPart(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
-	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart + itemTypeQuery + nePath + excludeQuery)
+	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart+itemTypeQuery+nePath+excludeQuery)
 	if pathPairsSize == 0 {
 		json += buildInnerQueryPart(".", searchPattern)
 	} else {
@@ -48,17 +48,17 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 func createAqlQueryForBuild(buildName, buildNumber string) string {
 	itemsPart :=
 		`items.find({` +
-				`"artifact.module.build.name": "%s",` +
-				`"artifact.module.build.number": "%s"` +
+			`"artifact.module.build.name": "%s",` +
+			`"artifact.module.build.number": "%s"` +
 			`})%s`
-	return fmt.Sprintf(itemsPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name","repo","path","actual_sha1"}))
+	return fmt.Sprintf(itemsPart, buildName, buildNumber, buildIncludeQueryPart([]string{"name", "repo", "path", "actual_sha1"}))
 }
 
 func CreateAqlQueryForNpm(npmName, npmVersion string) string {
 	itemsPart :=
 		`items.find({` +
-				`"@npm.name": "%s",` +
-				`"@npm.version": "%s"` +
+			`"@npm.name": "%s",` +
+			`"@npm.version": "%s"` +
 			`})%s`
 	return fmt.Sprintf(itemsPart, npmName, npmVersion, buildIncludeQueryPart([]string{"name", "actual_sha1", "actual_md5"}))
 }
@@ -112,10 +112,10 @@ func buildNePathPart(includeRoot bool) string {
 
 func buildInnerQueryPart(path, name string) string {
 	innerQueryPattern := `{"$and":` +
-							`[{` +
-								`"path": {"$match": "%s"},` +
-								`"name": {"$match": "%s"}` +
-							`}]}`
+		`[{` +
+		`"path": {"$match": "%s"},` +
+		`"name": {"$match": "%s"}` +
+		`}]}`
 	return fmt.Sprintf(innerQueryPattern, path, name)
 }
 
@@ -338,8 +338,8 @@ func createPropsQuery(aqlBody, propKey, propVal string) string {
 	propsQuery :=
 		`items.find({` +
 			`"$and" :[%s,{%s}]` +
-		`})%s`
-	return fmt.Sprintf(propsQuery, aqlBody, propKeyValQueryPart, buildIncludeQueryPart([]string {"name", "repo", "path", "actual_sha1", "property"}))
+			`})%s`
+	return fmt.Sprintf(propsQuery, aqlBody, propKeyValQueryPart, buildIncludeQueryPart([]string{"name", "repo", "path", "actual_sha1", "property"}))
 }
 
 func buildIncludeQueryPart(fieldsToInclude []string) string {

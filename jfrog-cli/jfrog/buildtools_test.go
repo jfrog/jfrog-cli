@@ -1,21 +1,21 @@
 package main
 
 import (
-	"os"
-	"testing"
-	"path/filepath"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"strconv"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 func InitBuildToolsTests() {
@@ -109,7 +109,7 @@ func TestNpm(t *testing.T) {
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateInstall, npmArgs: "--production"},
-		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateInstall, npmArgs: "-only=dev",},
+		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateInstall, npmArgs: "-only=dev"},
 		{command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validatePackInstall, npmArgs: "yaml"},
 		{command: "npmp", repo: tests.NpmLocalRepo, wd: npmScopedProjectPath, validationFunc: validateScopedPublish},
 		{command: "npm-publish", repo: tests.NpmLocalRepo, wd: npmProjectPath, validationFunc: validatePublish},
@@ -142,7 +142,7 @@ func TestNpm(t *testing.T) {
 	deleteBuild(tests.NpmBuildName)
 }
 
-func validateNpmrcFileInfo( t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
+func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
 	if postTestFileInfoErr != nil && !os.IsNotExist(postTestFileInfoErr) {
 		t.Error(postTestFileInfoErr)
 	}
@@ -242,11 +242,11 @@ func createNpmProject(t *testing.T, dir string) string {
 
 func initBuildToolsTest(t *testing.T) {
 	if !*tests.TestBuildTools {
-		t.Skip("Skipping build tools test. To run build tools tests add the '--test.buildTools=true' option.")
+		t.Skip("Skipping build tools test. To run build tools tests add the '-test.buildTools=true' option.")
 	}
 }
 
-func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string)  {
+func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	if err := os.Chdir(workingDirectory); err != nil {
 		t.Error(err)
 	}
@@ -328,7 +328,9 @@ func validatePackInstall(t *testing.T, npmTestParams npmTestParams) {
 		t.Error(err)
 	}
 
-	var packageJson struct{ Dependencies map[string]string `json:"dependencies,omitempty"` }
+	var packageJson struct {
+		Dependencies map[string]string `json:"dependencies,omitempty"`
+	}
 	if err := json.Unmarshal(packageJsonFile, &packageJson); err != nil {
 		t.Error(err)
 	}
@@ -372,13 +374,17 @@ func validateCommonPublish(t *testing.T, npmTestParams npmTestParams) {
 	}
 }
 
-func getBuildInfo(t *testing.T, npmTestParams npmTestParams) struct{ BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"` } {
+func getBuildInfo(t *testing.T, npmTestParams npmTestParams) struct {
+	BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"`
+} {
 	_, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/build/"+tests.NpmBuildName+"/"+npmTestParams.buildNumber, true, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
 
-	var buildInfoJson struct{ BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"` }
+	var buildInfoJson struct {
+		BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"`
+	}
 	if err := json.Unmarshal(body, &buildInfoJson); err != nil {
 		t.Error(err)
 	}

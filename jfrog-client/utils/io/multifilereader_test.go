@@ -1,12 +1,12 @@
 package io
 
 import (
-	"testing"
-	"io/ioutil"
-	"strconv"
 	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
+	"strconv"
+	"testing"
 )
 
 func TestNewMultiFileReaderAt(t *testing.T) {

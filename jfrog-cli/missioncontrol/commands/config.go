@@ -1,13 +1,13 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"errors"
-	"net/url"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/url"
 )
 
 func GetConfig() (*config.MissionControlDetails, error) {
@@ -44,7 +44,7 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 		if defaultDetails == nil {
 			defaultDetails, err = config.ReadMissionControlConf()
 			if err != nil {
-			    return
+				return
 			}
 		}
 		if conf.Url == "" {
@@ -53,18 +53,18 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 			u, err = url.Parse(conf.Url)
 			err = errorutils.CheckError(err)
 			if err != nil {
-			    return
+				return
 			}
 			if u.Scheme != "http" && u.Scheme != "https" {
 				err = errorutils.CheckError(errors.New("URL scheme is not valid " + u.Scheme))
-                if err != nil {
-                    return
-                }
+				if err != nil {
+					return
+				}
 			}
 		}
 		ioutils.ReadCredentialsFromConsole(conf, defaultDetails)
 	}
-	conf.Url = cliutils.AddTrailingSlashIfNeeded(conf.Url)
+	conf.Url = utils.AddTrailingSlashIfNeeded(conf.Url)
 	config.SaveMissionControlConf(conf)
 	return
 }

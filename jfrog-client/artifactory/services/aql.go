@@ -1,25 +1,25 @@
 package services
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 type AqlService struct {
 	client     *httpclient.HttpClient
-	ArtDetails *auth.ArtifactoryDetails
+	ArtDetails auth.ArtifactoryDetails
 }
 
 func NewAqlService(client *httpclient.HttpClient) *AqlService {
 	return &AqlService{client: client}
 }
 
-func (s *AqlService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (s *AqlService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return s.ArtDetails
 }
 
-func (s *AqlService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (s *AqlService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	s.ArtDetails = rt
 }
 

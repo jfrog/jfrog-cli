@@ -7,8 +7,7 @@ var Usage = []string{"jfrog rt c [command options] [server ID]",
 	"jfrog rt c [--interactive=<true|false>] delete <server ID>",
 	"jfrog rt c [--interactive=<true|false>] clear"}
 
-const Arguments string =
-`	server ID
+const Arguments string = `	server ID
 		A unique ID for the new Artifactory server configuration.
 
 	show

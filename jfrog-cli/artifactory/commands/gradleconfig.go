@@ -1,14 +1,14 @@
 package commands
 
 import (
-	"gopkg.in/yaml.v2"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/prompt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"io/ioutil"
-	"github.com/spf13/viper"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/prompt"
 	promptreader "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 func CreateGradleBuildConfig(configFilePath string) error {
@@ -150,14 +150,14 @@ func readDescriptors(deployer *GradleDeployer) error {
 }
 
 type GradleBuildConfig struct {
-	prompt.CommonConfig       `yaml:"common,inline"`
-	UsePlugin  bool           `yaml:"usePlugin,omitempty"`
-	UseWrapper bool           `yaml:"useWrapper,omitempty"`
-	Resolver   GradleRepo     `yaml:"resolver,omitempty"`
-	Deployer   GradleDeployer `yaml:"deployer,omitempty"`
+	prompt.CommonConfig `yaml:"common,inline"`
+	UsePlugin           bool           `yaml:"usePlugin,omitempty"`
+	UseWrapper          bool           `yaml:"useWrapper,omitempty"`
+	Resolver            GradleRepo     `yaml:"resolver,omitempty"`
+	Deployer            GradleDeployer `yaml:"deployer,omitempty"`
 }
 type GradleDeployer struct {
-	GradleRepo              `yaml:"deployer,inline"`
+	GradleRepo       `yaml:"deployer,inline"`
 	DeployMavenDesc  bool   `yaml:"deployMavenDescriptors,omitempty"`
 	DeployIvyDesc    bool   `yaml:"deployIvyDescriptors,omitempty"`
 	IvyPattern       string `yaml:"ivyPattern,omitempty"`

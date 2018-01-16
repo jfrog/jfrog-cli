@@ -1,21 +1,21 @@
 package commands
 
 import (
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"os"
-	"strconv"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"time"
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"errors"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -33,7 +33,7 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 	if err != nil {
 		return 0, 0, err
 	}
-	servicesManager, err := artifactory.NewArtifactoryService(servicesConfig)
+	servicesManager, err := artifactory.New(servicesConfig)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -112,23 +112,23 @@ func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildin
 	return buildArtifacts
 }
 
-func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, minChecksumDeploySize int64) (artifactory.ArtifactoryConfig, error) {
+func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, minChecksumDeploySize int64) (artifactory.Config, error) {
 	artAuth, err := artDetails.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
 	}
-	servicesConfig, err := new(artifactory.ArtifactoryServicesConfigBuilder).
+	servicesConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetMinChecksumDeploy(minChecksumDeploySize).
-		SetNumOfThreadPerOperation(flags.Threads).
+		SetThreads(flags.Threads).
 		SetLogger(log.Logger).
 		Build()
 	return servicesConfig, err
 }
 
-func createBaseUploadParams(flags *UploadConfiguration) (*services.UploadParamsImp) {
+func createBaseUploadParams(flags *UploadConfiguration) *services.UploadParamsImp {
 	uploadParamImp := &services.UploadParamsImp{}
 	uploadParamImp.Deb = flags.Deb
 	uploadParamImp.Symlink = flags.Symlink

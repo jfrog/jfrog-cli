@@ -1,16 +1,20 @@
 package commands
 
 import (
-    "encoding/json"
+	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-    "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray/tests"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-    expected := tests.CreateBintrayDetails()
-    Config(expected, nil, false)
-    details, err := GetConfig()
+	expected := &config.BintrayDetails{
+		ApiUrl:            "https://api.bintray.com/",
+		DownloadServerUrl: "https://dl.bintray.com/",
+		User:              "user",
+		Key:               "api-key",
+		DefPackageLicense: "Apache-2.0"}
+	Config(expected, nil, false)
+	details, err := GetConfig()
 	if err != nil {
 		t.Error(err.Error())
 	}

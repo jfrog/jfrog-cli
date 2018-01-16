@@ -3,11 +3,11 @@ package ioutils
 import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"golang.org/x/crypto/ssh/terminal"
-	"syscall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"os"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
+	"os"
+	"syscall"
 )
 
 func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials) error {

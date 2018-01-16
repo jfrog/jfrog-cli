@@ -1,14 +1,16 @@
 package utils
 
 import (
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"errors"
-	"sort"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"encoding/json"
+	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
+	"path"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 type SearchParams interface {
@@ -29,21 +31,21 @@ func SearchBySpecFiles(searchParams SearchParams, flags CommonConf) ([]ResultIte
 	var itemsFound []ResultItem
 	var err error
 
-		switch searchParams.GetSpecType() {
-		case WILDCARD, SIMPLE:
-			itemsFound, e := AqlSearchDefaultReturnFields(searchParams.GetFile(), flags)
-			if e != nil {
-				err = e
-				return resultItems, err
-			}
-			resultItems = append(resultItems, itemsFound...)
-		case AQL:
-			itemsFound, err = AqlSearchBySpec(searchParams.GetFile(), flags)
-			if err != nil {
-				return resultItems, err
-			}
-			resultItems = append(resultItems, itemsFound...)
+	switch searchParams.GetSpecType() {
+	case WILDCARD, SIMPLE:
+		itemsFound, e := AqlSearchDefaultReturnFields(searchParams.GetFile(), flags)
+		if e != nil {
+			err = e
+			return resultItems, err
 		}
+		resultItems = append(resultItems, itemsFound...)
+	case AQL:
+		itemsFound, err = AqlSearchBySpec(searchParams.GetFile(), flags)
+		if err != nil {
+			return resultItems, err
+		}
+		resultItems = append(resultItems, itemsFound...)
+	}
 	return resultItems, err
 }
 
@@ -52,7 +54,7 @@ func AqlSearchDefaultReturnFields(specFile *ArtifactoryCommonParams, flags Commo
 	if err != nil {
 		return nil, err
 	}
-	specFile.Aql = Aql{ItemsFind:query}
+	specFile.Aql = Aql{ItemsFind: query}
 	return AqlSearchBySpec(specFile, flags)
 }
 
@@ -89,15 +91,15 @@ func aqlSearch(aqlQuery string, flags CommonConf) ([]ResultItem, error) {
 
 func ExecAql(aqlQuery string, flags CommonConf) ([]byte, error) {
 	client := flags.GetJfrogHttpClient()
-	aqlUrl := flags.GetArtifactoryDetails().Url + "api/search/aql"
+	aqlUrl := flags.GetArtifactoryDetails().GetUrl() + "api/search/aql"
 	log.Debug("Searching Artifactory using AQL query:\n", aqlQuery)
 
-	httpClientsDetails := flags.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := flags.GetArtifactoryDetails().CreateHttpClientDetails()
 	resp, body, err := client.SendPost(aqlUrl, []byte(aqlQuery), httpClientsDetails)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + utils.IndentJson(body)))
 	}
 
@@ -139,7 +141,7 @@ type ResultItem struct {
 
 func (item ResultItem) GetItemRelativePath() string {
 	if item.Path == "." {
-		return item.Repo + "/" + item.Name
+		return path.Join(item.Repo, item.Name)
 	}
 
 	url := item.Repo
@@ -181,7 +183,7 @@ func FilterTopChainResults(paths map[string]ResultItem, pathsKeys []string) []Re
 	for _, k := range pathsKeys {
 		for _, k2 := range pathsKeys {
 			prefix := k2
-			if paths[k2].Type == "folder" &&  !strings.HasSuffix(k2, "/") {
+			if paths[k2].Type == "folder" && !strings.HasSuffix(k2, "/") {
 				prefix += "/"
 			}
 
@@ -213,5 +215,5 @@ func ReduceDirResult(searchResults []ResultItem, resultsFilter AqlSearchResultIt
 		paths[url] = file
 		pathsKeys = append(pathsKeys, url)
 	}
-	return  resultsFilter(paths, pathsKeys)
+	return resultsFilter(paths, pathsKeys)
 }

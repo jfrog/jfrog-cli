@@ -1,10 +1,10 @@
 package main
 
 import (
-	"testing"
 	"flag"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"os"
+	"testing"
 )
 
 func TestMain(m *testing.M) {

@@ -5,28 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrogdev/gofrog/parallel"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"net/http"
 )
 
 type UploadService struct {
 	client            *httpclient.HttpClient
-	ArtDetails        *auth.ArtifactoryDetails
+	ArtDetails        auth.ArtifactoryDetails
 	DryRun            bool
 	Threads           int
 	MinChecksumDeploy int64
@@ -44,7 +43,7 @@ func (us *UploadService) GetJfrogHttpClient() *httpclient.HttpClient {
 	return us.client
 }
 
-func (us *UploadService) SetArtDetails(artDetails *auth.ArtifactoryDetails) {
+func (us *UploadService) SetArtDetails(artDetails auth.ArtifactoryDetails) {
 	us.ArtDetails = artDetails
 }
 
@@ -181,7 +180,7 @@ func collectFilesForUpload(uploadParams UploadParams, producer parallel.Runner, 
 		producer.AddTaskWithError(task, errorsQueue.AddError)
 		return
 	}
-	uploadParams.SetPattern(cliutils.PrepareLocalPathForUpload(uploadParams.GetPattern(), uploadMetaData.IsRegexp))
+	uploadParams.SetPattern(clientutils.PrepareLocalPathForUpload(uploadParams.GetPattern(), uploadMetaData.IsRegexp))
 	err := collectPatternMatchingFiles(uploadParams, uploadMetaData, producer, artifactHandlerFunc, errorsQueue)
 	if err != nil {
 		errorsQueue.AddError(err)
@@ -190,7 +189,7 @@ func collectFilesForUpload(uploadParams UploadParams, producer parallel.Runner, 
 }
 
 func getRootPath(pattern string, isRegexp bool) (string, error) {
-	rootPath := cliutils.GetRootPathForUpload(pattern, isRegexp)
+	rootPath := clientutils.GetRootPathForUpload(pattern, isRegexp)
 	if !fileutils.IsPathExists(rootPath) {
 		err := errorutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {
@@ -303,7 +302,7 @@ func prepareExcludePathPattern(excludePatterns []string, isRegex, isRecursive bo
 		for _, singleExcludePattern := range excludePatterns {
 			if len(singleExcludePattern) > 0 {
 				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
-				singleExcludePattern = cliutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
+				singleExcludePattern = clientutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
 				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeparator()) {
 					singleExcludePattern += "*"
 				}
@@ -426,7 +425,7 @@ func (us *UploadService) uploadFile(localPath, targetPath, props string, uploadP
 	var resp *http.Response
 	var details *fileutils.FileDetails
 	var body []byte
-	httpClientsDetails := us.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := us.ArtDetails.CreateHttpClientDetails()
 	fileStat, err := os.Lstat(localPath)
 	if errorutils.CheckError(err) != nil {
 		return utils.FileInfo{}, false, err
@@ -444,7 +443,7 @@ func (us *UploadService) uploadFile(localPath, targetPath, props string, uploadP
 	}
 	logUploadResponse(logMsgPrefix, resp, body, checksumDeployed, us.DryRun)
 	artifact := createBuildArtifactItem(details, fileName, localPath, targetPath)
-	return artifact, us.DryRun || checksumDeployed || resp.StatusCode == 201 || resp.StatusCode == 200, nil
+	return artifact, us.DryRun || checksumDeployed || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK, nil
 }
 
 func (us *UploadService) uploadSymlink(targetPath string, httpClientsDetails httputils.HttpClientDetails, uploadParams UploadParams) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
@@ -468,7 +467,7 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 		if err != nil {
 			return resp, details, body, checksumDeployed, err
 		}
-		checksumDeployed = !us.DryRun && (resp.StatusCode == 201 || resp.StatusCode == 200)
+		checksumDeployed = !us.DryRun && (resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK)
 	}
 	if !us.DryRun && !checksumDeployed {
 		var body []byte
@@ -476,7 +475,7 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 		if err != nil {
 			return resp, details, body, checksumDeployed, err
 		}
-		if resp.StatusCode != 201 && resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 		}
 	}
@@ -487,7 +486,7 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 }
 
 func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, checksumDeployed, isDryRun bool) {
-	if resp != nil && resp.StatusCode != 201 && resp.StatusCode != 200 {
+	if resp != nil && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 	}
 	if !isDryRun {
@@ -653,7 +652,7 @@ func (us *UploadService) createArtifactHandlerFunc(uploadResult *uploadResult, u
 			var artifactFileInfo utils.FileInfo
 			uploadResult.TotalCount[threadId]++
 			logMsgPrefix := clientutils.GetLogMsgPrefix(threadId, us.DryRun)
-			target, e = utils.BuildArtifactoryUrl(us.ArtDetails.Url, artifact.Artifact.TargetPath, make(map[string]string))
+			target, e = utils.BuildArtifactoryUrl(us.ArtDetails.GetUrl(), artifact.Artifact.TargetPath, make(map[string]string))
 			if e != nil {
 				return
 			}
@@ -671,13 +670,13 @@ func (us *UploadService) createArtifactHandlerFunc(uploadResult *uploadResult, u
 }
 
 func (us *UploadService) createFolderInArtifactory(artifact UploadData) error {
-	url, err := utils.BuildArtifactoryUrl(us.ArtDetails.Url, artifact.Artifact.TargetPath, make(map[string]string))
-	url = cliutils.AddTrailingSlashIfNeeded(url)
+	url, err := utils.BuildArtifactoryUrl(us.ArtDetails.GetUrl(), artifact.Artifact.TargetPath, make(map[string]string))
+	url = clientutils.AddTrailingSlashIfNeeded(url)
 	if err != nil {
 		return err
 	}
 	content := make([]byte, 0)
-	httpClientsDetails := us.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := us.ArtDetails.CreateHttpClientDetails()
 	resp, body, err := us.client.SendPut(url, content, httpClientsDetails)
 	if err != nil {
 		log.Debug(resp)

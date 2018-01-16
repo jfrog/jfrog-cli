@@ -1,10 +1,10 @@
 package utils
 
- import (
-	 "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	 "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	 "encoding/json"
- )
+import (
+	"encoding/json"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+)
 
 func GetMissionControlHttpClientDetails(missionControlDetails *config.MissionControlDetails) httputils.HttpClientDetails {
 	return httputils.HttpClientDetails{
@@ -32,7 +32,7 @@ func ReadMissionControlHttpMessage(resp []byte) string {
 			}
 		}
 	}
-	if responseMessage == ""{
+	if responseMessage == "" {
 		return string(resp)
 	}
 	return responseMessage
@@ -40,20 +40,19 @@ func ReadMissionControlHttpMessage(resp []byte) string {
 
 type HttpResponse struct {
 	Message string
-	Type string
+	Type    string
 	Details []string
 }
 
 type LicenseRequestContent struct {
-	Name      string `json:"instanceName,omitempty"`
-	NodeID 	  string `json:"nodeId,omitempty"`
-	Deploy 	  bool   `json:"deploy,omitempty"`
+	Name   string `json:"instanceName,omitempty"`
+	NodeID string `json:"nodeId,omitempty"`
+	Deploy bool   `json:"deploy,omitempty"`
 }
 
 type ArtifactoryInstanceDetails struct {
 	Url      string `json:"url,omitempty"`
 	User     string `json:"user,omitempty"`
 	Password string `json:"password,omitempty"`
-	Name     string	`json:"instanceName,omitempty"`
+	Name     string `json:"instanceName,omitempty"`
 }
-

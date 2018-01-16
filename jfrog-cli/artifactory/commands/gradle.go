@@ -1,18 +1,18 @@
 package commands
 
 import (
-	"os/exec"
-	"path/filepath"
-	"io/ioutil"
-	"strings"
-	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"runtime"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 const gradleExtractorDependencyVersion = "4.6.0"

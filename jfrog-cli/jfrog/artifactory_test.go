@@ -1,48 +1,48 @@
 package main
 
 import (
-	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
-	"fmt"
-	"io/ioutil"
+	"bytes"
+	"crypto/tls"
+	"encoding/json"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"fmt"
 	"github.com/buger/jsonparser"
+	"github.com/jfrogdev/gofrog/io"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
+	cliproxy "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	rtutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/mholt/archiver"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
-	"encoding/json"
-	rtutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	cliproxy "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"net/url"
-	"net"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"strconv"
-	"bytes"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
-	"os/exec"
-	"crypto/tls"
+	"strings"
+	"testing"
 	"time"
-	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
-	"path"
-	"github.com/jfrogdev/gofrog/io"
-	"github.com/mholt/archiver"
 )
 
 var artifactoryCli *tests.JfrogCli
 var artifactoryDetails *config.ArtifactoryDetails
-var artAuth *auth.ArtifactoryDetails
+var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
@@ -57,9 +57,9 @@ func InitArtifactoryTests() {
 }
 
 func authenticate() string {
-	artifactoryDetails = &config.ArtifactoryDetails{Url: cliutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if !artifactoryDetails.IsSsh() {
+	if !httputils.IsSsh(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
 		} else {
@@ -72,14 +72,14 @@ func authenticate() string {
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
 		cliutils.Exit(cliutils.ExitCodeError, "Failed while attempting to authenticate with Artifactory: "+err.Error())
 	}
-	artifactoryDetails.SshAuthHeaders = artAuth.SshAuthHeaders
-	artifactoryDetails.Url = artAuth.Url
-	artHttpDetails = artAuth.CreateArtifactoryHttpClientDetails()
+	artifactoryDetails.SshAuthHeaders = artAuth.GetSshAuthHeaders()
+	artifactoryDetails.Url = artAuth.GetUrl()
+	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }
 
 func getArtifactoryTestCredentials() string {
-	if artifactoryDetails.IsSsh() {
+	if httputils.IsSsh(artifactoryDetails.Url) {
 		return getSshCredentials()
 	}
 	if *tests.RtApiKey != "" {
@@ -225,7 +225,7 @@ func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/inner", tests.Repo2, "--flat=true")
 	isExistInArtifactory(tests.SingleDirectoryCopyFlat, tests.GetFilePath(tests.SearchRepo2), t)
 	cleanArtifactoryTest()
@@ -237,7 +237,7 @@ func TestArtifactoryCopyPathsTwice(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 
 	log.Info("Copy Folder to root twice")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path", tests.Repo2)
@@ -277,7 +277,7 @@ func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/", tests.Repo2, "--flat=true")
 	isExistInArtifactory(tests.AnyItemCopyUsingSpec, tests.GetFilePath(tests.SearchRepo2), t)
 	cleanArtifactoryTest()
@@ -290,7 +290,7 @@ func TestArtifactoryCopyAnyItemUsingWildcardFlat(t *testing.T) {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/someFile", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*", tests.Repo2)
 	isExistInArtifactory(tests.AnyItemCopy, tests.GetFilePath(tests.SearchRepo2), t)
@@ -304,7 +304,7 @@ func TestArtifactoryCopyAnyItemRecursive(t *testing.T) {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/a/b/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/a/b/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/aFile", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/a*", tests.Repo2, "--recursive=true")
 	isExistInArtifactory(tests.AnyItemCopyRecursive, tests.GetFilePath(tests.SearchRepo2), t)
@@ -318,7 +318,7 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 		filePath = tests.FixWinPath("..\\testsdata\\a$+~&^a#\\a*")
 	}
 
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*", tests.Repo2+"/newPath")
 	isExistInArtifactory(tests.CopyFolderRename, tests.GetFilePath(tests.SearchRepo2), t)
 	cleanArtifactoryTest()
@@ -332,7 +332,7 @@ func TestArtifactoryCopyAnyItemUsingSpec(t *testing.T) {
 	}
 
 	specFile := tests.GetFilePath(tests.CopyItemsSpec)
-	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/", )
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/someFile", "--flat=true")
 	artifactoryCli.Exec("cp", "--spec="+specFile)
 	isExistInArtifactory(tests.AnyItemCopyUsingSpec, tests.GetFilePath(tests.SearchRepo2), t)
@@ -470,7 +470,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryDetails.Url = artAuth.Url
+	artifactoryDetails.Url = artAuth.GetUrl()
 	cleanArtifactoryTest()
 }
 
@@ -581,7 +581,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryDetails.Url = artAuth.Url
+	artifactoryDetails.Url = artAuth.GetUrl()
 }
 
 func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
@@ -1071,13 +1071,13 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
 	resp, _, _, _ := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
 	resp, _, _, _ = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
-	if resp.StatusCode != 404 {
+	if resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
@@ -1090,7 +1090,7 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
 	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != 404 {
+	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
 
@@ -1103,7 +1103,7 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
 	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != 200 {
+	if err != nil || resp.StatusCode != http.StatusOK {
 		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
 	folderContent, _, _, err := jsonparser.Get(body, "children")
@@ -1129,11 +1129,11 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 	artifactoryCli.Exec("delete", "--spec="+tests.GetFilePath(tests.DeleteSpec), "--quiet=true")
 
 	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != 404 {
+	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
 	resp, body, _, err = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != 404 {
+	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
 	}
 
@@ -1462,7 +1462,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	}
 	// Only the inner folder should be downland e.g 'folder'
 	artifactoryCli.Exec("download", tests.Repo1, tests.FixWinPath(tests.Out+fileutils.GetFileSeparator()), "--include-dirs=true", "--flat=true")
-	if !fileutils.IsPathExists(tests.Out + fileutils.GetFileSeparator() + "folder") && fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"inner") {
+	if !fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"folder") && fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"inner") {
 		t.Error("Failed to download folders from Artifatory")
 	}
 	//cleanup
@@ -2378,7 +2378,7 @@ func deleteBuild(buildName string) {
 	if err != nil {
 		log.Error(err)
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		log.Error(resp.Status)
 		log.Error(string(body))
 	}
@@ -2390,7 +2390,7 @@ func execDeleteRepoRest(repoName string) {
 		log.Error(err)
 		return
 	}
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		return
 	}
@@ -2411,7 +2411,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		os.Exit(1)
 		return
 	}
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		os.Exit(1)
 		return
@@ -2492,7 +2492,7 @@ func isRepoExist(repoName string) bool {
 		os.Exit(1)
 	}
 
-	if resp.StatusCode != 400 {
+	if resp.StatusCode != http.StatusBadRequest {
 		return true
 	}
 	return false

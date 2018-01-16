@@ -1,18 +1,18 @@
 package server
 
 import (
+	"crypto/tls"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	clilog "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io"
+	"log"
+	"net"
 	"net/http"
-	"path/filepath"
 	"net/http/httputil"
 	"net/url"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
 	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"io"
-	"net"
-	"log"
-	"crypto/tls"
-	clilog "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"path/filepath"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)
@@ -197,7 +197,7 @@ func StartLocalReverseHttpProxy(artifactoryUrl string) {
 	if artifactoryUrl == "" {
 		artifactoryUrl = "http://localhost:8081/artifactory/"
 	}
-	artifactoryUrl = cliutils.AddTrailingSlashIfNeeded(artifactoryUrl)
+	artifactoryUrl = utils.AddTrailingSlashIfNeeded(artifactoryUrl)
 	startHttpsReverseProxy(artifactoryUrl)
 }
 

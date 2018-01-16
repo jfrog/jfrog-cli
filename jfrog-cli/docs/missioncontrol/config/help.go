@@ -6,8 +6,7 @@ var Usage = []string{"jfrog mc c [command options]",
 	"jfrog mc c show",
 	"jfrog mc c [--interactive=<true|false>] clear"}
 
-const Arguments string =
-`	show
+const Arguments string = `	show
 		Shows the stored configuration.
 
 	clear

@@ -2,12 +2,12 @@ package xray
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray/commands"
-	"time"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"time"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -60,7 +60,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags,
 		cliutils.Exit(cliutils.ExitCodeError, "The --from option is mandatory, when the --to option is sent.")
 	}
 	if len(from) > 0 && len(to) < 1 {
-	    cliutils.Exit(cliutils.ExitCodeError, "The --to option is mandatory, when the --from option is sent.")
+		cliutils.Exit(cliutils.ExitCodeError, "The --to option is mandatory, when the --from option is sent.")
 	}
 	if len(from) > 0 && len(to) > 0 {
 		flags.From, err = dateToMilliseconds(from)

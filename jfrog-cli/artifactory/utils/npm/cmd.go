@@ -1,8 +1,8 @@
 package npm
 
 import (
-	"os/exec"
 	"io"
+	"os/exec"
 )
 
 func (config *NpmConfig) GetCmd() *exec.Cmd {

@@ -5,8 +5,7 @@ const Description = "Download files."
 var Usage = []string{"jfrog rt dl [command options] <source pattern> [target pattern]",
 	"jfrog rt dl --spec=<File Spec path> [command options]"}
 
-const Arguments string =
-`	source pattern
+const Arguments string = `	source pattern
 		Specifies the source path in Artifactory, from which the artifacts should be downloaded,
 		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
 

@@ -1,23 +1,23 @@
 package utils
 
 import (
-	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"os"
-	"io/ioutil"
 	"bytes"
-	"time"
-	"strings"
-	"net/http"
 	"encoding/base64"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"path/filepath"
+	"encoding/json"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 const BuildInfoDetails = "details"
@@ -216,17 +216,17 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 }
 
 type BuildInfoFlags struct {
-	artDetails *auth.ArtifactoryDetails
+	artDetails auth.ArtifactoryDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (flags *BuildInfoFlags) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (flags *BuildInfoFlags) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return flags.artDetails
 }
 
-func (flags *BuildInfoFlags) SetArtifactoryDetails(art *auth.ArtifactoryDetails) {
+func (flags *BuildInfoFlags) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
 	flags.artDetails = art
 }
 

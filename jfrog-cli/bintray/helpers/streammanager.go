@@ -1,17 +1,17 @@
 package helpers
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"time"
-	"net/http"
-	"io"
-	"io/ioutil"
-	"errors"
 	"bufio"
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 const BINTRAY_RECONNECT_HEADER = "X-Bintray-Stream-Reconnect-Id"
@@ -90,7 +90,7 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 	if e != nil {
 		return false, resp
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		errorutils.CheckError(errors.New("response: " + resp.Status))
 		msgBody, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()

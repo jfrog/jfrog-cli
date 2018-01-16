@@ -1,19 +1,19 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	rtclientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"sort"
-	"strings"
 	"encoding/json"
-	"path/filepath"
 	"errors"
-	clientuils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	rtclientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	clientuils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"fmt"
+	"path/filepath"
+	"sort"
+	"strings"
 )
 
 func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) error {
@@ -49,10 +49,10 @@ func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 		log.Output(clientuils.IndentJson(marshaledBuildInfo))
 		return nil
 	}
-	httpClientsDetails := flags.GetArtifactoryDetails().CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := flags.GetArtifactoryDetails().CreateHttpClientDetails()
 	rtclientutils.SetContentType("application/vnd.org.jfrog.artifactory+json", &httpClientsDetails.Headers)
 	log.Info("Deploying build info...")
-	resp, body, err := utils.PublishBuildInfo(flags.GetArtifactoryDetails().Url, marshaledBuildInfo, httpClientsDetails)
+	resp, body, err := utils.PublishBuildInfo(flags.GetArtifactoryDetails().GetUrl(), marshaledBuildInfo, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
-	log.Info("Build info successfully deployed. Browse it in Artifactory under " + flags.GetArtifactoryDetails().Url + "webapp/builds/" + buildName + "/" + buildNumber)
+	log.Info("Build info successfully deployed. Browse it in Artifactory under " + flags.GetArtifactoryDetails().GetUrl() + "webapp/builds/" + buildName + "/" + buildNumber)
 	if err = utils.RemoveBuildDir(buildName, buildNumber); err != nil {
 		return err
 	}

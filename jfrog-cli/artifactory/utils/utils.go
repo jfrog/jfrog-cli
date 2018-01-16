@@ -1,24 +1,24 @@
 package utils
 
 import (
+	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth/cert"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"errors"
 	"path"
-	"net/url"
 	"path/filepath"
-	"io"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 )
 
 const repoDetailsUrl = "api/repositories/"
@@ -31,13 +31,13 @@ func GetJfrogSecurityDir() (string, error) {
 	return filepath.Join(homeDir, "security"), nil
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth *auth.ArtifactoryDetails) (string, error) {
-	u, err := url.Parse(artifactoryAuth.Url)
+func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails) (string, error) {
+	u, err := url.Parse(artifactoryAuth.GetUrl())
 	if err != nil {
 		return "", err
 	}
 	u.Path = path.Join(u.Path, "api/security/encryptedPassword")
-	httpClientsDetails := artifactoryAuth.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := artifactoryAuth.CreateHttpClientDetails()
 	securityDir, err := GetJfrogSecurityDir()
 	if err != nil {
 		return "", err
@@ -71,7 +71,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := (&artifactory.ArtifactoryServicesConfigBuilder{}).
+	serviceConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetDryRun(isDryRun).
@@ -80,10 +80,10 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.NewArtifactoryService(serviceConfig)
+	return artifactory.New(serviceConfig)
 }
 
-func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultItem) ([]services.DeleteItem) {
+func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultItem) []services.DeleteItem {
 	deleteItems := make([]services.DeleteItem, len(resultItems))
 	for i, item := range resultItems {
 		deleteItems[i] = item
@@ -91,9 +91,9 @@ func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultIte
 	return deleteItems
 }
 
-func isRepoExists(repository string, artDetails *auth.ArtifactoryDetails) (bool, error) {
-	artHttpDetails := artDetails.CreateArtifactoryHttpClientDetails()
-	resp, _, _, err := httputils.SendGet(artDetails.Url+repoDetailsUrl+repository, true, artHttpDetails)
+func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
+	artHttpDetails := artDetails.CreateHttpClientDetails()
+	resp, _, _, err := httputils.SendGet(artDetails.GetUrl()+repoDetailsUrl+repository, true, artHttpDetails)
 	if err != nil {
 		return false, errorutils.CheckError(err)
 	}
@@ -104,7 +104,7 @@ func isRepoExists(repository string, artDetails *auth.ArtifactoryDetails) (bool,
 	return false, nil
 }
 
-func CheckIfRepoExists(repository string, artDetails *auth.ArtifactoryDetails) error {
+func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) error {
 	repoExists, err := isRepoExists(repository, artDetails)
 	if err != nil {
 		return err

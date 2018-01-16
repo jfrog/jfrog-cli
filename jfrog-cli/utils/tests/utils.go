@@ -1,19 +1,19 @@
 package tests
 
 import (
-	"testing"
-	"strconv"
+	"bytes"
 	"flag"
-	"strings"
-	"os"
-	"runtime"
+	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"bytes"
+	"os"
 	"os/exec"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"fmt"
+	"runtime"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 var RtUrl *string
@@ -164,7 +164,7 @@ type JfrogCli struct {
 	suffix string
 }
 
-func NewJfrogCli(mainFunc func(), prefix, suffix string) (*JfrogCli) {
+func NewJfrogCli(mainFunc func(), prefix, suffix string) *JfrogCli {
 	return &JfrogCli{mainFunc, prefix, suffix}
 }
 

@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"os"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"os"
 )
 
 func BuildAddGit(buildName, buildNumber, dotGitPath string) error {

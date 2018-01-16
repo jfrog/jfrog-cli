@@ -3,51 +3,52 @@ package config
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
-	"errors"
-	"os"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/buger/jsonparser"
-	"path/filepath"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"path"
-	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
 	"encoding/pem"
+	"errors"
+	"github.com/buger/jsonparser"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/prompt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
 const (
-	DefaultServerId = "Default-Server"
-	JfrogHomeEnv = "JFROG_CLI_HOME"
-	JfrogConfigFile = "jfrog-cli.conf"
+	DefaultServerId   = "Default-Server"
+	JfrogHomeEnv      = "JFROG_CLI_HOME"
+	JfrogConfigFile   = "jfrog-cli.conf"
 	JfrogDependencies = "dependencies"
 )
 
 func IsArtifactoryConfExists() (bool, error) {
-    conf, err := readConf()
-    if err != nil {
-        return false, err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return false, err
+	}
 	return conf.Artifactory != nil && len(conf.Artifactory) > 0, nil
 }
 
 func IsMissionControlConfExists() (bool, error) {
-    conf, err := readConf()
-    if err != nil {
-        return false, err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return false, err
+	}
 	return conf.MissionControl != nil, nil
 }
 
 func IsBintrayConfExists() (bool, error) {
-    conf, err := readConf()
-    if err != nil {
-        return false, err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return false, err
+	}
 	return conf.Bintray != nil, nil
 }
 
@@ -83,7 +84,7 @@ func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetai
 	return nil, errorutils.CheckError(errors.New("Couldn't find default server."))
 }
 
-func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails) {
+func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) *ArtifactoryDetails {
 	for _, conf := range configs {
 		if conf.ServerId == serverName {
 			return conf
@@ -115,10 +116,10 @@ func GetAllArtifactoryConfigs() ([]*ArtifactoryDetails, error) {
 }
 
 func ReadMissionControlConf() (*MissionControlDetails, error) {
-    conf, err := readConf()
-    if err != nil {
-        return nil, err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return nil, err
+	}
 	details := conf.MissionControl
 	if details == nil {
 		return new(MissionControlDetails), nil
@@ -127,10 +128,10 @@ func ReadMissionControlConf() (*MissionControlDetails, error) {
 }
 
 func ReadBintrayConf() (*BintrayDetails, error) {
-    conf, err := readConf()
-    if err != nil {
-        return nil, err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return nil, err
+	}
 	details := conf.Bintray
 	if details == nil {
 		return new(BintrayDetails), nil
@@ -148,19 +149,19 @@ func SaveArtifactoryConf(details []*ArtifactoryDetails) error {
 }
 
 func SaveMissionControlConf(details *MissionControlDetails) error {
-    conf, err := readConf()
-    if err != nil {
-        return err
-    }
+	conf, err := readConf()
+	if err != nil {
+		return err
+	}
 	conf.MissionControl = details
 	return saveConfig(conf)
 }
 
 func SaveBintrayConf(details *BintrayDetails) error {
 	config, err := readConf()
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 	config.Bintray = details
 	return saveConfig(config)
 }
@@ -277,9 +278,9 @@ func GetJfrogDependenciesPath() (string, error) {
 
 func getConfFilePath() (string, error) {
 	confPath, err := GetJfrogHomeDir()
-    if err != nil {
-        return "", err
-    }
+	if err != nil {
+		return "", err
+	}
 	os.MkdirAll(confPath, 0777)
 	return filepath.Join(confPath, JfrogConfigFile), nil
 }
@@ -322,11 +323,11 @@ type ArtifactoryDetails struct {
 }
 
 type BintrayDetails struct {
-	ApiUrl             string `json:"-"`
-	DownloadServerUrl  string `json:"-"`
-	User               string `json:"user,omitempty"`
-	Key                string `json:"key,omitempty"`
-	DefPackageLicenses string `json:"defPackageLicense,omitempty"`
+	ApiUrl            string `json:"-"`
+	DownloadServerUrl string `json:"-"`
+	User              string `json:"user,omitempty"`
+	Key               string `json:"key,omitempty"`
+	DefPackageLicense string `json:"defPackageLicense,omitempty"`
 }
 
 type MissionControlDetails struct {
@@ -367,25 +368,21 @@ func (artifactoryDetails *ArtifactoryDetails) GetPassword() string {
 	return artifactoryDetails.Password
 }
 
-func (artifactoryDetails *ArtifactoryDetails) IsSsh() bool {
-	return strings.HasPrefix(strings.ToLower(artifactoryDetails.Url), "ssh://")
-}
-
 func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 	return len(artifactoryDetails.SshAuthHeaders) > 0
 }
 
 func (artifactoryDetails *ArtifactoryDetails) sshAuthenticationRequired() bool {
-	return !artifactoryDetails.SshAuthHeaderSet() && artifactoryDetails.IsSsh()
+	return !artifactoryDetails.SshAuthHeaderSet() && httputils.IsSsh(artifactoryDetails.Url)
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (*auth.ArtifactoryDetails, error) {
-	artAuth := new(auth.ArtifactoryDetails)
-	artAuth.Url = artifactoryDetails.Url
-	artAuth.SshAuthHeaders = artifactoryDetails.SshAuthHeaders
-	artAuth.ApiKey = artifactoryDetails.ApiKey
-	artAuth.User = artifactoryDetails.User
-	artAuth.Password = artifactoryDetails.Password
+func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {
+	artAuth := auth.NewArtifactoryDetails()
+	artAuth.SetUrl(artifactoryDetails.Url)
+	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
+	artAuth.SetApiKey(artifactoryDetails.ApiKey)
+	artAuth.SetUser(artifactoryDetails.User)
+	artAuth.SetPassword(artifactoryDetails.Password)
 	if artifactoryDetails.sshAuthenticationRequired() {
 		var sshKey, sshPassphrase []byte
 		var err error
@@ -395,13 +392,10 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (*auth.Artif
 				return nil, err
 			}
 		}
-		sshAuth, baseUrl, err := artAuth.SshAuthentication(sshKey, sshPassphrase)
+		err = artAuth.AuthenticateSsh(sshKey, sshPassphrase)
 		if err != nil {
 			return nil, err
 		}
-		artAuth.SshAuthHeaders = sshAuth
-		// Change the url to http
-		artAuth.Url = baseUrl
 	}
 	return artAuth, nil
 }
@@ -432,10 +426,10 @@ func readSshPassphrase(sshKeyPath string) (string, error) {
 	if err != nil || !offerConfig {
 		return "", err
 	}
-	simplePrompt := &prompt.Simple {
-		Msg:     "Enter passphrase for key '" + sshKeyPath + "': ",
-		Mask:    true,
-		Label:   "sshPassphrase",
+	simplePrompt := &prompt.Simple{
+		Msg:   "Enter passphrase for key '" + sshKeyPath + "': ",
+		Mask:  true,
+		Label: "sshPassphrase",
 	}
 	if err = simplePrompt.Read(); err != nil {
 		return "", err
@@ -466,4 +460,3 @@ func (missionControlDetails *MissionControlDetails) GetUser() string {
 func (missionControlDetails *MissionControlDetails) GetPassword() string {
 	return missionControlDetails.Password
 }
-

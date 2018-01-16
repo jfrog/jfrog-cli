@@ -2,7 +2,7 @@ package utils
 
 import "testing"
 
-func TestReadMissionControlHttpMessage (t *testing.T){
+func TestReadMissionControlHttpMessage(t *testing.T) {
 	// Test simple error message
 	resp := []byte("{\"errors\":[{\"message\":\"HTTP 404 Not Found\",\"type\":\"Exception\"}]}")
 	expected := "HTTP 404 Not Found"

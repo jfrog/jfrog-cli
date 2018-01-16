@@ -1,20 +1,20 @@
 package utils
 
 import (
-	"os"
+	"errors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"os"
 	"path/filepath"
-	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
 type BuildType int
 
 const (
-	MAVEN  BuildType = iota
+	MAVEN BuildType = iota
 	GRADLE
 )
 
@@ -78,7 +78,7 @@ var defaultPropertiesValues = map[string]string{
 	"artifactory.publish.ivy":                            "false",
 	"buildInfoConfig.includeEnvVars":                     "false",
 	"buildInfoConfig.envVarsExcludePatterns":             "*password*,*secret*,*key*,*token*",
-	"buildInfo.agent.name":                               cliutils.CliAgent + "/" + cliutils.GetVersion(),
+	"buildInfo.agent.name":                               utils.ClientAgent + "/" + utils.GetVersion(),
 	"buildInfo.licenseControl.autoDiscover":              "true",
 	"buildInfo.licenseControl.includePublishedArtifacts": "false",
 	"buildInfo.licenseControl.runChecks":                 "false",

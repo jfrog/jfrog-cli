@@ -3,24 +3,25 @@ package services
 import (
 	"errors"
 	"github.com/jfrogdev/gofrog/parallel"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/errors/httperrors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/httpclient"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/errors/httperrors"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
-	"net/http"
 )
 
 type DownloadService struct {
 	client       *httpclient.HttpClient
-	ArtDetails   *auth.ArtifactoryDetails
+	ArtDetails   auth.ArtifactoryDetails
 	DryRun       bool
 	Threads      int
 	MinSplitSize int64
@@ -32,11 +33,11 @@ func NewDownloadService(client *httpclient.HttpClient) *DownloadService {
 	return &DownloadService{client: client}
 }
 
-func (ds *DownloadService) GetArtifactoryDetails() *auth.ArtifactoryDetails {
+func (ds *DownloadService) GetArtifactoryDetails() auth.ArtifactoryDetails {
 	return ds.ArtDetails
 }
 
-func (ds *DownloadService) SetArtifactoryDetails(rt *auth.ArtifactoryDetails) {
+func (ds *DownloadService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 	ds.ArtDetails = rt
 }
 
@@ -56,7 +57,7 @@ func (ds *DownloadService) SetThreads(threads int) {
 	ds.Threads = threads
 }
 
-func (ds *DownloadService) SetArtDetails(artDetails *auth.ArtifactoryDetails) {
+func (ds *DownloadService) SetArtDetails(artDetails auth.ArtifactoryDetails) {
 	ds.ArtDetails = artDetails
 }
 
@@ -150,7 +151,7 @@ func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, produ
 func collectDirPathsToCreate(aqlResultItem utils.ResultItem, directoriesData map[string]DownloadData, tempData DownloadData, directoriesDataKeys []string) (map[string]DownloadData, []string) {
 	key := aqlResultItem.Name
 	if aqlResultItem.Path != "." {
-		key = aqlResultItem.Path + "/" + aqlResultItem.Name
+		key = path.Join(aqlResultItem.Path, aqlResultItem.Name)
 	}
 	directoriesData[key] = tempData
 	directoriesDataKeys = append(directoriesDataKeys, key)
@@ -207,7 +208,7 @@ func createDownloadFileDetails(downloadPath, localPath, localFileName string, do
 }
 
 func (ds *DownloadService) downloadFile(downloadFileDetails *httpclient.DownloadFileDetails, logMsgPrefix string, downloadParams DownloadParams) error {
-	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := ds.ArtDetails.CreateHttpClientDetails()
 	bulkDownload := ds.SplitCount == 0 || ds.MinSplitSize < 0 || ds.MinSplitSize*1000 > downloadFileDetails.Size
 	if !bulkDownload {
 		acceptRange, err := ds.isFileAcceptRange(downloadFileDetails)
@@ -239,7 +240,7 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *httpclient.Download
 }
 
 func (ds *DownloadService) isFileAcceptRange(downloadFileDetails *httpclient.DownloadFileDetails) (bool, error) {
-	httpClientsDetails := ds.ArtDetails.CreateArtifactoryHttpClientDetails()
+	httpClientsDetails := ds.ArtDetails.CreateHttpClientDetails()
 	return ds.client.IsAcceptRanges(downloadFileDetails.DownloadPath, httpClientsDetails)
 }
 
@@ -334,7 +335,7 @@ func (ds *DownloadService) createFileHandlerFunc(buildDependencies [][]utils.Fil
 	return func(downloadData DownloadData) parallel.TaskFunc {
 		return func(threadId int) error {
 			logMsgPrefix := clientutils.GetLogMsgPrefix(threadId, ds.DryRun)
-			downloadPath, e := utils.BuildArtifactoryUrl(ds.ArtDetails.Url, downloadData.Dependency.GetItemRelativePath(), make(map[string]string))
+			downloadPath, e := utils.BuildArtifactoryUrl(ds.ArtDetails.GetUrl(), downloadData.Dependency.GetItemRelativePath(), make(map[string]string))
 			if e != nil {
 				return e
 			}
@@ -365,7 +366,7 @@ func (ds *DownloadService) createFileHandlerFunc(buildDependencies [][]utils.Fil
 				buildDependencies[threadId] = append(buildDependencies[threadId], dependency)
 			} else if !httperrors.IsResponseStatusError(e) {
 				// Ignore response status errors to continue downloading
-				log.Error(logMsgPrefix,"Received an error: "+ e.Error())
+				log.Error(logMsgPrefix, "Received an error: "+e.Error())
 				return e
 			}
 			return nil
