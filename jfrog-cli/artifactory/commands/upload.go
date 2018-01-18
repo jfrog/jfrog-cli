@@ -15,7 +15,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -152,22 +151,16 @@ func addBuildProps(props *string, buildName, buildNumber string) error {
 	if buildName == "" || buildNumber == "" {
 		return nil
 	}
-	buildProps := "build.name=" + buildName
-	buildProps += ";build.number=" + buildNumber
-	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	buildProps, err := utils.CreateBuildProperties(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
-	buildProps += ";build.timestamp=" + strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10)
-	*props = addProps(*props, buildProps)
-	return nil
-}
 
-func addProps(oldProps, additionalProps string) string {
-	if len(oldProps) > 0 && !strings.HasSuffix(oldProps, ";") && len(additionalProps) > 0 {
-		oldProps += ";"
+	if len(*props) > 0 && !strings.HasSuffix(*props, ";") && len(buildProps) > 0 {
+		*props += ";"
 	}
-	return oldProps + additionalProps
+	*props += buildProps
+	return nil
 }
 
 type UploadConfiguration struct {

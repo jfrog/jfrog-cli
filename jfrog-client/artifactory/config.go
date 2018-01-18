@@ -36,7 +36,7 @@ func (config *artifactoryServicesConfig) GetCertifactesPath() string {
 	return config.certifactesPath
 }
 
-func (config *artifactoryServicesConfig) GetNumOfThreadPerOperation() int {
+func (config *artifactoryServicesConfig) GetThreads() int {
 	return config.threads
 }
 

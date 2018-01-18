@@ -116,6 +116,13 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 	return nil
 }
 
+func RunCmdOutput(config CmdConfig) ([]byte, error) {
+	for k, v := range config.GetEnv() {
+		os.Setenv(k, v)
+	}
+	return config.GetCmd().Output()
+}
+
 func RunCmd(config CmdConfig) error {
 	for k, v := range config.GetEnv() {
 		os.Setenv(k, v)

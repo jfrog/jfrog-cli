@@ -20,9 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 func NpmPublish(repo string, cliFlags *npm.CliFlags) (err error) {
@@ -142,12 +140,11 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 	up := &services.UploadParamsImp{}
 	up.ArtifactoryCommonParams = &specutils.ArtifactoryCommonParams{Pattern: npmp.packedFilePath, Target: target}
 	if npmp.collectBuildInfo {
-		// TODO after merging docker build info use "createBuildProperties()" func for the properties
-		timestamp, err := getBuildTimestamp(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber)
+		utils.SaveBuildGeneralDetails(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber)
+		props, err := utils.CreateBuildProperties(npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber)
 		if err != nil {
 			return nil, err
 		}
-		props := fmt.Sprintf(`build.timestamp=%s;build.name=%s;build.number=%s`, timestamp, npmp.cliFlags.BuildName, npmp.cliFlags.BuildNumber)
 		up.ArtifactoryCommonParams.Props = props
 	}
 	artifactsFileInfo, _, failed, err := servicesManager.UploadFiles(up)
@@ -160,15 +157,6 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 		return nil, errorutils.CheckError(errors.New("Failed to upload the npm package to Artifactory. See Artifactory logs for more details."))
 	}
 	return artifactsFileInfo, nil
-}
-
-func getBuildTimestamp(buildName, buildNumber string) (timestamp string, err error) {
-	utils.SaveBuildGeneralDetails(buildName, buildNumber)
-	buildDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
-	if err != nil {
-		return "", err
-	}
-	return strconv.FormatInt(buildDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10), nil
 }
 
 func (npmp *npmPublish) saveArtifactData() error {

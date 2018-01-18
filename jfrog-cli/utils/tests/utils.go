@@ -29,6 +29,9 @@ var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
 var TestBuildTools *bool
+var TestDocker *bool
+var DockerRepoDomain *string
+var DockerTargetRepo *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -44,6 +47,9 @@ func init() {
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
+	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
+	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
+	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 }
 
 func CleanFileSystem() {

@@ -19,6 +19,7 @@ import (
 	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
@@ -293,6 +294,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:      "docker-push",
+			Flags:     getDockerPushFlags(),
+			Aliases:   []string{"dp"},
+			Usage:     dockerpush.Description,
+			HelpName:  common.CreateUsage("rt docker-push", dockerpush.Description, dockerpush.Usage),
+			UsageText: dockerpush.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				dockerPushCmd(c)
+			},
+		},
+		{
 			Name:      "npm-install",
 			Flags:     getNpmFlags(),
 			Aliases:   []string{"npmi"},
@@ -420,11 +433,6 @@ func getUploadFlags() []cli.Flag {
 			Name:  "regexp",
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
 		},
-		cli.StringFlag{
-			Name:  "threads",
-			Value: "",
-			Usage: "[Default: 3] Number of artifacts to upload in parallel.",
-		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -445,6 +453,7 @@ func getUploadFlags() []cli.Flag {
 			Name:  "exclude-patterns",
 			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
+		getThreadsFlag(),
 	}...)
 }
 
@@ -496,11 +505,6 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
 		cli.StringFlag{
-			Name:  "threads",
-			Value: "",
-			Usage: "[Default: 3] Number of artifacts to download in parallel.",
-		},
-		cli.StringFlag{
 			Name:  "retries",
 			Usage: "[Default: 3] Number of download retries.",
 		},
@@ -524,6 +528,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "exclude-patterns",
 			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
+		getThreadsFlag(),
 	}...)
 }
 
@@ -538,6 +543,14 @@ func getBuildToolFlags() []cli.Flag {
 			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.",
 		},
 	}
+}
+
+func getDockerPushFlags() []cli.Flag {
+	var flags []cli.Flag
+	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getServerFlags()...)
+	flags = append(flags, getThreadsFlag())
+	return flags
 }
 
 func getNpmFlags() []cli.Flag {
@@ -734,7 +747,16 @@ func getSetPropertiesFlags() []cli.Flag {
 			Name:  "exclude-patterns",
 			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
 		},
+		getThreadsFlag(),
 	}...)
+}
+
+func getThreadsFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "threads",
+		Value: "",
+		Usage: "[Default: 3] Number of working threads.",
+	}
 }
 
 func getBuildPublishFlags() []cli.Flag {
@@ -996,6 +1018,21 @@ func gradleCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func dockerPushCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	imageTag := c.Args().Get(0)
+	targetRepo := c.Args().Get(1)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	validateBuildParams(buildName, buildNumber)
+	dockerPushConfig := &commands.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
+	err := commands.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	cliutils.ExitOnErr(err)
+}
+
 func npmInstallCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1191,7 +1228,7 @@ func setPropsCmd(c *cli.Context) {
 	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
 	properties := c.Args()[1]
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	success, failed, err := commands.SetProps(setPropertiesSpec, properties, artDetails)
+	success, failed, err := commands.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
 	err = cliutils.PrintSummaryReport(success, failed, err)
 	cliutils.ExitOnErr(err)
 }

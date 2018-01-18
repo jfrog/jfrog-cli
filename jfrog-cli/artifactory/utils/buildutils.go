@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
@@ -16,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -34,6 +36,18 @@ func getBuildDir(buildName, buildNumber string) (string, error) {
 	return buildsDir, nil
 }
 
+func CreateBuildProperties(buildName, buildNumber string) (string, error) {
+	if buildName == "" || buildNumber == "" {
+		return "", nil
+	}
+	buildGeneralDetails, err := ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return fmt.Sprintf("build.name=%s;build.number=%s", buildName, buildNumber), err
+	}
+	timestamp := strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10)
+	return fmt.Sprintf("build.name=%s;build.number=%s;build.timestamp=%s", buildName, buildNumber, timestamp), nil
+}
+
 func getPartialsBuildDir(buildName, buildNumber string) (string, error) {
 	buildDir, err := getBuildDir(buildName, buildNumber)
 	if err != nil {
@@ -49,14 +63,12 @@ func getPartialsBuildDir(buildName, buildNumber string) (string, error) {
 
 func saveBuildData(action interface{}, buildName, buildNumber string) error {
 	b, err := json.Marshal(&action)
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	dirPath, err := getPartialsBuildDir(buildName, buildNumber)
@@ -66,6 +78,30 @@ func saveBuildData(action interface{}, buildName, buildNumber string) error {
 	log.Debug("Creating temp build file at:", dirPath)
 	tempFile, err := ioutil.TempFile(dirPath, "temp")
 	if err != nil {
+		return err
+	}
+	defer tempFile.Close()
+	_, err = tempFile.Write([]byte(content.String()))
+	return err
+}
+
+func SaveBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo) error {
+	b, err := json.Marshal(buildInfo)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	var content bytes.Buffer
+	err = json.Indent(&content, b, "", "  ")
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	dirPath, err := getBuildDir(buildName, buildNumber)
+	if err != nil {
+		return err
+	}
+	log.Debug("Creating temp build file at: " + dirPath)
+	tempFile, err := ioutil.TempFile(dirPath, "temp")
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	defer tempFile.Close()
@@ -95,8 +131,7 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	err = errorutils.CheckError(err)
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	err = ioutil.WriteFile(detailsFilePath, []byte(content.String()), 0600)

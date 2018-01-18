@@ -10,7 +10,7 @@ type Config interface {
 	GetPassword() string
 	GetApiKey() string
 	GetCertifactesPath() string
-	GetNumOfThreadPerOperation() int
+	GetThreads() int
 	GetMinSplitSize() int64
 	GetSplitCount() int
 	GetMinChecksumDeploy() int64

@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
+	"io"
 )
 
 type ArtifactoryServicesManager struct {
@@ -66,11 +67,18 @@ func (sm *ArtifactoryServicesManager) DeleteFiles(resultItems []services.DeleteI
 	return deleteService.DeleteFiles(resultItems, deleteService)
 }
 
+func (sm *ArtifactoryServicesManager) ReadRemoteFile(readPath string) (io.ReadCloser, error) {
+	readFileService := services.NewReadFileService(sm.client)
+	readFileService.DryRun = sm.config.IsDryRun()
+	readFileService.ArtDetails = sm.config.GetArtDetails()
+	return readFileService.ReadRemoteFile(readPath)
+}
+
 func (sm *ArtifactoryServicesManager) DownloadFiles(params services.DownloadParams) ([]utils.FileInfo, int, error) {
 	downloadService := services.NewDownloadService(sm.client)
 	downloadService.DryRun = sm.config.IsDryRun()
 	downloadService.ArtDetails = sm.config.GetArtDetails()
-	downloadService.Threads = sm.config.GetNumOfThreadPerOperation()
+	downloadService.Threads = sm.config.GetThreads()
 	downloadService.SplitCount = sm.config.GetSplitCount()
 	downloadService.MinSplitSize = sm.config.GetMinSplitSize()
 	return downloadService.DownloadFiles(params)
@@ -98,6 +106,7 @@ func (sm *ArtifactoryServicesManager) Aql(aql string) ([]byte, error) {
 func (sm *ArtifactoryServicesManager) SetProps(params services.SetPropsParams) (int, error) {
 	setPropsService := services.NewSetPropsService(sm.client)
 	setPropsService.ArtDetails = sm.config.GetArtDetails()
+	setPropsService.Threads = sm.config.GetThreads()
 	return setPropsService.SetProps(params)
 }
 
@@ -121,7 +130,7 @@ func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) (succ
 }
 
 func (sm *ArtifactoryServicesManager) setCommonServiceConfig(commonConfig ArtifactoryServicesSetter) {
-	commonConfig.SetThread(sm.config.GetNumOfThreadPerOperation())
+	commonConfig.SetThread(sm.config.GetThreads())
 	commonConfig.SetArtDetails(sm.config.GetArtDetails())
 	commonConfig.SetDryRun(sm.config.IsDryRun())
 }

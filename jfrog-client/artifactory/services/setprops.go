@@ -1,10 +1,12 @@
 package services
 
 import (
+	"github.com/jfrogdev/gofrog/parallel"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 )
@@ -12,6 +14,7 @@ import (
 type SetPropsService struct {
 	client     *httpclient.HttpClient
 	ArtDetails auth.ArtifactoryDetails
+	Threads    int
 }
 
 func NewSetPropsService(client *httpclient.HttpClient) *SetPropsService {
@@ -30,6 +33,10 @@ func (sp *SetPropsService) IsDryRun() bool {
 	return false
 }
 
+func (sp *SetPropsService) GetThreads() int {
+	return sp.Threads
+}
+
 func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) (int, error) {
 	updatePropertiesBaseUrl := sp.GetArtifactoryDetails().GetUrl() + "api/storage"
 	log.Info("Setting properties...")
@@ -37,27 +44,48 @@ func (sp *SetPropsService) SetProps(setPropsParams SetPropsParams) (int, error) 
 	if err != nil {
 		return 0, err
 	}
-	successCount := 0
+	successCounters := make([]int, sp.GetThreads())
 	encodedParam := props.ToEncodedString()
-	for _, item := range setPropsParams.GetItems() {
-		log.Info("Setting properties on:", item.GetItemRelativePath())
-		httpClientsDetails := sp.GetArtifactoryDetails().CreateHttpClientDetails()
-		setPropertiesUrl := updatePropertiesBaseUrl + "/" + item.GetItemRelativePath() + "?properties=" + encodedParam
-		log.Debug("Sending set properties request:", setPropertiesUrl)
-		resp, body, err := sp.client.SendPut(setPropertiesUrl, nil, httpClientsDetails)
-		if err != nil {
-			log.Error(err)
-			continue
+	producerConsumer := parallel.NewBounedRunner(sp.GetThreads(), true)
+	errorsQueue := utils.NewErrorsQueue(1)
+
+	go func() {
+		for _, item := range setPropsParams.GetItems() {
+			relativePath := item.GetItemRelativePath()
+			setPropsTask := func(threadId int) error {
+				logMsgPrefix := clientutils.GetLogMsgPrefix(threadId, sp.IsDryRun())
+				log.Info(logMsgPrefix+"Setting properties on:", relativePath)
+				httpClientsDetails := sp.GetArtifactoryDetails().CreateHttpClientDetails()
+				setPropertiesUrl := updatePropertiesBaseUrl + "/" + relativePath + "?properties=" + encodedParam
+				log.Debug(logMsgPrefix+"Sending set properties request:", setPropertiesUrl)
+				resp, body, err := sp.client.SendPut(setPropertiesUrl, nil, httpClientsDetails)
+				if err != nil {
+					return err
+				}
+				if err = httperrors.CheckResponseStatus(resp, body, http.StatusNoContent); err != nil {
+					return err
+				}
+				successCounters[threadId]++
+				return nil
+			}
+
+			producerConsumer.AddTaskWithError(setPropsTask, errorsQueue.AddError)
 		}
-		if err = httperrors.CheckResponseStatus(resp, body, http.StatusNoContent); err != nil {
-			log.Error(err)
-			continue
-		}
-		successCount++
+		defer producerConsumer.Done()
+	}()
+
+	producerConsumer.Run()
+	totalSuccess := 0
+	for _, v := range successCounters {
+		totalSuccess += v
 	}
 
+	err = errorsQueue.GetError()
+	if err != nil {
+		return totalSuccess, err
+	}
 	log.Info("Done setting properties.")
-	return successCount, err
+	return totalSuccess, nil
 }
 
 type SetPropsParams interface {

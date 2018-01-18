@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"os"
 	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 )
 
 func TestMain(m *testing.M) {
@@ -24,6 +24,9 @@ func setupIntegrationTests() {
 	}
 	if *tests.TestBuildTools {
 		InitBuildToolsTests()
+	}
+	if *tests.TestDocker {
+		InitDockerTests()
 	}
 }
 

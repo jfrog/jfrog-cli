@@ -168,6 +168,19 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 	return resp, body, nil
 }
 
+// Read remote file,
+// The caller is responsible to close the io.ReaderCloser
+func (jc *HttpClient) ReadRemoteFile(downloadPath string, httpClientsDetails httputils.HttpClientDetails, retries int) (io.ReadCloser, error) {
+	resp, _, err := jc.sendGetForFileDownload(downloadPath, true, httpClientsDetails, 0, retries)
+	if err != nil {
+		return nil, err
+	}
+	if err = httperrors.CheckResponseStatus(resp, nil, http.StatusOK); err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
+}
+
 func (jc *HttpClient) DownloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails, retries int, isExplode bool) (*http.Response, error) {
 	resp, _, err := jc.downloadFile(downloadFileDetails, logMsgPrefix, true, httpClientsDetails, retries, isExplode)
 	return resp, err
