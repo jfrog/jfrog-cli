@@ -2,8 +2,8 @@ package utils
 
 import (
 	"errors"
+	"github.com/jfrogdev/_jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -78,7 +78,7 @@ var defaultPropertiesValues = map[string]string{
 	"artifactory.publish.ivy":                            "false",
 	"buildInfoConfig.includeEnvVars":                     "false",
 	"buildInfoConfig.envVarsExcludePatterns":             "*password*,*secret*,*key*,*token*",
-	"buildInfo.agent.name":                               utils.ClientAgent + "/" + utils.GetVersion(),
+	"buildInfo.agent.name":                               cliutils.CliAgent + "/" + cliutils.GetVersion(),
 	"buildInfo.licenseControl.autoDiscover":              "true",
 	"buildInfo.licenseControl.includePublishedArtifacts": "false",
 	"buildInfo.licenseControl.runChecks":                 "false",

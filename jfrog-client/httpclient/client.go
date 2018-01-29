@@ -427,7 +427,7 @@ func setAuthentication(req *http.Request, httpClientsDetails httputils.HttpClien
 }
 
 func addUserAgentHeader(req *http.Request) {
-	req.Header.Set("User-Agent", utils.ClientAgent+"/"+utils.GetVersion())
+	req.Header.Set("User-Agent", utils.GetUserAgent())
 }
 
 type DownloadFileDetails struct {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray"
@@ -65,10 +66,13 @@ Environment Variables:
 `
 
 func main() {
+	// Set JFrog CLI's user-agent on the jfrog-client-go.
+	utils.SetUserAgent(fmt.Sprintf("%s/%s", cliutils.ClientAgent, cliutils.GetVersion()))
+
 	app := cli.NewApp()
 	app.Name = "jfrog"
 	app.Usage = "See https://github.com/jfrogdev/jfrog-cli-go for usage instructions."
-	app.Version = utils.GetVersion()
+	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()
 	cli.CommandHelpTemplate = commandHelpTemplate

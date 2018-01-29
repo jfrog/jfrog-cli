@@ -46,7 +46,7 @@ func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) 
 	data := XrayScanBody{
 		BuildName:   scanParams.GetBuildName(),
 		BuildNumber: scanParams.GetBuildNumber(),
-		Context:     clientutils.ClientAgent,
+		Context:     clientutils.GetUserAgent(),
 	}
 
 	requestContent, err := json.Marshal(data)

@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+const ClientAgent = "jfrog-cli-go"
+
 // CLI base commands constants:
 const CmdArtifactory = "rt"
 const CmdBintray = "bt"
@@ -101,7 +103,7 @@ func confirmAnswer(answer string) bool {
 }
 
 func GetVersion() string {
-	return "1.13.1"
+	return "1.14.0-dev"
 }
 
 func GetConfigVersion() string {

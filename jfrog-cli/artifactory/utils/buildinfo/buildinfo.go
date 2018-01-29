@@ -1,15 +1,15 @@
 package buildinfo
 
 import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"time"
 )
 
 func New() *BuildInfo {
 	return &BuildInfo{
-		Agent:      &Agent{Name: utils.ClientAgent, Version: utils.GetVersion()},
-		BuildAgent: &Agent{Name: "GENERIC", Version: utils.GetVersion()},
+		Agent:      &Agent{Name: cliutils.ClientAgent, Version: cliutils.GetVersion()},
+		BuildAgent: &Agent{Name: "GENERIC", Version: cliutils.GetVersion()},
 		Modules:    make([]Module, 0),
 		Vcs:        &Vcs{},
 	}
