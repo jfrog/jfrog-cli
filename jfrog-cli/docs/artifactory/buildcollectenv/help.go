@@ -1,6 +1,6 @@
 package buildcollectenv
 
-const Description = "Capture environment variables. Environment variables can be excluded using the build-publish command."
+const Description = "Collect environment variables. Environment variables can be excluded using the build-publish command."
 
 var Usage = []string{"jfrog rt bce <build name> <build number>"}
 
