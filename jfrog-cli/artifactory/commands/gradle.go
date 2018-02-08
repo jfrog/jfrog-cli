@@ -88,11 +88,11 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 }
 
 func getInitScript(dependenciesPath string) (string, error) {
-	initScript := filepath.Join(dependenciesPath, gradleInitScriptTemplate)
 	dependenciesPath, err := filepath.Abs(dependenciesPath)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
+	initScript := filepath.Join(dependenciesPath, gradleInitScriptTemplate)
 
 	if fileutils.IsPathExists(initScript) {
 		return initScript, nil
