@@ -14,10 +14,16 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 )
 
-const VULNERABILITY = "__vuln"
-const COMPONENT = "__comp"
+const (
+	Vulnerability       = "__vuln"
+	Component           = "__comp"
+	JxrayDefaultBaseUrl = "https://jxray.jfrog.io/"
+	JxrayApiBundles     = "api/v1/updates/bundles"
+	JxrayApiOnboarding  = "api/v1/updates/onboarding"
+)
 
 func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 	updatesUrl, err := buildUpdatesUrl(flags)
@@ -56,17 +62,22 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 	return nil
 }
 
-func getUpdatesBaseUrl() string {
-	url := os.Getenv("JFROG_CLI_JXRAY_UPDATES_API_URL")
-	if url != "" {
-		return url
+func getUpdatesBaseUrl(datesSpecified bool) string {
+	jxRayBaseUrl := os.Getenv("JFROG_CLI_JXRAY_BASE_URL")
+	jxRayBaseUrl = utils.AddTrailingSlashIfNeeded(jxRayBaseUrl)
+	if jxRayBaseUrl == "" {
+		jxRayBaseUrl = JxrayDefaultBaseUrl
 	}
-	return "https://jxray.jfrog.io/api/v1/updates/onboarding"
+	if datesSpecified {
+		return jxRayBaseUrl + JxrayApiBundles
+	}
+	return jxRayBaseUrl + JxrayApiOnboarding
 }
 
 func buildUpdatesUrl(flags *OfflineUpdatesFlags) (string, error) {
 	var queryParams string
-	if flags.From > 0 && flags.To > 0 {
+	datesSpecified := flags.From > 0 && flags.To > 0
+	if datesSpecified {
 		if err := validateDates(flags.From, flags.To); err != nil {
 			return "", err
 		}
@@ -78,7 +89,7 @@ func buildUpdatesUrl(flags *OfflineUpdatesFlags) (string, error) {
 		}
 		queryParams += fmt.Sprintf("version=%v", flags.Version)
 	}
-	url := getUpdatesBaseUrl()
+	url := getUpdatesBaseUrl(datesSpecified)
 	if queryParams != "" {
 		url += "?" + queryParams
 	}
@@ -159,9 +170,9 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 	}
 
 	for _, v := range urls.Urls {
-		if strings.Contains(v, VULNERABILITY) {
+		if strings.Contains(v, Vulnerability) {
 			vulnerabilities = append(vulnerabilities, v)
-		} else if strings.Contains(v, COMPONENT) {
+		} else if strings.Contains(v, Component) {
 			components = append(components, v)
 		}
 	}
