@@ -91,6 +91,7 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 		buildInfo.Properties = env
 	}
 	buildInfo.ArtifactoryPrincipal = config.GetArtifactoryDetails().GetUser()
+	buildInfo.BuildUrl = config.BuildUrl
 	if vcs != (buildinfo.Vcs{}) {
 		buildInfo.Revision = vcs.Revision
 		buildInfo.Url = vcs.Url

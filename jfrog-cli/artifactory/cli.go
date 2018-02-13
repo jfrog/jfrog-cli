@@ -729,6 +729,10 @@ func getThreadsFlag() cli.Flag {
 
 func getBuildPublishFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "build-url",
+			Usage: "[Optional] Can be used for setting the CI server build URL in the build-info.",
+		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -1534,6 +1538,7 @@ func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
 func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfo.Configuration, artDetails *config.ArtifactoryDetails) {
 	flags = new(buildinfo.Configuration)
 	artDetails = createArtifactoryDetailsByFlags(c, true)
+	flags.BuildUrl = c.String("build-url")
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
 	flags.EnvExclude = c.String("env-exclude")

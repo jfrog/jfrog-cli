@@ -28,6 +28,7 @@ type BuildInfo struct {
 	Started              string   `json:"started,omitempty"`
 	Properties           Env      `json:"properties,omitempty"`
 	ArtifactoryPrincipal string   `json:"artifactoryPrincipal,omitempty"`
+	BuildUrl             string   `json:"url,omitempty"`
 	*Vcs
 }
 
@@ -95,6 +96,7 @@ type General struct {
 
 type Configuration struct {
 	ArtDetails auth.ArtifactoryDetails
+	BuildUrl   string
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string

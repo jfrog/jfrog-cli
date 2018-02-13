@@ -109,23 +109,45 @@ func TestBuildAddDependencies(t *testing.T) {
 	clearTempBuildFiles(tests.BuildAddDepsBuildName, buildNumbers)
 }
 
+// Test publish build info without --build-url
 func TestArtifactoryPublishBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "10"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
-	//upload files with buildName and buildNumber
-	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	body := uploadFilesAndGetBuildInfo(t, buildName, buildNumber, "")
 
-	//publish buildInfo
-	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+	// Validate no build url
+	_, _, _, err := jsonparser.Get(body, "buildInfo", "url")
+	if err == nil {
+		t.Error("Build url is expected to be empty")
+	}
 
-	//validate files are uploaded with the build info name and number
-	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo1, tests.Repo1+"/*", props, t)
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
 
-	//cleanup
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
+// Test publish build info with --build-url
+func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "11"
+	buildUrl := "http://example.ci.com"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+	body := uploadFilesAndGetBuildInfo(t, buildName, buildNumber, buildUrl)
+
+	// Validate correctness of build url
+	actualBuildUrl, err := jsonparser.GetString(body, "buildInfo", "url")
+	if err != nil {
+		t.Error(err)
+	}
+	if buildUrl != actualBuildUrl {
+		t.Errorf("Build url expected %v, got %v", buildUrl, actualBuildUrl)
+	}
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
@@ -238,6 +260,31 @@ func TestReadGitConfig(t *testing.T) {
 	if gitManager.GetUrl() != url {
 		t.Error("Wrong revision", "expected: "+url, "Got: "+gitManager.GetUrl())
 	}
+}
+
+func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) ([]byte) {
+	//upload files with buildName and buildNumber
+	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	//publish buildInfo
+	publishBuildInfoArgs := []string{"build-publish", buildName, buildNumber}
+	if buildUrl != "" {
+		publishBuildInfoArgs = append(publishBuildInfoArgs, "--build-url=" + buildUrl)
+	}
+	artifactoryCli.Exec(publishBuildInfoArgs...)
+
+	//validate files are uploaded with the build info name and number
+	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
+	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo1, tests.Repo1+"/*", props, t)
+
+	//download build info
+	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v",artifactoryDetails.Url, buildName, buildNumber)
+	_, body, _, err := httputils.SendGet(buildInfoUrl, false, artHttpDetails)
+	if err != nil {
+		t.Error(err)
+	}
+	return body
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, t *testing.T) {
