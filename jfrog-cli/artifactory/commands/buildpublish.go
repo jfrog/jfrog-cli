@@ -16,14 +16,14 @@ import (
 	"strings"
 )
 
-func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDetails *config.ArtifactoryDetails) error {
+func BuildPublish(buildName, buildNumber string, config *buildinfo.Configuration, artDetails *config.ArtifactoryDetails) error {
 	artAuth, err := artDetails.CreateArtAuthConfig()
 	if err != nil {
 		return err
 	}
-	flags.SetArtifactoryDetails(artAuth)
+	config.SetArtifactoryDetails(artAuth)
 
-	buildInfo, err := createBuildInfoFromPartials(buildName, buildNumber, flags)
+	buildInfo, err := createBuildInfoFromPartials(buildName, buildNumber, config)
 	if err != nil {
 		return err
 	}
@@ -37,22 +37,22 @@ func BuildPublish(buildName, buildNumber string, flags *buildinfo.Flags, artDeta
 		buildInfo.Append(v)
 	}
 
-	return sendBuildInfo(buildName, buildNumber, buildInfo, flags)
+	return sendBuildInfo(buildName, buildNumber, buildInfo, config)
 }
 
-func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo, flags *buildinfo.Flags) error {
+func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo, config *buildinfo.Configuration) error {
 	marshaledBuildInfo, err := json.Marshal(buildInfo)
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	if flags.IsDryRun() {
+	if config.IsDryRun() {
 		log.Output(clientuils.IndentJson(marshaledBuildInfo))
 		return nil
 	}
-	httpClientsDetails := flags.GetArtifactoryDetails().CreateHttpClientDetails()
+	httpClientsDetails := config.GetArtifactoryDetails().CreateHttpClientDetails()
 	rtclientutils.SetContentType("application/vnd.org.jfrog.artifactory+json", &httpClientsDetails.Headers)
 	log.Info("Deploying build info...")
-	resp, body, err := utils.PublishBuildInfo(flags.GetArtifactoryDetails().GetUrl(), marshaledBuildInfo, httpClientsDetails)
+	resp, body, err := utils.PublishBuildInfo(config.GetArtifactoryDetails().GetUrl(), marshaledBuildInfo, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -61,14 +61,14 @@ func sendBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 	}
 
 	log.Debug("Artifactory response:", resp.Status)
-	log.Info("Build info successfully deployed. Browse it in Artifactory under " + flags.GetArtifactoryDetails().GetUrl() + "webapp/builds/" + buildName + "/" + buildNumber)
+	log.Info("Build info successfully deployed. Browse it in Artifactory under " + config.GetArtifactoryDetails().GetUrl() + "webapp/builds/" + buildName + "/" + buildNumber)
 	if err = utils.RemoveBuildDir(buildName, buildNumber); err != nil {
 		return err
 	}
 	return nil
 }
 
-func createBuildInfoFromPartials(buildName, buildNumber string, flags *buildinfo.Flags) (*buildinfo.BuildInfo, error) {
+func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinfo.Configuration) (*buildinfo.BuildInfo, error) {
 	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber)
 	if err != nil {
 		return nil, err
@@ -83,14 +83,14 @@ func createBuildInfoFromPartials(buildName, buildNumber string, flags *buildinfo
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	modules, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(flags.EnvInclude), createExcludeFilter(flags.EnvExclude))
+	modules, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(config.EnvInclude), createExcludeFilter(config.EnvExclude))
 	if err != nil {
 		return nil, err
 	}
 	if len(env) != 0 {
 		buildInfo.Properties = env
 	}
-	buildInfo.ArtifactoryPrincipal = flags.GetArtifactoryDetails().GetUser()
+	buildInfo.ArtifactoryPrincipal = config.GetArtifactoryDetails().GetUser()
 	if vcs != (buildinfo.Vcs{}) {
 		buildInfo.Revision = vcs.Revision
 		buildInfo.Url = vcs.Url

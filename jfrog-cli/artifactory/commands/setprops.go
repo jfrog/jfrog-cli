@@ -10,7 +10,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 )
 
-func SetProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (int, int, error) {
+func SetProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
 	servicesManager, err := createSetPropsServiceManager(threads, artDetails)
 	if err != nil {
 		return 0, 0, err

@@ -234,7 +234,7 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 		return err
 	}
 
-	buildPath, err := getBuildDir(config.GetString(BUILD_NAME), config.GetString(BUILD_NUMBER))
+	buildPath, err := GetBuildDir(config.GetString(BUILD_NAME), config.GetString(BUILD_NUMBER))
 	if err != nil {
 		return err
 	}

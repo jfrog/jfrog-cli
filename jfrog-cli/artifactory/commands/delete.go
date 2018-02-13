@@ -8,7 +8,7 @@ import (
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )
 
-func Delete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) (successCount, failedCount int, err error) {
+func Delete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) (successCount, failCount int, err error) {
 	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return 0, 0, err

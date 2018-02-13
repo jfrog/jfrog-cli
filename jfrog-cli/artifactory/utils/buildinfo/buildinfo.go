@@ -93,21 +93,21 @@ type General struct {
 	Timestamp time.Time `json:"Timestamp,omitempty"`
 }
 
-type Flags struct {
+type Configuration struct {
 	ArtDetails auth.ArtifactoryDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (flags *Flags) GetArtifactoryDetails() auth.ArtifactoryDetails {
-	return flags.ArtDetails
+func (config *Configuration) GetArtifactoryDetails() auth.ArtifactoryDetails {
+	return config.ArtDetails
 }
 
-func (flags *Flags) SetArtifactoryDetails(artDetails auth.ArtifactoryDetails) {
-	flags.ArtDetails = artDetails
+func (config *Configuration) SetArtifactoryDetails(artDetails auth.ArtifactoryDetails) {
+	config.ArtDetails = artDetails
 }
 
-func (flags *Flags) IsDryRun() bool {
-	return flags.DryRun
+func (config *Configuration) IsDryRun() bool {
+	return config.DryRun
 }

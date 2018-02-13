@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"io/ioutil"
@@ -21,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 )
 
 func InitBuildToolsTests() {
@@ -75,8 +74,8 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 }
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	mavenFlags := &utils.BuildConfigFlags{}
-	err := commands.Mvn("clean install -f"+pomPath, configFilePath, mavenFlags)
+	buildConfig := &utils.BuildConfiguration{}
+	err := commands.Mvn("clean install -f"+pomPath, configFilePath, buildConfig)
 	if err != nil {
 		t.Error(err)
 	}
@@ -155,7 +154,7 @@ func TestDockerPush(t *testing.T) {
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
 	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, t)
-	deleteBuild(buildName)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	deleteFlags := new(commands.DeleteConfiguration)
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
@@ -174,7 +173,7 @@ func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtif
 		t.Error("Docker build info was not pushed correctly correctly, expected:", expectedArtifacts, " Found:", len(result))
 	}
 
-	buildInfo := getBuildInfo(buildName, buildNumber, t)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		t.Error("Docker build info was not generated correctly, no modules were created.")
 	}
@@ -232,7 +231,7 @@ func TestNpm(t *testing.T) {
 		t.Error(err)
 	}
 	cleanBuildToolsTest()
-	deleteBuild(tests.NpmBuildName)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
@@ -276,8 +275,8 @@ func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcPr
 }
 
 func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {
-	buildConfigFlags := &utils.BuildConfigFlags{}
-	err := commands.Gradle("clean artifactoryPublish -b "+buildGradlePath, configFilePath, buildConfigFlags)
+	buildConfig := &utils.BuildConfiguration{}
+	err := commands.Gradle("clean artifactoryPublish -b "+buildGradlePath, configFilePath, buildConfig)
 	if err != nil {
 		t.Error(err)
 	}
@@ -379,8 +378,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json-9.0.6.tgz", scopes: []string{"development"}})
 	}
-
-	buildInfo := getBuildInfo(tests.NpmBuildName, npmTestParams.buildNumber, t)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
 		t.Errorf("npm install test with the arguments: \n%s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
@@ -389,7 +387,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	if len(expectedDependencies) != len(buildInfo.Modules[0].Dependencies) {
 		// The checksums are ignored when comparing the actual and the expected
 		t.Errorf("npm install test with the arguments: \n%s \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
-			npmTestParams, expectedDependencies, buildInfo.Modules[0].Dependencies)
+			npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
 	}
 	for _, expectedDependency := range expectedDependencies {
 		found := false
@@ -404,13 +402,13 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 		if !found {
 			// The checksums are ignored when comparing the actual and the expected
 			t.Errorf("npm install test with the arguments: \n%s \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
-				npmTestParams, expectedDependencies, buildInfo.Modules[0].Dependencies)
+				npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
 		}
 	}
 }
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo := getBuildInfo(tests.NpmBuildName, npmTestParams.buildNumber, t)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	if len(buildInfo.Modules) > 0 {
 		t.Errorf("npm install test with the arguments: \n%s \nexpected to have no modules but has: \n%s",
 			npmTestParams, buildInfo.Modules[0])
@@ -449,7 +447,7 @@ func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo := getBuildInfo(tests.NpmBuildName, npmTestParams.buildNumber, t)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	expectedArtifactName := "jfrog-cli-tests-1.0.0.tgz"
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
@@ -467,20 +465,7 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
 	}
 }
 
-func getBuildInfo(buildName, buildNumber string, t *testing.T) buildinfo.BuildInfo {
-	_, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
-	if err != nil {
-		t.Error(err)
-	}
 
-	var buildInfoJson struct {
-		BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"`
-	}
-	if err := json.Unmarshal(body, &buildInfoJson); err != nil {
-		t.Error(err)
-	}
-	return buildInfoJson.BuildInfo
-}
 
 type npmTestParams struct {
 	command        string

@@ -78,8 +78,12 @@ func (f File) IsExplode(defaultValue bool) (bool, error) {
 	return clientutils.StringToBool(f.Explode, defaultValue)
 }
 
+func (f File) IsRegexp(defaultValue bool) (bool, error) {
+	return clientutils.StringToBool(f.Regexp, defaultValue)
+}
+
 func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 
 	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
@@ -102,7 +106,7 @@ func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error
 }
 
 func (f *File) ToArtifatoryDownloadParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
@@ -118,7 +122,7 @@ func (f *File) ToArtifatoryDownloadParams() (*utils.ArtifactoryCommonParams, err
 }
 
 func (f *File) ToArtifatoryDeleteParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
@@ -128,7 +132,7 @@ func (f *File) ToArtifatoryDeleteParams() (*utils.ArtifactoryCommonParams, error
 }
 
 func (f *File) ToArtifatorySearchParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
@@ -139,7 +143,7 @@ func (f *File) ToArtifatorySearchParams() (*utils.ArtifactoryCommonParams, error
 }
 
 func (f *File) ToArtifatoryMoveCopyParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 	recursive, err := clientutils.StringToBool(f.Recursive, true)
 	if err != nil {
 		return nil, err
@@ -149,7 +153,7 @@ func (f *File) ToArtifatoryMoveCopyParams() (*utils.ArtifactoryCommonParams, err
 }
 
 func (f *File) ToArtifatorySetPropsParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.toArtifactoryCommonParams()
+	params := f.ToArtifactoryCommonParams()
 	recursive, err := clientutils.StringToBool(f.Recursive, false)
 	if err != nil {
 		return nil, err
@@ -162,7 +166,7 @@ func (f *File) ToArtifatorySetPropsParams() (*utils.ArtifactoryCommonParams, err
 	return params, nil
 }
 
-func (f *File) toArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
+func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params := new(utils.ArtifactoryCommonParams)
 	params.Aql = f.Aql
 	params.Pattern = f.Pattern

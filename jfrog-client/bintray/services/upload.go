@@ -194,7 +194,7 @@ func (us *UploadService) getFilesToUpload(uploadDetails *UploadParams) ([]client
 		debianDefaultPath = getDebianDefaultPath(uploadDetails.Deb, uploadDetails.Package)
 	}
 
-	rootPath := clientutils.GetRootPathForUpload(uploadDetails.Pattern, uploadDetails.UseRegExp)
+	rootPath := clientutils.GetRootPath(uploadDetails.Pattern, uploadDetails.UseRegExp)
 	if !fileutils.IsPathExists(rootPath) {
 		err := errorutils.CheckError(errors.New("Path does not exist: " + rootPath))
 		if err != nil {

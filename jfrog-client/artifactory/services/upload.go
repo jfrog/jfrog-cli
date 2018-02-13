@@ -1,11 +1,9 @@
 package services
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
 	"github.com/jfrogdev/gofrog/parallel"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/fspatterns"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
@@ -99,26 +97,6 @@ func sumIntArray(arr []int) int {
 	return sum
 }
 
-func getSingleFileToUpload(rootPath, targetPath string, flat bool) clientutils.Artifact {
-	var uploadPath string
-	if !strings.HasSuffix(targetPath, "/") {
-		uploadPath = targetPath
-	} else {
-		if flat {
-			uploadPath, _ = fileutils.GetFileAndDirFromPath(rootPath)
-			uploadPath = targetPath + uploadPath
-		} else {
-			uploadPath = targetPath + rootPath
-			uploadPath = clientutils.TrimPath(uploadPath)
-		}
-	}
-	symlinkPath, e := getFileSymlinkPath(rootPath)
-	if e != nil {
-		return clientutils.Artifact{}
-	}
-	return clientutils.Artifact{LocalPath: rootPath, TargetPath: uploadPath, Symlink: symlinkPath}
-}
-
 func addProps(oldProps, additionalProps string) string {
 	if len(oldProps) > 0 && !strings.HasSuffix(oldProps, ";") && len(additionalProps) > 0 {
 		oldProps += ";"
@@ -160,16 +138,22 @@ func collectFilesForUpload(uploadParams UploadParams, producer parallel.Runner, 
 	if strings.Index(uploadParams.GetTarget(), "/") < 0 {
 		uploadParams.SetTarget(uploadParams.GetTarget() + "/")
 	}
-	uploadMetaData := uploadDescriptor{}
 	uploadParams.SetPattern(clientutils.ReplaceTildeWithUserHome(uploadParams.GetPattern()))
-	uploadMetaData.CreateUploadDescriptor(uploadParams.IsRegexp(), uploadParams.IsFlat(), uploadParams.GetPattern())
-	if uploadMetaData.Err != nil {
-		errorsQueue.AddError(uploadMetaData.Err)
+	rootPath, err := fspatterns.GetRootPath(uploadParams.GetPattern(), uploadParams.IsRegexp())
+	if err != nil {
+		errorsQueue.AddError(err)
 		return
 	}
-	// If the path is a single file then return it
-	if !uploadMetaData.IsDir || (uploadParams.IsSymlink() && fileutils.IsPathSymlink(uploadParams.GetPattern())) {
-		artifact := getSingleFileToUpload(uploadMetaData.RootPath, uploadParams.GetTarget(), uploadMetaData.IsFlat)
+
+	isDir, err := fileutils.IsDir(rootPath)
+	if err != nil {
+		errorsQueue.AddError(err)
+		return
+	}
+
+	// If the path is a single file then return it or it is a link and preserve symbolic links is set to true
+	if !isDir || (uploadParams.IsSymlink() && fileutils.IsPathSymlink(uploadParams.GetPattern())) {
+		artifact := fspatterns.GetSingleFileToUpload(rootPath, uploadParams.GetTarget(), uploadParams.IsFlat())
 		props, err := addSymlinkProps(artifact, uploadParams)
 		if err != nil {
 			errorsQueue.AddError(err)
@@ -180,63 +164,22 @@ func collectFilesForUpload(uploadParams UploadParams, producer parallel.Runner, 
 		producer.AddTaskWithError(task, errorsQueue.AddError)
 		return
 	}
-	uploadParams.SetPattern(clientutils.PrepareLocalPathForUpload(uploadParams.GetPattern(), uploadMetaData.IsRegexp))
-	err := collectPatternMatchingFiles(uploadParams, uploadMetaData, producer, artifactHandlerFunc, errorsQueue)
+	uploadParams.SetPattern(clientutils.PrepareLocalPathForUpload(uploadParams.GetPattern(), uploadParams.IsRegexp()))
+	err = collectPatternMatchingFiles(uploadParams, rootPath, producer, artifactHandlerFunc, errorsQueue)
 	if err != nil {
 		errorsQueue.AddError(err)
 		return
 	}
 }
 
-func getRootPath(pattern string, isRegexp bool) (string, error) {
-	rootPath := clientutils.GetRootPathForUpload(pattern, isRegexp)
-	if !fileutils.IsPathExists(rootPath) {
-		err := errorutils.CheckError(errors.New("Path does not exist: " + rootPath))
-		if err != nil {
-			return "", err
-		}
-	}
-	return rootPath, nil
-}
-
-// If filePath is path to a symlink we should return the link content e.g where the link points
-func getFileSymlinkPath(filePath string) (string, error) {
-	fileInfo, e := os.Lstat(filePath)
-	if errorutils.CheckError(e) != nil {
-		return "", e
-	}
-	var symlinkPath = ""
-	if fileutils.IsFileSymlink(fileInfo) {
-		symlinkPath, e = os.Readlink(filePath)
-		if errorutils.CheckError(e) != nil {
-			return "", e
-		}
-	}
-	return symlinkPath, nil
-}
-
-func getUploadPaths(rootPath string, isRecursive, includeDirs, isSymlink bool) ([]string, error) {
-	var paths []string
-	var err error
-	if isRecursive {
-		paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(rootPath, !isSymlink)
-	} else {
-		paths, err = fileutils.ListFiles(rootPath, includeDirs)
-	}
-	if err != nil {
-		return paths, err
-	}
-	return paths, nil
-}
-
-func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploadDescriptor, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) error {
-	excludePathPattern := prepareExcludePathPattern(uploadParams.GetExcludePatterns(), uploadMetaData.IsRegexp, uploadParams.IsRecursive())
+func collectPatternMatchingFiles(uploadParams UploadParams, rootPath string, producer parallel.Runner, artifactHandlerFunc artifactContext, errorsQueue *utils.ErrorsQueue) error {
+	excludePathPattern := fspatterns.PrepareExcludePathPattern(uploadParams)
 	patternRegex, err := regexp.Compile(uploadParams.GetPattern())
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
 
-	paths, err := getUploadPaths(uploadMetaData.RootPath, uploadParams.IsRecursive(), uploadParams.IsIncludeDirs(), uploadParams.IsSymlink())
+	paths, err := fspatterns.GetPaths(rootPath, uploadParams.IsRecursive(), uploadParams.IsIncludeDirs(), uploadParams.IsSymlink())
 	if err != nil {
 		return err
 	}
@@ -246,81 +189,31 @@ func collectPatternMatchingFiles(uploadParams UploadParams, uploadMetaData uploa
 	// 'foldersPaths' will contain only the directories paths which are in the 'paths' array.
 	var foldersPaths []string
 	for index, path := range paths {
-		isDir, err := fileutils.IsDir(path)
+		matches, isDir, isSymlinkFlow, err := fspatterns.PrepareAndFilterPaths(path, excludePathPattern, uploadParams.IsSymlink(), uploadParams.IsIncludeDirs(), patternRegex)
 		if err != nil {
 			return err
 		}
 
-		excludedPath, err := isPathExcluded(path, excludePathPattern)
-		if err != nil {
-			return err
-		}
-
-		if excludedPath {
-			continue
-		}
-
-		isSymlinkFlow := uploadParams.IsSymlink() && fileutils.IsPathSymlink(path)
-		if isSymlinkFlow {
-			_, err := filepath.EvalSymlinks(path)
-			if err != nil {
-				return err
-			}
-		}
-
-		if isDir && !uploadParams.IsIncludeDirs() && !isSymlinkFlow {
-			continue
-		}
-
-		groups := patternRegex.FindStringSubmatch(path)
-		size := len(groups)
-		if size > 0 {
+		if matches != nil && len(matches) > 0 {
 			target := uploadParams.GetTarget()
 			tempPaths := paths
 			tempIndex := index
 			// In case we need to upload directories with flat=true, we want to avoid the creation of unnecessary paths in Artifactory.
 			// To achieve this, we need to take into consideration the directories which had already been uploaded, ignoring all files paths.
 			// When flat=false we take into consideration folder paths which were created implicitly by file upload
-			if uploadMetaData.IsFlat && uploadParams.IsIncludeDirs() && isDir {
+			if uploadParams.IsFlat() && uploadParams.IsIncludeDirs() && isDir {
 				foldersPaths = append(foldersPaths, path)
 				tempPaths = foldersPaths
 				tempIndex = len(foldersPaths) - 1
 			}
-			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow, paths: tempPaths,
-				groups: groups, index: tempIndex, size: size, uploadParams: uploadParams, uploadMetaData: uploadMetaData,
+			taskData := &uploadTaskData{target: target, path: path, isDir: isDir, isSymlinkFlow: isSymlinkFlow,
+				paths: tempPaths, groups: matches, index: tempIndex, size: len(matches), uploadParams: uploadParams,
 				producer: producer, artifactHandlerFunc: artifactHandlerFunc, errorsQueue: errorsQueue,
 			}
 			createUploadTask(taskData)
 		}
 	}
 	return nil
-}
-
-func prepareExcludePathPattern(excludePatterns []string, isRegex, isRecursive bool) string {
-	excludePathPattern := ""
-	if len(excludePatterns) > 0 {
-		for _, singleExcludePattern := range excludePatterns {
-			if len(singleExcludePattern) > 0 {
-				singleExcludePattern = clientutils.ReplaceTildeWithUserHome(singleExcludePattern)
-				singleExcludePattern = clientutils.PrepareLocalPathForUpload(singleExcludePattern, isRegex)
-				if isRecursive && strings.HasSuffix(singleExcludePattern, fileutils.GetFileSeparator()) {
-					singleExcludePattern += "*"
-				}
-				excludePathPattern += fmt.Sprintf(`(%s)|`, singleExcludePattern)
-			}
-		}
-		if len(excludePathPattern) > 0 {
-			excludePathPattern = excludePathPattern[:len(excludePathPattern)-1]
-		}
-	}
-	return excludePathPattern
-}
-
-func isPathExcluded(path string, excludePathPattern string) (excludedPath bool, err error) {
-	if len(excludePathPattern) > 0 {
-		excludedPath, err = regexp.MatchString(excludePathPattern, path)
-	}
-	return
 }
 
 type uploadTaskData struct {
@@ -333,7 +226,6 @@ type uploadTaskData struct {
 	index               int
 	size                int
 	uploadParams        UploadParams
-	uploadMetaData      uploadDescriptor
 	producer            parallel.Runner
 	artifactHandlerFunc artifactContext
 	errorsQueue         *utils.ErrorsQueue
@@ -345,9 +237,9 @@ func createUploadTask(taskData *uploadTaskData) error {
 		taskData.target = strings.Replace(taskData.target, "{"+strconv.Itoa(i)+"}", group, -1)
 	}
 	var task parallel.TaskFunc
-	taskData.target = getUploadTarget(taskData.uploadMetaData.IsFlat, taskData.path, taskData.target)
+	taskData.target = getUploadTarget(taskData.uploadParams.IsFlat(), taskData.path, taskData.target)
 	// If case taskData.path is a symlink we get the symlink link path.
-	symlinkPath, e := getFileSymlinkPath(taskData.path)
+	symlinkPath, e := fspatterns.GetFileSymlinkPath(taskData.path)
 	if e != nil {
 		return e
 	}
@@ -447,7 +339,7 @@ func (us *UploadService) uploadFile(localPath, targetPath, props string, uploadP
 }
 
 func (us *UploadService) uploadSymlink(targetPath string, httpClientsDetails httputils.HttpClientDetails, uploadParams UploadParams) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
-	details, err = createSymlinkFileDetails()
+	details, err = fspatterns.CreateSymlinkFileDetails()
 	if err != nil {
 		return
 	}
@@ -498,21 +390,6 @@ func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, ch
 		}
 		log.Debug(logMsgPrefix, "Artifactory response:", resp.Status, strChecksumDeployed)
 	}
-}
-
-// When handling symlink we want to simulate the creation of empty file
-func createSymlinkFileDetails() (*fileutils.FileDetails, error) {
-	checksumInfo, err := checksum.Calc(bytes.NewBuffer([]byte(fileutils.SYMLINK_FILE_CONTENT)))
-	if err != nil {
-		return nil, err
-	}
-
-	details := new(fileutils.FileDetails)
-	details.Checksum.Md5 = checksumInfo[checksum.MD5]
-	details.Checksum.Sha1 = checksumInfo[checksum.SHA1]
-	details.Checksum.Sha256 = checksumInfo[checksum.SHA256]
-	details.Size = int64(0)
-	return details, nil
 }
 
 func createBuildArtifactItem(details *fileutils.FileDetails, fileName, localPath, targetPath string) utils.FileInfo {
@@ -603,33 +480,6 @@ type UploadData struct {
 	Artifact clientutils.Artifact
 	Props    string
 	IsDir    bool
-}
-
-type uploadDescriptor struct {
-	IsFlat   bool
-	IsRegexp bool
-	IsDir    bool
-	RootPath string
-	Err      error
-}
-
-func (p *uploadDescriptor) CreateUploadDescriptor(isRegexp, isFlat bool, pattern string) {
-	p.IsRegexp = isRegexp
-	p.IsFlat = isFlat
-	p.setRootPath(pattern)
-	p.checkIfDir()
-}
-
-func (p *uploadDescriptor) setRootPath(pattern string) {
-	if p.Err == nil {
-		p.RootPath, p.Err = getRootPath(pattern, p.IsRegexp)
-	}
-}
-
-func (p *uploadDescriptor) checkIfDir() {
-	if p.Err == nil {
-		p.IsDir, p.Err = fileutils.IsDir(p.RootPath)
-	}
 }
 
 type uploadResult struct {

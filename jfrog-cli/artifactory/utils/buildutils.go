@@ -25,7 +25,7 @@ import (
 const BuildInfoDetails = "details"
 const BuildTempPath = "jfrog/builds/"
 
-func getBuildDir(buildName, buildNumber string) (string, error) {
+func GetBuildDir(buildName, buildNumber string) (string, error) {
 	tempDir := os.TempDir()
 	encodedDirName := base64.StdEncoding.EncodeToString([]byte(buildName + "_" + buildNumber))
 	buildsDir := filepath.Join(tempDir, BuildTempPath, encodedDirName)
@@ -49,7 +49,7 @@ func CreateBuildProperties(buildName, buildNumber string) (string, error) {
 }
 
 func getPartialsBuildDir(buildName, buildNumber string) (string, error) {
-	buildDir, err := getBuildDir(buildName, buildNumber)
+	buildDir, err := GetBuildDir(buildName, buildNumber)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func SaveBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	dirPath, err := getBuildDir(buildName, buildNumber)
+	dirPath, err := GetBuildDir(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
@@ -128,14 +128,16 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 		Timestamp: time.Now(),
 	}
 	b, err := json.Marshal(&meta)
-	err = errorutils.CheckError(err)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
-	if errorutils.CheckError(err) != nil {
-		return err
+	if err != nil {
+		return errorutils.CheckError(err)
 	}
 	err = ioutil.WriteFile(detailsFilePath, []byte(content.String()), 0600)
-	return err
+	return errorutils.CheckError(err)
 }
 
 type populatePartialBuildInfo func(partial *buildinfo.Partial)
@@ -148,7 +150,7 @@ func SavePartialBuildInfo(buildName, buildNumber string, populatePartialBuildInf
 }
 
 func GetGeneratedBuildsInfo(buildName, buildNumber string) ([]*buildinfo.BuildInfo, error) {
-	buildDir, err := getBuildDir(buildName, buildNumber)
+	buildDir, err := GetBuildDir(buildName, buildNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +238,7 @@ func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.H
 }
 
 func RemoveBuildDir(buildName, buildNumber string) error {
-	tempDirPath, err := getBuildDir(buildName, buildNumber)
+	tempDirPath, err := GetBuildDir(buildName, buildNumber)
 	if err != nil {
 		return err
 	}
@@ -250,26 +252,26 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 	return nil
 }
 
-type BuildInfoFlags struct {
+type BuildInfoConfiguration struct {
 	artDetails auth.ArtifactoryDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (flags *BuildInfoFlags) GetArtifactoryDetails() auth.ArtifactoryDetails {
-	return flags.artDetails
+func (config *BuildInfoConfiguration) GetArtifactoryDetails() auth.ArtifactoryDetails {
+	return config.artDetails
 }
 
-func (flags *BuildInfoFlags) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
-	flags.artDetails = art
+func (config *BuildInfoConfiguration) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
+	config.artDetails = art
 }
 
-func (flags *BuildInfoFlags) IsDryRun() bool {
-	return flags.DryRun
+func (config *BuildInfoConfiguration) IsDryRun() bool {
+	return config.DryRun
 }
 
-type BuildConfigFlags struct {
+type BuildConfiguration struct {
 	BuildName   string
 	BuildNumber string
 }

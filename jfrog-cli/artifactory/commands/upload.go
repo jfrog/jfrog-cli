@@ -19,7 +19,7 @@ import (
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUploaded, totalFailed int, err error) {
+func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCount, failCount int, err error) {
 	certPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
 		return 0, 0, err
@@ -73,8 +73,8 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 		uploadParamImp.ExplodeArchive = explode
 		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParamImp)
 		filesInfo = append(filesInfo, artifacts...)
-		totalFailed += failed
-		totalUploaded += uploaded
+		failCount += failed
+		successCount += uploaded
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -85,7 +85,7 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (totalUpload
 		err = errors.New("Upload finished with errors. Please review the logs")
 		return
 	}
-	if totalFailed > 0 {
+	if failCount > 0 {
 		return
 	}
 	if isCollectBuildInfo && !flags.DryRun {

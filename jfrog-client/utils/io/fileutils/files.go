@@ -36,9 +36,8 @@ func IsFileExists(path string) (bool, error) {
 		return false, nil
 	}
 	f, err := os.Stat(path)
-	err = errorutils.CheckError(err)
 	if err != nil {
-		return false, err
+		return false, errorutils.CheckError(err)
 	}
 	return !f.IsDir(), nil
 }

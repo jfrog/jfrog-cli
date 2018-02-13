@@ -22,14 +22,14 @@ const usePlugin = "useplugin"
 const useWrapper = "usewrapper"
 const gradleBuildInfoProperties = "buildInfoConfig.propertiesFile"
 
-func Gradle(tasks, configPath string, flags *utils.BuildConfigFlags) error {
+func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) error {
 	log.Info("Running Gradle...")
 	dependenciesPath, err := downloadGradleDependencies()
 	if err != nil {
 		return err
 	}
 
-	gradleRunConfig, err := createGradleRunConfig(tasks, configPath, flags, dependenciesPath)
+	gradleRunConfig, err := createGradleRunConfig(tasks, configPath, configuration, dependenciesPath)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func downloadGradleDependencies() (string, error) {
 	return dependenciesPath, err
 }
 
-func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFlags, dependenciesPath string) (*gradleRunConfig, error) {
+func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildConfiguration, dependenciesPath string) (*gradleRunConfig, error) {
 	runConfig := &gradleRunConfig{env: map[string]string{}}
 	runConfig.tasks = tasks
 
@@ -72,7 +72,7 @@ func createGradleRunConfig(tasks, configPath string, flags *utils.BuildConfigFla
 		return nil, err
 	}
 
-	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(flags.BuildName, flags.BuildNumber, vConfig, utils.GRADLE)
+	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.GRADLE)
 	if err != nil {
 		return nil, err
 	}

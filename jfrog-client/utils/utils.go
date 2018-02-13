@@ -30,8 +30,10 @@ func getDefaultUserAgent() string {
 	return fmt.Sprintf("jfrog-client-go/%s", getVersion())
 }
 
-// Get the local root path, from which to start collecting artifacts to be uploaded to Artifactory.
-func GetRootPathForUpload(path string, useRegExp bool) string {
+// Get the local root path, from which to start collecting artifacts to be used for:
+// 1. Uploaded to Artifactory,
+// 2. Adding to the local build-info, to be later published to Artifactory.
+func GetRootPath(path string, useRegExp bool) string {
 	// The first step is to split the local path pattern into sections, by the file seperator.
 	seperator := "/"
 	sections := strings.Split(path, seperator)

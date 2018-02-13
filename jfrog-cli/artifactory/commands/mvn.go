@@ -20,7 +20,7 @@ const MavenExtractorDependencyVersion = "2.9.2"
 const ClasswordConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
-func Mvn(goals, configPath string, flags *utils.BuildConfigFlags) error {
+func Mvn(goals, configPath string, configuration *utils.BuildConfiguration) error {
 	log.Info("Running Mvn...")
 	err := validateMavenInstallation()
 	if err != nil {
@@ -33,7 +33,7 @@ func Mvn(goals, configPath string, flags *utils.BuildConfigFlags) error {
 		return err
 	}
 
-	mvnRunConfig, err := createMvnRunConfig(goals, configPath, flags, dependenciesPath)
+	mvnRunConfig, err := createMvnRunConfig(goals, configPath, configuration, dependenciesPath)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func createClassworldsConfig(dependenciesPath string) error {
 	return errorutils.CheckError(ioutil.WriteFile(classworldsPath, []byte(utils.ClassworldsConf), 0644))
 }
 
-func createMvnRunConfig(goals, configPath string, flags *utils.BuildConfigFlags, dependenciesPath string) (*mvnRunConfig, error) {
+func createMvnRunConfig(goals, configPath string, configuration *utils.BuildConfiguration, dependenciesPath string) (*mvnRunConfig, error) {
 	var err error
 	var javaExecPath string
 
@@ -117,16 +117,16 @@ func createMvnRunConfig(goals, configPath string, flags *utils.BuildConfigFlags,
 		return nil, err
 	}
 
-	if len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0 {
-		vConfig.Set(utils.BUILD_NAME, flags.BuildName)
-		vConfig.Set(utils.BUILD_NUMBER, flags.BuildNumber)
-		err = utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber)
+	if len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0 {
+		vConfig.Set(utils.BUILD_NAME, configuration.BuildName)
+		vConfig.Set(utils.BUILD_NUMBER, configuration.BuildNumber)
+		err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	buildInfoProperties, err := utils.CreateBuildInfoPropertiesFile(flags.BuildName, flags.BuildNumber, vConfig, utils.MAVEN)
+	buildInfoProperties, err := utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.MAVEN)
 	if err != nil {
 		return nil, err
 	}

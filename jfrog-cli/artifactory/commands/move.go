@@ -9,7 +9,7 @@ import (
 )
 
 // Moves the artifacts using the specified move pattern.
-func Move(moveSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (successCount, failedCount int, err error) {
+func Move(moveSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return
@@ -27,7 +27,7 @@ func Move(moveSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (succ
 		}
 		partialSuccess, partialFailed, err := servicesManager.Move(&services.MoveCopyParamsImpl{ArtifactoryCommonParams: params, Flat: flat})
 		successCount += partialSuccess
-		failedCount += partialFailed
+		failCount += partialFailed
 		if err != nil {
 			log.Error(err)
 			continue

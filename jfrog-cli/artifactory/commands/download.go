@@ -14,18 +14,18 @@ import (
 	"strconv"
 )
 
-func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, int, error) {
-	servicesManager, err := createDownloadServiceManager(flags.ArtDetails, flags)
+func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration) (successCount, failCount int, err error) {
+	servicesManager, err := createDownloadServiceManager(configuration.ArtDetails, configuration)
 	if err != nil {
 		return 0, 0, err
 	}
-	isCollectBuildInfo := len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0
-	if isCollectBuildInfo && !flags.DryRun {
-		if err = utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {
+	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
+	if isCollectBuildInfo && !configuration.DryRun {
+		if err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
 			return 0, 0, err
 		}
 	}
-	if !flags.DryRun {
+	if !configuration.DryRun {
 		err = fileutils.CreateTempDirPath()
 		if err != nil {
 			return 0, 0, err
@@ -56,7 +56,7 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, 
 			continue
 		}
 
-		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: flags.ValidateSymlink, Symlink: flags.Symlink, Flat: flat, Explode: explode, Retries: flags.Retries})
+		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: configuration.ValidateSymlink, Symlink: configuration.Symlink, Flat: flat, Explode: explode, Retries: configuration.Retries})
 		totalExpected += expected
 		filesInfo = append(filesInfo, currentBuildDependencies...)
 		if err != nil {
@@ -70,11 +70,11 @@ func Download(downloadSpec *spec.SpecFiles, flags *DownloadConfiguration) (int, 
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
-	if isCollectBuildInfo && !flags.DryRun {
+	if isCollectBuildInfo && !configuration.DryRun {
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Dependencies = buildDependencies
 		}
-		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
+		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc)
 	}
 
 	return len(filesInfo), totalExpected - len(filesInfo), err

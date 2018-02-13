@@ -2,6 +2,7 @@ package npm
 
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/mattn/go-shellwords"
 	"io"
@@ -43,4 +44,11 @@ func createConfigListCmdConfig(executablePath string, splitFlags []string, pipeW
 		StrWriter:    pipeWriter,
 		ErrWriter:    nil,
 	}
+}
+
+type CliConfiguration struct {
+	BuildName   string
+	BuildNumber string
+	NpmArgs     string
+	ArtDetails  *config.ArtifactoryDetails
 }

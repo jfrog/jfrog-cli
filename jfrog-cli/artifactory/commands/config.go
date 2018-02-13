@@ -286,7 +286,7 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 	return nil
 }
 
-type ConfigFlags struct {
+type ConfigCommandConfiguration struct {
 	ArtDetails  *config.ArtifactoryDetails
 	Interactive bool
 	EncPassword bool
