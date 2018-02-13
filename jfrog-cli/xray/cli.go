@@ -8,6 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"time"
+	"errors"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -52,15 +53,15 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags,
 	flags.Version = c.String("version")
 	flags.License = c.String("license-id")
 	if len(flags.License) < 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --license-id option is mandatory.")
+		cliutils.ExitOnErr(errors.New("The --license-id option is mandatory."))
 	}
 	from := c.String("from")
 	to := c.String("to")
 	if len(to) > 0 && len(from) < 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --from option is mandatory, when the --to option is sent.")
+		cliutils.ExitOnErr(errors.New("The --from option is mandatory, when the --to option is sent."))
 	}
 	if len(from) > 0 && len(to) < 1 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --to option is mandatory, when the --from option is sent.")
+		cliutils.ExitOnErr(errors.New("The --to option is mandatory, when the --from option is sent."))
 	}
 	if len(from) > 0 && len(to) > 0 {
 		flags.From, err = dateToMilliseconds(from)
@@ -86,11 +87,7 @@ func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
 
 func offlineUpdates(c *cli.Context) {
 	offlineUpdateFlags, err := getOfflineUpdatesFlag(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 	err = commands.OfflineUpdate(offlineUpdateFlags)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 }

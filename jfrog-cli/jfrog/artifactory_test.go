@@ -71,7 +71,7 @@ func authenticate() string {
 	cred += getArtifactoryTestCredentials()
 	var err error
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, "Failed while attempting to authenticate with Artifactory: "+err.Error())
+		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: "+err.Error()))
 	}
 	artifactoryDetails.SshAuthHeaders = artAuth.GetSshAuthHeaders()
 	artifactoryDetails.Url = artAuth.GetUrl()

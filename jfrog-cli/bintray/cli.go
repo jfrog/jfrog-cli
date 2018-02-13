@@ -40,6 +40,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -622,13 +623,13 @@ func configure(c *cli.Context) {
 		} else if c.Args().Get(0) == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '"+c.Args().Get(0)+"'. Available arguments are 'show' and 'clear'.")
+			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args().Get(0)+"'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
 		interactive := cliutils.GetBoolFlagValue(c, "interactive", true)
 		if !interactive {
 			if c.String("user") == "" || c.String("key") == "" {
-				cliutils.Exit(cliutils.ExitCodeError, "The --user and --key options are mandatory when the --interactive option is set to false")
+				cliutils.ExitOnErr(errors.New("The --user and --key options are mandatory when the --interactive option is set to false"))
 			}
 		}
 		bintrayDetails, err := createBintrayDetails(c, false)
@@ -786,10 +787,7 @@ func downloadVersion(c *cli.Context) {
 	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
-		if downloaded > 0 {
-			cliutils.Exit(cliutils.ExitCodeWarning, "")
-		}
-		cliutils.Exit(cliutils.ExitCodeError, "")
+		cliutils.ExitOnErr(errors.New(""))
 	}
 }
 
@@ -811,7 +809,7 @@ func upload(c *cli.Context) {
 
 	params.Deb = c.String("deb")
 	if params.Deb != "" && len(strings.Split(params.Deb, "/")) != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --deb option should be in the form of distribution/component/architecture")
+		cliutils.ExitOnErr(errors.New("The --deb option should be in the form of distribution/component/architecture"))
 	}
 
 	params.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
@@ -826,10 +824,7 @@ func upload(c *cli.Context) {
 	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	cliutils.ExitOnErr(err)
 	if failed > 0 {
-		if uploaded > 0 {
-			cliutils.Exit(cliutils.ExitCodeWarning, "")
-		}
-		cliutils.Exit(cliutils.ExitCodeError, "")
+		cliutils.ExitOnErr(errors.New(""))
 	}
 }
 
@@ -900,7 +895,7 @@ func logs(c *cli.Context) {
 func stream(c *cli.Context) {
 	bintrayDetails, err := createBintrayDetails(c, true)
 	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
+		cliutils.ExitOnErr(err)
 	}
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -951,7 +946,7 @@ func accessKeys(c *cli.Context) {
 	case "update":
 		err = commands.UpdateAccessKey(btConfig, createAccessKeysParams(c, org, keyId))
 	default:
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before the key argument. Got "+c.Args().Get(0))
+		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before the key argument. Got "+c.Args().Get(0)))
 	}
 	cliutils.ExitOnErr(err)
 }
@@ -980,7 +975,7 @@ func handleEntitlements(c *cli.Context) {
 	case "show":
 		id := c.String("id")
 		if id == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
+			cliutils.ExitOnErr(errors.New("Please add the --id option"))
 		}
 		err = commands.ShowEntitlement(btConfig, id, versionPath)
 	case "create":
@@ -992,11 +987,11 @@ func handleEntitlements(c *cli.Context) {
 	case "delete":
 		id := c.String("id")
 		if id == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
+			cliutils.ExitOnErr(errors.New("Please add the --id option"))
 		}
 		err = commands.DeleteEntitlement(btConfig, id, versionPath)
 	default:
-		cliutils.Exit(cliutils.ExitCodeError, "Expecting show, create, update or delete before "+c.Args().Get(1)+". Got "+c.Args().Get(0))
+		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before "+c.Args().Get(1)+". Got "+c.Args().Get(0)))
 	}
 	cliutils.ExitOnErr(err)
 }
@@ -1008,14 +1003,14 @@ func createPackageParams(c *cli.Context) (*packages.Params, error) {
 		publicDownloadNumbers = c.String("pub-dn")
 		publicDownloadNumbers = strings.ToLower(publicDownloadNumbers)
 		if publicDownloadNumbers != "true" && publicDownloadNumbers != "false" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --pub-dn option should have a boolean value.")
+			cliutils.ExitOnErr(errors.New("The --pub-dn option should have a boolean value."))
 		}
 	}
 	if c.String("pub-stats") != "" {
 		publicStats = c.String("pub-stats")
 		publicStats = strings.ToLower(publicStats)
 		if publicStats != "true" && publicStats != "false" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --pub-stats option should have a boolean value.")
+			cliutils.ExitOnErr(errors.New("The --pub-stats option should have a boolean value."))
 		}
 	}
 	licenses := c.String("licenses")
@@ -1069,7 +1064,7 @@ func createVersionParams(c *cli.Context) (*versions.Params, error) {
 		githubTagReleaseNotes = c.String("github-tag-rel-notes")
 		githubTagReleaseNotes = strings.ToLower(githubTagReleaseNotes)
 		if githubTagReleaseNotes != "true" && githubTagReleaseNotes != "false" {
-			cliutils.Exit(cliutils.ExitCodeError, "The --github-tag-rel-notes option should have a boolean value.")
+			cliutils.ExitOnErr(errors.New("The --github-tag-rel-notes option should have a boolean value."))
 		}
 	}
 
@@ -1093,7 +1088,7 @@ func createUrlSigningFlags(c *cli.Context) *url.Params {
 	if c.String("valid-for") != "" {
 		_, err := strconv.ParseInt(c.String("valid-for"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--valid-for' option should have a numeric value.")
+			cliutils.ExitOnErr(errors.New("The '--valid-for' option should have a numeric value."))
 		}
 	}
 	urlSigningDetails, err := utils.CreatePathDetails(c.Args().Get(0))
@@ -1104,7 +1099,7 @@ func createUrlSigningFlags(c *cli.Context) *url.Params {
 		var err error
 		expiry, err = strconv.ParseInt(c.String("expiry"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The --expiry option should have a numeric value.")
+			cliutils.ExitOnErr(errors.New("The --expiry option should have a numeric value."))
 		}
 	}
 
@@ -1127,7 +1122,7 @@ func getThreadsOptionValue(c *cli.Context) (threads int) {
 		var err error
 		threads, err = strconv.Atoi(c.String("threads"))
 		if err != nil || threads < 1 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--threads' option should have a numeric positive value.")
+			cliutils.ExitOnErr(errors.New("The '--threads' option should have a numeric positive value."))
 		}
 	}
 	return
@@ -1135,7 +1130,7 @@ func getThreadsOptionValue(c *cli.Context) (threads int) {
 
 func createEntitlementFlagsForCreate(c *cli.Context, path *versions.Path) *entitlements.Params {
 	if c.String("access") == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
+		cliutils.ExitOnErr(errors.New("Please add the --access option"))
 	}
 
 	params := entitlements.NewEntitlementsParams()
@@ -1149,10 +1144,10 @@ func createEntitlementFlagsForCreate(c *cli.Context, path *versions.Path) *entit
 
 func createEntitlementFlagsForUpdate(c *cli.Context, path *versions.Path) *entitlements.Params {
 	if c.String("id") == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "Please add the --id option")
+		cliutils.ExitOnErr(errors.New("Please add the --id option"))
 	}
 	if c.String("access") == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "Please add the --access option")
+		cliutils.ExitOnErr(errors.New("Please add the --access option"))
 	}
 
 	params := entitlements.NewEntitlementsParams()
@@ -1171,7 +1166,7 @@ func createAccessKeysParams(c *cli.Context, org, keyId string) *accesskeys.Param
 		var err error
 		cachePeriod, err = strconv.Atoi(c.String("ex-check-cache"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The --ex-check-cache option should have a numeric value.")
+			cliutils.ExitOnErr(errors.New("The --ex-check-cache option should have a numeric value."))
 		}
 	}
 
@@ -1180,7 +1175,7 @@ func createAccessKeysParams(c *cli.Context, org, keyId string) *accesskeys.Param
 		var err error
 		expiry, err = strconv.ParseInt(c.String("expiry"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The --expiry option should have a numeric value.")
+			cliutils.ExitOnErr(errors.New("The --expiry option should have a numeric value."))
 		}
 	}
 
@@ -1275,7 +1270,7 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) (auth.BintrayDetai
 			key = confDetails.Key
 		}
 		if key == "" {
-			cliutils.Exit(cliutils.ExitCodeError, "Please set your Bintray API key using the config command or send it as the --key option.")
+			cliutils.ExitOnErr(errors.New("Please set your Bintray API key using the config command or send it as the --key option."))
 		}
 		if defaultPackageLicenses == "" {
 			defaultPackageLicenses = confDetails.DefPackageLicense
@@ -1319,10 +1314,10 @@ func getSplitCountFlag(c *cli.Context) int {
 		cliutils.PrintHelpAndExitWithError("The '--split-count' option should have a numeric value.", c)
 	}
 	if splitCount > 15 {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
+		cliutils.ExitOnErr(errors.New("The '--split-count' option value is limitted to a maximum of 15."))
 	}
 	if splitCount < 0 {
-		cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
+		cliutils.ExitOnErr(errors.New("The '--split-count' option cannot have a negative value."))
 	}
 	return splitCount
 }

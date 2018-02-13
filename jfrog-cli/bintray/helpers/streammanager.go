@@ -95,7 +95,7 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 		msgBody, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		if resp.StatusCode > 400 && resp.StatusCode < 500 {
-			cliutils.Exit(cliutils.ExitCodeError, string(msgBody))
+			cliutils.ExitOnErr(errors.New(string(msgBody)))
 		}
 		return false, resp
 

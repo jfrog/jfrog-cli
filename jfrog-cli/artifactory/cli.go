@@ -44,6 +44,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -452,6 +453,7 @@ func getUploadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
 	}...)
@@ -517,6 +519,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
 	}...)
@@ -539,6 +542,13 @@ func getServerIdFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "server-id",
 		Usage: "[Optional] Artifactory server ID configured using the config command.",
+	}
+}
+
+func getFailNoOpFlag() cli.Flag {
+	return 	cli.BoolFlag{
+		Name:  "fail-no-op",
+		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.",
 	}
 }
 
@@ -608,6 +618,7 @@ func getMoveFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are moved. The property format is build-name/build-number.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 	}...)
 
@@ -639,6 +650,7 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are copied. The property format is build-name/build-number.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 	}...)
 }
@@ -669,6 +681,7 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are deleted. The property format is build-name/build-number.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 	}...)
 }
@@ -690,6 +703,7 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 	}...)
 }
@@ -714,6 +728,7 @@ func getSetPropertiesFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.",
 		},
+		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
 	}...)
@@ -863,7 +878,7 @@ func getConfigFlags() []cli.Flag {
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory")
+		cliutils.ExitOnErr(errors.New("The --url option is mandatory"))
 	}
 	return artDetails
 }
@@ -874,13 +889,13 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option should have a numeric value. "+cliutils.GetDocumentationMessage())
+			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
 		}
 		if splitCount > 15 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option value is limitted to a maximum of 15.")
+			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limitted to a maximum of 15."))
 		}
 		if splitCount < 0 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--split-count' option cannot have a negative value.")
+			cliutils.ExitOnErr(errors.New("The '--split-count' option cannot have a negative value."))
 		}
 	}
 	return
@@ -892,7 +907,7 @@ func getThreadsCount(c *cli.Context) (threads int) {
 	if c.String("threads") != "" {
 		threads, err = strconv.Atoi(c.String("threads"))
 		if err != nil || threads < 1 {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--threads' option should have a numeric positive value.")
+			cliutils.ExitOnErr(errors.New("The '--threads' option should have a numeric positive value."))
 		}
 	}
 	return
@@ -904,7 +919,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--min-split' option should have a numeric value. "+cliutils.GetDocumentationMessage())
+			cliutils.ExitOnErr(errors.New("The '--min-split' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
@@ -916,7 +931,7 @@ func getRetries(c *cli.Context) (retries int) {
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
 		if err != nil {
-			cliutils.Exit(cliutils.ExitCodeError, "The '--retries' option should have a numeric value. "+cliutils.GetDocumentationMessage())
+			cliutils.ExitOnErr(errors.New("The '--retries' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
@@ -926,7 +941,7 @@ func validateServerId(serverId string) {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
 		if serverId == reservedId {
-			cliutils.Exit(cliutils.ExitCodeError, fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New(fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage())))
 		}
 	}
 }
@@ -1077,7 +1092,7 @@ func downloadCmd(c *cli.Context) {
 	configuration := createDownloadConfiguration(c)
 	downloaded, failed, err := commands.Download(downloadSpec, configuration)
 	err = cliutils.PrintSummaryReport(downloaded, failed, err)
-	cliutils.ExitOnErr(err)
+	cliutils.FailNoOp(err, downloaded, failed, isFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) {
@@ -1097,13 +1112,7 @@ func uploadCmd(c *cli.Context) {
 	configuration := createUploadConfiguration(c)
 	uploaded, failed, err := commands.Upload(uploadSpec, configuration)
 	err = cliutils.PrintSummaryReport(uploaded, failed, err)
-	cliutils.ExitOnErr(err)
-	if failed > 0 {
-		if uploaded > 0 {
-			cliutils.Exit(cliutils.ExitCodeWarning, "")
-		}
-		cliutils.Exit(cliutils.ExitCodeError, "")
-	}
+	cliutils.FailNoOp(err, uploaded, failed, isFailNoOp(c))
 }
 
 func moveCmd(c *cli.Context) {
@@ -1125,7 +1134,7 @@ func moveCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetails(c, true)
 	moveCount, failed, err := commands.Move(moveSpec, artDetails)
 	err = cliutils.PrintSummaryReport(moveCount, failed, err)
-	cliutils.ExitOnErr(err)
+	cliutils.FailNoOp(err, moveCount, failed, isFailNoOp(c))
 }
 
 func copyCmd(c *cli.Context) {
@@ -1147,7 +1156,7 @@ func copyCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetails(c, true)
 	copyCount, failed, err := commands.Copy(copySpec, artDetails)
 	err = cliutils.PrintSummaryReport(copyCount, failed, err)
-	cliutils.ExitOnErr(err)
+	cliutils.FailNoOp(err, copyCount, failed, isFailNoOp(c))
 }
 
 func deleteCmd(c *cli.Context) {
@@ -1172,7 +1181,7 @@ func deleteCmd(c *cli.Context) {
 	if c.Bool("quiet") || confirmDelete(pathsToDelete) {
 		success, failed, err := commands.DeleteFiles(pathsToDelete, configuration)
 		err = cliutils.PrintSummaryReport(success, failed, err)
-		cliutils.ExitOnErr(err)
+		cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 	}
 }
 
@@ -1206,7 +1215,7 @@ func searchCmd(c *cli.Context) {
 	SearchResult, err := commands.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(SearchResult)
-	cliutils.ExitOnErr(err)
+	cliutils.FailNoOp(err, len(SearchResult), 0, isFailNoOp(c))
 
 	log.Output(string(clientutils.IndentJson(result)))
 }
@@ -1221,7 +1230,7 @@ func setPropsCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	success, failed, err := commands.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
 	err = cliutils.PrintSummaryReport(success, failed, err)
-	cliutils.ExitOnErr(err)
+	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 }
 
 func buildPublishCmd(c *cli.Context) {
@@ -1248,10 +1257,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	configuration := createBuildAddDependenciesConfiguration(c)
 	added, failed, err := commands.BuildAddDependencies(dependenciesSpec, configuration)
 	err = cliutils.PrintSummaryReport(added, failed, err)
-	cliutils.ExitOnErr(err)
-	if added == 0 {
-		cliutils.Exit(cliutils.ExitCodeWarning, "")
-	}
+	cliutils.FailNoOp(err, added, failed, isFailNoOp(c))
 	return nil
 }
 
@@ -1427,7 +1433,7 @@ func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
 func getDebFlag(c *cli.Context) (deb string) {
 	deb = c.String("deb")
 	if deb != "" && len(strings.Split(deb, "/")) != 3 {
-		cliutils.Exit(cliutils.ExitCodeError, "The --deb option should be in the form of distribution/component/architecture")
+		cliutils.ExitOnErr(errors.New("The --deb option should be in the form of distribution/component/architecture"))
 	}
 	return deb
 }
@@ -1767,7 +1773,7 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
+		cliutils.ExitOnErr(errors.New("The --url option is mandatory when the --interactive option is set to false"))
 	}
 }
 
@@ -1797,22 +1803,22 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 
 func validateCommonContext(c *cli.Context) {
 	if c.IsSet("build") && c.IsSet("offset") {
-		cliutils.Exit(cliutils.ExitCodeError, "The 'offset' option cannot be used together with the 'build' option")
+		cliutils.ExitOnErr(errors.New("The 'offset' option cannot be used together with the 'build' option"))
 	}
 	if c.IsSet("build") && c.IsSet("limit") {
-		cliutils.Exit(cliutils.ExitCodeError, "The 'limit' option cannot be used together with the 'build' option")
+		cliutils.ExitOnErr(errors.New("The 'limit' option cannot be used together with the 'build' option"))
 	}
 	if c.IsSet("sort-order") && !c.IsSet("sort-by") {
-		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option cannot be used without the 'sort-by' option")
+		cliutils.ExitOnErr(errors.New("The 'sort-order' option cannot be used without the 'sort-by' option"))
 	}
 	if c.IsSet("sort-order") && !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
-		cliutils.Exit(cliutils.ExitCodeError, "The 'sort-order' option can only accept 'asc' or 'desc' as values")
+		cliutils.ExitOnErr(errors.New("The 'sort-order' option can only accept 'asc' or 'desc' as values"))
 	}
 }
 
 func validateBuildParams(buildName, buildNumber string) {
 	if (buildName == "" && buildNumber != "") || (buildName != "" && buildNumber == "") {
-		cliutils.Exit(cliutils.ExitCodeError, "The build-name and build-number options cannot be sent separately.")
+		cliutils.ExitOnErr(errors.New("The build-name and build-number options cannot be sent separately."))
 	}
 }
 
@@ -1835,4 +1841,11 @@ func getIntValue(key string, c *cli.Context) int {
 	value, err := cliutils.GetIntFlagValue(c, key, 0)
 	cliutils.ExitOnErr(err)
 	return value
+}
+
+func isFailNoOp(context *cli.Context) bool {
+	if context == nil {
+		return false
+	}
+	return context.Bool("fail-no-op")
 }

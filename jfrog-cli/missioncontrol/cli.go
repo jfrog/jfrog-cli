@@ -16,6 +16,7 @@ import (
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"strings"
+	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -186,9 +187,7 @@ func addInstance(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	addInstanceFlags, err := createAddInstanceFlag(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 	rtinstances.AddInstance(c.Args()[0], addInstanceFlags)
 }
 
@@ -205,9 +204,7 @@ func removeInstance(c *cli.Context) {
 		}
 	}
 	flags, err := createRemoveInstanceFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 	rtinstances.Remove(instanceName, flags)
 }
 
@@ -217,9 +214,7 @@ func attachLicense(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createAttachLicFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 	rtinstances.AttachLic(c.Args()[0], flags)
 }
 
@@ -229,9 +224,7 @@ func detachLicense(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	flags, err := createDetachLicFlags(c)
-	if err != nil {
-		cliutils.Exit(cliutils.ExitCodeError, err.Error())
-	}
+	cliutils.ExitOnErr(err)
 	rtinstances.DetachLic(c.Args()[0], flags)
 }
 
@@ -276,7 +269,7 @@ func configure(c *cli.Context) {
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.Exit(cliutils.ExitCodeError, "Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.")
+			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
 		flags, err := createConfigFlags(c)
@@ -306,7 +299,7 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	}
 	flags.LicensePath = c.String("license-path")
 	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeparator()) {
-		cliutils.Exit(cliutils.ExitCodeError, "The --license-path option cannot be a directory")
+		cliutils.ExitOnErr(errors.New("The --license-path option cannot be a directory"))
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
 		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
@@ -325,7 +318,7 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 		return
 	}
 	if !flags.Interactive && flags.MissionControlDetails.Url == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --url option is mandatory when the --interactive option is set to false")
+		cliutils.ExitOnErr(errors.New("The --url option is mandatory when the --interactive option is set to false"))
 	}
 	return
 }
@@ -338,13 +331,13 @@ func createAddInstanceFlag(c *cli.Context) (flags *rtinstances.AddInstanceFlags,
 	}
 	flags.ArtifactoryInstanceDetails = new(utils.ArtifactoryInstanceDetails)
 	if flags.ArtifactoryInstanceDetails.Url = c.String("rt-url"); flags.ArtifactoryInstanceDetails.Url == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --rt-url option is mandatory")
+		cliutils.ExitOnErr(errors.New("The --rt-url option is mandatory"))
 	}
 	if flags.ArtifactoryInstanceDetails.User = c.String("rt-user"); flags.ArtifactoryInstanceDetails.User == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --rt-user option is mandatory")
+		cliutils.ExitOnErr(errors.New("The --rt-user option is mandatory"))
 	}
 	if flags.ArtifactoryInstanceDetails.Password = c.String("rt-password"); flags.ArtifactoryInstanceDetails.Password == "" {
-		cliutils.Exit(cliutils.ExitCodeError, "The --rt-password option is mandatory")
+		cliutils.ExitOnErr(errors.New("The --rt-password option is mandatory"))
 	}
 	flags.Description = c.String("desc")
 	flags.Location = c.String("location")
