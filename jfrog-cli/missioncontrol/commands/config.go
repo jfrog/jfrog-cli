@@ -36,6 +36,7 @@ func ClearConfig() {
 }
 
 func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) (conf *config.MissionControlDetails, err error) {
+	allowUsingSavedPassword := true
 	conf = details
 	if conf == nil {
 		conf = new(config.MissionControlDetails)
@@ -61,8 +62,9 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 					return
 				}
 			}
+			allowUsingSavedPassword = false
 		}
-		ioutils.ReadCredentialsFromConsole(conf, defaultDetails)
+		ioutils.ReadCredentialsFromConsole(conf, defaultDetails, allowUsingSavedPassword)
 	}
 	conf.Url = utils.AddTrailingSlashIfNeeded(conf.Url)
 	config.SaveMissionControlConf(conf)

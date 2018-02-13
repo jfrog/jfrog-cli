@@ -10,11 +10,14 @@ import (
 	"syscall"
 )
 
-func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials) error {
+// @param allowUsingSavedPassword - Prevent changing username or url without changing the password.
+// False iff the user changed the username or the url.
+func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials, allowUsingSavedPassword bool) error {
 	if details.GetUser() == "" {
 		tempUser := ""
 		ScanFromConsole("User", &tempUser, savedDetails.GetUser())
 		details.SetUser(tempUser)
+		allowUsingSavedPassword = false
 	}
 	if details.GetPassword() == "" {
 		print("Password: ")
@@ -24,7 +27,7 @@ func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials) erro
 			return err
 		}
 		details.SetPassword(string(bytePassword))
-		if details.GetPassword() == "" {
+		if details.GetPassword() == "" && allowUsingSavedPassword {
 			details.SetPassword(savedDetails.GetPassword())
 		}
 	}

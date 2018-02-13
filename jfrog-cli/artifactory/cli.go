@@ -1384,8 +1384,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.ServerId = c.String("server-id")
 
-	if includeConfig {
-		confDetails, err := commands.GetConfig(c.String("server-id"))
+	if includeConfig && !credentialsChanged(details) {
+		confDetails, err := commands.GetConfig(details.ServerId)
 		cliutils.ExitOnErr(err)
 
 		if details.Url == "" {
@@ -1409,6 +1409,11 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	return
+}
+
+func credentialsChanged(details *config.ArtifactoryDetails) bool {
+	return details.Url != "" || details.User != "" || details.Password != "" ||
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshAuthHeaderSet()
 }
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {

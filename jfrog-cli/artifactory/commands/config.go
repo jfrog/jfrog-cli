@@ -104,11 +104,13 @@ func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaul
 }
 
 func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {
+	allowUsingSavedPassword := true
 	if details.Url == "" {
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+		allowUsingSavedPassword = false
 	}
 	if httputils.IsSsh(details.Url) {
-		useAgentPrompt := &prompt.YesNo{
+		useAgentPrompt := &prompt.YesNo {
 			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
 			Label:   "useSshAgent",
 			Default: "n",
@@ -126,7 +128,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 			ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
 		}
 		if details.ApiKey == "" {
-			ioutils.ReadCredentialsFromConsole(details, defaultDetails)
+			ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
 		}
 	}
 	return nil
