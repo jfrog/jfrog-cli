@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"path/filepath"
 )
 
 func NewDownloadService(client *httpclient.HttpClient) *DownloadService {
@@ -179,7 +180,7 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 
 	localPath, localFileName := fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, downloadParams.Flat)
 	var shouldDownload bool
-	shouldDownload, err = shouldDownloadFile(path.Join(localPath, localFileName), details)
+	shouldDownload, err = shouldDownloadFile(filepath.Join(localPath, localFileName), details)
 	if err != nil {
 		return err
 	}
@@ -218,7 +219,6 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 				FileSize:     details.Size,
 				SplitCount:   ds.SplitCount,
 				Flat:         downloadParams.Flat}
-
 			httputils.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 		} else {
 			if errorutils.CheckError(err) != nil {

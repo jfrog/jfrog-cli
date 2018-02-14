@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"path"
 )
 
 const MavenExtractorDependencyVersion = "2.9.2"
@@ -62,7 +63,7 @@ func downloadDependencies() (string, error) {
 	}
 
 	filename := "/build-info-extractor-maven3-${version}-uber.jar"
-	downloadPath := filepath.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-maven3/${version}/", filename)
+	downloadPath := path.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-maven3/${version}/", filename)
 	err = utils.DownloadFromBintray(downloadPath, filename, MavenExtractorDependencyVersion, dependenciesPath)
 	if err != nil {
 		return "", err

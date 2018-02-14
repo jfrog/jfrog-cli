@@ -2,7 +2,6 @@ package httputils
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -268,32 +267,28 @@ func downloadFileRange(flags ConcurrentDownloadFlags, start, end int64, currentS
 	if err != nil {
 		return "", err
 	}
-	tempLocalPath = filepath.Join(tempLocalPath, flags.LocalPath)
+
+	tempFile, err := ioutil.TempFile(tempLocalPath, strconv.Itoa(currentSplit)+"_")
+	if errorutils.CheckError(err) != nil {
+		return "", err
+	}
+	defer tempFile.Close()
 
 	if httpClientsDetails.Headers == nil {
 		httpClientsDetails.Headers = make(map[string]string)
 	}
 	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
-
 	resp, _, err := sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails)
-	err = errorutils.CheckError(err)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	log.Debug(logMsgPrefix+"["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
+	log.Info(logMsgPrefix+"["+strconv.Itoa(currentSplit)+"]:", resp.Status+"...")
 	os.MkdirAll(tempLocalPath, 0777)
-	filePath := filepath.Join(tempLocalPath, base64.StdEncoding.EncodeToString([]byte(flags.FileName))+"_"+strconv.Itoa(currentSplit))
 
-	out, err := os.Create(filePath)
-	err = errorutils.CheckError(err)
-	defer out.Close()
-	if err != nil {
-		return "", err
-	}
-	_, err = io.Copy(out, resp.Body)
-	return filePath, errorutils.CheckError(err)
+	_, err = io.Copy(tempFile, resp.Body)
+	return tempFile.Name(), errorutils.CheckError(err)
 }
 
 func GetRemoteFileDetails(downloadUrl string, httpClientsDetails HttpClientDetails) (*fileutils.FileDetails, error) {

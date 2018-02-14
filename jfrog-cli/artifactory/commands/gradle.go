@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"path"
 )
 
 const gradleExtractorDependencyVersion = "4.6.2"
@@ -49,7 +50,7 @@ func downloadGradleDependencies() (string, error) {
 	}
 
 	filename := "build-info-extractor-gradle-${version}-uber.jar"
-	downloadPath := filepath.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/${version}/", filename)
+	downloadPath := path.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/${version}/", filename)
 	err = utils.DownloadFromBintray(downloadPath, filename, gradleExtractorDependencyVersion, dependenciesPath)
 	if err != nil {
 		return "", err
@@ -98,7 +99,14 @@ func getInitScript(dependenciesPath string) (string, error) {
 		return initScript, nil
 	}
 
-	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", dependenciesPath, -1)
+	dependenciesPathFixed := strings.Replace(dependenciesPath, "\\", "\\\\", -1)
+	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", dependenciesPathFixed, -1)
+	if !fileutils.IsPathExists(dependenciesPath) {
+		err = os.MkdirAll(dependenciesPath, 0777)
+		if errorutils.CheckError(err) != nil {
+			return "", err
+		}
+	}
 	return initScript, errorutils.CheckError(ioutil.WriteFile(initScript, []byte(initScriptContent), 0644))
 }
 

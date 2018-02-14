@@ -22,7 +22,7 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 
 	fileName := "cliTestFile.txt"
 	testFileRelPath, testFileAbs := createFileInHomeDir(t, fileName)
-	testFileRelPath = testFileRelPath[:len(testFileRelPath)-5] + "*"
+
 	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildNumber: "1"}
 	collectDepsAndPublishBuild(test, t)
 	validateBuildAddDepsBuildInfo(t, test)
@@ -54,7 +54,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	noCredsCli := tests.NewJfrogCli(main, "jfrog rt", "")
 	// Execute tha bad command
-	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", "a/*", "--dry-run=true")
+	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", prepareFilePathForWindows("a/*"), "--dry-run=true")
 	buildDir, err := buildutils.GetBuildDir(tests.BuildAddDepsBuildName, "1")
 	if err != nil {
 		t.Error(err)
@@ -88,9 +88,9 @@ func TestBuildAddDependencies(t *testing.T) {
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 
 	var badTests = []buildAddDepsBuildInfoTestParams{
-		{description: "'rt bad' simple cli", commandArgs: []string{"a/*"}, expectedDependencies: allFiles},
-		{description: "'rt bad' single file", commandArgs: []string{"a/a1.in"}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' none recursive", commandArgs: []string{"a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
+		{description: "'rt bad' simple cli", commandArgs: []string{prepareFilePathForWindows("a/*")}, expectedDependencies: allFiles},
+		{description: "'rt bad' single file", commandArgs: []string{prepareFilePathForWindows("a/a1.in")}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' none recursive", commandArgs: []string{prepareFilePathForWindows("a/*"), "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
 		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{prepareFilePathForWindows("../testsdata/a/*"), "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
 		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},

@@ -204,7 +204,7 @@ func GetUserHomeDir() string {
 		if home == "" {
 			home = os.Getenv("USERPROFILE")
 		}
-		return home
+		return strings.Replace(home, "\\", "\\\\", -1)
 	}
 	return os.Getenv("HOME")
 }

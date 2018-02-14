@@ -11,6 +11,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
@@ -38,7 +39,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 )
 
 var artifactoryCli *tests.JfrogCli
@@ -71,7 +71,7 @@ func authenticate() string {
 	cred += getArtifactoryTestCredentials()
 	var err error
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
-		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: "+err.Error()))
+		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
 	artifactoryDetails.SshAuthHeaders = artAuth.GetSshAuthHeaders()
 	artifactoryDetails.Url = artAuth.GetUrl()
@@ -572,8 +572,8 @@ func checkIfServerIsUp(port, proxyScheme string) error {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	attempt := 0
-	for attempt < 10 {
+
+	for attempt := 0; attempt < 10; attempt++ {
 		log.Info("Checking if proxy server is up and running.", strconv.Itoa(attempt+1), "attempt.", "URL:", proxyScheme+"://localhost:"+port)
 		resp, err := client.Get(proxyScheme + "://localhost:" + port)
 		if err != nil {
@@ -686,8 +686,8 @@ func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 }
 
 func createFileInHomeDir(t *testing.T, fileName string) (testFileRelPath string, testFileAbsPath string) {
-	testFileRelPath = "~" + fileutils.GetFileSeparator() + fileName
-	testFileAbsPath = fileutils.GetHomeDir() + fileutils.GetFileSeparator() + fileName
+	testFileRelPath = filepath.Join("~", fileName)
+	testFileAbsPath = filepath.Join(fileutils.GetHomeDir(), fileName)
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbsPath, d1, 0644)
 	if err != nil {
@@ -706,8 +706,8 @@ func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
 
 func prepareFilePathForWindows(path string) string {
 	if runtime.GOOS == "windows" {
+		path = strings.Replace(path, "\\", "\\\\", -1)
 		path = strings.Replace(path, "/", "\\\\", -1)
-
 	}
 	return path
 }
@@ -729,21 +729,21 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 		t.Error("Couldn't create dir:", err)
 	}
 	defer os.Remove(absDirPath)
-	absDirPath = prepareFilePathForWindows(absDirPath + "/")
+	absDirPath = prepareFilePathForWindows(absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
-	err = ioutil.WriteFile(absDirPath+"cliTestFile1.in", d1, 0644)
+	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile1.in"), d1, 0644)
 	if err != nil {
 		t.Error("Couldn't create file:", err)
 	}
-	err = ioutil.WriteFile(absDirPath+"cliTestFile2.in", d1, 0644)
+	err = ioutil.WriteFile(filepath.Join(absDirPath, "cliTestFile2.in"), d1, 0644)
 	if err != nil {
 		t.Error("Couldn't create file:", err)
 	}
 
 	// Upload files
-	artifactoryCli.Exec("upload", absDirPath+"*", tests.Repo1, "--exclude-patterns=*cliTestFile1*")
+	artifactoryCli.Exec("upload", tests.FixWinPath(filepath.Join(absDirPath, "*")), tests.Repo1, "--exclude-patterns=*cliTestFile1*")
 
 	// Check files exists in artifactory
 	isExistInArtifactory([]string{tests.Repo1 + "/cliTestFile2.in"}, tests.GetFilePath(tests.Search), t)
