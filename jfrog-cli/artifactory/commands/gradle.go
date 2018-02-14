@@ -15,12 +15,12 @@ import (
 	"strings"
 )
 
-const gradleExtractorDependencyVersion = "4.6.0"
+const gradleExtractorDependencyVersion = "4.6.2"
 const gradleInitScriptTemplate = "gradle.init.v2"
 
 const usePlugin = "useplugin"
 const useWrapper = "usewrapper"
-const gradleBuildInfoProperties = "buildInfoConfig.propertiesFile"
+const gradleBuildInfoProperties = "BUILDINFO_PROPFILE"
 
 func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) error {
 	log.Info("Running Gradle...")
