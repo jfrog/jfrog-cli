@@ -107,9 +107,9 @@ func (getImageId *getImageIdCmd) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "docker")
 	cmd = append(cmd, "images")
-	cmd = append(cmd, getImageId.image.tag)
 	cmd = append(cmd, "--format", "{{.ID}}")
 	cmd = append(cmd, "--no-trunc")
+	cmd = append(cmd, getImageId.image.tag)
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 
@@ -133,8 +133,8 @@ func (getImageId *getParentId) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "docker")
 	cmd = append(cmd, "inspect")
-	cmd = append(cmd, getImageId.image.tag)
 	cmd = append(cmd, "--format", "{{.Parent}}")
+	cmd = append(cmd, getImageId.image.tag)
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 
