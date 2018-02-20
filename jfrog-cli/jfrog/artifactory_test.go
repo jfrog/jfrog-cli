@@ -495,13 +495,21 @@ func TestArtifactoryProxy(t *testing.T) {
 }
 
 func runProxyTest(t *testing.T, proxyTestArgs []string, httpProxyEnv string) {
-	command := exec.Command("go", proxyTestArgs...)
-	command.Env = append(os.Environ(), httpProxyEnv)
-	output, err := command.Output()
+	cmd := exec.Command("go", proxyTestArgs...)
+	cmd.Env = append(os.Environ(), httpProxyEnv)
+
+	tempDirPath := filepath.Join(os.TempDir(), "jfrog_temp")
+	f, err := os.Create(filepath.Join(tempDirPath, "artifactory_proxy_tests.log"))
 	if err != nil {
 		t.Error(err)
 	}
-	log.Info(string(output))
+
+	cmd.Stdout, cmd.Stderr = f, f
+	if err := cmd.Run(); err != nil {
+		log.Error("Artifactory proxy tests failed, full report available at the following path:", f.Name())
+		t.Error(err)
+	}
+	log.Info("Full Artifactory proxy testing report available at the following path:", f.Name())
 }
 
 // Should be run only by @TestArtifactoryProxy test.
