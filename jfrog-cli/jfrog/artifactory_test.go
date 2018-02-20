@@ -498,7 +498,10 @@ func runProxyTest(t *testing.T, proxyTestArgs []string, httpProxyEnv string) {
 	cmd := exec.Command("go", proxyTestArgs...)
 	cmd.Env = append(os.Environ(), httpProxyEnv)
 
-	tempDirPath := filepath.Join(os.TempDir(), "jfrog_temp")
+	tempDirPath, err := tests.GetTestsLogsDir()
+	if err != nil {
+		t.Error(err)
+	}
 	f, err := os.Create(filepath.Join(tempDirPath, "artifactory_proxy_tests.log"))
 	if err != nil {
 		t.Error(err)

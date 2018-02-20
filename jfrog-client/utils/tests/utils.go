@@ -2,7 +2,7 @@ package tests
 
 import (
 	"bufio"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net"
 	"net/http"
@@ -59,15 +59,15 @@ func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 	return res
 }
 
-func RunTests(tests []string) error {
-	if len(tests) == 0 {
+func RunTests(testsPackages []string) error {
+	if len(testsPackages) == 0 {
 		return nil
 	}
-	tests = append([]string{"test", "-v"}, tests...)
-	cmd := exec.Command("go", tests...)
+	testsPackages = append([]string{"test", "-v"}, testsPackages...)
+	cmd := exec.Command("go", testsPackages...)
 
-	tempDirPath := filepath.Join(os.TempDir(), "jfrog_temp")
-	exitOnErr(fileutils.CreateDirIfNotExist(tempDirPath))
+	tempDirPath, err := tests.GetTestsLogsDir()
+	exitOnErr(err)
 
 	f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
 	exitOnErr(err)

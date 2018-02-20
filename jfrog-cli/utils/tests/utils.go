@@ -10,6 +10,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -149,6 +150,11 @@ func GetFilePath(fileName string) string {
 func FixWinPath(filePath string) string {
 	fixedPath := strings.Replace(filePath, "\\", "\\\\", -1)
 	return fixedPath
+}
+
+func GetTestsLogsDir() (string, error) {
+	tempDirPath := filepath.Join(os.TempDir(), "jfrog_tests_logs")
+	return tempDirPath, fileutils.CreateDirIfNotExist(tempDirPath)
 }
 
 type PackageSearchResultItem struct {
