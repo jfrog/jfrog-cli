@@ -3,6 +3,7 @@ y.output
 # ignore intellij files
 .idea
 *.iml
+npm/jfrog-*.tgz
 *.ipr
 *.iws
 
