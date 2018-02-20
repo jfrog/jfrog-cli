@@ -36,7 +36,7 @@ func TestGetDeployPath(t *testing.T) {
 		pi           *PackageInfo
 	}{
 		{`jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz`, &PackageInfo{Name: "jfrog-cli-tests", Version: "1.0.0", Scope: ""}},
-		{`@jfrog/jfrog-cli-tests/-/@jfrog/jfrog-cli-tests-1.0.0.tgz`, &PackageInfo{Name: "jfrog-cli-tests", Version: "1.0.0", Scope: "@jfrog"}},
+		{`@jfrog/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz`, &PackageInfo{Name: "jfrog-cli-tests", Version: "1.0.0", Scope: "@jfrog"}},
 	}
 	for _, test := range tests {
 		t.Run(test.expectedPath, func(t *testing.T) {

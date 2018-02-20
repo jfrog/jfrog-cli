@@ -609,7 +609,7 @@ var GradleDeployedArtifacts = []string{
 }
 
 var NpmDeployedScopedArtifacts = []string{
-	NpmLocalRepo + "/@jfrog/jfrog-cli-tests/-/@jfrog/jfrog-cli-tests-1.0.0.tgz",
+	NpmLocalRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
 }
 
 var NpmDeployedArtifacts = []string{

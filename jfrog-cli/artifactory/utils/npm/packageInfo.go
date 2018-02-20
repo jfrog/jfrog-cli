@@ -46,7 +46,7 @@ func (pi *PackageInfo) GetDeployPath() string {
 	if pi.Scope == "" {
 		return fmt.Sprintf("%s/-/%s", pi.Name, fileName)
 	}
-	return fmt.Sprintf("%s/%s/-/%s/%s", pi.Scope, pi.Name, pi.Scope, fileName)
+	return fmt.Sprintf("%s/%s/-/%s", pi.Scope, pi.Name, fileName)
 }
 
 func (pi *PackageInfo) GetExpectedPackedFileName() string {
