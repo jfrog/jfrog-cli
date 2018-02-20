@@ -12,7 +12,7 @@ JFrog CLI is a compact and smart client that provides a simple interface that au
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable.
 
-##Requirements
+## Requirements
 npm version 5.0.0 or above.
 
 
