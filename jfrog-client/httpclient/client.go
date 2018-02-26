@@ -326,7 +326,10 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 	}
 	defer destFile.Close()
 	for i := 0; i < flags.SplitCount; i++ {
-		fileutils.AppendFile(chunkedPaths[i], destFile)
+		err := fileutils.AppendFile(chunkedPaths[i], destFile)
+		if err != nil {
+			return err
+		}
 	}
 	log.Info(logMsgPrefix + "Done downloading.")
 	return nil
