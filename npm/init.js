@@ -1,7 +1,8 @@
+validateNpmVersion();
+
 var https = require('follow-redirects').https;
 var fs = require('fs');
 var packageJson = require('./package.json');
-
 var fileName = getFileName();
 var filePath = "bin/" + fileName;
 var version = packageJson.version;
@@ -9,10 +10,13 @@ var btPackage = "jfrog-cli-" + getArchitecture();
 
 downloadCli();
 
-function downloadCli() {
-    if (!validVersion()) {
+function validateNpmVersion() {
+    if (!isValidNpmVersion()) {
         throw new Error("JFrog CLI can be installed using npm version 5.0.0 or above.")
     }
+}
+
+function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
     https.get({
         hostname: 'api.bintray.com',
@@ -23,7 +27,7 @@ function downloadCli() {
     }, writeToFile).on('error', function (err) {console.error(err);});
 }
 
-function validVersion() {
+function isValidNpmVersion() {
     var child_process = require('child_process');
     var npmVersionCmdOut = child_process.execSync("npm version -json");
     var npmVersion = JSON.parse(npmVersionCmdOut).npm;

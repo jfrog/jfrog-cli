@@ -21,9 +21,7 @@
   "dependencies": {
     "debug": "3.1.0",
     "follow-redirects": "1.2.6",
-    "ms": "2.0.0",
-    "npm": "^4.6.1",
-    "version": "^0.1.2"
+    "ms": "2.0.0"
   },
   "bundledDependencies": [
     "follow-redirects",
