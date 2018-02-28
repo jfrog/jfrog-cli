@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)
@@ -106,25 +107,25 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 type testProxy struct {
 }
 
-func (t *testProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.RequestURI == "/" {
-		w.WriteHeader(200)
+func (t *testProxy) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	if request.RequestURI == "/" {
+		responseWriter.WriteHeader(200)
 	} else {
-		host := r.URL.Host
-		r.Host = "https://" + r.Host
+		host := request.URL.Host
+		request.Host = "https://" + request.Host
 		targetSiteCon, err := net.Dial("tcp", host)
 		if err != nil {
 			clilog.Error(err)
 			return
 		}
-		hij, ok := w.(http.Hijacker)
+		hij, ok := responseWriter.(http.Hijacker)
 		if !ok {
-			http.Error(w, "webserver doesn't support hijacking", http.StatusInternalServerError)
+			http.Error(responseWriter, "webserver doesn't support hijacking", http.StatusInternalServerError)
 			return
 		}
 		proxyClient, _, err := hij.Hijack()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(responseWriter, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -174,7 +175,7 @@ func CreateNewServerCertificates() (string, string) {
 
 func GetProxyHttpsPort() string {
 	port := "1024"
-	if httpPort := os.Getenv("PROXY_HTTPS_PORT"); httpPort != "" {
+	if httpPort := os.Getenv(tests.HttpsProxyEnvVar); httpPort != "" {
 		port = httpPort
 	}
 	return port

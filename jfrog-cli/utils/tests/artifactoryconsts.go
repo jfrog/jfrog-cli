@@ -56,6 +56,7 @@ const (
 	UploadSpecExclude                      = "upload_spec_exclude.json"
 	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
 	BuildDownloadSpecNoBuildNumberWithSort = "build_download_spec_no_build_number_with_sort.json"
+	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
 )
 
 var TxtUploadExpectedRepo1 = []string{

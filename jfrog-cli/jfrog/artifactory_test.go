@@ -392,6 +392,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	}
 	defer os.RemoveAll(path)
 	os.Setenv("JFROG_CLI_HOME", path)
+	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
@@ -484,6 +485,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	var httpProxyEnv string
 	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase}
 	if rtUrl.Scheme == "https" {
+		os.Setenv(tests.HttpsProxyEnvVar, "1025")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
 		httpProxyEnv = "HTTPS_PROXY=localhost:" + cliproxy.GetProxyHttpsPort()
 	} else {
