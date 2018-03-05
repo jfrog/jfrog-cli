@@ -5,6 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"net/url"
 	"strings"
+	"fmt"
 )
 
 type PropertyParseOptions int
@@ -53,8 +54,12 @@ func ParseProperties(propStr string, option PropertyParseOptions) (*Properties, 
 func (props *Properties) ToEncodedString() string {
 	encodedProps := ""
 	for _, v := range props.Properties {
-		jointProp := strings.Join([]string{url.QueryEscape(v.Key), url.QueryEscape(v.Value)}, "=")
-		encodedProps = strings.Join([]string{encodedProps, jointProp}, ";")
+		jointProp := fmt.Sprintf("%s=%s", url.QueryEscape(v.Key), url.QueryEscape(v.Value))
+		encodedProps = fmt.Sprintf("%s;%s", encodedProps, jointProp)
+	}
+	// Remove leading semicolon
+	if strings.HasPrefix(encodedProps, ";") {
+		return encodedProps[1:]
 	}
 	return encodedProps
 }
