@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"fmt"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -61,13 +62,10 @@ func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) 
 	if details == nil || len(details) == 0 {
 		return new(ArtifactoryDetails), nil
 	}
-	var artifactoryDetails *ArtifactoryDetails
 	if len(serverId) == 0 {
-		artifactoryDetails, err = GetDefaultArtifactoryConf(details)
-	} else {
-		artifactoryDetails = GetArtifactoryConfByServerId(serverId, details)
+		return GetDefaultArtifactoryConf(details)
 	}
-	return artifactoryDetails, err
+	return GetArtifactoryConfByServerId(serverId, details)
 }
 
 func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
@@ -84,13 +82,14 @@ func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetai
 	return nil, errorutils.CheckError(errors.New("Couldn't find default server."))
 }
 
-func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) *ArtifactoryDetails {
+// Returns the configured server or error if the server id not found
+func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
 	for _, conf := range configs {
 		if conf.ServerId == serverName {
-			return conf
+			return conf, nil
 		}
 	}
-	return new(ArtifactoryDetails)
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Server id '%s' dose not exists.", serverName)))
 }
 
 func GetAndRemoveConfiguration(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, []*ArtifactoryDetails) {
