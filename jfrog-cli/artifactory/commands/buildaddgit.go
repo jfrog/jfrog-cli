@@ -5,6 +5,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
+	"strings"
 )
 
 func BuildAddGit(buildName, buildNumber, dotGitPath string) error {
@@ -25,9 +26,14 @@ func BuildAddGit(buildName, buildNumber, dotGitPath string) error {
 		return err
 	}
 
+	gitUrl := gitManager.GetUrl()
+	if !strings.HasSuffix(gitUrl,".git") {
+		gitUrl += ".git"
+	}
+
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Vcs = &buildinfo.Vcs{
-			Url:      gitManager.GetUrl() + ".git",
+			Url:      gitManager.GetUrl(),
 			Revision: gitManager.GetRevision(),
 		}
 	}
