@@ -245,7 +245,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 		t.Error(".npmrc file was not deleted at the end of the install command.")
 	}
 	if err == nil && postTestFileInfoErr == nil && (npmrcFileInfo.Mode() != postTestNpmrcFileInfo.Mode() || npmrcFileInfo.Size() != postTestNpmrcFileInfo.Size()) {
-		t.Errorf(".npmrc file was changed after running npm command! it was:\n%s\nnow it is:\n%s\nTest arguments are:\n%s", npmrcFileInfo, postTestNpmrcFileInfo, npmTest)
+		t.Errorf(".npmrc file was changed after running npm command! it was:\n%s\nnow it is:\n%s\nTest arguments are:\n%v", npmrcFileInfo, postTestNpmrcFileInfo, npmTest)
 	}
 	// make sue the temp .npmrc was deleted.
 	bcpNpmrc, err := os.Stat("jfrog.npmrc.backup")
@@ -253,7 +253,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 		t.Error(err)
 	}
 	if bcpNpmrc != nil {
-		t.Errorf("The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when runnung the configuration:\n%s", npmTest)
+		t.Errorf("The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when runnung the configuration:\n%v", npmTest)
 	}
 }
 
@@ -381,12 +381,12 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
-		t.Errorf("npm install test with the arguments: \n%s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
+		t.Errorf("npm install test with the arguments: \n%v \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
 			npmTestParams, expectedDependencies, buildInfo)
 	}
 	if len(expectedDependencies) != len(buildInfo.Modules[0].Dependencies) {
 		// The checksums are ignored when comparing the actual and the expected
-		t.Errorf("npm install test with the arguments: \n%s \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
+		t.Errorf("npm install test with the arguments: \n%v \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
 			npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
 	}
 	for _, expectedDependency := range expectedDependencies {
@@ -401,7 +401,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 		}
 		if !found {
 			// The checksums are ignored when comparing the actual and the expected
-			t.Errorf("npm install test with the arguments: \n%s \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
+			t.Errorf("npm install test with the arguments: \n%v \nexpected to have the following dependencies: \n%s \nbut has: \n%s",
 				npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
 		}
 	}
@@ -410,7 +410,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	if len(buildInfo.Modules) > 0 {
-		t.Errorf("npm install test with the arguments: \n%s \nexpected to have no modules but has: \n%s",
+		t.Errorf("npm install test with the arguments: \n%v \nexpected to have no modules but has: \n%s",
 			npmTestParams, buildInfo.Modules[0])
 	}
 
@@ -427,7 +427,7 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 	}
 
 	if len(packageJson.Dependencies) != 2 || packageJson.Dependencies[npmTestParams.npmArgs] == "" {
-		t.Errorf("npm install test with the arguments: \n%s \nexpected have the dependency %s in the following package.json file: \n%s",
+		t.Errorf("npm install test with the arguments: \n%v \nexpected have the dependency %s in the following package.json file: \n%s",
 			npmTestParams, npmTestParams.npmArgs, packageJsonFile)
 	}
 }
@@ -451,16 +451,16 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
 	expectedArtifactName := "jfrog-cli-tests-1.0.0.tgz"
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
-		t.Errorf("npm publish test with the arguments: \n%s \nexpected to have module with the following artifact: \n%s \nbut has no modules: \n%s",
+		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have module with the following artifact: \n%s \nbut has no modules: \n%s",
 			npmTestParams, expectedArtifactName, buildInfo)
 	}
 	if len(buildInfo.Modules[0].Artifacts) != 1 {
 		// The checksums are ignored when comparing the actual and the expected
-		t.Errorf("npm publish test with the arguments: \n%s \nexpected to have the following artifact: \n%s \nbut has: \n%s",
+		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have the following artifact: \n%s \nbut has: \n%s",
 			npmTestParams, expectedArtifactName, buildInfo.Modules[0].Artifacts)
 	}
 	if buildInfo.Modules[0].Artifacts[0].Name != expectedArtifactName {
-		t.Errorf("npm publish test with the arguments: \n%s \nexpected to have the following artifact: \n%s \nbut has: \n%s",
+		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have the following artifact: \n%s \nbut has: \n%s",
 			npmTestParams, expectedArtifactName, buildInfo.Modules[0].Artifacts[0].Name)
 	}
 }
