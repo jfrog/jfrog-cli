@@ -9,7 +9,8 @@ import (
 )
 
 type SearchResult struct {
-	Path string `json:"path,omitempty"`
+	Path       string            `json:"path,omitempty"`
+	Properties map[string]string `json:"properties,omitempty"`
 }
 
 func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
@@ -44,6 +45,10 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 			tempResult.Path = v.Repo + "/" + v.Path + "/" + v.Name
 		} else {
 			tempResult.Path = v.Repo + "/" + v.Name
+		}
+		tempResult.Properties = make(map[string]string, len(v.Properties))
+		for _, prop := range v.Properties {
+			tempResult.Properties[prop.Key] = prop.Value
 		}
 		result[i] = *tempResult
 	}
