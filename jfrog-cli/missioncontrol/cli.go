@@ -100,9 +100,8 @@ func getFlags() []cli.Flag {
 
 func getRemoveInstanceFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "quiet",
-			Value: "",
 			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
 		},
 	}...)
@@ -147,11 +146,11 @@ func getAttachLicenseFlags() []cli.Flag {
 			Name:  "license-path",
 			Usage: "[Optional] Full path to the license file",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "override",
 			Usage: "[Default: false] Set to true to override licence file.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "deploy",
 			Usage: "[Default: false] Set to true to deploy licence to instace.",
 		},
@@ -173,7 +172,7 @@ func getDetachLicenseFlags() []cli.Flag {
 
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "interactive",
 			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.",
 		},
@@ -304,15 +303,15 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
 		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
 	}
-	flags.Override = cliutils.GetBoolFlagValue(c, "override", false)
-	flags.Deploy = cliutils.GetBoolFlagValue(c, "deploy", false)
+	flags.Override = c.Bool("override")
+	flags.Deploy = c.Bool("deploy")
 	flags.NodeId = c.String("node-id")
 	return
 }
 
 func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) {
 	flags = new(commands.ConfigFlags)
-	flags.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
+	flags.Interactive = c.BoolT("interactive")
 	flags.MissionControlDetails, err = createMissionControlDetails(c, false)
 	if err != nil {
 		return
@@ -351,7 +350,7 @@ func createRemoveInstanceFlags(c *cli.Context) (flags *rtinstances.RemoveFlags, 
 	}
 	flags = &rtinstances.RemoveFlags{
 		MissionControlDetails: details,
-		Interactive:           cliutils.GetBoolFlagValue(c, "interactive", true)}
+		Interactive:           c.BoolT("interactive")}
 
 	return
 }

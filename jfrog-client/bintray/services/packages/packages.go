@@ -45,8 +45,8 @@ type Params struct {
 	IssueTrackerUrl        string
 	GithubRepo             string
 	GithubReleaseNotesFile string
-	PublicDownloadNumbers  string
-	PublicStats            string
+	PublicDownloadNumbers  bool
+	PublicStats            bool
 }
 
 func (ps *PackageService) Create(params *Params) error {
@@ -208,6 +208,6 @@ type contentConfig struct {
 	IssueTrackerUrl        string   `json:"issue_tracker_url,omitempty"`
 	GithubRepo             string   `json:"github_repo,omitempty"`
 	GithubReleaseNotesFile string   `json:"github_release_notes_file,omitempty"`
-	PublicDownloadNumbers  string   `json:"public_download_numbers,omitempty"`
-	PublicStats            string   `json:"public_stats,omitempty"`
+	PublicDownloadNumbers  bool   `json:"public_download_numbers,omitempty"`
+	PublicStats            bool   `json:"public_stats,omitempty"`
 }

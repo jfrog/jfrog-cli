@@ -423,14 +423,12 @@ func getUploadFlags() []cli.Flag {
 			Name:  "deb",
 			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.",
 		},
 		cli.BoolFlag{
@@ -475,14 +473,12 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to include the download of artifacts inside sub-folders in Artifactory.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.",
 		},
 		cli.StringFlag{
@@ -596,14 +592,12 @@ func getMoveFlags() []cli.Flag {
 	moveFlags := append(getServerFlags(), getSortLimitFlags()...)
 	moveFlags = append(moveFlags, getSpecFlags()...)
 	return append(moveFlags, []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: false] If set to false, files are moved according to their file system hierarchy.",
 		},
 		cli.BoolFlag{
@@ -628,14 +622,12 @@ func getCopyFlags() []cli.Flag {
 	copyFlags := append(getServerFlags(), getSortLimitFlags()...)
 	copyFlags = append(copyFlags, getSpecFlags()...)
 	return append(copyFlags, []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: false] If set to false, files are copied according to their file system hierarchy.",
 		},
 		cli.BoolFlag{
@@ -663,14 +655,12 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "quiet",
-			Value: "",
 			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
 		},
 		cli.BoolFlag{
@@ -694,9 +684,8 @@ func getSearchFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
 		},
 		cli.StringFlag{
@@ -715,9 +704,8 @@ func getSetPropertiesFlags() []cli.Flag {
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.",
 		},
 		cli.StringFlag{
@@ -765,9 +753,8 @@ func getBuildPublishFlags() []cli.Flag {
 
 func getBuildAddDependenciesFlags() []cli.Flag {
 	return append(getSpecFlags(), []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.",
 		},
 		cli.BoolFlag{
@@ -821,7 +808,7 @@ func getBuildDistributeFlags() []cli.Flag {
 			Name:  "passphrase",
 			Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.",
 		},
-		cli.BoolFlag{
+		cli.BoolTFlag{
 			Name:  "publish",
 			Usage: "[Default: true] If true, builds are published when deployed to Bintray.",
 		},
@@ -863,11 +850,11 @@ func getGitLfsCleanFlags() []cli.Flag {
 
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "interactive",
 			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "enc-password",
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
@@ -1372,7 +1359,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 		return
 	}
 	details = createArtifactoryDetails(c, false)
-	encPassword := cliutils.GetBoolFlagValue(c, "enc-password", true)
+	encPassword := c.BoolT("enc-password")
 	details, err = commands.Config(nil, details, true, encPassword, "")
 	cliutils.ExitOnErr(err)
 	return
@@ -1447,9 +1434,9 @@ func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
-		Flat(cliutils.GetBoolFlagValue(c, "flat", false)).
+		Flat(c.Bool("flat")).
 		IncludeDirs(true).
 		Target(c.Args().Get(1)).
 		BuildSpec()
@@ -1477,7 +1464,7 @@ func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		BuildSpec()
 }
@@ -1511,7 +1498,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		BuildSpec()
 }
@@ -1525,9 +1512,9 @@ func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
-		IncludeDirs(cliutils.GetBoolFlagValue(c, "include-dirs", false)).
+		IncludeDirs(c.Bool("include-dirs")).
 		BuildSpec()
 }
 
@@ -1576,7 +1563,7 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *comm
 
 func createBuildDistributionConfiguration(c *cli.Context) (distributeConfiguration *commands.BuildDistributionConfiguration) {
 	distributeParamsImpl := new(services.BuildDistributionParamsImpl)
-	distributeParamsImpl.Publish = cliutils.GetBoolFlagValue(c, "publish", true)
+	distributeParamsImpl.Publish = c.BoolT("publish")
 	distributeParamsImpl.OverrideExistingFiles = c.Bool("override")
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
@@ -1619,11 +1606,11 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
-		Flat(cliutils.GetBoolFlagValue(c, "flat", false)).
+		Flat(c.Bool("flat")).
 		Explode(c.String("explode")).
-		IncludeDirs(cliutils.GetBoolFlagValue(c, "include-dirs", false)).
+		IncludeDirs(c.Bool("include-dirs")).
 		Target(c.Args().Get(1)).
 		BuildSpec()
 }
@@ -1661,7 +1648,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *command
 
 func createBuildAddDependenciesConfiguration(c *cli.Context) (buildAddDependenciesConfiguration *commands.BuildAddDependenciesConfiguration) {
 	buildAddDependenciesConfiguration = new(commands.BuildAddDependenciesConfiguration)
-	buildAddDependenciesConfiguration.DryRun = cliutils.GetBoolFlagValue(c, "dry-run", false)
+	buildAddDependenciesConfiguration.DryRun = c.Bool("dry-run")
 	buildAddDependenciesConfiguration.BuildName = c.Args().Get(0)
 	buildAddDependenciesConfiguration.BuildNumber = c.Args().Get(1)
 	return
@@ -1676,9 +1663,9 @@ func createDefaultUploadSpec(c *cli.Context) *spec.SpecFiles {
 		Limit(getIntValue("limit", c)).
 		SortOrder(c.String("sort-order")).
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
-		Flat(cliutils.GetBoolFlagValue(c, "flat", true)).
+		Flat(c.BoolT("flat")).
 		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
 		IncludeDirs(c.Bool("include-dirs")).
@@ -1689,7 +1676,7 @@ func createDefaultUploadSpec(c *cli.Context) *spec.SpecFiles {
 func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(2)).
-		Recursive(cliutils.GetBoolFlagValue(c, "recursive", true)).
+		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Regexp(c.Bool("regexp")).
 		BuildSpec()
@@ -1766,8 +1753,8 @@ func createNpmConfiguration(c *cli.Context) (npmConfiguration *npm.CliConfigurat
 func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
 	configCommandConfiguration.ArtDetails = createArtifactoryDetails(c, false)
-	configCommandConfiguration.EncPassword = cliutils.GetBoolFlagValue(c, "enc-password", true)
-	configCommandConfiguration.Interactive = cliutils.GetBoolFlagValue(c, "interactive", true)
+	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
+	configCommandConfiguration.Interactive = c.BoolT("interactive")
 	return
 }
 

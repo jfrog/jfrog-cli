@@ -6,13 +6,6 @@ import (
 	"strings"
 )
 
-func GetBoolFlagValue(c *cli.Context, flagName string, defValue bool) bool {
-	if c.IsSet(flagName) {
-		return c.Bool(flagName)
-	}
-	return defValue
-}
-
 func GetIntFlagValue(c *cli.Context, flagName string, defValue int) (int, error) {
 	if c.IsSet(flagName) {
 		flagIntVal, err := strconv.Atoi(c.String(flagName))

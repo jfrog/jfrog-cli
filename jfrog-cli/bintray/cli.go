@@ -314,9 +314,8 @@ func getStreamFlags() []cli.Flag {
 
 func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "interactive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not want the config command to be interactive.",
 		},
 	}
@@ -328,7 +327,7 @@ func getConfigFlags() []cli.Flag {
 	})
 }
 
-func getPackageFlags(prefix string) []cli.Flag {
+func getPackageFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "licenses",
@@ -340,14 +339,12 @@ func getPackageFlags(prefix string) []cli.Flag {
 			Value: "",
 			Usage: "[Mandatory for OSS] Package VCS URL.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "pub-dn",
-			Value: "",
 			Usage: "[Default: false] Public download numbers.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "pub-stats",
-			Value: "",
 			Usage: "[Default: true] Public statistics.",
 		},
 		cli.StringFlag{
@@ -390,9 +387,8 @@ func getPackageFlags(prefix string) []cli.Flag {
 
 func getVersionFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "github-tag-rel-notes",
-			Value: "",
 			Usage: "[Default: false] Set to true if you wish to use a Github tag release notes.",
 		},
 		cli.StringFlag{
@@ -419,7 +415,7 @@ func getVersionFlags() []cli.Flag {
 }
 
 func getCreateAndUpdatePackageFlags() []cli.Flag {
-	return append(getFlags(), getPackageFlags("")...)
+	return append(getFlags(), getPackageFlags()...)
 }
 
 func getCreateAndUpdateVersionFlags() []cli.Flag {
@@ -427,18 +423,16 @@ func getCreateAndUpdateVersionFlags() []cli.Flag {
 }
 
 func getDeletePackageAndVersionFlags() []cli.Flag {
-	return append(getFlags(), cli.StringFlag{
+	return append(getFlags(), cli.BoolFlag{
 		Name:  "quiet",
-		Value: "",
 		Usage: "[Default: false] Set to true to skip the delete confirmation message.",
 	})
 }
 
 func getDownloadFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: false] Set to true if you do not wish to have the Bintray path structure created locally for your downloaded files.",
 		},
 		cli.StringFlag{
@@ -451,9 +445,8 @@ func getDownloadFlags() []cli.Flag {
 			Value: "",
 			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "unpublished",
-			Value: "",
 			Usage: "[Default: false] Download both published and unpublished files.",
 		},
 	}
@@ -474,33 +467,28 @@ func getDownloadVersionFlags() []cli.Flag {
 
 func getUploadFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "recursive",
-			Value: "",
 			Usage: "[Default: true] Set to false if you do not wish to collect files in sub-folders to be uploaded to Bintray.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "flat",
-			Value: "",
 			Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.",
 		},
 		cli.BoolFlag{
 			Name:  "regexp",
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "publish",
-			Value: "",
 			Usage: "[Default: false] Set to true to publish the uploaded files.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "override",
-			Value: "",
 			Usage: "[Default: false] Set to true to enable overriding existing published files.",
 		},
-		cli.StringFlag{
+		cli.BoolFlag{
 			Name:  "explode",
-			Value: "",
 			Usage: "[Default: false] Set to true to explode archived files after upload.",
 		},
 		cli.StringFlag{
@@ -571,7 +559,7 @@ func getAccessKeysFlags() []cli.Flag {
 			Name:  "black-cidrs",
 			Usage: "[Optional] Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
 		},
-		cli.StringFlag{
+		cli.BoolTFlag{
 			Name:  "api-only",
 			Usage: "[Default: true] You can set api_only to false to allow access keys access to Bintray UI as well as to the API.",
 		},
@@ -626,7 +614,7 @@ func configure(c *cli.Context) {
 			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args().Get(0)+"'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
-		interactive := cliutils.GetBoolFlagValue(c, "interactive", true)
+		interactive := c.BoolT("interactive")
 		if !interactive {
 			if c.String("user") == "" || c.String("key") == "" {
 				cliutils.ExitOnErr(errors.New("The --user and --key options are mandatory when the --interactive option is set to false"))
@@ -773,7 +761,7 @@ func downloadVersion(c *cli.Context) {
 	}
 	var err error
 	params := services.NewDownloadVersionParams()
-	params.IncludeUnpublished = cliutils.GetBoolFlagValue(c, "unpublished", false)
+	params.IncludeUnpublished = c.Bool("unpublished")
 	params.Path, err = services.CreateVersionDetailsForDownloadVersion(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 
@@ -812,12 +800,12 @@ func upload(c *cli.Context) {
 		cliutils.ExitOnErr(errors.New("The --deb option should be in the form of distribution/component/architecture"))
 	}
 
-	params.Recursive = cliutils.GetBoolFlagValue(c, "recursive", true)
-	params.Flat = cliutils.GetBoolFlagValue(c, "flat", true)
-	params.Publish = cliutils.GetBoolFlagValue(c, "publish", false)
-	params.Override = cliutils.GetBoolFlagValue(c, "override", false)
-	params.Explode = cliutils.GetBoolFlagValue(c, "explode", false)
-	params.UseRegExp = cliutils.GetBoolFlagValue(c, "regexp", false)
+	params.Recursive = c.BoolT("recursive")
+	params.Flat = c.BoolT("flat")
+	params.Publish = c.Bool("publish")
+	params.Override = c.Bool("override")
+	params.Explode = c.Bool("explode")
+	params.UseRegExp = c.Bool("regexp")
 
 	uploadConfig := newBintrayConfig(c)
 	uploaded, failed, err := commands.Upload(uploadConfig, params)
@@ -834,8 +822,8 @@ func downloadFile(c *cli.Context) {
 	}
 	var err error
 	params := services.NewDownloadFileParams()
-	params.Flat = cliutils.GetBoolFlagValue(c, "flat", false)
-	params.IncludeUnpublished = cliutils.GetBoolFlagValue(c, "unpublished", false)
+	params.Flat = c.Bool("flat")
+	params.IncludeUnpublished = c.Bool("unpublished")
 	params.PathDetails, err = utils.CreatePathDetails(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 
@@ -997,22 +985,6 @@ func handleEntitlements(c *cli.Context) {
 }
 
 func createPackageParams(c *cli.Context) (*packages.Params, error) {
-	var publicDownloadNumbers string
-	var publicStats string
-	if c.String("pub-dn") != "" {
-		publicDownloadNumbers = c.String("pub-dn")
-		publicDownloadNumbers = strings.ToLower(publicDownloadNumbers)
-		if publicDownloadNumbers != "true" && publicDownloadNumbers != "false" {
-			cliutils.ExitOnErr(errors.New("The --pub-dn option should have a boolean value."))
-		}
-	}
-	if c.String("pub-stats") != "" {
-		publicStats = c.String("pub-stats")
-		publicStats = strings.ToLower(publicStats)
-		if publicStats != "true" && publicStats != "false" {
-			cliutils.ExitOnErr(errors.New("The --pub-stats option should have a boolean value."))
-		}
-	}
 	licenses := c.String("licenses")
 	if licenses == "" {
 		confDetails, err := commands.GetConfig()
@@ -1038,8 +1010,8 @@ func createPackageParams(c *cli.Context) (*packages.Params, error) {
 	params.IssueTrackerUrl = c.String("issuetracker-url")
 	params.GithubRepo = c.String("github-repo")
 	params.GithubReleaseNotesFile = c.String("github-rel-notes")
-	params.PublicDownloadNumbers = publicDownloadNumbers
-	params.PublicStats = publicStats
+	params.PublicDownloadNumbers = c.Bool("pub-dn")
+	params.PublicStats = c.BoolT("pub-stats")
 
 	return params, nil
 }
@@ -1059,15 +1031,6 @@ func newBintrayConfig(c *cli.Context) bintray.Config {
 }
 
 func createVersionParams(c *cli.Context) (*versions.Params, error) {
-	var githubTagReleaseNotes string
-	if c.String("github-tag-rel-notes") != "" {
-		githubTagReleaseNotes = c.String("github-tag-rel-notes")
-		githubTagReleaseNotes = strings.ToLower(githubTagReleaseNotes)
-		if githubTagReleaseNotes != "true" && githubTagReleaseNotes != "false" {
-			cliutils.ExitOnErr(errors.New("The --github-tag-rel-notes option should have a boolean value."))
-		}
-	}
-
 	versionDetails, err := versions.CreatePath(c.Args().Get(0))
 	if err != nil {
 		return nil, err
@@ -1079,7 +1042,7 @@ func createVersionParams(c *cli.Context) (*versions.Params, error) {
 	params.VcsTag = c.String("vcs-tag")
 	params.Released = c.String("released")
 	params.GithubReleaseNotesFile = c.String("github-rel-notes")
-	params.GithubUseTagReleaseNotes = githubTagReleaseNotes
+	params.GithubUseTagReleaseNotes = c.Bool("github-tag-rel-notes")
 
 	return params, nil
 }
@@ -1188,7 +1151,7 @@ func createAccessKeysParams(c *cli.Context, org, keyId string) *accesskeys.Param
 	params.ExistenceCheckCache = cachePeriod
 	params.WhiteCidrs = c.String("white-cidrs")
 	params.BlackCidrs = c.String("black-cidrs")
-	params.ApiOnly = cliutils.GetBoolFlagValue(c, "recursive", true)
+	params.ApiOnly = c.BoolT("recursive")
 
 	return params
 }

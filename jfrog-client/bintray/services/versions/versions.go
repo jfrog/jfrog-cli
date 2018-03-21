@@ -40,7 +40,7 @@ type Params struct {
 	VcsTag                   string
 	Released                 string
 	GithubReleaseNotesFile   string
-	GithubUseTagReleaseNotes string
+	GithubUseTagReleaseNotes bool
 }
 
 func (vs *VersionService) Create(params *Params) error {
@@ -204,5 +204,5 @@ type contentConfig struct {
 	VcsTag                   string `json:"vcs_tag,omitempty"`
 	Released                 string `json:"released,omitempty"`
 	GithubReleaseNotesFile   string `json:"github_release_notes_file,omitempty"`
-	GithubUseTagReleaseNotes string `json:"github_use_tag_release_notes,omitempty"`
+	GithubUseTagReleaseNotes bool `json:"github_use_tag_release_notes,omitempty"`
 }
