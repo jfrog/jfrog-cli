@@ -219,7 +219,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 		t.Error("Wrong revision", "expected: "+gitManager.GetRevision(), "Got: "+buildInfoVcsRevision)
 	}
 
-	gitConfigUrl := gitManager.GetUrl() + ".git"
+	gitConfigUrl := gitManager.GetUrl()
 	if gitConfigUrl != buildInfoVcsUrl {
 		t.Error("Wrong url", "expected: "+gitConfigUrl, "Got: "+buildInfoVcsUrl)
 	}
