@@ -30,7 +30,9 @@ func ReadPackageInfo(data []byte) (*PackageInfo, error) {
 	if err := json.Unmarshal(data, parsedResult); err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return splitScopeFromName(parsedResult), nil
+	removeVersionPrefixes(parsedResult)
+	splitScopeFromName(parsedResult)
+	return parsedResult, nil
 }
 
 func (pi *PackageInfo) BuildInfoModuleId() string {
@@ -57,11 +59,16 @@ func (pi *PackageInfo) GetExpectedPackedFileName() string {
 	return fmt.Sprintf("%s-%s", strings.TrimPrefix(pi.Scope, "@"), fileNameBase)
 }
 
-func splitScopeFromName(packageInfo *PackageInfo) *PackageInfo {
+func splitScopeFromName(packageInfo *PackageInfo) {
 	if strings.HasPrefix(packageInfo.Name, "@") && strings.Contains(packageInfo.Name, "/") {
 		splitValues := strings.Split(packageInfo.Name, "/")
 		packageInfo.Scope = splitValues[0]
 		packageInfo.Name = splitValues[1]
 	}
-	return packageInfo
+}
+
+// A leading "=" or "v" character is stripped off and ignored by npm.
+func removeVersionPrefixes(packageInfo *PackageInfo) {
+	packageInfo.Version = strings.TrimPrefix(packageInfo.Version, "v")
+	packageInfo.Version = strings.TrimPrefix(packageInfo.Version, "=")
 }

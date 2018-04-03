@@ -1,6 +1,6 @@
 {
   "name": "jfrog-cli-tests",
-  "version": "1.0.0",
+  "version": "v1.0.0",
   "description": "test package",
   "main": "index.js",
   "scripts": {

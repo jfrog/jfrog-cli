@@ -1,6 +1,6 @@
 {
   "name": "@jscope/jfrog-cli-tests",
-  "version": "1.0.0",
+  "version": "=1.0.0",
   "description": "test package with scope",
   "main": "index.js",
   "scripts": {
