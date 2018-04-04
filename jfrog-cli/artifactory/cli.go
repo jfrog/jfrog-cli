@@ -2,6 +2,7 @@ package artifactory
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
@@ -44,7 +45,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -417,7 +417,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\" to be attached to the uploaded artifacts.",
 		},
 		cli.StringFlag{
 			Name:  "deb",
@@ -473,7 +473,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -546,7 +546,7 @@ func getServerIdFlag() cli.Flag {
 }
 
 func getFailNoOpFlag() cli.Flag {
-	return 	cli.BoolFlag{
+	return cli.BoolFlag{
 		Name:  "fail-no-op",
 		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.",
 	}
@@ -612,7 +612,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -644,7 +644,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -661,7 +661,7 @@ func getDeleteFlags() []cli.Flag {
 	return append(deleteFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -692,7 +692,7 @@ func getSearchFlags() []cli.Flag {
 	return append(searchFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -713,7 +713,7 @@ func getSetPropertiesFlags() []cli.Flag {
 	return append(propsFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.",
 		},
 		cli.StringFlag{
 			Name:  "recursive",
@@ -889,7 +889,7 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 		if splitCount > 15 {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limitted to a maximum of 15."))
@@ -919,7 +919,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--min-split' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
@@ -931,7 +931,7 @@ func getRetries(c *cli.Context) (retries int) {
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--retries' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
