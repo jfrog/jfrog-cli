@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
@@ -90,9 +90,9 @@ func compare(expected, actual []string, t *testing.T) {
 	}
 }
 
-func CompareExpectedVsActuals(expected []string, actual []commands.SearchResult, t *testing.T) {
+func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error(fmt.Sprintf("Unexpected behavior, expected - %s: \n%s\nfound - %s: \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
+		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

@@ -1,0 +1,16 @@
+package buildinfo
+
+import (
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+)
+
+func Clean(buildName, buildNumber string) error {
+	log.Info("Cleaning build info...")
+	err := utils.RemoveBuildDir(buildName, buildNumber)
+	if err != nil {
+		return err
+	}
+	log.Info("Cleaned build info", buildName+"/"+buildNumber+".")
+	return nil
+}

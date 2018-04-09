@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	buildutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -40,8 +40,8 @@ type buildInfoBuilder struct {
 	// internal fields
 	imageId      string
 	layers       []utils.ResultItem
-	artifacts    []buildinfo.Artifacts
-	dependencies []buildinfo.Dependencies
+	artifacts    []buildinfo.Artifact
+	dependencies []buildinfo.Dependency
 }
 
 // Create build info for docker image
@@ -137,53 +137,53 @@ func (builder *buildInfoBuilder) createBuildInfo() (*buildinfo.BuildInfo, error)
 }
 
 // Download and read the manifest from Artifactory
-func getManifest(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (*manifest, buildinfo.Artifacts, error) {
+func getManifest(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (*manifest, buildinfo.Artifact, error) {
 	item := searchResults["manifest.json"]
 	ioReaderCloser, err := serviceManager.ReadRemoteFile(item.GetItemRelativePath())
 	if err != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 	defer ioReaderCloser.Close()
 	content, err := ioutil.ReadAll(ioReaderCloser)
 	if err != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 
 	var manifest manifest
 	err = json.Unmarshal(content, &manifest)
 	if errorutils.CheckError(err) != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 
 	// Check that the manifest ID is the right one
 	if manifest.Config.Digest != imageId {
-		return nil, buildinfo.Artifacts{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
+		return nil, buildinfo.Artifact{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
 	}
 
-	artifact := buildinfo.Artifacts{Name: "manifest.json", Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+	artifact := buildinfo.Artifact{Name: "manifest.json", Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 	return &manifest, artifact, nil
 }
 
 // Download and read the config layer from Artifactory
-func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (*configLayer, buildinfo.Artifacts, error) {
+func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (*configLayer, buildinfo.Artifact, error) {
 	item := searchResults[digestToLayer(imageId)]
 	ioReaderCloser, err := serviceManager.ReadRemoteFile(item.GetItemRelativePath())
 	if err != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 	defer ioReaderCloser.Close()
 	content, err := ioutil.ReadAll(ioReaderCloser)
 	if err != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 
 	var configLayer configLayer
 	err = json.Unmarshal(content, &configLayer)
 	if err != nil {
-		return nil, buildinfo.Artifacts{}, err
+		return nil, buildinfo.Artifact{}, err
 	}
 
-	artifact := buildinfo.Artifacts{Name: digestToLayer(imageId), Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+	artifact := buildinfo.Artifact{Name: digestToLayer(imageId), Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 	return &configLayer, artifact, nil
 }
 

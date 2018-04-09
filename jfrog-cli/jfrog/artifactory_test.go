@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"github.com/buger/jsonparser"
 	"github.com/jfrogdev/gofrog/io"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
@@ -406,7 +406,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	}
 	parsedUrl, err := url.Parse(artifactoryDetails.Url)
 	artifactoryDetails.Url = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
-	_, err = commands.Search(spec, artifactoryDetails)
+	_, err = generic.Search(spec, artifactoryDetails)
 	// The server is using self-sign certificate
 	// Without loading the certificated we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
 	if _, ok := err.(*url.Error); !ok {
@@ -426,7 +426,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = commands.Search(spec, artifactoryDetails)
+	_, err = generic.Search(spec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -549,7 +549,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = commands.Search(spec, artifactoryDetails)
+	_, err = generic.Search(spec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -573,7 +573,7 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 }
 
 func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
-	_, err := commands.Search(spec, artifactoryDetails)
+	_, err := generic.Search(spec, artifactoryDetails)
 	_, isUrlErr := err.(*url.Error)
 	if err == nil || !isUrlErr {
 		t.Error("Expected the request to fails, since the proxy is down.", err)
@@ -1149,9 +1149,9 @@ func TestArtifactoryDisplyedPathToDelete(t *testing.T) {
 
 	specFile := tests.GetFilePath(tests.DeleteComplexSpec)
 	artifactsToDelete := getPathsToDelete(specFile)
-	var displayedPaths []commands.SearchResult
+	var displayedPaths []generic.SearchResult
 	for _, v := range artifactsToDelete {
-		displayedPaths = append(displayedPaths, commands.SearchResult{Path: v.GetItemRelativePath()})
+		displayedPaths = append(displayedPaths, generic.SearchResult{Path: v.GetItemRelativePath()})
 	}
 
 	tests.CompareExpectedVsActuals(tests.DeleteDisplyedFiles, displayedPaths, t)
@@ -2205,7 +2205,7 @@ func prepCopyFiles() {
 
 func getPathsToDelete(specFile string) []rtutils.ResultItem {
 	deleteSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	artifactsToDelete, _ := commands.GetPathsToDelete(deleteSpec, &commands.DeleteConfiguration{ArtDetails: artifactoryDetails})
+	artifactsToDelete, _ := generic.GetPathsToDelete(deleteSpec, &generic.DeleteConfiguration{ArtDetails: artifactoryDetails})
 	return artifactsToDelete
 }
 
@@ -2278,15 +2278,15 @@ func deleteRepos() {
 }
 
 func cleanArtifactory() {
-	deleteFlags := new(commands.DeleteConfiguration)
+	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpec, _ := spec.CreateSpecFromFile(tests.GetFilePath(tests.DeleteSpec), nil)
 	deleteFlags.ArtDetails = artifactoryDetails
-	commands.Delete(deleteSpec, deleteFlags)
+	generic.Delete(deleteSpec, deleteFlags)
 }
 
-func searchInArtifactory(specFile string) (result []commands.SearchResult, err error) {
+func searchInArtifactory(specFile string) (result []generic.SearchResult, err error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	result, err = commands.Search(searchSpec, artifactoryDetails)
+	result, err = generic.Search(searchSpec, artifactoryDetails)
 	return
 }
 
@@ -2303,7 +2303,7 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
 	searchSpec := spec.NewBuilder().Pattern(pattern).Props(props).Recursive(true).BuildSpec()
-	results, err := commands.Search(searchSpec, artifactoryDetails)
+	results, err := generic.Search(searchSpec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}

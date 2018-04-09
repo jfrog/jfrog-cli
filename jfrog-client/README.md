@@ -146,6 +146,15 @@
     rtManager.SetProps(params)
 ```
 
+#### Publish build info
+```
+    buildInfo := &buildinfo.BuildInfo{}
+    // Fill build information
+    
+    rtManager.PublishBuildInfo(buildInfo)
+```
+
+
 #### Execute AQL
 ```
     rtManager.Aql(aql string)

@@ -5,21 +5,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 const BuildInfoDetails = "details"
@@ -225,16 +221,6 @@ func ReadBuildInfoGeneralDetails(buildName, buildNumber string) (*buildinfo.Gene
 	details := new(buildinfo.General)
 	json.Unmarshal(content, &details)
 	return details, nil
-}
-
-func PublishBuildInfo(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
-	securityDir, err := GetJfrogSecurityDir()
-	if err != nil {
-		return nil, nil, err
-	}
-	transport, err := cert.GetTransportWithLoadedCert(securityDir)
-	client := httpclient.NewHttpClient(&http.Client{Transport: transport})
-	return client.SendPut(url+"api/build/", content, httpClientsDetails)
 }
 
 func RemoveBuildDir(buildName, buildNumber string) error {

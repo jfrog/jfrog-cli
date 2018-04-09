@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
@@ -12,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type SearchParams interface {
@@ -165,12 +165,12 @@ func addSeparator(str1, separator, str2 string) string {
 	return str1 + separator + str2
 }
 
-func (item *ResultItem) ToArtifact() buildinfo.Artifacts {
-	return buildinfo.Artifacts{Name: item.Name, Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+func (item *ResultItem) ToArtifact() buildinfo.Artifact {
+	return buildinfo.Artifact{Name: item.Name, Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 }
 
-func (item *ResultItem) ToDependency() buildinfo.Dependencies {
-	return buildinfo.Dependencies{Id: item.Name, Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+func (item *ResultItem) ToDependency() buildinfo.Dependency {
+	return buildinfo.Dependency{Id: item.Name, Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 }
 
 type AqlSearchResultItemFilter func(map[string]ResultItem, []string) []ResultItem

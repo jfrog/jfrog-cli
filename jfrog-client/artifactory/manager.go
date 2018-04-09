@@ -8,6 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"io"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type ArtifactoryServicesManager struct {
@@ -31,6 +32,13 @@ func New(config Config) (*ArtifactoryServicesManager, error) {
 		log.SetLogger(config.GetLogger())
 	}
 	return manager, err
+}
+
+func (sm *ArtifactoryServicesManager) PublishBuildInfo(build *buildinfo.BuildInfo) error {
+	publishBuildInfoService := services.NewBuildInfoPublishService(sm.client)
+	publishBuildInfoService.DryRun = sm.config.IsDryRun()
+	publishBuildInfoService.ArtDetails = sm.config.GetArtDetails()
+	return publishBuildInfoService.PublishBuildInfo(build)
 }
 
 func (sm *ArtifactoryServicesManager) DistributeBuild(params services.BuildDistributionParams) error {

@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
-	buildutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/git"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 )
 
 func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
@@ -36,7 +37,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
-	err := buildutils.RemoveBuildDir(tests.BuildAddDepsBuildName, "1")
+	err := utils.RemoveBuildDir(tests.BuildAddDepsBuildName, "1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +56,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	noCredsCli := tests.NewJfrogCli(main, "jfrog rt", "")
 	// Execute tha bad command
 	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", prepareFilePathForWindows("a/*"), "--dry-run=true")
-	buildDir, err := buildutils.GetBuildDir(tests.BuildAddDepsBuildName, "1")
+	buildDir, err := utils.GetBuildDir(tests.BuildAddDepsBuildName, "1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -211,8 +212,8 @@ func TestCollectGitBuildInfo(t *testing.T) {
 		t.Error("Failed to get git remote url.")
 	}
 
-	gitManager := buildutils.NewGitManager(dotGitPath)
-	if err = gitManager.ReadGitConfig(); err != nil {
+	gitManager := git.NewManager(dotGitPath)
+	if err = gitManager.ReadConfig(); err != nil {
 		t.Error("Failed to read .git config file.")
 	}
 	if gitManager.GetRevision() != buildInfoVcsRevision {
@@ -230,8 +231,8 @@ func TestCollectGitBuildInfo(t *testing.T) {
 
 func TestReadGitConfig(t *testing.T) {
 	dotGitPath := getCliDotGitPath(t)
-	gitManager := buildutils.NewGitManager(dotGitPath)
-	err := gitManager.ReadGitConfig()
+	gitManager := git.NewManager(dotGitPath)
+	err := gitManager.ReadConfig()
 	if err != nil {
 		t.Error("Failed to read .git config file.")
 	}
@@ -262,7 +263,7 @@ func TestReadGitConfig(t *testing.T) {
 	}
 }
 
-func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) ([]byte) {
+func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) []byte {
 	//upload files with buildName and buildNumber
 	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
@@ -270,7 +271,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 	//publish buildInfo
 	publishBuildInfoArgs := []string{"build-publish", buildName, buildNumber}
 	if buildUrl != "" {
-		publishBuildInfoArgs = append(publishBuildInfoArgs, "--build-url=" + buildUrl)
+		publishBuildInfoArgs = append(publishBuildInfoArgs, "--build-url="+buildUrl)
 	}
 	artifactoryCli.Exec(publishBuildInfoArgs...)
 
@@ -279,7 +280,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo1, tests.Repo1+"/*", props, t)
 
 	//download build info
-	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v",artifactoryDetails.Url, buildName, buildNumber)
+	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)
 	_, body, _, err := httputils.SendGet(buildInfoUrl, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
@@ -290,7 +291,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, t *testing.T) {
 	noCredsCli := tests.NewJfrogCli(main, "jfrog rt", "")
 	// Remove old tests data from fs if exists
-	err := buildutils.RemoveBuildDir(tests.BuildAddDepsBuildName, badTest.buildNumber)
+	err := utils.RemoveBuildDir(tests.BuildAddDepsBuildName, badTest.buildNumber)
 	if err != nil {
 		t.Error(err)
 	}
@@ -336,12 +337,12 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 
 func clearTempBuildFiles(buildName string, buildNumbers []string) {
 	for _, buildNumber := range buildNumbers {
-		buildutils.RemoveBuildDir(buildName, buildNumber)
+		utils.RemoveBuildDir(buildName, buildNumber)
 	}
 
 }
 
-func dependenciesToPrintableArray(dependencies []buildinfo.Dependencies) []string {
+func dependenciesToPrintableArray(dependencies []buildinfo.Dependency) []string {
 	ids := []string{}
 	for _, dependency := range dependencies {
 		ids = append(ids, dependency.Id)

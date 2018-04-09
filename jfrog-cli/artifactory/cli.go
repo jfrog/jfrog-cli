@@ -2,13 +2,19 @@ package artifactory
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/npm"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/buildinfo"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/spec"
+	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildclean"
@@ -23,10 +29,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
+	gradledoc "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/move"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvn"
+	mvndoc "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
@@ -37,6 +43,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	buildinfocmd "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
 	rtclientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
@@ -44,7 +51,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -266,9 +272,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:      "mvn",
 			Flags:     getBuildToolFlags(),
-			Usage:     mvn.Description,
-			HelpName:  common.CreateUsage("rt mvn", mvn.Description, mvn.Usage),
-			UsageText: mvn.Arguments,
+			Usage:     mvndoc.Description,
+			HelpName:  common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
+			UsageText: mvndoc.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				mvnCmd(c)
@@ -288,9 +294,9 @@ func GetCommands() []cli.Command {
 		{
 			Name:      "gradle",
 			Flags:     getBuildToolFlags(),
-			Usage:     gradle.Description,
-			HelpName:  common.CreateUsage("rt gradle", gradle.Description, gradle.Usage),
-			UsageText: gradle.Arguments,
+			Usage:     gradledoc.Description,
+			HelpName:  common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
+			UsageText: gradledoc.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				gradleCmd(c)
@@ -542,7 +548,7 @@ func getServerIdFlag() cli.Flag {
 }
 
 func getFailNoOpFlag() cli.Flag {
-	return 	cli.BoolFlag{
+	return cli.BoolFlag{
 		Name:  "fail-no-op",
 		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.",
 	}
@@ -876,7 +882,7 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 		if splitCount > 15 {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limitted to a maximum of 15."))
@@ -906,7 +912,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--min-split' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--min-split' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
@@ -918,7 +924,7 @@ func getRetries(c *cli.Context) (retries int) {
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
 		if err != nil {
-			cliutils.ExitOnErr(errors.New("The '--retries' option should have a numeric value. "+cliutils.GetDocumentationMessage()))
+			cliutils.ExitOnErr(errors.New("The '--retries' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 	}
 	return
@@ -998,7 +1004,7 @@ func mvnCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildToolConfiguration(c)
-	err := commands.Mvn(c.Args().Get(0), c.Args().Get(1), configuration)
+	err := mvn.Mvn(c.Args().Get(0), c.Args().Get(1), configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1007,7 +1013,7 @@ func gradleCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildToolConfiguration(c)
-	err := commands.Gradle(c.Args().Get(0), c.Args().Get(1), configuration)
+	err := gradle.Gradle(c.Args().Get(0), c.Args().Get(1), configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1021,8 +1027,8 @@ func dockerPushCmd(c *cli.Context) {
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
-	dockerPushConfig := &commands.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
-	err := commands.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	dockerPushConfig := &docker.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
+	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1031,7 +1037,7 @@ func npmInstallCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createNpmConfiguration(c)
-	err := commands.NpmInstall(c.Args().Get(0), configuration)
+	err := npm.Install(c.Args().Get(0), configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1040,7 +1046,7 @@ func npmPublishCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createNpmConfiguration(c)
-	err := commands.NpmPublish(c.Args().Get(0), configuration)
+	err := npm.Publish(c.Args().Get(0), configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1048,7 +1054,7 @@ func createGradleConfigCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	err := commands.CreateGradleBuildConfig(c.Args().Get(0))
+	err := gradle.CreateBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1056,7 +1062,7 @@ func createMvnConfigCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	err := commands.CreateMvnBuildConfig(c.Args().Get(0))
+	err := mvn.CreateBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1077,7 +1083,7 @@ func downloadCmd(c *cli.Context) {
 	}
 
 	configuration := createDownloadConfiguration(c)
-	downloaded, failed, err := commands.Download(downloadSpec, configuration)
+	downloaded, failed, err := generic.Download(downloadSpec, configuration)
 	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.FailNoOp(err, downloaded, failed, isFailNoOp(c))
 }
@@ -1097,7 +1103,7 @@ func uploadCmd(c *cli.Context) {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
 	configuration := createUploadConfiguration(c)
-	uploaded, failed, err := commands.Upload(uploadSpec, configuration)
+	uploaded, failed, err := generic.Upload(uploadSpec, configuration)
 	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	cliutils.FailNoOp(err, uploaded, failed, isFailNoOp(c))
 }
@@ -1119,7 +1125,7 @@ func moveCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	moveCount, failed, err := commands.Move(moveSpec, artDetails)
+	moveCount, failed, err := generic.Move(moveSpec, artDetails)
 	err = cliutils.PrintSummaryReport(moveCount, failed, err)
 	cliutils.FailNoOp(err, moveCount, failed, isFailNoOp(c))
 }
@@ -1141,7 +1147,7 @@ func copyCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	copyCount, failed, err := commands.Copy(copySpec, artDetails)
+	copyCount, failed, err := generic.Copy(copySpec, artDetails)
 	err = cliutils.PrintSummaryReport(copyCount, failed, err)
 	cliutils.FailNoOp(err, copyCount, failed, isFailNoOp(c))
 }
@@ -1163,10 +1169,10 @@ func deleteCmd(c *cli.Context) {
 	}
 
 	configuration := createDeleteConfiguration(c)
-	pathsToDelete, err := commands.GetPathsToDelete(deleteSpec, configuration)
+	pathsToDelete, err := generic.GetPathsToDelete(deleteSpec, configuration)
 	cliutils.ExitOnErr(err)
 	if c.Bool("quiet") || confirmDelete(pathsToDelete) {
-		success, failed, err := commands.DeleteFiles(pathsToDelete, configuration)
+		success, failed, err := generic.DeleteFiles(pathsToDelete, configuration)
 		err = cliutils.PrintSummaryReport(success, failed, err)
 		cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 	}
@@ -1199,7 +1205,7 @@ func searchCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	SearchResult, err := commands.Search(searchSpec, artDetails)
+	SearchResult, err := generic.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(SearchResult)
 	cliutils.FailNoOp(err, len(SearchResult), 0, isFailNoOp(c))
@@ -1215,7 +1221,7 @@ func setPropsCmd(c *cli.Context) {
 	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
 	properties := c.Args()[1]
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	success, failed, err := commands.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
+	success, failed, err := generic.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
 	err = cliutils.PrintSummaryReport(success, failed, err)
 	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 }
@@ -1223,7 +1229,7 @@ func setPropsCmd(c *cli.Context) {
 func buildPublishCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
 	configuration, artDetails := createBuildInfoConfiguration(c)
-	err := commands.BuildPublish(c.Args().Get(0), c.Args().Get(1), configuration, artDetails)
+	err := buildinfo.Publish(c.Args().Get(0), c.Args().Get(1), configuration, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1242,7 +1248,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
 	configuration := createBuildAddDependenciesConfiguration(c)
-	added, failed, err := commands.BuildAddDependencies(dependenciesSpec, configuration)
+	added, failed, err := buildinfo.AddDependencies(dependenciesSpec, configuration)
 	err = cliutils.PrintSummaryReport(added, failed, err)
 	cliutils.FailNoOp(err, added, failed, isFailNoOp(c))
 	return nil
@@ -1250,7 +1256,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 
 func buildCollectEnvCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-	err := commands.BuildCollectEnv(c.Args().Get(0), c.Args().Get(1))
+	err := buildinfo.CollectEnv(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1262,7 +1268,7 @@ func buildAddGitCmd(c *cli.Context) {
 	if c.NArg() == 3 {
 		dotGitPath = c.Args().Get(2)
 	}
-	err := commands.BuildAddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	err := buildinfo.AddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1270,13 +1276,13 @@ func buildScanCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
 
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	err := commands.BuildScan(c.Args().Get(0), c.Args().Get(1), artDetails)
+	err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails)
 	cliutils.ExitOnErr(err)
 }
 
 func buildCleanCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-	err := commands.BuildClean(c.Args().Get(0), c.Args().Get(1))
+	err := buildinfo.Clean(c.Args().Get(0), c.Args().Get(1))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1285,7 +1291,7 @@ func buildPromoteCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	err := commands.BuildPromote(configuration)
+	err := buildinfo.Promote(configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1294,7 +1300,7 @@ func buildDistributeCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildDistributionConfiguration(c)
-	err := commands.BuildDistribute(configuration)
+	err := buildinfo.Distribute(configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1303,26 +1309,26 @@ func gitLfsCleanCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
-	filesToDelete, err := commands.PrepareGitLfsClean(configuration)
+	filesToDelete, err := generic.PrepareGitLfsClean(configuration)
 	cliutils.ExitOnErr(err)
 	if len(filesToDelete) < 1 {
 		return
 	}
 	if configuration.Quiet {
-		err = commands.DeleteLfsFilesFromArtifactory(filesToDelete, configuration)
+		err = generic.DeleteLfsFilesFromArtifactory(filesToDelete, configuration)
 		cliutils.ExitOnErr(err)
 		return
 	}
 	interactiveDeleteLfsFiles(filesToDelete, configuration)
 }
 
-func interactiveDeleteLfsFiles(filesToDelete []rtclientutils.ResultItem, configuration *commands.GitLfsCleanConfiguration) {
+func interactiveDeleteLfsFiles(filesToDelete []rtclientutils.ResultItem, configuration *generic.GitLfsCleanConfiguration) {
 	for _, v := range filesToDelete {
 		fmt.Println("  " + v.Name)
 	}
 	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above files?")
 	if confirmed {
-		err := commands.DeleteLfsFilesFromArtifactory(filesToDelete, configuration)
+		err := generic.DeleteLfsFilesFromArtifactory(filesToDelete, configuration)
 		cliutils.ExitOnErr(err)
 	}
 }
@@ -1482,8 +1488,8 @@ func getDeleteSpec(c *cli.Context) (deleteSpec *spec.SpecFiles) {
 	return
 }
 
-func createDeleteConfiguration(c *cli.Context) (deleteConfiguration *commands.DeleteConfiguration) {
-	deleteConfiguration = new(commands.DeleteConfiguration)
+func createDeleteConfiguration(c *cli.Context) (deleteConfiguration *generic.DeleteConfiguration) {
+	deleteConfiguration = new(generic.DeleteConfiguration)
 	deleteConfiguration.DryRun = c.Bool("dry-run")
 	deleteConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
@@ -1528,8 +1534,8 @@ func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
 	return
 }
 
-func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfo.Configuration, artDetails *config.ArtifactoryDetails) {
-	flags = new(buildinfo.Configuration)
+func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfocmd.Configuration, artDetails *config.ArtifactoryDetails) {
+	flags = new(buildinfocmd.Configuration)
 	artDetails = createArtifactoryDetailsByFlags(c, true)
 	flags.BuildUrl = c.String("build-url")
 	flags.DryRun = c.Bool("dry-run")
@@ -1544,14 +1550,14 @@ func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfo.Configuratio
 	return
 }
 
-func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *commands.BuildPromotionConfiguration) {
+func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buildinfo.BuildPromotionConfiguration) {
 	promotionParamsImpl := new(services.PromotionParamsImpl)
 	promotionParamsImpl.Comment = c.String("comment")
 	promotionParamsImpl.SourceRepo = c.String("source-repo")
 	promotionParamsImpl.Status = c.String("status")
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
-	promoteConfiguration = new(commands.BuildPromotionConfiguration)
+	promoteConfiguration = new(buildinfo.BuildPromotionConfiguration)
 	promoteConfiguration.DryRun = c.Bool("dry-run")
 	promoteConfiguration.PromotionParamsImpl = promotionParamsImpl
 	promoteConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
@@ -1561,14 +1567,14 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *comm
 	return
 }
 
-func createBuildDistributionConfiguration(c *cli.Context) (distributeConfiguration *commands.BuildDistributionConfiguration) {
+func createBuildDistributionConfiguration(c *cli.Context) (distributeConfiguration *buildinfo.BuildDistributionConfiguration) {
 	distributeParamsImpl := new(services.BuildDistributionParamsImpl)
 	distributeParamsImpl.Publish = c.BoolT("publish")
 	distributeParamsImpl.OverrideExistingFiles = c.Bool("override")
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeConfiguration = new(commands.BuildDistributionConfiguration)
+	distributeConfiguration = new(buildinfo.BuildDistributionConfiguration)
 	distributeConfiguration.DryRun = c.Bool("dry-run")
 	distributeConfiguration.BuildDistributionParamsImpl = distributeParamsImpl
 	distributeConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
@@ -1578,8 +1584,8 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 	return
 }
 
-func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *commands.GitLfsCleanConfiguration) {
-	gitLfsCleanConfiguration = new(commands.GitLfsCleanConfiguration)
+func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {
+	gitLfsCleanConfiguration = new(generic.GitLfsCleanConfiguration)
 	refs := c.String("refs")
 	if len(refs) == 0 {
 		refs = "refs/remotes/*"
@@ -1630,8 +1636,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 	return
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *commands.DownloadConfiguration) {
-	downloadConfiguration = new(commands.DownloadConfiguration)
+func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *generic.DownloadConfiguration) {
+	downloadConfiguration = new(generic.DownloadConfiguration)
 	downloadConfiguration.DryRun = c.Bool("dry-run")
 	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadConfiguration.MinSplitSize = getMinSplit(c)
@@ -1646,8 +1652,8 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *command
 	return
 }
 
-func createBuildAddDependenciesConfiguration(c *cli.Context) (buildAddDependenciesConfiguration *commands.BuildAddDependenciesConfiguration) {
-	buildAddDependenciesConfiguration = new(commands.BuildAddDependenciesConfiguration)
+func createBuildAddDependenciesConfiguration(c *cli.Context) (buildAddDependenciesConfiguration *buildinfo.AddDependenciesConfiguration) {
+	buildAddDependenciesConfiguration = new(buildinfo.AddDependenciesConfiguration)
 	buildAddDependenciesConfiguration.DryRun = c.Bool("dry-run")
 	buildAddDependenciesConfiguration.BuildName = c.Args().Get(0)
 	buildAddDependenciesConfiguration.BuildNumber = c.Args().Get(1)
@@ -1715,8 +1721,8 @@ func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
 	}
 }
 
-func createUploadConfiguration(c *cli.Context) (uploadConfiguration *commands.UploadConfiguration) {
-	uploadConfiguration = new(commands.UploadConfiguration)
+func createUploadConfiguration(c *cli.Context) (uploadConfiguration *generic.UploadConfiguration) {
+	uploadConfiguration = new(generic.UploadConfiguration)
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
@@ -1738,8 +1744,8 @@ func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *uti
 	return
 }
 
-func createNpmConfiguration(c *cli.Context) (npmConfiguration *npm.CliConfiguration) {
-	npmConfiguration = new(npm.CliConfiguration)
+func createNpmConfiguration(c *cli.Context) (npmConfiguration *npmutils.CliConfiguration) {
+	npmConfiguration = new(npmutils.CliConfiguration)
 	npmConfiguration.BuildName = c.String("build-name")
 	npmConfiguration.BuildNumber = c.String("build-number")
 	validateBuildParams(npmConfiguration.BuildName, npmConfiguration.BuildNumber)
