@@ -279,7 +279,7 @@ func addPropsToTargetPath(targetPath, props, debConfig string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return targetPath + ";" + properties.ToEncodedString(), nil
+	return strings.Join([]string{targetPath, properties.ToEncodedString()}, ";"), nil
 }
 
 func prepareUploadData(targetPath, localPath, props string, uploadParams UploadParams, logMsgPrefix string) (os.FileInfo, string, string, error) {

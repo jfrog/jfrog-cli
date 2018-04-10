@@ -31,6 +31,7 @@ var TestBintray *bool
 var TestArtifactoryProxy *bool
 var TestBuildTools *bool
 var TestDocker *bool
+var TestVgo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 
@@ -49,6 +50,7 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
+	TestVgo = flag.Bool("test.vgo", false, "Test Vgo")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 }

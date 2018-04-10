@@ -22,7 +22,7 @@ func setupIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
-	if *tests.TestBuildTools {
+	if *tests.TestBuildTools || *tests.TestVgo {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {

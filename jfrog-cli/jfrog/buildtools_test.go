@@ -8,13 +8,16 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo/cmd"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -25,9 +28,6 @@ import (
 )
 
 func InitBuildToolsTests() {
-	if !*tests.TestBuildTools {
-		return
-	}
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
@@ -136,6 +136,166 @@ func (image *buildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
+func initVgoTest(t *testing.T) {
+	if !*tests.TestVgo {
+		t.Skip("Skipping vgo test. To run vgo test add the '-test.vgo=true' option.")
+	}
+
+	// Move when vgo will be supported and check Artifactory version.
+	if !isRepoExist(tests.VgoLocalRepo) {
+		repoConfig := tests.GetTestResourcesPath() + tests.VgoLocalRepositoryConfig
+		execCreateRepoRest(repoConfig, tests.VgoLocalRepo)
+	}
+}
+
+func cleanVgoTest(t *testing.T) {
+	if isRepoExist(tests.VgoLocalRepo) {
+		execDeleteRepoRest(tests.VgoLocalRepo)
+	}
+	cleanBuildToolsTest()
+}
+
+// Testing build info capabilities for vgo project.
+// Build project using vgo without Artifactory ->
+// Publish dependencies to Artifactory ->
+// Publish project to Artifactory->
+// Publish and validate build-info
+func TestVgoBuildInfo(t *testing.T) {
+	initVgoTest(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	project1Path := createVgoProject(t, "project1")
+	err = os.Chdir(project1Path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	vgoCmd, err := cmd.New()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Download dependencies without Artifactory
+	vgoCmd.Command = []string{"build"}
+	err = utils.RunCmd(vgoCmd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	buildName := "vgo-build"
+	buildNumber := "1"
+
+	// Publish dependency project to Artifactory
+	artifactoryCli.Exec("vdp", tests.VgoLocalRepo)
+	artifactoryCli.Exec("vp", tests.VgoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 6, 2)
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanVgoTest(t)
+}
+
+// Testing publishing and resolution capabilities for vgo projects.
+// Build first project using vgo without Artifactory ->
+// Publish dependencies to Artifactory ->
+// Publish first project to Artifactory ->
+// Set vgo to resolve from Artifactory (set GOPROXY) ->
+// Build second project using vgo resolving from Artifactory, should download project1 as dependency.
+func TestVgoPublishResolve(t *testing.T) {
+	initVgoTest(t)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	project1Path := createVgoProject(t, "project1")
+	project2Path := createVgoProject(t, "project2")
+	err = os.Chdir(project1Path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	vgoCmd, err := cmd.New()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Download dependencies without Artifactory
+	vgoCmd.Command = []string{"build"}
+	err = utils.RunCmd(vgoCmd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Publish dependency project to Artifactory
+	artifactoryCli.Exec("vdp", tests.VgoLocalRepo)
+	artifactoryCli.Exec("vp", tests.VgoLocalRepo, "v1.0.0")
+
+	// Set GOPROXY env var to resolve dependencies from Artifactory
+	rtUrl, err := url.Parse(artifactoryDetails.Url)
+	if err != nil {
+		t.Error(err)
+	}
+	rtUrl.User = url.UserPassword(artifactoryDetails.User, artifactoryDetails.Password)
+	rtUrl.Path += "api/go/" + tests.VgoLocalRepo
+
+	err = os.Setenv("GOPROXY", rtUrl.String())
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = os.Chdir(project2Path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Build the second project, download dependencies from Artifactory
+	err = utils.RunCmd(vgoCmd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Restore workspace
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanVgoTest(t)
+}
+
+func createVgoProject(t *testing.T, projectName string) string {
+	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "vgo", projectName)
+	projectTarget := filepath.Join(tests.Out, projectName)
+	err := fileutils.CreateDirIfNotExist(projectTarget)
+	if err != nil {
+		t.Error(err)
+	}
+
+	files, err := fileutils.ListFiles(projectSrc, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, v := range files {
+		err = fileutils.CopyFile(projectTarget, v)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	projectTarget, err = filepath.Abs(projectTarget)
+	if err != nil {
+		t.Error(err)
+	}
+	return projectTarget
+}
+
 func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
@@ -176,14 +336,16 @@ func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtif
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		t.Error("Docker build info was not generated correctly, no modules were created.")
-	}
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
+}
 
+func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
+	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+		t.Error("build info was not generated correctly, no modules were created.")
+	}
 	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
 	}
-
 	if expectedArtifacts != len(buildInfo.Modules[0].Artifacts) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedArtifacts, " Found:", len(buildInfo.Modules[0].Artifacts))
 	}

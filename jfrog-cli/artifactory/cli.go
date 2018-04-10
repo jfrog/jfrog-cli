@@ -12,6 +12,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/npm"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/vgo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
@@ -40,6 +41,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/use"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/vgopublish"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/vgodepspublish"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
@@ -349,6 +352,30 @@ func GetCommands() []cli.Command {
 				npmPublishCmd(c)
 			},
 		},
+		{
+			Name:      "vgo-deps-publish",
+			Flags:     append(getVgoFlags(), getThreadsFlag()),
+			Aliases:   []string{"vdp"},
+			Usage:     vgodepspublish.Description,
+			HelpName:  common.CreateUsage("rt vgo-deps-publish", vgodepspublish.Description, vgodepspublish.Usage),
+			UsageText: vgodepspublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				vgoDepsPublish(c)
+			},
+		},
+		{
+			Name:      "vgo-publish",
+			Flags:     getVgoFlags(),
+			Aliases:   []string{"vp"},
+			Usage:     vgopublish.Description,
+			HelpName:  common.CreateUsage("rt vgo-publish", vgopublish.Description, vgopublish.Usage),
+			UsageText: vgopublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				vgoPublish(c)
+			},
+		},
 	}
 }
 
@@ -592,6 +619,13 @@ func getNpmFlags() []cli.Flag {
 	npmFlags = append(npmFlags, getBaseFlags()...)
 	npmFlags = append(npmFlags, getServerIdFlag())
 	return append(npmFlags, getBuildToolFlags()...)
+}
+
+func getVgoFlags() []cli.Flag {
+	var flags []cli.Flag
+	flags = append(flags, getBaseFlags()...)
+	flags = append(flags, getServerIdFlag())
+	return append(flags, getBuildToolFlags()...)
 }
 
 func getMoveFlags() []cli.Flag {
@@ -1047,6 +1081,40 @@ func npmPublishCmd(c *cli.Context) {
 	}
 	configuration := createNpmConfiguration(c)
 	err := npm.Publish(c.Args().Get(0), configuration)
+	cliutils.ExitOnErr(err)
+}
+
+func vgoDepsPublish(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	targetRepo := c.Args().Get(0)
+	threads := getThreadsCount(c)
+	details := createArtifactoryDetailsByFlags(c, true)
+
+	succeeded, failed, err := vgo.PublishDependencies(targetRepo, threads, details)
+	err = cliutils.PrintSummaryReport(succeeded, failed, err)
+	cliutils.ExitOnErr(err)
+}
+
+func vgoPublish(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	targetRepo := c.Args().Get(0)
+	version := c.Args().Get(1)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	details := createArtifactoryDetailsByFlags(c, true)
+
+	err := vgo.Publish(targetRepo, version, buildName, buildNumber, details)
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+		cliutils.ExitOnErr(err)
+	}
+	err = cliutils.PrintSummaryReport(1, 0, err)
 	cliutils.ExitOnErr(err)
 }
 

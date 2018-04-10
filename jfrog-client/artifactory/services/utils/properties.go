@@ -6,12 +6,13 @@ import (
 	"net/url"
 	"strings"
 	"fmt"
+	"encoding/base64"
 )
 
 type PropertyParseOptions int
 
 const (
-	// Parsing properties l
+	// Parsing properties
 	SplitCommas PropertyParseOptions = iota
 	JoinCommas
 )
@@ -62,6 +63,14 @@ func (props *Properties) ToEncodedString() string {
 		return encodedProps[1:]
 	}
 	return encodedProps
+}
+
+func (props *Properties) ToHeadersMap() map[string]string {
+	headers := map[string]string{}
+	for _, v := range props.Properties {
+		headers[v.Key] = base64.StdEncoding.EncodeToString([]byte(v.Value))
+	}
+	return headers
 }
 
 // Split properties string of format key=value to key value strings

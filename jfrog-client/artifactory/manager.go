@@ -8,6 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"io"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
@@ -135,6 +136,12 @@ func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) (succ
 	moveService := services.NewMoveCopyService(sm.client, services.MOVE)
 	moveService.ArtDetails = sm.config.GetArtDetails()
 	return moveService.MoveCopyServiceMoveFilesWrapper(params)
+}
+
+func (sm *ArtifactoryServicesManager) PublishVgoProject(params vgo.VgoParams) error {
+	vgoService := vgo.NewVgoService(sm.client)
+	vgoService.ArtDetails = sm.config.GetArtDetails()
+	return vgoService.PublishPackage(params)
 }
 
 func (sm *ArtifactoryServicesManager) setCommonServiceConfig(commonConfig ArtifactoryServicesSetter) {
