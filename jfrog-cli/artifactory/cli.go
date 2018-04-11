@@ -25,6 +25,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
+	nugetdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
+	nugettree "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
@@ -54,6 +56,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 )
 
 func GetCommands() []cli.Command {
@@ -353,6 +356,28 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:      "nuget",
+			Flags:     getNugetFlags(),
+			Usage:     nugetdocs.Description,
+			HelpName:  common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
+			UsageText: nugetdocs.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				nugetCmd(c)
+			},
+		},
+		{
+			Name:      "nuget-deps-tree",
+			Aliases:   []string{"ndt"},
+			Usage:     nugettree.Description,
+			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
+			UsageText: nugettree.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				nugetDepsTreeCmd(c)
+			},
+		},
+		{
 			Name:      "vgo-deps-publish",
 			Flags:     append(getVgoFlags(), getThreadsFlag()),
 			Aliases:   []string{"vdp"},
@@ -619,6 +644,18 @@ func getNpmFlags() []cli.Flag {
 	npmFlags = append(npmFlags, getBaseFlags()...)
 	npmFlags = append(npmFlags, getServerIdFlag())
 	return append(npmFlags, getBuildToolFlags()...)
+}
+
+func getNugetFlags() []cli.Flag {
+	nugetFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "nuget-args",
+			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1=value1 arg2=value2\"",
+		},
+	}
+	nugetFlags = append(nugetFlags, getBaseFlags()...)
+	nugetFlags = append(nugetFlags, getServerIdFlag())
+	return append(nugetFlags, getBuildToolFlags()...)
 }
 
 func getVgoFlags() []cli.Flag {
@@ -1063,6 +1100,31 @@ func dockerPushCmd(c *cli.Context) {
 	validateBuildParams(buildName, buildNumber)
 	dockerPushConfig := &docker.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
 	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	cliutils.ExitOnErr(err)
+}
+
+func nugetCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	params := &nuget.Params{}
+	params.Args = c.Args().Get(0)
+	params.Flags = c.String("nuget-args")
+	params.RepoName = c.Args().Get(1)
+	params.BuildName = c.String("build-name")
+	params.BuildNumber = c.String("build-number")
+	params.ArtifactoryDetails = createArtifactoryDetailsByFlags(c, true)
+
+	err := nuget.ConsumeCmd(params)
+	cliutils.ExitOnErr(err)
+}
+
+func nugetDepsTreeCmd(c *cli.Context) {
+	if c.NArg() != 0 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	err := nuget.DependencyTreeCmd()
 	cliutils.ExitOnErr(err)
 }
 

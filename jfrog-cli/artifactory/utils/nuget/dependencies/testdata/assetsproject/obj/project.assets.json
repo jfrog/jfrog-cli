@@ -1,0 +1,45 @@
+{
+  "version": 3,
+  "targets": {
+    "t1": {
+      "dep1/1.0.1": {},
+      "dep2/1.0.2": {
+        "dependencies": {
+          "dep1": "1.0.1"
+        }
+      }
+    }
+  },
+  "libraries": {
+    "dep1/1.0.1": {
+      "path": "",
+      "files": [
+        "file1",
+        "dep1.nupkg.sha512"
+      ]
+    },
+    "dep2/1.0.2": {
+      "path": "",
+      "files": [
+        "file1",
+        "dep2.nupkg.sha512"
+      ]
+    }
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "packagesPath": "testdata/assetsproject"
+    },
+    "frameworks": {
+      "net461": {
+        "dependencies": {
+          "dep1": {
+            "target": "Package",
+            "version": "[1.0.1, )"
+          }
+        }
+      }
+    }
+  }
+}

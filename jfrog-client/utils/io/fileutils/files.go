@@ -360,6 +360,7 @@ func CopyFile(dst, src string) error {
 	if err != nil {
 		return err
 	}
+	defer dstFile.Close()
 	io.Copy(dstFile, srcFile)
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo/cmd"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -172,7 +173,7 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 
-	vgoCmd, err := cmd.New()
+	vgoCmd, err := vgo.NewCmd()
 	if err != nil {
 		t.Error(err)
 	}
@@ -222,7 +223,7 @@ func TestVgoPublishResolve(t *testing.T) {
 		t.Error(err)
 	}
 
-	vgoCmd, err := cmd.New()
+	vgoCmd, err := vgo.NewCmd()
 	if err != nil {
 		t.Error(err)
 	}
@@ -349,6 +350,87 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 	if expectedArtifacts != len(buildInfo.Modules[0].Artifacts) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedArtifacts, " Found:", len(buildInfo.Modules[0].Artifacts))
 	}
+}
+
+func TestNugetResolve(t *testing.T) {
+	initBuildToolsTest(t)
+	projects := []struct {
+		project              string
+		expectedDependencies int
+	}{
+		{"packagesconfig", 6},
+		{"reference", 6},
+	}
+	for buildNumber, test := range projects {
+		t.Run(test.project, func(t *testing.T) {
+			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), 6)
+		})
+	}
+}
+
+func createNugetProject(t *testing.T, projectName string) string {
+	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "nuget", projectName)
+	projectTarget := filepath.Join(tests.Out, projectName)
+	err := fileutils.CreateDirIfNotExist(projectTarget)
+	if err != nil {
+		t.Error(err)
+	}
+
+	files, err := fileutils.ListFiles(projectSrc, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, v := range files {
+		err = fileutils.CopyFile(projectTarget, v)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	return projectTarget
+}
+
+func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expectedDependencies int) {
+	// init
+	initBuildToolsTest(t)
+	if runtime.GOOS != "windows" {
+		t.Skip("Skipping nuget tests...")
+	}
+
+	// This is due to Artifactory bug, we cant create remote repository with REST API.
+	if !isRepoExist(tests.NugetRemoteRepo) {
+		t.Error("Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(projectPath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	artifactoryCli.Exec("nuget", "restore", tests.NugetRemoteRepo, "--build-name="+tests.NugetBuildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("bp", tests.NugetBuildName, buildNumber)
+
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NugetBuildName, buildNumber, t, artHttpDetails)
+	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+		t.Error("Nuget build info was not generated correctly, no modules were created.")
+	}
+
+	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
+		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
+	}
+
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NugetBuildName, artHttpDetails)
+	cleanBuildToolsTest()
 }
 
 func TestNpm(t *testing.T) {

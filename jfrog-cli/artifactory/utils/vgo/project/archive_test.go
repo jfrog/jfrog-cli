@@ -7,9 +7,13 @@ import (
 	"bytes"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"reflect"
+	"runtime"
 )
 
 func TestArchiveProject(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping archive test...")
+	}
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
