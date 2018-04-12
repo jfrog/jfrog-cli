@@ -119,7 +119,11 @@ Flags:
   Once the tests are completed, the repository will be deleted.
 
 # Pull Requests
-We welcome pull requests.
+We welcome pull requests from the community.
+## Guidelines
+* Before creating your first pull request, please join our contributors community by signing [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
+* Pull requests should be created on the *dev* branch.
+* Please use [gofmt](https://golang.org/cmd/gofmt/) for formatting the code before submitting the pull request.
 
 # Using JFrog CLI
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
