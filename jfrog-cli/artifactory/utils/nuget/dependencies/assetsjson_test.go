@@ -76,7 +76,7 @@ func TestJson(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expected, assetsObj) {
-		t.Errorf("Expected: \n%s, \nGot: \n%s", expected, assetsObj)
+		t.Errorf("Expected: \n%v, \nGot: \n%v", expected, assetsObj)
 	}
 }
 
