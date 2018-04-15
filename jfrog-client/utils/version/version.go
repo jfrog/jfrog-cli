@@ -57,10 +57,11 @@ func compareTokens(ver1Token, ver2Token string) int {
 func getFirstNumeral(token string) string {
 	numeric := ""
 	for i := 0; i < len(token); i++ {
-		if _, err := strconv.Atoi(token[i:i]); err != nil {
+		n := token[i:i+1]
+		if _, err := strconv.Atoi(n); err != nil {
 			break
 		}
-		numeric += token[i:i]
+		numeric += n
 	}
 	if len(numeric) == 0 {
 		return "0"
