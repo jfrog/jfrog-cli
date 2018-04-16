@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -220,7 +221,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 		t.Error("Wrong revision", "expected: "+gitManager.GetRevision(), "Got: "+buildInfoVcsRevision)
 	}
 
-	gitConfigUrl := gitManager.GetUrl() + ".git"
+	gitConfigUrl := gitManager.GetUrl()
 	if gitConfigUrl != buildInfoVcsUrl {
 		t.Error("Wrong url", "expected: "+gitConfigUrl, "Got: "+buildInfoVcsUrl)
 	}
@@ -257,9 +258,12 @@ func TestReadGitConfig(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	if !strings.HasSuffix(url, ".git") {
+		url += ".git"
+	}
 
 	if gitManager.GetUrl() != url {
-		t.Error("Wrong revision", "expected: "+url, "Got: "+gitManager.GetUrl())
+		t.Error("Wrong url", "expected: "+url, "Got: "+gitManager.GetUrl())
 	}
 }
 

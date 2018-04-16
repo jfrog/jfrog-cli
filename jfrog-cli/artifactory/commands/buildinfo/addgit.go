@@ -28,7 +28,7 @@ func AddGit(buildName, buildNumber, dotGitPath string) error {
 
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Vcs = &buildinfo.Vcs{
-			Url:      gitManager.GetUrl() + ".git",
+			Url:      gitManager.GetUrl(),
 			Revision: gitManager.GetRevision(),
 		}
 	}

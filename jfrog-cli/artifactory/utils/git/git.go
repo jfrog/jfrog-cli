@@ -69,6 +69,9 @@ func (m *manager) readUrl() {
 		m.err = err
 		return
 	}
+	if !strings.HasSuffix(originUrl, ".git") {
+		originUrl += ".git"
+	}
 	m.url = originUrl
 }
 
