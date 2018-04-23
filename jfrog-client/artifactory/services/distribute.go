@@ -51,8 +51,13 @@ func (ds *DistributeService) BuildDistribute(params BuildDistributionParams) err
 		return err
 	}
 
+	var sourceRepos []string
+	if params.GetSourceRepos() != "" {
+		sourceRepos = strings.Split(params.GetSourceRepos(), ",")
+	}
+
 	data := BuildDistributionBody{
-		SourceRepos:           strings.Split(params.GetSourceRepos(), ","),
+		SourceRepos:           sourceRepos,
 		TargetRepo:            params.GetTargetRepo(),
 		Publish:               params.IsPublish(),
 		OverrideExistingFiles: params.IsOverrideExistingFiles(),
@@ -112,7 +117,7 @@ func (bd *BuildDistributionParamsImpl) GetSourceRepos() string {
 }
 
 func (bd *BuildDistributionParamsImpl) GetTargetRepo() string {
-	return bd.SourceRepos
+	return bd.TargetRepo
 }
 
 func (bd *BuildDistributionParamsImpl) GetGpgPassphrase() string {
