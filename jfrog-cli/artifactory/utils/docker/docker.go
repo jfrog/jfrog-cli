@@ -54,24 +54,24 @@ func (image *image) ParentId() (string, error) {
 
 // Get docker image relative path in Artifactory
 func (image *image) Path() string {
-	indexOfFirstSlash := strings.Index(image.tag, "/")
+	indexOfLastSlash := strings.LastIndex(image.tag, "/")
 	indexOfLastColon := strings.LastIndex(image.tag, ":")
 
-	if indexOfLastColon < 0 || indexOfLastColon < indexOfFirstSlash {
-		return path.Join(image.tag[indexOfFirstSlash:], "latest")
+	if indexOfLastColon < 0 || indexOfLastColon < indexOfLastSlash {
+		return path.Join(image.tag[indexOfLastSlash:], "latest")
 	}
-	return path.Join(image.tag[indexOfFirstSlash:indexOfLastColon], image.tag[indexOfLastColon+1:])
+	return path.Join(image.tag[indexOfLastSlash:indexOfLastColon], image.tag[indexOfLastColon+1:])
 }
 
 // Get docker image name
 func (image *image) Name() string {
-	indexOfFirstSlash := strings.Index(image.tag, "/")
+	indexOfLastSlash := strings.LastIndex(image.tag, "/")
 	indexOfLastColon := strings.LastIndex(image.tag, ":")
 
-	if indexOfLastColon < 0 || indexOfLastColon < indexOfFirstSlash {
-		return image.tag[indexOfFirstSlash+1:] + ":latest"
+	if indexOfLastColon < 0 || indexOfLastColon < indexOfLastSlash {
+		return image.tag[indexOfLastSlash+1:] + ":latest"
 	}
-	return image.tag[indexOfFirstSlash+1:]
+	return image.tag[indexOfLastSlash+1:]
 }
 
 // Image push command
