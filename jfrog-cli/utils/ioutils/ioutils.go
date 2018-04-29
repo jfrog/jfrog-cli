@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"syscall"
+	"strings"
+	"runtime"
 )
 
 // @param allowUsingSavedPassword - Prevent changing username or url without changing the password.
@@ -64,4 +66,25 @@ func CopyFile(src, dst string, fileMode os.FileMode) error {
 	}
 
 	return errorutils.CheckError(os.Chmod(dst, fileMode))
+}
+
+func FixWinPath(filePath string) string {
+	fixedPath := strings.Replace(filePath, "\\", "\\\\", -1)
+	return fixedPath
+}
+
+func PrepareFilePathForWindows(path string) string {
+	if runtime.GOOS == "windows" {
+		path = strings.Replace(path, "\\", "\\\\", -1)
+		path = strings.Replace(path, "/", "\\\\", -1)
+	}
+	return path
+}
+
+func PrepareFilePathForUnix(path string) string {
+	if runtime.GOOS == "windows" {
+		path = strings.Replace(path, "\\\\", "/", -1)
+		path = strings.Replace(path, "\\", "/", -1)
+	}
+	return path
 }

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
@@ -129,6 +130,16 @@ func GetTestResourcesPath() string {
 	return dir + fileSeparator + "testsdata" + fileSeparator
 }
 
+func GetPath(filename, path string, a ...string) string {
+	for i := 0; i < len(a); i++ {
+		path += a[i] + fileutils.GetFileSeparator()
+	}
+	if filename != "" {
+		path += filename
+	}
+	return ioutils.FixWinPath(path)
+}
+
 func getFileByOs(fileName string) string {
 	var currentOs string
 	fileSeparator := fileutils.GetFileSeparator()
@@ -147,11 +158,6 @@ func GetFilePath(fileName string) string {
 		return filePath
 	}
 	return getFileByOs(fileName)
-}
-
-func FixWinPath(filePath string) string {
-	fixedPath := strings.Replace(filePath, "\\", "\\\\", -1)
-	return fixedPath
 }
 
 func GetTestsLogsDir() (string, error) {

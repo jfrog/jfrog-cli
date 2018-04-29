@@ -7,6 +7,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/git"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
@@ -56,7 +57,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	noCredsCli := tests.NewJfrogCli(main, "jfrog rt", "")
 	// Execute tha bad command
-	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", prepareFilePathForWindows("a/*"), "--dry-run=true")
+	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", ioutils.PrepareFilePathForWindows("a/*"), "--dry-run=true")
 	buildDir, err := utils.GetBuildDir(tests.BuildAddDepsBuildName, "1")
 	if err != nil {
 		t.Error(err)
@@ -90,14 +91,14 @@ func TestBuildAddDependencies(t *testing.T) {
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 
 	var badTests = []buildAddDepsBuildInfoTestParams{
-		{description: "'rt bad' simple cli", commandArgs: []string{prepareFilePathForWindows("a/*")}, expectedDependencies: allFiles},
-		{description: "'rt bad' single file", commandArgs: []string{prepareFilePathForWindows("a/a1.in")}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' none recursive", commandArgs: []string{prepareFilePathForWindows("a/*"), "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
+		{description: "'rt bad' simple cli", commandArgs: []string{ioutils.PrepareFilePathForWindows("a/*")}, expectedDependencies: allFiles},
+		{description: "'rt bad' single file", commandArgs: []string{ioutils.PrepareFilePathForWindows("a/a1.in")}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' none recursive", commandArgs: []string{ioutils.PrepareFilePathForWindows("a/*"), "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
 		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{prepareFilePathForWindows("../testsdata/a/*"), "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{ioutils.PrepareFilePathForWindows("../testsdata/a/*"), "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
 		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
 		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
-		{description: "'rt bad' exclude command line regexp", commandArgs: []string{prepareFilePathForWindows("a/a(.*)"), "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' exclude command line regexp", commandArgs: []string{ioutils.PrepareFilePathForWindows("a/a(.*)"), "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
 	}
 
 	for i, badTest := range badTests {
@@ -156,10 +157,11 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
+	buildNameNotToPromote := "cli-test-build-not-to-promote"
 
 	//upload files with buildName and buildNumber
 	specFile := tests.GetFilePath(tests.UploadSpec)
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildNameNotToPromote, "--build-number="+buildNumber)
 
 	//cleanup buildInfo
 	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
@@ -187,7 +189,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	gitCollectCliRunner := tests.NewJfrogCli(main, "jfrog rt", "")
 	buildName, buildNumber := "cli-test-build", "13"
-	dotGitPath := tests.FixWinPath(getCliDotGitPath(t))
+	dotGitPath := ioutils.FixWinPath(getCliDotGitPath(t))
 	gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, dotGitPath)
 
 	//publish buildInfo

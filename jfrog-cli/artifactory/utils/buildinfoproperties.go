@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -244,6 +245,8 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 	if err != nil {
 		return err
 	}
-	config.Set(GENERATED_BUILD_INFO, tempFile.Name())
+	// If this is a Windows machine there is a need to modify the path for the build info file to match Java syntax with double \\
+	path := ioutils.FixWinPath(tempFile.Name())
+	config.Set(GENERATED_BUILD_INFO, path)
 	return nil
 }

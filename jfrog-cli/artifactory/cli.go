@@ -13,8 +13,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
@@ -27,6 +27,10 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
+	/*
+		nugetdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
+		nugettree "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
+	*/
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
@@ -41,8 +45,6 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
-	nugetdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
-	nugettree "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/upload"
@@ -356,7 +358,7 @@ func GetCommands() []cli.Command {
 				npmPublishCmd(c)
 			},
 		},
-		{
+		/*{
 			Name:      "nuget",
 			Flags:     getNugetFlags(),
 			Usage:     nugetdocs.Description,
@@ -377,7 +379,7 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) {
 				nugetDepsTreeCmd(c)
 			},
-		},
+		},*/
 		{
 			Name:      "go-publish",
 			Flags:     getGoPublishFlags(),

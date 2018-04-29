@@ -357,6 +357,7 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 	}
 }
 
+/*
 func TestNugetResolve(t *testing.T) {
 	initBuildToolsTest(t)
 	projects := []struct {
@@ -372,6 +373,7 @@ func TestNugetResolve(t *testing.T) {
 		})
 	}
 }
+*/
 
 func createNugetProject(t *testing.T, projectName string) string {
 	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "nuget", projectName)
