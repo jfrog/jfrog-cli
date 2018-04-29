@@ -34,6 +34,7 @@ const (
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	PrepareCopy                            = "prepare_copy.json"
 	Search                                 = "search.json"
+	SearchGo                               = "search_go.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchTxt                              = "search_txt.json"

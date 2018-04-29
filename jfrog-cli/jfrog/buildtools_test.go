@@ -8,16 +8,15 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	rtutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -168,33 +167,31 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	project1Path := createVgoProject(t, "project1")
+	testsdataTarget := filepath.Join(tests.Out, "testsdata")
+	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "vgo", "testsdata")
+	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	if err != nil {
+		t.Error(err)
+	}
 	err = os.Chdir(project1Path)
 	if err != nil {
 		t.Error(err)
 	}
 
-	vgoCmd, err := vgo.NewCmd()
-	if err != nil {
-		t.Error(err)
-	}
-
 	// Download dependencies without Artifactory
-	vgoCmd.Command = []string{"build"}
-	err = utils.RunCmd(vgoCmd)
-	if err != nil {
-		t.Error(err)
-	}
+	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo, "--no-registry=true")
 
 	buildName := "vgo-build"
 	buildNumber := "1"
 
 	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("vdp", tests.VgoLocalRepo)
-	artifactoryCli.Exec("vp", tests.VgoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("gp", tests.VgoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 2)
+	validateBuildInfoProperties(buildInfo, t)
+
 	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)
@@ -223,34 +220,10 @@ func TestVgoPublishResolve(t *testing.T) {
 		t.Error(err)
 	}
 
-	vgoCmd, err := vgo.NewCmd()
-	if err != nil {
-		t.Error(err)
-	}
-
 	// Download dependencies without Artifactory
-	vgoCmd.Command = []string{"build"}
-	err = utils.RunCmd(vgoCmd)
-	if err != nil {
-		t.Error(err)
-	}
-
+	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo, "--no-registry=true")
 	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("vdp", tests.VgoLocalRepo)
-	artifactoryCli.Exec("vp", tests.VgoLocalRepo, "v1.0.0")
-
-	// Set GOPROXY env var to resolve dependencies from Artifactory
-	rtUrl, err := url.Parse(artifactoryDetails.Url)
-	if err != nil {
-		t.Error(err)
-	}
-	rtUrl.User = url.UserPassword(artifactoryDetails.User, artifactoryDetails.Password)
-	rtUrl.Path += "api/go/" + tests.VgoLocalRepo
-
-	err = os.Setenv("GOPROXY", rtUrl.String())
-	if err != nil {
-		t.Error(err)
-	}
+	artifactoryCli.Exec("gp", tests.VgoLocalRepo, "v1.0.0", "--deps=ALL")
 
 	err = os.Chdir(project2Path)
 	if err != nil {
@@ -258,10 +231,7 @@ func TestVgoPublishResolve(t *testing.T) {
 	}
 
 	// Build the second project, download dependencies from Artifactory
-	err = utils.RunCmd(vgoCmd)
-	if err != nil {
-		t.Error(err)
-	}
+	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo)
 
 	// Restore workspace
 	err = os.Chdir(wd)
@@ -274,21 +244,9 @@ func TestVgoPublishResolve(t *testing.T) {
 func createVgoProject(t *testing.T, projectName string) string {
 	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "vgo", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
-	err := fileutils.CreateDirIfNotExist(projectTarget)
+	err := fileutils.CopyDir(projectSrc, projectTarget, false)
 	if err != nil {
 		t.Error(err)
-	}
-
-	files, err := fileutils.ListFiles(projectSrc, false)
-	if err != nil {
-		t.Error(err)
-	}
-
-	for _, v := range files {
-		err = fileutils.CopyFile(projectTarget, v)
-		if err != nil {
-			t.Error(err)
-		}
 	}
 	projectTarget, err = filepath.Abs(projectTarget)
 	if err != nil {
@@ -352,6 +310,53 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 	}
 }
 
+// Validate the build.name and build.number properties
+func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
+	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
+	flags.SetArtifactoryDetails(artAuth)
+	var resultItems []rtutils.ResultItem
+	for i := 0; i < len(spec.Files); i++ {
+		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+		if err != nil {
+			t.Error(err)
+		}
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
+		if err != nil {
+			t.Error("Failed Searching files:", err)
+		}
+		resultItems = append(resultItems, currentResultItems...)
+	}
+
+	if len(buildInfo.Modules[0].Artifacts) != len(resultItems) {
+		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
+	}
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		if len(properties) < 1 {
+			t.Error("Failed setting properties on item:", item.GetItemRelativePath())
+		}
+		propertiesMap := convertSliceToMap(properties)
+		value, contains := propertiesMap["build.name"]
+
+		if !contains {
+			t.Error("Failed setting up build.name property on", item.Name)
+		}
+		if value != buildInfo.Name {
+			t.Error("Wrong value for build.name property on", item.Name, "expected", buildInfo.Name, "got", value)
+		}
+
+		value, contains = propertiesMap["build.number"]
+		if !contains {
+			t.Error("Failed setting up build.number property on", item.Name)
+		}
+		if value != buildInfo.Number {
+			t.Error("Wrong value for build.number property on", item.Name, "expected", buildInfo.Number, "got", value)
+		}
+
+	}
+}
+
 func TestNugetResolve(t *testing.T) {
 	initBuildToolsTest(t)
 	projects := []struct {
@@ -388,6 +393,14 @@ func createNugetProject(t *testing.T, projectName string) string {
 		}
 	}
 	return projectTarget
+}
+
+func convertSliceToMap(props []rtutils.Property) map[string]string {
+	propsMap := make(map[string]string)
+	for _, item := range props {
+		propsMap[item.Key] = item.Value
+	}
+	return propsMap
 }
 
 func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expectedDependencies int) {
@@ -604,12 +617,11 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 }
 
 func cleanBuildToolsTest() {
-	if !*tests.TestBuildTools {
-		return
+	if *tests.TestBuildTools || *tests.TestVgo {
+		os.Unsetenv(config.JfrogHomeEnv)
+		cleanArtifactory()
+		tests.CleanFileSystem()
 	}
-	os.Unsetenv(config.JfrogHomeEnv)
-	cleanArtifactory()
-	tests.CleanFileSystem()
 }
 
 func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {

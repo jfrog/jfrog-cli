@@ -364,3 +364,38 @@ func CopyFile(dst, src string) error {
 	io.Copy(dstFile, srcFile)
 	return nil
 }
+
+// Copy directory content from one path to another.
+// includeDirs means to copy also the dirs if presented in the src folder.
+func CopyDir(fromPath, toPath string, includeDirs bool) error {
+	err := CreateDirIfNotExist(toPath)
+	if err != nil {
+		return err
+	}
+
+	files, err := ListFiles(fromPath, includeDirs)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range files {
+		dir, err := IsDir(v)
+		if err != nil {
+			return err
+		}
+
+		if dir {
+			toPath := toPath + GetFileSeparator() + filepath.Base(v)
+			err := CopyDir(v, toPath, true)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		err = CopyFile(toPath, v)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}

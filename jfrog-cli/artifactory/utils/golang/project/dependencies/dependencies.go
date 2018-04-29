@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	golangutil "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
@@ -15,7 +16,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	vgoutil "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo"
 )
 
 func Load() ([]Dependency, error) {
@@ -35,6 +35,10 @@ type Dependency struct {
 	modContent            []byte
 	zipPath               string
 	version               string
+}
+
+func (dependency *Dependency) GetId() string {
+	return dependency.id
 }
 
 func (dependency *Dependency) Publish(targetRepo string, details *config.ArtifactoryDetails) error {
@@ -57,7 +61,7 @@ func (dependency *Dependency) Dependencies() []buildinfo.Dependency {
 }
 
 func getDependencies(cachePath string) ([]Dependency, error) {
-	vgoCmd, err := vgoutil.NewCmd()
+	vgoCmd, err := golangutil.NewCmd()
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +138,7 @@ func parseListOutput(content []byte) (map[string]string, error) {
 }
 
 func getGOPATH() (string, error) {
-	vgoCmd, err := vgoutil.NewCmd()
+	vgoCmd, err := golangutil.NewCmd()
 	if err != nil {
 		return "", err
 	}

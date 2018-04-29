@@ -5,9 +5,9 @@ import "testing"
 func TestParseModuleName(t *testing.T) {
 	content := `
 
-         	module "github.com/jfrogdev/vgo-example"
+         	module github.com/jfrogdev/vgo-example
 
-        require "rsc.io/quote" v1.5.2
+        require rsc.io/quote v1.5.2
 	`
 
 	expected := "github.com/jfrogdev/vgo-example"

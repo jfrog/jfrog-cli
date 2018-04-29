@@ -9,12 +9,14 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/golang"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/vgo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	goutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
@@ -25,13 +27,13 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
-	nugetdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
-	nugettree "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gocommand"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gopublish"
 	gradledoc "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/move"
@@ -39,12 +41,12 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
+	nugetdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
+	nugettree "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/use"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/vgopublish"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/vgodepspublish"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
@@ -56,7 +58,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 )
 
 func GetCommands() []cli.Command {
@@ -378,27 +379,27 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "vgo-deps-publish",
-			Flags:     append(getVgoFlags(), getThreadsFlag()),
-			Aliases:   []string{"vdp"},
-			Usage:     vgodepspublish.Description,
-			HelpName:  common.CreateUsage("rt vgo-deps-publish", vgodepspublish.Description, vgodepspublish.Usage),
-			UsageText: vgodepspublish.Arguments,
+			Name:      "go-publish",
+			Flags:     getGoPublishFlags(),
+			Aliases:   []string{"gp"},
+			Usage:     gopublish.Description,
+			HelpName:  common.CreateUsage("rt go-publish", gopublish.Description, gopublish.Usage),
+			UsageText: gopublish.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
-				vgoDepsPublish(c)
+				goPublishCmd(c)
 			},
 		},
 		{
-			Name:      "vgo-publish",
-			Flags:     getVgoFlags(),
-			Aliases:   []string{"vp"},
-			Usage:     vgopublish.Description,
-			HelpName:  common.CreateUsage("rt vgo-publish", vgopublish.Description, vgopublish.Usage),
-			UsageText: vgopublish.Arguments,
+			Name:      "go",
+			Flags:     getGoFlags(),
+			Aliases:   []string{"go"},
+			Usage:     gocommand.Description,
+			HelpName:  common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
+			UsageText: gocommand.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
-				vgoPublish(c)
+				goCmd(c)
 			},
 		},
 	}
@@ -658,11 +659,34 @@ func getNugetFlags() []cli.Flag {
 	return append(nugetFlags, getBuildToolFlags()...)
 }
 
-func getVgoFlags() []cli.Flag {
-	var flags []cli.Flag
+func getGoFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.BoolFlag{
+			Name:  "no-registry",
+			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy",
+		},
+	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
-	return append(flags, getBuildToolFlags()...)
+	return flags
+}
+
+func getGoPublishFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "deps",
+			Value: "",
+			Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.",
+		},
+		cli.BoolTFlag{
+			Name:  "self",
+			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..",
+		},
+	}
+	flags = append(flags, getBaseFlags()...)
+	flags = append(flags, getServerIdFlag())
+	flags = append(flags, getBuildToolFlags()...)
+	return flags
 }
 
 func getMoveFlags() []cli.Flag {
@@ -1146,38 +1170,80 @@ func npmPublishCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func vgoDepsPublish(c *cli.Context) {
-	if c.NArg() != 1 {
+func goPublishCmd(c *cli.Context) {
+	// When "self" set to true (default), there must be two arguments passed: target repo and the version
+	if c.BoolT("self") && c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	// When "self" set to false, the target repository is mandatory but the version is not.
+	// The version is only needed for publishing the project
+	// But for automation purposes of users, keeping the possibility to pass the version without failing
+	if !c.BoolT("self") && c.NArg() > 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	targetRepo := c.Args().Get(0)
-	threads := getThreadsCount(c)
-	details := createArtifactoryDetailsByFlags(c, true)
-
-	succeeded, failed, err := vgo.PublishDependencies(targetRepo, threads, details)
-	err = cliutils.PrintSummaryReport(succeeded, failed, err)
-	cliutils.ExitOnErr(err)
-}
-
-func vgoPublish(c *cli.Context) {
-	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
-	}
-
-	targetRepo := c.Args().Get(0)
-	version := c.Args().Get(1)
-	buildName := c.String("build-name")
-	buildNumber := c.String("build-number")
-	details := createArtifactoryDetailsByFlags(c, true)
-
-	err := vgo.Publish(targetRepo, version, buildName, buildNumber, details)
+	output, err := goutils.GetVgoVersion()
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
-	err = cliutils.PrintSummaryReport(1, 0, err)
+	log.Info("Using vgo version:", string(output))
+
+	targetRepo := c.Args().Get(0)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	version := c.Args().Get(1)
+	details := createArtifactoryDetailsByFlags(c, true)
+
+	if c.BoolT("self") {
+		err := golang.Publish(targetRepo, version, buildName, buildNumber, details)
+		if err != nil {
+			err = cliutils.PrintSummaryReport(0, 1, err)
+			cliutils.ExitOnErr(err)
+		}
+	}
+
+	publishDeps := c.String("deps")
+	publishDepsSlice := strings.Split(publishDeps, ",")
+	succeeded, failed, err := golang.PublishDependencies(targetRepo, details, publishDepsSlice)
+	if c.BoolT("self") {
+		succeeded++
+	}
+	err = cliutils.PrintSummaryReport(succeeded, failed, err)
 	cliutils.ExitOnErr(err)
+}
+
+func goCmd(c *cli.Context) {
+	// When the no-registry set to false (default), two arguments are mandatory: vgo command and the target repository
+	if !c.Bool("no-registry") && c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	// When the no-registry is set to true this means that the resolution will not be done via Artifactory.
+	// For automation purposes of users, keeping the possibility to pass the repository although we are not using it.
+	if c.Bool("no-registry") && c.NArg() > 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	vgoArg := c.Args().Get(0)
+	targetRepo := c.Args().Get(1)
+	details := createArtifactoryDetailsByFlags(c, true)
+
+	output, err := goutils.GetVgoVersion()
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+		cliutils.ExitOnErr(err)
+	}
+	log.Info("The vgo version that is being used is:", string(output))
+
+	if !c.Bool("no-registry") {
+		goutils.SetGoProxyEnvVar(details, targetRepo)
+	}
+	// Run vgo
+	err = goutils.RunVgo(vgoArg)
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+		cliutils.ExitOnErr(err)
+	}
 }
 
 func createGradleConfigCmd(c *cli.Context) {

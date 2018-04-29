@@ -1,13 +1,13 @@
 package project
 
 import (
-	"os"
-	"path/filepath"
-	"testing"
 	"bytes"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
+	"testing"
 )
 
 func TestArchiveProject(t *testing.T) {

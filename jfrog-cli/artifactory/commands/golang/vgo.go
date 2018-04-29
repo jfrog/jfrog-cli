@@ -1,22 +1,25 @@
-package vgo
+package golang
 
 import (
 	"errors"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo/project"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	cliutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"os/exec"
+	"strings"
 )
 
-func PublishDependencies(targetRepo string, threads int, details *config.ArtifactoryDetails) (int, int, error) {
+func PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string) (int, int, error) {
 	err := validatePrerequisites()
 	if err != nil {
 		return 0, 0, err
 	}
 
 	log.Info("Publishing project dependencies...")
+	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
 	// The version is not necessary because we are publishing only the dependencies.
 	goProject, err := project.Load("-")
 	if err != nil {
@@ -24,17 +27,29 @@ func PublishDependencies(targetRepo string, threads int, details *config.Artifac
 	}
 
 	succeeded := 0
+	skip := 0
+	_, includeAll := includeDep["ALL"]
 	dependencies := goProject.Dependencies()
 	for _, dependency := range dependencies {
-		err = dependency.Publish(targetRepo, details)
-		if err != nil {
-			log.Error(err)
+		depToBeIncluded := false
+		id := strings.Split(dependency.GetId(), ":")
+		if includedVersion, included := includeDep[id[0]]; included && strings.EqualFold(includedVersion, id[1]) {
+			depToBeIncluded = true
+		}
+		if includeAll || depToBeIncluded {
+			err = dependency.Publish(targetRepo, details)
+			if err != nil {
+				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
+				log.Error("Failed to publish", dependency.GetId(), ":", err)
+			} else {
+				succeeded++
+			}
 			continue
 		}
-		succeeded++
+		skip++
 	}
 
-	failed := len(dependencies) - succeeded
+	failed := len(dependencies) - succeeded - skip
 	if failed > 0 {
 		err = errors.New("Publishing project dependencies finished with errors. Please review the logs.")
 	}

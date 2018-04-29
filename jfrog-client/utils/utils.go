@@ -209,6 +209,20 @@ func GetUserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+func GetMapFromStringSlice(slice []string, sep string) map[string]string {
+	mapFromSlice := make(map[string]string)
+	for _, value := range slice {
+		splitted := strings.Split(value, sep)
+		if len(splitted) == 2 {
+			mapFromSlice[splitted[0]] = splitted[1]
+		}
+		if len(splitted) == 1 {
+			mapFromSlice[splitted[0]] = ""
+		}
+	}
+	return mapFromSlice
+}
+
 type Artifact struct {
 	LocalPath  string
 	TargetPath string

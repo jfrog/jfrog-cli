@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/vgo/project/dependencies"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
@@ -169,7 +169,7 @@ func (project *goProject) archiveProject(version string) (string, error) {
 
 // Parse module name from go.mod content.
 func parseModuleName(modContent string) (string, error) {
-	r, err := regexp.Compile(`module "([\w\.@:%_\+-.~#?&]+/.+)"`)
+	r, err := regexp.Compile(`module ([\w\.@:%_\+-.~#?&]+/.+)`)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}

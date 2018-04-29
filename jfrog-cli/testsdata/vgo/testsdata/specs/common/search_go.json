@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-vgo-local-repo/github.com/jfrogdev/dependency/@v/v1.0.0*"
+    }
+  ]
+}
