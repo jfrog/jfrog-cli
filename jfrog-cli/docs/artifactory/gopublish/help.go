@@ -1,6 +1,6 @@
 package gopublish
 
-const Description = "Publish go package and/or it's dependencies to Artifactory"
+const Description = "Publish go package and/or its dependencies to Artifactory"
 
 var Usage = []string{`jfrog rt gp [command options] <target repository> <project version>`}
 
