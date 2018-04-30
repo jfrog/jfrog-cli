@@ -1235,7 +1235,7 @@ func goCmd(c *cli.Context) {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
-	log.Info("The vgo version that is being used is:", string(output))
+	log.Info("Using vgo version:", string(output))
 
 	if !c.Bool("no-registry") {
 		goutils.SetGoProxyEnvVar(details, targetRepo)
