@@ -153,12 +153,10 @@ func ListFiles(path string, includeDirs bool) ([]string, error) {
 }
 
 func GetUploadRequestContent(file *os.File) io.Reader {
-	var reqBody io.Reader
-	reqBody = file
 	if file == nil {
-		reqBody = bytes.NewBuffer([]byte(SYMLINK_FILE_CONTENT))
+		return bytes.NewBuffer([]byte(SYMLINK_FILE_CONTENT))
 	}
-	return reqBody
+	return bufio.NewReader(file)
 }
 
 func GetFileSize(file *os.File) (int64, error) {

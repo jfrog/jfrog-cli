@@ -143,6 +143,7 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 	if err != nil {
 		return nil, nil, err
 	}
+
 	req, err := http.NewRequest("PUT", url, fileutils.GetUploadRequestContent(f))
 	if errorutils.CheckError(err) != nil {
 		return nil, nil, err
