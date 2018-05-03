@@ -8,11 +8,11 @@ func TestGetImagePath(t *testing.T) {
 		expected string
 	}{
 		{"domain:8080/path:1.0", "/path/1.0"},
-		{"domain:8080/path/in/artifactory:1.0", "/artifactory/1.0"},
-		{"domain:8080/path/in/artifactory", "/artifactory/latest"},
+		{"domain:8080/path/in/artifactory:1.0", "/path/in/artifactory/1.0"},
+		{"domain:8080/path/in/artifactory", "/path/in/artifactory/latest"},
 		{"domain/path:1.0", "/path/1.0"},
-		{"domain/path/in/artifactory:1.0", "/artifactory/1.0"},
-		{"domain/path/in/artifactory", "/artifactory/latest"},
+		{"domain/path/in/artifactory:1.0", "/path/in/artifactory/1.0"},
+		{"domain/path/in/artifactory", "/path/in/artifactory/latest"},
 	}
 
 	for _, v := range imageTags {

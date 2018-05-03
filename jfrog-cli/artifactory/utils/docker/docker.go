@@ -54,13 +54,13 @@ func (image *image) ParentId() (string, error) {
 
 // Get docker image relative path in Artifactory
 func (image *image) Path() string {
-	indexOfLastSlash := strings.LastIndex(image.tag, "/")
+	indexOfFirstSlash := strings.Index(image.tag, "/")
 	indexOfLastColon := strings.LastIndex(image.tag, ":")
 
-	if indexOfLastColon < 0 || indexOfLastColon < indexOfLastSlash {
-		return path.Join(image.tag[indexOfLastSlash:], "latest")
+	if indexOfLastColon < 0 || indexOfLastColon < indexOfFirstSlash {
+		return path.Join(image.tag[indexOfFirstSlash:], "latest")
 	}
-	return path.Join(image.tag[indexOfLastSlash:indexOfLastColon], image.tag[indexOfLastColon+1:])
+	return path.Join(image.tag[indexOfFirstSlash:indexOfLastColon], image.tag[indexOfLastColon+1:])
 }
 
 // Get docker image name

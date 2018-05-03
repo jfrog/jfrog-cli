@@ -6,6 +6,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"strings"
 )
 
 type DockerPushConfig struct {
@@ -15,6 +16,9 @@ type DockerPushConfig struct {
 
 // Push docker image and create build info if needed
 func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, config *DockerPushConfig) error {
+	if strings.LastIndex(imageTag, ":") == -1 {
+		imageTag = imageTag + ":latest"
+	}
 	image := docker.New(imageTag)
 	err := image.Push()
 	if err != nil {

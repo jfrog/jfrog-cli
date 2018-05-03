@@ -259,8 +259,18 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
+	runDockerTest( "jfrog_cli_test_image", t)
+}
 
-	imageName := "jfrog_cli_test_image"
+func TestDockerPushWithMultipleSlash(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+	runDockerTest( "jfrog_cli_test_image/multiple", t)
+}
+
+// Run docker push to Artifactory
+func runDockerTest(imageName string, t *testing.T) {
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
 	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
 	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}

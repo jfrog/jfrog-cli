@@ -65,10 +65,37 @@ func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
 	return builder.createBuildInfo()
 }
 
+// First we will try to get assuming using a reverse proxy (sub domain or port methods)
+// If fails, we will try the repository path (proxy-less).
+func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error){
+	var searchResults map[string]utils.ResultItem
+	// Try to get layers, assuming reverse proxy
+	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.targetRepo, builder.image.Path(), "*"), builder.serviceManager)
+	if err != nil {
+		return nil, err
+	}
+	// Try to get layers, assuming proxy-less (repository path)
+	if searchResults == nil {
+		// Need to remove the "/" from the image path
+		searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.image.Path()[1:], "*"), builder.serviceManager)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if searchResults == nil {
+		// Layers not found in the required path.
+		return nil, errorutils.CheckError(errors.New("Found incorrect docker image, expecting image ID: " + builder.imageId))
+	}
+
+	return searchResults, nil
+}
+
 // Search validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	// Search for all the image layer to get the local path inside Artifactory (supporting virtual repos).
-	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.targetRepo, builder.image.Path(), "*"), builder.serviceManager)
+	searchResults, err := builder.getImageLayersFromArtifactory()
 	if err != nil {
 		return err
 	}
@@ -203,7 +230,7 @@ func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifac
 
 	// Validate image ID layer exists.
 	if _, ok := resultMap[digestToLayer(imageId)]; !ok {
-		return nil, errorutils.CheckError(errors.New("Found incorrect docker image, expecting image ID: " + imageId))
+		return nil, nil
 	}
 	return resultMap, nil
 }
