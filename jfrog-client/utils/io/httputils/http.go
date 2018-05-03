@@ -20,12 +20,12 @@ import (
 
 var UserAgent string
 
-func sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
-	return Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
+func sendGetLeaveBodyOpen(url string, followRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
+	return Send("GET", url, nil, followRedirect, false, httpClientsDetails)
 }
 
-func sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
-	resp, _, redirectUrl, err := sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
+func sendGetForFileDownload(url string, followRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, string, error) {
+	resp, _, redirectUrl, err := sendGetLeaveBodyOpen(url, followRedirect, httpClientsDetails)
 	return resp, redirectUrl, err
 }
 
@@ -33,8 +33,8 @@ func Stream(url string, httpClientsDetails HttpClientDetails) (*http.Response, [
 	return sendGetLeaveBodyOpen(url, true, httpClientsDetails)
 }
 
-func SendGet(url string, allowRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
-	return Send("GET", url, nil, allowRedirect, true, httpClientsDetails)
+func SendGet(url string, followRedirect bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
+	return Send("GET", url, nil, followRedirect, true, httpClientsDetails)
 }
 
 func SendPost(url string, content []byte, httpClientsDetails HttpClientDetails) (resp *http.Response, body []byte, err error) {
@@ -78,7 +78,7 @@ func getHttpClient(transport *http.Transport) *http.Client {
 	return client
 }
 
-func Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
+func Send(method string, url string, content []byte, followRedirect, closeBody bool, httpClientsDetails HttpClientDetails) (*http.Response, []byte, string, error) {
 	var req *http.Request
 	var err error
 	if content != nil {
@@ -90,17 +90,17 @@ func Send(method string, url string, content []byte, allowRedirect bool, closeBo
 		return nil, nil, "", err
 	}
 
-	return doRequest(req, allowRedirect, closeBody, httpClientsDetails)
+	return doRequest(req, followRedirect, closeBody, httpClientsDetails)
 }
 
-func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClientsDetails HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+func doRequest(req *http.Request, followRedirect, closeBody bool, httpClientsDetails HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	req.Close = true
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 	copyHeaders(httpClientsDetails, req)
 
 	client := getHttpClient(httpClientsDetails.Transport)
-	if !allowRedirect {
+	if !followRedirect {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			redirectUrl = req.URL.String()
 			return errors.New("redirect")
@@ -108,18 +108,14 @@ func doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClient
 	}
 
 	resp, err = client.Do(req)
-	if !allowRedirect && err != nil {
-		return
-	}
-
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return
-	}
-	if closeBody {
+	if closeBody && resp != nil {
 		defer resp.Body.Close()
 		respBody, _ = ioutil.ReadAll(resp.Body)
 	}
+	if !followRedirect && err != nil {
+		return
+	}
+	err = errorutils.CheckError(err)
 	return
 }
 
@@ -173,9 +169,9 @@ func DownloadFileNoRedirect(downloadPath, localPath, fileName string, httpClient
 	return downloadFile(downloadPath, localPath, fileName, false, httpClientsDetails)
 }
 
-func downloadFile(downloadPath, localPath, fileName string, allowRedirect bool,
+func downloadFile(downloadPath, localPath, fileName string, followRedirect bool,
 	httpClientsDetails HttpClientDetails) (resp *http.Response, redirectUrl string, err error) {
-	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, allowRedirect, httpClientsDetails)
+	resp, redirectUrl, err = sendGetForFileDownload(downloadPath, followRedirect, httpClientsDetails)
 	if err != nil {
 		return
 	}
@@ -207,11 +203,8 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
 	chuckPaths := make([]string, flags.SplitCount)
-	var err error
+	errors := make([]error, flags.SplitCount)
 	for i := 0; i < flags.SplitCount; i++ {
-		if err != nil {
-			break
-		}
 		wg.Add(1)
 		start := chunkSize * int64(i)
 		end := chunkSize * (int64(i) + 1)
@@ -220,18 +213,16 @@ func DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string
 		}
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
-			var downloadErr error
-			chuckPaths[i], downloadErr = downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails)
-			if downloadErr != nil {
-				err = downloadErr
-			}
+			chuckPaths[i], errors[i] = downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails)
 			wg.Done()
 		}(start, end, i)
 	}
 	wg.Wait()
 
-	if err != nil {
-		return err
+	for _, e := range errors {
+		if e != nil {
+			return errorutils.CheckError(e)
+		}
 	}
 
 	if flags.LocalPath != "" {
