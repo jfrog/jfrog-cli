@@ -78,16 +78,6 @@ To run docker push tests execute the following command (fill out the missing par
 go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
 
-#### Vgo commands tests
-
-To run vgo tests:
-* Add vgo executable to the system search path (PATH environment variable).
-* Run the following command:
-
-````
-go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.vgo=true 
-````
-
 ##### Mandatory Parameters
 | Flag | Description |
 | --- | --- |
@@ -99,6 +89,16 @@ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=fa
 
 ##### Important
 * Before running the test make sure docker is logged in to the Artifactory docker registry (run `docker login` before the test).
+
+#### Vgo commands tests
+
+To run vgo tests:
+* Add vgo executable to the system search path (PATH environment variable).
+* Run the following command:
+
+````
+go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.vgo=true 
+````
 
 ### Bintray tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
