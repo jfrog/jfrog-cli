@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
@@ -17,11 +16,10 @@ type FileInfo struct {
 	ArtifactoryPath string `json:"artifactoryPath,omitempty"`
 }
 
-func (fileInfo *FileInfo) ToBuildArtifacts() buildinfo.Artifact {
-	artifact := buildinfo.Artifact{Checksum: &buildinfo.Checksum{}}
+func (fileInfo *FileInfo) ToBuildArtifact() buildinfo.InternalArtifact {
+	artifact := buildinfo.InternalArtifact{Checksum: &buildinfo.Checksum{}}
 	artifact.Sha1 = fileInfo.Sha1
 	artifact.Md5 = fileInfo.Md5
-	filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.LocalPath)
-	artifact.Name = filename
+	artifact.Path = fileInfo.ArtifactoryPath
 	return artifact
 }

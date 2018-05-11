@@ -11,9 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"strconv"
-	"strings"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
@@ -40,9 +38,6 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 	if isCollectBuildInfo && !flags.DryRun {
 		if err := utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {
 			return 0, 0, err
-		}
-		for i := 0; i < len(uploadSpec.Files); i++ {
-			addBuildProps(&uploadSpec.Get(i).Props, flags.BuildName, flags.BuildNumber)
 		}
 	}
 
@@ -98,15 +93,10 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 	return
 }
 
-func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildinfo.Artifact {
-	buildArtifacts := make([]buildinfo.Artifact, len(filesInfo))
+func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildinfo.InternalArtifact {
+	buildArtifacts := make([]buildinfo.InternalArtifact, len(filesInfo))
 	for i, fileInfo := range filesInfo {
-		artifact := buildinfo.Artifact{Checksum: &buildinfo.Checksum{}}
-		artifact.Sha1 = fileInfo.Sha1
-		artifact.Md5 = fileInfo.Md5
-		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.LocalPath)
-		artifact.Name = filename
-		buildArtifacts[i] = artifact
+		buildArtifacts[i] = fileInfo.ToBuildArtifact()
 	}
 	return buildArtifacts
 }
@@ -145,22 +135,6 @@ func getMinChecksumDeploySize() (int64, error) {
 		return 0, err
 	}
 	return minSize * 1000, nil
-}
-
-func addBuildProps(props *string, buildName, buildNumber string) error {
-	if buildName == "" || buildNumber == "" {
-		return nil
-	}
-	buildProps, err := utils.CreateBuildProperties(buildName, buildNumber)
-	if err != nil {
-		return err
-	}
-
-	if len(*props) > 0 && !strings.HasSuffix(*props, ";") && len(buildProps) > 0 {
-		*props += ";"
-	}
-	*props += buildProps
-	return nil
 }
 
 type UploadConfiguration struct {
