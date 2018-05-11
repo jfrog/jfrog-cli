@@ -144,6 +144,12 @@ func (sm *ArtifactoryServicesManager) PublishVgoProject(params vgo.VgoParams) er
 	return vgoService.PublishPackage(params)
 }
 
+func (sm *ArtifactoryServicesManager) GetFileInfo(path string) (*utils.FileInfo, error) {
+	getFileInfoService := services.NewFileInfoService(sm.client)
+	getFileInfoService.ArtDetails = sm.config.GetArtDetails()
+	return getFileInfoService.GetFileInfo(path)
+}
+
 func (sm *ArtifactoryServicesManager) setCommonServiceConfig(commonConfig ArtifactoryServicesSetter) {
 	commonConfig.SetThread(sm.config.GetThreads())
 	commonConfig.SetArtDetails(sm.config.GetArtDetails())

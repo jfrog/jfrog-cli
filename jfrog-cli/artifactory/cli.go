@@ -18,6 +18,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddartifact"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/buildclean"
@@ -264,6 +265,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
+			},
+		},
+		{
+			Name:      "build-add-artifact",
+			Flags:     getServerFlags(),
+			Aliases:   []string{"baa"},
+			Usage:     buildaddartifact.Description,
+			HelpName:  common.CreateUsage("rt build-add-artifact", buildaddartifact.Description, buildaddartifact.Usage),
+			UsageText: buildaddartifact.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				buildAddArtifactCmd(c)
 			},
 		},
 		{
@@ -1502,6 +1515,15 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func buildAddArtifactCmd(c *cli.Context) {
+	if c.NArg() != 3 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	configuration := createBuildAddArtifactConfiguration(c)
+	err := buildinfo.AddArtifact(configuration)
+	cliutils.ExitOnErr(err)
+}
+
 func gitLfsCleanCmd(c *cli.Context) {
 	if c.NArg() > 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1779,6 +1801,15 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 	distributeConfiguration.BuildName = c.Args().Get(0)
 	distributeConfiguration.BuildNumber = c.Args().Get(1)
 	distributeConfiguration.TargetRepo = c.Args().Get(2)
+	return
+}
+
+func createBuildAddArtifactConfiguration(c *cli.Context) (addArtifactConfiguration *buildinfo.BuildAddArtifactConfiguration) {
+	addArtifactConfiguration = new(buildinfo.BuildAddArtifactConfiguration)
+	addArtifactConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	addArtifactConfiguration.Artifact = c.Args().Get(2)
+	addArtifactConfiguration.BuildName = c.Args().Get(0)
+	addArtifactConfiguration.BuildNumber = c.Args().Get(1)
 	return
 }
 

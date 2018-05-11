@@ -3,6 +3,7 @@ package buildinfo
 import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"time"
 )
 
@@ -67,15 +68,26 @@ type Vcs struct {
 	Revision string `json:"vcsRevision,omitempty"`
 }
 
+type InternalArtifact struct {
+	Path string `json:"Path,omitempty"`
+	*Checksum
+}
+
+func (internalArtifact *InternalArtifact) ToArtifact() Artifact {
+	artifact := Artifact{Checksum: internalArtifact.Checksum}
+	artifact.Name, _ = fileutils.GetFileAndDirFromPath(internalArtifact.Path)
+	return artifact
+}
+
 type Partials []*Partial
 
 type Partial struct {
-	Artifacts    []Artifact   `json:"Artifacts,omitempty"`
-	Dependencies []Dependency `json:"Dependencies,omitempty"`
-	Env          Env          `json:"Env,omitempty"`
-	Timestamp    int64        `json:"Timestamp,omitempty"`
+	Artifacts       []InternalArtifact `json:"Artifacts,omitempty"`
+	Dependencies    []Dependency       `json:"Dependencies,omitempty"`
+	Env          	Env                `json:"Env,omitempty"`
+	Timestamp    	int64              `json:"Timestamp,omitempty"`
 	*Vcs
-	ModuleId     string       `json:"ModuleId,omitempty"`
+	ModuleId     	string             `json:"ModuleId,omitempty"`
 }
 
 func (partials Partials) Len() int {
