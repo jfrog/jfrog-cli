@@ -1,4 +1,4 @@
-package rtinstances
+package services
 
 import (
 	"errors"
@@ -9,8 +9,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 )
 
-func Remove(instanceName string, flags *RemoveFlags) error {
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances/" + instanceName
+func Remove(serviceName string, flags *RemoveFlags) error {
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services/" + serviceName
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendDelete(missionControlUrl, nil, httpClientDetails)
 	if err != nil {

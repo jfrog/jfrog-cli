@@ -45,14 +45,15 @@ type HttpResponse struct {
 }
 
 type LicenseRequestContent struct {
-	Name   string `json:"instanceName,omitempty"`
-	NodeID string `json:"nodeId,omitempty"`
-	Deploy bool   `json:"deploy,omitempty"`
+	Name             string `json:"service_name,omitempty"`
+	NumberOfLicenses int    `json:"number_of_licenses,omitempty"`
+	Deploy           bool   `json:"deploy,omitempty"`
 }
 
-type ArtifactoryInstanceDetails struct {
+type ServiceDetails struct {
+	Type     string `json:"type,omitempty"`
 	Url      string `json:"url,omitempty"`
 	User     string `json:"user,omitempty"`
 	Password string `json:"password,omitempty"`
-	Name     string `json:"instanceName,omitempty"`
+	Name     string `json:"service_name,omitempty"`
 }

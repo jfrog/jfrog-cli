@@ -1,4 +1,4 @@
-package rtinstances
+package services
 
 import (
 	"encoding/json"
@@ -12,19 +12,20 @@ import (
 	"net/http"
 )
 
-func AddInstance(instanceName string, flags *AddInstanceFlags) error {
-	data := AddInstanceRequestContent{
-		Name:        instanceName,
-		Url:         flags.ArtifactoryInstanceDetails.Url,
-		User:        flags.ArtifactoryInstanceDetails.User,
-		Password:    flags.ArtifactoryInstanceDetails.Password,
+func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
+	data := AddServiceRequestContent{
+		Type:        serviceType,
+		Name:        serviceName,
+		Url:         flags.ServiceDetails.Url,
+		User:        flags.ServiceDetails.User,
+		Password:    flags.ServiceDetails.Password,
 		Description: flags.Description,
-		Location:    flags.Location}
+		SiteName:    flags.SiteName}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to execute request. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/instances"
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
@@ -38,19 +39,19 @@ func AddInstance(instanceName string, flags *AddInstanceFlags) error {
 	return nil
 }
 
-type AddInstanceFlags struct {
+type AddServiceFlags struct {
 	MissionControlDetails      *config.MissionControlDetails
 	Description                string
-	Location                   string
-	NodeId                     string
-	ArtifactoryInstanceDetails *utils.ArtifactoryInstanceDetails
+	SiteName                   string
+	ServiceDetails *utils.ServiceDetails
 }
 
-type AddInstanceRequestContent struct {
+type AddServiceRequestContent struct {
+	Type        string `json:"type,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Url         string `json:"url,omitempty"`
 	User        string `json:"username,omitempty"`
 	Password    string `json:"password,omitempty"`
-	Location    string `json:"location,omitempty"`
+	SiteName    string `json:"site_name,omitempty"`
 	Description string `json:"description,omitempty"`
 }

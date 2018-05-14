@@ -1,4 +1,4 @@
-package rtinstances
+package services
 
 import (
 	"encoding/json"
@@ -15,17 +15,17 @@ import (
 	"os"
 )
 
-func AttachLic(instanceName string, flags *AttachLicFlags) error {
+func AttachLic(service_name string, flags *AttachLicFlags) error {
 	prepareLicenseFile(flags.LicensePath, flags.Override)
 	postContent := utils.LicenseRequestContent{
-		Name:   instanceName,
-		NodeID: flags.NodeId,
-		Deploy: flags.Deploy}
+		Name:             service_name,
+		NumberOfLicenses: 1,
+		Deploy:           flags.Deploy}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + flags.BucketId + "/licenses"
+	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/attach_lic/buckets/" + flags.BucketId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
@@ -57,6 +57,9 @@ func AttachLic(instanceName string, flags *AttachLicFlags) error {
 			return err
 		}
 		err = saveLicense(flags.LicensePath, licenseKey)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -130,7 +133,6 @@ func saveLicense(filepath string, content []byte) (err error) {
 type AttachLicFlags struct {
 	MissionControlDetails *config.MissionControlDetails
 	LicensePath           string
-	NodeId                string
 	BucketKey             string
 	BucketId              string
 	Override              bool
