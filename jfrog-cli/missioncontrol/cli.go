@@ -4,12 +4,12 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
 	configdocs "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/add"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/attachlic"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/detachlic"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/rtinstances/remove"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/add"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/attachlic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/detachlic"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/remove"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/commands"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/commands/rtinstances"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/commands/services"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
@@ -22,9 +22,9 @@ import (
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:        "rt-instances",
-			Aliases:     []string{"rti"},
-			Usage:       "Artifactory instances",
+			Name:        "services",
+			Aliases:     []string{"s"},
+			Usage:       "Services",
 			Subcommands: getRtiSubCommands(),
 		},
 		{
@@ -44,27 +44,27 @@ func getRtiSubCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:      "add",
-			Flags:     getAddInstanceFlags(),
+			Flags:     getAddServiceFlags(),
 			Usage:     add.Description,
-			HelpName:  common.CreateUsage("mc rt-instances add", add.Description, add.Usage),
+			HelpName:  common.CreateUsage("mc services add", add.Description, add.Usage),
 			UsageText: add.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
-			Action:    addInstance,
+			Action:    addService,
 		},
 		{
 			Name:      "remove",
-			Flags:     getRemoveInstanceFlags(),
+			Flags:     getRemoveServiceFlags(),
 			Usage:     remove.Description,
-			HelpName:  common.CreateUsage("mc rt-instances remove", remove.Description, remove.Usage),
+			HelpName:  common.CreateUsage("mc services remove", remove.Description, remove.Usage),
 			UsageText: remove.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
-			Action:    removeInstance,
+			Action:    removeService,
 		},
 		{
 			Name:      "attach-lic",
 			Flags:     getAttachLicenseFlags(),
 			Usage:     attachlic.Description,
-			HelpName:  common.CreateUsage("mc rt-instances attach-lic", attachlic.Description, attachlic.Usage),
+			HelpName:  common.CreateUsage("mc services attach-lic", attachlic.Description, attachlic.Usage),
 			UsageText: attachlic.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action:    attachLicense,
@@ -73,7 +73,7 @@ func getRtiSubCommands() []cli.Command {
 			Name:      "detach-lic",
 			Flags:     getDetachLicenseFlags(),
 			Usage:     detachlic.Description,
-			HelpName:  common.CreateUsage("mc rt-instances detach-lic", detachlic.Description, detachlic.Usage),
+			HelpName:  common.CreateUsage("mc services detach-lic", detachlic.Description, detachlic.Usage),
 			UsageText: detachlic.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action:    detachLicense,
@@ -98,7 +98,7 @@ func getFlags() []cli.Flag {
 	}
 }
 
-func getRemoveInstanceFlags() []cli.Flag {
+func getRemoveServiceFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "quiet",
@@ -107,27 +107,27 @@ func getRemoveInstanceFlags() []cli.Flag {
 	}...)
 }
 
-func getAddInstanceFlags() []cli.Flag {
+func getAddServiceFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
-			Name:  "rt-url",
-			Usage: "[Mandatory] Artifactory URL.",
+			Name:  "service-url",
+			Usage: "[Mandatory] Service URL.",
 		},
 		cli.StringFlag{
-			Name:  "rt-user",
-			Usage: "[Mandatory] Artifactory admin username.",
+			Name:  "service-user",
+			Usage: "[Mandatory] Service username.",
 		},
 		cli.StringFlag{
-			Name:  "rt-password",
-			Usage: "[Mandatory] Artifactory admin password - optionally encrypted.",
+			Name:  "service-password",
+			Usage: "[Mandatory] Service password.",
 		},
 		cli.StringFlag{
 			Name:  "desc",
-			Usage: "[Optional] Artifactory instance description.",
+			Usage: "[Optional] Service description.",
 		},
 		cli.StringFlag{
-			Name:  "location",
-			Usage: "[Optional] Artifactory instance location, e.g. US.",
+			Name:  "site-name",
+			Usage: "[Optional] Service site name, e.g. US.",
 		},
 	}...)
 }
@@ -139,10 +139,6 @@ func getAttachLicenseFlags() []cli.Flag {
 			Usage: "[Mandatory] license bucket ID",
 		},
 		cli.StringFlag{
-			Name:  "node-id",
-			Usage: "[Optional] Unique HA node identifier",
-		},
-		cli.StringFlag{
 			Name:  "license-path",
 			Usage: "[Optional] Full path to the license file",
 		},
@@ -152,7 +148,7 @@ func getAttachLicenseFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "deploy",
-			Usage: "[Default: false] Set to true to deploy licence to instace.",
+			Usage: "[Default: false] Set to true to deploy licence to service.",
 		},
 	}...)
 }
@@ -162,10 +158,6 @@ func getDetachLicenseFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "bucket-id",
 			Usage: "[Mandatory] license bucket ID",
-		},
-		cli.StringFlag{
-			Name:  "node-id",
-			Usage: "[Optional] Unique HA node identifier",
 		},
 	}...)
 }
@@ -180,31 +172,34 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getFlags()...)
 }
 
-func addInstance(c *cli.Context) {
-	size := len(c.Args())
-	if size != 1 {
+func addService(c *cli.Context) {
+	if len(c.Args()) != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	addInstanceFlags, err := createAddInstanceFlag(c)
+	addServiceFlags, err := createAddServiceFlag(c)
 	cliutils.ExitOnErr(err)
-	rtinstances.AddInstance(c.Args()[0], addInstanceFlags)
+	serviceType := c.Args()[0]
+	serviceName := c.Args()[1]
+	err = services.AddService(serviceType, serviceName, addServiceFlags)
+	cliutils.ExitOnErr(err)
 }
 
-func removeInstance(c *cli.Context) {
+func removeService(c *cli.Context) {
 	size := len(c.Args())
 	if size != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	instanceName := c.Args()[0]
+	serviceName := c.Args()[0]
 	if !c.Bool("quiet") {
-		confirmed := cliutils.InteractiveConfirm("Remove Instance,  " + instanceName + "?")
+		confirmed := cliutils.InteractiveConfirm("Remove Service,  " + serviceName + "?")
 		if !confirmed {
 			return
 		}
 	}
-	flags, err := createRemoveInstanceFlags(c)
+	flags, err := createRemoveServiceFlags(c)
 	cliutils.ExitOnErr(err)
-	rtinstances.Remove(instanceName, flags)
+	err = services.Remove(serviceName, flags)
+	cliutils.ExitOnErr(err)
 }
 
 func attachLicense(c *cli.Context) {
@@ -214,7 +209,8 @@ func attachLicense(c *cli.Context) {
 	}
 	flags, err := createAttachLicFlags(c)
 	cliutils.ExitOnErr(err)
-	rtinstances.AttachLic(c.Args()[0], flags)
+	err = services.AttachLic(c.Args()[0], flags)
+	cliutils.ExitOnErr(err)
 }
 
 func detachLicense(c *cli.Context) {
@@ -224,7 +220,8 @@ func detachLicense(c *cli.Context) {
 	}
 	flags, err := createDetachLicFlags(c)
 	cliutils.ExitOnErr(err)
-	rtinstances.DetachLic(c.Args()[0], flags)
+	err = services.DetachLic(c.Args()[0], flags)
+	cliutils.ExitOnErr(err)
 }
 
 func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
@@ -277,8 +274,8 @@ func configure(c *cli.Context) {
 	}
 }
 
-func createDetachLicFlags(c *cli.Context) (flags *rtinstances.DetachLicFlags, err error) {
-	flags = new(rtinstances.DetachLicFlags)
+func createDetachLicFlags(c *cli.Context) (flags *services.DetachLicFlags, err error) {
+	flags = new(services.DetachLicFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
@@ -286,12 +283,11 @@ func createDetachLicFlags(c *cli.Context) (flags *rtinstances.DetachLicFlags, er
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
 		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
 	}
-	flags.NodeId = c.String("node-id")
 	return
 }
 
-func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, err error) {
-	flags = new(rtinstances.AttachLicFlags)
+func createAttachLicFlags(c *cli.Context) (flags *services.AttachLicFlags, err error) {
+	flags = new(services.AttachLicFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
@@ -305,7 +301,6 @@ func createAttachLicFlags(c *cli.Context) (flags *rtinstances.AttachLicFlags, er
 	}
 	flags.Override = c.Bool("override")
 	flags.Deploy = c.Bool("deploy")
-	flags.NodeId = c.String("node-id")
 	return
 }
 
@@ -322,33 +317,34 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 	return
 }
 
-func createAddInstanceFlag(c *cli.Context) (flags *rtinstances.AddInstanceFlags, err error) {
-	flags = new(rtinstances.AddInstanceFlags)
+func createAddServiceFlag(c *cli.Context) (flags *services.AddServiceFlags, err error) {
+	flags = new(services.AddServiceFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
 	}
-	flags.ArtifactoryInstanceDetails = new(utils.ArtifactoryInstanceDetails)
-	if flags.ArtifactoryInstanceDetails.Url = c.String("rt-url"); flags.ArtifactoryInstanceDetails.Url == "" {
-		cliutils.ExitOnErr(errors.New("The --rt-url option is mandatory"))
+	flags.ServiceDetails = new(utils.ServiceDetails)
+
+	if flags.ServiceDetails.Url = c.String("service-url"); flags.ServiceDetails.Url == "" {
+		cliutils.ExitOnErr(errors.New("The --service-url option is mandatory"))
 	}
-	if flags.ArtifactoryInstanceDetails.User = c.String("rt-user"); flags.ArtifactoryInstanceDetails.User == "" {
-		cliutils.ExitOnErr(errors.New("The --rt-user option is mandatory"))
+	if flags.ServiceDetails.User = c.String("service-user"); flags.ServiceDetails.User == "" {
+		cliutils.ExitOnErr(errors.New("The --service-user option is mandatory"))
 	}
-	if flags.ArtifactoryInstanceDetails.Password = c.String("rt-password"); flags.ArtifactoryInstanceDetails.Password == "" {
-		cliutils.ExitOnErr(errors.New("The --rt-password option is mandatory"))
+	if flags.ServiceDetails.Password = c.String("service-password"); flags.ServiceDetails.Password == "" {
+		cliutils.ExitOnErr(errors.New("The --service-password option is mandatory"))
 	}
 	flags.Description = c.String("desc")
-	flags.Location = c.String("location")
+	flags.SiteName = c.String("site-name")
 	return
 }
 
-func createRemoveInstanceFlags(c *cli.Context) (flags *rtinstances.RemoveFlags, err error) {
+func createRemoveServiceFlags(c *cli.Context) (flags *services.RemoveFlags, err error) {
 	details, err := createMissionControlDetails(c, true)
 	if err != nil {
 		return
 	}
-	flags = &rtinstances.RemoveFlags{
+	flags = &services.RemoveFlags{
 		MissionControlDetails: details,
 		Interactive:           c.BoolT("interactive")}
 
