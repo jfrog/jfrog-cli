@@ -299,6 +299,10 @@ func getSpecialCharFilePath() string {
 	return ioutils.PrepareFilePathForWindows("../testsdata/a$+~&^a#/a*")
 }
 
+func TestArtifactoryCopyNoSpec(t *testing.T) {
+	testCopyMoveNoSpec("cp", tests.BuildBeforeCopyExpected, tests.BuildCopyExpected, t)
+}
+
 func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -1968,6 +1972,10 @@ func TestArtifactoryMoveByBuildUsingFlags(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryMoveNoSpec(t *testing.T) {
+	testCopyMoveNoSpec("mv", tests.BuildBeforeMoveExpected, tests.BuildMoveExpected, t)
+}
+
 func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -2344,4 +2352,29 @@ func createServerConfigAndReturnPassphrase() (passphrase string) {
 	}
 	artifactoryCli.Exec("c", tests.RtServerId, "--interactive=false")
 	return passphrase
+}
+
+func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpected []string, t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files
+	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
+	specFileB := tests.GetFilePath(tests.SplitUploadSpecB)
+	artifactoryCli.Exec("upload", "--spec="+specFileA)
+	artifactoryCli.Exec("upload", "--spec="+specFileB)
+
+	// Run command with dry-run
+	artifactoryCli.Exec(command, "jfrog-cli-tests-repo1/data/*a* jfrog-cli-tests-repo2/", "--dry-run")
+
+	// Validate files weren't affected
+	isExistInArtifactory(beforeCommandExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	// Run command
+	artifactoryCli.Exec(command, "jfrog-cli-tests-repo1/data/*a* jfrog-cli-tests-repo2/")
+
+	// Validate files were affected
+	isExistInArtifactory(afterCommandExpected, tests.GetFilePath(tests.CpMvDlByBuildAssertSpec), t)
+
+	// Cleanup
+	cleanArtifactoryTest()
 }

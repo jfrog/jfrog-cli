@@ -24,6 +24,7 @@ const (
 type MoveCopyService struct {
 	moveType   MoveType
 	client     *httpclient.HttpClient
+	DryRun     bool
 	ArtDetails auth.ArtifactoryDetails
 }
 
@@ -40,7 +41,7 @@ func (mc *MoveCopyService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
 }
 
 func (mc *MoveCopyService) IsDryRun() bool {
-	return false
+	return mc.DryRun
 }
 
 func (mc *MoveCopyService) GetJfrogHttpClient() *httpclient.HttpClient {
@@ -135,16 +136,16 @@ func (mc *MoveCopyService) moveFiles(regexpPath string, resultItems []utils.Resu
 
 func (mc *MoveCopyService) moveFile(sourcePath, destPath string) (bool, error) {
 	message := moveMsgs[mc.moveType].MovingMsg + " artifact: " + sourcePath + " to: " + destPath
-	if mc.IsDryRun() == true {
-		log.Info("[Dry run] ", message)
-		return true, nil
-	}
-
-	log.Info(message)
-
 	moveUrl := mc.GetArtifactoryDetails().GetUrl()
 	restApi := path.Join("api", string(mc.moveType), sourcePath)
-	requestFullUrl, err := utils.BuildArtifactoryUrl(moveUrl, restApi, map[string]string{"to": destPath})
+	params := map[string]string{"to": destPath}
+	if mc.IsDryRun() {
+		log.Info("[Dry run]", message)
+		params["dry"] = "1"
+	} else {
+		log.Info(message)
+	}
+	requestFullUrl, err := utils.BuildArtifactoryUrl(moveUrl, restApi, params)
 	if err != nil {
 		return false, err
 	}
@@ -165,7 +166,7 @@ func (mc *MoveCopyService) moveFile(sourcePath, destPath string) (bool, error) {
 // Create destPath in Artifactory
 func (mc *MoveCopyService) createPathForMoveAction(destPath string) (bool, error) {
 	if mc.IsDryRun() == true {
-		log.Info("[Dry run] ", "Create path:", destPath)
+		log.Info("[Dry run]", "Create path:", destPath)
 		return true, nil
 	}
 

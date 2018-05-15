@@ -9,8 +9,8 @@ import (
 )
 
 // Moves the artifacts using the specified move pattern.
-func Move(moveSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := utils.CreateServiceManager(artDetails, false)
+func Move(moveSpec *spec.SpecFiles, flags *MoveConfiguration) (successCount, failCount int, err error) {
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
 		return
 	}
@@ -34,4 +34,9 @@ func Move(moveSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (succ
 		}
 	}
 	return
+}
+
+type MoveConfiguration struct {
+	DryRun                bool
+	ArtDetails            *config.ArtifactoryDetails
 }

@@ -128,12 +128,14 @@ func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) 
 
 func (sm *ArtifactoryServicesManager) Copy(params services.MoveCopyParams) (successCount, failedCount int, err error) {
 	copyService := services.NewMoveCopyService(sm.client, services.COPY)
+	copyService.DryRun = sm.config.IsDryRun()
 	copyService.ArtDetails = sm.config.GetArtDetails()
 	return copyService.MoveCopyServiceMoveFilesWrapper(params)
 }
 
 func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) (successCount, failedCount int, err error) {
 	moveService := services.NewMoveCopyService(sm.client, services.MOVE)
+	moveService.DryRun = sm.config.IsDryRun()
 	moveService.ArtDetails = sm.config.GetArtDetails()
 	return moveService.MoveCopyServiceMoveFilesWrapper(params)
 }

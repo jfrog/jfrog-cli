@@ -239,6 +239,8 @@ var MassiveMoveExpected = []string{
 	Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/c/c3.in",
 }
 
+var BuildBeforeCopyExpected = BuildBeforeMoveExpected
+
 var BuildCopyExpected = []string{
 	Repo1 + "/data/a1.in",
 	Repo1 + "/data/a2.in",
@@ -253,6 +255,15 @@ var BuildCopyExpected = []string{
 
 var GitLfsExpected = []string{
 	LfsRepo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
+}
+
+var BuildBeforeMoveExpected = []string{
+	Repo1 + "/data/b1.in",
+	Repo1 + "/data/b2.in",
+	Repo1 + "/data/b3.in",
+	Repo1 + "/data/a1.in",
+	Repo1 + "/data/a2.in",
+	Repo1 + "/data/a3.in",
 }
 
 var BuildMoveExpected = []string{

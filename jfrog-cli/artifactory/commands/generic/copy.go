@@ -9,10 +9,10 @@ import (
 )
 
 // Copies the artifacts using the specified move pattern.
-func Copy(copySpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := utils.CreateServiceManager(artDetails, false)
+func Copy(copySpec *spec.SpecFiles, flags *CopyConfiguration) (successCount, failCount int, err error) {
+	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
 	if err != nil {
-		return successCount, failCount, err
+		return
 	}
 	for i := 0; i < len(copySpec.Files); i++ {
 		params, err := copySpec.Get(i).ToArtifatoryMoveCopyParams()
@@ -34,4 +34,9 @@ func Copy(copySpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (succ
 		}
 	}
 	return
+}
+
+type CopyConfiguration struct {
+	DryRun                bool
+	ArtDetails            *config.ArtifactoryDetails
 }

@@ -1322,8 +1322,8 @@ func moveCmd(c *cli.Context) {
 		moveSpec = createDefaultCopyMoveSpec(c)
 	}
 
-	artDetails := createArtifactoryDetails(c, true)
-	moveCount, failed, err := generic.Move(moveSpec, artDetails)
+	configuration := createMoveConfiguration(c)
+	moveCount, failed, err := generic.Move(moveSpec, configuration)
 	err = cliutils.PrintSummaryReport(moveCount, failed, err)
 	cliutils.FailNoOp(err, moveCount, failed, isFailNoOp(c))
 }
@@ -1344,8 +1344,8 @@ func copyCmd(c *cli.Context) {
 		copySpec = createDefaultCopyMoveSpec(c)
 	}
 
-	artDetails := createArtifactoryDetails(c, true)
-	copyCount, failed, err := generic.Copy(copySpec, artDetails)
+	configuration := createCopyConfiguration(c)
+	copyCount, failed, err := generic.Copy(copySpec, configuration)
 	err = cliutils.PrintSummaryReport(copyCount, failed, err)
 	cliutils.FailNoOp(err, copyCount, failed, isFailNoOp(c))
 }
@@ -1690,6 +1690,20 @@ func createDeleteConfiguration(c *cli.Context) (deleteConfiguration *generic.Del
 	deleteConfiguration = new(generic.DeleteConfiguration)
 	deleteConfiguration.DryRun = c.Bool("dry-run")
 	deleteConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createMoveConfiguration(c *cli.Context) (moveConfiguration *generic.MoveConfiguration) {
+	moveConfiguration = new(generic.MoveConfiguration)
+	moveConfiguration.DryRun = c.Bool("dry-run")
+	moveConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func createCopyConfiguration(c *cli.Context) (copyConfiguration *generic.CopyConfiguration) {
+	copyConfiguration = new(generic.CopyConfiguration)
+	copyConfiguration.DryRun = c.Bool("dry-run")
+	copyConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
