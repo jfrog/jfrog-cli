@@ -436,7 +436,7 @@ func getDebianProps(debianPropsStr string) string {
 		return ""
 	}
 	result := ""
-	debProps := strings.Split(debianPropsStr, "/")
+	debProps := clientutils.SplitWithEscape(debianPropsStr, '/')
 	for k, v := range []string{"deb.distribution", "deb.component", "deb.architecture"} {
 		debProp := strings.Join([]string{v, debProps[k]}, "=")
 		result = strings.Join([]string{result, debProp}, ";")

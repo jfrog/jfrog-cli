@@ -1,6 +1,7 @@
 package utils
 
 import "testing"
+import "reflect"
 
 func TestReformatRegexp(t *testing.T) {
 	assertReformatRegexp("1(.*)234", "1hello234", "{1}", "hello", t)
@@ -19,5 +20,25 @@ func assertReformatRegexp(regexp, source, dest, expected string, t *testing.T) {
 	}
 	if expected != result {
 		t.Error("Unexpected string built. Expected: `" + expected + "` Got `" + result + "`")
+	}
+}
+
+func TestSplitWithEscape(t *testing.T) {
+	assertSplitWithEscape("", []string{""}, t)
+	assertSplitWithEscape("a", []string{"a"}, t)
+	assertSplitWithEscape("a/b", []string{"a", "b"}, t)
+	assertSplitWithEscape("a/b/c", []string{"a", "b", "c"}, t)
+	assertSplitWithEscape("a/b\\5/c", []string{"a", "b5", "c"}, t)
+	assertSplitWithEscape("a/b\\\\5.2/c", []string{"a", "b\\5.2", "c"}, t)
+	assertSplitWithEscape("a\\8/b\\5/c", []string{"a8", "b5", "c"}, t)
+	assertSplitWithEscape("a\\\\8/b\\\\5.2/c", []string{"a\\8", "b\\5.2", "c"}, t)
+	assertSplitWithEscape("a/b\\5/c\\0", []string{"a", "b5", "c0"}, t)
+	assertSplitWithEscape("a/b\\\\5.2/c\\\\0", []string{"a", "b\\5.2", "c\\0"}, t)
+}
+
+func assertSplitWithEscape(str string, expected []string, t *testing.T) {
+	result := SplitWithEscape(str, '/')
+	if !reflect.DeepEqual(result, expected) {
+		t.Error("Unexpected string array built. Expected: `", expected, "` Got `", result, "`")
 	}
 }

@@ -91,6 +91,12 @@ var UploadSpecExcludeRepo1 = []string{
 	Repo1 + "/c3.in",
 }
 
+var UploadDebianExpected = []string{
+	Repo1 + "/data/a1.in",
+	Repo1 + "/data/a2.in",
+	Repo1 + "/data/a3.in",
+}
+
 var SingleFileCopy = []string{
 	Repo2 + "/path/a1.in",
 }

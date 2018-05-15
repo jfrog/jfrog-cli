@@ -223,6 +223,29 @@ func GetMapFromStringSlice(slice []string, sep string) map[string]string {
 	return mapFromSlice
 }
 
+// Split str by the provided separator, escaping the separator if it is prefixed by a back-slash.
+func SplitWithEscape(str string, separator rune) []string {
+	var parts []string
+	var current bytes.Buffer
+	escaped := false
+	for _, char := range str {
+		if char == '\\' {
+			if escaped {
+				current.WriteRune(char)
+			}
+			escaped = true
+		} else if char == separator && !escaped {
+			parts = append(parts, current.String())
+			current.Reset()
+		} else {
+			escaped = false
+			current.WriteRune(char)
+		}
+	}
+	parts = append(parts, current.String())
+	return parts
+}
+
 type Artifact struct {
 	LocalPath  string
 	TargetPath string

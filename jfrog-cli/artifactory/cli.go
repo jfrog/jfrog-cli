@@ -1623,7 +1623,8 @@ func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
 
 func getDebFlag(c *cli.Context) (deb string) {
 	deb = c.String("deb")
-	if deb != "" && len(strings.Split(deb, "/")) != 3 {
+	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
+	if deb != "" && slashesCount != 2 {
 		cliutils.ExitOnErr(errors.New("The --deb option should be in the form of distribution/component/architecture"))
 	}
 	return deb

@@ -342,6 +342,16 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadDebian(t *testing.T) {
+	initArtifactoryTest(t)
+	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=bionic/main/i386")
+	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1 + "/*", "deb.distribution=bionic;deb.component=main;deb.architecture=i386", t)
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=cosmic/main\\/18.10/amd64")
+	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1 + "/*", "deb.distribution=cosmic;deb.component=main/18.10;deb.architecture=amd64", t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a.zip"), "jfrog-cli-tests-repo1", "--explode=true")
