@@ -268,7 +268,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "build-add-artifact",
-			Flags:     getServerFlags(),
+			Flags:     getBuildAddArtifactFlags(),
 			Aliases:   []string{"baa"},
 			Usage:     buildaddartifact.Description,
 			HelpName:  common.CreateUsage("rt build-add-artifact", buildaddartifact.Description, buildaddartifact.Usage),
@@ -975,6 +975,24 @@ func getBuildDistributeFlags() []cli.Flag {
 	}...)
 }
 
+func getBuildAddArtifactFlags() []cli.Flag {
+	buildAddArtifactFlags := append(getServerFlags(), getSortLimitFlags()...)
+	buildAddArtifactFlags = append(buildAddArtifactFlags, getSpecFlags()...)
+	return append(buildAddArtifactFlags, []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+		},
+		cli.BoolTFlag{
+			Name:  "recursive",
+			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+		},
+		getFailNoOpFlag(),
+		getExcludePatternsFlag(),
+	}...)
+}
+
+
 func getGitLfsCleanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
@@ -1561,11 +1579,23 @@ func buildDistributeCmd(c *cli.Context) {
 }
 
 func buildAddArtifactCmd(c *cli.Context) {
-	if c.NArg() != 3 {
+	if c.NArg() > 2 && c.IsSet("spec") {
+		cliutils.PrintHelpAndExitWithError("Only build name and build number should be set when the spec option is used.", c)
+	}
+	if !(c.NArg() == 3 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
+
+	var buildAddArtifactSpec *spec.SpecFiles
+	if c.IsSet("spec") {
+		buildAddArtifactSpec = getBuildAddArtifactSpec(c)
+	} else {
+		validateCommonContext(c)
+		buildAddArtifactSpec = createDefaultBuildAddArtifactSpec(c)
+	}
+
 	configuration := createBuildAddArtifactConfiguration(c)
-	err := buildinfo.AddArtifact(configuration)
+	err := buildinfo.AddArtifact(buildAddArtifactSpec, configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1868,10 +1898,32 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 	return
 }
 
+func createDefaultBuildAddArtifactSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(2)).
+		Props(c.String("props")).
+		Offset(getIntValue("offset", c)).
+		Limit(getIntValue("limit", c)).
+		SortOrder(c.String("sort-order")).
+		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
+		Recursive(c.BoolT("recursive")).
+		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		BuildSpec()
+}
+
+func getBuildAddArtifactSpec(c *cli.Context) (buildAddArtifactSpec *spec.SpecFiles) {
+	buildAddArtifactSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	cliutils.ExitOnErr(err)
+	//Override spec with CLI options
+	for i := 0; i < len(buildAddArtifactSpec.Files); i++ {
+		overrideFieldsIfSet(buildAddArtifactSpec.Get(i), c)
+	}
+	return
+}
+
 func createBuildAddArtifactConfiguration(c *cli.Context) (addArtifactConfiguration *buildinfo.BuildAddArtifactConfiguration) {
 	addArtifactConfiguration = new(buildinfo.BuildAddArtifactConfiguration)
 	addArtifactConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
-	addArtifactConfiguration.Artifact = c.Args().Get(2)
 	addArtifactConfiguration.BuildName = c.Args().Get(0)
 	addArtifactConfiguration.BuildNumber = c.Args().Get(1)
 	return
