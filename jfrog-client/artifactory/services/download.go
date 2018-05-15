@@ -199,11 +199,12 @@ func createDependencyFileInfo(resultItem utils.ResultItem, localPath, localFileN
 
 func createDownloadFileDetails(downloadPath, localPath, localFileName string, downloadData DownloadData) (details *httpclient.DownloadFileDetails) {
 	details = &httpclient.DownloadFileDetails{
-		FileName:      downloadData.Dependency.Name,
-		DownloadPath:  downloadPath,
-		LocalPath:     localPath,
-		LocalFileName: localFileName,
-		Size:          downloadData.Dependency.Size}
+		FileName:       downloadData.Dependency.Name,
+		DownloadPath:   downloadPath,
+		LocalPath:      localPath,
+		LocalFileName:  localFileName,
+		Size:           downloadData.Dependency.Size,
+		ExpectedSha1:   downloadData.Dependency.Actual_Sha1}
 	return
 }
 
@@ -231,6 +232,7 @@ func (ds *DownloadService) downloadFile(downloadFileDetails *httpclient.Download
 		DownloadPath:  downloadFileDetails.DownloadPath,
 		LocalFileName: downloadFileDetails.LocalFileName,
 		LocalPath:     downloadFileDetails.LocalPath,
+		ExpectedSha1:  downloadFileDetails.ExpectedSha1,
 		FileSize:      downloadFileDetails.Size,
 		SplitCount:    ds.SplitCount,
 		Explode:       downloadParams.IsExplode(),

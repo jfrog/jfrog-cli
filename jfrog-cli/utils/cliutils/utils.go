@@ -12,18 +12,8 @@ import (
 	"strings"
 )
 
-const ClientAgent = "jfrog-cli-go"
-
-// CLI base commands constants:
-const CmdArtifactory = "rt"
-const CmdBintray = "bt"
-const CmdMissionControl = "mc"
-const CmdXray = "xr"
-
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
-
-const OnErrorPanic OnError = "panic"
 
 func init() {
 	if os.Getenv("JFROG_CLI_ERROR_HANDLING") == string(OnErrorPanic) {
@@ -124,7 +114,7 @@ func confirmAnswer(answer string) bool {
 }
 
 func GetVersion() string {
-	return "1.16.0"
+	return CliVersion
 }
 
 func GetConfigVersion() string {

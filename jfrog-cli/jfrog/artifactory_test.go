@@ -148,6 +148,32 @@ func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryConcurrentDownload(t *testing.T) {
+	testArtifactoryDownload(cliutils.DownloadMinSplitKb * 1000, t)
+}
+
+func TestArtifactoryBulkDownload(t *testing.T) {
+	testArtifactoryDownload(cliutils.DownloadMinSplitKb * 1000 - 1, t)
+}
+
+func testArtifactoryDownload(fileSize int, t *testing.T) {
+	initArtifactoryTest(t)
+
+	tempDir, _ := ioutil.TempDir("", "")
+	randFile, _ := io.CreateRandFile(tempDir + fileutils.GetFileSeparator() + "randFile", fileSize)
+	defer randFile.File.Close()
+	defer os.Remove(randFile.Name())
+	localFileDetails, _ := fileutils.GetFileDetails(randFile.Name())
+
+	artifactoryCli.Exec("u", randFile.Name(), tests.Repo1 + "/testsdata/", "--flat=true")
+	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "randFile"}, paths, t)
+	tests.ValidateChecksums(tests.Out + fileutils.GetFileSeparator() + "randFile", localFileDetails.Checksum, t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
@@ -361,38 +387,39 @@ func TestArtifactoryUploadAndExplode(t *testing.T) {
 
 func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
-	err := fileutils.CreateDirIfNotExist(tests.Out)
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Error(err)
 	}
-	f0, err := io.CreateRandFile(filepath.Join(tests.Out, "randLargeFile0"), 100000)
+	randFile, err := io.CreateRandFile(tempDir + fileutils.GetFileSeparator() + "randFile", 100000)
 	if err != nil {
 		t.Error(err)
 	}
-	f0.Close()
-	f1, err := io.CreateRandFile(filepath.Join(tests.Out, "randLargeFile1"), 15000000)
-	if err != nil {
-		t.Error(err)
-	}
-	f1.Close()
+	defer randFile.File.Close()
+	defer os.RemoveAll(tempDir)
 
-	err = archiver.Zip.Make(filepath.Join(tests.Out, "large.zip"), []string{f0.Name(), f1.Name()})
+	err = archiver.TarGz.Make(filepath.Join(tempDir, "concurrent.tar.gz"), []string{randFile.Name()})
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a.zip"), "jfrog-cli-tests-repo1", "--flat=true")
-	artifactoryCli.Exec("upload", filepath.Join(tests.Out, "large.zip"), "jfrog-cli-tests-repo1", "--flat=true")
-	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a", "a1.in"), "jfrog-cli-tests-repo1", "--flat=true")
-	err = os.RemoveAll(tests.Out)
+	err = archiver.Tar.Make(filepath.Join(tempDir, "bulk.tar"), []string{randFile.Name()})
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(err)
 	}
+	err = archiver.Zip.Make(filepath.Join(tempDir, "zipFile.zip"), []string{randFile.Name()})
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", filepath.Join(tempDir, "*"), "jfrog-cli-tests-repo1", "--flat=true")
 
-	artifactoryCli.Exec("download", path.Join(tests.Repo1, "*"), tests.Out+"/", "--explode=true")
-	artifactoryCli.Exec("download", path.Join(tests.Repo1, "large.zip"), tests.Out+"/", "--explode=false")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "randFile"), tests.Out+"/", "--explode=true")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "bulk.tar"), tests.Out+"/", "--explode=true")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "zipFile.zip"), tests.Out+"/", "--explode=true", "--min-split=50")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1, "zipFile.zip"), tests.Out+"/", "--explode=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsExistLocally(tests.ExtractedDownlod, paths, t)
+	tests.IsExistLocally(tests.ExtractedDownload, paths, t)
 
 	cleanArtifactoryTest()
 }
@@ -1572,7 +1599,7 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildDownload, paths, t)
+	tests.ValidateListsIdentical(tests.BuildDownload, paths, t)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1597,7 +1624,7 @@ func TestArtifactoryDownloadArtifactDoesntExistInBuild(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildDownloadDoesntExist, paths, t)
+	tests.ValidateListsIdentical(tests.BuildDownloadDoesntExist, paths, t)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1627,7 +1654,7 @@ func TestArtifactoryDownloadByShaAndBuild(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildDownloadByShaAndBuild, paths, t)
+	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuild, paths, t)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1658,7 +1685,7 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildDownloadByShaAndBuildName, paths, t)
+	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildName, paths, t)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1687,7 +1714,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 	//validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildSimpleDownload, paths, t)
+	tests.ValidateListsIdentical(tests.BuildSimpleDownload, paths, t)
 
 	//cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1708,7 +1735,7 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildExcludeDownload, paths, t)
+	tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1729,7 +1756,7 @@ func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildExcludeDownloadBySpec, paths, t)
+	tests.ValidateListsIdentical(tests.BuildExcludeDownloadBySpec, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1750,7 +1777,7 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.BuildExcludeDownload, paths, t)
+	tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1845,7 +1872,7 @@ func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
 	artifactoryCli.Exec("download", "--sort-by=created --spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "download", "sort_limit_by_build"), false)
-	tests.AreListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths, t)
+	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths, t)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1894,7 +1921,7 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=depth", "--limit=3", "--sort-order=desc")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.AreListsIdentical(tests.SortAndLimit, paths, t)
+	tests.ValidateListsIdentical(tests.SortAndLimit, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()

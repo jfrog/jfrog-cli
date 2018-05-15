@@ -73,11 +73,27 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 	compare(expected, actual, t)
 }
 
-func AreListsIdentical(expected, actual []string, t *testing.T) {
+func ValidateListsIdentical(expected, actual []string, t *testing.T) {
 	if len(actual) != len(expected) {
 		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
 	}
 	compare(expected, actual, t)
+}
+
+func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
+	localFileDetails, err := fileutils.GetFileDetails(filePath)
+	if err != nil {
+		t.Error("Couldn't calculate sha1, " + err.Error())
+	}
+	if localFileDetails.Checksum.Sha1 != expectedChecksum.Sha1 {
+		t.Error("sha1 mismatch for " + filePath + ", expected: " + expectedChecksum.Sha1, "found: " + localFileDetails.Checksum.Sha1)
+	}
+	if localFileDetails.Checksum.Md5 != expectedChecksum.Md5 {
+		t.Error("md5 mismatch for " + filePath + ", expected: " + expectedChecksum.Md5, "found: " + localFileDetails.Checksum.Sha1)
+	}
+	if localFileDetails.Checksum.Sha256 != expectedChecksum.Sha256 {
+		t.Error("sha256 mismatch for " + filePath + ", expected: " + expectedChecksum.Sha256, "found: " + localFileDetails.Checksum.Sha1)
+	}
 }
 
 func compare(expected, actual []string, t *testing.T) {

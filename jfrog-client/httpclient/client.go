@@ -18,6 +18,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"crypto/sha1"
+	"encoding/hex"
+	"hash"
 )
 
 type HttpClient struct {
@@ -214,7 +217,7 @@ func (jc *HttpClient) downloadFile(downloadFileDetails *DownloadFileDetails, log
 	}
 
 	// Save the file to the file system
-	err = saveToFile(downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName, resp.Body)
+	err = saveToFile(downloadFileDetails, resp.Body)
 	if err != nil {
 		return
 	}
@@ -227,8 +230,8 @@ func (jc *HttpClient) downloadFile(downloadFileDetails *DownloadFileDetails, log
 	return
 }
 
-func saveToFile(localPath, localFileName string, body io.ReadCloser) error {
-	fileName, err := fileutils.CreateFilePath(localPath, localFileName)
+func saveToFile(downloadFileDetails *DownloadFileDetails, body io.ReadCloser) error {
+	fileName, err := fileutils.CreateFilePath(downloadFileDetails.LocalPath, downloadFileDetails.LocalFileName)
 	if err != nil {
 		return err
 	}
@@ -239,7 +242,17 @@ func saveToFile(localPath, localFileName string, body io.ReadCloser) error {
 	}
 
 	defer out.Close()
-	_, err = io.Copy(out, body)
+	if len(downloadFileDetails.ExpectedSha1) > 0 {
+		actualSha1 := sha1.New()
+		writer := io.MultiWriter(actualSha1, out)
+		_, err = io.Copy(writer, body)
+		if hex.EncodeToString(actualSha1.Sum(nil)) != downloadFileDetails.ExpectedSha1 {
+			err = errors.New("Checksum mismatch for " + fileName + ", expected: " + downloadFileDetails.ExpectedSha1 + ", actual: " + hex.EncodeToString(actualSha1.Sum(nil)))
+		}
+	} else {
+		_, err = io.Copy(out, body)
+	}
+
 	return errorutils.CheckError(err)
 }
 
@@ -268,10 +281,44 @@ func extractZip(downloadFileDetails *DownloadFileDetails, logMsgPrefix string) e
 }
 
 func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails) error {
+	chunksPaths := make([]string, flags.SplitCount)
+
+	err := jc.downloadChunksConcurrently(chunksPaths, flags, logMsgPrefix, httpClientsDetails)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	if !flags.Flat && flags.LocalPath != "" {
+		os.MkdirAll(flags.LocalPath, 0777)
+		flags.LocalFileName = filepath.Join(flags.LocalPath, flags.LocalFileName)
+	}
+
+	if fileutils.IsPathExists(flags.LocalFileName) {
+		err := os.Remove(flags.LocalFileName)
+		if errorutils.CheckError(err) != nil {
+			return err
+		}
+	}
+
+	// Explode and merge archive if necessary
+	if flags.Explode {
+		extracted, err := extractAndMergeChunks(chunksPaths, flags, logMsgPrefix)
+		if extracted || err != nil {
+			return err
+		}
+	}
+
+	err = mergeChunks(chunksPaths, flags)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	log.Info(logMsgPrefix + "Done downloading.")
+	return nil
+}
+
+func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags ConcurrentDownloadFlags, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails) error {
 	var wg sync.WaitGroup
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
-	chunkedPaths := make([]string, flags.SplitCount)
 	var err error
 	for i := 0; i < flags.SplitCount; i++ {
 		if err != nil {
@@ -286,7 +333,7 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
 			var downloadErr error
-			chunkedPaths[i], downloadErr = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
+			chunksPaths[i], downloadErr = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
 			if downloadErr != nil {
 				err = downloadErr
 			}
@@ -294,51 +341,45 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 		}(start, end, i)
 	}
 	wg.Wait()
+	return err
+}
 
-	if err != nil {
-		return err
-	}
-
-	if !flags.Flat && flags.LocalPath != "" {
-		os.MkdirAll(flags.LocalPath, 0777)
-		flags.LocalFileName = filepath.Join(flags.LocalPath, flags.LocalFileName)
-	}
-
-	if fileutils.IsPathExists(flags.LocalFileName) {
-		err := os.Remove(flags.LocalFileName)
-		err = errorutils.CheckError(err)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Explode archive if necessary
-	if flags.Explode {
-		extracted, err := extractChunkedFile(chunkedPaths, flags, logMsgPrefix)
-		if extracted || err != nil {
-			return err
-		}
-	}
-
-	destFile, err := os.Create(flags.LocalFileName)
-	err = errorutils.CheckError(err)
-	if err != nil {
+func mergeChunks(chunksPaths []string, flags ConcurrentDownloadFlags) error {
+	destFile, err := os.OpenFile(flags.LocalFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	defer destFile.Close()
+	var writer io.Writer
+	var actualSha1 hash.Hash
+	if len(flags.ExpectedSha1) > 0 {
+		actualSha1 = sha1.New()
+		writer = io.MultiWriter(actualSha1, destFile)
+	} else {
+		writer = io.MultiWriter(destFile)
+	}
 	for i := 0; i < flags.SplitCount; i++ {
-		err := fileutils.AppendFile(chunkedPaths[i], destFile)
+		reader, err := os.Open(chunksPaths[i])
+		if err != nil {
+			return err
+		}
+		defer reader.Close()
+		_, err = io.Copy(writer, reader)
 		if err != nil {
 			return err
 		}
 	}
-	log.Info(logMsgPrefix + "Done downloading.")
-	return nil
+	if len(flags.ExpectedSha1) > 0 {
+		if hex.EncodeToString(actualSha1.Sum(nil)) != flags.ExpectedSha1 {
+			err = errors.New("Checksum mismatch for  " + flags.LocalFileName + ", expected: " + flags.ExpectedSha1 + ", actual: " + hex.EncodeToString(actualSha1.Sum(nil)))
+		}
+	}
+	return err
 }
 
-func extractChunkedFile(chunkedPaths []string, flags ConcurrentDownloadFlags, logMsgPrefix string) (bool, error) {
+func extractAndMergeChunks(chunksPaths []string, flags ConcurrentDownloadFlags, logMsgPrefix string) (bool, error) {
 	if fileutils.IsZip(flags.FileName) {
-		multiReader, err := multifilereader.NewMultiFileReaderAt(chunkedPaths)
+		multiReader, err := multifilereader.NewMultiFileReaderAt(chunksPaths)
 		if errorutils.CheckError(err) != nil {
 			return false, err
 		}
@@ -356,9 +397,9 @@ func extractChunkedFile(chunkedPaths []string, flags ConcurrentDownloadFlags, lo
 		return false, nil
 	}
 
-	fileReaders := make([]io.Reader, len(chunkedPaths))
+	fileReaders := make([]io.Reader, len(chunksPaths))
 	var err error
-	for k, v := range chunkedPaths {
+	for k, v := range chunksPaths {
 		f, err := os.Open(v)
 		fileReaders[k] = f
 		if err != nil {
@@ -435,11 +476,12 @@ func addUserAgentHeader(req *http.Request) {
 }
 
 type DownloadFileDetails struct {
-	FileName      string `json:"LocalFileName,omitempty"`
-	DownloadPath  string `json:"DownloadPath,omitempty"`
-	LocalPath     string `json:"LocalPath,omitempty"`
-	LocalFileName string `json:"LocalFileName,omitempty"`
-	Size          int64  `json:"Size,omitempty"`
+	FileName       string `json:"LocalFileName,omitempty"`
+	DownloadPath   string `json:"DownloadPath,omitempty"`
+	LocalPath      string `json:"LocalPath,omitempty"`
+	LocalFileName  string `json:"LocalFileName,omitempty"`
+	ExpectedSha1   string `json:"ExpectedSha1,omitempty"`
+	Size           int64  `json:"Size,omitempty"`
 }
 
 type ConcurrentDownloadFlags struct {
@@ -447,6 +489,7 @@ type ConcurrentDownloadFlags struct {
 	DownloadPath  string
 	LocalFileName string
 	LocalPath     string
+	ExpectedSha1  string
 	FileSize      int64
 	SplitCount    int
 	Flat          bool

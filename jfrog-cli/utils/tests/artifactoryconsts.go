@@ -299,21 +299,10 @@ var BuildDeleteExpected = []string{
 	Repo1 + "/data/b3.in",
 }
 
-var ExtractedDownlod = []string{
-	filepath.Join(Out, "randLargeFile0"),
-	filepath.Join(Out, "randLargeFile1"),
-	filepath.Join(Out, "large.zip"),
-	filepath.Join(Out, "a1.in"),
-	filepath.Join(Out, "a", "a1.in"),
-	filepath.Join(Out, "a", "a2.in"),
-	filepath.Join(Out, "a", "a3.in"),
-	filepath.Join(Out, "a", "b", "b1.in"),
-	filepath.Join(Out, "a", "b", "b2.in"),
-	filepath.Join(Out, "a", "b", "b3.in"),
-	filepath.Join(Out, "a", "b", "c", "c1.in"),
-	filepath.Join(Out, "a", "b", "c", "c2.in"),
-	filepath.Join(Out, "a", "b", "c", "c3.in"),
-	filepath.Join(Out, "a", "b", "c", "c3.in"),
+var ExtractedDownload = []string{
+	filepath.Join(Out, "randFile"),
+	filepath.Join(Out, "concurrent.tar.gz"),
+	filepath.Join(Out, "randFile"),
 }
 
 var MassiveDownload = []string{

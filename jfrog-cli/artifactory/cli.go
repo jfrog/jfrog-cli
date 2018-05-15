@@ -549,16 +549,16 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
-			Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+			Usage: "[Default: " + string(cliutils.DownloadMinSplitKb) + "  ] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "split-count",
 			Value: "",
-			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
+			Usage: "[Default: " + string(cliutils.DownloadSplitCount) + " ] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: 3] Number of download retries.",
+			Usage: "[Default: " + string(cliutils.DownloadRetries) + " ] Number of download retries.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -974,15 +974,15 @@ func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config
 }
 
 func getSplitCount(c *cli.Context) (splitCount int) {
-	splitCount = 3
+	splitCount = cliutils.DownloadSplitCount
 	var err error
 	if c.String("split-count") != "" {
 		splitCount, err = strconv.Atoi(c.String("split-count"))
 		if err != nil {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
-		if splitCount > 15 {
-			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limitted to a maximum of 15."))
+		if splitCount > cliutils.DownloadMaxSplitCount {
+			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limited to a maximum of " + string(cliutils.DownloadMaxSplitCount) + "."))
 		}
 		if splitCount < 0 {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option cannot have a negative value."))
@@ -1004,7 +1004,7 @@ func getThreadsCount(c *cli.Context) (threads int) {
 }
 
 func getMinSplit(c *cli.Context) (minSplitSize int64) {
-	minSplitSize = 5120
+	minSplitSize = cliutils.DownloadMinSplitKb
 	var err error
 	if c.String("min-split") != "" {
 		minSplitSize, err = strconv.ParseInt(c.String("min-split"), 10, 64)
@@ -1016,7 +1016,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 }
 
 func getRetries(c *cli.Context) (retries int) {
-	retries = 3
+	retries = cliutils.DownloadRetries
 	var err error
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
