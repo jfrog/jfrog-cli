@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
+	rtclientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"path/filepath"
 	"sort"
@@ -17,7 +20,12 @@ func Publish(buildName, buildNumber string, config *buildinfo.Configuration, art
 		return err
 	}
 
-	buildInfo, err := createBuildInfoFromPartials(buildName, buildNumber, config, artDetails)
+	buildInfo, partials, err := createBuildInfoFromPartials(buildName, buildNumber, config, artDetails)
+	if err != nil {
+		return err
+	}
+
+	err = setBuildInfoPropertiesForArtifacts(servicesManager, buildInfo, partials)
 	if err != nil {
 		return err
 	}
@@ -41,10 +49,10 @@ func Publish(buildName, buildNumber string, config *buildinfo.Configuration, art
 	return nil
 }
 
-func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinfo.Configuration, artDetails *config.ArtifactoryDetails) (*buildinfo.BuildInfo, error) {
+func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinfo.Configuration, artDetails *config.ArtifactoryDetails) (*buildinfo.BuildInfo, buildinfo.Partials, error) {
 	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	sort.Sort(partials)
 
@@ -53,12 +61,12 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 	buildInfo.Number = buildNumber
 	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
 	modules, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(config.EnvInclude), createExcludeFilter(config.EnvExclude))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if len(env) != 0 {
 		buildInfo.Properties = env
@@ -75,7 +83,7 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 		}
 		buildInfo.Modules = append(buildInfo.Modules, module)
 	}
-	return buildInfo, nil
+	return buildInfo, partials, nil
 }
 
 func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, error) {
@@ -132,7 +140,9 @@ func addDependencyToPartialModule(dependency buildinfo.Dependency, moduleId stri
 	partialModules[moduleId].dependencies[key] = dependency
 }
 
-func addArtifactToPartialModule(artifact buildinfo.Artifact, moduleId string, partialModules map[string]partialModule) {
+func addArtifactToPartialModule(internalArtifact buildinfo.InternalArtifact, moduleId string, partialModules map[string]partialModule) {
+	artifact := internalArtifact.ToArtifact()
+
 	// init map if needed
 	if partialModules[moduleId].artifacts == nil {
 		partialModules[moduleId] =
@@ -223,6 +233,22 @@ func createExcludeFilter(pattern string) filterFunc {
 		}
 		return result, nil
 	}
+}
+
+func setBuildInfoPropertiesForArtifacts(servicesManager *artifactory.ArtifactoryServicesManager, buildInfo *buildinfo.BuildInfo, partials buildinfo.Partials) error {
+	var resultItems []rtclientutils.ResultItem
+	for _, partial := range partials {
+		switch {
+		case partial.Artifacts != nil:
+			for _, artifact := range partial.Artifacts {
+				resultItems = append(resultItems, rtclientutils.ResultItem{Path: artifact.Path})
+			}
+		}
+	}
+
+	props := "build.name=" + buildInfo.Name + ";build.number=" + buildInfo.Number
+	_, err := servicesManager.SetProps(&services.SetPropsParamsImpl{Items: resultItems, Props: props})
+	return err
 }
 
 type partialModule struct {

@@ -161,9 +161,9 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 
 func (npmp *npmPublish) saveArtifactData() error {
 	log.Debug("Saving npm package artifact build info data.")
-	var buildArtifacts []buildinfo.Artifact
+	var buildArtifacts []buildinfo.InternalArtifact
 	for _, artifact := range npmp.artifactData {
-		buildArtifacts = append(buildArtifacts, artifact.ToBuildArtifacts())
+		buildArtifacts = append(buildArtifacts, artifact.ToBuildArtifact())
 	}
 
 	populateFunc := func(partial *buildinfo.Partial) {
