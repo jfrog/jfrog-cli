@@ -23,7 +23,7 @@ node {
                     sh 'go install'
                 }
             }
-            if ("$PUBLISH_NPM_PACKAGE") {
+            if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
                 print "publishing npm package"
                 publishNpmPackage()
             } else {
