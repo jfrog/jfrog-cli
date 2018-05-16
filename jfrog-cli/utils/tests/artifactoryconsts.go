@@ -302,7 +302,6 @@ var BuildDeleteExpected = []string{
 var ExtractedDownload = []string{
 	filepath.Join(Out, "randFile"),
 	filepath.Join(Out, "concurrent.tar.gz"),
-	filepath.Join(Out, "randFile"),
 }
 
 var MassiveDownload = []string{
