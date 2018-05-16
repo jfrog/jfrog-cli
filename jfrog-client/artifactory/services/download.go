@@ -84,6 +84,7 @@ func (ds *DownloadService) DownloadFiles(downloadParams DownloadParams) ([]utils
 func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHandler fileHandlerFunc, expectedChan chan int, errorsQueue *utils.ErrorsQueue, downloadParams DownloadParams) {
 	go func() {
 		defer producer.Done()
+		defer close(expectedChan)
 		var err error
 		var resultItems []utils.ResultItem
 		switch downloadParams.GetSpecType() {
