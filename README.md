@@ -75,6 +75,7 @@ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=fa
 
 To run docker push tests execute the following command (fill out the missing parameters as described below):
 ````
+docker login
 go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
 
@@ -86,9 +87,6 @@ go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=fa
 | `-rt.url` | Artifactory URL. |
 | `-rt.user` | Artifactory username. |
 | `-rt.password` | Artifactory password. |
-
-##### Important
-* Before running the test make sure docker is logged in to the Artifactory docker registry (run `docker login` before the test).
 
 #### Vgo commands tests
 
