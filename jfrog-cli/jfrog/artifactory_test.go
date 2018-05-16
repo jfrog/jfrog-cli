@@ -158,17 +158,28 @@ func TestArtifactoryBulkDownload(t *testing.T) {
 
 func testArtifactoryDownload(fileSize int, t *testing.T) {
 	initArtifactoryTest(t)
-
-	tempDir, _ := ioutil.TempDir("", "")
-	randFile, _ := io.CreateRandFile(tempDir + fileutils.GetFileSeparator() + "randFile", fileSize)
-	defer randFile.File.Close()
-	defer os.Remove(randFile.Name())
-	localFileDetails, _ := fileutils.GetFileDetails(randFile.Name())
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	if err != nil {
+		t.Error(err)
+	}
+	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "randFile"), fileSize)
+	if err != nil {
+		t.Error(err)
+	}
+	localFileDetails, err := fileutils.GetFileDetails(randFile.Name())
+	if err != nil {
+		t.Error(err)
+	}
 
 	artifactoryCli.Exec("u", randFile.Name(), tests.Repo1 + "/testsdata/", "--flat=true")
+	randFile.File.Close()
+	os.RemoveAll(tests.Out)
 	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
 	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "randFile"}, paths, t)
 	tests.ValidateChecksums(tests.Out + fileutils.GetFileSeparator() + "randFile", localFileDetails.Checksum, t)
 	cleanArtifactoryTest()
@@ -387,38 +398,40 @@ func TestArtifactoryUploadAndExplode(t *testing.T) {
 
 func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
-	tempDir, err := ioutil.TempDir("", "")
+	err := fileutils.CreateDirIfNotExist(tests.Out)
 	if err != nil {
 		t.Error(err)
 	}
-	randFile, err := io.CreateRandFile(tempDir + fileutils.GetFileSeparator() + "randFile", 100000)
+	randFile, err := io.CreateRandFile(filepath.Join(tests.Out, "randFile"), 100000)
 	if err != nil {
 		t.Error(err)
 	}
-	defer randFile.File.Close()
-	defer os.RemoveAll(tempDir)
 
-	err = archiver.TarGz.Make(filepath.Join(tempDir, "concurrent.tar.gz"), []string{randFile.Name()})
+	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{randFile.Name()})
 	if err != nil {
 		t.Error(err)
 	}
-	err = archiver.Tar.Make(filepath.Join(tempDir, "bulk.tar"), []string{randFile.Name()})
+	err = archiver.Tar.Make(filepath.Join(tests.Out, "bulk.tar"), []string{randFile.Name()})
 	if err != nil {
 		t.Error(err)
 	}
-	err = archiver.Zip.Make(filepath.Join(tempDir, "zipFile.zip"), []string{randFile.Name()})
+	err = archiver.Zip.Make(filepath.Join(tests.Out, "zipFile.zip"), []string{randFile.Name()})
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryCli.Exec("upload", filepath.Join(tempDir, "*"), "jfrog-cli-tests-repo1", "--flat=true")
-
+	artifactoryCli.Exec("upload", filepath.Join(tests.Out, "*"), "jfrog-cli-tests-repo1", "--flat=true")
+	randFile.File.Close()
+	os.RemoveAll(tests.Out)
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "randFile"), tests.Out+"/", "--explode=true")
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50")
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "bulk.tar"), tests.Out+"/", "--explode=true")
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "zipFile.zip"), tests.Out+"/", "--explode=true", "--min-split=50")
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "zipFile.zip"), tests.Out+"/", "--explode=true")
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
 	tests.IsExistLocally(tests.ExtractedDownload, paths, t)
 
 	cleanArtifactoryTest()
