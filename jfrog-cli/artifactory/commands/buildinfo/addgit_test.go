@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 )
 
 const (
@@ -105,11 +106,12 @@ func removePath(testPath string, t *testing.T) {
 }
 
 func renamePath(oldPath, newPath string, t *testing.T) {
-	err := os.Rename(oldPath, newPath)
+	err := fileutils.CopyDir(oldPath, newPath, true)
 	if err != nil {
-		t.Error("Error renaming directory: ", oldPath, "to", newPath, err.Error())
+		t.Error("Error copying directory: ", oldPath, "to", newPath, err.Error())
 		t.FailNow()
 	}
+	removePath(oldPath, t)
 }
 
 func getBaseDir() (baseDir string) {
