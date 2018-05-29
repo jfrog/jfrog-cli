@@ -151,3 +151,9 @@ func (sm *ArtifactoryServicesManager) setCommonServiceConfig(commonConfig Artifa
 	commonConfig.SetArtDetails(sm.config.GetArtDetails())
 	commonConfig.SetDryRun(sm.config.IsDryRun())
 }
+
+func (sm *ArtifactoryServicesManager) Ping() ([]byte, error) {
+	pingService := services.NewPingService(sm.client)
+	pingService.ArtDetails = sm.config.GetArtDetails()
+	return pingService.Ping()
+}
