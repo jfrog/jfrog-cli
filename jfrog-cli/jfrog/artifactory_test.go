@@ -2111,6 +2111,7 @@ func TestGitLfsCleanup(t *testing.T) {
 func TestPing(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("ping")
+	cleanArtifactoryTest()
 }
 
 func TestSummaryReport(t *testing.T) {
