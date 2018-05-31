@@ -60,7 +60,7 @@ func CreateAqlQueryForNpm(npmName, npmVersion string) string {
 			`"@npm.name": "%s",` +
 			`"@npm.version": "%s"` +
 			`})%s`
-	return fmt.Sprintf(itemsPart, npmName, npmVersion, buildIncludeQueryPart([]string{"name", "actual_sha1", "actual_md5"}))
+	return fmt.Sprintf(itemsPart, npmName, npmVersion, buildIncludeQueryPart([]string{"name", "repo", "path", "actual_sha1", "actual_md5"}))
 }
 
 func prepareSearchPattern(pattern string, repositoryExists bool) string {
