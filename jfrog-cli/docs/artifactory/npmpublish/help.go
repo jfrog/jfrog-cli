@@ -1,6 +1,6 @@
 package npmpublish
 
-const Description = "Run npm publish."
+const Description = "Packs and deploys the npm package to the designated npm repository."
 
 var Usage = []string{`jfrog rt npmp [command options] <repository name>`}
 
