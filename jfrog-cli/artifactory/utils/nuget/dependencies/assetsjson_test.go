@@ -2,9 +2,9 @@ package dependencies
 
 import (
 	"encoding/json"
-	"testing"
-	"reflect"
 	"path/filepath"
+	"reflect"
+	"testing"
 )
 
 func TestJson(t *testing.T) {

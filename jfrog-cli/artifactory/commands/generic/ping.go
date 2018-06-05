@@ -1,8 +1,8 @@
 package generic
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
 func Ping(artDetails *config.ArtifactoryDetails) ([]byte, error) {

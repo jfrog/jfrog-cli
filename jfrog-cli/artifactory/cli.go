@@ -13,8 +13,8 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
@@ -45,6 +45,7 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/ping"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/upload"
@@ -60,7 +61,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/ping"
 )
 
 func GetCommands() []cli.Command {
@@ -407,7 +407,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "ping",
-			Flags:     getGoFlags(),
+			Flags:     getPingFlags(),
 			Aliases:   []string{"p"},
 			Usage:     ping.Description,
 			HelpName:  common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -420,12 +420,17 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func getBaseFlags() []cli.Flag {
+func getUrlFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
 			Usage: "[Optional] Artifactory URL.",
 		},
+	}
+}
+
+func getBaseFlags() []cli.Flag {
+	return append(getUrlFlag(),
 		cli.StringFlag{
 			Name:  "user",
 			Usage: "[Optional] Artifactory username.",
@@ -437,8 +442,7 @@ func getBaseFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "apikey",
 			Usage: "[Optional] Artifactory API key.",
-		},
-	}
+		})
 }
 
 func getCommonFlags() []cli.Flag {
@@ -455,6 +459,10 @@ func getCommonFlags() []cli.Flag {
 
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), getServerIdFlag())
+}
+
+func getPingFlags() []cli.Flag {
+	return append(getUrlFlag(), getServerIdFlag())
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -1287,7 +1295,6 @@ func pingCmd(c *cli.Context) {
 		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
 	}
 	log.Output(string(clientutils.IndentJson(resBody)))
-
 }
 
 func downloadCmd(c *cli.Context) {

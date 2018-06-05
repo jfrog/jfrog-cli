@@ -1,11 +1,11 @@
 package generic
 
 import (
-	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"net/http/httptest"
-	"net/http"
 	"fmt"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func TestPingSuccess(t *testing.T) {
@@ -14,18 +14,17 @@ func TestPingSuccess(t *testing.T) {
 		fmt.Fprint(w, "OK")
 	}))
 	defer ts.Close()
-	responseBytes,err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
+	responseBytes, err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
 	if err != nil {
-		t.Log("Error from artifactory %s", err)
+		t.Log(fmt.Sprintf("Error received from Artifactory following ping request: %s", err))
 		t.Fail()
 	}
 	responseString := string(responseBytes)
 	if responseString != "OK" {
-		t.Log("bad response string from artifactory: %s", responseString)
+		t.Log(fmt.Sprintf("Non 'OK' response received from Artifactory following ping request:: %s", responseString))
 		t.Fail()
 	}
 }
-
 
 func TestPingFailed(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +32,7 @@ func TestPingFailed(t *testing.T) {
 		fmt.Fprint(w, `{"error":"error"}`)
 	}))
 	defer ts.Close()
-	_,err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
+	_, err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
 	if err == nil {
 		t.Log("Expected error from artifactory")
 		t.Fail()

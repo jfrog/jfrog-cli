@@ -42,7 +42,12 @@ import (
 	"time"
 )
 
+// JFrog CLI for Artifactory commands
 var artifactoryCli *tests.JfrogCli
+
+// JFrog CLI for Artifactory commands. This CLI is initialized with no credentials
+var artifactoryAnonymousCli *tests.JfrogCli
+
 var artifactoryDetails *config.ArtifactoryDetails
 var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
@@ -54,6 +59,7 @@ func InitArtifactoryTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	artifactoryAnonymousCli = tests.NewJfrogCli(main, "jfrog rt", "")
 	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
@@ -149,11 +155,11 @@ func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 }
 
 func TestArtifactoryConcurrentDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb * 1000, t)
+	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000, t)
 }
 
 func TestArtifactoryBulkDownload(t *testing.T) {
-	testArtifactoryDownload(cliutils.DownloadMinSplitKb * 1000 - 1, t)
+	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000-1, t)
 }
 
 func testArtifactoryDownload(fileSize int, t *testing.T) {
@@ -171,7 +177,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 		t.Error(err)
 	}
 
-	artifactoryCli.Exec("u", randFile.Name(), tests.Repo1 + "/testsdata/", "--flat=true")
+	artifactoryCli.Exec("u", randFile.Name(), tests.Repo1+"/testsdata/", "--flat=true")
 	randFile.File.Close()
 	os.RemoveAll(tests.Out)
 	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
@@ -181,7 +187,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 		t.Error(err)
 	}
 	tests.IsExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "randFile"}, paths, t)
-	tests.ValidateChecksums(tests.Out + fileutils.GetFileSeparator() + "randFile", localFileDetails.Checksum, t)
+	tests.ValidateChecksums(tests.Out+fileutils.GetFileSeparator()+"randFile", localFileDetails.Checksum, t)
 	cleanArtifactoryTest()
 }
 
@@ -383,9 +389,9 @@ func TestArtifactoryUploadDebian(t *testing.T) {
 	initArtifactoryTest(t)
 	specFileA := tests.GetFilePath(tests.SplitUploadSpecA)
 	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=bionic/main/i386")
-	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1 + "/*", "deb.distribution=bionic;deb.component=main;deb.architecture=i386", t)
+	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1+"/*", "deb.distribution=bionic;deb.component=main;deb.architecture=i386", t)
 	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=cosmic/main\\/18.10/amd64")
-	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1 + "/*", "deb.distribution=cosmic;deb.component=main/18.10;deb.architecture=amd64", t)
+	isExistInArtifactoryByProps(tests.UploadDebianExpected, tests.Repo1+"/*", "deb.distribution=cosmic;deb.component=main/18.10;deb.architecture=amd64", t)
 	cleanArtifactoryTest()
 }
 
@@ -2110,7 +2116,7 @@ func TestGitLfsCleanup(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	initArtifactoryTest(t)
-	artifactoryCli.Exec("ping")
+	artifactoryAnonymousCli.Exec("ping")
 	cleanArtifactoryTest()
 }
 

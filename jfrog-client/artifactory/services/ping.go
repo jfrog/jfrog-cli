@@ -1,14 +1,14 @@
 package services
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
-	"net/http"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
 )
 
 type PingService struct {
@@ -37,7 +37,7 @@ func (ps *PingService) IsDryRun() bool {
 }
 
 func (ps *PingService) Ping() ([]byte, error) {
-	url, err := utils.BuildArtifactoryUrl(ps.ArtDetails.GetUrl(),"api/system/ping", nil)
+	url, err := utils.BuildArtifactoryUrl(ps.ArtDetails.GetUrl(), "api/system/ping", nil)
 	if err != nil {
 		return nil, err
 	}
