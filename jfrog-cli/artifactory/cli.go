@@ -60,6 +60,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/artifactory/ping"
 )
 
 func GetCommands() []cli.Command {
@@ -402,6 +403,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				goCmd(c)
+			},
+		},
+		{
+			Name:      "ping",
+			Flags:     getGoFlags(),
+			Aliases:   []string{"p"},
+			Usage:     ping.Description,
+			HelpName:  common.CreateUsage("rt ping", ping.Description, ping.Usage),
+			UsageText: ping.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				pingCmd(c)
 			},
 		},
 	}
@@ -1264,6 +1277,19 @@ func createMvnConfigCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func pingCmd(c *cli.Context) {
+	if c.NArg() > 0 {
+		cliutils.PrintHelpAndExitWithError("No arguments should be sent.", c)
+	}
+	artDetails := createArtifactoryDetails(c, true)
+	resBody, err := generic.Ping(artDetails)
+	if err != nil {
+		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
+	}
+	log.Output(string(clientutils.IndentJson(resBody)))
+
+}
+
 func downloadCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
@@ -1403,10 +1429,10 @@ func searchCmd(c *cli.Context) {
 	}
 
 	artDetails := createArtifactoryDetails(c, true)
-	SearchResult, err := generic.Search(searchSpec, artDetails)
+	searchResults, err := generic.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
-	result, err := json.Marshal(SearchResult)
-	cliutils.FailNoOp(err, len(SearchResult), 0, isFailNoOp(c))
+	result, err := json.Marshal(searchResults)
+	cliutils.FailNoOp(err, len(searchResults), 0, isFailNoOp(c))
 
 	log.Output(string(clientutils.IndentJson(result)))
 }
