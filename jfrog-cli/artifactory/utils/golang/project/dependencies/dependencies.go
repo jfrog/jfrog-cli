@@ -83,28 +83,43 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 		if err != nil {
 			return nil, err
 		}
-		deps = append(deps, dep)
+		if dep != nil {
+			deps = append(deps, *dep)
+		}
 	}
 	return deps, nil
 }
 
-func createDependency(cachePath, dependencyName, version string) (Dependency, error) {
+// Creates a vgo dependency.
+// Returns a nil value in case the dependency does not include a zip in the cache.
+func createDependency(cachePath, dependencyName, version string) (*Dependency, error) {
+	// We first check if the this dependency has a zip binary in the local vgo cache.
+	// Core golang dependencies do not have a binary, and we should therefore skip them.
+	zipPath := filepath.Join(cachePath, dependencyName, "@v", version+".zip")
+	fileExists, err := fileutils.IsFileExists(zipPath)
+	if err != nil {
+		return nil, err
+	}
+	// Zip binary does not exist, so we skip it by returning a nil dependency.
+	if !fileExists {
+		return nil, nil
+	}
+
 	dep := Dependency{}
-	var err error
 
 	dep.id = strings.Join([]string{dependencyName, version}, ":")
 	dep.version = version
-	dep.zipPath = filepath.Join(cachePath, dependencyName, "@v", version+".zip")
+	dep.zipPath = zipPath
 	dep.modContent, err = ioutil.ReadFile(filepath.Join(cachePath, dependencyName, "@v", version+".mod"))
 	if err != nil {
-		return dep, errorutils.CheckError(err)
+		return &dep, errorutils.CheckError(err)
 	}
 
 	// Mod file dependency
 	modDependency := buildinfo.Dependency{Id: dep.id}
 	checksums, err := checksum.Calc(bytes.NewBuffer(dep.modContent))
 	if err != nil {
-		return dep, err
+		return &dep, err
 	}
 	modDependency.Checksum = &buildinfo.Checksum{Sha1: checksums[checksum.SHA1], Md5: checksums[checksum.MD5]}
 
@@ -112,12 +127,12 @@ func createDependency(cachePath, dependencyName, version string) (Dependency, er
 	zipDependency := buildinfo.Dependency{Id: dep.id}
 	fileDetails, err := fileutils.GetFileDetails(dep.zipPath)
 	if err != nil {
-		return dep, err
+		return &dep, err
 	}
 	zipDependency.Checksum = &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}
 
 	dep.buildInfoDependencies = append(dep.buildInfoDependencies, modDependency, zipDependency)
-	return dep, nil
+	return &dep, nil
 }
 
 func parseListOutput(content []byte) (map[string]string, error) {
