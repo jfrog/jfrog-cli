@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"github.com/mattn/go-shellwords"
 )
 
 func NewCmd() (*Cmd, error) {
@@ -74,6 +75,9 @@ func RunVgo(vgoArg string) error {
 		return err
 	}
 
-	vgoCmd.Command = []string{vgoArg}
+	vgoCmd.Command, err = shellwords.Parse(vgoArg)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
 	return utils.RunCmd(vgoCmd)
 }
