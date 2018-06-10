@@ -1,11 +1,11 @@
 <p align="center">
   <a href="https://jfrog.com/">
-    <img alt="JFrog" src="https://github.com/JFrogDev/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" width="200">
+    <img alt="JFrog" src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" width="200">
   </a>
 </p>
 
 # JFrog CLI
-[Website](http://www.jfrog.com)  •  [Docs](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)  •  [Issues](https://github.com/JFrogDev/jfrog-cli-go/issues)  •  [Blog](https://jfrog.com/blog/)  •  [We're Hiring](https://join.jfrog.com/)  •  [Artifactory Free Trial](https://jfrog.com/artifactory/free-trial/)
+[Website](http://www.jfrog.com)  •  [Docs](https://www.jfrog.com/confluence/display/CLI/JFrog+CLI)  •  [Issues](https://github.com/jfrog/jfrog-cli-go/issues)  •  [Blog](https://jfrog.com/blog/)  •  [We're Hiring](https://join.jfrog.com/)  •  [Artifactory Free Trial](https://jfrog.com/artifactory/free-trial/)
 
 ## Overview
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.

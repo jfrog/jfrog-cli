@@ -1,3 +1,3 @@
-module "github.com/jfrogdev/project"
+module "github.com/jfrog/project"
 
-require "github.com/jfrogdev/dependency" v1.0.0
+require "github.com/jfrog/dependency" v1.0.0

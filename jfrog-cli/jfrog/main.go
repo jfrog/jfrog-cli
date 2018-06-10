@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/bintray"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/missioncontrol"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"os"
 )
 
@@ -71,7 +71,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "jfrog"
-	app.Usage = "See https://github.com/jfrogdev/jfrog-cli-go for usage instructions."
+	app.Usage = "See https://github.com/jfrog/jfrog-cli-go for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.Commands = getCommands()

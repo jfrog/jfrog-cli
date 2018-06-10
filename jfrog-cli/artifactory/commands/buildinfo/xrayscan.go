@@ -1,11 +1,11 @@
 package buildinfo
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
+	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetails) error {

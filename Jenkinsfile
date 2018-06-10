@@ -16,9 +16,9 @@ node {
         cliWorkspace = pwd()
         withEnv(["GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
             stage 'Go get'
-            sh 'go get -f -u github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog'
+            sh 'go get -f -u github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog'
             if (BRANCH?.trim()) {
-                dir("src/github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog") {
+                dir("src/github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog") {
                     sh "git checkout $BRANCH"
                     sh 'go install'
                 }
@@ -48,14 +48,14 @@ def uploadToBintray(pkg, fileExtension) {
 }
 
 def buildAndUpload(goos, goarch, pkg, fileExtension) {
-    sh "env GOOS=$goos GOARCH=$goarch go build github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog"
+    sh "env GOOS=$goos GOARCH=$goarch go build github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog"
     def extension = fileExtension == null ? '' : fileExtension
     uploadToBintray(pkg, extension)
     sh "rm jfrog$extension"
 }
 
 def publishNpmPackage() {
-    dir ('src/github.com/jfrogdev/jfrog-cli-go/npm/') {
+    dir ('src/github.com/jfrog/jfrog-cli-go/npm/') {
         sh '''#!/bin/bash
             echo "Downloading npm..."
             wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz

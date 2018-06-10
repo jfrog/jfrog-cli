@@ -2,7 +2,7 @@ package project
 
 import (
 	"bytes"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"os"
 	"path/filepath"
 	"reflect"

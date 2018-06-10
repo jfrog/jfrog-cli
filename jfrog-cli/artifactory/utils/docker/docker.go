@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"io"
 	"os/exec"
 	"path"

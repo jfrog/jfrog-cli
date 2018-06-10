@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"os"
 	"regexp"
 	"runtime"

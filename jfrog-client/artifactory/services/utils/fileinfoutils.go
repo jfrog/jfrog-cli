@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type FileHashes struct {

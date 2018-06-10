@@ -1,13 +1,13 @@
 package solution
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"os"
 	"path/filepath"
 	"strings"
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution/project"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution/project"
 )
 
 type Solution interface {

@@ -2,11 +2,11 @@ package xray
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/common"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/xray/commands"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray/commands"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"time"
 	"errors"
 )

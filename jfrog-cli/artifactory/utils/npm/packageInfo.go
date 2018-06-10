@@ -3,8 +3,8 @@ package npm
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
 	"path/filepath"
 	"strings"

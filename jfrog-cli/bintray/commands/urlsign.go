@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/url"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/url"
 )
 
 func SignVersion(config bintray.Config, params *url.Params) (err error) {

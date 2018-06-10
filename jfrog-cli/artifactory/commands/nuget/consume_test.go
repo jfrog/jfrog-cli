@@ -1,13 +1,13 @@
 package nuget
 
 import (
-	"github.com/jfrogdev/gofrog/io"
+	"github.com/jfrog/gofrog/io"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
 )
 
 func TestCopyExistingConfig(t *testing.T) {

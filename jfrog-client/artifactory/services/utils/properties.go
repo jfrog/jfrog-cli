@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"net/url"
 	"strings"
 	"fmt"

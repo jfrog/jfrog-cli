@@ -3,13 +3,13 @@ package services
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type buildInfoPublishService struct {

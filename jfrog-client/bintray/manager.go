@@ -1,18 +1,18 @@
 package bintray
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/accesskeys"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/entitlements"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/gpg"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/logs"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/packages"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/repositories"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/url"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/versions"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/accesskeys"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/entitlements"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/gpg"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/logs"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/packages"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/repositories"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/url"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/versions"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type ServicesManager struct {

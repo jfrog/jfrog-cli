@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/versions"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/versions"
 )
 
 func GpgSignFile(config bintray.Config, pathDetails *utils.PathDetails, passphrase string) error {

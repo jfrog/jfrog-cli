@@ -2,7 +2,7 @@
   "name": "jfrog-cli-go",
   "version": "1.16.1",
   "description": "🐸 Command-line interface for JFrog Artifactory, Bintray, Mission Control and Xray 🐸",
-  "homepage": "https://github.com/JFrogDev/jfrog-cli-go",
+  "homepage": "https://github.com/jfrog/jfrog-cli-go",
   "preferGlobal": true,
   "license": "Apache 2.0",
   "scripts": {
@@ -10,10 +10,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/JFrogDev/jfrog-cli-go"
+    "url": "https://github.com/jfrog/jfrog-cli-go"
   },
   "bugs": {
-    "url": "https://github.com/JFrogDev/jfrog-cli-go/issues"
+    "url": "https://github.com/jfrog/jfrog-cli-go/issues"
   },
   "bin": {
     "jfrog": "./bin/jfrog"

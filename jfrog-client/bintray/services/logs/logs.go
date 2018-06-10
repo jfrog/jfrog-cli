@@ -2,13 +2,13 @@ package logs
 
 import (
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/services/versions"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/httpclient"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/auth"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/versions"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
 )

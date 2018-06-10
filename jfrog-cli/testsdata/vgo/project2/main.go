@@ -1,6 +1,6 @@
-package main // import "github.com/jfrogdev/project"
+package main // import "github.com/jfrog/project"
 
-import "github.com/jfrogdev/dependency"
+import "github.com/jfrog/dependency"
 
 func main() {
 	dependency.PrintHello()

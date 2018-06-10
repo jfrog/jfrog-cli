@@ -252,7 +252,7 @@
     params.Labels = "labels"
     params.Licenses = "licences"
     params.CustomLicenses = "custum-licenses"
-    params.VcsUrl = "https://github.com/JFrogDev/jfrog-cli-go"
+    params.VcsUrl = "https://github.com/jfrog/jfrog-cli-go"
     params.WebsiteUrl = "https://jfrog.com"
     params.IssueTrackerUrl = "https://github.com/bintray/bintray-client-java/issues"
     params.GithubRepo = "bintray/bintray-client-java"
@@ -397,7 +397,7 @@
 #### Tests
 To run tests execute the following command: 
 ````
-go test -v github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services
+go test -v github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services
 ````
 Optional flags:
 

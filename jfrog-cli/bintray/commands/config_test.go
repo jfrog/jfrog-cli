@@ -2,7 +2,7 @@ package commands
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"testing"
 )
 

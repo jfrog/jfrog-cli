@@ -3,8 +3,8 @@ package prompt
 import (
 	"errors"
 	"github.com/chzyer/readline"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/spf13/viper"
 	"regexp"
 	"strings"

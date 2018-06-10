@@ -2,7 +2,7 @@ package fileutils
 
 import (
 	"archive/zip"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"io"
 	"os"
 	"path/filepath"

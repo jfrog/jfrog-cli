@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	clientTests "github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	clientTests "github.com/jfrog/jfrog-cli-go/jfrog-client/utils/tests"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 const (
 	JfrogTestsHome      = ".jfrogTest"
-	CliIntegrationTests = "github.com/jfrogdev/jfrog-cli-go/jfrog-cli/jfrog"
+	CliIntegrationTests = "github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog"
 )
 
 func TestUnitTests(t *testing.T) {

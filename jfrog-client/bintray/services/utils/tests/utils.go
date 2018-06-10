@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/bintray/auth"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/auth"
 )
 
 func CreateBintrayDetails() auth.BintrayDetails {

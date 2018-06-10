@@ -3,8 +3,8 @@ package cert
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"

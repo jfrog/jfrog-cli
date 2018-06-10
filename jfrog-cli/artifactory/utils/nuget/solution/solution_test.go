@@ -2,7 +2,7 @@ package solution
 
 import (
 	"testing"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"reflect"
 )
 

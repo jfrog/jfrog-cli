@@ -5,12 +5,12 @@ import "testing"
 func TestParseModuleName(t *testing.T) {
 	content := `
 
-         	module github.com/jfrogdev/vgo-example
+         	module github.com/jfrog/vgo-example
 
         require rsc.io/quote v1.5.2
 	`
 
-	expected := "github.com/jfrogdev/vgo-example"
+	expected := "github.com/jfrog/vgo-example"
 	actual, err := parseModuleName(content)
 
 	if err != nil {

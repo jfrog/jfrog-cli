@@ -2,8 +2,8 @@ package project
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/dependencies"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/dependencies"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type Project interface {

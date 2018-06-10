@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/json"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 )
 
 const BINTRAY_API_URL = "https://bintray.com/api/v1/"

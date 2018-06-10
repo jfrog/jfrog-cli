@@ -1,8 +1,8 @@
 package artifactory
 
 import (
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/auth"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 )
 
 type artifactoryServicesConfig struct {
