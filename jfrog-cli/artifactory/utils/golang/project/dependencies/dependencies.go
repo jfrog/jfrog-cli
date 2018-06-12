@@ -94,10 +94,11 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 // Returns a nil value in case the dependency does not include a zip in the cache.
 func createDependency(cachePath, dependencyName, version string) (*Dependency, error) {
 	// We first check if the this dependency has a zip binary in the local vgo cache.
-	// Core golang dependencies do not have a binary, and we should therefore skip them.
+	// If it does not, nil is returned. This seems to be a bug in vgo.
 	zipPath := filepath.Join(cachePath, dependencyName, "@v", version+".zip")
 	fileExists, err := fileutils.IsFileExists(zipPath)
 	if err != nil {
+		log.Warn(fmt.Sprintf("Could not find zip binary for dependency '%s' at %s.", dependencyName, zipPath))
 		return nil, err
 	}
 	// Zip binary does not exist, so we skip it by returning a nil dependency.
