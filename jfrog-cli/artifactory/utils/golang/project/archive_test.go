@@ -2,6 +2,7 @@ package project
 
 import (
 	"bytes"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"os"
 	"path/filepath"
@@ -20,7 +21,13 @@ func TestArchiveProject(t *testing.T) {
 	}
 
 	buff := &bytes.Buffer{}
-	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "my/module/name", "1.0.0")
+	regex, err := getPathExclusionRegExp()
+	if err != nil {
+		t.Error(err)
+	}
+	originalFolder := "test_.git_suffix"
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, false)
+	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "my/module/name", "1.0.0", regex)
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,4 +40,5 @@ func TestArchiveProject(t *testing.T) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expecting: %v, Got: %v", expected, actual)
 	}
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 }

@@ -2,12 +2,11 @@ package buildinfo
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 )
 
 const (
@@ -24,23 +23,23 @@ func TestExtractGitUrlWithoutDotGit(t *testing.T) {
 	runTest(t, withoutGit)
 }
 
-func runTest(t *testing.T, originalFolder string) {
-	baseDir, dotGitPath := preparation(t, originalFolder)
+func runTest(t *testing.T, originalDir string) {
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, true)
 	buildDir := getBuildDir(t)
-	checkFailureAndClean(t, buildDir, dotGitPath, originalFolder)
+	checkFailureAndClean(t, buildDir, dotGitPath)
 	partials := getBuildInfoPartials(baseDir, t, buildName, "1")
-	checkFailureAndClean(t, buildDir, dotGitPath, originalFolder)
+	checkFailureAndClean(t, buildDir, dotGitPath)
 	checkVCSUrl(partials, t)
-	removePath(buildDir, t)
-	renamePath(dotGitPath, filepath.Join(getBaseDir(), originalFolder), t)
+	tests.RemovePath(buildDir, t)
+	tests.RenamePath(dotGitPath, filepath.Join(tests.GetBaseDir(true), originalDir), t)
 }
 
 // Clean the environment if fails
-func checkFailureAndClean(t *testing.T, buildDir string, oldPath, newPath string) {
+func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 	if t.Failed() {
 		t.Log("Performing cleanup...")
-		removePath(buildDir, t)
-		renamePath(oldPath, filepath.Join(getBaseDir(), withGit), t)
+		tests.RemovePath(buildDir, t)
+		tests.RenamePath(oldPath, filepath.Join(tests.GetBaseDir(true), withGit), t)
 		t.FailNow()
 	}
 }
@@ -82,41 +81,4 @@ func checkVCSUrl(partials buildinfo.Partials, t *testing.T) {
 			break
 		}
 	}
-}
-
-// Need to prepare the environment such as .git directory and the config, head files.
-// Renaming the already prepared folders.
-func preparation(t *testing.T, path string) (string, string) {
-	baseDir := getBaseDir()
-	dotGitPath := filepath.Join(baseDir, ".git")
-	removePath(dotGitPath, t)
-	dotGitPathTest := filepath.Join(baseDir, path)
-	renamePath(dotGitPathTest, dotGitPath, t)
-	return baseDir, dotGitPath
-}
-
-func removePath(testPath string, t *testing.T) {
-	if _, err := os.Stat(testPath); err == nil {
-		//path exists need to delete.
-		err = os.RemoveAll(testPath)
-		if err != nil {
-			t.Error("Cannot remove path: " + testPath + " due to: " + err.Error())
-		}
-	}
-}
-
-func renamePath(oldPath, newPath string, t *testing.T) {
-	err := fileutils.CopyDir(oldPath, newPath, true)
-	if err != nil {
-		t.Error("Error copying directory: ", oldPath, "to", newPath, err.Error())
-		t.FailNow()
-	}
-	removePath(oldPath, t)
-}
-
-func getBaseDir() (baseDir string) {
-	pwd, _ := os.Getwd()
-	pwd = filepath.Dir(pwd)
-	baseDir = filepath.Join(pwd, "testdata")
-	return
 }

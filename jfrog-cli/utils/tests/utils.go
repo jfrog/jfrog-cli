@@ -86,13 +86,13 @@ func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetai
 		t.Error("Couldn't calculate sha1, " + err.Error())
 	}
 	if localFileDetails.Checksum.Sha1 != expectedChecksum.Sha1 {
-		t.Error("sha1 mismatch for " + filePath + ", expected: " + expectedChecksum.Sha1, "found: " + localFileDetails.Checksum.Sha1)
+		t.Error("sha1 mismatch for "+filePath+", expected: "+expectedChecksum.Sha1, "found: "+localFileDetails.Checksum.Sha1)
 	}
 	if localFileDetails.Checksum.Md5 != expectedChecksum.Md5 {
-		t.Error("md5 mismatch for " + filePath + ", expected: " + expectedChecksum.Md5, "found: " + localFileDetails.Checksum.Sha1)
+		t.Error("md5 mismatch for "+filePath+", expected: "+expectedChecksum.Md5, "found: "+localFileDetails.Checksum.Sha1)
 	}
 	if localFileDetails.Checksum.Sha256 != expectedChecksum.Sha256 {
-		t.Error("sha256 mismatch for " + filePath + ", expected: " + expectedChecksum.Sha256, "found: " + localFileDetails.Checksum.Sha1)
+		t.Error("sha256 mismatch for "+filePath+", expected: "+expectedChecksum.Sha256, "found: "+localFileDetails.Checksum.Sha1)
 	}
 }
 
@@ -252,4 +252,45 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	err := cmd.Run()
 	errorutils.CheckError(err)
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
+}
+
+// Need to prepare the environment, for example such as .git directory and the config, head files.
+// Renaming the already prepared directories.
+func PrepareDotGitDir(t *testing.T, path string, setToParentDir bool) (string, string) {
+	baseDir := GetBaseDir(setToParentDir)
+	dotGitPath := filepath.Join(baseDir, ".git")
+	RemovePath(dotGitPath, t)
+	dotGitPathTest := filepath.Join(baseDir, path)
+	RenamePath(dotGitPathTest, dotGitPath, t)
+	return baseDir, dotGitPath
+}
+
+// Removing the provided path from the filesystem
+func RemovePath(testPath string, t *testing.T) {
+	if _, err := os.Stat(testPath); err == nil {
+		//path exists need to delete.
+		err = os.RemoveAll(testPath)
+		if err != nil {
+			t.Error("Cannot remove path: " + testPath + " due to: " + err.Error())
+		}
+	}
+}
+
+// Renaming from old path to new path.
+func RenamePath(oldPath, newPath string, t *testing.T) {
+	err := fileutils.CopyDir(oldPath, newPath, true)
+	if err != nil {
+		t.Error("Error copying directory: ", oldPath, "to", newPath, err.Error())
+		t.FailNow()
+	}
+	RemovePath(oldPath, t)
+}
+
+func GetBaseDir(setToParentDir bool) (baseDir string) {
+	pwd, _ := os.Getwd()
+	if setToParentDir {
+		pwd = filepath.Dir(pwd)
+	}
+	baseDir = filepath.Join(pwd, "testdata")
+	return
 }

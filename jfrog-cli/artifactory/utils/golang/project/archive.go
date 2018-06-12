@@ -3,21 +3,16 @@ package project
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/sabhiram/go-gitignore"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 // Archive project files according to the vgo project standard
-func archiveProject(writer io.Writer, sourcePath, module, version string) error {
-	// Ignoring unnecessary file
-	ignoreParser, err := getIgnoreParser(sourcePath)
-	if err != nil {
-		return nil
-	}
+func archiveProject(writer io.Writer, sourcePath, module, version string, excludePathsRegExp *regexp.Regexp) error {
 	zipWriter := zip.NewWriter(writer)
 	defer zipWriter.Close()
 
@@ -26,11 +21,11 @@ func archiveProject(writer io.Writer, sourcePath, module, version string) error 
 			return err
 		}
 
-		fileName := getFileName(sourcePath, path, module, version)
-		if ignoreParser.MatchesPath(fileName) {
+		if excludePathsRegExp.FindString(path) != "" {
+			log.Debug(fmt.Sprintf("Excluding path '%s' from zip archive.", path))
 			return nil
 		}
-
+		fileName := getFileName(sourcePath, path, module, version)
 		file, err := os.Open(path)
 		if err != nil {
 			return err
@@ -55,18 +50,4 @@ func getFileName(sourcePath, filePath, moduleName, version string) string {
 	moduleID := fmt.Sprintf("%s@%s", moduleName, version)
 
 	return filepath.Join(moduleID, filename)
-}
-
-// Use .gitignore if available to filter out unnecessary files while archiving a vgo project.
-// Ignores vendor and .gitignore file by default.
-func getIgnoreParser(sourcePath string) (ignore.IgnoreParser, error) {
-	exists, err := fileutils.IsFileExists(filepath.Join(sourcePath, ".gitignore"))
-	if err != nil {
-		return nil, err
-	}
-
-	if exists {
-		return ignore.CompileIgnoreFileAndLines(filepath.Join(sourcePath, ".gitignore"), "vendor", ".gitignore")
-	}
-	return ignore.CompileIgnoreLines("vendor", ".gitignore")
 }
