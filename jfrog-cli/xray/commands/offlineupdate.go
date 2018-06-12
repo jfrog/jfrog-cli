@@ -129,9 +129,12 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 		}
 	}()
 	for _, url := range urlsList {
-		fileName := fileutils.GetFileNameFromUrl(url)
+		fileName, err := createXrayFileNameFromUrl(url)
+		if err != nil {
+			return err
+		}
 		log.Info("Downloading", url)
-		_, err := httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
+		_, err = httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
 		if err != nil {
 			return err
 		}
@@ -143,6 +146,27 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 	}
 	log.Info("Done zipping files.")
 	return nil
+}
+
+func createXrayFileNameFromUrl(url string) (fileName string, err error) {
+	originalUrl := url
+	index := strings.Index(url, "?")
+	if index != -1 {
+		url = url[:index]
+	}
+	index = strings.Index(url, ";")
+	if index != -1 {
+		url = url[:index]
+	}
+
+	sections := strings.Split(url, "/")
+	length := len(sections)
+	if length < 2 {
+		err = errorutils.CheckError(errors.New(fmt.Sprintf("Unexpected URL format: %s", originalUrl)))
+		return
+	}
+	fileName = fmt.Sprintf("%s__%s", sections[length-2], sections[length-1])
+	return
 }
 
 func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilities []string, components []string, lastUpdate int64, err error) {
