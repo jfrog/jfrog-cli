@@ -1205,12 +1205,7 @@ func goPublishCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	output, err := goutils.GetVgoVersion()
-	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
-		cliutils.ExitOnErr(err)
-	}
-	log.Info("Using vgo version:", string(output))
+	logVgoVersion()
 
 	targetRepo := c.Args().Get(0)
 	buildName := c.String("build-name")
@@ -1251,22 +1246,26 @@ func goCmd(c *cli.Context) {
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	output, err := goutils.GetVgoVersion()
-	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
-		cliutils.ExitOnErr(err)
-	}
-	log.Info("Using vgo version:", string(output))
+	logVgoVersion()
 
 	if !c.Bool("no-registry") {
 		goutils.SetGoProxyEnvVar(details, targetRepo)
 	}
 	// Run vgo
-	err = goutils.RunVgo(vgoArg)
+	err := goutils.RunVgo(vgoArg)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
+}
+
+func logVgoVersion() {
+	output, err := goutils.GetVgoVersion()
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+		cliutils.ExitOnErr(err)
+	}
+	log.Info("Using vgo:", string(output))
 }
 
 func createGradleConfigCmd(c *cli.Context) {

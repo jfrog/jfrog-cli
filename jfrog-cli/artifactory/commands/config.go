@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
@@ -220,31 +221,37 @@ func DeleteConfig(serverName string) error {
 }
 
 // Set the default configuration
-func Use(serverName string) error {
+func Use(serverId string) error {
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
 		return err
 	}
-	var isFoundName bool
+	var serverFound *config.ArtifactoryDetails
+	newDefaultServer := true
 	for _, config := range configurations {
-		if config.ServerId == serverName {
-			// In case the serverId is already default we can return, no more changes needed
+		if config.ServerId == serverId {
+			serverFound = config
 			if config.IsDefault {
-				return nil
+				newDefaultServer = false
+				break
 			}
 			config.IsDefault = true
-			isFoundName = true
 		} else {
 			config.IsDefault = false
 		}
 	}
 	// Need to save only if we found a server with the serverId
-	if isFoundName {
-		return config.SaveArtifactoryConf(configurations)
-	} else {
-		log.Info("Couldn't find matching server, no changes were made.")
+	if serverFound != nil {
+		if newDefaultServer {
+			err = config.SaveArtifactoryConf(configurations)
+			if err != nil {
+				return err
+			}
+		}
+		log.Info(fmt.Sprintf("Using server ID '%s' (%s).", serverFound.ServerId, serverFound.Url))
+		return nil
 	}
-	return nil
+	return errorutils.CheckError(errors.New(fmt.Sprintf("Could not find a server with ID '%s'.", serverId)))
 }
 
 func ClearConfig(interactive bool) {
