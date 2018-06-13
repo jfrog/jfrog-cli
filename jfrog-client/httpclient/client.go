@@ -433,7 +433,7 @@ func (jc *HttpClient) downloadFileRange(flags ConcurrentDownloadFlags, start, en
 		httpClientsDetails.Headers = make(map[string]string)
 	}
 	httpClientsDetails.Headers["Range"] = "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end-1, 10)
-	resp, _, err := jc.sendGetForFileDownload(flags.DownloadPath, false, httpClientsDetails, currentSplit, retries)
+	resp, _, err := jc.sendGetForFileDownload(flags.DownloadPath, true, httpClientsDetails, currentSplit, retries)
 	if errorutils.CheckError(err) != nil {
 		return "", err
 	}
