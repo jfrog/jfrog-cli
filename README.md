@@ -64,9 +64,9 @@ Optional flags:
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
   
-#### Build tools tests
+#### Maven, Gradle and Npm tests
 * The *M2_HOME* environment variable should be set to the local maven installation path.
-* The *gradle* executable path should be included as part of the *PATH* environment variable.
+* The *gradle* and *npm* executables pshould be included as part of the *PATH* environment variable.
 * The *java* executable be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
 To run build tools tests execute the following command:
