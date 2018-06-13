@@ -301,7 +301,7 @@ func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtif
 		t.Error(err)
 	}
 	if expectedArtifacts != len(result) {
-		t.Error("Docker build info was not pushed correctly correctly, expected:", expectedArtifacts, " Found:", len(result))
+		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(result))
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
