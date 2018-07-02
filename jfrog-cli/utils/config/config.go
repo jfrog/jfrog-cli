@@ -168,37 +168,24 @@ func SaveBintrayConf(details *BintrayDetails) error {
 func saveConfig(config *ConfigV1) error {
 	config.Version = cliutils.GetConfigVersion()
 	b, err := json.Marshal(&config)
-	err = errorutils.CheckError(err)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	var content bytes.Buffer
 	err = json.Indent(&content, b, "", "  ")
-	err = errorutils.CheckError(err)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	path, err := getConfFilePath()
 	if err != nil {
 		return err
 	}
-	var exists bool
-	exists, err = fileutils.IsFileExists(path)
+
+	err = ioutil.WriteFile(path, []byte(content.String()), 0600)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
-	if exists {
-		err := os.Remove(path)
-		err = errorutils.CheckError(err)
-		if err != nil {
-			return err
-		}
-	}
-	path, err = getConfFilePath()
-	if err != nil {
-		return err
-	}
-	ioutil.WriteFile(path, []byte(content.String()), 0600)
+
 	return nil
 }
 
