@@ -68,6 +68,7 @@ type File struct {
 	Flat            string
 	Regexp          string
 	IncludeDirs     string
+	ArchiveEntries string
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
@@ -178,6 +179,7 @@ func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.SortBy = f.SortBy
 	params.Offset = f.Offset
 	params.Limit = f.Limit
+	params.ArchiveEntries = f.ArchiveEntries
 	return params
 }
 
