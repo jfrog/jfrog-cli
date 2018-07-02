@@ -1614,7 +1614,10 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildDownload, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildDownload, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1639,7 +1642,10 @@ func TestArtifactoryDownloadArtifactDoesntExistInBuild(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildDownloadDoesntExist, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildDownloadDoesntExist, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1669,7 +1675,10 @@ func TestArtifactoryDownloadByShaAndBuild(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuild, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuild, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1700,7 +1709,10 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildName, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildName, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1729,7 +1741,10 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildSimpleDownload, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildSimpleDownload, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -1743,12 +1758,8 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Download by archive entries only those who contain c1.in
-	artifactoryCli.Exec("dl", "jfrog-cli-tests-repo1/", "out/", "--archive-entries=(*)c1.in", "--flat=true")
-
-	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildArchiveEntriesDownloadCli, paths, t)
+	// Download by archive entries only those who contain c1.in, and validate results
+	validateDownloadByArchiveEntries(120, tests.BuildArchiveEntriesDownloadCli, t, "dl", "jfrog-cli-tests-repo1/", "out/", "--archive-entries=(*)c1.in", "--flat=true")
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1761,12 +1772,8 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Download by archive entries only those who contain c1.in
-	artifactoryCli.Exec("dl", "jfrog-cli-tests-repo1/", "out/", "--archive-entries=b/c/c1.in", "--flat=true")
-
-	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildArchiveEntriesSpecificPathDownload, paths, t)
+	// Download by archive entries only those who contain c1.in, and validate results
+	validateDownloadByArchiveEntries(120, tests.BuildArchiveEntriesSpecificPathDownload, t, "dl", "jfrog-cli-tests-repo1/", "out/", "--archive-entries=b/c/c1.in", "--flat=true")
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1780,15 +1787,33 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Download by archive entries only those who contain a1.in
-	artifactoryCli.Exec("dl", "--spec="+downloadSpecFile)
-
-	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildArchiveEntriesDownloadSpec, paths, t)
+	// Download by archive entries only those who contain a1.in, and validate results
+	validateDownloadByArchiveEntries(120, tests.BuildArchiveEntriesDownloadSpec, t, "dl", "--spec="+downloadSpecFile)
 
 	// Cleanup
 	cleanArtifactoryTest()
+}
+
+func validateDownloadByArchiveEntries(retries int, expected []string, t *testing.T, args ...string) {
+	var err error = nil
+	for i := 0; i < retries; i++ {
+		// Execute the requested cli command
+		artifactoryCli.Exec(args...)
+
+		// Validate files are downloaded as expected
+		paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+		err = tests.ValidateListsIdentical(expected, paths)
+		if err == nil {
+			return
+		}
+
+		// Going to sleep for 1 second, allowing Artifactory to index the uploaded archives
+		log.Info(fmt.Sprintf("Retry %v/%v: waiting for Artifactory to index archives...", i, retries))
+		time.Sleep(time.Second)
+	}
+
+	// If no success after retries, the test has failed
+	t.Error(err.Error())
 }
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
@@ -1805,7 +1830,10 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1826,7 +1854,10 @@ func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildExcludeDownloadBySpec, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildExcludeDownloadBySpec, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1847,7 +1878,10 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildExcludeDownload, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -1942,7 +1976,10 @@ func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
 	artifactoryCli.Exec("download", "--sort-by=created --spec="+specFile)
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(tests.Out, "download", "sort_limit_by_build"), false)
-	tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths, t)
+	err := tests.ValidateListsIdentical(tests.BuildDownloadByShaAndBuildNameWithSort, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
@@ -1991,7 +2028,10 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	artifactoryCli.Exec("download", "jfrog-cli-tests-repo1/data/ out/download/sort_limit/", "--sort-by=depth", "--limit=3", "--sort-order=desc")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.ValidateListsIdentical(tests.SortAndLimit, paths, t)
+	err := tests.ValidateListsIdentical(tests.SortAndLimit, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
