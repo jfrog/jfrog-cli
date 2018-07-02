@@ -13,7 +13,10 @@ addListener(new BuildInfoPluginListener())
 class BuildInfoPluginListener extends BuildAdapter {
 
     def void projectsLoaded(Gradle gradle) {
-        gradle.startParameter.getProjectProperties().put("build.start", Long.toString(System.currentTimeMillis()))
+        Map<String, String> projectProperties = new HashMap<String, String>(gradle.startParameter.getProjectProperties())
+        projectProperties.put("build.start", Long.toString(System.currentTimeMillis()))
+        gradle.startParameter.setProjectProperties(projectProperties)
+
         Project root = gradle.getRootProject()
         root.logger.debug("Artifactory plugin: projectsEvaluated: ${root.name}")
         if (!"buildSrc".equals(root.name)) {
