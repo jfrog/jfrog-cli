@@ -148,7 +148,23 @@ func initVgoTest(t *testing.T) {
 	}
 }
 
-func cleanVgoTest(t *testing.T) {
+func initNugetTest(t *testing.T) {
+	if !*tests.TestNuget {
+		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
+	}
+
+	if runtime.GOOS != "windows" {
+		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
+	}
+
+	// This is due to Artifactory bug, we cant create remote repository with REST API.
+	if !isRepoExist(tests.NugetRemoteRepo) {
+		t.Error("Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
+		t.FailNow()
+	}
+}
+
+func cleanVgoTest() {
 	if isRepoExist(tests.VgoLocalRepo) {
 		execDeleteRepoRest(tests.VgoLocalRepo)
 	}
@@ -197,7 +213,7 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	cleanVgoTest(t)
+	cleanVgoTest()
 }
 
 // Testing publishing and resolution capabilities for vgo projects.
@@ -238,7 +254,7 @@ func TestVgoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	cleanVgoTest(t)
+	cleanVgoTest()
 }
 
 func createVgoProject(t *testing.T, projectName string) string {
@@ -259,14 +275,14 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest( "jfrog_cli_test_image", t)
+	runDockerTest("jfrog_cli_test_image", t)
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest( "jfrog_cli_test_image/multiple", t)
+	runDockerTest("jfrog_cli_test_image/multiple", t)
 }
 
 // Run docker push to Artifactory
@@ -367,9 +383,8 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 	}
 }
 
-/*
 func TestNugetResolve(t *testing.T) {
-	initBuildToolsTest(t)
+	initNugetTest(t)
 	projects := []struct {
 		project              string
 		expectedDependencies int
@@ -382,8 +397,8 @@ func TestNugetResolve(t *testing.T) {
 			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), 6)
 		})
 	}
+	cleanBuildToolsTest()
 }
-*/
 
 func createNugetProject(t *testing.T, projectName string) string {
 	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "nuget", projectName)
@@ -416,17 +431,6 @@ func convertSliceToMap(props []rtutils.Property) map[string]string {
 }
 
 func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expectedDependencies int) {
-	// init
-	initBuildToolsTest(t)
-	if runtime.GOOS != "windows" {
-		t.Skip("Skipping nuget tests...")
-	}
-
-	// This is due to Artifactory bug, we cant create remote repository with REST API.
-	if !isRepoExist(tests.NugetRemoteRepo) {
-		t.Error("Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -629,7 +633,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestBuildTools || *tests.TestVgo {
+	if *tests.TestBuildTools || *tests.TestVgo || *tests.TestNuget {
 		os.Unsetenv(config.JfrogHomeEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()

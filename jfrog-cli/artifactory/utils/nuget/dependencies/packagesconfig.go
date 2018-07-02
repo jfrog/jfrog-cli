@@ -10,7 +10,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -52,7 +51,7 @@ func (extractor *packagesExtractor) ChildrenMap() (map[string][]string, error) {
 }
 
 // Create new packages.config extractor
-func (extractor *packagesExtractor) new(projectName, projectRoot string) (extractor, error) {
+func (extractor *packagesExtractor) new(projectName, projectRoot string) (Extractor, error) {
 	newExtractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
 	packagesConfig, err := newExtractor.loadPackagesConfig(projectRoot)
 	if err != nil {
@@ -71,14 +70,54 @@ func (extractor *packagesExtractor) new(projectName, projectRoot string) (extrac
 func (extractor *packagesExtractor) extract(packagesConfig *packagesConfig, globalPackagesCache string) error {
 	for _, nuget := range packagesConfig.XmlPackages {
 		id := strings.ToLower(nuget.Id)
-		pack, err := createNugetPackage(globalPackagesCache, nuget)
+		nPackage := &nugetPackage{id: id, version: nuget.Version, dependencies: map[string]bool{}}
+		// First lets check if the original version exists within the file system:
+		pack, err := createNugetPackage(globalPackagesCache, nuget, nPackage)
 		if err != nil {
 			return err
+		}
+		if pack == nil {
+			// If doesn't exists lets build the array of alternative versions.
+			alternativeVersions := createAlternativeVersionForms(nuget.Version)
+			// Now lets do a loop to run over the alternative possibilities
+			for i := 0; i < len(alternativeVersions); i++ {
+				nPackage.version = alternativeVersions[i]
+				pack, err = createNugetPackage(globalPackagesCache, nuget, nPackage)
+				if err != nil {
+					return err
+				}
+				if pack != nil {
+					break
+				}
+			}
 		}
 		extractor.allDependencies[id] = pack.dependency
 		extractor.childrenMap[id] = pack.getDependencies()
 	}
 	return nil
+}
+
+// NuGet allows the version will be with missing or unnecessary zeros
+// This method will return a list of the possible alternative versions
+func createAlternativeVersionForms(originalVersion string) []string {
+	versionSlice := strings.Split(originalVersion, ".")
+	versionSliceSize := len(versionSlice)
+	for i := 4; i > versionSliceSize; i-- {
+		versionSlice = append(versionSlice, "0")
+	}
+
+	var alternativeVersions []string
+
+	for i := 4; i > 0 ; i-- {
+		version := strings.Join(versionSlice[:i], ".")
+		if version != originalVersion {
+			alternativeVersions = append(alternativeVersions, version)
+		}
+		if !strings.HasSuffix(version, ".0") {
+			return alternativeVersions
+		}
+	}
+	return alternativeVersions
 }
 
 func (extractor *packagesExtractor) loadPackagesConfig(rootPath string) (*packagesConfig, error) {
@@ -149,18 +188,30 @@ func searchRootDependencies(dfsHelper map[string]*dfsHelper, currentId string, a
 	dfsHelper[currentId].visited = true
 }
 
-func createNugetPackage(packagesPath string, nuget xmlPackage) (*nugetPackage, error) {
-	nPackage := &nugetPackage{id: strings.ToLower(nuget.Id), version: nuget.Version, dependencies: map[string]bool{}}
+func createNugetPackage(packagesPath string, nuget xmlPackage, nPackage *nugetPackage) (*nugetPackage, error) {
+	nupkgPath := filepath.Join(packagesPath, nPackage.id, nPackage.version, strings.Join([]string{nPackage.id, nPackage.version, "nupkg"}, "."))
 
-	nupkgPath := filepath.Join(packagesPath, nPackage.id, nuget.Version, strings.Join([]string{nPackage.id, nuget.Version, "nupkg"}, "."))
+	exists, err := fileutils.IsFileExists(nupkgPath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		if !strings.HasSuffix(nPackage.version, ".0") {
+			return nil, errorutils.CheckError(fmt.Errorf("File %s.%s doesn't exists", nuget.Id, nuget.Version))
+		}
+		return nil, nil
+	}
+
 	fileDetails, err := fileutils.GetFileDetails(nupkgPath)
 	if err != nil {
 		return nil, err
 	}
-	nPackage.dependency = &buildinfo.Dependency{Id: path.Join(nuget.Id, nuget.Version), Checksum: &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}}
+	nPackage.dependency = &buildinfo.Dependency{Id: nuget.Id + ":" + nuget.Version, Checksum: &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}}
 
-	// nuspec for
-	nuspecPath := filepath.Join(packagesPath, nPackage.id, nuget.Version, strings.Join([]string{nPackage.id, "nuspec"}, "."))
+	// Nuspec file that holds the metadata for the package.
+	nuspecPath := filepath.Join(packagesPath, nPackage.id, nPackage.version, strings.Join([]string{nPackage.id, "nuspec"}, "."))
 	nuspecContent, err := ioutil.ReadFile(nuspecPath)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -169,7 +220,9 @@ func createNugetPackage(packagesPath string, nuget xmlPackage) (*nugetPackage, e
 	nuspec := &nuspec{}
 	err = xml.Unmarshal(nuspecContent, nuspec)
 	if err != nil {
-		return nil, err
+		pack := nPackage.id + ":" + nPackage.version
+		log.Warn("Package:", pack, "couldn't be parsed due to:", err.Error(), ". Skipping the package dependency.")
+		return nPackage, nil
 	}
 
 	for _, dependency := range nuspec.Metadata.Dependencies.Dependencies {

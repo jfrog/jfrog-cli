@@ -1,18 +1,19 @@
 package solution
 
 import (
+	"encoding/json"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"os"
 	"path/filepath"
 	"strings"
-	"encoding/json"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution/project"
 )
 
 type Solution interface {
-	BuildInfo() *buildinfo.BuildInfo
+	BuildInfo() (*buildinfo.BuildInfo, error)
 	Marshal() ([]byte, error)
+	GetProjects() []project.Project
 }
 
 func Load(solutionPath string) (Solution, error) {
@@ -26,15 +27,26 @@ type solution struct {
 	projects []project.Project
 }
 
-func (solution *solution) BuildInfo() *buildinfo.BuildInfo {
+func (solution *solution) BuildInfo() (*buildinfo.BuildInfo, error) {
 	buildInfo := &buildinfo.BuildInfo{}
 	var modules []buildinfo.Module
 	for _, project := range solution.projects {
-		module := buildinfo.Module{Id: project.Name(), Dependencies: project.Dependencies()}
+		// Get All project dependencies
+		dependencies, err := project.Extractor().AllDependencies()
+		if err != nil {
+			return nil, err
+		}
+		var projectDependencies []buildinfo.Dependency
+
+		for _, dep := range dependencies {
+			projectDependencies = append(projectDependencies, *dep)
+		}
+
+		module := buildinfo.Module{Id: project.Name(), Dependencies: projectDependencies}
 		modules = append(modules, module)
 	}
 	buildInfo.Modules = modules
-	return buildInfo
+	return buildInfo, nil
 }
 
 func (solution *solution) Marshal() ([]byte, error) {
@@ -43,6 +55,10 @@ func (solution *solution) Marshal() ([]byte, error) {
 	}{
 		Projects: solution.projects,
 	})
+}
+
+func (solution *solution) GetProjects() []project.Project {
+	return solution.projects
 }
 
 func (solution *solution) loadProjects() error {

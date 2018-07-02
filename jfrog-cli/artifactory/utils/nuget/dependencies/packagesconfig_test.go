@@ -45,6 +45,34 @@ func TestGetRootDependencies(t *testing.T) {
 	}
 }
 
+func TestAlternativeVersionsForms(t *testing.T) {
+	tests := []struct {
+		version  string
+		expected []string
+	}{
+		{"1.0", []string{"1.0.0.0", "1.0.0", "1"}},
+		{"1", []string{"1.0.0.0", "1.0.0", "1.0"}},
+		{"1.2", []string{"1.2.0.0", "1.2.0"}},
+		{"1.22.33", []string{"1.22.33.0"}},
+		{"1.22.33.44", []string{}},
+		{"1.0.2", []string{"1.0.2.0"}},
+	}
+	for _, test := range tests {
+		t.Run(test.version, func(t *testing.T) {
+			actual := createAlternativeVersionForms(test.version)
+			sort.Strings(actual)
+			sort.Strings(test.expected)
+			if len(actual) != len(test.expected) {
+				t.Errorf("Expected: %s, Got: %s", test.expected, actual)
+			}
+
+			if len(actual) > 0 && len(test.expected) > 0 && !reflect.DeepEqual(test.expected, actual) {
+				t.Errorf("Expected: %s, Got: %s", test.expected, actual)
+			}
+		})
+	}
+}
+
 func TestLoadPackagesConfig(t *testing.T) {
 	xmlContent := []byte(`<?xml version="1.0" encoding="utf-8"?>
 <packages>

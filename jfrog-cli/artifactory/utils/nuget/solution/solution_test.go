@@ -1,9 +1,9 @@
 package solution
 
 import (
-	"testing"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"reflect"
+	"testing"
 )
 
 func TestEmptySolution(t *testing.T) {
@@ -13,7 +13,10 @@ func TestEmptySolution(t *testing.T) {
 	}
 
 	expected := &buildinfo.BuildInfo{}
-	buildInfo := solution.BuildInfo()
+	buildInfo, err := solution.BuildInfo()
+	if err != nil {
+		t.Error("An error occurred while creating the build info object", err.Error())
+	}
 	if !reflect.DeepEqual(buildInfo, expected) {
 		t.Errorf("Expecting: \n%s \nGot: \n%s", expected, buildInfo)
 	}

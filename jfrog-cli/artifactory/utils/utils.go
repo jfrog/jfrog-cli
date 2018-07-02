@@ -120,7 +120,11 @@ func RunCmdOutput(config CmdConfig) ([]byte, error) {
 	for k, v := range config.GetEnv() {
 		os.Setenv(k, v)
 	}
-	return config.GetCmd().Output()
+	output, err := config.GetCmd().Output()
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	return output, nil
 }
 
 func RunCmd(config CmdConfig) error {

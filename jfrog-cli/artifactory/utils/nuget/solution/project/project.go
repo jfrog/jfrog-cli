@@ -3,24 +3,30 @@ package project
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/dependencies"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 type Project interface {
 	Name() string
-	Dependencies() []buildinfo.Dependency
 	MarshalJSON() ([]byte, error)
+	Extractor() dependencies.Extractor
+	CreateDependencyTree() error
 }
 
 func Load(name, rootPath, csprojPath string) (Project, error) {
+	var err error
 	project := &project{name: name, rootPath: rootPath, csprojPath: csprojPath}
-	err := project.extractDependencies()
+	project.extractor, err = project.getCompatibleExtractor()
 	return project, err
 }
 
-func (project *project) extractDependencies() error {
+func (project *project) getCompatibleExtractor() (dependencies.Extractor, error) {
+	extractor, err := dependencies.CreateCompatibleExtractor(project.name, project.rootPath)
+	return extractor, err
+}
+
+func (project *project) CreateDependencyTree() error {
 	var err error
-	project.dependencyTree, err = dependencies.CreateDependencyTree(project.name, project.rootPath)
+	project.dependencyTree, err = dependencies.CreateDependencyTree(project.extractor)
 	return err
 }
 
@@ -29,14 +35,15 @@ type project struct {
 	rootPath       string
 	csprojPath     string
 	dependencyTree dependencies.Tree
+	extractor      dependencies.Extractor
 }
 
 func (project *project) Name() string {
 	return project.name
 }
 
-func (project *project) Dependencies() []buildinfo.Dependency {
-	return project.dependencyTree.AllDependencies()
+func (project *project) Extractor() dependencies.Extractor {
+	return project.extractor
 }
 
 func (project *project) MarshalJSON() ([]byte, error) {

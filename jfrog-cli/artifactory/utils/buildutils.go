@@ -102,7 +102,7 @@ func SaveBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 	}
 	defer tempFile.Close()
 	_, err = tempFile.Write([]byte(content.String()))
-	return err
+	return errorutils.CheckError(err)
 }
 
 func SaveBuildGeneralDetails(buildName, buildNumber string) error {

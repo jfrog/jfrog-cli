@@ -27,10 +27,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
-	/*
-		nugetdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
-		nugettree "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
-	*/
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
@@ -45,6 +41,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/mvnconfig"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/npminstall"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/npmpublish"
+	nugetdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/nuget"
+	nugettree "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
@@ -359,7 +357,7 @@ func GetCommands() []cli.Command {
 				npmPublishCmd(c)
 			},
 		},
-		/*{
+		{
 			Name:      "nuget",
 			Flags:     getNugetFlags(),
 			Usage:     nugetdocs.Description,
@@ -380,7 +378,7 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) {
 				nugetDepsTreeCmd(c)
 			},
-		},*/
+		},
 		{
 			Name:      "go-publish",
 			Flags:     getGoPublishFlags(),
@@ -671,7 +669,11 @@ func getNugetFlags() []cli.Flag {
 	nugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1=value1 arg2=value2\"",
+			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 value1 arg2 value2\"",
+		},
+		cli.StringFlag{
+			Name:  "solution-root",
+			Usage: "[Optional] Path to the solution.",
 		},
 	}
 	nugetFlags = append(nugetFlags, getBaseFlags()...)
@@ -1169,9 +1171,11 @@ func nugetCmd(c *cli.Context) {
 	params.RepoName = c.Args().Get(1)
 	params.BuildName = c.String("build-name")
 	params.BuildNumber = c.String("build-number")
+
+	path := c.String("solution-root")
 	params.ArtifactoryDetails = createArtifactoryDetailsByFlags(c, true)
 
-	err := nuget.ConsumeCmd(params)
+	err := nuget.ConsumeCmd(params, path)
 	cliutils.ExitOnErr(err)
 }
 

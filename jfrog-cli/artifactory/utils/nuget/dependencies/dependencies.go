@@ -7,15 +7,15 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 )
 
-var extractors []extractor
+var extractors []Extractor
 
 // Register dependency extractor
-func register(dependencyType extractor) {
+func register(dependencyType Extractor) {
 	extractors = append(extractors, dependencyType)
 }
 
 // The extractor responsible to calculate the project dependencies.
-type extractor interface {
+type Extractor interface {
 	// Check whether the extractor is compatible with the current dependency resolution method
 	IsCompatible(projectName, projectRoot string) (bool, error)
 	// Get all the dependencies for the project
@@ -25,21 +25,23 @@ type extractor interface {
 	// Dependencies relations map
 	ChildrenMap() (map[string][]string, error)
 
-	// Create new extractor
-	new(projectName, projectRoot string) (extractor, error)
+	new(projectName, projectRoot string) (Extractor, error)
 }
 
 // Dependency tree
 type Tree interface {
 	MarshalJSON() ([]byte, error)
-	AllDependencies() []buildinfo.Dependency
 }
 
-func CreateDependencyTree(projectName, projectRoot string) (Tree, error) {
+func CreateCompatibleExtractor(projectName, projectRoot string) (Extractor, error) {
 	extractor, err := getCompatibleExtractor(projectName, projectRoot)
 	if err != nil {
 		return nil, err
 	}
+	return extractor, nil
+}
+
+func CreateDependencyTree(extractor Extractor) (root, error) {
 	rootDependencies, err := extractor.DirectDependencies()
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func CreateDependencyTree(projectName, projectRoot string) (Tree, error) {
 }
 
 // Find suitable registered dependencies extractor.
-func getCompatibleExtractor(projectName, projectRoot string) (extractor, error) {
+func getCompatibleExtractor(projectName, projectRoot string) (Extractor, error) {
 	for _, extractor := range extractors {
 		compatible, err := extractor.IsCompatible(projectName, projectRoot)
 		if err != nil {
@@ -74,29 +76,7 @@ type root []*tree
 type tree struct {
 	Dependency         *buildinfo.Dependency `json:"dependencies,omitempty"`
 	DirectDependencies []*tree
-
-	id string
-}
-
-func (r root) AllDependencies() []buildinfo.Dependency {
-	var dependencies []buildinfo.Dependency
-	for _, tree := range r {
-		tree.allDependencies(&dependencies)
-	}
-	return dependencies
-}
-
-func (t tree) AllDependencies() []buildinfo.Dependency {
-	var dependencies []buildinfo.Dependency
-	t.allDependencies(&dependencies)
-	return dependencies
-}
-
-func (t *tree) allDependencies(dependencies *[]buildinfo.Dependency) {
-	for _, tree := range t.DirectDependencies {
-		tree.allDependencies(dependencies)
-	}
-	*dependencies = append(*dependencies, *t.Dependency)
+	id                 string
 }
 
 func (r root) MarshalJSON() ([]byte, error) {

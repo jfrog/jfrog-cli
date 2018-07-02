@@ -2,34 +2,35 @@ package nuget
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	"io"
-	"io/ioutil"
+	"github.com/mattn/go-shellwords"
 	"net/url"
 	"os"
 	"path"
 	"strings"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
+	"io/ioutil"
 )
 
 type Params struct {
-	Args        string
-	Flags       string
-	RepoName    string
-	BuildName   string
-	BuildNumber string
-
+	Args               string
+	Flags              string
+	RepoName           string
+	BuildName          string
+	BuildNumber        string
 	ArtifactoryDetails *config.ArtifactoryDetails
 }
 
+const SOURCE_NAME = "JFrogCli"
+
 // Exec all consume type nuget commands, install, update, add, restore.
-func ConsumeCmd(params *Params) error {
+func ConsumeCmd(params *Params, solutionPath string) error {
 	log.Info("Running nuget...")
 	// Use temp dir to save config file, the config will be removed at the end.
 	err := fileutils.CreateTempDirPath()
@@ -38,7 +39,12 @@ func ConsumeCmd(params *Params) error {
 	}
 	defer fileutils.RemoveTempDir()
 
-	solutionPath, err := prepareAndRunCmd(params)
+	solutionPath, err = changeWorkingDir(solutionPath)
+	if err != nil {
+		return err
+	}
+
+	err = prepareAndRunCmd(params)
 	if err != nil {
 		return err
 	}
@@ -53,13 +59,14 @@ func ConsumeCmd(params *Params) error {
 		return err
 	}
 
-	if isCollectBuildInfo {
-		if err = utils.SaveBuildGeneralDetails(params.BuildName, params.BuildNumber); err != nil {
-			return err
-		}
-		return utils.SaveBuildInfo(params.BuildName, params.BuildNumber, sol.BuildInfo())
+	if err = utils.SaveBuildGeneralDetails(params.BuildName, params.BuildNumber); err != nil {
+		return err
 	}
-	return nil
+	buildInfo, err := sol.BuildInfo()
+	if err != nil {
+		return err
+	}
+	return utils.SaveBuildInfo(params.BuildName, params.BuildNumber, buildInfo)
 }
 
 func DependencyTreeCmd() error {
@@ -73,118 +80,185 @@ func DependencyTreeCmd() error {
 		return err
 	}
 
+	// Create the tree for each project
+	for _, project := range sol.GetProjects() {
+		err = project.CreateDependencyTree()
+		if err != nil {
+			return err
+		}
+	}
+	// Build the tree.
 	content, err := sol.Marshal()
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	log.Output(clientutils.IndentJson(content))
 	return nil
 }
 
-func prepareAndRunCmd(params *Params) (string, error) {
+// Changes the working directory if provided.
+// Returns the path to the solution
+func changeWorkingDir(newWorkingDir string) (string, error) {
+	var err error
+	if newWorkingDir != "" {
+		err = os.Chdir(newWorkingDir)
+	} else {
+		newWorkingDir, err = os.Getwd()
+	}
+
+	return newWorkingDir, errorutils.CheckError(err)
+}
+
+// Prepares the nuget configuration file within the temp directory
+// Runs NuGet itself with the arguments and flags provided.
+func prepareAndRunCmd(params *Params) error {
 	cmd, err := createNugetCmd(params)
 	if err != nil {
-		return "", err
+		return err
+	}
+	// To prevent NuGet prompting for credentials
+	err = os.Setenv("NUGET_EXE_NO_PROMPT", "true")
+	if err != nil {
+		return errorutils.CheckError(err)
 	}
 
 	err = prepareConfigFile(params, cmd)
 	if err != nil {
-		return "", err
+		return err
 	}
-
 	err = utils.RunCmd(cmd)
 	if err != nil {
-		return "", errorutils.CheckError(err)
+		return err
 	}
 
-	// Return current solution path.
-	return os.Getwd()
+	return nil
 }
 
+// Checks if the user provided input such as -configfile flag or -Source flag.
+// If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
+// If neither provided, we are initializing our own config.
 func prepareConfigFile(params *Params, cmd *nuget.Cmd) error {
-	tempDir, err := fileutils.GetTempDirPath()
-	if err != nil {
-		return err
-	}
-	configFile, err := ioutil.TempFile(tempDir, "jfrog.cli.nuget.")
-	if err != nil {
-		return err
-	}
-	log.Debug("Nuget config file created at:", configFile.Name())
-
-	currentConfigPath, err := getAndReplaceCurrentConfigPath(configFile.Name(), cmd)
+	currentConfigPath, err := getFlagValueIfExists("-configfile", cmd)
 	if err != nil {
 		return err
 	}
 	if currentConfigPath != "" {
-		err = copyExistingConfig(configFile, currentConfigPath)
-	} else {
-		err = initNewConfig(configFile, params, cmd)
+		return nil
 	}
+
+	sourceCommandValue, err := getFlagValueIfExists("-source", cmd)
 	if err != nil {
 		return err
 	}
-
-	err = configFile.Close()
-	if err != nil {
-		return err
+	if sourceCommandValue != "" {
+		return nil
 	}
 
-	return nil
+	err = initNewConfig(params, cmd)
+	return err
 }
 
-func copyExistingConfig(newConfigFile *os.File, currentConfigPath string) error {
-	// Copy the content of the current config file to the temp config.
-	// To preserve the behaviour of the given config.
-	log.Debug("Copying config file content from:", currentConfigPath)
-	currentConfigFile, err := os.Open(currentConfigPath)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	defer currentConfigFile.Close()
-
-	_, err = io.Copy(newConfigFile, currentConfigFile)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-
-	return nil
-}
-func getAndReplaceCurrentConfigPath(newConfigPath string, cmd *nuget.Cmd) (string, error) {
+// Returns the value of the flag if exists
+func getFlagValueIfExists(cmdFlag string, cmd *nuget.Cmd) (string, error) {
 	for i := 0; i < len(cmd.CommandFlags); i++ {
-		if !strings.Contains(strings.ToLower(cmd.CommandFlags[i]), "-configfile") {
+		if !strings.EqualFold(cmd.CommandFlags[i], cmdFlag) {
 			continue
 		}
 		if i+1 == len(cmd.CommandFlags) {
-			return "", errorutils.CheckError(fmt.Errorf("-ConfigFile flag was provided without file path"))
+			return "", errorutils.CheckError(errorutils.CheckError(fmt.Errorf(cmdFlag, " flag was provided without value")))
 		}
-		currentConfigPath := cmd.CommandFlags[i+1]
-		exists, err := fileutils.IsFileExists(currentConfigPath)
-		if err != nil {
-			return "", errorutils.CheckError(err)
-		}
-		if !exists {
-			return "", errorutils.CheckError(fmt.Errorf("Could not find config file at: %s", currentConfigPath))
-		}
-
-		// Override config file in the cmd
-		cmd.CommandFlags[i+1] = newConfigPath
-		return currentConfigPath, nil
+		return cmd.CommandFlags[i+1], nil
 	}
 
 	return "", nil
 }
 
-func initNewConfig(newConfigFile *os.File, params *Params, cmd *nuget.Cmd) error {
-	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", newConfigFile.Name())
+// Initializing a new NuGet config file that NuGet will use into a temp file
+func initNewConfig(params *Params, cmd *nuget.Cmd) error {
+	// Got to here, means that neither of the flags provided and we need to init our own config.
+	configFile, err := writeToTempConfigFile(cmd)
+	if err != nil {
+		return err
+	}
 
-	// Set Artifactory repo as source
+	return addNugetAuthenticationToNewConfig(params, configFile)
+}
+
+// Runs nuget add sources and setapikey commands to authenticate with Artifactory server
+func addNugetAuthenticationToNewConfig(params *Params, configFile *os.File) error {
 	sourceUrl, user, password, err := getSourceDetails(params)
 	if err != nil {
 		return err
 	}
-	content := fmt.Sprintf(nuget.ConfigFileTemplate, sourceUrl, user, password)
-	_, err = newConfigFile.WriteString(content)
+
+	err = addNugetSource(configFile.Name(), sourceUrl, user, password)
+	if err != nil {
+		return err
+	}
+
+	err = addNugetApiKey(user, password, configFile.Name())
+	return err
+}
+
+// Creates the temp file and writes the config template into the file for NuGet can use it.
+func writeToTempConfigFile(cmd *nuget.Cmd) (*os.File, error) {
+	tempDir, err := fileutils.GetTempDirPath()
+	if err != nil {
+		return nil, err
+	}
+	configFile, err := ioutil.TempFile(tempDir, "jfrog.cli.nuget.")
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	log.Debug("Nuget config file created at:", configFile.Name())
+
+	defer configFile.Close()
+
+	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFile.Name())
+
+	// Set Artifactory repo as source
+	content := nuget.ConfigFileTemplate
+	_, err = configFile.WriteString(content)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	return configFile, nil
+}
+
+// Runs nuget sources add command
+func addNugetSource(configFileName, sourceUrl, user, password string) error {
+	cmd, err := nuget.NewNugetCmd()
+	if err != nil {
+		return err
+	}
+
+	sourceCommand := "sources"
+	cmd.Command = append(cmd.Command, sourceCommand)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
+	cmd.CommandFlags = append(cmd.CommandFlags, "Add")
+	cmd.CommandFlags = append(cmd.CommandFlags, "-Name", SOURCE_NAME)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceUrl)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-username", user)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-password", password)
+	output, err := utils.RunCmdOutput(cmd)
+	log.Debug("Running command: %s", string(output))
+	return err
+}
+
+// Runs nuget setapikey command
+func addNugetApiKey(user, password, configFileName string) error {
+	cmd, err := nuget.NewNugetCmd()
+	if err != nil {
+		return err
+	}
+
+	cmd.Command = append(cmd.Command, "setapikey")
+	cmd.CommandFlags = append(cmd.CommandFlags, user+":"+password)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", SOURCE_NAME)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
+
+	output, err := utils.RunCmdOutput(cmd)
+	log.Debug("Running command: %s", string(output))
 	return err
 }
 
@@ -207,12 +281,15 @@ func createNugetCmd(params *Params) (*nuget.Cmd, error) {
 		return nil, err
 	}
 	if params.Args != "" {
-		c.Command = strings.Split(params.Args, " ")
+		c.Command, err = shellwords.Parse(params.Args)
+		if err != nil {
+			return nil, errorutils.CheckError(err)
+		}
 	}
 
 	if params.Flags != "" {
-		c.CommandFlags = strings.Split(params.Flags, " ")
+		c.CommandFlags, err = shellwords.Parse(params.Flags)
 	}
 
-	return c, nil
+	return c, errorutils.CheckError(err)
 }

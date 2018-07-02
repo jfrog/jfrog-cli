@@ -35,6 +35,7 @@ var TestDocker *bool
 var TestVgo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
+var TestNuget *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -54,6 +55,7 @@ func init() {
 	TestVgo = flag.Bool("test.vgo", false, "Test Vgo")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
+	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 }
 
 func CleanFileSystem() {

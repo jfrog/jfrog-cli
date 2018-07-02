@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"errors"
 )
 
 var assetsFilePath = filepath.Join("obj", "project.assets.json")
@@ -47,7 +48,7 @@ func (extractor *assetsExtractor) ChildrenMap() (map[string][]string, error) {
 }
 
 // Create new assets json extractor.
-func (extractor *assetsExtractor) new(projectName, projectRoot string) (extractor, error) {
+func (extractor *assetsExtractor) new(projectName, projectRoot string) (Extractor, error) {
 	newExtractor := &assetsExtractor{}
 	assetsFilePath := filepath.Join(projectRoot, assetsFilePath)
 	content, err := ioutil.ReadFile(assetsFilePath)
@@ -98,6 +99,17 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 			return nil, err
 		}
 		nupkgFilePath := filepath.Join(packagesPath, library.Path, nupkgFileName)
+		exists, err := fileutils.IsFileExists(nupkgFilePath)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			if assets.isPackagePartOfTargetDependencies(library.Path) {
+				log.Warn("The file", nupkgFilePath, "doesn't exist in the NuGet cache directory but it does exist as a target in the assets files. Skipping adding this file to the build info.")
+				continue
+			}
+			return nil, errorutils.CheckError(errors.New("The file " + nupkgFilePath + " doesn't exist in the NuGet cache directory."))
+		}
 		fileDetails, err := fileutils.GetFileDetails(nupkgFilePath)
 		if err != nil {
 			return nil, err
@@ -109,6 +121,24 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 
 	return dependencies, nil
 }
+
+// If the package is included in the targets section of the assets.json file,
+// then this is a .NET dependency that shouldn't be included in the build-info dependencies list
+// (it come with the SDK).
+// Those files are located in the following path: C:\Program Files\dotnet\sdk\NuGetFallbackFolder
+func (assets *assets) isPackagePartOfTargetDependencies(nugetPackageName string) bool {
+	for _, dependencies := range assets.Targets {
+		for dependencyId := range dependencies {
+			// The package names in the targets section of the assets.json file are
+			// case insensitive.
+			if strings.EqualFold(dependencyId, nugetPackageName) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func getDependencyName(dependencyId string) string {
 	return strings.ToLower(dependencyId)[0:strings.Index(dependencyId, "/")]
 }

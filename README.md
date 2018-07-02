@@ -103,6 +103,17 @@ To run vgo tests:
 go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.vgo=true 
 ````
 
+#### NuGet tests
+
+To run NuGet tests:
+* Add NuGet executable to the system search path (PATH environment variable).
+* Create a remote repository named jfrog-cli-tests-nuget-remote-repo
+* Run the following command:
+
+````
+go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.nuget=true 
+````
+
 ### Bintray tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
 
