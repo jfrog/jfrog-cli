@@ -853,7 +853,7 @@ func getSetPropertiesFlags() []cli.Flag {
 func getArchiveEntriesFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "archive-entries",
-		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched.",
+		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.",
 	}
 }
 
