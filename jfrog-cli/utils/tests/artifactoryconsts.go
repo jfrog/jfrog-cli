@@ -62,6 +62,8 @@ const (
 	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
 	BuildDownloadSpecNoBuildNumberWithSort = "build_download_spec_no_build_number_with_sort.json"
 	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
+	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
+	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 )
 
 var TxtUploadExpectedRepo1 = []string{
@@ -644,4 +646,21 @@ var BuildDownloadByShaAndBuildNameWithSort = []string{
 	filepath.Join(Out, "download", "sort_limit_by_build"),
 	filepath.Join(Out, "download", "sort_limit_by_build", "data"),
 	filepath.Join(Out, "download", "sort_limit_by_build", "data", "a11.in"),
+}
+
+var BuildArchiveEntriesDownloadCli = []string{
+	Out,
+	filepath.Join(Out, "a.zip"),
+	filepath.Join(Out, "b.zip"),
+	filepath.Join(Out, "c.zip"),
+}
+
+var BuildArchiveEntriesSpecificPathDownload = []string{
+	Out,
+	filepath.Join(Out, "b.zip"),
+}
+
+var BuildArchiveEntriesDownloadSpec = []string{
+	Out,
+	filepath.Join(Out, "d.zip"),
 }

@@ -596,6 +596,7 @@ func getDownloadFlags() []cli.Flag {
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
 }
 
@@ -734,6 +735,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
 
 }
@@ -764,6 +766,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
 }
 
@@ -793,6 +796,7 @@ func getDeleteFlags() []cli.Flag {
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
 }
 
@@ -814,6 +818,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
 }
 
@@ -839,7 +844,15 @@ func getSetPropertiesFlags() []cli.Flag {
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
+		getArchiveEntriesFlag(),
 	}...)
+}
+
+func getArchiveEntriesFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "archive-entries",
+		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched.",
+	}
 }
 
 func getThreadsFlag() cli.Flag {
@@ -1672,6 +1685,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
 		Flat(c.Bool("flat")).
 		IncludeDirs(true).
 		Target(c.Args().Get(1)).
+		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }
 
@@ -1699,6 +1713,7 @@ func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }
 
@@ -1747,6 +1762,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }
 
@@ -1762,6 +1778,7 @@ func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		IncludeDirs(c.Bool("include-dirs")).
+		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }
 
@@ -1859,6 +1876,7 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 		Explode(c.String("explode")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(c.Args().Get(1)).
+		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }
 

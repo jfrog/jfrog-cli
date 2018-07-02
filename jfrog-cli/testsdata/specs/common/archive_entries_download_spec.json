@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "jfrog-cli-tests-repo1/*",
+      "target": "out/",
+      "flat": "true",
+      "archiveEntries" : "*d1.in"
+    }
+  ]
+}

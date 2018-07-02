@@ -30,6 +30,7 @@ type ArtifactoryCommonParams struct {
 	Recursive       bool
 	IncludeDirs     bool
 	Regexp          bool
+	ArchiveEntries  string
 }
 
 type FileGetter interface {
@@ -50,6 +51,16 @@ type FileGetter interface {
 	IsRegexp() bool
 	IsRecursive() bool
 	IsIncludeDirs() bool
+	GetArchiveEntries() string
+	SetArchiveEntries(archiveEntries string)
+}
+
+func (params ArtifactoryCommonParams) GetArchiveEntries() string {
+	return params.ArchiveEntries
+}
+
+func (params *ArtifactoryCommonParams) SetArchiveEntries(archiveEntries string) {
+	params.ArchiveEntries = archiveEntries
 }
 
 func (params *ArtifactoryCommonParams) GetPattern() string {

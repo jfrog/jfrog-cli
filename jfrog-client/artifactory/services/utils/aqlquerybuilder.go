@@ -31,18 +31,77 @@ func createAqlBodyForSpec(params *ArtifactoryCommonParams) (string, error) {
 	excludeQuery := buildExcludeQueryPart(params.ExcludePatterns, pathPairsSize == 0 || params.Recursive, params.Recursive)
 
 	json := fmt.Sprintf(`{"repo": "%s",%s"$or": [`, repo, propsQueryPart+itemTypeQuery+nePath+excludeQuery)
+
+	// Get archive search parameters
+	archivePathFilePairs := createArchiveSearchParams(params)
+
 	if pathPairsSize == 0 {
-		json += buildInnerQueryPart(".", searchPattern)
+		json += handleEmptyPathFilePairs(searchPattern, archivePathFilePairs)
 	} else {
-		for i := 0; i < pathPairsSize; i++ {
-			json += buildInnerQueryPart(pathFilePairs[i].path, pathFilePairs[i].file)
-			if i+1 < pathPairsSize {
-				json += ","
-			}
-		}
+		json += handlePathFilePairs(pathFilePairs, archivePathFilePairs, pathPairsSize)
 	}
+
 	json += "]}"
 	return json, nil
+}
+
+func createArchiveSearchParams(params *ArtifactoryCommonParams) []PathFilePair {
+	var archivePathFilePairs []PathFilePair
+
+	if params.ArchiveEntries != "" {
+		archiveSearchPattern := prepareSearchPattern(params.ArchiveEntries, false)
+		archivePathFilePairs = createPathFilePairs(archiveSearchPattern, true)
+	}
+
+	return archivePathFilePairs
+}
+
+// Handle building aql query when having PathFilePairs
+func handlePathFilePairs(pathFilePairs []PathFilePair, archivePathFilePairs []PathFilePair, pathPairSize int) string {
+	var query string
+	archivePathPairSize := len(archivePathFilePairs)
+
+	for i := 0; i < pathPairSize; i++ {
+		if archivePathPairSize > 0 {
+			query += handleArchiveSearch(pathFilePairs[i].path, pathFilePairs[i].file, archivePathFilePairs)
+		} else {
+			query += buildInnerQueryPart(pathFilePairs[i].path, pathFilePairs[i].file)
+		}
+
+		if i+1 < pathPairSize {
+			query += ","
+		}
+	}
+
+	return query
+}
+
+// Handle building aql query when not having PathFilePairs
+func handleEmptyPathFilePairs(searchPattern string, archivePathFilePairs []PathFilePair) string {
+	var query string
+	if len(archivePathFilePairs) > 0 {
+		// Archive search
+		query = handleArchiveSearch(".", searchPattern, archivePathFilePairs)
+	} else {
+		// No archive search
+		query = buildInnerQueryPart(".", searchPattern)
+	}
+
+	return query
+}
+
+// Handle building aql query including archive search
+func handleArchiveSearch(path, name string, archivePathFilePairs []PathFilePair) string {
+	var query string
+	archivePathPairSize := len(archivePathFilePairs)
+	for i := 0; i < archivePathPairSize; i++ {
+		query += buildInnerArchiveQueryPart(path, name, archivePathFilePairs[i].path, archivePathFilePairs[i].file)
+
+		if i+1 < archivePathPairSize {
+			query += ","
+		}
+	}
+	return query
 }
 
 func createAqlQueryForBuild(buildName, buildNumber string) string {
@@ -117,6 +176,17 @@ func buildInnerQueryPart(path, name string) string {
 		`"name": {"$match": "%s"}` +
 		`}]}`
 	return fmt.Sprintf(innerQueryPattern, path, name)
+}
+
+func buildInnerArchiveQueryPart(path, name, archivePath, archiveName string) string {
+	innerQueryPattern := `{"$and":` +
+		`[{` +
+		`"path": {"$match": "%s"},` +
+		`"name": {"$match": "%s"},` +
+		`"archive.entry.path": {"$match": "%s"},` +
+		`"archive.entry.name": {"$match": "%s"}` +
+		`}]}`
+	return fmt.Sprintf(innerQueryPattern, path, name, archivePath, archiveName)
 }
 
 func buildExcludeQueryPart(excludePatterns []string, useLocalPath, recursive bool) string {
