@@ -45,9 +45,6 @@ import (
 // JFrog CLI for Artifactory commands
 var artifactoryCli *tests.JfrogCli
 
-// JFrog CLI for Artifactory commands. This CLI is initialized with no credentials
-var artifactoryAnonymousCli *tests.JfrogCli
-
 var artifactoryDetails *config.ArtifactoryDetails
 var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
@@ -59,7 +56,6 @@ func InitArtifactoryTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
-	artifactoryAnonymousCli = tests.NewJfrogCli(main, "jfrog rt", "")
 	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
@@ -425,7 +421,7 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryCli.Exec("upload", filepath.Join(tests.Out, "*"), "jfrog-cli-tests-repo1", "--flat=true")
+	artifactoryCli.Exec("upload", ioutils.PrepareFilePathForWindows(filepath.Join(tests.Out, "*")), "jfrog-cli-tests-repo1", "--flat=true")
 	randFile.File.Close()
 	os.RemoveAll(tests.Out)
 	artifactoryCli.Exec("download", path.Join(tests.Repo1, "randFile"), tests.Out+"/", "--explode=true")
@@ -2116,7 +2112,7 @@ func TestGitLfsCleanup(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	initArtifactoryTest(t)
-	artifactoryAnonymousCli.Exec("ping")
+	artifactoryCli.Exec("ping")
 	cleanArtifactoryTest()
 }
 

@@ -407,7 +407,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "ping",
-			Flags:     getPingFlags(),
+			Flags:     getServerFlags(),
 			Aliases:   []string{"p"},
 			Usage:     ping.Description,
 			HelpName:  common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -459,10 +459,6 @@ func getCommonFlags() []cli.Flag {
 
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), getServerIdFlag())
-}
-
-func getPingFlags() []cli.Flag {
-	return append(getUrlFlag(), getServerIdFlag())
 }
 
 func getSortLimitFlags() []cli.Flag {
