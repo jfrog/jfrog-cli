@@ -14,52 +14,48 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"fmt"
 )
 
-const gradleExtractorDependencyVersion = "4.6.2"
-const gradleInitScriptTemplate = "gradle.init.v2"
+const gradleExtractorDependencyVersion = "4.7.5"
+const gradleInitScriptTemplate = "gradle.init"
 
 const usePlugin = "useplugin"
 const useWrapper = "usewrapper"
 const gradleBuildInfoProperties = "BUILDINFO_PROPFILE"
 
 func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) error {
-	log.Info("Running Gradle...")
-	dependenciesPath, err := downloadGradleDependencies()
+	gradleDependenciesDir, gradlePluginFilename, err := downloadGradleDependencies()
 	if err != nil {
 		return err
 	}
-
-	gradleRunConfig, err := createGradleRunConfig(tasks, configPath, configuration, dependenciesPath)
+	gradleRunConfig, err := createGradleRunConfig(tasks, configPath, configuration, gradleDependenciesDir, gradlePluginFilename)
 	if err != nil {
 		return err
 	}
-
 	defer os.Remove(gradleRunConfig.env[gradleBuildInfoProperties])
 	if err := utils.RunCmd(gradleRunConfig); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func downloadGradleDependencies() (string, error) {
+func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename string, err error) {
 	dependenciesPath, err := config.GetJfrogDependenciesPath()
 	if err != nil {
-		return "", err
+		return
 	}
+	gradleDependenciesDir = filepath.Join(dependenciesPath, "gradle", gradleExtractorDependencyVersion)
+	gradlePluginFilename = fmt.Sprintf("build-info-extractor-gradle-%s-uber.jar", gradleExtractorDependencyVersion)
 
-	filename := "build-info-extractor-gradle-${version}-uber.jar"
-	downloadPath := path.Join("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/${version}/", filename)
-	err = utils.DownloadFromBintray(downloadPath, filename, gradleExtractorDependencyVersion, dependenciesPath)
-	if err != nil {
-		return "", err
-	}
+	filePath := fmt.Sprintf("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/%s", gradleExtractorDependencyVersion)
+	downloadPath := path.Join(filePath, gradlePluginFilename)
 
-	return dependenciesPath, err
+	err = utils.DownloadFromBintrayIfNeeded(downloadPath, gradlePluginFilename, gradleDependenciesDir)
+	return
 }
 
-func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildConfiguration, dependenciesPath string) (*gradleRunConfig, error) {
+func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildConfiguration, gradleDependenciesDir, gradlePluginFilename string) (*gradleRunConfig, error) {
 	runConfig := &gradleRunConfig{env: map[string]string{}}
 	runConfig.tasks = tasks
 
@@ -79,7 +75,7 @@ func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildC
 	}
 
 	if !vConfig.GetBool(usePlugin) {
-		runConfig.initScript, err = getInitScript(dependenciesPath)
+		runConfig.initScript, err = getInitScript(gradleDependenciesDir, gradlePluginFilename)
 		if err != nil {
 			return nil, err
 		}
@@ -88,26 +84,29 @@ func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildC
 	return runConfig, nil
 }
 
-func getInitScript(dependenciesPath string) (string, error) {
-	dependenciesPath, err := filepath.Abs(dependenciesPath)
+func getInitScript(gradleDependenciesDir, gradlePluginFilename string) (string, error) {
+	gradleDependenciesDir, err := filepath.Abs(gradleDependenciesDir)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-	initScript := filepath.Join(dependenciesPath, gradleInitScriptTemplate)
+	initScriptPath := filepath.Join(gradleDependenciesDir, gradleInitScriptTemplate)
 
-	if fileutils.IsPathExists(initScript) {
-		return initScript, nil
+	exists, err := fileutils.IsFileExists(initScriptPath)
+	if exists || err != nil {
+		return initScriptPath, err
 	}
 
-	dependenciesPathFixed := strings.Replace(dependenciesPath, "\\", "\\\\", -1)
-	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", dependenciesPathFixed, -1)
-	if !fileutils.IsPathExists(dependenciesPath) {
-		err = os.MkdirAll(dependenciesPath, 0777)
+	gradlePluginPath := filepath.Join(gradleDependenciesDir, gradlePluginFilename)
+	gradlePluginPath = strings.Replace(gradlePluginPath, "\\", "\\\\", -1)
+	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", gradlePluginPath, -1)
+	if !fileutils.IsPathExists(gradleDependenciesDir) {
+		err = os.MkdirAll(gradleDependenciesDir, 0777)
 		if errorutils.CheckError(err) != nil {
 			return "", err
 		}
 	}
-	return initScript, errorutils.CheckError(ioutil.WriteFile(initScript, []byte(initScriptContent), 0644))
+
+	return initScriptPath, errorutils.CheckError(ioutil.WriteFile(initScriptPath, []byte(initScriptContent), 0644))
 }
 
 type gradleRunConfig struct {
@@ -124,6 +123,8 @@ func (config *gradleRunConfig) GetCmd() *exec.Cmd {
 		cmd = append(cmd, "--init-script", config.initScript)
 	}
 	cmd = append(cmd, strings.Split(config.tasks, " ")...)
+
+	log.Info("Running gradle command:", strings.Join(cmd, " "))
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 

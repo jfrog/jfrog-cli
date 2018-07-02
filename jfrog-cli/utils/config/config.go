@@ -264,7 +264,7 @@ func GetJfrogHomeDir() (string, error) {
 			return "", err
 		}
 	}
-	return path.Join(userDir, ".jfrog"), nil
+	return filepath.Join(userDir, ".jfrog"), nil
 }
 
 func GetJfrogDependenciesPath() (string, error) {

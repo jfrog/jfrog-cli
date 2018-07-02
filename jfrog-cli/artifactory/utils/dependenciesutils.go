@@ -8,28 +8,22 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"path/filepath"
-	"strings"
 )
 
 // Download file from Bintray.
-// downloadPath: download path in the following format: subject/repo/path/version/filename.
-// filename: the file full name, will replace ${filename} in downloadPath argument.
-// version: version of the desired file, will replace ${version} in downloadPath argument.
+// downloadPath: Bintray download path in the following format: subject/repo/path/version/filename.
+// filename: the file full name.
 // targetPath: local download target path.
-func DownloadFromBintray(downloadPath, filename, version, targetPath string) error {
-	filename = strings.Replace(filename, "${version}", version, -1)
+func DownloadFromBintrayIfNeeded(downloadPath, filename, targetPath string) error {
 	targetFile := filepath.Join(targetPath, filename)
-	if fileutils.IsPathExists(targetFile) {
-		return nil
+	exists, err := fileutils.IsFileExists(targetFile)
+	if exists || err != nil {
+		return err
 	}
 
 	bintrayConfig := auth.NewBintrayDetails()
-	config := bintray.NewConfigBuilder().
-		SetBintrayDetails(bintrayConfig).
-		Build()
+	config := bintray.NewConfigBuilder().SetBintrayDetails(bintrayConfig).Build()
 
-	downloadPath = strings.Replace(downloadPath, "${version}", version, -1)
-	downloadPath = strings.Replace(downloadPath, "${filename}", filename, -1)
 	pathDetails, err := utils.CreatePathDetails(downloadPath)
 	if err != nil {
 		return err
