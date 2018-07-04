@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"errors"
 )
 
 var RtUrl *string
@@ -72,14 +73,18 @@ func IsExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
-	compare(expected, actual, t)
+	err := compare(expected, actual)
+	if err != nil {
+		t.Error(err.Error())
+	}
 }
 
-func ValidateListsIdentical(expected, actual []string, t *testing.T) {
+func ValidateListsIdentical(expected, actual []string) error {
 	if len(actual) != len(expected) {
-		t.Error("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
+		return errors.New("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
 	}
-	compare(expected, actual, t)
+	err := compare(expected, actual)
+	return err
 }
 
 func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetails, t *testing.T) {
@@ -98,17 +103,18 @@ func ValidateChecksums(filePath string, expectedChecksum fileutils.ChecksumDetai
 	}
 }
 
-func compare(expected, actual []string, t *testing.T) {
+func compare(expected, actual []string) error {
 	for _, v := range expected {
 		for i, r := range actual {
 			if v == r {
 				break
 			}
 			if i == len(actual)-1 {
-				t.Error("Missing file : " + v)
+				return errors.New("Missing file : " + v)
 			}
 		}
 	}
+	return nil
 }
 
 func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, t *testing.T) {
