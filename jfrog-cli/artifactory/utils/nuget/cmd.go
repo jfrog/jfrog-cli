@@ -4,7 +4,6 @@ import (
 	"os/exec"
 	"io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"os"
 )
 
 func NewNugetCmd() (*Cmd, error) {
@@ -12,7 +11,7 @@ func NewNugetCmd() (*Cmd, error) {
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{Nuget: execPath, StrWriter: os.Stderr}, nil
+	return &Cmd{Nuget: execPath}, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {
