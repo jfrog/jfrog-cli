@@ -31,7 +31,7 @@ func TestArchiveProject(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	expected := map[checksum.Algorithm]string{checksum.MD5: "5f3b3609258f05c1b2d52a66e8d54e2a", checksum.SHA1: "2f2ccb2e42c0d3abd351a8d0b9ba488e1277cf23"}
+	expected := map[checksum.Algorithm]string{checksum.MD5: "e9d99e836e06dcb12bb3172d7719fb0f", checksum.SHA1: "f3d0e545eb065ba6b5ca01b8d916100b50a96daa"}
 	actual, err := checksum.Calc(buff)
 	if err != nil {
 		t.Error(err)

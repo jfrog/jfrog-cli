@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -23,7 +24,7 @@ func Load() ([]Dependency, error) {
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	cachePath := filepath.Join(goPath, "src", "v", "cache")
+	cachePath := filepath.Join(goPath, "src", "mod", "cache", "download")
 	return getDependencies(cachePath)
 }
 
@@ -66,7 +67,7 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 		return nil, err
 	}
 	vgoCmd.Command = []string{"list"}
-	vgoCmd.CommandFlags = []string{"-m"}
+	vgoCmd.CommandFlags = []string{"-m", "all"}
 	output, err := utils.RunCmdOutput(vgoCmd)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -95,14 +96,13 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 func createDependency(cachePath, dependencyName, version string) (*Dependency, error) {
 	// We first check if the this dependency has a zip binary in the local vgo cache.
 	// If it does not, nil is returned. This seems to be a bug in vgo.
-	zipPath := filepath.Join(cachePath, dependencyName, "@v", version+".zip")
-	fileExists, err := fileutils.IsFileExists(zipPath)
+	zipPath, err := getPackageZipLocation(cachePath, dependencyName, version)
+
 	if err != nil {
-		log.Warn(fmt.Sprintf("Could not find zip binary for dependency '%s' at %s.", dependencyName, zipPath))
 		return nil, err
 	}
-	// Zip binary does not exist, so we skip it by returning a nil dependency.
-	if !fileExists {
+
+	if zipPath == "" {
 		return nil, nil
 	}
 
@@ -136,6 +136,42 @@ func createDependency(cachePath, dependencyName, version string) (*Dependency, e
 	return &dep, nil
 }
 
+// Returns the path to the package zip file if exists.
+func getPackageZipLocation(cachePath, dependencyName, version string) (string, error) {
+	zipPath, err := getPackagePathIfExists(cachePath, dependencyName, version)
+	if err != nil {
+		return "", err
+	}
+
+	if zipPath != "" {
+		return zipPath, nil
+	}
+
+	zipPath, err = getPackagePathIfExists(path.Dir(cachePath), dependencyName, version)
+
+	if err != nil {
+		return "", err
+	}
+
+	return zipPath, nil
+}
+
+// Validates if the package zip file exists.
+func getPackagePathIfExists(cachePath, dependencyName, version string) (zipPath string, err error) {
+	zipPath = filepath.Join(cachePath, dependencyName, "@v", version+".zip")
+	fileExists, err := fileutils.IsFileExists(zipPath)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Could not find zip binary for dependency '%s' at %s.", dependencyName, zipPath))
+		return "", err
+	}
+	// Zip binary does not exist, so we skip it by returning a nil dependency.
+	if !fileExists {
+		log.Debug("The following file is missing:", zipPath)
+		return "", nil
+	}
+	return zipPath, nil
+}
+
 func parseListOutput(content []byte) (map[string]string, error) {
 	depRegexp, err := regexp.Compile("(\\S+)\\s+(\\S+)")
 	if err != nil {
@@ -144,7 +180,7 @@ func parseListOutput(content []byte) (map[string]string, error) {
 
 	depMap := map[string]string{}
 	lines := bytes.Split(content, []byte("\n"))
-	for i := 2; i < len(lines); i++ {
+	for i := 0; i < len(lines); i++ {
 		dependency := depRegexp.FindStringSubmatch(string(lines[i]))
 		if len(dependency) == 3 {
 			depMap[dependency[1]] = dependency[2]
