@@ -2,13 +2,13 @@ package buildinfo
 
 import (
 	"errors"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )
 
 func AddArtifacts(addArtifactsSpec *spec.SpecFiles, configuration *BuildAddArtifactsConfiguration) (successCount int, failCount int, err error) {
