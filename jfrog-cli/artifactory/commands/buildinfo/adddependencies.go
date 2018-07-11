@@ -15,7 +15,7 @@ import (
 	"strconv"
 )
 
-func AddDependencies(dependenciesSpec *spec.SpecFiles, configuration *AddDependenciesConfiguration) (successCount, failCount int, err error) {
+func AddDependencies(dependenciesSpec *spec.SpecFiles, configuration *AddDependenciesConfiguration) (successCount int, failCount int, err error) {
 	log.Info("Running Build Add Dependencies command...")
 	if !configuration.DryRun {
 		if err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {

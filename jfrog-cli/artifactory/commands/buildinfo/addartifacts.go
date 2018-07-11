@@ -11,26 +11,28 @@ import (
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )
 
-func AddArtifacts(addArtifactsSpec *spec.SpecFiles, flags *BuildAddArtifactsConfiguration) (err error) {
+func AddArtifacts(addArtifactsSpec *spec.SpecFiles, configuration *BuildAddArtifactsConfiguration) (successCount int, failCount int, err error) {
 	log.Info("Running Build Add Artifacts command...")
+	if !configuration.DryRun {
+		buildArtifacts, err := getBuildArtifacts(configuration.ArtDetails, addArtifactsSpec); if err != nil {
+			return 0, 0, err
+		}
 
-	buildArtifacts, err := getBuildArtifacts(flags.ArtDetails, addArtifactsSpec); if err != nil {
-		return
-	}
+		err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); if err != nil {
+			return 0, len(buildArtifacts), err
+		}
 
-	err = utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); if err != nil {
-		return
-	}
+		populateFunc := func(partial *buildinfo.Partial) {
+			partial.Artifacts = buildArtifacts
+		}
+		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc); if err != nil {
+			return 0, len(buildArtifacts), err
+		}
 
-	populateFunc := func(partial *buildinfo.Partial) {
-		partial.Artifacts = buildArtifacts
+		return len(buildArtifacts), 0, err
+	} else {
+		return 0, 0, nil
 	}
-	err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc); if err != nil {
-		return
-	}
-
-	log.Info("Successfully added artifact to build info")
-	return
 }
 
 func getBuildArtifacts(artifactoryDetails *config.ArtifactoryDetails, addArtifactsSpec *spec.SpecFiles) ([]buildinfo.InternalArtifact, error) {
@@ -67,4 +69,5 @@ type BuildAddArtifactsConfiguration struct {
 	ArtDetails  *config.ArtifactoryDetails
 	BuildName   string
 	BuildNumber string
+	DryRun      bool
 }

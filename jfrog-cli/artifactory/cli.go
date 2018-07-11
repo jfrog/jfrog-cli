@@ -911,7 +911,7 @@ func getBuildAddDependenciesFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.",
+			Usage: "[Default: false] Set to true to only get a summary of the dependencies that will be added to the build info.",
 		},
 		getExcludePatternsFlag(),
 	}...)
@@ -986,6 +986,10 @@ func getBuildAddArtifactFlags() []cli.Flag {
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to turn this into a no-op.",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -1595,8 +1599,10 @@ func buildAddArtifactCmd(c *cli.Context) {
 	}
 
 	configuration := createBuildAddArtifactsConfiguration(c)
-	err := buildinfo.AddArtifacts(buildAddArtifactsSpec, configuration)
-	cliutils.ExitOnErr(err)
+	added, failed, err := buildinfo.AddArtifacts(buildAddArtifactsSpec, configuration)
+	err = cliutils.PrintSummaryReport(added, failed, err)
+	cliutils.FailNoOp(err, added, failed, isFailNoOp(c))
+
 }
 
 func gitLfsCleanCmd(c *cli.Context) {
@@ -1924,6 +1930,7 @@ func getBuildAddArtifactsSpec(c *cli.Context) (buildAddArtifactSpec *spec.SpecFi
 func createBuildAddArtifactsConfiguration(c *cli.Context) (addArtifactsConfiguration *buildinfo.BuildAddArtifactsConfiguration) {
 	addArtifactsConfiguration = new(buildinfo.BuildAddArtifactsConfiguration)
 	addArtifactsConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	addArtifactsConfiguration.DryRun = c.Bool("dry-run")
 	addArtifactsConfiguration.BuildName = c.Args().Get(0)
 	addArtifactsConfiguration.BuildNumber = c.Args().Get(1)
 	return
