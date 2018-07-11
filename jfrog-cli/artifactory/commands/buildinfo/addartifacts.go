@@ -12,10 +12,10 @@ import (
 )
 
 func AddArtifacts(addArtifactsSpec *spec.SpecFiles, flags *BuildAddArtifactsConfiguration) (err error) {
-	log.Info("Adding artifacts to build info " + flags.BuildName + " #" + flags.BuildNumber + "...")
+	log.Info("Running Build Add Artifacts command...")
 
 	buildArtifacts, err := getBuildArtifacts(flags.ArtDetails, addArtifactsSpec); if err != nil {
-		return err
+		return
 	}
 
 	err = utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); if err != nil {
