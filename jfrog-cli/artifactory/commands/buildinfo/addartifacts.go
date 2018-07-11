@@ -14,7 +14,7 @@ import (
 func AddArtifacts(addArtifactsSpec *spec.SpecFiles, configuration *BuildAddArtifactsConfiguration) (successCount int, failCount int, err error) {
 	log.Info("Running Build Add Artifacts command...")
 	if !configuration.DryRun {
-		buildArtifacts, err := getBuildArtifacts(configuration.ArtDetails, addArtifactsSpec); if err != nil {
+		buildArtifacts, err := searchArtifacts(configuration.ArtDetails, addArtifactsSpec); if err != nil {
 			return 0, 0, err
 		}
 
@@ -35,7 +35,7 @@ func AddArtifacts(addArtifactsSpec *spec.SpecFiles, configuration *BuildAddArtif
 	}
 }
 
-func getBuildArtifacts(artifactoryDetails *config.ArtifactoryDetails, addArtifactsSpec *spec.SpecFiles) ([]buildinfo.InternalArtifact, error) {
+func searchArtifacts(artifactoryDetails *config.ArtifactoryDetails, addArtifactsSpec *spec.SpecFiles) ([]buildinfo.InternalArtifact, error) {
 	var buildArtifacts []buildinfo.InternalArtifact
 
 	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false); if err != nil {
