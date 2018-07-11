@@ -5,21 +5,16 @@ import (
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	clientutils "github.com/jfrogdev/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 )
 
-func AddArtifact(addArtifactSpec *spec.SpecFiles, flags *BuildAddArtifactConfiguration) (err error) {
+func AddArtifacts(addArtifactsSpec *spec.SpecFiles, flags *BuildAddArtifactsConfiguration) (err error) {
 	log.Info("Adding artifacts to build info " + flags.BuildName + " #" + flags.BuildNumber + "...")
 
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, false); if err != nil {
-		return err
-	}
-
-	buildArtifacts, err := getBuildArtifacts(servicesManager, addArtifactSpec); if err != nil {
+	buildArtifacts, err := getBuildArtifacts(flags.ArtDetails, addArtifactsSpec); if err != nil {
 		return err
 	}
 
@@ -38,10 +33,15 @@ func AddArtifact(addArtifactSpec *spec.SpecFiles, flags *BuildAddArtifactConfigu
 	return
 }
 
-func getBuildArtifacts(servicesManager *artifactory.ArtifactoryServicesManager, addArtifactSpec *spec.SpecFiles) ([]buildinfo.InternalArtifact, error) {
+func getBuildArtifacts(artifactoryDetails *config.ArtifactoryDetails, addArtifactsSpec *spec.SpecFiles) ([]buildinfo.InternalArtifact, error) {
 	var buildArtifacts []buildinfo.InternalArtifact
-	for i := 0; i < len(addArtifactSpec.Files); i++ {
-		params, err := addArtifactSpec.Get(i).ToArtifatorySearchParams(); if err != nil {
+
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false); if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(addArtifactsSpec.Files); i++ {
+		params, err := addArtifactsSpec.Get(i).ToArtifatorySearchParams(); if err != nil {
 			return nil, err
 		}
 		resultItems, err := servicesManager.Search(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: params}); if err != nil {
@@ -63,7 +63,7 @@ func getBuildArtifacts(servicesManager *artifactory.ArtifactoryServicesManager, 
 	return buildArtifacts, nil
 }
 
-type BuildAddArtifactConfiguration struct {
+type BuildAddArtifactsConfiguration struct {
 	ArtDetails  *config.ArtifactoryDetails
 	BuildName   string
 	BuildNumber string

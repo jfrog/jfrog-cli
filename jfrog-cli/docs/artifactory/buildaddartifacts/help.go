@@ -1,4 +1,4 @@
-package buildaddartifact
+package buildaddartifacts
 
 const Description = "This command is used to add a priorly uploaded artifact to a build."
 

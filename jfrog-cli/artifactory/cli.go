@@ -267,12 +267,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "build-add-artifact",
+			Name:      "build-add-artifacts",
 			Flags:     getBuildAddArtifactFlags(),
 			Aliases:   []string{"baa"},
-			Usage:     buildaddartifact.Description,
-			HelpName:  common.CreateUsage("rt build-add-artifact", buildaddartifact.Description, buildaddartifact.Usage),
-			UsageText: buildaddartifact.Arguments,
+			Usage:     buildaddartifacts.Description,
+			HelpName:  common.CreateUsage("rt build-add-artifacts", buildaddartifacts.Description, buildaddartifacts.Usage),
+			UsageText: buildaddartifacts.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildAddArtifactCmd(c)
@@ -1586,16 +1586,16 @@ func buildAddArtifactCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	var buildAddArtifactSpec *spec.SpecFiles
+	var buildAddArtifactsSpec *spec.SpecFiles
 	if c.IsSet("spec") {
-		buildAddArtifactSpec = getBuildAddArtifactSpec(c)
+		buildAddArtifactsSpec = getBuildAddArtifactsSpec(c)
 	} else {
 		validateCommonContext(c)
-		buildAddArtifactSpec = createDefaultBuildAddArtifactSpec(c)
+		buildAddArtifactsSpec = createDefaultBuildAddArtifactsSpec(c)
 	}
 
-	configuration := createBuildAddArtifactConfiguration(c)
-	err := buildinfo.AddArtifact(buildAddArtifactSpec, configuration)
+	configuration := createBuildAddArtifactsConfiguration(c)
+	err := buildinfo.AddArtifacts(buildAddArtifactsSpec, configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1898,7 +1898,7 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 	return
 }
 
-func createDefaultBuildAddArtifactSpec(c *cli.Context) *spec.SpecFiles {
+func createDefaultBuildAddArtifactsSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(2)).
 		Props(c.String("props")).
@@ -1911,21 +1911,21 @@ func createDefaultBuildAddArtifactSpec(c *cli.Context) *spec.SpecFiles {
 		BuildSpec()
 }
 
-func getBuildAddArtifactSpec(c *cli.Context) (buildAddArtifactSpec *spec.SpecFiles) {
-	buildAddArtifactSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+func getBuildAddArtifactsSpec(c *cli.Context) (buildAddArtifactSpec *spec.SpecFiles) {
+	buildAddArtifactsSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	cliutils.ExitOnErr(err)
 	//Override spec with CLI options
-	for i := 0; i < len(buildAddArtifactSpec.Files); i++ {
-		overrideFieldsIfSet(buildAddArtifactSpec.Get(i), c)
+	for i := 0; i < len(buildAddArtifactsSpec.Files); i++ {
+		overrideFieldsIfSet(buildAddArtifactsSpec.Get(i), c)
 	}
 	return
 }
 
-func createBuildAddArtifactConfiguration(c *cli.Context) (addArtifactConfiguration *buildinfo.BuildAddArtifactConfiguration) {
-	addArtifactConfiguration = new(buildinfo.BuildAddArtifactConfiguration)
-	addArtifactConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
-	addArtifactConfiguration.BuildName = c.Args().Get(0)
-	addArtifactConfiguration.BuildNumber = c.Args().Get(1)
+func createBuildAddArtifactsConfiguration(c *cli.Context) (addArtifactsConfiguration *buildinfo.BuildAddArtifactsConfiguration) {
+	addArtifactsConfiguration = new(buildinfo.BuildAddArtifactsConfiguration)
+	addArtifactsConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
+	addArtifactsConfiguration.BuildName = c.Args().Get(0)
+	addArtifactsConfiguration.BuildNumber = c.Args().Get(1)
 	return
 }
 
