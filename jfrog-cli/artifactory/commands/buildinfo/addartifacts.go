@@ -50,7 +50,7 @@ func searchArtifacts(artifactoryDetails *config.ArtifactoryDetails, addArtifacts
 			return nil, err
 		}
 		for _, resultItem := range resultItems {
-			artifactPath := resultItem.Repo + "/" + resultItem.Path + "/" + resultItem.Name
+			artifactPath := resultItem.GetItemRelativePath()
 			artifact := buildinfo.InternalArtifact{Path: artifactPath, Checksum: &buildinfo.Checksum{}}
 			artifact.Sha1 = resultItem.Actual_Sha1
 			artifact.Md5 = resultItem.Actual_Md5
