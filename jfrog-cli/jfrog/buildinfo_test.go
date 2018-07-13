@@ -10,9 +10,11 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -267,6 +269,46 @@ func TestReadGitConfig(t *testing.T) {
 	if gitManager.GetUrl() != url {
 		t.Error("Wrong url", "expected: "+url, "Got: "+gitManager.GetUrl())
 	}
+}
+
+func TestArtifactoryBuildAddArtifact(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "10"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+
+	// upload artifacts and add them to build
+	artifacts := []string{"../testsdata/a/a1.in",
+	                      "../testsdata/a/a2.in",
+	                      "../testsdata/a/a3.in"}
+	uploadTargetPath := tests.Repo1 + fileutils.GetFileSeparator() + "data" + fileutils.GetFileSeparator()
+
+	for _, artifact := range artifacts {
+		artifactoryCli.Exec("upload", artifact, uploadTargetPath)
+		artifactoryCli.Exec("build-add-artifacts", buildName, buildNumber, uploadTargetPath + filepath.Base(artifact))
+	}
+
+	// upload build
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+
+	// verify build properties are properly set on artifacts
+	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
+	isExistInArtifactoryByProps([]string{uploadTargetPath + "a1.in",
+	                                     uploadTargetPath + "a2.in",
+	                                     uploadTargetPath + "a3.in"}, tests.Repo1 + "/*", props, t)
+
+	
+	// verify artifacts are downloaded when downloading by build
+	artifactoryCli.Exec("download", "--spec=" + tests.GetFilePath(tests.BuildDownloadSpec))
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err := tests.ValidateListsIdentical(tests.BuildDownload, paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) []byte {
