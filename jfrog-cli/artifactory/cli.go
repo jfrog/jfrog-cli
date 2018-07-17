@@ -493,7 +493,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\" to be attached to the uploaded artifacts.",
 		},
 		cli.StringFlag{
 			Name:  "deb",
@@ -547,7 +547,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be downloaded.",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -729,7 +729,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be moved.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -760,7 +760,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be copied.",
 		},
 		cli.StringFlag{
 			Name:  "build",
@@ -778,7 +778,7 @@ func getDeleteFlags() []cli.Flag {
 	return append(deleteFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be deleted.",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -808,7 +808,7 @@ func getSearchFlags() []cli.Flag {
 	return append(searchFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties will be returned.",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -829,7 +829,7 @@ func getSetPropertiesFlags() []cli.Flag {
 	return append(propsFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2;...\". Only artifacts with these properties are affected.",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
