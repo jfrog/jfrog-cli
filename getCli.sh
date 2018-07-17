@@ -6,9 +6,10 @@ CLI_UNAME="na"
 if [ $# -eq 0 ]
   then
 	VERSION=\$latest
-	echo "Using latest version of jfrog cli"
+	echo "Downloading the latest version of JFrog CLI..."
   else
 	VERSION=$1
+	echo "Downloading version $1 of JFrog CLI..."
 fi
 
 if $(echo "${OSTYPE}" | grep -q msys); then
