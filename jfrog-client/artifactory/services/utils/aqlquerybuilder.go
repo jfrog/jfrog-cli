@@ -331,11 +331,11 @@ type PathFilePair struct {
 }
 
 func getQueryReturnFields(specFile *ArtifactoryCommonParams) []string {
-	returnFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type"}
+	returnFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type", "property"}
 	if specIncludesSortOrLimit(specFile) {
 		return appendMissingFields(specFile.SortBy, returnFields)
 	}
-	return append(returnFields, "property")
+	return returnFields
 }
 
 func specIncludesSortOrLimit(specFile *ArtifactoryCommonParams) bool {
