@@ -924,7 +924,7 @@ func getBuildPromotionFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "copy",
-			Usage: "[Default: false] If set true, the build are artifacts and dependencies are copied to the target repository, otherwise they are moved.",
+			Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
