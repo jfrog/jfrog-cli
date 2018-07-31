@@ -564,16 +564,16 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
-			Usage: "[Default: " + string(cliutils.DownloadMinSplitKb) + "  ] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "split-count",
 			Value: "",
-			Usage: "[Default: " + string(cliutils.DownloadSplitCount) + " ] Number of parts to split a file when downloading. Set to 0 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: " + string(cliutils.DownloadRetries) + " ] Number of download retries.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadRetries) + "] Number of download retries.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -1014,7 +1014,7 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 		if splitCount > cliutils.DownloadMaxSplitCount {
-			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limited to a maximum of " + string(cliutils.DownloadMaxSplitCount) + "."))
+			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(cliutils.DownloadMaxSplitCount) + "."))
 		}
 		if splitCount < 0 {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option cannot have a negative value."))
