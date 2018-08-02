@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
@@ -11,7 +12,16 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+)
+
+type RequiredArtifactProps int
+
+// This enum defines which properties are required in the result of the aql.
+// For example, when performing a copy/move command - the props are not needed, so we set RequiredArtifactProps to NONE.
+const (
+	ALL RequiredArtifactProps = iota
+	SYMLINK
+	NONE
 )
 
 type SearchParams interface {
@@ -27,21 +37,21 @@ func (s *SearchParamsImpl) GetFile() *ArtifactoryCommonParams {
 	return s.ArtifactoryCommonParams
 }
 
-func SearchBySpecFiles(searchParams SearchParams, flags CommonConf) ([]ResultItem, error) {
+func SearchBySpecFiles(searchParams SearchParams, flags CommonConf, requiredArtifactProps RequiredArtifactProps) ([]ResultItem, error) {
 	var resultItems []ResultItem
 	var itemsFound []ResultItem
 	var err error
 
 	switch searchParams.GetSpecType() {
 	case WILDCARD, SIMPLE:
-		itemsFound, e := AqlSearchDefaultReturnFields(searchParams.GetFile(), flags)
+		itemsFound, e := AqlSearchDefaultReturnFields(searchParams.GetFile(), flags, requiredArtifactProps)
 		if e != nil {
 			err = e
 			return resultItems, err
 		}
 		resultItems = append(resultItems, itemsFound...)
 	case AQL:
-		itemsFound, err = AqlSearchBySpec(searchParams.GetFile(), flags)
+		itemsFound, err = AqlSearchBySpec(searchParams.GetFile(), flags, requiredArtifactProps)
 		if err != nil {
 			return resultItems, err
 		}
@@ -50,17 +60,17 @@ func SearchBySpecFiles(searchParams SearchParams, flags CommonConf) ([]ResultIte
 	return resultItems, err
 }
 
-func AqlSearchDefaultReturnFields(specFile *ArtifactoryCommonParams, flags CommonConf) ([]ResultItem, error) {
+func AqlSearchDefaultReturnFields(specFile *ArtifactoryCommonParams, flags CommonConf, requiredArtifactProps RequiredArtifactProps) ([]ResultItem, error) {
 	query, err := createAqlBodyForSpec(specFile)
 	if err != nil {
 		return nil, err
 	}
 	specFile.Aql = Aql{ItemsFind: query}
-	return AqlSearchBySpec(specFile, flags)
+	return AqlSearchBySpec(specFile, flags, requiredArtifactProps)
 }
 
-func AqlSearchBySpec(specFile *ArtifactoryCommonParams, flags CommonConf) ([]ResultItem, error) {
-	query := buildQueryFromSpecFile(specFile)
+func AqlSearchBySpec(specFile *ArtifactoryCommonParams, flags CommonConf, requiredArtifactProps RequiredArtifactProps) ([]ResultItem, error) {
+	query := buildQueryFromSpecFile(specFile, requiredArtifactProps)
 	results, err := aqlSearch(query, flags)
 	if err != nil {
 		return nil, err
@@ -72,7 +82,14 @@ func AqlSearchBySpec(specFile *ArtifactoryCommonParams, flags CommonConf) ([]Res
 		}
 	}
 	if specIncludesSortOrLimit(specFile) {
-		err = searchAndAddPropsToAqlResult(results, specFile.Aql.ItemsFind, "symlink.dest", "*", flags)
+		switch requiredArtifactProps {
+		case ALL:
+			err = searchAndAddPropsToAqlResult(results, specFile.Aql.ItemsFind, "*", "*", flags)
+			break
+		case SYMLINK:
+			err = searchAndAddPropsToAqlResult(results, specFile.Aql.ItemsFind, "symlink.dest", "*", flags)
+			break
+		}
 		if err != nil {
 			return nil, err
 		}

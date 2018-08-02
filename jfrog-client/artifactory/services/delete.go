@@ -41,7 +41,7 @@ func (ds *DeleteService) GetPathsToDelete(deleteParams DeleteParams) (resultItem
 	log.Info("Searching artifacts...")
 	// Search paths using AQL.
 	if deleteParams.GetSpecType() == utils.AQL {
-		if resultItemsTemp, e := utils.AqlSearchBySpec(deleteParams.GetFile(), ds); e == nil {
+		if resultItemsTemp, e := utils.AqlSearchBySpec(deleteParams.GetFile(), ds, utils.NONE); e == nil {
 			resultItems = append(resultItems, resultItemsTemp...)
 		} else {
 			err = e
@@ -50,7 +50,7 @@ func (ds *DeleteService) GetPathsToDelete(deleteParams DeleteParams) (resultItem
 	} else {
 
 		deleteParams.SetIncludeDirs(true)
-		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteParams.GetFile(), ds)
+		tempResultItems, e := utils.AqlSearchDefaultReturnFields(deleteParams.GetFile(), ds, utils.NONE)
 		if e != nil {
 			err = e
 			return

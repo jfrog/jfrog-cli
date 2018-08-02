@@ -68,7 +68,7 @@ func (mc *MoveCopyService) MoveCopyServiceMoveFilesWrapper(moveSpec MoveCopyPara
 
 func (mc *MoveCopyService) moveAql(params MoveCopyParams) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
-	resultItems, err := utils.AqlSearchBySpec(params.GetFile(), mc)
+	resultItems, err := utils.AqlSearchBySpec(params.GetFile(), mc, utils.NONE)
 	if err != nil {
 		return
 	}
@@ -79,7 +79,7 @@ func (mc *MoveCopyService) moveAql(params MoveCopyParams) (successCount, failedC
 func (mc *MoveCopyService) moveWildcard(params MoveCopyParams) (successCount, failedCount int, err error) {
 	log.Info("Searching artifacts...")
 	params.SetIncludeDir(true)
-	resultItems, err := utils.AqlSearchDefaultReturnFields(params.GetFile(), mc)
+	resultItems, err := utils.AqlSearchDefaultReturnFields(params.GetFile(), mc, utils.NONE)
 	if err != nil {
 		return
 	}

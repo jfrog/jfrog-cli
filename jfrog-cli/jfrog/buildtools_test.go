@@ -346,7 +346,7 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 		}

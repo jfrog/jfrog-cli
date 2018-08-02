@@ -128,13 +128,17 @@ func TestGetQueryReturnFields(t *testing.T) {
 	artifactoryParams := ArtifactoryCommonParams{}
 	minimalFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type"}
 
-	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "property"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, ALL), append(minimalFields, "property"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, SYMLINK), append(minimalFields, "property"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, NONE), append(minimalFields), t)
 
 	artifactoryParams.SortBy = []string{"Vava"}
-	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "Vava"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, NONE), append(minimalFields, "Vava"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, ALL), append(minimalFields, "Vava"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, SYMLINK), append(minimalFields, "Vava"), t)
 
 	artifactoryParams.SortBy = []string{"Vava", "Bubu"}
-	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams), append(minimalFields, "Vava", "Bubu"), t)
+	assertEqualFieldsList(getQueryReturnFields(&artifactoryParams, ALL), append(minimalFields, "Vava", "Bubu"), t)
 }
 
 func assertEqualFieldsList(actual, expected []string, t *testing.T) {

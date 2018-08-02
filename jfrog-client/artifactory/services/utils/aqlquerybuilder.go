@@ -330,10 +330,17 @@ type PathFilePair struct {
 	file string
 }
 
-func getQueryReturnFields(specFile *ArtifactoryCommonParams) []string {
-	returnFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type", "property"}
+// Creates a list of basic required return fields. The list will include the sortBy field if needed.
+// If requiredArtifactProps is NONE or sortBy is configured, "property" field won't be included due to a limitation in the AQL implementation in Artifactory.
+func getQueryReturnFields(specFile *ArtifactoryCommonParams, requiredArtifactProps RequiredArtifactProps) []string {
+	returnFields := []string{"name", "repo", "path", "actual_md5", "actual_sha1", "size", "type"}
 	if specIncludesSortOrLimit(specFile) {
+		// Sort dose not work when property is in the include section. in this case we will append properties in later stage.
 		return appendMissingFields(specFile.SortBy, returnFields)
+	}
+	if requiredArtifactProps != NONE {
+		// If any prop is needed we just adding all the properties to the result, in order to prevent the second props query.
+		return append(returnFields, "property")
 	}
 	return returnFields
 }
@@ -367,9 +374,13 @@ func prepareFieldsForQuery(fields []string) []string {
 	return fields
 }
 
-func buildQueryFromSpecFile(specFile *ArtifactoryCommonParams) string {
+// Creates an aql query from a spec file.
+// If the spec includes sortBy, the produced AQL won't includes property in the include section,
+// due to an Artifactory limitation to limitation related to using sort with props in an AQL statement - this mean the result wont contain properties.
+// Same will happen if requiredArtifactProps is 'NONE'.
+func buildQueryFromSpecFile(specFile *ArtifactoryCommonParams, requiredArtifactProps RequiredArtifactProps) string {
 	aqlBody := specFile.Aql.ItemsFind
-	query := fmt.Sprintf(`items.find(%s)%s`, aqlBody, buildIncludeQueryPart(getQueryReturnFields(specFile)))
+	query := fmt.Sprintf(`items.find(%s)%s`, aqlBody, buildIncludeQueryPart(getQueryReturnFields(specFile, requiredArtifactProps)))
 	query = appendSortQueryPart(specFile, query)
 	query = appendOffsetQueryPart(specFile, query)
 	return appendLimitQueryPart(specFile, query)
