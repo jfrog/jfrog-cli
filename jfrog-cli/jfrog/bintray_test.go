@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 var bintrayConfig *config.BintrayDetails
@@ -363,7 +364,8 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, _, err := httputils.SendGet(apiUrl, true, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(apiUrl, true, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -435,7 +437,8 @@ func createBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := httputils.SendPost(apiUrl, content, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(apiUrl, content, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -454,7 +457,8 @@ func deleteBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(apiUrl, nil, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		log.Error(err)
 		os.Exit(1)

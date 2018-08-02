@@ -194,6 +194,8 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 
+	log.Info("Using Go project located at ", project1Path)
+
 	// Download dependencies without Artifactory
 	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo, "--no-registry=true")
 

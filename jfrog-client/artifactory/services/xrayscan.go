@@ -108,7 +108,8 @@ func checkForXrayResponseError(content []byte, ignoreFatalError bool) error {
 }
 
 func execScanRequest(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) (*http.Response, error) {
-	resp, _, _, err := httputils.Send("POST", url, content, true, false, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, err := client.Send("POST", url, content, true, false, httpClientsDetails)
 	if err != nil {
 		return resp, err
 	}

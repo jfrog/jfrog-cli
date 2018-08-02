@@ -40,6 +40,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 // JFrog CLI for Artifactory commands
@@ -63,7 +64,7 @@ func InitArtifactoryTests() {
 func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if !httputils.IsSsh(artifactoryDetails.Url) {
+	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
 		} else {
@@ -83,7 +84,7 @@ func authenticate() string {
 }
 
 func getArtifactoryTestCredentials() string {
-	if httputils.IsSsh(artifactoryDetails.Url) {
+	if fileutils.IsSshUrl(artifactoryDetails.Url) {
 		return getSshCredentials()
 	}
 	if *tests.RtApiKey != "" {
@@ -1082,13 +1083,14 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	specFile := tests.GetFilePath(tests.MoveCopyDeleteSpec)
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
-	resp, _, _, _ := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, _ := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
-	resp, _, _, _ = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ = client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
@@ -1101,7 +1103,8 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -1114,7 +1117,8 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -1140,11 +1144,12 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 
 	artifactoryCli.Exec("delete", "--spec="+tests.GetFilePath(tests.DeleteSpec), "--quiet=true")
 
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
-	resp, body, _, err = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err = client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
 	}
@@ -2364,7 +2369,8 @@ func getPathsToDelete(specFile string) []rtutils.ResultItem {
 }
 
 func execDeleteRepoRest(repoName string) {
-	resp, body, err := httputils.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		return
@@ -2384,7 +2390,8 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		return
 	}
 	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
-	resp, body, err := httputils.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -2465,7 +2472,8 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 }
 
 func isRepoExist(repoName string) bool {
-	resp, _, _, err := httputils.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, err := client.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)

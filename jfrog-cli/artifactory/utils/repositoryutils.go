@@ -6,8 +6,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"net/http"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 type RepoType int
@@ -49,7 +49,8 @@ func execGetRepositories(artDetails auth.ArtifactoryDetails, repoType RepoType) 
 	apiUrl := artDetails.GetUrl() + "api/repositories?type=" + repoType.String()
 
 	httpClientsDetails := artDetails.CreateHttpClientDetails()
-	resp, body, _, err := httputils.SendGet(apiUrl, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(apiUrl, true, httpClientsDetails)
 	if err != nil {
 		return repos, err
 	}

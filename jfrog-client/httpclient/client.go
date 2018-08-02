@@ -11,7 +11,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/mholt/archiver"
-	"net/url"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,7 +21,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"hash"
-	"strings"
 )
 
 func (jc *HttpClient) sendGetLeaveBodyOpen(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
@@ -41,17 +39,9 @@ func NewHttpClient(client *http.Client) *HttpClient {
 	return &HttpClient{Client: client}
 }
 
-func IsSsh(urlPath string) bool {
-	u, err := url.Parse(urlPath)
-	if err != nil {
-		return false
-	}
-	return strings.ToLower(u.Scheme) == "ssh"
-}
-
-func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails, currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
+func (jc *HttpClient) sendGetForFileDownload(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails, currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
 	for i := 0; i < retries+1; i++ {
-		resp, _, redirectUrl, err = jc.sendGetLeaveBodyOpen(url, allowRedirect, httpClientsDetails)
+		resp, _, redirectUrl, err = jc.sendGetLeaveBodyOpen(url, followRedirect, httpClientsDetails)
 		if resp != nil && resp.StatusCode <= 500 {
 			// No error and status <= 500
 			return
@@ -65,8 +55,8 @@ func (jc *HttpClient) Stream(url string, httpClientsDetails httputils.HttpClient
 	return jc.sendGetLeaveBodyOpen(url, true, httpClientsDetails)
 }
 
-func (jc *HttpClient) SendGet(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
-	return jc.Send("GET", url, nil, allowRedirect, true, httpClientsDetails)
+func (jc *HttpClient) SendGet(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+	return jc.Send("GET", url, nil, followRedirect, true, httpClientsDetails)
 }
 
 func (jc *HttpClient) SendPost(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, body []byte, err error) {
@@ -94,7 +84,7 @@ func (jc *HttpClient) SendPut(url string, content []byte, httpClientsDetails htt
 	return
 }
 
-func (jc *HttpClient) Send(method string, url string, content []byte, allowRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+func (jc *HttpClient) Send(method string, url string, content []byte, followRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	var req *http.Request
 	if content != nil {
 		req, err = http.NewRequest(method, url, bytes.NewBuffer(content))
@@ -105,7 +95,7 @@ func (jc *HttpClient) Send(method string, url string, content []byte, allowRedir
 		return nil, nil, "", err
 	}
 
-	return jc.doRequest(req, content, allowRedirect, closeBody, httpClientsDetails)
+	return jc.doRequest(req, content, followRedirect, closeBody, httpClientsDetails)
 }
 
 func (jc *HttpClient) doRequest(req *http.Request, content []byte, followRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
@@ -218,9 +208,9 @@ func (jc *HttpClient) DownloadFileNoRedirect(downloadPath, localPath, fileName s
 	return jc.downloadFile(downloadFileDetails, "", false, httpClientsDetails, 0, false)
 }
 
-func (jc *HttpClient) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, allowRedirect bool,
+func (jc *HttpClient) downloadFile(downloadFileDetails *DownloadFileDetails, logMsgPrefix string, followRedirect bool,
 	httpClientsDetails httputils.HttpClientDetails, retries int, isExplode bool) (resp *http.Response, redirectUrl string, err error) {
-	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadFileDetails.DownloadPath, allowRedirect, httpClientsDetails, 0, retries)
+	resp, redirectUrl, err = jc.sendGetForFileDownload(downloadFileDetails.DownloadPath, followRedirect, httpClientsDetails, 0, retries)
 	if err != nil {
 		return
 	}

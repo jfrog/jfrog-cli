@@ -7,9 +7,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func DetachLic(service_name string, flags *DetachLicFlags) error {
@@ -22,7 +22,8 @@ func DetachLic(service_name string, flags *DetachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/detach_lic/buckets/" + bucketId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := httputils.SendDelete(missionControlUrl, requestContent, httpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err
 	}

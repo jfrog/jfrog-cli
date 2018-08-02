@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"net/url"
 )
 
 const SYMLINK_FILE_CONTENT = ""
@@ -280,6 +281,14 @@ func GetHomeDir() string {
 		return user.HomeDir
 	}
 	return ""
+}
+
+func IsSshUrl(urlPath string) bool {
+	u, err := url.Parse(urlPath)
+	if err != nil {
+		return false
+	}
+	return strings.ToLower(u.Scheme) == "ssh"
 }
 
 func ReadFile(filePath string) ([]byte, error) {

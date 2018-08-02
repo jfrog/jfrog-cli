@@ -10,7 +10,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/prompt"
 )
@@ -110,7 +109,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		allowUsingSavedPassword = false
 	}
-	if httputils.IsSsh(details.Url) {
+	if fileutils.IsSshUrl(details.Url) {
 		useAgentPrompt := &prompt.YesNo {
 			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
 			Label:   "useSshAgent",
@@ -286,7 +285,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", httputils.IsSsh(details.Url)}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url)}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
 	}

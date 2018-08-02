@@ -8,7 +8,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
@@ -150,7 +149,8 @@ func (mc *MoveCopyService) moveFile(sourcePath, destPath string) (bool, error) {
 		return false, err
 	}
 	httpClientsDetails := mc.GetArtifactoryDetails().CreateHttpClientDetails()
-	resp, body, err := httputils.SendPost(requestFullUrl, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
@@ -180,7 +180,8 @@ func createPathInArtifactory(destPath string, conf utils.CommonConf) (bool, erro
 		return false, err
 	}
 	httpClientsDetails := conf.GetArtifactoryDetails().CreateHttpClientDetails()
-	resp, body, err := httputils.SendPut(requestFullUrl, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPut(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}

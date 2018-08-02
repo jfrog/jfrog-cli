@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
@@ -50,7 +49,8 @@ func (us *UrlService) SignVersion(params *Params) error {
 
 	log.Info("Signing URL...")
 	httpClientsDetails := us.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendPost(signVersionUrl, content, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(signVersionUrl, content, httpClientsDetails)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"os"
@@ -159,7 +158,8 @@ func uploadFile(artifact clientutils.Artifact, url, logMsgPrefix string, bintray
 	}
 	defer f.Close()
 	httpClientsDetails := bintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.UploadFile(f, url, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.UploadFile(f, url, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}

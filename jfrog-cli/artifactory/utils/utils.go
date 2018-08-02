@@ -10,7 +10,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"net/http"
@@ -93,7 +92,8 @@ func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultIte
 
 func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
 	artHttpDetails := artDetails.CreateHttpClientDetails()
-	resp, _, _, err := httputils.SendGet(artDetails.GetUrl()+repoDetailsUrl+repository, true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, err := client.SendGet(artDetails.GetUrl()+repoDetailsUrl+repository, true, artHttpDetails)
 	if err != nil {
 		return false, errorutils.CheckError(err)
 	}

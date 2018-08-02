@@ -7,7 +7,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
@@ -44,7 +43,8 @@ func (aks *AccessKeysService) ShowAll(org string) error {
 	path := getAccessKeysPath(aks.BintrayDetails, org)
 	httpClientsDetails := aks.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Getting access keys...")
-	resp, body, _, _ := httputils.SendGet(path, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, _ := client.SendGet(path, true, httpClientsDetails)
 	if resp.StatusCode != http.StatusOK {
 		return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
@@ -58,7 +58,8 @@ func (aks *AccessKeysService) Show(org, id string) error {
 	url := getAccessKeyPath(aks.BintrayDetails, id, org)
 	httpClientsDetails := aks.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Getting access key...")
-	resp, body, _, _ := httputils.SendGet(url, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, _ := client.SendGet(url, true, httpClientsDetails)
 	if resp.StatusCode != http.StatusOK {
 		return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
@@ -76,7 +77,8 @@ func (aks *AccessKeysService) Create(params *Params) error {
 	url := getAccessKeysPath(aks.BintrayDetails, params.Org)
 	httpClientsDetails := aks.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Creating access key...")
-	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -97,7 +99,8 @@ func (aks *AccessKeysService) Update(params *Params) error {
 	url := getAccessKeyPath(aks.BintrayDetails, params.Id, params.Org)
 	httpClientsDetails := aks.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Updating access key...")
-	resp, body, err := httputils.SendPatch(url, []byte(data), httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPatch(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -114,7 +117,8 @@ func (aks *AccessKeysService) Delete(org, id string) error {
 	url := getAccessKeyPath(aks.BintrayDetails, id, org)
 	httpClientsDetails := aks.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Deleting access key...")
-	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}

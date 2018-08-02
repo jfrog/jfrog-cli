@@ -11,7 +11,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/prompt"
 	"io/ioutil"
 	"os"
@@ -359,7 +358,7 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 }
 
 func (artifactoryDetails *ArtifactoryDetails) sshAuthenticationRequired() bool {
-	return !artifactoryDetails.SshAuthHeaderSet() && httputils.IsSsh(artifactoryDetails.Url)
+	return !artifactoryDetails.SshAuthHeaderSet() && fileutils.IsSshUrl(artifactoryDetails.Url)
 }
 
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {

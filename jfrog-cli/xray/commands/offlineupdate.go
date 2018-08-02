@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 const (
@@ -134,7 +135,13 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 			return err
 		}
 		log.Info("Downloading", url)
-		_, err = httputils.DownloadFile(url, dataDir, fileName, httputils.HttpClientDetails{})
+		client := httpclient.NewDefaultHttpClient()
+		details := &httpclient.DownloadFileDetails{
+			FileName:      fileName,
+			DownloadPath:  url,
+			LocalPath:     dataDir,
+			LocalFileName: fileName}
+		_, err = client.DownloadFile(details, "", httputils.HttpClientDetails{}, 3, false)
 		if err != nil {
 			return err
 		}
@@ -176,7 +183,8 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 	httpClientDetails := httputils.HttpClientDetails{
 		Headers: headers,
 	}
-	resp, body, _, err := httputils.SendGet(updatesUrl, false, httpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(updatesUrl, false, httpClientDetails)
 	if err != nil {
 		errorutils.CheckError(err)
 		return

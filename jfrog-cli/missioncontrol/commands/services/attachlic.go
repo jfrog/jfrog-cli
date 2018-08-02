@@ -8,11 +8,11 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func AttachLic(service_name string, flags *AttachLicFlags) error {
@@ -27,7 +27,8 @@ func AttachLic(service_name string, flags *AttachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/attach_lic/buckets/" + flags.BucketId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err
 	}

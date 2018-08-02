@@ -10,12 +10,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
@@ -195,7 +195,8 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	//publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	_, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	_, body, _, err := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -287,7 +288,8 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 
 	//download build info
 	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)
-	_, body, _, err := httputils.SendGet(buildInfoUrl, false, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	_, body, _, err := client.SendGet(buildInfoUrl, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}

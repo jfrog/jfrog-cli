@@ -7,10 +7,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"testing"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) buildinfo.BuildInfo {
-	_, body, _, err := httputils.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	_, body, _, err := client.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
@@ -25,7 +27,8 @@ func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, a
 }
 
 func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.HttpClientDetails) {
-	resp, body, err := httputils.SendDelete(artifactoryUrl+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(artifactoryUrl+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 	}

@@ -184,7 +184,8 @@ func getBuildNumberFromArtifactory(buildName, buildNumber string, flags CommonCo
 	httpClientsDetails := flags.GetArtifactoryDetails().CreateHttpClientDetails()
 	SetContentType("application/json", &httpClientsDetails.Headers)
 	log.Debug("Sending post request to: " + restUrl + ", with the following body: " + string(body))
-	resp, body, err := httputils.SendPost(restUrl, body, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(restUrl, body, httpClientsDetails)
 	if err != nil {
 		return "", "", err
 	}
