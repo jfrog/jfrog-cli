@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/mholt/archiver"
+	"net/url"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -21,7 +22,12 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"hash"
+	"strings"
 )
+
+func (jc *HttpClient) sendGetLeaveBodyOpen(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+	return jc.Send("GET", url, nil, followRedirect, false, httpClientsDetails)
+}
 
 type HttpClient struct {
 	Client *http.Client
@@ -35,8 +41,12 @@ func NewHttpClient(client *http.Client) *HttpClient {
 	return &HttpClient{Client: client}
 }
 
-func (jc *HttpClient) sendGetLeaveBodyOpen(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
-	return jc.Send("GET", url, nil, allowRedirect, false, httpClientsDetails)
+func IsSsh(urlPath string) bool {
+	u, err := url.Parse(urlPath)
+	if err != nil {
+		return false
+	}
+	return strings.ToLower(u.Scheme) == "ssh"
 }
 
 func (jc *HttpClient) sendGetForFileDownload(url string, allowRedirect bool, httpClientsDetails httputils.HttpClientDetails, currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
@@ -95,25 +105,38 @@ func (jc *HttpClient) Send(method string, url string, content []byte, allowRedir
 		return nil, nil, "", err
 	}
 
-	return jc.doRequest(req, allowRedirect, closeBody, httpClientsDetails)
+	return jc.doRequest(req, content, allowRedirect, closeBody, httpClientsDetails)
 }
 
-func (jc *HttpClient) doRequest(req *http.Request, allowRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
+func (jc *HttpClient) doRequest(req *http.Request, content []byte, followRedirect bool, closeBody bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
 	req.Close = true
 	setAuthentication(req, httpClientsDetails)
 	addUserAgentHeader(req)
 	copyHeaders(httpClientsDetails, req)
-	client := jc.Client
-	if !allowRedirect {
-		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+
+	if !followRedirect || (followRedirect && req.Method == "POST") {
+		jc.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			redirectUrl = req.URL.String()
 			return errors.New("redirect")
 		}
 	}
 
-	resp, err = client.Do(req)
-	if !allowRedirect && err != nil {
-		return
+	resp, err = jc.Client.Do(req)
+	jc.Client.CheckRedirect = nil
+
+	if err != nil && redirectUrl != "" {
+		if !followRedirect {
+			log.Debug("Blocking HTTP redirect to ", redirectUrl)
+			return
+		}
+		// Due to security reasons, there's no built in HTTP redirect in the HTTP Client
+		// for POST requests. We therefore implement the redirect on our own.
+		if req.Method == "POST" {
+			log.Debug("HTTP redirecting to ", redirectUrl)
+			resp, respBody, err = jc.SendPost(redirectUrl, content, httpClientsDetails)
+			redirectUrl = ""
+			return
+		}
 	}
 
 	err = errorutils.CheckError(err)
@@ -313,6 +336,32 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 	}
 	log.Info(logMsgPrefix + "Done downloading.")
 	return nil
+}
+
+func (jc *HttpClient) GetRemoteFileDetails(downloadUrl string, httpClientsDetails httputils.HttpClientDetails) (*fileutils.FileDetails, error) {
+	resp, body, err := jc.SendHead(downloadUrl, httpClientsDetails)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = httperrors.CheckResponseStatus(resp, body, http.StatusOK); err != nil {
+		return nil, err
+	}
+
+	fileSize := int64(0)
+	contentLength := resp.Header.Get("Content-Length")
+	if len(contentLength) > 0 {
+		fileSize, err = strconv.ParseInt(contentLength, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	fileDetails := new(fileutils.FileDetails)
+	fileDetails.Checksum.Md5 = resp.Header.Get("X-Checksum-Md5")
+	fileDetails.Checksum.Sha1 = resp.Header.Get("X-Checksum-Sha1")
+	fileDetails.Size = fileSize
+	return fileDetails, nil
 }
 
 func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags ConcurrentDownloadFlags, logMsgPrefix string, httpClientsDetails httputils.HttpClientDetails) error {
