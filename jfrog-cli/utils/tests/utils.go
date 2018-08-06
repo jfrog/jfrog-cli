@@ -53,7 +53,7 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestGo = flag.Bool("test.go", true, "Test Go")
+	TestGo = flag.Bool("test.go", false, "Test Go")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
