@@ -359,9 +359,12 @@ func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags Con
 	var wg sync.WaitGroup
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
-	errors := make([]error, flags.SplitCount)
+	// Create a list of errors, to allow each go routine to save there its own returned error.
+	errorsList := make([]error, flags.SplitCount)
 	var err error
 	for i := 0; i < flags.SplitCount; i++ {
+		// Checking this global error may help break out of the loop earlier, if an error
+		// has already been returned by one of the go routines.
 		if err != nil {
 			break
 		}
@@ -373,16 +376,17 @@ func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags Con
 		}
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
-			chunksPaths[i], errors[i] = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
-			if errors[i] != nil {
-				err = errors[i]
+			chunksPaths[i], errorsList[i] = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
+			if errorsList[i] != nil {
+				err = errorsList[i]
 			}
 			wg.Done()
 		}(start, end, i)
 	}
 	wg.Wait()
 
-	for _, e := range errors {
+	// Verify that all chunks have been downloaded successfully.
+	for _, e := range errorsList {
 		if e != nil {
 			return errorutils.CheckError(e)
 		}
