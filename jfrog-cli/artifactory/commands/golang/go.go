@@ -90,7 +90,7 @@ func Publish(targetRepo, version, buildName, buildNumber string, details *config
 }
 
 func validatePrerequisites() error {
-	_, err := exec.LookPath("vgo")
+	_, err := exec.LookPath("go")
 	if err != nil {
 		return errorutils.CheckError(err)
 	}

@@ -2,14 +2,14 @@ package artifactory
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/go"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	"net/http"
 	"io"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"net/http"
 )
 
 type ArtifactoryServicesManager struct {
@@ -140,10 +140,10 @@ func (sm *ArtifactoryServicesManager) Move(params services.MoveCopyParams) (succ
 	return moveService.MoveCopyServiceMoveFilesWrapper(params)
 }
 
-func (sm *ArtifactoryServicesManager) PublishVgoProject(params vgo.VgoParams) error {
-	vgoService := vgo.NewVgoService(sm.client)
-	vgoService.ArtDetails = sm.config.GetArtDetails()
-	return vgoService.PublishPackage(params)
+func (sm *ArtifactoryServicesManager) PublishGoProject(params _go.GoParams) error {
+	goService := _go.NewGoService(sm.client)
+	goService.ArtDetails = sm.config.GetArtDetails()
+	return goService.PublishPackage(params)
 }
 
 func (sm *ArtifactoryServicesManager) setCommonServiceConfig(commonConfig ArtifactoryServicesSetter) {

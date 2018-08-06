@@ -4,24 +4,24 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/mattn/go-shellwords"
 	"io"
 	"net/url"
 	"os"
 	"os/exec"
-	"github.com/mattn/go-shellwords"
 )
 
 func NewCmd() (*Cmd, error) {
-	execPath, err := exec.LookPath("vgo")
+	execPath, err := exec.LookPath("go")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{Vgo: execPath}, nil
+	return &Cmd{Go: execPath}, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, config.Vgo)
+	cmd = append(cmd, config.Go)
 	cmd = append(cmd, config.Command...)
 	cmd = append(cmd, config.CommandFlags...)
 	return exec.Command(cmd[0], cmd[1:]...)
@@ -40,7 +40,7 @@ func (config *Cmd) GetErrWriter() io.WriteCloser {
 }
 
 type Cmd struct {
-	Vgo          string
+	Go           string
 	Command      []string
 	CommandFlags []string
 	StrWriter    io.WriteCloser
@@ -59,25 +59,25 @@ func SetGoProxyEnvVar(artifactoryDetails *config.ArtifactoryDetails, repoName st
 	return err
 }
 
-func GetVgoVersion() ([]byte, error) {
-	vgoCmd, err := NewCmd()
+func GetGoVersion() ([]byte, error) {
+	goCmd, err := NewCmd()
 	if err != nil {
 		return nil, err
 	}
-	vgoCmd.Command = []string{"version"}
-	output, err := utils.RunCmdOutput(vgoCmd)
+	goCmd.Command = []string{"version"}
+	output, err := utils.RunCmdOutput(goCmd)
 	return output, err
 }
 
-func RunVgo(vgoArg string) error {
-	vgoCmd, err := NewCmd()
+func RunGo(goArg string) error {
+	goCmd, err := NewCmd()
 	if err != nil {
 		return err
 	}
 
-	vgoCmd.Command, err = shellwords.Parse(vgoArg)
+	goCmd.Command, err = shellwords.Parse(goArg)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	return utils.RunCmd(vgoCmd)
+	return utils.RunCmd(goCmd)
 }

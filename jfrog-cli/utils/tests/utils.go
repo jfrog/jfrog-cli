@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
@@ -16,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"errors"
 )
 
 var RtUrl *string
@@ -33,7 +33,7 @@ var TestBintray *bool
 var TestArtifactoryProxy *bool
 var TestBuildTools *bool
 var TestDocker *bool
-var TestVgo *bool
+var TestGo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
@@ -53,7 +53,7 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestVgo = flag.Bool("test.vgo", false, "Test Vgo")
+	TestGo = flag.Bool("test.go", true, "Test Go")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")

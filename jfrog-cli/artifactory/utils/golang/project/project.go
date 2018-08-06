@@ -8,7 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/go"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
@@ -36,7 +36,7 @@ type goProject struct {
 	projectPath  string
 }
 
-// Load vgo project.
+// Load go project.
 func Load(version string) (Go, error) {
 	goProject := &goProject{version: version}
 	pwd, err := os.Getwd()
@@ -52,12 +52,12 @@ func Load(version string) (Go, error) {
 	return goProject, err
 }
 
-// Get the vgo project dependencies.
+// Get the go project dependencies.
 func (project *goProject) Dependencies() []dependencies.Dependency {
 	return project.dependencies
 }
 
-// Publish vgo project to Artifactory.
+// Publish go project to Artifactory.
 func (project *goProject) Publish(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	log.Info("Publishing", project.getId(), "to", targetRepo)
 	servicesManager, err := utils.CreateServiceManager(details, false)
@@ -78,7 +78,7 @@ func (project *goProject) Publish(targetRepo, buildName, buildNumber string, det
 	}
 	defer fileutils.RemoveTempDir()
 
-	params := &vgo.VgoParamsImpl{}
+	params := &_go.GoParamsImpl{}
 	params.Version = project.version
 	params.Props = props
 	params.TargetRepo = targetRepo
@@ -89,10 +89,10 @@ func (project *goProject) Publish(targetRepo, buildName, buildNumber string, det
 		return err
 	}
 
-	return servicesManager.PublishVgoProject(params)
+	return servicesManager.PublishGoProject(params)
 }
 
-// Get the build info of the vgo project
+// Get the build info of the go project
 func (project *goProject) BuildInfo() *buildinfo.BuildInfo {
 	buildInfoDependencies := []buildinfo.Dependency{}
 	for _, dep := range project.dependencies {
@@ -101,7 +101,7 @@ func (project *goProject) BuildInfo() *buildinfo.BuildInfo {
 	return &buildinfo.BuildInfo{Modules: []buildinfo.Module{{Id: project.getId(), Artifacts: project.artifacts, Dependencies: buildInfoDependencies}}}
 }
 
-// Get vgo project ID in the form of projectName:version
+// Get go project ID in the form of projectName:version
 func (project *goProject) getId() string {
 	return fmt.Sprintf("%s:%s", project.moduleName, project.version)
 }
@@ -137,7 +137,7 @@ func (project *goProject) readModFile(projectPath string) error {
 	return nil
 }
 
-// Archive the vgo project.
+// Archive the go project.
 // Returns the path of the temp archived project file.
 func (project *goProject) archiveProject(version string) (string, error) {
 	tempDir, err := fileutils.GetTempDirPath()

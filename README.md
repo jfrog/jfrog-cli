@@ -93,14 +93,14 @@ go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false
 | `-rt.user` | Artifactory username. |
 | `-rt.password` | Artifactory password. |
 
-#### Vgo commands tests
+#### Go commands tests
 
-To run vgo tests:
-* Add vgo executable to the system search path (PATH environment variable).
+To run go tests:
+* Use Go version 1.11 and above.
 * Run the following command:
 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.vgo=true 
+go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.go=true 
 ````
 
 #### NuGet tests

@@ -7,16 +7,16 @@ import (
 	golangutil "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/vgo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/go"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 func Load() ([]Dependency, error) {
@@ -24,11 +24,11 @@ func Load() ([]Dependency, error) {
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	cachePath := filepath.Join(goPath, "src", "mod", "cache", "download")
+	cachePath := filepath.Join(goPath, "pkg", "mod", "cache", "download")
 	return getDependencies(cachePath)
 }
 
-// Represent vgo dependency project.
+// Represent go dependency project.
 // Includes publishing capabilities and build info dependencies.
 type Dependency struct {
 	buildInfoDependencies []buildinfo.Dependency
@@ -48,13 +48,13 @@ func (dependency *Dependency) Publish(targetRepo string, details *config.Artifac
 	if err != nil {
 		return err
 	}
-	params := &vgo.VgoParamsImpl{}
+	params := &_go.GoParamsImpl{}
 	params.ZipPath = dependency.zipPath
 	params.ModContent = dependency.modContent
 	params.Version = dependency.version
 	params.TargetRepo = targetRepo
 
-	return servicesManager.PublishVgoProject(params)
+	return servicesManager.PublishGoProject(params)
 }
 
 func (dependency *Dependency) Dependencies() []buildinfo.Dependency {
@@ -62,13 +62,13 @@ func (dependency *Dependency) Dependencies() []buildinfo.Dependency {
 }
 
 func getDependencies(cachePath string) ([]Dependency, error) {
-	vgoCmd, err := golangutil.NewCmd()
+	goCmd, err := golangutil.NewCmd()
 	if err != nil {
 		return nil, err
 	}
-	vgoCmd.Command = []string{"list"}
-	vgoCmd.CommandFlags = []string{"-m", "all"}
-	output, err := utils.RunCmdOutput(vgoCmd)
+	goCmd.Command = []string{"list"}
+	goCmd.CommandFlags = []string{"-m", "all"}
+	output, err := utils.RunCmdOutput(goCmd)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
@@ -80,6 +80,7 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 
 	deps := []Dependency{}
 	for name, ver := range nameVersionMap {
+		name := getDependencyName(name)
 		dep, err := createDependency(cachePath, name, ver)
 		if err != nil {
 			return nil, err
@@ -91,11 +92,26 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 	return deps, nil
 }
 
-// Creates a vgo dependency.
+// Returns the actual path to the dependency.
+// If in the path there are capital letters, the Go convention is to use "!" before the letter.
+// The letter itself in lowercase.
+func getDependencyName(name string) string {
+	path := ""
+	for _, letter := range name {
+		if unicode.IsUpper(letter) {
+			path += "!" + strings.ToLower(string(letter))
+		} else {
+			path += string(letter)
+		}
+	}
+	return path
+}
+
+// Creates a go dependency.
 // Returns a nil value in case the dependency does not include a zip in the cache.
 func createDependency(cachePath, dependencyName, version string) (*Dependency, error) {
-	// We first check if the this dependency has a zip binary in the local vgo cache.
-	// If it does not, nil is returned. This seems to be a bug in vgo.
+	// We first check if the this dependency has a zip binary in the local go cache.
+	// If it does not, nil is returned. This seems to be a bug in go.
 	zipPath, err := getPackageZipLocation(cachePath, dependencyName, version)
 
 	if err != nil {
@@ -147,7 +163,7 @@ func getPackageZipLocation(cachePath, dependencyName, version string) (string, e
 		return zipPath, nil
 	}
 
-	zipPath, err = getPackagePathIfExists(path.Dir(cachePath), dependencyName, version)
+	zipPath, err = getPackagePathIfExists(filepath.Dir(cachePath), dependencyName, version)
 
 	if err != nil {
 		return "", err
@@ -190,12 +206,12 @@ func parseListOutput(content []byte) (map[string]string, error) {
 }
 
 func getGOPATH() (string, error) {
-	vgoCmd, err := golangutil.NewCmd()
+	goCmd, err := golangutil.NewCmd()
 	if err != nil {
 		return "", err
 	}
-	vgoCmd.Command = []string{"env", "GOPATH"}
-	output, err := utils.RunCmdOutput(vgoCmd)
+	goCmd.Command = []string{"env", "GOPATH"}
+	output, err := utils.RunCmdOutput(goCmd)
 	if err != nil {
 		return "", fmt.Errorf("Could not find GOPATH env: %s", err.Error())
 	}

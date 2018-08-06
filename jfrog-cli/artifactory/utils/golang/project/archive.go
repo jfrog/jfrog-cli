@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Archive project files according to the vgo project standard
+// Archive project files according to the go project standard
 func archiveProject(writer io.Writer, sourcePath, module, version string, excludePathsRegExp *regexp.Regexp) error {
 	zipWriter := zip.NewWriter(writer)
 	defer zipWriter.Close()
