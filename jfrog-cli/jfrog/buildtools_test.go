@@ -49,12 +49,25 @@ func CleanBuildToolsTests() {
 	deleteRepos()
 }
 
+func createJfrogHomeConfig(t *testing.T) {
+	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
+
+	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
+	jfrogHomePath, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestMavenBuildWithServerID(t *testing.T) {
 	initBuildToolsTest(t)
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-	createJfrogHomeConfig(t)
 
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -89,7 +102,6 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
-	createJfrogHomeConfig(t)
 
 	runAndValidateGradle(buildGradlePath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -613,6 +625,7 @@ func initBuildToolsTest(t *testing.T) {
 	if !*tests.TestBuildTools {
 		t.Skip("Skipping build tools test. To run build tools tests add the '-test.buildTools=true' option.")
 	}
+	createJfrogHomeConfig(t)
 }
 
 func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {

@@ -181,11 +181,13 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 
 	regexpPattern := clientutils.PathToRegExp(downloadParams.Path)
 	placeHolderTarget, err := clientutils.ReformatRegexp(regexpPattern, cleanPath, downloadParams.TargetPath)
+
 	if err != nil {
 		return err
 	}
 
 	localPath, localFileName := fileutils.GetLocalPathAndFile(fileName, filePath, placeHolderTarget, downloadParams.Flat)
+
 	var shouldDownload bool
 	shouldDownload, err = shouldDownloadFile(filepath.Join(localPath, localFileName), details)
 	if err != nil {
@@ -227,11 +229,12 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 			err = nil
 			concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
 				DownloadPath: redirectUrl,
-				FileName:     localFileName,
-				LocalPath:    localPath,
-				FileSize:     details.Size,
-				SplitCount:   ds.SplitCount,
-				Flat:         downloadParams.Flat}
+				FileName:     	   localFileName,
+				LocalFileName:     localFileName,
+				LocalPath:    	   localPath,
+				FileSize:          details.Size,
+				SplitCount:        ds.SplitCount}
+
 			err = client.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 			if err != nil {
 				return err

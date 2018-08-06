@@ -2286,23 +2286,6 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, l
 	}
 }
 
-func createJfrogHomeConfig(t *testing.T) {
-	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
-
-	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
-	jfrogHomePath, err := config.GetJfrogHomeDir()
-	if err != nil {
-		t.Error(err)
-	}
-	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
-	if err != nil {
-		t.Error(err)
-	}
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
 	deleteRepos()

@@ -297,10 +297,11 @@ func (jc *HttpClient) DownloadFileConcurrently(flags ConcurrentDownloadFlags, lo
 	chunksPaths := make([]string, flags.SplitCount)
 
 	err := jc.downloadChunksConcurrently(chunksPaths, flags, logMsgPrefix, httpClientsDetails)
-	if errorutils.CheckError(err) != nil {
+	if err != nil {
 		return err
 	}
-	if !flags.Flat && flags.LocalPath != "" {
+
+	if flags.LocalPath != "" {
 		os.MkdirAll(flags.LocalPath, 0777)
 		flags.LocalFileName = filepath.Join(flags.LocalPath, flags.LocalFileName)
 	}
@@ -358,6 +359,7 @@ func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags Con
 	var wg sync.WaitGroup
 	chunkSize := flags.FileSize / int64(flags.SplitCount)
 	mod := flags.FileSize % int64(flags.SplitCount)
+	errors := make([]error, flags.SplitCount)
 	var err error
 	for i := 0; i < flags.SplitCount; i++ {
 		if err != nil {
@@ -371,16 +373,22 @@ func (jc *HttpClient) downloadChunksConcurrently(chunksPaths []string, flags Con
 		}
 		requestClientDetails := httpClientsDetails.Clone()
 		go func(start, end int64, i int) {
-			var downloadErr error
-			chunksPaths[i], downloadErr = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
-			if downloadErr != nil {
-				err = downloadErr
+			chunksPaths[i], errors[i] = jc.downloadFileRange(flags, start, end, i, logMsgPrefix, *requestClientDetails, flags.Retries)
+			if errors[i] != nil {
+				err = errors[i]
 			}
 			wg.Done()
 		}(start, end, i)
 	}
 	wg.Wait()
-	return err
+
+	for _, e := range errors {
+		if e != nil {
+			return errorutils.CheckError(e)
+		}
+	}
+
+	return nil
 }
 
 func mergeChunks(chunksPaths []string, flags ConcurrentDownloadFlags) error {
@@ -531,7 +539,6 @@ type ConcurrentDownloadFlags struct {
 	ExpectedSha1  string
 	FileSize      int64
 	SplitCount    int
-	Flat          bool
 	Explode       bool
 	Retries       int
 }
