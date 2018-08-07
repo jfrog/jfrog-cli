@@ -41,6 +41,9 @@ func (gs *GoService) PublishPackage(params GoParams) error {
 	utils.AddHeader("X-GO-MODULE-CONTENT", base64.StdEncoding.EncodeToString(params.GetModContent()), &clientDetails.Headers)
 	addPropertiesHeaders(params.GetProps(), &clientDetails.Headers)
 	resp, body, err := gs.client.UploadFile(f, url, clientDetails)
+	if err != nil {
+		return err
+	}
 	return httperrors.CheckResponseStatus(resp, body, 201)
 }
 
