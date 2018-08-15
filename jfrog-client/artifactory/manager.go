@@ -112,11 +112,18 @@ func (sm *ArtifactoryServicesManager) Aql(aql string) ([]byte, error) {
 	return aqlService.ExecAql(aql)
 }
 
-func (sm *ArtifactoryServicesManager) SetProps(params services.SetPropsParams) (int, error) {
-	setPropsService := services.NewSetPropsService(sm.client)
+func (sm *ArtifactoryServicesManager) SetProps(params services.PropsParams) (int, error) {
+	setPropsService := services.NewPropsService(sm.client)
 	setPropsService.ArtDetails = sm.config.GetArtDetails()
 	setPropsService.Threads = sm.config.GetThreads()
 	return setPropsService.SetProps(params)
+}
+
+func (sm *ArtifactoryServicesManager) DeleteProps(params services.PropsParams) (int, error) {
+	setPropsService := services.NewPropsService(sm.client)
+	setPropsService.ArtDetails = sm.config.GetArtDetails()
+	setPropsService.Threads = sm.config.GetThreads()
+	return setPropsService.DeleteProps(params)
 }
 
 func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) (artifactsFileInfo []utils.FileInfo, totalUploaded, totalFailed int, err error) {

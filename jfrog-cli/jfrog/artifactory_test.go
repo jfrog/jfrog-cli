@@ -21,6 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	rtutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -40,7 +41,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 // JFrog CLI for Artifactory commands
@@ -676,21 +676,7 @@ func TestArtifactorySetProperties(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/a.in")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/a.*", "prop=val")
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artAuth)
-	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
-		if err != nil {
-			t.Error(err)
-		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
-		if err != nil {
-			t.Error("Failed Searching files:", err)
-		}
-		resultItems = append(resultItems, currentResultItems...)
-	}
-
+	resultItems := searchItemsInArtifacotry(t)
 	for _, item := range resultItems {
 		properties := item.Properties
 		if len(properties) < 1 {
@@ -712,21 +698,7 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artAuth)
-	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
-		if err != nil {
-			t.Error(err)
-		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
-		if err != nil {
-			t.Error("Failed Searching files:", err)
-		}
-		resultItems = append(resultItems, currentResultItems...)
-	}
-
+	resultItems := searchItemsInArtifacotry(t)
 	for _, item := range resultItems {
 		if item.Name != "a3.in" {
 			continue
@@ -741,6 +713,46 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 			}
 			if prop.Key != "prop" || prop.Value != "val" {
 				t.Error("Wrong properties")
+			}
+		}
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeleteProperties(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
+	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val")
+	artifactoryCli.Exec("delp", "jfrog-cli-tests-repo1/*", "prop")
+	resultItems := searchItemsInArtifacotry(t)
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		for _, prop := range properties {
+			if prop.Key != "" {
+				t.Error("Wrong properties")
+			}
+		}
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
+	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val")
+
+	artifactoryCli.Exec("delp", "jfrog-cli-tests-repo1/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
+	resultItems := searchItemsInArtifacotry(t)
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		for _, prop := range properties {
+			if item.Name == "a1.in" || item.Name == "a2.in" {
+				// Check that properties were not removed.
+				if prop.Key != "prop" || prop.Value != "val" {
+					t.Error("Wrong properties")
+				}
 			}
 		}
 	}
@@ -2521,4 +2533,24 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 
 	// Cleanup
 	cleanArtifactoryTest()
+}
+
+func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
+	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
+	flags.SetArtifactoryDetails(artAuth)
+	var resultItems []rtutils.ResultItem
+	for i := 0; i < len(spec.Files); i++ {
+		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
+		if err != nil {
+			t.Error("Failed Searching files:", err)
+			t.FailNow()
+		}
+		resultItems = append(resultItems, currentResultItems...)
+	}
+	return resultItems
 }

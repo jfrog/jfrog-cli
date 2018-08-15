@@ -29,6 +29,7 @@ import (
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
@@ -167,6 +168,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				setPropsCmd(c)
+			},
+		},
+		{
+			Name:      "delete-props",
+			Flags:     getDeletePropertiesFlags(),
+			Aliases:   []string{"delp"},
+			Usage:     deleteprops.Description,
+			HelpName:  common.CreateUsage("rt delete-props", deleteprops.Description, deleteprops.Usage),
+			UsageText: deleteprops.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				deletePropsCmd(c)
 			},
 		},
 		{
@@ -825,12 +838,28 @@ func getSearchFlags() []cli.Flag {
 }
 
 func getSetPropertiesFlags() []cli.Flag {
-	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
-	return append(propsFlags, []cli.Flag{
+	flags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
 		},
+	}
+	return append(flags, getPropertiesFlags()...)
+}
+
+func getDeletePropertiesFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.",
+		},
+	}
+	return append(flags, getPropertiesFlags()...)
+}
+
+func getPropertiesFlags() []cli.Flag {
+	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.",
@@ -1457,14 +1486,17 @@ func searchCmd(c *cli.Context) {
 }
 
 func setPropsCmd(c *cli.Context) {
-	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
-	}
-	validateCommonContext(c)
-	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
-	properties := c.Args()[1]
-	artDetails := createArtifactoryDetailsByFlags(c, true)
-	success, failed, err := generic.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
+	validatePropsCommand(c)
+	propertiesSpec, properties, artDetails := createPropsParams(c)
+	success, failed, err := generic.SetProps(propertiesSpec, properties, getThreadsCount(c), artDetails)
+	err = cliutils.PrintSummaryReport(success, failed, err)
+	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
+}
+
+func deletePropsCmd(c *cli.Context) {
+	validatePropsCommand(c)
+	propertiesSpec, properties, artDetails := createPropsParams(c)
+	success, failed, err := generic.DeleteProps(propertiesSpec, properties, getThreadsCount(c), artDetails)
 	err = cliutils.PrintSummaryReport(success, failed, err)
 	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 }
@@ -1776,7 +1808,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		BuildSpec()
 }
 
-func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
+func createDefaultPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
@@ -2110,4 +2142,18 @@ func isFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func createPropsParams(c *cli.Context) (propertiesSpec *spec.SpecFiles, properties string, artDetails *config.ArtifactoryDetails) {
+	propertiesSpec = createDefaultPropertiesSpec(c)
+	properties = c.Args()[1]
+	artDetails = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func validatePropsCommand(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	validateCommonContext(c)
 }

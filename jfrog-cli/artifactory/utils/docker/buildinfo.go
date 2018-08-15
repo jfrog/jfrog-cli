@@ -67,7 +67,7 @@ func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
 
 // First we will try to get assuming using a reverse proxy (sub domain or port methods)
 // If fails, we will try the repository path (proxy-less).
-func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error){
+func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error) {
 	var searchResults map[string]utils.ResultItem
 	// Try to get layers, assuming reverse proxy
 	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.targetRepo, builder.image.Path(), "*"), builder.serviceManager)
@@ -137,7 +137,7 @@ func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return builder.serviceManager.SetProps(&services.SetPropsParamsImpl{Items: builder.layers, Props: props})
+	return builder.serviceManager.SetProps(&services.PropsParamsImpl{Items: builder.layers, Props: props})
 }
 
 // Create docker build info
