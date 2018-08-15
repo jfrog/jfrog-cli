@@ -139,9 +139,6 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		}
 	} else {
 		if details.ApiKey == "" && details.Password == "" {
-			ioutils.ScanFromConsole("API key (leave empty for basic authentication)", &details.ApiKey, "")
-		}
-		if details.ApiKey == "" {
 			ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
 		}
 	}

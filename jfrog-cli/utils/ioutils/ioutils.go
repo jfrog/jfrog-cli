@@ -22,7 +22,7 @@ func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials, allo
 		allowUsingSavedPassword = false
 	}
 	if details.GetPassword() == "" {
-		print("Password: ")
+		print("Password/API key: ")
 		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 		err = errorutils.CheckError(err)
 		if err != nil {

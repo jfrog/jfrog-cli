@@ -299,12 +299,13 @@ type ArtifactoryDetails struct {
 	Url            string            `json:"url,omitempty"`
 	User           string            `json:"user,omitempty"`
 	Password       string            `json:"password,omitempty"`
-	ApiKey         string            `json:"apiKey,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	SshPassphrase  string            `json:"SshPassphrase,omitempty"`
 	SshAuthHeaders map[string]string `json:"SshAuthHeaders,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
+	// Deprecated, use password option instead.
+	ApiKey         string            `json:"apiKey,omitempty"`
 }
 
 type BintrayDetails struct {

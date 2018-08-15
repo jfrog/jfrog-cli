@@ -1630,6 +1630,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.ServerId = c.String("server-id")
 
+	if details.ApiKey != "" && details.User != "" && details.Password == "" {
+		// The API Key is deprecated, use password option instead.
+		details.Password = details.ApiKey
+		details.ApiKey = ""
+	}
+
 	if includeConfig && !credentialsChanged(details) {
 		confDetails, err := commands.GetConfig(details.ServerId)
 		cliutils.ExitOnErr(err)
