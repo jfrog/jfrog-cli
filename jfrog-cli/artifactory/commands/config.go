@@ -7,15 +7,29 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/lock"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/prompt"
+	"sync"
 )
+
+// Internal golang locking for the same process.
+var mutux sync.Mutex
 
 func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
 	shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
+	mutux.Lock()
+	lockFile, err := lock.CreateLock()
+	defer mutux.Unlock()
+	defer lockFile.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+
 	if details == nil {
 		details = new(config.ArtifactoryDetails)
 	}
@@ -110,7 +124,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		allowUsingSavedPassword = false
 	}
 	if fileutils.IsSshUrl(details.Url) {
-		useAgentPrompt := &prompt.YesNo {
+		useAgentPrompt := &prompt.YesNo{
 			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
 			Label:   "useSshAgent",
 			Default: "n",

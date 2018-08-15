@@ -3,13 +3,27 @@ package commands
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/lock"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"golang.org/x/crypto/ssh/terminal"
+	"sync"
 	"syscall"
 )
 
+// Internal golang locking for the same process.
+var mutux sync.Mutex
+
 func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*config.BintrayDetails, error) {
+	mutux.Lock()
+	lockFile, err := lock.CreateLock()
+	defer mutux.Unlock()
+	defer lockFile.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+
 	if details == nil {
 		details = new(config.BintrayDetails)
 	}
@@ -41,7 +55,7 @@ func Config(details, defaultDetails *config.BintrayDetails, interactive bool) (*
 				&details.DefPackageLicense, defaultDetails.DefPackageLicense)
 		}
 	}
-	err := config.SaveBintrayConf(details)
+	err = config.SaveBintrayConf(details)
 	return details, err
 }
 
