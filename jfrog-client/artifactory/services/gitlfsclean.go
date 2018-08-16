@@ -99,12 +99,12 @@ func detectRepo(gitPath, rtUrl string) (string, error) {
 	if err == nil {
 		return repo, nil
 	}
-	errMsg1 := fmt.Sprintln("Cannot detect Git LFS repository from .lfsconfig: %s", err)
+	errMsg1 := fmt.Sprintf("Cannot detect Git LFS repository from .lfsconfig: %s", err.Error())
 	repo, err = extractRepo(gitPath, ".git/config", rtUrl, configLfsUrlExtractor)
 	if err == nil {
 		return repo, nil
 	}
-	errMsg2 := fmt.Sprintln("Cannot detect Git LFS repository from .git/config: %s", err)
+	errMsg2 := fmt.Sprintf("Cannot detect Git LFS repository from .git/config: %s", err.Error())
 	suggestedSolution := "You may want to try passing the --repo option manually"
 	return "", errorutils.CheckError(fmt.Errorf("%s%s%s", errMsg1, errMsg2, suggestedSolution))
 }

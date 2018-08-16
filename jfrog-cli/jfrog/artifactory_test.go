@@ -2264,6 +2264,69 @@ func TestSummaryReport(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildDiscard(t *testing.T) {
+	// Initialize
+	initArtifactoryTest(t)
+	client := httpclient.NewDefaultHttpClient()
+
+	// Upload files with buildName and buildNumber
+	filePath := ioutils.PrepareFilePathForWindows("../testsdata/a/(*)")
+	buildName := "discard-builds-test"
+	for i := 1; i <= 10; i++ {
+		artifactoryCli.Exec("upload", filePath, "jfrog-cli-tests-repo1/data/{1}", "--build-name="+buildName, "--build-number="+strconv.Itoa(i))
+		artifactoryCli.Exec("build-publish", buildName, strconv.Itoa(i))
+	}
+
+	// Test discard by max-builds
+	artifactoryCli.Exec("build-discard", buildName, "--max-builds=8")
+	jsonResponse := getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
+	if len(jsonResponse.Builds) != 8 {
+		t.Error("Incorrect operation of build-discard by max-builds.")
+	}
+
+	// Test discard with exclusion
+	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1", "--exclude-builds=2,3,4,5,6,7,8,9,10")
+	jsonResponse = getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
+	if len(jsonResponse.Builds) != 8 {
+		t.Error("Incorrect operation of build-discard with exclusion.")
+	}
+
+	// Test discard by max-days
+	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1")
+	jsonResponse = getAllBuildsByBuildName(client, buildName, t, http.StatusNotFound)
+	if len(jsonResponse.Builds) != 0 {
+		t.Error("Incorrect operation of build-discard by max-days.")
+	}
+
+	//Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func getAllBuildsByBuildName(client *httpclient.HttpClient, buildName string, t *testing.T, expectedHttpStatusCode int) buildsApiResponseStruct {
+	resp, body, _, _ := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName, true, artHttpDetails)
+	if resp.StatusCode != expectedHttpStatusCode {
+		t.Error("Failed retrieving build information from artifactory.")
+	}
+
+	buildsApiResponse := &buildsApiResponseStruct{}
+	err := json.Unmarshal(body, buildsApiResponse)
+	if err != nil {
+		t.Error("Unmarshaling failed with an error:", err.Error())
+	}
+	return *buildsApiResponse
+}
+
+type buildsApiInnerBuildsStruct struct {
+	Uri     string `json:"uri,omitempty"`
+	Started string `json:"started,omitempty"`
+}
+
+type buildsApiResponseStruct struct {
+	Uri    string                       `json:"uri,omitempty"`
+	Builds []buildsApiInnerBuildsStruct `json:"buildsNumbers,omitempty"`
+}
+
 func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, logger log.Log) {
 	content := buffer.Bytes()
 	buffer.Reset()

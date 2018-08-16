@@ -20,7 +20,7 @@ func TestIsSsh(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.url, func(t *testing.T) {
-			if IsSsh(test.url) != test.expected {
+			if IsSshUrl(test.url) != test.expected {
 				t.Error("Expected '"+strconv.FormatBool(test.expected)+"' Got: '"+strconv.FormatBool(!test.expected)+"' For URL:", test.url)
 			}
 		})

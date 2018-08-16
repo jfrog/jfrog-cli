@@ -22,6 +22,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildclean"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildcollectenv"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/builddiscard"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/builddistribute"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
@@ -276,6 +277,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
+			},
+		},
+		{
+			Name:      "build-discard",
+			Flags:     getBuildDiscardFlags(),
+			Aliases:   []string{"bdi"},
+			Usage:     builddiscard.Description,
+			HelpName:  common.CreateUsage("rt build-discard", builddiscard.Description, builddiscard.Usage),
+			UsageText: builddiscard.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				buildDiscardCmd(c)
 			},
 		},
 		{
@@ -1026,6 +1039,31 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getCommonFlags()...)
 }
 
+func getBuildDiscardFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "max-days",
+			Usage: "[Optional] The maximum number of days to keep builds in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "max-builds",
+			Usage: "[Optional] The maximum number of builds to store in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "exclude-builds",
+			Usage: "[Optional] List of build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "delete-artifacts",
+			Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "async",
+			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.",
+		},
+	}...)
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1579,6 +1617,15 @@ func buildDistributeCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func buildDiscardCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	configuration := createBuildDiscardConfiguration(c)
+	err := buildinfo.BuildDiscard(configuration)
+	cliutils.ExitOnErr(err)
+}
+
 func gitLfsCleanCmd(c *cli.Context) {
 	if c.NArg() > 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1864,6 +1911,20 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 	promoteConfiguration.BuildName = c.Args().Get(0)
 	promoteConfiguration.BuildNumber = c.Args().Get(1)
 	promoteConfiguration.TargetRepo = c.Args().Get(2)
+	return
+}
+
+func createBuildDiscardConfiguration(c *cli.Context) (discardConfiguration *buildinfo.BuildDiscardConfiguration) {
+	discardParamsImpl := new(services.DiscardBuildsParamsImpl)
+	discardParamsImpl.DeleteArtifacts = c.Bool("delete-artifacts")
+	discardParamsImpl.MaxBuilds = c.String("max-builds")
+	discardParamsImpl.MaxDays = c.String("max-days")
+	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
+	discardParamsImpl.Async = c.Bool("async")
+	discardParamsImpl.BuildName = c.Args().Get(0)
+	discardConfiguration = new(buildinfo.BuildDiscardConfiguration)
+	discardConfiguration.DiscardBuildsParamsImpl = discardParamsImpl
+	discardConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 

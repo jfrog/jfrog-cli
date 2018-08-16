@@ -56,6 +56,12 @@ func (sm *ArtifactoryServicesManager) PromoteBuild(params services.PromotionPara
 	return promotionService.BuildPromote(params)
 }
 
+func (sm *ArtifactoryServicesManager) DiscardBuilds(params services.DiscardBuildsParams) error {
+	discardService := services.NewDiscardBuildsService(sm.client)
+	discardService.ArtDetails = sm.config.GetArtDetails()
+	return discardService.DiscardBuilds(params)
+}
+
 func (sm *ArtifactoryServicesManager) XrayScanBuild(params services.XrayScanParams) ([]byte, error) {
 	xrayScanService := services.NewXrayScanService(sm.client)
 	xrayScanService.ArtDetails = sm.config.GetArtDetails()

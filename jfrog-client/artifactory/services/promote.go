@@ -23,15 +23,7 @@ func NewPromotionService(client *httpclient.HttpClient) *PromoteService {
 	return &PromoteService{client: client}
 }
 
-func (ps *PromoteService) GetArtifactoryDetails() auth.ArtifactoryDetails {
-	return ps.ArtDetails
-}
-
-func (ps *PromoteService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
-	ps.ArtDetails = rt
-}
-
-func (ps *PromoteService) IsDryRun() bool {
+func (ps *PromoteService) isDryRun() bool {
 	return ps.DryRun
 }
 
@@ -56,7 +48,7 @@ func (ps *PromoteService) BuildPromote(promotionParams PromotionParams) error {
 		IncludeDependencies: promotionParams.IsIncludeDependencies(),
 		SourceRepo:          promotionParams.GetSourceRepo(),
 		TargetRepo:          promotionParams.GetTargetRepo(),
-		DryRun:              ps.IsDryRun()}
+		DryRun:              ps.isDryRun()}
 	requestContent, err := json.Marshal(data)
 	if err != nil {
 		return errorutils.CheckError(err)

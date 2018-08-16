@@ -29,14 +29,6 @@ func NewXrayScanService(client *httpclient.HttpClient) *XrayScanService {
 	return &XrayScanService{client: client}
 }
 
-func (ps *XrayScanService) GetArtifactoryDetails() auth.ArtifactoryDetails {
-	return ps.ArtDetails
-}
-
-func (ps *XrayScanService) SetArtifactoryDetails(rt auth.ArtifactoryDetails) {
-	ps.ArtDetails = rt
-}
-
 func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) {
 	url := ps.ArtDetails.GetUrl()
 	requestFullUrl, err := utils.BuildArtifactoryUrl(url, SCAN_BUILD_API_URL, make(map[string]string))
