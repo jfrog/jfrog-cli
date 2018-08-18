@@ -7,7 +7,7 @@ branches:
 environment:
   GOPATH: c:\gopath
 
-clone_folder: c:\gopath\src\github.com\jfrog\$project
+clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 
 stack: go 1.10
 
