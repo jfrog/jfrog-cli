@@ -11,8 +11,10 @@ clone_folder: c:\gopath\src\github.com\jfrog\$project
 
 stack: go 1.10
 
-#before_test:
-#- go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-#
-#test_script:
-#- go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog --rt.url=JFROG_CLI_RT_URL --rt.user=JFROG_CLI_RT_USER --rt.password=JFROG_CLI_RT_PASSWORD
+before_test:
+#- git clone -q --branch=dev https://github.com/yahavi/jfrog-cli-go.git c:\gopath\src\github.com\jfrog\$project
+- git --git-dir=c:\gopath\src\github.com\jfrog\$project.git --work-tree=c:\gopath\src\github.com\jfrog\$project checkout dev
+
+test_script:
+- go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+- go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog --rt.url=JFROG_CLI_RT_URL --rt.user=JFROG_CLI_RT_USER --rt.password=JFROG_CLI_RT_PASSWORD
