@@ -7,12 +7,10 @@ branches:
 environment:
   GOPATH: c:\gopath
 
-clone_folder: c:\gopath\src\github.com\jfrog\$project
-
 stack: go 1.10
 
 before_test:
-#- git clone -q --branch=dev https://github.com/yahavi/jfrog-cli-go.git c:\gopath\src\github.com\jfrog\$project
+- git clone -q --branch=dev https://github.com/yahavi/jfrog-cli-go.git c:\gopath\src\github.com\jfrog\$project
 - git --git-dir=c:\gopath\src\github.com\jfrog\$project.git --work-tree=c:\gopath\src\github.com\jfrog\$project checkout dev
 
 test_script:
