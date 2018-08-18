@@ -2,16 +2,14 @@ build: off
 
 branches:
   only:
-  - master
+  - dev
 
 environment:
   GOPATH: c:\gopath
 
-stack: go 1.10
+clone_folder: c:\gopath\src\github.com\jfrog\$project
 
-before_test:
-- git clone -q --branch=dev https://github.com/yahavi/jfrog-cli-go.git c:\gopath\src\github.com\jfrog\$project
-- git --git-dir=c:\gopath\src\github.com\jfrog\$project.git --work-tree=c:\gopath\src\github.com\jfrog\$project checkout dev
+stack: go 1.10
 
 test_script:
 - go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
