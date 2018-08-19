@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -153,8 +152,14 @@ func (lock *Lock) removeOtherLockOrWait(otherLock Lock, filesList *[]string) err
 		return nil
 	}
 	log.Debug("Lock hasn't been acquired.")
-	// Check if process is running:
-	running := isProcessRunning(otherLock)
+
+	// Check if the process is running.
+	// There are two implementation of the 'isProcessRunning'.
+	// One for Windows and one for Unix based systems.
+	running, err := isProcessRunning(otherLock.pid)
+	if err != nil {
+		return err
+	}
 
 	if !running {
 		log.Debug(fmt.Sprintf("Removing lock file %s since the creating process is no longer running", otherLock.fileName))
@@ -209,26 +214,6 @@ func (lock *Lock) getLocks(filesList []string) (Locks, error) {
 	}
 	sort.Sort(files)
 	return files, nil
-}
-
-// Checks if the process is running.
-// If error occurs, check if the error is part of the OS permission errors. This means the process is running.
-// Else means the process is not running.
-func isProcessRunning(lock Lock) bool {
-	process, _ := os.FindProcess(lock.pid)
-	err := process.Signal(syscall.Signal(0))
-	// If err is not nil, then the other process might still be running.
-	if err != nil {
-		// If this is a permission error, then the other process is running
-		if os.IsPermission(err) {
-			log.Debug("Other process still alive: ", err.Error())
-			return true
-		}
-		// The other process died without unlocking. Let's unlock.
-		return false
-	}
-	// This means there were no errors, same process.
-	return true
 }
 
 // Removes the lock file so other process can continue.
