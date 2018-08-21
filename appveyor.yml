@@ -23,7 +23,7 @@ environment:
 clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 
 before_test:
-  - choco install gradle
+  - choco install gradle --version 4.9
 
 test_script:
   - go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
