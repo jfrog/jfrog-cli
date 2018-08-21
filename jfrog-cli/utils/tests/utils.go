@@ -37,6 +37,7 @@ var TestGo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
+var MaskCredentials *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -57,6 +58,7 @@ func init() {
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	MaskCredentials = flag.Bool("mask-credentials", false, "Mask credentials in test output")
 }
 
 func CleanFileSystem() {
@@ -215,17 +217,24 @@ func NewJfrogCli(mainFunc func(), prefix, suffix string) *JfrogCli {
 func (cli *JfrogCli) Exec(args ...string) {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
+	output := strings.Split(cli.prefix, spaceSplit)
 	for _, v := range args {
 		if v == "" {
 			continue
 		}
-		os.Args = append(os.Args, strings.Split(v, spaceSplit)...)
+		args := strings.Split(v, spaceSplit)
+		os.Args = append(os.Args, args...)
+		output = append(output, args...)
 	}
 	if cli.suffix != "" {
-		os.Args = append(os.Args, strings.Split(cli.suffix, spaceSplit)...)
+		args := strings.Split(cli.suffix, spaceSplit)
+		os.Args = append(os.Args, args...)
+		if !*MaskCredentials {
+			output = append(output, args...)
+		}
 	}
 
-	log.Info("[Command]", strings.Join(os.Args, " "))
+	log.Info("[Command]", strings.Join(output, " "))
 	cli.main()
 }
 
