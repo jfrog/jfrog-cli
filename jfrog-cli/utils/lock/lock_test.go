@@ -88,7 +88,7 @@ func TestCreateFile(t *testing.T) {
 	}
 
 	if len(files) != 1 {
-		t.Error(fmt.Errorf("Expected one file, got %d.", len(files)))
+		t.Error(fmt.Errorf("Expected one file, got %d.", len(files), files))
 		t.FailNow()
 	}
 
