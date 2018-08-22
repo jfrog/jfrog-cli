@@ -22,7 +22,7 @@ func TestLock(t *testing.T) {
 	}
 
 	if len(files) != 2 {
-		t.Error("Expected 2 files but got ", len(files), files)
+		t.Error("Expected 2 files but got ", len(files))
 	}
 
 	// Performing lock. This should work since the first lock PID is not running. The Lock() will remove it.
@@ -88,7 +88,7 @@ func TestCreateFile(t *testing.T) {
 	}
 
 	if len(files) != 1 {
-		t.Error(fmt.Errorf("Expected one file, got %d.", len(files), files))
+		t.Error(fmt.Errorf("Expected one file, got %d. %v", len(files), files))
 		t.FailNow()
 	}
 
