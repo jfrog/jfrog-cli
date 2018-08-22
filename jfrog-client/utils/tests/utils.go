@@ -65,7 +65,6 @@ func RunTests(testsPackages []string, hideUnitTestsLog bool) error {
 	}
 	testsPackages = append([]string{"test", "-v"}, testsPackages...)
 	cmd := exec.Command("go", testsPackages...)
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 
 	if hideUnitTestsLog {
 		tempDirPath, err := getTestsLogsDir()
@@ -83,6 +82,7 @@ func RunTests(testsPackages []string, hideUnitTestsLog bool) error {
 		return nil
 	}
 
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
 		log.Error("Unit tests failed")
 		exitOnErr(err)
