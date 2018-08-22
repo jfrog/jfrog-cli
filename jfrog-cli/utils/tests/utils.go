@@ -38,6 +38,7 @@ var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
 var MaskCredentials *bool
+var HideUnitTestLog *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -58,7 +59,8 @@ func init() {
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
-	MaskCredentials = flag.Bool("mask-credentials", false, "Mask credentials in test output")
+	MaskCredentials = flag.Bool("test.maskCredentials", false, "Mask credentials in test output")
+	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Mask credentials in test output")
 }
 
 func CleanFileSystem() {

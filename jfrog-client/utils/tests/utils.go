@@ -59,25 +59,34 @@ func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 	return res
 }
 
-func RunTests(testsPackages []string) error {
+func RunTests(testsPackages []string, hideUnitTestsLog bool) error {
 	if len(testsPackages) == 0 {
 		return nil
 	}
 	testsPackages = append([]string{"test", "-v"}, testsPackages...)
 	cmd := exec.Command("go", testsPackages...)
 
-	tempDirPath, err := getTestsLogsDir()
-	exitOnErr(err)
+	if hideUnitTestsLog {
+		tempDirPath, err := getTestsLogsDir()
+		exitOnErr(err)
 
-	f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
-	exitOnErr(err)
+		f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
+		exitOnErr(err)
 
-	cmd.Stdout, cmd.Stderr = f, f
+		cmd.Stdout, cmd.Stderr = f, f
+		if err := cmd.Run(); err != nil {
+			log.Error("Unit tests failed, full report available at the following path:", f.Name())
+			exitOnErr(err)
+		}
+		log.Info("Full unit testing report available at the following path:", f.Name())
+		return nil
+	}
+
 	if err := cmd.Run(); err != nil {
-		log.Error("Unit tests failed, full report available at the following path:", f.Name())
+		log.Error("Unit tests failed")
 		exitOnErr(err)
 	}
-	log.Info("Full unit testing report available at the following path:", f.Name())
+
 	return nil
 }
 
