@@ -7,6 +7,7 @@ stack: go 1.10, node 8, jdk 8
 environment:
   GOPATH: c:\gopath
   JAVA_HOME: C:\Program Files\Java\jdk1.8.0
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
 
   RT_CREDENTIALS:
   JFROG_CLI_RT_URL:
@@ -41,4 +42,3 @@ test_script:
     --test.artifactory=false --test.buildTools=true
     --timeout 0 --test.maskCredentials
 
-  - gradle --stop
