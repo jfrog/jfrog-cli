@@ -35,6 +35,15 @@ func TestLock(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
+	// Confirming that only two locks are located in the lock directory
+	files, err = fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Error("Expected 0 files but got ", len(files), files)
+	}
 }
 
 func TestUnlock(t *testing.T) {
