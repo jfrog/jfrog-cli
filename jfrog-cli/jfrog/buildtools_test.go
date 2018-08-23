@@ -308,6 +308,7 @@ func runDockerTest(imageName string, t *testing.T) {
 	imageTag := *tests.DockerRepoDomain + "/" + imageName+ ":1"
 	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
 	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
+	fmt.Print("The build command:", *imageBuilder)
 	utils.RunCmd(imageBuilder)
 
 	buildName := "docker-build"
