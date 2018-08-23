@@ -35,7 +35,7 @@ environment:
       "%COMMON_TESTS_ARGS%"
   - BINTRAY_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS%" "%BT_CREDENTIALS_ARGS%" --test.artifactory=false --test.bintray=true
+      "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS%" --test.artifactory=false --test.bintray=true
   - BUILD_TOOLS_TESTS:
     TEST_SUIT:
       choco install gradle && "%COMMON_TESTS_ARGS%" --test.artifactory=false --test.buildTools=true
