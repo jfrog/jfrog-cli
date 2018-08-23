@@ -45,7 +45,7 @@ environment:
 #      "%COMMON_TESTS_ARGS% --test.artifactory=false --test.nuget=true"
   - DOCKER_TESTS:
     TEST_SUIT:
-      "docker login ecosysjfrog-docker-local.jfrog.io -u %JFROG_CLI_RT_USER% --password %JFROG_CLI_RT_PASSWORD% &&
+      "echo %JFROG_CLI_RT_PASSWORD% | docker login ecosysjfrog-docker-local.jfrog.io -u %JFROG_CLI_RT_USER% --password-stdin &&
       %COMMON_TESTS_ARGS% --test.artifactory=false --test.docker=true --rt.dockerRepoDomain=ecosysjfrog-docker-local.jfrog.io --rt.dockerTargetRepo=docker-local"
 
 test_script:

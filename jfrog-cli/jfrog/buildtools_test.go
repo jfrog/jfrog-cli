@@ -305,7 +305,7 @@ func TestDockerPushWithMultipleSlash(t *testing.T) {
 
 // Run docker push to Artifactory
 func runDockerTest(imageName string, t *testing.T) {
-	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
+	imageTag := *tests.DockerRepoDomain + "/" + imageName+ ":1"
 	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
 	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
 	utils.RunCmd(imageBuilder)
