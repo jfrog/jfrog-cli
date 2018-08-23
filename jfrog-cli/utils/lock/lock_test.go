@@ -8,43 +8,44 @@ import (
 	"time"
 )
 
-//func TestLock(t *testing.T) {
-//
-//	// First creating the first lock object with special pid number that doesn't exists.
-//	getLock(os.Getpid()*os.Getpid(), t)
-//	// Creating a second lock object with the running PID
-//	secondLock, folderName := getLock(os.Getpid(), t)
-//
-//	// Confirming that only two locks are located in the lock directory
-//	files, err := fileutils.ListFiles(folderName, false)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	if len(files) != 2 {
-//		t.Error("Expected 2 files but got ", len(files))
-//	}
-//
-//	// Performing lock. This should work since the first lock PID is not running. The Lock() will remove it.
-//	err = secondLock.Lock()
-//	if err != nil {
-//		t.Error(err)
-//	}
-//	// Unlocking to remove the lock file.
-//	err = secondLock.Unlock()
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	// Confirming that no locks are located in the lock directory
-//	files, err = fileutils.ListFiles(folderName, false)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//	if len(files) != 0 {
-//		t.Error("Expected 0 files but got", len(files), files)
-//	}
-//}
+func TestLock(t *testing.T) {
+
+	// First creating the first lock object with special pid number that doesn't exists.
+	fmt.Print("The process id is: " + string(os.Getpid()))
+	getLock(os.Getpid()*os.Getpid(), t)
+	// Creating a second lock object with the running PID
+	secondLock, folderName := getLock(os.Getpid(), t)
+
+	// Confirming that only two locks are located in the lock directory
+	files, err := fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(files) != 2 {
+		t.Error("Expected 2 files but got ", len(files))
+	}
+
+	// Performing lock. This should work since the first lock PID is not running. The Lock() will remove it.
+	err = secondLock.Lock()
+	if err != nil {
+		t.Error(err)
+	}
+	// Unlocking to remove the lock file.
+	err = secondLock.Unlock()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Confirming that no locks are located in the lock directory
+	files, err = fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Error("Expected 0 files but got", len(files), files)
+	}
+}
 
 func TestUnlock(t *testing.T) {
 
