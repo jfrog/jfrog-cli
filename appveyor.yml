@@ -4,12 +4,12 @@ image:
 build: off
 
 stack: go 1.10, node 8, jdk 8
+clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 environment:
   GOPATH: c:\gopath
   JAVA_HOME: C:\Program Files\Java\jdk1.8.0
   GRADLE_OPTS: -Dorg.gradle.daemon=false
 
-  RT_CREDENTIALS:
   JFROG_CLI_RT_URL:
     secure: KkjTm9RrjPrzDQocmxTmQPdE2bozPgix5CFjkeam6Fscx1S34tR4Hpqg3j/7R+AH
   JFROG_CLI_RT_USER:
@@ -21,26 +21,24 @@ environment:
   JFROG_CLI_BINTRAY_APIKEY:
     secure: OHRW/mJst4W1Dgnh+fI0IAIerXVCR6TMb6oG9ug0HYsMPmgSIISiEIKiFv1HcWK5
 
-  matrix:
-  - TEST_SUIT:
-      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-  - TEST_SUIT:
-      go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-        --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
-        --timeout 0 --test.maskCredentials
-  - TEST_SUIT:
-      go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-        --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%" --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
-        --test.artifactory=false --test.bintray=true
-        --timeout 0
-  - TEST_SUIT:
-      choco install gradle &&
-      go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-        --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
-        --test.artifactory=false --test.buildTools=true
-        --timeout 0 --test.maskCredentials
+  COMMON_TESTS_ARGS:
+    go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog --timeout 0 --test.maskCredentials --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+  BT_CREDENTIALS_ARGS:
+    --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
-clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
+  matrix:
+  - VET:
+    TEST_SUIT:
+      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - ARTIFACTORY_TESTS:
+    TEST_SUIT:
+      "%COMMON_TESTS_ARGS%"
+  - BINTRAY_TESTS:
+    TEST_SUIT:
+      "%COMMON_TESTS_ARGS%" "%BT_CREDENTIALS_ARGS%" --test.artifactory=false --test.bintray=true
+  - BUILD_TOOLS_TESTS:
+    TEST_SUIT:
+      choco install gradle && "%COMMON_TESTS_ARGS%" --test.artifactory=false --test.buildTools=true
 
 test_script:
   - "%TEST_SUIT%"
