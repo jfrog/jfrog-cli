@@ -11,7 +11,9 @@ import (
 func TestLock(t *testing.T) {
 
 	// First creating the first lock object with special pid number that doesn't exists.
-	fmt.Print("The process id is: " + string(os.Getpid()))
+	fmt.Print("The process id is: ", os.Getegid())
+	b, e := isProcessRunning(os.Getpid()*os.Getpid())
+	fmt.Print("Is process exists? ", b, e)
 	getLock(os.Getpid()*os.Getpid(), t)
 	// Creating a second lock object with the running PID
 	secondLock, folderName := getLock(os.Getpid(), t)
