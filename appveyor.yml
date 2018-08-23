@@ -22,15 +22,15 @@ environment:
     secure: OHRW/mJst4W1Dgnh+fI0IAIerXVCR6TMb6oG9ug0HYsMPmgSIISiEIKiFv1HcWK5
 
   matrix:
-  - test_script: go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-  - test_script: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - TEST_SUIT: go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - TEST_SUIT: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
       --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
       --timeout 0 --test.maskCredentials
-  - test_script: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - TEST_SUIT: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
       --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%" --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
       --test.artifactory=false --test.bintray=true
       --timeout 0
-  - test_script: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - TEST_SUIT: go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
       --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
       --test.artifactory=false --test.buildTools=true
       --timeout 0 --test.maskCredentials
@@ -40,7 +40,8 @@ clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 before_test:
   - choco install gradle
 #
-#test_script:
+test_script:
+  - "%TEST_SUIT%"
 #  - go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
 #  - go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
 #    --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
