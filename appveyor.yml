@@ -1,5 +1,5 @@
 image:
-- Visual Studio 2017
+  - Visual Studio 2017
 
 build: off
 
@@ -36,15 +36,17 @@ environment:
 #  - BINTRAY_TESTS:
 #    TEST_SUIT:
 #      "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS% --test.artifactory=false --test.bintray=true"
-  - BUILD_TOOLS_TESTS:
-    TEST_SUIT:
-      "choco install gradle && %COMMON_TESTS_ARGS% --test.artifactory=false --test.buildTools=true"
-  - NUGET_TESTS:
-    TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --test.artifactory=false -test.nuget=true"
+#  - BUILD_TOOLS_TESTS:
+#    TEST_SUIT:
+#      "choco install gradle &&
+#      %COMMON_TESTS_ARGS% --test.artifactory=false --test.buildTools=true"
+#  - NUGET_TESTS:
+#    TEST_SUIT:
+#      "%COMMON_TESTS_ARGS% --test.artifactory=false --test.nuget=true"
   - DOCKER_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --test.artifactory=false -test.docker=true --rt.dockerRepoDomain=ecosysjfrog-docker-local.jfrog.io --rt.dockerTargetRepo=docker-local"
+      "echo %JFROG_CLI_RT_PASSWORD% | docker login -u %JFROG_CLI_RT_USER% --password-stdin &&
+      %COMMON_TESTS_ARGS% --test.artifactory=false --test.docker=true --rt.dockerRepoDomain=ecosysjfrog-docker-local.jfrog.io --rt.dockerTargetRepo=docker-local"
 
 test_script:
   - "%TEST_SUIT%"
