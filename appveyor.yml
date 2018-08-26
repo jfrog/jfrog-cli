@@ -2,7 +2,6 @@ image:
   - Visual Studio 2017
 
 build: off
-
 stack: go 1.10, node 8, jdk 8
 clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 environment:

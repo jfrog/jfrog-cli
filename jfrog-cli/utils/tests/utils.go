@@ -60,7 +60,7 @@ func init() {
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	MaskCredentials = flag.Bool("test.maskCredentials", false, "Mask credentials in test output")
-	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Mask credentials in test output")
+	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 }
 
 func CleanFileSystem() {
