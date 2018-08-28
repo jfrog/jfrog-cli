@@ -212,19 +212,37 @@ func TestGoBuildInfo(t *testing.T) {
 
 	log.Info("Using Go project located at ", project1Path)
 
-	// Download dependencies without Artifactory
-	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--no-registry=true")
-
 	buildName := "go-build"
-	buildNumber := "1"
 
-	// Publish dependency project to Artifactory
+	// 1. Download dependencies without Artifactory.
+	// 2. Publish build-info.
+	// 3. Validate the total count of dependencies added to the build-info.
+	buildNumber := "1"
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--no-registry=true", "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 6, 0)
+
+	// Do the same, with one exception - download the dependencies from Artifactory.
+	// Use a new build number. Expect the same results as the previous build.
+	buildNumber = "2"
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 6, 0)
+
+	// Now, using a new build number, do the following:
+	// 1. Build the project again.
+	// 2. Publish the go package.
+	// 3. Validate the total count of dependencies and artifacts added to the build-info.
+	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
+	buildNumber = "3"
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 2)
-	validateBuildInfoProperties(buildInfo, t)
+	validateBuildInfoProperties(buildInfo, tests.SearchGo, t)
 
 	err = os.Chdir(wd)
 	if err != nil {
@@ -347,15 +365,18 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 		t.Error("build info was not generated correctly, no modules were created.")
 	}
 	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
-		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
+		t.Error("Incorrect number of dependencies found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
 	}
 	if expectedArtifacts != len(buildInfo.Modules[0].Artifacts) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedArtifacts, " Found:", len(buildInfo.Modules[0].Artifacts))
 	}
 }
 
-// Validate the build.name and build.number properties
-func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
+// This function counts the following:
+// #1 The number of artifacts in the build-info JSON.
+// #2 The number of artifact with the build.name and build.number properties.
+// Validates that #1 == #2
+func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, specName string, t *testing.T) {
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem

@@ -188,7 +188,7 @@ func execCreateRepoRest(repoConfig, repoName string) error {
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return errors.New("Fail to create repository. Reason local repository with key: " + repoName + " already exist\n")
 	}
-	log.Info("Repository", repoName, "was created.")
+	log.Info("Repository", repoName, "created.")
 	return nil
 }
 

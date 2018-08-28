@@ -2437,7 +2437,7 @@ func execDeleteRepoRest(repoName string) {
 		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		return
 	}
-	log.Info("Repository", repoName, "was deleted.")
+	log.Info("Repository", repoName, "deleted.")
 }
 
 func execCreateRepoRest(repoConfig, repoName string) {
@@ -2460,7 +2460,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		os.Exit(1)
 		return
 	}
-	log.Info("Repository", repoName, "was created.")
+	log.Info("Repository", repoName, "created.")
 }
 
 func createReposIfNeeded() {

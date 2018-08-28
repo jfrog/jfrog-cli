@@ -15,8 +15,59 @@ func New() *BuildInfo {
 	}
 }
 
+// Append the modules of the recieved build info to this build info.
+// If the two build info instances contain modules with identical names, these modules are merged.
+// When merging the modules, the artifacts and dependencies remain unique according to their checksums.
 func (targetBuildInfo *BuildInfo) Append(buildInfo *BuildInfo) {
-	targetBuildInfo.Modules = append(targetBuildInfo.Modules, buildInfo.Modules...)
+	for _, newModule := range buildInfo.Modules {
+		merged := false
+		for i, _ := range targetBuildInfo.Modules {
+			if newModule.Id == targetBuildInfo.Modules[i].Id {
+				mergeModules(&newModule, &targetBuildInfo.Modules[i])
+				merged = true
+				break
+			}
+		}
+		if !merged {
+			targetBuildInfo.Modules = append(targetBuildInfo.Modules, newModule)
+		}
+	}
+}
+
+// Merge the first module inot the second module.
+func mergeModules(merge *Module, into *Module) {
+	mergeArtifacts(&merge.Artifacts, &into.Artifacts)
+	mergeDependencies(&merge.Dependencies, &into.Dependencies)
+}
+
+func mergeArtifacts(mergeArtifacts *[]Artifact, intoArtifacts *[]Artifact) {
+	for _, mergeArtifact := range *mergeArtifacts {
+		exists := false
+		for _, artifact := range *intoArtifacts {
+			if mergeArtifact.Sha1 == artifact.Sha1 {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			*intoArtifacts = append(*intoArtifacts, mergeArtifact)
+		}
+	}
+}
+
+func mergeDependencies(mergeDependencies *[]Dependency, intoDependencies *[]Dependency) {
+	for _, mergeDependency := range *mergeDependencies {
+		exists := false
+		for _, dependency := range *intoDependencies {
+			if mergeDependency.Sha1 == dependency.Sha1 {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			*intoDependencies = append(*intoDependencies, mergeDependency)
+		}
+	}
 }
 
 type BuildInfo struct {
