@@ -42,11 +42,11 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	if len(depsList) > 0 {
 		succeeded, failed, err = goProject.PublishDependencies(targetRepo, details, depsList)
 	}
-	if publishPackage {
-		succeeded++
-	}
 	if err != nil {
 		return
+	}
+	if publishPackage {
+		succeeded++
 	}
 
 	// Publish the build-info to Artifactory

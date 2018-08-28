@@ -20,21 +20,21 @@ func New() *BuildInfo {
 // When merging the modules, the artifacts and dependencies remain unique according to their checksums.
 func (targetBuildInfo *BuildInfo) Append(buildInfo *BuildInfo) {
 	for _, newModule := range buildInfo.Modules {
-		merged := false
+		exists := false
 		for i, _ := range targetBuildInfo.Modules {
 			if newModule.Id == targetBuildInfo.Modules[i].Id {
 				mergeModules(&newModule, &targetBuildInfo.Modules[i])
-				merged = true
+				exists = true
 				break
 			}
 		}
-		if !merged {
+		if !exists {
 			targetBuildInfo.Modules = append(targetBuildInfo.Modules, newModule)
 		}
 	}
 }
 
-// Merge the first module inot the second module.
+// Merge the first module into the second module.
 func mergeModules(merge *Module, into *Module) {
 	mergeArtifacts(&merge.Artifacts, &into.Artifacts)
 	mergeDependencies(&merge.Dependencies, &into.Dependencies)
