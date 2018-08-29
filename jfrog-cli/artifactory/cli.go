@@ -1877,7 +1877,8 @@ func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfocmd.Configura
 	if len(flags.EnvInclude) == 0 {
 		flags.EnvInclude = "*"
 	}
-	if len(flags.EnvExclude) == 0 {
+	// Allow to use `env-exclude=""` and get no filters
+	if !c.IsSet("env-exclude") {
 		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return
