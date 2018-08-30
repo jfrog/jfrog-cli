@@ -716,6 +716,7 @@ func getGoFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
+	flags = append(flags, getBuildToolFlags()...)
 	return flags
 }
 
@@ -1287,26 +1288,13 @@ func goPublishCmd(c *cli.Context) {
 
 	logGoVersion()
 
-	targetRepo := c.Args().Get(0)
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
+	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	if c.BoolT("self") {
-		err := golang.Publish(targetRepo, version, buildName, buildNumber, details)
-		if err != nil {
-			err = cliutils.PrintSummaryReport(0, 1, err)
-			cliutils.ExitOnErr(err)
-		}
-	}
-
-	publishDeps := c.String("deps")
-	publishDepsSlice := strings.Split(publishDeps, ",")
-	succeeded, failed, err := golang.PublishDependencies(targetRepo, details, publishDepsSlice)
-	if c.BoolT("self") {
-		succeeded++
-	}
+	succeeded, failed, err := golang.Publish(c.BoolT("self"), c.String("deps"), targetRepo, version, buildName, buildNumber, details)
 	err = cliutils.PrintSummaryReport(succeeded, failed, err)
 	cliutils.ExitOnErr(err)
 }
@@ -1322,17 +1310,15 @@ func goCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
 	goArg := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
 
-	if !c.Bool("no-registry") {
-		goutils.SetGoProxyEnvVar(details, targetRepo)
-	}
-	// Run go
-	err := goutils.RunGo(goArg)
+	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
@@ -1891,7 +1877,8 @@ func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfocmd.Configura
 	if len(flags.EnvInclude) == 0 {
 		flags.EnvInclude = "*"
 	}
-	if len(flags.EnvExclude) == 0 {
+	// Allow to use `env-exclude=""` and get no filters
+	if !c.IsSet("env-exclude") {
 		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return

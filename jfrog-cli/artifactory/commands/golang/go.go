@@ -1,73 +1,63 @@
 package golang
 
 import (
-	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	cliutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"os/exec"
 	"strings"
 )
 
-func PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string) (int, int, error) {
-	err := validatePrerequisites()
+func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, buildNumber string, details *config.ArtifactoryDetails) (succeeded, failed int, err error) {
+	err = validatePrerequisites()
 	if err != nil {
-		return 0, 0, err
+		return
 	}
 
-	log.Info("Publishing project dependencies...")
-	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
-	// The version is not necessary because we are publishing only the dependencies.
-	goProject, err := project.Load("-")
-	if err != nil {
-		return 0, 0, err
-	}
-
-	succeeded := 0
-	skip := 0
-	_, includeAll := includeDep["ALL"]
-	dependencies := goProject.Dependencies()
-	for _, dependency := range dependencies {
-		depToBeIncluded := false
-		id := strings.Split(dependency.GetId(), ":")
-		if includedVersion, included := includeDep[id[0]]; included && strings.EqualFold(includedVersion, id[1]) {
-			depToBeIncluded = true
+	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
+	if isCollectBuildInfo {
+		err = utils.SaveBuildGeneralDetails(buildName, buildNumber)
+		if err != nil {
+			return
 		}
-		if includeAll || depToBeIncluded {
-			err = dependency.Publish(targetRepo, details)
-			if err != nil {
-				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
-				log.Error("Failed to publish", dependency.GetId(), ":", err)
-			} else {
-				succeeded++
-			}
-			continue
-		}
-		skip++
 	}
 
-	failed := len(dependencies) - succeeded - skip
-	if failed > 0 {
-		err = errors.New("Publishing project dependencies finished with errors. Please review the logs.")
-	}
-	return succeeded, failed, err
-}
-
-func Publish(targetRepo, version, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
-	err := validatePrerequisites()
-	if err != nil {
-		return err
-	}
-
-	log.Info("Publishing project...")
 	goProject, err := project.Load(version)
 	if err != nil {
-		return err
+		return
 	}
 
+	// Publish the package to Artifactory
+	if publishPackage {
+		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, details)
+		if err != nil {
+			return
+		}
+	}
+
+	// Publish the package dependencies to Artifactory
+	depsList := strings.Split(dependencies, ",")
+	if len(depsList) > 0 {
+		succeeded, failed, err = goProject.PublishDependencies(targetRepo, details, depsList)
+	}
+	if err != nil {
+		return
+	}
+	if publishPackage {
+		succeeded++
+	}
+
+	// Publish the build-info to Artifactory
+	if isCollectBuildInfo {
+		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true))
+	}
+
+	return
+}
+
+func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
 		err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
@@ -76,17 +66,24 @@ func Publish(targetRepo, version, buildName, buildNumber string, details *config
 		}
 	}
 
-	err = goProject.Publish(targetRepo, buildName, buildNumber, details)
+	if !noRegistry {
+		goutils.SetGoProxyEnvVar(details, targetRepo)
+	}
+	err := goutils.RunGo(goArg)
 	if err != nil {
-		log.Error(err)
-		return errors.New("Publishing project finished with errors. Please review the logs.")
+		return err
 	}
 
-	buildInfo := goProject.BuildInfo()
 	if isCollectBuildInfo {
-		return utils.SaveBuildInfo(buildName, buildNumber, buildInfo)
+		// The version is not necessary because we are collecting the dependencies only.
+		goProject, err := project.Load("-")
+		if err != nil {
+			return err
+		}
+		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(false))
 	}
-	return nil
+
+	return err
 }
 
 func validatePrerequisites() error {
