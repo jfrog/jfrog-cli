@@ -2,7 +2,7 @@ image:
   - Visual Studio 2017
 
 build: off
-stack: go 1.10, node 8, jdk 8
+stack: go 1.11, node 8, jdk 8
 clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
 environment:
   GOPATH: c:\gopath
@@ -26,22 +26,25 @@ environment:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
-  - VET:
+#  - VET:
+#    TEST_SUIT:
+#      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+#  - ARTIFACTORY_TESTS:
+#    TEST_SUIT:
+#      "%COMMON_TESTS_ARGS%"
+#  - BINTRAY_TESTS:
+#    TEST_SUIT:
+#      "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS% --test.artifactory=false --test.bintray=true"
+#  - BUILD_TOOLS_TESTS:
+#    TEST_SUIT:
+#      "choco install gradle &&
+#      %COMMON_TESTS_ARGS% --test.artifactory=false --test.buildTools=true"
+#  - NUGET_TESTS:
+#    TEST_SUIT:
+#      "%COMMON_TESTS_ARGS% --test.artifactory=false --test.nuget=true"
+  - GO_TESTS:
     TEST_SUIT:
-      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
-  - ARTIFACTORY_TESTS:
-    TEST_SUIT:
-      "%COMMON_TESTS_ARGS%"
-  - BINTRAY_TESTS:
-    TEST_SUIT:
-      "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS% --test.artifactory=false --test.bintray=true"
-  - BUILD_TOOLS_TESTS:
-    TEST_SUIT:
-      "choco install gradle &&
-      %COMMON_TESTS_ARGS% --test.artifactory=false --test.buildTools=true"
-  - NUGET_TESTS:
-    TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --test.artifactory=false --test.nuget=true"
+      "%COMMON_TESTS_ARGS% --test.artifactory=false -test.go=true"
 
 test_script:
   - "%TEST_SUIT%"
