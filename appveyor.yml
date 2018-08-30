@@ -26,9 +26,9 @@ environment:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
-#  - VET:
-#    TEST_SUIT:
-#      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
+  - VET:
+    TEST_SUIT:
+      go vet github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog
 #  - ARTIFACTORY_TESTS:
 #    TEST_SUIT:
 #      "%COMMON_TESTS_ARGS%"
@@ -47,4 +47,5 @@ environment:
       "%COMMON_TESTS_ARGS% --test.artifactory=false -test.go=true"
 
 test_script:
+  - go version
   - "%TEST_SUIT%"
