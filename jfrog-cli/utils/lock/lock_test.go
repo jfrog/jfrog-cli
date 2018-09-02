@@ -3,15 +3,20 @@ package lock
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"math"
 	"os"
 	"testing"
 	"time"
 )
 
-func TestLock(t *testing.T) {
+/*
+	The lock mechanism prefers earlier lock requests. If two locks requests have same time stamps, it'll take the one with the smaller PID first.
+	Here we test the functionality of a real process with a real PID and a dummy process with MaxInt pid.
+*/
+func TestLockSmallerPid(t *testing.T) {
 
 	// First creating the first lock object with special pid number that doesn't exists.
-	getLock(os.Getpid()*os.Getpid(), t)
+	firstLock, _ := getLock(math.MaxInt32, t)
 	// Creating a second lock object with the running PID
 	secondLock, folderName := getLock(os.Getpid(), t)
 
@@ -34,6 +39,65 @@ func TestLock(t *testing.T) {
 	err = secondLock.Unlock()
 	if err != nil {
 		t.Error(err)
+	}
+
+	// If timestamp equals, secondLock.Lock() is not expected to delete first lock's file, since os.Getpid() < math.MaxInt32.
+	if firstLock.currentTime == secondLock.currentTime {
+		err = firstLock.Unlock()
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	// Confirming that no locks are located in the lock directory
+	files, err = fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Error("Expected 0 files but got", len(files), files)
+	}
+}
+
+/*
+	The lock mechanism prefers earlier lock requests. If two locks requests have same time stamps, it'll take the one with the smaller PID first.
+	Here we test the functionality of a real process with a real PID and a dummy process with -1 pid.
+*/
+func TestLockBiggerPid(t *testing.T) {
+
+	// First creating the first lock object with special pid number that doesn't exists.
+	getLock(-1, t)
+	// Creating a second lock object with the running PID
+	secondLock, folderName := getLock(os.Getpid(), t)
+
+	// Confirming that only two locks are located in the lock directory
+	files, err := fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(files) != 2 {
+		t.Error("Expected 2 files but got ", len(files), files)
+	}
+
+	// Performing lock. This should work since the first lock PID is not running. The Lock() will remove it.
+	err = secondLock.Lock()
+	if err != nil {
+		t.Error(err)
+	}
+	// Unlocking to remove the lock file.
+	err = secondLock.Unlock()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Confirming that no locks are located in the lock directory
+	files, err = fileutils.ListFiles(folderName, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Error("Expected 0 files but got", len(files), files)
 	}
 }
 
