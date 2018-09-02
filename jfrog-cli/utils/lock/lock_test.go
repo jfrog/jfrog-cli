@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-func TestLockPidSmaller(t *testing.T) {
+/*
+	The lock mechanism prefers earlier lock requests. If two locks requests have same time stamps, it'll take the one with the smaller PID first.
+	Here we test the functionality of a real process with a real PID and a dummy process with MaxInt pid.
+*/
+func TestLockSmallerPid(t *testing.T) {
 
 	// First creating the first lock object with special pid number that doesn't exists.
 	firstLock, _ := getLock(math.MaxInt32, t)
@@ -55,7 +59,11 @@ func TestLockPidSmaller(t *testing.T) {
 	}
 }
 
-func TestLockPidBigger(t *testing.T) {
+/*
+	The lock mechanism prefers earlier lock requests. If two locks requests have same time stamps, it'll take the one with the smaller PID first.
+	Here we test the functionality of a real process with a real PID and a dummy process with -1 pid.
+*/
+func TestLockBiggerPid(t *testing.T) {
 
 	// First creating the first lock object with special pid number that doesn't exists.
 	getLock(-1, t)
