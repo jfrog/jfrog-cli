@@ -2,6 +2,8 @@ package httpclient
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
@@ -11,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"github.com/mholt/archiver"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -18,9 +21,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"crypto/sha1"
-	"encoding/hex"
-	"hash"
 )
 
 func (jc *HttpClient) sendGetLeaveBodyOpen(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails) (resp *http.Response, respBody []byte, redirectUrl string, err error) {
@@ -42,13 +42,20 @@ func NewHttpClient(client *http.Client) *HttpClient {
 func (jc *HttpClient) sendGetForFileDownload(url string, followRedirect bool, httpClientsDetails httputils.HttpClientDetails, currentSplit, retries int) (resp *http.Response, redirectUrl string, err error) {
 	for i := 0; i < retries+1; i++ {
 		resp, _, redirectUrl, err = jc.sendGetLeaveBodyOpen(url, followRedirect, httpClientsDetails)
-		if resp != nil && resp.StatusCode <= 500 {
-			// No error and status <= 500
+		if resp != nil && resp.StatusCode < 500 {
+			// No error and status < 500
 			return
 		}
-		log.Warn("Download attempt #", i, "of part", currentSplit, "of", url, "failed.")
+		log.Warn("Download attempt #", i, "of part", currentSplit, "of", url, "failed -", getFailureReason(resp, err))
 	}
 	return
+}
+
+func getFailureReason(resp *http.Response, err error) string {
+	if resp != nil {
+		return resp.Status
+	}
+	return err.Error()
 }
 
 func (jc *HttpClient) Stream(url string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, string, error) {
@@ -154,13 +161,35 @@ func setRequestHeaders(httpClientsDetails httputils.HttpClientDetails, size int6
 	req.Header.Set("Content-Length", length)
 }
 
-func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
-	size, err := fileutils.GetFileSize(f)
+func (jc *HttpClient) UploadFile(localPath, url string, httpClientsDetails httputils.HttpClientDetails, retries int) (resp *http.Response, body []byte, err error) {
+	for i := 0; i < retries+1; i++ {
+		resp, body, err = jc.doUploadFile(localPath, url, httpClientsDetails)
+		if resp != nil && resp.StatusCode < 500 {
+			// No error and status < 500
+			return
+		}
+		log.Warn("Upload attempt #", i, "to", url, "failed -", getFailureReason(resp, err))
+	}
+	return resp, body, err
+}
+
+func (jc *HttpClient) doUploadFile(localPath, url string, httpClientsDetails httputils.HttpClientDetails) (*http.Response, []byte, error) {
+	var file *os.File
+	var err error
+	if localPath != "" {
+		file, err = os.Open(localPath)
+		defer file.Close()
+		if errorutils.CheckError(err) != nil {
+			return nil, nil, err
+		}
+	}
+
+	size, err := fileutils.GetFileSize(file)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequest("PUT", url, fileutils.GetUploadRequestContent(f))
+	req, err := http.NewRequest("PUT", url, fileutils.GetUploadRequestContent(file))
 	if errorutils.CheckError(err) != nil {
 		return nil, nil, err
 	}
@@ -176,9 +205,8 @@ func (jc *HttpClient) UploadFile(f *os.File, url string, httpClientsDetails http
 	if errorutils.CheckError(err) != nil {
 		return nil, nil, err
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 	if errorutils.CheckError(err) != nil {
 		return nil, nil, err
 	}
@@ -527,12 +555,12 @@ func addUserAgentHeader(req *http.Request) {
 }
 
 type DownloadFileDetails struct {
-	FileName       string `json:"LocalFileName,omitempty"`
-	DownloadPath   string `json:"DownloadPath,omitempty"`
-	LocalPath      string `json:"LocalPath,omitempty"`
-	LocalFileName  string `json:"LocalFileName,omitempty"`
-	ExpectedSha1   string `json:"ExpectedSha1,omitempty"`
-	Size           int64  `json:"Size,omitempty"`
+	FileName      string `json:"LocalFileName,omitempty"`
+	DownloadPath  string `json:"DownloadPath,omitempty"`
+	LocalPath     string `json:"LocalPath,omitempty"`
+	LocalFileName string `json:"LocalFileName,omitempty"`
+	ExpectedSha1  string `json:"ExpectedSha1,omitempty"`
+	Size          int64  `json:"Size,omitempty"`
 }
 
 type ConcurrentDownloadFlags struct {

@@ -2,19 +2,19 @@ package generic
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"strconv"
 	"strings"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 )
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
@@ -131,6 +131,7 @@ func createBaseUploadParams(flags *UploadConfiguration) *services.UploadParamsIm
 	uploadParamImp := &services.UploadParamsImp{}
 	uploadParamImp.Deb = flags.Deb
 	uploadParamImp.Symlink = flags.Symlink
+	uploadParamImp.Retries = flags.Retries
 	return uploadParamImp
 }
 
@@ -173,4 +174,5 @@ type UploadConfiguration struct {
 	Symlink               bool
 	ExplodeArchive        bool
 	ArtDetails            *config.ArtifactoryDetails
+	Retries               int
 }

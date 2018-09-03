@@ -10,7 +10,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
-	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -151,15 +150,9 @@ func getDebianDefaultPath(debianPropsStr, packageName string) string {
 func uploadFile(artifact clientutils.Artifact, url, logMsgPrefix string, bintrayDetails auth.BintrayDetails) (bool, error) {
 	log.Info(logMsgPrefix+"Uploading artifact:", artifact.LocalPath)
 
-	f, err := os.Open(artifact.LocalPath)
-	err = errorutils.CheckError(err)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
 	httpClientsDetails := bintrayDetails.CreateHttpClientDetails()
 	client := httpclient.NewDefaultHttpClient()
-	resp, body, err := client.UploadFile(f, url, httpClientsDetails)
+	resp, body, err := client.UploadFile(artifact.LocalPath, url, httpClientsDetails, 0)
 	if err != nil {
 		return false, err
 	}

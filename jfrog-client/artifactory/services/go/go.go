@@ -6,8 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"os"
 )
 
 type GoService struct {
@@ -28,19 +26,13 @@ func (gs *GoService) SetArtDetails(artDetails auth.ArtifactoryDetails) {
 }
 
 func (gs *GoService) PublishPackage(params GoParams) error {
-	f, err := os.Open(params.GetZipPath())
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	defer f.Close()
-
 	url, err := utils.BuildArtifactoryUrl(gs.ArtDetails.GetUrl(), "api/go/"+params.GetTargetRepo(), make(map[string]string))
 	clientDetails := gs.ArtDetails.CreateHttpClientDetails()
 
 	utils.AddHeader("X-GO-MODULE-VERSION", params.GetVersion(), &clientDetails.Headers)
 	utils.AddHeader("X-GO-MODULE-CONTENT", base64.StdEncoding.EncodeToString(params.GetModContent()), &clientDetails.Headers)
 	addPropertiesHeaders(params.GetProps(), &clientDetails.Headers)
-	resp, body, err := gs.client.UploadFile(f, url, clientDetails)
+	resp, body, err := gs.client.UploadFile(params.GetZipPath(), url, clientDetails, 0)
 	if err != nil {
 		return err
 	}
