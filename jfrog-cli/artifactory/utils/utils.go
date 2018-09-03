@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
@@ -18,6 +19,8 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 const repoDetailsUrl = "api/repositories/"
@@ -158,9 +161,98 @@ func RunCmd(config CmdConfig) error {
 	return nil
 }
 
+/*
+Mask the credentials from the output per the regExp provided.
+ */
+func MaskCmdOutput(config CmdConfig, regExp string) error {
+	for k, v := range config.GetEnv() {
+		os.Setenv(k, v)
+	}
+
+	cmd := config.GetCmd()
+	cmdReader, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	defer cmdReader.Close()
+	scanner := bufio.NewScanner(cmdReader)
+
+	err = cmd.Start()
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	regExpression, err := getUrlProtocolRegExp(regExp)
+	if err != nil {
+		return err
+	}
+	for scanner.Scan() {
+		line := scanner.Text()
+		if regExpression.FindString(line) != "" {
+			line = removeCredentialsFromLine(line)
+		}
+		log.Output(line)
+	}
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	return nil
+}
+
 type CmdConfig interface {
 	GetCmd() *exec.Cmd
 	GetEnv() map[string]string
 	GetStdWriter() io.WriteCloser
 	GetErrWriter() io.WriteCloser
+}
+
+func getUrlProtocolRegExp(regex string) (*regexp.Regexp, error) {
+	excludePathsRegExp, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+
+	return excludePathsRegExp, nil
+}
+
+/*
+Removes the credentials information from the line. The credentials are build as user:password
+For example: http://user:password@127.0.0.1:8081/artifactory/path/to/repo
+*/
+func removeCredentialsFromLine(line string) string {
+	splitByProtocolSlashes := strings.Split(line, "//")
+	if len(splitByProtocolSlashes) < 2 {
+		// The prefix wasn't found. Return the line as is.
+		return line
+	}
+	splitByAtSign := strings.Split(splitByProtocolSlashes[1], "@")
+	if len(splitByAtSign) < 2 {
+		// No credentials prefix were found. Return the line as is.
+		return line
+	}
+	if strings.Contains(splitByAtSign[0], ":") {
+		splitByAtSign[0] = "***:***"
+	}
+	splitByProtocolSlashes[1] = ""
+	line = ""
+	// Now construct the line again
+	for _, s := range splitByAtSign {
+		splitByProtocolSlashes[1] += s + "@"
+	}
+	if strings.HasSuffix(splitByProtocolSlashes[1], "@") {
+		splitByProtocolSlashes[1] = splitByProtocolSlashes[1][:len(splitByProtocolSlashes[1])-1]
+	}
+	for _, splittedString := range splitByProtocolSlashes {
+		line += splittedString + "//"
+	}
+	if strings.HasSuffix(line, "//") {
+		line = line[:len(line)-2]
+	}
+
+	return line
 }

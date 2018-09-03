@@ -79,5 +79,5 @@ func RunGo(goArg string) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	return utils.RunCmd(goCmd)
+	return utils.MaskCmdOutput(goCmd, "((http|https)://)")
 }
