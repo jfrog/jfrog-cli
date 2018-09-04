@@ -11,6 +11,8 @@ import (
 	"os/exec"
 )
 
+const GOPROXY = "GOPROXY"
+
 func NewCmd() (*Cmd, error) {
 	execPath, err := exec.LookPath("go")
 	if err != nil {
@@ -55,7 +57,7 @@ func SetGoProxyEnvVar(artifactoryDetails *config.ArtifactoryDetails, repoName st
 	rtUrl.User = url.UserPassword(artifactoryDetails.User, artifactoryDetails.Password)
 	rtUrl.Path += "api/go/" + repoName
 
-	err = os.Setenv("GOPROXY", rtUrl.String())
+	err = os.Setenv(GOPROXY, rtUrl.String())
 	return err
 }
 
@@ -79,5 +81,26 @@ func RunGo(goArg string) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	return utils.MaskCmdOutput(goCmd, "((http|https)://)")
+
+	regExp, err := utils.GetRegExp("((http|https)://)")
+	if err != nil {
+		return err
+	}
+
+	protocolRegExp := utils.RegExpStruct{
+		RegExp:   regExp,
+		ExecFunc: utils.MaskCredentials,
+	}
+
+	regExp, err = utils.GetRegExp("(404 Not Found)")
+	if err != nil {
+		return err
+	}
+
+	notFoundRegExp := utils.RegExpStruct{
+		RegExp:   regExp,
+		ExecFunc: utils.ErrorOnNotFound,
+	}
+
+	return utils.RunCmdWithOutputParser(goCmd, protocolRegExp, notFoundRegExp)
 }

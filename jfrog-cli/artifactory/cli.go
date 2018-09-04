@@ -711,7 +711,7 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy",
+			Usage: "[Default: false] Deprecated. Use the command without this flag. Set to true if you don't want to use Artifactory as your proxy",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -1317,8 +1317,11 @@ func goCmd(c *cli.Context) {
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-
-	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	noRegistry := c.Bool("no-registry")
+	if noRegistry {
+		log.Warn("no-registry flag is deprecated and will be removed in upcoming releases. Use the command without the flag instead.")
+	}
+	err := golang.ExecuteGo(noRegistry, goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)

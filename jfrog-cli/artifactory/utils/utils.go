@@ -162,9 +162,10 @@ func RunCmd(config CmdConfig) error {
 }
 
 /*
-Mask the credentials from the output per the regExp provided.
- */
-func MaskCmdOutput(config CmdConfig, regExp string) error {
+Executes the command and captures the output.
+Analyze each line to match the provided regex.
+*/
+func RunCmdWithOutputParser(config CmdConfig, regExpStruct ...RegExpStruct) error {
 	for k, v := range config.GetEnv() {
 		os.Setenv(k, v)
 	}
@@ -172,7 +173,7 @@ func MaskCmdOutput(config CmdConfig, regExp string) error {
 	cmd := config.GetCmd()
 	cmdReader, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	defer cmdReader.Close()
 	scanner := bufio.NewScanner(cmdReader)
@@ -181,19 +182,21 @@ func MaskCmdOutput(config CmdConfig, regExp string) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	regExpression, err := getUrlProtocolRegExp(regExp)
-	if err != nil {
-		return err
-	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		if regExpression.FindString(line) != "" {
-			line = removeCredentialsFromLine(line)
+		for _, regExp := range regExpStruct {
+			if regExp.RegExp.FindString(line) != "" {
+				line, err = regExp.ExecFunc(line)
+				if err != nil {
+					return err
+				}
+			}
 		}
 		log.Output(line)
 	}
 	if scanner.Err() != nil {
-		return scanner.Err()
+		return errorutils.CheckError(scanner.Err())
 	}
 
 	err = cmd.Wait()
@@ -211,7 +214,7 @@ type CmdConfig interface {
 	GetErrWriter() io.WriteCloser
 }
 
-func getUrlProtocolRegExp(regex string) (*regexp.Regexp, error) {
+func GetRegExp(regex string) (*regexp.Regexp, error) {
 	excludePathsRegExp, err := regexp.Compile(regex)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -221,19 +224,19 @@ func getUrlProtocolRegExp(regex string) (*regexp.Regexp, error) {
 }
 
 /*
-Removes the credentials information from the line. The credentials are build as user:password
+Mask the credentials information from the line. The credentials are build as user:password
 For example: http://user:password@127.0.0.1:8081/artifactory/path/to/repo
 */
-func removeCredentialsFromLine(line string) string {
+func MaskCredentials(line string) (string, error) {
 	splitByProtocolSlashes := strings.Split(line, "//")
 	if len(splitByProtocolSlashes) < 2 {
 		// The prefix wasn't found. Return the line as is.
-		return line
+		return line, nil
 	}
 	splitByAtSign := strings.Split(splitByProtocolSlashes[1], "@")
 	if len(splitByAtSign) < 2 {
 		// No credentials prefix were found. Return the line as is.
-		return line
+		return line, nil
 	}
 	if strings.Contains(splitByAtSign[0], ":") {
 		splitByAtSign[0] = "***:***"
@@ -247,12 +250,22 @@ func removeCredentialsFromLine(line string) string {
 	if strings.HasSuffix(splitByProtocolSlashes[1], "@") {
 		splitByProtocolSlashes[1] = splitByProtocolSlashes[1][:len(splitByProtocolSlashes[1])-1]
 	}
-	for _, splittedString := range splitByProtocolSlashes {
-		line += splittedString + "//"
+	for _, partialLine := range splitByProtocolSlashes {
+		line += partialLine + "//"
 	}
 	if strings.HasSuffix(line, "//") {
 		line = line[:len(line)-2]
 	}
 
-	return line
+	return line, nil
+}
+
+func ErrorOnNotFound(line string) (string, error) {
+	log.Output(line)
+	return "", errors.New("404 Not Found")
+}
+
+type RegExpStruct struct {
+	RegExp   *regexp.Regexp
+	ExecFunc func(line string) (string, error)
 }
