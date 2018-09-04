@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 )
 
 const (
@@ -24,7 +25,7 @@ func TestUnitTests(t *testing.T) {
 	setJfrogHome(homePath)
 	packages := clientTests.GetTestPackages("../...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
-	clientTests.RunTests(packages)
+	clientTests.RunTests(packages, *tests.HideUnitTestLog)
 	cleanUnitTestsJfrogHome(homePath)
 }
 
