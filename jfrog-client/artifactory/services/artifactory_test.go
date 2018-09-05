@@ -49,7 +49,7 @@ func init() {
 
 func TestMain(m *testing.M) {
 	packages := tests.ExcludeTestsPackage(tests.GetTestPackages("../../..."), ClientIntegrationTests)
-	tests.RunTests(packages)
+	tests.RunTests(packages, false)
 	flag.Parse()
 	log.Logger.SetLogLevel(log.GetCliLogLevel(*LogLevel))
 	if *RtUrl != "" && !strings.HasSuffix(*RtUrl, "/") {

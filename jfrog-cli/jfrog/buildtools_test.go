@@ -242,7 +242,7 @@ func TestGoBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 2)
-	validateBuildInfoProperties(buildInfo, tests.SearchGo, t)
+	validateBuildInfoProperties(buildInfo, t)
 
 	err = os.Chdir(wd)
 	if err != nil {
@@ -376,7 +376,7 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 // #1 The number of artifacts in the build-info JSON.
 // #2 The number of artifact with the build.name and build.number properties.
 // Validates that #1 == #2
-func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, specName string, t *testing.T) {
+func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
