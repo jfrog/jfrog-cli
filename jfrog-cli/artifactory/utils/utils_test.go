@@ -36,7 +36,7 @@ func TestRemoveCredentialsFromURL(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := removeCredentialsFromLine(test.line)
+			actual, _ := MaskCredentials(test.line)
 			if !strings.EqualFold(actual, test.expected) {
 				t.Errorf("Expected: %s, Got: %s", test.expected, actual)
 			}
