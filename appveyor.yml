@@ -16,9 +16,9 @@ environment:
   JFROG_CLI_RT_PASSWORD:
     secure: Um8o75MQIieSavIemF4ySA==
   JFROG_CLI_BINTRAY_USER:
-    secure: qr5vtfCwBPUAQyCqU2/0tQ==
+    secure: 86Gh1wUR9EjUYrNPws+0DQ==
   JFROG_CLI_BINTRAY_APIKEY:
-    secure: 9KuCfPL8w7Pt0aBwO7leKNPjR8zhbKWp6DMGI6+4Ha8CuNMbizzk+O5c1R47V8LX
+    secure: Bm9R9Zveb6Rxc6M4IWvpVi1j1txDSBwz2L+CHKDoxwDHDfPs7vMb8+gSbB63XAq+
 
   COMMON_TESTS_ARGS:
     go test -v github.com\jfrog\jfrog-cli-go\jfrog-cli\jfrog --timeout 0 --test.maskCredentials --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
