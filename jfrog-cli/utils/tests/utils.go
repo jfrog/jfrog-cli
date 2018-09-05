@@ -37,7 +37,6 @@ var TestGo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
-var MaskCredentials *bool
 var HideUnitTestLog *bool
 
 func init() {
@@ -59,7 +58,6 @@ func init() {
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
-	MaskCredentials = flag.Bool("test.maskCredentials", false, "Mask credentials in test output")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 }
 
@@ -207,13 +205,13 @@ type PackageSearchResultItem struct {
 }
 
 type JfrogCli struct {
-	main   func()
-	prefix string
-	suffix string
+	main        func()
+	prefix      string
+	credentials string
 }
 
-func NewJfrogCli(mainFunc func(), prefix, suffix string) *JfrogCli {
-	return &JfrogCli{mainFunc, prefix, suffix}
+func NewJfrogCli(mainFunc func(), prefix, credentials string) *JfrogCli {
+	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
 func (cli *JfrogCli) Exec(args ...string) {
@@ -228,12 +226,9 @@ func (cli *JfrogCli) Exec(args ...string) {
 		os.Args = append(os.Args, args...)
 		output = append(output, args...)
 	}
-	if cli.suffix != "" {
-		args := strings.Split(cli.suffix, spaceSplit)
+	if cli.credentials != "" {
+		args := strings.Split(cli.credentials, spaceSplit)
 		os.Args = append(os.Args, args...)
-		if !*MaskCredentials {
-			output = append(output, args...)
-		}
 	}
 
 	log.Info("[Command]", strings.Join(output, " "))
