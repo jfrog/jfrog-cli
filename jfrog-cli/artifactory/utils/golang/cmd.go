@@ -104,3 +104,14 @@ func RunGo(goArg string) error {
 
 	return utils.RunCmdWithOutputParser(goCmd, protocolRegExp, notFoundRegExp)
 }
+
+// Using go mod download command to download all the dependencies before publishing to Artifactory
+func DownloadDependenciesDirectly() error {
+	goCmd, err := NewCmd()
+	if err != nil {
+		return err
+	}
+
+	goCmd.Command = []string{"mod", "download"}
+	return utils.RunCmd(goCmd)
+}
