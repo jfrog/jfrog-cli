@@ -136,6 +136,7 @@ func (sm *ArtifactoryServicesManager) UploadFiles(params services.UploadParams) 
 	uploadService := services.NewUploadService(sm.client)
 	sm.setCommonServiceConfig(uploadService)
 	uploadService.MinChecksumDeploy = sm.config.GetMinChecksumDeploy()
+	uploadService.Retries = params.GetRetries()
 	return uploadService.UploadFiles(params)
 }
 

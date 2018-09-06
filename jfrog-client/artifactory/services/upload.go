@@ -27,6 +27,7 @@ type UploadService struct {
 	DryRun            bool
 	Threads           int
 	MinChecksumDeploy int64
+	Retries           int
 }
 
 func NewUploadService(client *httpclient.HttpClient) *UploadService {
@@ -282,23 +283,21 @@ func addPropsToTargetPath(targetPath, props, debConfig string) (string, error) {
 	return strings.Join([]string{targetPath, properties.ToEncodedString()}, ";"), nil
 }
 
-func prepareUploadData(targetPath, localPath, props string, uploadParams UploadParams, logMsgPrefix string) (os.FileInfo, string, string, error) {
-	fileName, _ := fileutils.GetFileAndDirFromPath(targetPath)
-	targetPath, err := addPropsToTargetPath(targetPath, props, uploadParams.GetDebian())
+func prepareUploadData(baseTargetPath, localPath, props string, uploadParams UploadParams, logMsgPrefix string) (fileInfo os.FileInfo, targetPath string, fileName string, err error) {
+	fileName, _ = fileutils.GetFileAndDirFromPath(baseTargetPath)
+	targetPath, err = addPropsToTargetPath(baseTargetPath, props, uploadParams.GetDebian())
 	if errorutils.CheckError(err) != nil {
-		return nil, "", "", err
+		return
 	}
 	log.Info(logMsgPrefix+"Uploading artifact:", localPath)
 	file, err := os.Open(localPath)
 	defer file.Close()
 	if errorutils.CheckError(err) != nil {
-		return nil, "", "", err
+		return
 	}
-	fileInfo, err := file.Stat()
-	if errorutils.CheckError(err) != nil {
-		return nil, "", "", err
-	}
-	return fileInfo, targetPath, fileName, nil
+	fileInfo, err = file.Stat()
+	errorutils.CheckError(err)
+	return
 }
 
 // Uploads the file in the specified local path to the specified target path.
@@ -343,7 +342,7 @@ func (us *UploadService) uploadSymlink(targetPath string, httpClientsDetails htt
 	if err != nil {
 		return
 	}
-	resp, body, err = utils.UploadFile(nil, targetPath, us.ArtDetails, details, httpClientsDetails, us.client)
+	resp, body, err = utils.UploadFile(nil, "", targetPath, us.ArtDetails, details, httpClientsDetails, us.client, us.Retries)
 	return
 }
 
@@ -363,12 +362,9 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 	}
 	if !us.DryRun && !checksumDeployed {
 		var body []byte
-		resp, body, err = utils.UploadFile(file, targetPath, us.ArtDetails, details, httpClientsDetails, us.client)
+		resp, body, err = utils.UploadFile(file, localPath, targetPath, us.ArtDetails, details, httpClientsDetails, us.client, us.Retries)
 		if err != nil {
 			return resp, details, body, checksumDeployed, err
-		}
-		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-			log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
 		}
 	}
 	if details == nil {
@@ -380,6 +376,7 @@ func (us *UploadService) doUpload(file *os.File, localPath, targetPath, logMsgPr
 func logUploadResponse(logMsgPrefix string, resp *http.Response, body []byte, checksumDeployed, isDryRun bool) {
 	if resp != nil && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		log.Error(logMsgPrefix + "Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+		return
 	}
 	if !isDryRun {
 		var strChecksumDeployed string
@@ -410,8 +407,8 @@ func addExplodeHeader(httpClientsDetails *httputils.HttpClientDetails, isExplode
 	}
 }
 
-func (us *UploadService) tryChecksumDeploy(filePath, targetPath string,
-	httpClientsDetails httputils.HttpClientDetails, client *httpclient.HttpClient) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
+func (us *UploadService) tryChecksumDeploy(filePath, targetPath string, httpClientsDetails httputils.HttpClientDetails,
+	client *httpclient.HttpClient) (resp *http.Response, details *fileutils.FileDetails, body []byte, err error) {
 
 	details, err = fileutils.GetFileDetails(filePath)
 	if err != nil {
@@ -450,6 +447,7 @@ type UploadParamsImp struct {
 	Symlink        bool
 	ExplodeArchive bool
 	Flat           bool
+	Retries        int
 }
 
 func (up *UploadParamsImp) IsFlat() bool {
@@ -468,12 +466,17 @@ func (up *UploadParamsImp) GetDebian() string {
 	return up.Deb
 }
 
+func (up *UploadParamsImp) GetRetries() int {
+	return up.Retries
+}
+
 type UploadParams interface {
 	utils.FileGetter
 	IsSymlink() bool
 	IsExplodeArchive() bool
 	GetDebian() string
 	IsFlat() bool
+	GetRetries() int
 }
 
 type UploadData struct {

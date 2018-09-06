@@ -537,6 +537,10 @@ func getUploadFlags() []cli.Flag {
 			Name:  "regexp",
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
 		},
+		cli.StringFlag{
+			Name:  "retries",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of upload retries.",
+		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -599,7 +603,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadRetries) + "] Number of download retries.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of download retries.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -1116,7 +1120,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 }
 
 func getRetries(c *cli.Context) (retries int) {
-	retries = cliutils.DownloadRetries
+	retries = cliutils.Retries
 	var err error
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
@@ -2079,6 +2083,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *generic.Upl
 	uploadConfiguration.BuildNumber = buildNumber
 	uploadConfiguration.DryRun = c.Bool("dry-run")
 	uploadConfiguration.Symlink = c.Bool("symlinks")
+	uploadConfiguration.Retries = getRetries(c)
 	uploadConfiguration.Threads = getThreadsCount(c)
 	uploadConfiguration.Deb = getDebFlag(c)
 	uploadConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
