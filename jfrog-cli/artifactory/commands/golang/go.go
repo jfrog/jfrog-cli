@@ -75,8 +75,8 @@ func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string
 	if err != nil {
 		if !noRegistry && strings.EqualFold(err.Error(), "404 Not Found") {
 			// Need to run Go without Artifactory to resolve all dependencies.
-			log.Debug("Got", err.Error(), "from", details.GetUrl()+"api/go/"+targetRepo+".", "Trying resolving directly and publishing the dependencies to Artifactory")
-			err = TryToDownloadAndPublish(targetRepo, details)
+			log.Info("Received", err.Error(), "from Artifactory. Trying download the dependencies from the VCS and upload them to Artifactory...")
+			err = downloadAndPublish(targetRepo, details)
 			if err != nil {
 				return err
 			}
@@ -105,10 +105,8 @@ func validatePrerequisites() error {
 	return nil
 }
 
-/*
-Resolves the dependencies from the official Go repositories and publish those dependencies to Artifactory
-*/
-func TryToDownloadAndPublish(targetRepo string, details *config.ArtifactoryDetails) error {
+// Download the dependencies from VCS and publish them to Artifactory.
+func downloadAndPublish(targetRepo string, details *config.ArtifactoryDetails) error {
 	err := os.Unsetenv(goutils.GOPROXY)
 	if err != nil {
 		return errorutils.CheckError(err)

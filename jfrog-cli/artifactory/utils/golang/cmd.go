@@ -82,15 +82,17 @@ func RunGo(goArg string) error {
 		return errorutils.CheckError(err)
 	}
 
-	regExp, err := utils.GetRegExp("((http|https)://)")
+	regExp, err := utils.GetRegExp(`((http|https):\/\/\w.*?:\w.*?@)`)
 	if err != nil {
 		return err
 	}
 
 	protocolRegExp := utils.RegExpStruct{
-		RegExp:   regExp,
-		ExecFunc: utils.MaskCredentials,
+		RegExp:    regExp,
+		Separator: "//",
+		Replacer:  "//***.***@",
 	}
+	protocolRegExp.ExecFunc = protocolRegExp.MaskCredentials
 
 	regExp, err = utils.GetRegExp("(404 Not Found)")
 	if err != nil {
@@ -98,11 +100,11 @@ func RunGo(goArg string) error {
 	}
 
 	notFoundRegExp := utils.RegExpStruct{
-		RegExp:   regExp,
-		ExecFunc: utils.ErrorOnNotFound,
+		RegExp: regExp,
 	}
+	notFoundRegExp.ExecFunc = notFoundRegExp.ErrorOnNotFound
 
-	return utils.RunCmdWithOutputParser(goCmd, protocolRegExp, notFoundRegExp)
+	return utils.RunCmdWithOutputParser(goCmd, &protocolRegExp, &notFoundRegExp)
 }
 
 // Using go mod download command to download all the dependencies before publishing to Artifactory

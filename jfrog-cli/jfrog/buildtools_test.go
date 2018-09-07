@@ -198,6 +198,7 @@ func TestGoBuildInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "go", "testsdata")
@@ -257,6 +258,7 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	project2Path := createGoProject(t, "project2")
 	err = os.Chdir(project1Path)
