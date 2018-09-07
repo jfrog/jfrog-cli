@@ -213,7 +213,7 @@ func (project *goProject) archiveProject(version string) (string, error) {
 
 // Parse module name from go.mod content.
 func parseModuleName(modContent string) (string, error) {
-	r, err := regexp.Compile(`module ([\w\.@:%_\+-.~#?&]+/.+)`)
+	r, err := regexp.Compile(`module ([\w\.@:%_\+-.~#?&]+/?.+)`)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
