@@ -159,11 +159,11 @@ func ResolveRegistryFromTag(imageTag string) string {
 	if indexOfFirstSlash < 0 {
 		return ""
 	}
-	// Proxy-less Artifactory
+	// Reverse proxy Artifactory
 	if indexOfSecondSlash < 0 {
 		return imageTag[:indexOfFirstSlash]
 	}
-	// Can be Reverse proxy or proxy-less Artifactory
+	// Can be reverse proxy or proxy-less Artifactory
 	indexOfSecondSlash += indexOfFirstSlash + 1
 	return imageTag[:indexOfSecondSlash]
 }
