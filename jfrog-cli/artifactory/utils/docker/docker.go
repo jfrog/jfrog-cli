@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"runtime"
 )
 
 func New(imageTag string) Image {
@@ -146,5 +147,53 @@ func (getImageId *getParentId) GetStdWriter() io.WriteCloser {
 	return nil
 }
 func (getImageId *getParentId) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+// Get docker registry from tag
+func ResolveRegistryFromTag(imageTag string) string {
+	indexOfFirstSlash := strings.Index(imageTag, "/")
+	indexOfSecondSlash := strings.Index(imageTag[indexOfFirstSlash + 1:], "/")
+
+	// Should use docker hub
+	if indexOfFirstSlash < 0 {
+		return ""
+	}
+	// Proxy-less Artifactory
+	if indexOfSecondSlash < 0 {
+		return imageTag[:indexOfFirstSlash]
+	}
+	// Can be Reverse proxy or proxy-less Artifactory
+	indexOfSecondSlash += indexOfFirstSlash + 1
+	return imageTag[:indexOfSecondSlash]
+}
+
+// Login command
+type LoginCmd struct {
+	DockerRegistry string
+	Username string
+	Password string
+}
+
+func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
+	cmdLogin := "| docker login " + loginCmd.DockerRegistry + " --username=" + loginCmd.Username + " --password-stdin"
+
+	if runtime.GOOS == "windows" {
+		cmd := "echo %DOCKER_PASS%" + cmdLogin
+		return exec.Command("cmd", "/C", cmd)
+	}
+
+	cmd:="echo $DOCKER_PASS " + cmdLogin
+	return exec.Command("bash", "-c", cmd)
+}
+
+func (loginCmd *LoginCmd) GetEnv() map[string]string {
+	return map[string]string{"DOCKER_PASS": loginCmd.Password}
+}
+
+func (loginCmd *LoginCmd) GetStdWriter() io.WriteCloser {
+	return nil
+}
+func (loginCmd *LoginCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }

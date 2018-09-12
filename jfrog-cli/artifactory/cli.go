@@ -1224,8 +1224,17 @@ func dockerPushCmd(c *cli.Context) {
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
+
+	// Perform login
+	dockerLoginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
+	err := docker.DockerLogin(imageTag, dockerLoginConfig)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+
+	// Perform push
 	dockerPushConfig := &docker.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
-	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	err = docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
 	cliutils.ExitOnErr(err)
 }
 
