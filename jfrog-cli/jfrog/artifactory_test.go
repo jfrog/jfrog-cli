@@ -36,7 +36,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -903,7 +902,7 @@ func TestArtifactoryCopySpec(t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
 func TestSimpleSymlinkHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -927,7 +926,7 @@ func TestSimpleSymlinkHandling(t *testing.T) {
 // Testing exclude pattern with symlinks.
 // This test should not upload any files.
 func TestExcludeBrokenSymlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -949,7 +948,7 @@ func TestExcludeBrokenSymlink(t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
 func TestSymlinkWildcardPathHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -974,7 +973,7 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 // Upload symlink pointing to directory to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -998,7 +997,7 @@ func TestSymlinkToDirHandling(t *testing.T) {
 // Upload symlink pointing to directory using wildcard path to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirWilcardHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1024,7 +1023,7 @@ func TestSymlinkToDirWilcardHandling(t *testing.T) {
 // Download the symlink which was uploaded.
 // The test create circular links and the test suppose to prune the circular searching.
 func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1910,7 +1909,7 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactoryLimitWithSimlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1935,7 +1934,7 @@ func TestArtifactoryLimitWithSimlink(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactorySortWithSimlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -2212,7 +2211,7 @@ func TestGitLfsCleanup(t *testing.T) {
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/{2}{1}")
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/")
 	separator := "/"
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		separator = "\\"
 	}
 	refs := strings.Join([]string{"refs", "heads", "*"}, separator)

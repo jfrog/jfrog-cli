@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	rtutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -21,7 +22,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -169,7 +169,7 @@ func initNugetTest(t *testing.T) {
 		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
 	}
 
-	if runtime.GOOS != "windows" {
+	if !cliutils.IsWindows() {
 		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
 	}
 

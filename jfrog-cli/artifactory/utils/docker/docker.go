@@ -2,11 +2,11 @@ package docker
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"io"
 	"os/exec"
 	"path"
 	"strings"
-	"runtime"
 )
 
 func New(imageTag string) Image {
@@ -178,7 +178,7 @@ type LoginCmd struct {
 func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
 	cmdLogin := "| docker login " + loginCmd.DockerRegistry + " --username=" + loginCmd.Username + " --password-stdin"
 
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		cmd := "echo %DOCKER_PASS%" + cmdLogin
 		return exec.Command("cmd", "/C", cmd)
 	}

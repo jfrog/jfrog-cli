@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"runtime"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -171,6 +172,10 @@ func varsAsMap(vars []string) map[string]string {
 		result[keyVal[0]] = keyVal[1]
 	}
 	return result
+}
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
 }
 
 type Credentials interface {

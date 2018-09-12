@@ -199,7 +199,7 @@ func ReplaceTildeWithUserHome(path string) string {
 }
 
 func GetUserHomeDir() string {
-	if runtime.GOOS == "windows" {
+	if IsWindows() {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {
 			home = os.Getenv("USERPROFILE")
@@ -244,6 +244,10 @@ func SplitWithEscape(str string, separator rune) []string {
 	}
 	parts = append(parts, current.String())
 	return parts
+}
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
 }
 
 type Artifact struct {

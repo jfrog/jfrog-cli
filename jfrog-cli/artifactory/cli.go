@@ -58,7 +58,6 @@ import (
 	rtclientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -2061,7 +2060,7 @@ func getFileSystemSpec(c *cli.Context, isTargetMandatory bool) *spec.SpecFiles {
 }
 
 func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
 			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
@@ -2072,7 +2071,7 @@ func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
 }
 
 func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Target = strings.Replace(file.Target, "\\", "\\\\", -1)
 		}
