@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	rtutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
@@ -658,7 +659,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 		t.Error(err)
 	}
 
-	caches := filepath.Join(workingDirectory, "caches")
+	caches := ioutils.FixWinPath(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
 	artifactoryCli.Exec("npm-install", tests.NpmRemoteRepo, "--npm-args=-cache="+caches)
