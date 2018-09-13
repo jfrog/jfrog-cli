@@ -58,7 +58,7 @@ func TestResolveRegistryFromTag(t *testing.T) {
 	}
 
 	for _, v := range imageTags {
-		result := ResolveRegistryFromTag(v.in)
+		result, _ := ResolveRegistryFromTag(v.in)
 		if result != v.expected {
 			t.Errorf("Name(\"%s\") => '%s', want '%s'", v.in, result, v.expected)
 		}

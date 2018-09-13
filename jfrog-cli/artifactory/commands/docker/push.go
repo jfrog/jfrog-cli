@@ -1,10 +1,13 @@
 package docker
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/docker"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"strings"
 )
@@ -16,11 +19,19 @@ type DockerPushConfig struct {
 
 // Push docker image and create build info if needed
 func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, config *DockerPushConfig) error {
+	// Perform login
+	loginConfig := &dockerLoginConfig{ArtifactoryDetails: config.ArtifactoryDetails}
+	err := dockerLogin(imageTag, loginConfig)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+
+	// Perform push
 	if strings.LastIndex(imageTag, ":") == -1 {
 		imageTag = imageTag + ":latest"
 	}
 	image := docker.New(imageTag)
-	err := image.Push()
+	err = image.Push()
 	if err != nil {
 		return err
 	}
@@ -64,4 +75,40 @@ func createServiceManager(config *DockerPushConfig) (*artifactory.ArtifactorySer
 		Build()
 
 	return artifactory.New(serviceConfig)
+}
+
+type dockerLoginConfig struct {
+	ArtifactoryDetails *config.ArtifactoryDetails
+}
+
+// First will try to login assuming a proxy-less tag (e.g. "registry-address/docker-repo/image:ver").
+// If fails, we will try assuming a reverse proxy tag (e.g. "registry-address-docker-repo/image:ver").
+func dockerLogin(imageTag string, config *dockerLoginConfig) error {
+	imageRegistry, err := docker.ResolveRegistryFromTag(imageTag)
+	if err != nil {
+		return err
+	}
+
+	cmd := &docker.LoginCmd{DockerRegistry: imageRegistry, Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
+	err = utils.RunCmd(cmd)
+
+	if exitCode := cliutils.GetExitCode(err, 0, 0, false); exitCode == cliutils.ExitCodeNoError {
+		// Login succeeded
+		return nil
+	}
+
+	indexOfSlash := strings.Index(imageTag, "/")
+	if indexOfSlash < 0 {
+		return errorutils.CheckError(errors.New("Docker login failed for provided tag."))
+	}
+
+	cmd = &docker.LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
+	err = utils.RunCmd(cmd)
+	if err != nil {
+		// Login failed for both attempts
+		return err
+	}
+
+	// Login succeeded
+	return nil
 }
