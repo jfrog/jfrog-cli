@@ -46,16 +46,13 @@ func (ps *XrayScanService) ScanBuild(scanParams XrayScanParams) ([]byte, error) 
 		return []byte{}, errorutils.CheckError(err)
 	}
 
-	httpClientsDetails := ps.ArtDetails.CreateHttpClientDetails()
-	utils.SetContentType("application/json", &httpClientsDetails.Headers)
-
 	connection := httputils.RetryableConnection{
 		ReadTimeout:            XRAY_SCAN_CONNECTION_TIMEOUT,
 		RetriesNum:             XRAY_SCAN_RETRY_CONSECUTIVE_RETRIES,
 		StableConnectionWindow: XRAY_SCAN_STABLE_CONNECTION_WINDOW,
 		SleepBetweenRetries:    XRAY_SCAN_SLEEP_BETWEEN_RETRIES,
 		ConnectHandler: func() (*http.Response, error) {
-			return execScanRequest(requestFullUrl, requestContent, httpClientsDetails)
+			return ps.execScanRequest(requestFullUrl, requestContent)
 		},
 		ErrorHandler: func(content []byte) error {
 			return checkForXrayResponseError(content, true)
@@ -99,9 +96,11 @@ func checkForXrayResponseError(content []byte, ignoreFatalError bool) error {
 	return errorutils.CheckError(errors.New("Artifactory response: " + string(content)))
 }
 
-func execScanRequest(url string, content []byte, httpClientsDetails httputils.HttpClientDetails) (*http.Response, error) {
-	client := httpclient.NewDefaultHttpClient()
-	resp, _, _, err := client.Send("POST", url, content, true, false, httpClientsDetails)
+func (ps *XrayScanService) execScanRequest(url string, content []byte) (*http.Response, error) {
+	httpClientsDetails := ps.ArtDetails.CreateHttpClientDetails()
+	utils.SetContentType("application/json", &httpClientsDetails.Headers)
+
+	resp, _, _, err := ps.client.Send("POST", url, content, true, false, httpClientsDetails)
 	if err != nil {
 		return resp, err
 	}
