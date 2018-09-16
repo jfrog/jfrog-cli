@@ -199,6 +199,7 @@ func TestGoBuildInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "go", "testsdata")
@@ -215,21 +216,13 @@ func TestGoBuildInfo(t *testing.T) {
 
 	buildName := "go-build"
 
-	// 1. Download dependencies without Artifactory.
+	// 1. Download dependencies.
 	// 2. Publish build-info.
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
-	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--no-registry=true", "--build-name="+buildName, "--build-number="+buildNumber)
-	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 6, 0)
-
-	// Do the same, with one exception - download the dependencies from Artifactory.
-	// Use a new build number. Expect the same results as the previous build.
-	buildNumber = "2"
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 0)
 
 	// Now, using a new build number, do the following:
@@ -237,7 +230,7 @@ func TestGoBuildInfo(t *testing.T) {
 	// 2. Publish the go package.
 	// 3. Validate the total count of dependencies and artifacts added to the build-info.
 	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
-	buildNumber = "3"
+	buildNumber = "2"
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
 	artifactoryCli.Exec("bp", buildName, buildNumber)
@@ -266,6 +259,7 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	project2Path := createGoProject(t, "project2")
 	err = os.Chdir(project1Path)
@@ -274,9 +268,9 @@ func TestGoPublishResolve(t *testing.T) {
 	}
 
 	// Download dependencies without Artifactory
-	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--no-registry=true")
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo)
 	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--deps=ALL")
+	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0")
 
 	err = os.Chdir(project2Path)
 	if err != nil {

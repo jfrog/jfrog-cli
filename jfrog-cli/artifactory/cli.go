@@ -1321,7 +1321,6 @@ func goCmd(c *cli.Context) {
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-
 	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)

@@ -2,10 +2,12 @@ package golang
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -71,7 +73,16 @@ func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string
 	}
 	err := goutils.RunGo(goArg)
 	if err != nil {
-		return err
+		if !noRegistry && strings.EqualFold(err.Error(), "404 Not Found") {
+			// Need to run Go without Artifactory to resolve all dependencies.
+			log.Info("Received", err.Error(), "from Artifactory. Trying download the dependencies from the VCS and upload them to Artifactory...")
+			err = downloadAndPublish(targetRepo, details)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	if isCollectBuildInfo {
@@ -91,5 +102,24 @@ func validatePrerequisites() error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
+	return nil
+}
+
+// Download the dependencies from VCS and publish them to Artifactory.
+func downloadAndPublish(targetRepo string, details *config.ArtifactoryDetails) error {
+	err := os.Unsetenv(goutils.GOPROXY)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	err = goutils.DownloadDependenciesDirectly()
+	if err != nil {
+		return err
+	}
+	// Publish the dependencies.
+	_, _, err = Publish(false, "ALL", targetRepo, "", "", "", details)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
