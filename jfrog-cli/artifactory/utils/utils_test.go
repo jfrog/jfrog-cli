@@ -30,29 +30,29 @@ func TestRemoveCredentialsFromURL(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		regex        RegExpStruct
+		regex        CmdOutputPattern
 		expectedLine string
 		matched      bool
 	}{
-		{"http", RegExpStruct{RegExp: regExpProtocol, Separator: "//", Replacer: "//***.***@", line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line http://***.***@127.0.0.1:8081/artifactory/path/to/repo", true},
-		{"https", RegExpStruct{RegExp: regExpProtocol, Separator: "//", Replacer: "//***.***@", line: "This is an example line https://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line https://***.***@127.0.0.1:8081/artifactory/path/to/repo", true},
-		{"No credentials", RegExpStruct{RegExp: regExpProtocol, Separator: "//", Replacer: "//***.***@", line: "This is an example line https://127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line https://127.0.0.1:8081/artifactory/path/to/repo", false},
-		{"No http", RegExpStruct{RegExp: regExpProtocol, Separator: "//", Replacer: "//***.***@", line: "This is an example line"}, "This is an example line", false},
+		{"http", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line http://***.***@127.0.0.1:8081/artifactory/path/to/repo", true},
+		{"https", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line https://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line https://***.***@127.0.0.1:8081/artifactory/path/to/repo", true},
+		{"No credentials", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line https://127.0.0.1:8081/artifactory/path/to/repo"}, "This is an example line https://127.0.0.1:8081/artifactory/path/to/repo", false},
+		{"No http", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line"}, "This is an example line", false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.regex.matcher = test.regex.RegExp.FindString(test.regex.line)
-			if test.matched && test.regex.matcher == "" {
+			test.regex.matchedResult = test.regex.RegExp.FindString(test.regex.line)
+			if test.matched && test.regex.matchedResult == "" {
 				t.Error("Expected to find a match.")
 			}
-			if test.matched && test.regex.matcher != "" {
+			if test.matched && test.regex.matchedResult != "" {
 				actual, _ := test.regex.MaskCredentials()
 				if !strings.EqualFold(actual, test.expectedLine) {
-					t.Errorf("Expected: %s, Got: %s", test.expectedLine, actual)
+					t.Errorf("Expected: %s, The Regex found %s and the masked line: %s", test.expectedLine, test.regex.matchedResult, actual)
 				}
 			}
-			if !test.matched && test.regex.matcher != "" {
-				t.Error("Expected to find zero match, found:", test.regex.matcher)
+			if !test.matched && test.regex.matchedResult != "" {
+				t.Error("Expected to find zero match, found:", test.regex.matchedResult)
 			}
 		})
 	}
@@ -66,20 +66,20 @@ func TestReturnErrorOnNotFound(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		regex RegExpStruct
+		regex CmdOutputPattern
 		error bool
 	}{
-		{"Without Error", RegExpStruct{RegExp: regExpProtocol, line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, false},
-		{"With Error", RegExpStruct{RegExp: regExpProtocol, line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo: 404 Not Found"}, true},
+		{"Without Error", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo"}, false},
+		{"With Error", CmdOutputPattern{RegExp: regExpProtocol, line: "This is an example line http://user:password@127.0.0.1:8081/artifactory/path/to/repo: 404 Not Found"}, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.regex.matcher = test.regex.RegExp.FindString(test.regex.line)
-			if test.regex.matcher == "" && test.error {
-				t.Error("Expected to find 404 not found")
+			test.regex.matchedResult = test.regex.RegExp.FindString(test.regex.line)
+			if test.regex.matchedResult == "" && test.error {
+				t.Error("Expected to find 404 not found, found nothing.")
 			}
-			if test.regex.matcher != "" && !test.error {
-				t.Error("Expected regex to return empty result")
+			if test.regex.matchedResult != "" && !test.error {
+				t.Error("Expected regex to return empty result. Got:", test.regex.matchedResult)
 			}
 		})
 	}

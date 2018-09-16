@@ -87,10 +87,8 @@ func RunGo(goArg string) error {
 		return err
 	}
 
-	protocolRegExp := utils.RegExpStruct{
+	protocolRegExp := utils.CmdOutputPattern{
 		RegExp:    regExp,
-		Separator: "//",
-		Replacer:  "//***.***@",
 	}
 	protocolRegExp.ExecFunc = protocolRegExp.MaskCredentials
 
@@ -99,7 +97,7 @@ func RunGo(goArg string) error {
 		return err
 	}
 
-	notFoundRegExp := utils.RegExpStruct{
+	notFoundRegExp := utils.CmdOutputPattern{
 		RegExp: regExp,
 	}
 	notFoundRegExp.ExecFunc = notFoundRegExp.ErrorOnNotFound

@@ -163,7 +163,7 @@ func RunCmd(config CmdConfig) error {
 
 // Executes the command and captures the output.
 // Analyze each line to match the provided regex.
-func RunCmdWithOutputParser(config CmdConfig, regExpStruct ...*RegExpStruct) error {
+func RunCmdWithOutputParser(config CmdConfig, regExpStruct ...*CmdOutputPattern) error {
 	for k, v := range config.GetEnv() {
 		os.Setenv(k, v)
 	}
@@ -184,8 +184,8 @@ func RunCmdWithOutputParser(config CmdConfig, regExpStruct ...*RegExpStruct) err
 	for scanner.Scan() {
 		line := scanner.Text()
 		for _, regExp := range regExpStruct {
-			regExp.matcher = regExp.RegExp.FindString(line)
-			if regExp.matcher != "" {
+			regExp.matchedResult = regExp.RegExp.FindString(line)
+			if regExp.matchedResult != "" {
 				regExp.line = line
 				line, err = regExp.ExecFunc()
 				if err != nil {
@@ -225,21 +225,19 @@ func GetRegExp(regex string) (*regexp.Regexp, error) {
 
 // Mask the credentials information from the line. The credentials are build as user:password
 // For example: http://user:password@127.0.0.1:8081/artifactory/path/to/repo
-func (reg *RegExpStruct) MaskCredentials() (string, error) {
-	splittedResult := strings.Split(reg.matcher, reg.Separator)
-	return strings.Replace(reg.line, reg.matcher, splittedResult[0]+reg.Replacer, 1), nil
+func (reg *CmdOutputPattern) MaskCredentials() (string, error) {
+	splittedResult := strings.Split(reg.matchedResult, "//")
+	return strings.Replace(reg.line, reg.matchedResult, splittedResult[0]+"//***.***@", 1), nil
 }
 
-func (reg *RegExpStruct) ErrorOnNotFound() (string, error) {
+func (reg *CmdOutputPattern) ErrorOnNotFound() (string, error) {
 	log.Output(reg.line)
 	return "", errors.New("404 Not Found")
 }
 
-type RegExpStruct struct {
-	RegExp    *regexp.Regexp
-	matcher   string
-	Separator string
-	Replacer  string
-	line      string
-	ExecFunc  func() (string, error)
+type CmdOutputPattern struct {
+	RegExp        *regexp.Regexp
+	matchedResult string
+	line          string
+	ExecFunc      func() (string, error)
 }
