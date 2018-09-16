@@ -242,6 +242,10 @@ func (reg *CmdOutputPattern) ErrorOnNotFound() (string, error) {
 	return "", errors.New("404 Not Found")
 }
 
+// RegExp - The regexp that the line will be searched upon.
+// matchedResult - The result string that was found by the regex
+// line - The output line from the external process
+// ExecFunc - The function to execute
 type CmdOutputPattern struct {
 	RegExp        *regexp.Regexp
 	matchedResult string
