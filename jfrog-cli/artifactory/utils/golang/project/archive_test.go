@@ -3,16 +3,16 @@ package project
 import (
 	"bytes"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 )
 
 func TestArchiveProject(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		t.Skip("Skipping archive test...")
 	}
 	pwd, err := os.Getwd()

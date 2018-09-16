@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -169,7 +169,7 @@ func GetPath(filename, path string, a ...string) string {
 func getFileByOs(fileName string) string {
 	var currentOs string
 	fileSeparator := fileutils.GetFileSeparator()
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		currentOs = "win"
 	} else {
 		currentOs = "unix"

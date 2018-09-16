@@ -5,12 +5,12 @@ import (
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"runtime"
 )
 
 func TestGetFlagValueExists(t *testing.T) {
@@ -60,7 +60,7 @@ func TestGetFlagValueExists(t *testing.T) {
 
 func TestInitNewConfig(t *testing.T) {
 
-	if runtime.GOOS != "windows" {
+	if !cliutils.IsWindows() {
 		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
 	}
 

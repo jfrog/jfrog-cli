@@ -6,12 +6,12 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"net/url"
 )
@@ -21,7 +21,7 @@ const SYMLINK_FILE_CONTENT = ""
 var tempDirPath string
 
 func GetFileSeparator() string {
-	if runtime.GOOS == "windows" {
+	if utils.IsWindows() {
 		return "\\"
 	}
 	return "/"

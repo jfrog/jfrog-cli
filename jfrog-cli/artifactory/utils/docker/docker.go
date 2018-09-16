@@ -1,7 +1,10 @@
 package docker
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"io"
 	"os/exec"
 	"path"
@@ -120,6 +123,7 @@ func (getImageId *getImageIdCmd) GetEnv() map[string]string {
 func (getImageId *getImageIdCmd) GetStdWriter() io.WriteCloser {
 	return nil
 }
+
 func (getImageId *getImageIdCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
@@ -145,6 +149,56 @@ func (getImageId *getParentId) GetEnv() map[string]string {
 func (getImageId *getParentId) GetStdWriter() io.WriteCloser {
 	return nil
 }
+
 func (getImageId *getParentId) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+// Get docker registry from tag
+func ResolveRegistryFromTag(imageTag string) (string, error) {
+	indexOfFirstSlash := strings.Index(imageTag, "/")
+	if indexOfFirstSlash < 0 {
+		err := errorutils.CheckError(errors.New("Invalid image tag received for pushing to Artifactory - tag does not include a slash."))
+		return "", err
+	}
+
+	indexOfSecondSlash := strings.Index(imageTag[indexOfFirstSlash+1:], "/")
+	// Reverse proxy Artifactory
+	if indexOfSecondSlash < 0 {
+		return imageTag[:indexOfFirstSlash], nil
+	}
+	// Can be reverse proxy or proxy-less Artifactory
+	indexOfSecondSlash += indexOfFirstSlash + 1
+	return imageTag[:indexOfSecondSlash], nil
+}
+
+// Login command
+type LoginCmd struct {
+	DockerRegistry string
+	Username       string
+	Password       string
+}
+
+func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
+	cmdLogin := "| docker login " + loginCmd.DockerRegistry + " --username=" + loginCmd.Username + " --password-stdin"
+
+	if cliutils.IsWindows() {
+		cmd := "echo %DOCKER_PASS%" + cmdLogin
+		return exec.Command("cmd", "/C", cmd)
+	}
+
+	cmd := "echo $DOCKER_PASS " + cmdLogin
+	return exec.Command("bash", "-c", cmd)
+}
+
+func (loginCmd *LoginCmd) GetEnv() map[string]string {
+	return map[string]string{"DOCKER_PASS": loginCmd.Password}
+}
+
+func (loginCmd *LoginCmd) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (loginCmd *LoginCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }

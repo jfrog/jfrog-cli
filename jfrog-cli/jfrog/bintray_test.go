@@ -5,21 +5,21 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 var bintrayConfig *config.BintrayDetails
@@ -192,13 +192,13 @@ func TestBintrayUploads(t *testing.T) {
 	bintrayExpectedUploadNonFlatRecursive := tests.BintrayExpectedUploadNonFlatRecursive
 	bintrayExpectedUploadNonFlatNonRecursive := tests.BintrayExpectedUploadNonFlatNonRecursive
 	for i := range bintrayExpectedUploadNonFlatRecursive {
-		if runtime.GOOS != "windows" && strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
+		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatRecursive[i].Path = bintrayExpectedUploadNonFlatRecursive[i].Path[1:]
 		}
 	}
 
 	for i := range bintrayExpectedUploadNonFlatNonRecursive {
-		if runtime.GOOS != "windows" && strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
+		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatNonRecursive[i].Path = bintrayExpectedUploadNonFlatNonRecursive[i].Path[1:]
 		}
 	}
