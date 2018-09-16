@@ -2,6 +2,7 @@ package docker
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
@@ -11,6 +12,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"strings"
 )
+
+// Docker login error message
+const dockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
 
 type DockerPushConfig struct {
 	ArtifactoryDetails *config.ArtifactoryDetails
@@ -23,7 +27,7 @@ func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, config
 	loginConfig := &dockerLoginConfig{ArtifactoryDetails: config.ArtifactoryDetails}
 	err := dockerLogin(imageTag, loginConfig)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		return err
 	}
 
 	// Perform push
@@ -97,16 +101,17 @@ func dockerLogin(imageTag string, config *dockerLoginConfig) error {
 		return nil
 	}
 
-	indexOfSlash := strings.Index(imageTag, "/")
+	indexOfSlash := strings.Index(imageRegistry, "/")
 	if indexOfSlash < 0 {
-		return errorutils.CheckError(errors.New("Docker login failed for provided tag."))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage, imageRegistry)))
 	}
 
 	cmd = &docker.LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
 	err = utils.RunCmd(cmd)
 	if err != nil {
 		// Login failed for both attempts
-		return err
+		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage,
+			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
 	}
 
 	// Login succeeded

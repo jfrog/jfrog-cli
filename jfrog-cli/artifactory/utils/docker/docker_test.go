@@ -46,21 +46,26 @@ func TestGetImageName(t *testing.T) {
 
 func TestResolveRegistryFromTag(t *testing.T) {
 	var imageTags = []struct {
-		in       string
-		expected string
+		in             string
+		expected       string
+		expectingError bool
 	}{
-		{"domain:8080/path:1.0", "domain:8080"},
-		{"domain:8080/path/in/artifactory:1.0", "domain:8080/path"},
-		{"domain:8080/path/in/artifactory", "domain:8080/path"},
-		{"domain/path:1.0", "domain"},
-		{"domain/path/in/artifactory:1.0", "domain/path"},
-		{"domain/path/in/artifactory", "domain/path"},
+		{"domain:8080/path:1.0", "domain:8080", false},
+		{"domain:8080/path/in/artifactory:1.0", "domain:8080/path", false},
+		{"domain:8080/path/in/artifactory", "domain:8080/path", false},
+		{"domain/path:1.0", "domain", false},
+		{"domain/path/in/artifactory:1.0", "domain/path", false},
+		{"domain/path/in/artifactory", "domain/path", false},
+		{"domain:8081", "", true},
 	}
 
 	for _, v := range imageTags {
-		result, _ := ResolveRegistryFromTag(v.in)
+		result, err := ResolveRegistryFromTag(v.in)
+		if err != nil && !v.expectingError {
+			t.Error(err.Error())
+		}
 		if result != v.expected {
-			t.Errorf("Name(\"%s\") => '%s', want '%s'", v.in, result, v.expected)
+			t.Errorf("ResolveRegistryFromTag(\"%s\") => '%s', expected '%s'", v.in, result, v.expected)
 		}
 	}
 }

@@ -158,7 +158,7 @@ func (getImageId *getParentId) GetErrWriter() io.WriteCloser {
 func ResolveRegistryFromTag(imageTag string) (string, error) {
 	indexOfFirstSlash := strings.Index(imageTag, "/")
 	if indexOfFirstSlash < 0 {
-		err := errorutils.CheckError(errors.New("Invalid image tag received for pushing to Artifactory."))
+		err := errorutils.CheckError(errors.New("Invalid image tag received for pushing to Artifactory - tag does not include a slash."))
 		return "", err
 	}
 
