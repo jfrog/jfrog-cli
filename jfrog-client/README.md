@@ -155,7 +155,7 @@
     items = append(items, item)
     prop := "key=value"
     
-    params := &services.SetPropsParamsImpl{Items:items, Props:prop}
+    params := &services.PropsParamsImpl{Items:items, Props:prop}
     rtManager.SetProps(params)
 ```
 

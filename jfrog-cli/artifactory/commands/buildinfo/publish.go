@@ -5,7 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-        "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
 	rtclientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
@@ -251,7 +251,7 @@ func setBuildInfoPropertiesForArtifacts(servicesManager *artifactory.Artifactory
 	}
 
 	props := "build.name=" + buildInfo.Name + ";build.number=" + buildInfo.Number
-	_, err := servicesManager.SetProps(&services.SetPropsParamsImpl{Items: resultItems, Props: props})
+	_, err := servicesManager.SetProps(&services.PropsParamsImpl{Items: resultItems, Props: props})
 	return err
 }
 
