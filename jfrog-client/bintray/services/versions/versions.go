@@ -7,7 +7,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
@@ -71,7 +70,8 @@ func (vs *VersionService) Update(params *Params) error {
 
 	log.Info("Updating version...")
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendPatch(url, content, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPatch(url, content, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,8 @@ func (vs *VersionService) Publish(versionPath *Path) error {
 
 	log.Info("Publishing version...")
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendPost(url, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,8 @@ func (vs *VersionService) Delete(versionPath *Path) error {
 
 	log.Info("Deleting version...")
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -139,7 +141,8 @@ func (vs *VersionService) Show(versionPath *Path) error {
 
 	log.Info("Getting version details...")
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, _, _ := httputils.SendGet(url, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, _ := client.SendGet(url, true, httpClientsDetails)
 
 	if resp.StatusCode != http.StatusOK {
 		return errorutils.CheckError(errors.New("Bintray response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
@@ -154,7 +157,8 @@ func (vs *VersionService) IsVersionExists(versionPath *Path) (bool, error) {
 	url := vs.BintrayDetails.GetApiUrl() + path.Join("packages", versionPath.Subject, versionPath.Repo, versionPath.Package, "versions", versionPath.Version)
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
 
-	resp, _, err := httputils.SendHead(url, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, err := client.SendHead(url, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
@@ -179,7 +183,8 @@ func (vs *VersionService) doCreateVersion(params *Params) (*http.Response, []byt
 	}
 	url := vs.BintrayDetails.GetApiUrl() + path.Join("packages", params.Subject, params.Repo, params.Package, "versions")
 	httpClientsDetails := vs.BintrayDetails.CreateHttpClientDetails()
-	return httputils.SendPost(url, content, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	return client.SendPost(url, content, httpClientsDetails)
 }
 
 func createVersionContent(params *Params) ([]byte, error) {

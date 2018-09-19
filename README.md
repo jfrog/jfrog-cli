@@ -1,3 +1,8 @@
+|Branch|Status|
+|:---:|:---:|
+|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
+|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev)|
+
 # Overview
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
@@ -66,8 +71,8 @@ Optional flags:
   
 #### Maven, Gradle and Npm tests
 * The *M2_HOME* environment variable should be set to the local maven installation path.
-* The *gradle* and *npm* executables pshould be included as part of the *PATH* environment variable.
-* The *java* executable be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
+* The *gradle* and *npm* executables should be included as part of the *PATH* environment variable.
+* The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
 To run build tools tests execute the following command:
 ````
@@ -80,7 +85,6 @@ go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false
 
 To run docker push tests execute the following command (fill out the missing parameters as described below):
 ````
-docker login
 go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
 
@@ -93,14 +97,14 @@ go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false
 | `-rt.user` | Artifactory username. |
 | `-rt.password` | Artifactory password. |
 
-#### Vgo commands tests
+#### Go commands tests
 
-To run vgo tests:
-* Add vgo executable to the system search path (PATH environment variable).
+To run go tests:
+* Use Go version 1.11 and above.
 * Run the following command:
 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.vgo=true 
+go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.go=true 
 ````
 
 #### NuGet tests

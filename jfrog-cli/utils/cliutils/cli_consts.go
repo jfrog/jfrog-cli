@@ -2,19 +2,21 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion = "1.17.1"
-	ClientAgent = "jfrog-cli-go"
+	CliVersion           = "1.20.0"
+	ClientAgent          = "jfrog-cli-go"
 	OnErrorPanic OnError = "panic"
 
 	// CLI base commands constants:
-	CmdArtifactory = "rt"
-	CmdBintray = "bt"
+	CmdArtifactory    = "rt"
+	CmdBintray        = "bt"
 	CmdMissionControl = "mc"
-	CmdXray = "xr"
+	CmdXray           = "xr"
 
 	// Download
 	DownloadMinSplitKb    = 5120
 	DownloadSplitCount    = 3
-	DownloadRetries       = 3
 	DownloadMaxSplitCount = 15
+
+	// Common
+	Retries = 3
 )

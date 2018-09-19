@@ -117,6 +117,19 @@
     rtManager.DistributeBuild(params)
 ```
 
+#### Discard Builds
+```
+    params := &services.DiscardBuildsParamsImpl{}
+    params.BuildName = "buildName"
+    params.MaxDays = "max-days"
+    params.MaxBuilds = "max-builds"
+    params.ExcludeBuilds = "1,2"
+    params.DeleteArtifacts = false
+    params.Async = false
+    
+    rtManager.DiscardBuilds(params)
+```
+
 #### Promote
 ```
     params := &services.PromotionParamsImpl{}

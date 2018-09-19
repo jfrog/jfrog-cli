@@ -5,7 +5,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/auth"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"net/http"
 	"path"
 )
@@ -29,7 +28,8 @@ func (rs *RepositoryService) IsRepoExists(repositoryPath *Path) (bool, error) {
 	url := rs.BintrayDetails.GetApiUrl() + path.Join("repos", repositoryPath.Subject, repositoryPath.Repo)
 	httpClientsDetails := rs.BintrayDetails.CreateHttpClientDetails()
 
-	resp, _, err := httputils.SendHead(url, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, err := client.SendHead(url, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}

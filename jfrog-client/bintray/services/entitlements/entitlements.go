@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"strings"
@@ -43,7 +42,8 @@ func (es *EntitlementsService) ShowAll(path *versions.Path) error {
 	}
 	httpClientsDetails := es.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Getting entitlements...")
-	resp, body, _, err := httputils.SendGet(url, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(url, true, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,8 @@ func (es *EntitlementsService) Show(id string, path *versions.Path) error {
 	}
 	httpClientsDetails := es.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Getting entitlement...")
-	resp, body, _, err := httputils.SendGet(url, true, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(url, true, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,8 @@ func (es *EntitlementsService) Create(params *Params) error {
 
 	httpClientsDetails := es.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Creating entitlement...")
-	resp, body, err := httputils.SendPost(path, content, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(path, content, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -110,7 +112,8 @@ func (es *EntitlementsService) Delete(id string, path *versions.Path) error {
 
 	httpClientsDetails := es.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Deleting entitlement...")
-	resp, body, err := httputils.SendDelete(url, nil, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(url, nil, httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -135,7 +138,8 @@ func (es *EntitlementsService) Update(params *Params) error {
 
 	httpClientsDetails := es.BintrayDetails.CreateHttpClientDetails()
 	log.Info("Updating entitlement...")
-	resp, body, err := httputils.SendPatch(path, content, httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPatch(path, content, httpClientsDetails)
 	if err != nil {
 		return err
 	}

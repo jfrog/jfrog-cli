@@ -32,5 +32,5 @@ func (s *SearchService) GetJfrogHttpClient() *httpclient.HttpClient {
 }
 
 func (s *SearchService) Search(searchParamsImpl utils.SearchParams) ([]utils.ResultItem, error) {
-	return utils.SearchBySpecFiles(searchParamsImpl, s)
+	return utils.SearchBySpecFiles(searchParamsImpl, s, utils.ALL)
 }

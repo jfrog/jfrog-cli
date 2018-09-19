@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 const BINTRAY_RECONNECT_HEADER = "X-Bintray-Stream-Reconnect-Id"
@@ -86,7 +87,8 @@ func (sm *StreamManager) Connect() (bool, *http.Response) {
 		sm.setReconnectHeader()
 	}
 	log.Debug("Connecting...")
-	resp, _, _, e := httputils.Stream(sm.Url, sm.HttpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, e := client.Stream(sm.Url, sm.HttpClientDetails)
 	if e != nil {
 		return false, resp
 	}

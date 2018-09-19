@@ -7,9 +7,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
@@ -27,7 +27,8 @@ func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := httputils.SendPost(missionControlUrl, requestContent, httpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err
 	}

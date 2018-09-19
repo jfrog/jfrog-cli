@@ -4,11 +4,16 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/lock"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/url"
+	"sync"
 )
+
+// Internal golang locking for the same process.
+var mutux sync.Mutex
 
 func GetConfig() (*config.MissionControlDetails, error) {
 	return config.ReadMissionControlConf()
@@ -36,6 +41,15 @@ func ClearConfig() {
 }
 
 func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) (conf *config.MissionControlDetails, err error) {
+	mutux.Lock()
+	lockFile, err := lock.CreateLock()
+	defer mutux.Unlock()
+	defer lockFile.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+
 	allowUsingSavedPassword := true
 	conf = details
 	if conf == nil {

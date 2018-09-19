@@ -3,6 +3,7 @@ package project
 import (
 	"archive/zip"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
 	"os"
@@ -11,13 +12,13 @@ import (
 	"strings"
 )
 
-// Archive project files according to the vgo project standard
+// Archive project files according to the go project standard
 func archiveProject(writer io.Writer, sourcePath, module, version string, excludePathsRegExp *regexp.Regexp) error {
 	zipWriter := zip.NewWriter(writer)
 	defer zipWriter.Close()
 
 	return filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info == nil || info.IsDir() {
+		if err != nil || info == nil || info.IsDir() || fileutils.IsPathSymlink(path) {
 			return err
 		}
 

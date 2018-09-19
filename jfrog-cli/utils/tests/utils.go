@@ -2,21 +2,21 @@ package tests
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
-	"errors"
 )
 
 var RtUrl *string
@@ -33,10 +33,11 @@ var TestBintray *bool
 var TestArtifactoryProxy *bool
 var TestBuildTools *bool
 var TestDocker *bool
-var TestVgo *bool
+var TestGo *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
+var HideUnitTestLog *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -53,10 +54,11 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestVgo = flag.Bool("test.vgo", false, "Test Vgo")
+	TestGo = flag.Bool("test.go", false, "Test Go")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
+	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 }
 
 func CleanFileSystem() {
@@ -167,7 +169,7 @@ func GetPath(filename, path string, a ...string) string {
 func getFileByOs(fileName string) string {
 	var currentOs string
 	fileSeparator := fileutils.GetFileSeparator()
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		currentOs = "win"
 	} else {
 		currentOs = "unix"
@@ -203,29 +205,33 @@ type PackageSearchResultItem struct {
 }
 
 type JfrogCli struct {
-	main   func()
-	prefix string
-	suffix string
+	main        func()
+	prefix      string
+	credentials string
 }
 
-func NewJfrogCli(mainFunc func(), prefix, suffix string) *JfrogCli {
-	return &JfrogCli{mainFunc, prefix, suffix}
+func NewJfrogCli(mainFunc func(), prefix, credentials string) *JfrogCli {
+	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
 func (cli *JfrogCli) Exec(args ...string) {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
+	output := strings.Split(cli.prefix, spaceSplit)
 	for _, v := range args {
 		if v == "" {
 			continue
 		}
-		os.Args = append(os.Args, strings.Split(v, spaceSplit)...)
+		args := strings.Split(v, spaceSplit)
+		os.Args = append(os.Args, args...)
+		output = append(output, args...)
 	}
-	if cli.suffix != "" {
-		os.Args = append(os.Args, strings.Split(cli.suffix, spaceSplit)...)
+	if cli.credentials != "" {
+		args := strings.Split(cli.credentials, spaceSplit)
+		os.Args = append(os.Args, args...)
 	}
 
-	log.Info("[Command]", strings.Join(os.Args, " "))
+	log.Info("[Command]", strings.Join(output, " "))
 	cli.main()
 }
 

@@ -91,7 +91,7 @@ func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHan
 		case utils.WILDCARD, utils.SIMPLE:
 			resultItems, err = ds.collectFilesUsingWildcardPattern(downloadParams)
 		case utils.AQL:
-			resultItems, err = utils.AqlSearchBySpec(downloadParams.GetFile(), ds)
+			resultItems, err = utils.AqlSearchBySpec(downloadParams.GetFile(), ds, utils.SYMLINK)
 		}
 
 		if err != nil {
@@ -108,7 +108,7 @@ func (ds *DownloadService) prepareTasks(producer parallel.Runner, fileContextHan
 }
 
 func (ds *DownloadService) collectFilesUsingWildcardPattern(downloadParams DownloadParams) ([]utils.ResultItem, error) {
-	return utils.AqlSearchDefaultReturnFields(downloadParams.GetFile(), ds)
+	return utils.AqlSearchDefaultReturnFields(downloadParams.GetFile(), ds, utils.SYMLINK)
 }
 
 func produceTasks(items []utils.ResultItem, downloadParams DownloadParams, producer parallel.Runner, fileHandler fileHandlerFunc, errorsQueue *utils.ErrorsQueue) (int, error) {
@@ -200,12 +200,12 @@ func createDependencyFileInfo(resultItem utils.ResultItem, localPath, localFileN
 
 func createDownloadFileDetails(downloadPath, localPath, localFileName string, downloadData DownloadData) (details *httpclient.DownloadFileDetails) {
 	details = &httpclient.DownloadFileDetails{
-		FileName:       downloadData.Dependency.Name,
-		DownloadPath:   downloadPath,
-		LocalPath:      localPath,
-		LocalFileName:  localFileName,
-		Size:           downloadData.Dependency.Size,
-		ExpectedSha1:   downloadData.Dependency.Actual_Sha1}
+		FileName:      downloadData.Dependency.Name,
+		DownloadPath:  downloadPath,
+		LocalPath:     localPath,
+		LocalFileName: localFileName,
+		Size:          downloadData.Dependency.Size,
+		ExpectedSha1:  downloadData.Dependency.Actual_Sha1}
 	return
 }
 

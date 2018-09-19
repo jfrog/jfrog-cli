@@ -21,6 +21,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	rtutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils/tests/xray"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -35,7 +36,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -63,7 +63,7 @@ func InitArtifactoryTests() {
 func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if !httputils.IsSsh(artifactoryDetails.Url) {
+	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
 		} else {
@@ -83,7 +83,7 @@ func authenticate() string {
 }
 
 func getArtifactoryTestCredentials() string {
-	if httputils.IsSsh(artifactoryDetails.Url) {
+	if fileutils.IsSshUrl(artifactoryDetails.Url) {
 		return getSshCredentials()
 	}
 	if *tests.RtApiKey != "" {
@@ -675,21 +675,7 @@ func TestArtifactorySetProperties(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a/a1.in", "jfrog-cli-tests-repo1/a.in")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/a.*", "prop=val")
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artAuth)
-	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
-		if err != nil {
-			t.Error(err)
-		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
-		if err != nil {
-			t.Error("Failed Searching files:", err)
-		}
-		resultItems = append(resultItems, currentResultItems...)
-	}
-
+	resultItems := searchItemsInArtifacotry(t)
 	for _, item := range resultItems {
 		properties := item.Properties
 		if len(properties) < 1 {
@@ -711,21 +697,7 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
 	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
-	flags.SetArtifactoryDetails(artAuth)
-	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
-		if err != nil {
-			t.Error(err)
-		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
-		if err != nil {
-			t.Error("Failed Searching files:", err)
-		}
-		resultItems = append(resultItems, currentResultItems...)
-	}
-
+	resultItems := searchItemsInArtifacotry(t)
 	for _, item := range resultItems {
 		if item.Name != "a3.in" {
 			continue
@@ -740,6 +712,46 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 			}
 			if prop.Key != "prop" || prop.Value != "val" {
 				t.Error("Wrong properties")
+			}
+		}
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeleteProperties(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
+	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val")
+	artifactoryCli.Exec("delp", "jfrog-cli-tests-repo1/*", "prop")
+	resultItems := searchItemsInArtifacotry(t)
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		for _, prop := range properties {
+			if prop.Key != "" {
+				t.Error("Wrong properties")
+			}
+		}
+	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "../testsdata/a/a*.in", "jfrog-cli-tests-repo1/")
+	artifactoryCli.Exec("sp", "jfrog-cli-tests-repo1/*", "prop=val")
+
+	artifactoryCli.Exec("delp", "jfrog-cli-tests-repo1/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
+	resultItems := searchItemsInArtifacotry(t)
+
+	for _, item := range resultItems {
+		properties := item.Properties
+		for _, prop := range properties {
+			if item.Name == "a1.in" || item.Name == "a2.in" {
+				// Check that properties were not removed.
+				if prop.Key != "prop" || prop.Value != "val" {
+					t.Error("Wrong properties")
+				}
 			}
 		}
 	}
@@ -890,7 +902,7 @@ func TestArtifactoryCopySpec(t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
 func TestSimpleSymlinkHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -914,7 +926,7 @@ func TestSimpleSymlinkHandling(t *testing.T) {
 // Testing exclude pattern with symlinks.
 // This test should not upload any files.
 func TestExcludeBrokenSymlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -936,7 +948,7 @@ func TestExcludeBrokenSymlink(t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
 func TestSymlinkWildcardPathHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -961,7 +973,7 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 // Upload symlink pointing to directory to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -985,7 +997,7 @@ func TestSymlinkToDirHandling(t *testing.T) {
 // Upload symlink pointing to directory using wildcard path to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirWilcardHandling(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1011,7 +1023,7 @@ func TestSymlinkToDirWilcardHandling(t *testing.T) {
 // Download the symlink which was uploaded.
 // The test create circular links and the test suppose to prune the circular searching.
 func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1082,13 +1094,14 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	specFile := tests.GetFilePath(tests.MoveCopyDeleteSpec)
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
-	resp, _, _, _ := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, _ := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
-	resp, _, _, _ = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
+	resp, _, _, _ = client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
@@ -1101,7 +1114,8 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -1114,7 +1128,8 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
@@ -1140,11 +1155,12 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 
 	artifactoryCli.Exec("delete", "--spec="+tests.GetFilePath(tests.DeleteSpec), "--quiet=true")
 
-	resp, body, _, err := httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
 	}
-	resp, body, _, err = httputils.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
+	resp, body, _, err = client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo2 + "/downloadTestResources/ " + string(body))
 	}
@@ -1893,7 +1909,7 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactoryLimitWithSimlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -1918,7 +1934,7 @@ func TestArtifactoryLimitWithSimlink(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactorySortWithSimlink(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		return
 	}
 	initArtifactoryTest(t)
@@ -2195,7 +2211,7 @@ func TestGitLfsCleanup(t *testing.T) {
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/{2}{1}")
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/")
 	separator := "/"
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		separator = "\\"
 	}
 	refs := strings.Join([]string{"refs", "heads", "*"}, separator)
@@ -2247,6 +2263,69 @@ func TestSummaryReport(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildDiscard(t *testing.T) {
+	// Initialize
+	initArtifactoryTest(t)
+	client := httpclient.NewDefaultHttpClient()
+
+	// Upload files with buildName and buildNumber
+	filePath := ioutils.PrepareFilePathForWindows("../testsdata/a/(*)")
+	buildName := "discard-builds-test"
+	for i := 1; i <= 10; i++ {
+		artifactoryCli.Exec("upload", filePath, "jfrog-cli-tests-repo1/data/{1}", "--build-name="+buildName, "--build-number="+strconv.Itoa(i))
+		artifactoryCli.Exec("build-publish", buildName, strconv.Itoa(i))
+	}
+
+	// Test discard by max-builds
+	artifactoryCli.Exec("build-discard", buildName, "--max-builds=8")
+	jsonResponse := getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
+	if len(jsonResponse.Builds) != 8 {
+		t.Error("Incorrect operation of build-discard by max-builds.")
+	}
+
+	// Test discard with exclusion
+	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1", "--exclude-builds=2,3,4,5,6,7,8,9,10")
+	jsonResponse = getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
+	if len(jsonResponse.Builds) != 8 {
+		t.Error("Incorrect operation of build-discard with exclusion.")
+	}
+
+	// Test discard by max-days
+	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1")
+	jsonResponse = getAllBuildsByBuildName(client, buildName, t, http.StatusNotFound)
+	if len(jsonResponse.Builds) != 0 {
+		t.Error("Incorrect operation of build-discard by max-days.")
+	}
+
+	//Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func getAllBuildsByBuildName(client *httpclient.HttpClient, buildName string, t *testing.T, expectedHttpStatusCode int) buildsApiResponseStruct {
+	resp, body, _, _ := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName, true, artHttpDetails)
+	if resp.StatusCode != expectedHttpStatusCode {
+		t.Error("Failed retrieving build information from artifactory.")
+	}
+
+	buildsApiResponse := &buildsApiResponseStruct{}
+	err := json.Unmarshal(body, buildsApiResponse)
+	if err != nil {
+		t.Error("Unmarshaling failed with an error:", err.Error())
+	}
+	return *buildsApiResponse
+}
+
+type buildsApiInnerBuildsStruct struct {
+	Uri     string `json:"uri,omitempty"`
+	Started string `json:"started,omitempty"`
+}
+
+type buildsApiResponseStruct struct {
+	Uri    string                       `json:"uri,omitempty"`
+	Builds []buildsApiInnerBuildsStruct `json:"buildsNumbers,omitempty"`
+}
+
 func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, logger log.Log) {
 	content := buffer.Bytes()
 	buffer.Reset()
@@ -2278,23 +2357,6 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, l
 	}
 	if resultFailure != failure {
 		t.Error("Summary validation failed, expected failure count:", failure, "got:", resultFailure)
-	}
-}
-
-func createJfrogHomeConfig(t *testing.T) {
-	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
-
-	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
-	jfrogHomePath, err := config.GetJfrogHomeDir()
-	if err != nil {
-		t.Error(err)
-	}
-	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
-	if err != nil {
-		t.Error(err)
-	}
-	if err != nil {
-		t.Error(err)
 	}
 }
 
@@ -2364,7 +2426,8 @@ func getPathsToDelete(specFile string) []rtutils.ResultItem {
 }
 
 func execDeleteRepoRest(repoName string) {
-	resp, body, err := httputils.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		return
@@ -2373,7 +2436,7 @@ func execDeleteRepoRest(repoName string) {
 		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		return
 	}
-	log.Info("Repository", repoName, "was deleted.")
+	log.Info("Repository", repoName, "deleted.")
 }
 
 func execCreateRepoRest(repoConfig, repoName string) {
@@ -2384,7 +2447,8 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		return
 	}
 	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
-	resp, body, err := httputils.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -2395,7 +2459,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		os.Exit(1)
 		return
 	}
-	log.Info("Repository", repoName, "was created.")
+	log.Info("Repository", repoName, "created.")
 }
 
 func createReposIfNeeded() {
@@ -2465,7 +2529,8 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 }
 
 func isRepoExist(repoName string) bool {
-	resp, _, _, err := httputils.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, _, _, err := client.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -2530,4 +2595,24 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 
 	// Cleanup
 	cleanArtifactoryTest()
+}
+
+func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
+	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.Search))
+	flags.SetArtifactoryDetails(artAuth)
+	var resultItems []rtutils.ResultItem
+	for i := 0; i < len(spec.Files); i++ {
+		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
+		if err != nil {
+			t.Error("Failed Searching files:", err)
+			t.FailNow()
+		}
+		resultItems = append(resultItems, currentResultItems...)
+	}
+	return resultItems
 }

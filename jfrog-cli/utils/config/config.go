@@ -11,7 +11,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/prompt"
 	"io/ioutil"
 	"os"
@@ -300,12 +299,13 @@ type ArtifactoryDetails struct {
 	Url            string            `json:"url,omitempty"`
 	User           string            `json:"user,omitempty"`
 	Password       string            `json:"password,omitempty"`
-	ApiKey         string            `json:"apiKey,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	SshPassphrase  string            `json:"SshPassphrase,omitempty"`
 	SshAuthHeaders map[string]string `json:"SshAuthHeaders,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
+	// Deprecated, use password option instead.
+	ApiKey         string            `json:"apiKey,omitempty"`
 }
 
 type BintrayDetails struct {
@@ -359,7 +359,7 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 }
 
 func (artifactoryDetails *ArtifactoryDetails) sshAuthenticationRequired() bool {
-	return !artifactoryDetails.SshAuthHeaderSet() && httputils.IsSsh(artifactoryDetails.Url)
+	return !artifactoryDetails.SshAuthHeaderSet() && fileutils.IsSshUrl(artifactoryDetails.Url)
 }
 
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {

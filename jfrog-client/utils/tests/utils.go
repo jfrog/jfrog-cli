@@ -2,7 +2,7 @@ package tests
 
 import (
 	"bufio"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net"
 	"net/http"
@@ -59,26 +59,41 @@ func ExcludeTestsPackage(packages []string, packageToExclude string) []string {
 	return res
 }
 
-func RunTests(testsPackages []string) error {
+func RunTests(testsPackages []string, hideUnitTestsLog bool) error {
 	if len(testsPackages) == 0 {
 		return nil
 	}
 	testsPackages = append([]string{"test", "-v"}, testsPackages...)
 	cmd := exec.Command("go", testsPackages...)
 
-	tempDirPath, err := tests.GetTestsLogsDir()
-	exitOnErr(err)
+	if hideUnitTestsLog {
+		tempDirPath, err := getTestsLogsDir()
+		exitOnErr(err)
 
-	f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
-	exitOnErr(err)
+		f, err := os.Create(filepath.Join(tempDirPath, "unit_tests.log"))
+		exitOnErr(err)
 
-	cmd.Stdout, cmd.Stderr = f, f
+		cmd.Stdout, cmd.Stderr = f, f
+		if err := cmd.Run(); err != nil {
+			log.Error("Unit tests failed, full report available at the following path:", f.Name())
+			exitOnErr(err)
+		}
+		log.Info("Full unit testing report available at the following path:", f.Name())
+		return nil
+	}
+
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Error("Unit tests failed, full report available at the following path:", f.Name())
+		log.Error("Unit tests failed")
 		exitOnErr(err)
 	}
-	log.Info("Full unit testing report available at the following path:", f.Name())
+
 	return nil
+}
+
+func getTestsLogsDir() (string, error) {
+	tempDirPath := filepath.Join(os.TempDir(), "jfrog_tests_logs")
+	return tempDirPath, fileutils.CreateDirIfNotExist(tempDirPath)
 }
 
 func exitOnErr(err error) {

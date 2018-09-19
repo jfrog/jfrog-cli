@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"os"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 )
 
 func TestMain(m *testing.M) {
@@ -22,7 +22,7 @@ func setupIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
-	if *tests.TestBuildTools || *tests.TestVgo || *tests.TestNuget {
+	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {

@@ -1,7 +1,6 @@
 package buildinfo
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"time"
@@ -9,15 +8,78 @@ import (
 
 func New() *BuildInfo {
 	return &BuildInfo{
-		Agent:      &Agent{Name: cliutils.ClientAgent, Version: cliutils.GetVersion()},
-		BuildAgent: &Agent{Name: "GENERIC", Version: cliutils.GetVersion()},
+		Agent:      &Agent{},
+		BuildAgent: &Agent{Name: "GENERIC"},
 		Modules:    make([]Module, 0),
 		Vcs:        &Vcs{},
 	}
 }
 
+func (targetBuildInfo *BuildInfo) SetBuildAgentVersion(buildAgentVersion string) {
+	targetBuildInfo.BuildAgent.Version = buildAgentVersion
+}
+
+func (targetBuildInfo *BuildInfo) SetAgentName(agentName string) {
+	targetBuildInfo.Agent.Name = agentName
+}
+
+func (targetBuildInfo *BuildInfo) SetAgentVersion(agentVersion string) {
+	targetBuildInfo.Agent.Version = agentVersion
+}
+
+// Append the modules of the recieved build info to this build info.
+// If the two build info instances contain modules with identical names, these modules are merged.
+// When merging the modules, the artifacts and dependencies remain unique according to their checksums.
 func (targetBuildInfo *BuildInfo) Append(buildInfo *BuildInfo) {
-	targetBuildInfo.Modules = append(targetBuildInfo.Modules, buildInfo.Modules...)
+	for _, newModule := range buildInfo.Modules {
+		exists := false
+		for i, _ := range targetBuildInfo.Modules {
+			if newModule.Id == targetBuildInfo.Modules[i].Id {
+				mergeModules(&newModule, &targetBuildInfo.Modules[i])
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			targetBuildInfo.Modules = append(targetBuildInfo.Modules, newModule)
+		}
+	}
+}
+
+// Merge the first module into the second module.
+func mergeModules(merge *Module, into *Module) {
+	mergeArtifacts(&merge.Artifacts, &into.Artifacts)
+	mergeDependencies(&merge.Dependencies, &into.Dependencies)
+}
+
+func mergeArtifacts(mergeArtifacts *[]Artifact, intoArtifacts *[]Artifact) {
+	for _, mergeArtifact := range *mergeArtifacts {
+		exists := false
+		for _, artifact := range *intoArtifacts {
+			if mergeArtifact.Sha1 == artifact.Sha1 {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			*intoArtifacts = append(*intoArtifacts, mergeArtifact)
+		}
+	}
+}
+
+func mergeDependencies(mergeDependencies *[]Dependency, intoDependencies *[]Dependency) {
+	for _, mergeDependency := range *mergeDependencies {
+		exists := false
+		for _, dependency := range *intoDependencies {
+			if mergeDependency.Sha1 == dependency.Sha1 {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			*intoDependencies = append(*intoDependencies, mergeDependency)
+		}
+	}
 }
 
 type BuildInfo struct {

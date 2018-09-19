@@ -23,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildclean"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildcollectenv"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/builddiscard"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/builddistribute"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpromote"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
@@ -30,6 +31,7 @@ import (
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
@@ -57,7 +59,6 @@ import (
 	rtclientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -171,6 +172,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:      "delete-props",
+			Flags:     getDeletePropertiesFlags(),
+			Aliases:   []string{"delp"},
+			Usage:     deleteprops.Description,
+			HelpName:  common.CreateUsage("rt delete-props", deleteprops.Description, deleteprops.Usage),
+			UsageText: deleteprops.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				deletePropsCmd(c)
+			},
+		},
+		{
 			Name:      "build-publish",
 			Flags:     getBuildPublishFlags(),
 			Aliases:   []string{"bp"},
@@ -264,6 +277,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				buildDistributeCmd(c)
+			},
+		},
+		{
+			Name:      "build-discard",
+			Flags:     getBuildDiscardFlags(),
+			Aliases:   []string{"bdi"},
+			Usage:     builddiscard.Description,
+			HelpName:  common.CreateUsage("rt build-discard", builddiscard.Description, builddiscard.Usage),
+			UsageText: builddiscard.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				buildDiscardCmd(c)
 			},
 		},
 		{
@@ -524,6 +549,10 @@ func getUploadFlags() []cli.Flag {
 			Name:  "regexp",
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
 		},
+		cli.StringFlag{
+			Name:  "retries",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of upload retries.",
+		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
@@ -572,21 +601,21 @@ func getDownloadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are downloaded. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
-			Usage: "[Default: " + string(cliutils.DownloadMinSplitKb) + "  ] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "split-count",
 			Value: "",
-			Usage: "[Default: " + string(cliutils.DownloadSplitCount) + " ] Number of parts to split a file when downloading. Set to 0 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.",
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: " + string(cliutils.DownloadRetries) + " ] Number of download retries.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of download retries.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -703,6 +732,7 @@ func getGoFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
+	flags = append(flags, getBuildToolFlags()...)
 	return flags
 }
 
@@ -746,7 +776,7 @@ func getMoveFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are moved. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -777,7 +807,7 @@ func getCopyFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are copied. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -807,7 +837,7 @@ func getDeleteFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are deleted. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -829,7 +859,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -838,19 +868,35 @@ func getSearchFlags() []cli.Flag {
 }
 
 func getSetPropertiesFlags() []cli.Flag {
-	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
-	return append(propsFlags, []cli.Flag{
+	flags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
 			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
 		},
+	}
+	return append(flags, getPropertiesFlags()...)
+}
+
+func getDeletePropertiesFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "props",
+			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.",
+		},
+	}
+	return append(flags, getPropertiesFlags()...)
+}
+
+func getPropertiesFlags() []cli.Flag {
+	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
+	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are affected. The property format is build-name/build-number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
@@ -937,7 +983,7 @@ func getBuildPromotionFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "copy",
-			Usage: "[Default: false] If set true, the build are artifacts and dependencies are copied to the target repository, otherwise they are moved.",
+			Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -1032,6 +1078,31 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getCommonFlags()...)
 }
 
+func getBuildDiscardFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "max-days",
+			Usage: "[Optional] The maximum number of days to keep builds in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "max-builds",
+			Usage: "[Optional] The maximum number of builds to store in Artifactory.",
+		},
+		cli.StringFlag{
+			Name:  "exclude-builds",
+			Usage: "[Optional] List of build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "delete-artifacts",
+			Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.",
+		},
+		cli.BoolFlag{
+			Name:  "async",
+			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.",
+		},
+	}...)
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1049,7 +1120,7 @@ func getSplitCount(c *cli.Context) (splitCount int) {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option should have a numeric value. " + cliutils.GetDocumentationMessage()))
 		}
 		if splitCount > cliutils.DownloadMaxSplitCount {
-			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limited to a maximum of " + string(cliutils.DownloadMaxSplitCount) + "."))
+			cliutils.ExitOnErr(errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(cliutils.DownloadMaxSplitCount) + "."))
 		}
 		if splitCount < 0 {
 			cliutils.ExitOnErr(errors.New("The '--split-count' option cannot have a negative value."))
@@ -1083,7 +1154,7 @@ func getMinSplit(c *cli.Context) (minSplitSize int64) {
 }
 
 func getRetries(c *cli.Context) (retries int) {
-	retries = cliutils.DownloadRetries
+	retries = cliutils.Retries
 	var err error
 	if c.String("retries") != "" {
 		retries, err = strconv.Atoi(c.String("retries"))
@@ -1253,34 +1324,21 @@ func goPublishCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	logVgoVersion()
+	logGoVersion()
 
-	targetRepo := c.Args().Get(0)
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
+	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	if c.BoolT("self") {
-		err := golang.Publish(targetRepo, version, buildName, buildNumber, details)
-		if err != nil {
-			err = cliutils.PrintSummaryReport(0, 1, err)
-			cliutils.ExitOnErr(err)
-		}
-	}
-
-	publishDeps := c.String("deps")
-	publishDepsSlice := strings.Split(publishDeps, ",")
-	succeeded, failed, err := golang.PublishDependencies(targetRepo, details, publishDepsSlice)
-	if c.BoolT("self") {
-		succeeded++
-	}
+	succeeded, failed, err := golang.Publish(c.BoolT("self"), c.String("deps"), targetRepo, version, buildName, buildNumber, details)
 	err = cliutils.PrintSummaryReport(succeeded, failed, err)
 	cliutils.ExitOnErr(err)
 }
 
 func goCmd(c *cli.Context) {
-	// When the no-registry set to false (default), two arguments are mandatory: vgo command and the target repository
+	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
@@ -1290,30 +1348,27 @@ func goCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	vgoArg := c.Args().Get(0)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	goArg := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	logVgoVersion()
-
-	if !c.Bool("no-registry") {
-		goutils.SetGoProxyEnvVar(details, targetRepo)
-	}
-	// Run vgo
-	err := goutils.RunVgo(vgoArg)
+	logGoVersion()
+	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
 }
 
-func logVgoVersion() {
-	output, err := goutils.GetVgoVersion()
+func logGoVersion() {
+	output, err := goutils.GetGoVersion()
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
-	log.Info("Using vgo:", string(output))
+	log.Info("Using go:", string(output))
 }
 
 func createGradleConfigCmd(c *cli.Context) {
@@ -1492,14 +1547,17 @@ func searchCmd(c *cli.Context) {
 }
 
 func setPropsCmd(c *cli.Context) {
-	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
-	}
-	validateCommonContext(c)
-	setPropertiesSpec := createDefaultSetPropertiesSpec(c)
-	properties := c.Args()[1]
-	artDetails := createArtifactoryDetailsByFlags(c, true)
-	success, failed, err := generic.SetProps(setPropertiesSpec, properties, getThreadsCount(c), artDetails)
+	validatePropsCommand(c)
+	propertiesSpec, properties, artDetails := createPropsParams(c)
+	success, failed, err := generic.SetProps(propertiesSpec, properties, getThreadsCount(c), artDetails)
+	err = cliutils.PrintSummaryReport(success, failed, err)
+	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
+}
+
+func deletePropsCmd(c *cli.Context) {
+	validatePropsCommand(c)
+	propertiesSpec, properties, artDetails := createPropsParams(c)
+	success, failed, err := generic.DeleteProps(propertiesSpec, properties, getThreadsCount(c), artDetails)
 	err = cliutils.PrintSummaryReport(success, failed, err)
 	cliutils.FailNoOp(err, success, failed, isFailNoOp(c))
 }
@@ -1579,6 +1637,15 @@ func buildDistributeCmd(c *cli.Context) {
 	}
 	configuration := createBuildDistributionConfiguration(c)
 	err := buildinfo.Distribute(configuration)
+	cliutils.ExitOnErr(err)
+}
+
+func buildDiscardCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	configuration := createBuildDiscardConfiguration(c)
+	err := buildinfo.BuildDiscard(configuration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1687,6 +1754,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.ServerId = c.String("server-id")
+
+	if details.ApiKey != "" && details.User != "" && details.Password == "" {
+		// The API Key is deprecated, use password option instead.
+		details.Password = details.ApiKey
+		details.ApiKey = ""
+	}
 
 	if includeConfig && !credentialsChanged(details) {
 		confDetails, err := commands.GetConfig(details.ServerId)
@@ -1828,7 +1901,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		BuildSpec()
 }
 
-func createDefaultSetPropertiesSpec(c *cli.Context) *spec.SpecFiles {
+func createDefaultPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
@@ -1864,7 +1937,8 @@ func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfocmd.Configura
 	if len(flags.EnvInclude) == 0 {
 		flags.EnvInclude = "*"
 	}
-	if len(flags.EnvExclude) == 0 {
+	// Allow to use `env-exclude=""` and get no filters
+	if !c.IsSet("env-exclude") {
 		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return
@@ -1884,6 +1958,20 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 	promoteConfiguration.BuildName = c.Args().Get(0)
 	promoteConfiguration.BuildNumber = c.Args().Get(1)
 	promoteConfiguration.TargetRepo = c.Args().Get(2)
+	return
+}
+
+func createBuildDiscardConfiguration(c *cli.Context) (discardConfiguration *buildinfo.BuildDiscardConfiguration) {
+	discardParamsImpl := new(services.DiscardBuildsParamsImpl)
+	discardParamsImpl.DeleteArtifacts = c.Bool("delete-artifacts")
+	discardParamsImpl.MaxBuilds = c.String("max-builds")
+	discardParamsImpl.MaxDays = c.String("max-days")
+	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
+	discardParamsImpl.Async = c.Bool("async")
+	discardParamsImpl.BuildName = c.Args().Get(0)
+	discardConfiguration = new(buildinfo.BuildDiscardConfiguration)
+	discardConfiguration.DiscardBuildsParamsImpl = discardParamsImpl
+	discardConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
@@ -2056,7 +2144,7 @@ func getFileSystemSpec(c *cli.Context, isTargetMandatory bool) *spec.SpecFiles {
 }
 
 func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
 			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
@@ -2067,7 +2155,7 @@ func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
 }
 
 func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Target = strings.Replace(file.Target, "\\", "\\\\", -1)
 		}
@@ -2083,6 +2171,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *generic.Upl
 	uploadConfiguration.BuildNumber = buildNumber
 	uploadConfiguration.DryRun = c.Bool("dry-run")
 	uploadConfiguration.Symlink = c.Bool("symlinks")
+	uploadConfiguration.Retries = getRetries(c)
 	uploadConfiguration.Threads = getThreadsCount(c)
 	uploadConfiguration.Deb = getDebFlag(c)
 	uploadConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
@@ -2194,4 +2283,18 @@ func isFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
+}
+
+func createPropsParams(c *cli.Context) (propertiesSpec *spec.SpecFiles, properties string, artDetails *config.ArtifactoryDetails) {
+	propertiesSpec = createDefaultPropertiesSpec(c)
+	properties = c.Args()[1]
+	artDetails = createArtifactoryDetailsByFlags(c, true)
+	return
+}
+
+func validatePropsCommand(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	validateCommonContext(c)
 }

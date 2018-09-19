@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
@@ -44,7 +43,8 @@ func (gs *GpgService) SignFile(pathDetails *utils.PathDetails, passphrase string
 
 	log.Info("GPG signing file...")
 	httpClientsDetails := gs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,8 @@ func (gs *GpgService) SignVersion(versionPath *versions.Path, passphrase string)
 
 	log.Info("GPG signing version...")
 	httpClientsDetails := gs.BintrayDetails.CreateHttpClientDetails()
-	resp, body, err := httputils.SendPost(url, []byte(data), httpClientsDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(url, []byte(data), httpClientsDetails)
 	if err != nil {
 		return err
 	}

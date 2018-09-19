@@ -104,7 +104,7 @@ func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error)
 	}
 
 	npmi.npmAuth = string(npmAuth)
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 {
+	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 

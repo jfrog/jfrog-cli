@@ -10,7 +10,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	rtutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
@@ -21,7 +23,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -49,12 +50,25 @@ func CleanBuildToolsTests() {
 	deleteRepos()
 }
 
+func createJfrogHomeConfig(t *testing.T) {
+	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
+
+	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
+	jfrogHomePath, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestMavenBuildWithServerID(t *testing.T) {
 	initBuildToolsTest(t)
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-	createJfrogHomeConfig(t)
 
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -89,7 +103,6 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
-	createJfrogHomeConfig(t)
 
 	runAndValidateGradle(buildGradlePath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -136,15 +149,19 @@ func (image *buildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func initVgoTest(t *testing.T) {
-	if !*tests.TestVgo {
-		t.Skip("Skipping vgo test. To run vgo test add the '-test.vgo=true' option.")
+func initGoTest(t *testing.T) {
+	if !*tests.TestGo {
+		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 
-	// Move when vgo will be supported and check Artifactory version.
-	if !isRepoExist(tests.VgoLocalRepo) {
-		repoConfig := tests.GetTestResourcesPath() + tests.VgoLocalRepositoryConfig
-		execCreateRepoRest(repoConfig, tests.VgoLocalRepo)
+	err := os.Setenv("GO111MODULE", "on")
+	if err != nil {
+		t.Error(err)
+	}
+	// Move when go will be supported and check Artifactory version.
+	if !isRepoExist(tests.GoLocalRepo) {
+		repoConfig := tests.GetTestResourcesPath() + tests.GoLocalRepositoryConfig
+		execCreateRepoRest(repoConfig, tests.GoLocalRepo)
 	}
 }
 
@@ -153,7 +170,7 @@ func initNugetTest(t *testing.T) {
 		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
 	}
 
-	if runtime.GOOS != "windows" {
+	if !cliutils.IsWindows() {
 		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
 	}
 
@@ -164,27 +181,28 @@ func initNugetTest(t *testing.T) {
 	}
 }
 
-func cleanVgoTest() {
-	if isRepoExist(tests.VgoLocalRepo) {
-		execDeleteRepoRest(tests.VgoLocalRepo)
+func cleanGoTest() {
+	if isRepoExist(tests.GoLocalRepo) {
+		execDeleteRepoRest(tests.GoLocalRepo)
 	}
 	cleanBuildToolsTest()
 }
 
-// Testing build info capabilities for vgo project.
-// Build project using vgo without Artifactory ->
+// Testing build info capabilities for go project.
+// Build project using go without Artifactory ->
 // Publish dependencies to Artifactory ->
 // Publish project to Artifactory->
 // Publish and validate build-info
-func TestVgoBuildInfo(t *testing.T) {
-	initVgoTest(t)
+func TestGoBuildInfo(t *testing.T) {
+	initGoTest(t)
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
-	project1Path := createVgoProject(t, "project1")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	project1Path := createGoProject(t, "project1")
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "vgo", "testsdata")
+	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "go", "testsdata")
 	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
 	if err != nil {
 		t.Error(err)
@@ -194,17 +212,29 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Download dependencies without Artifactory
-	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo, "--no-registry=true")
+	log.Info("Using Go project located at ", project1Path)
 
-	buildName := "vgo-build"
+	buildName := "go-build"
+
+	// 1. Download dependencies.
+	// 2. Publish build-info.
+	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
-
-	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("gp", tests.VgoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 6, 0)
+
+	// Now, using a new build number, do the following:
+	// 1. Build the project again.
+	// 2. Publish the go package.
+	// 3. Validate the total count of dependencies and artifacts added to the build-info.
+	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
+	buildNumber = "2"
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 2)
 	validateBuildInfoProperties(buildInfo, t)
 
@@ -213,33 +243,34 @@ func TestVgoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	cleanVgoTest()
+	cleanGoTest()
 }
 
-// Testing publishing and resolution capabilities for vgo projects.
-// Build first project using vgo without Artifactory ->
+// Testing publishing and resolution capabilities for go projects.
+// Build first project using go without Artifactory ->
 // Publish dependencies to Artifactory ->
 // Publish first project to Artifactory ->
-// Set vgo to resolve from Artifactory (set GOPROXY) ->
-// Build second project using vgo resolving from Artifactory, should download project1 as dependency.
-func TestVgoPublishResolve(t *testing.T) {
-	initVgoTest(t)
+// Set go to resolve from Artifactory (set GOPROXY) ->
+// Build second project using go resolving from Artifactory, should download project1 as dependency.
+func TestGoPublishResolve(t *testing.T) {
+	initGoTest(t)
 
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
-	project1Path := createVgoProject(t, "project1")
-	project2Path := createVgoProject(t, "project2")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	project1Path := createGoProject(t, "project1")
+	project2Path := createGoProject(t, "project2")
 	err = os.Chdir(project1Path)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Download dependencies without Artifactory
-	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo, "--no-registry=true")
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo)
 	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("gp", tests.VgoLocalRepo, "v1.0.0", "--deps=ALL")
+	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0")
 
 	err = os.Chdir(project2Path)
 	if err != nil {
@@ -247,18 +278,18 @@ func TestVgoPublishResolve(t *testing.T) {
 	}
 
 	// Build the second project, download dependencies from Artifactory
-	artifactoryCli.Exec("go", "build", tests.VgoLocalRepo)
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo)
 
 	// Restore workspace
 	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)
 	}
-	cleanVgoTest()
+	cleanGoTest()
 }
 
-func createVgoProject(t *testing.T, projectName string) string {
-	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "vgo", projectName)
+func createGoProject(t *testing.T, projectName string) string {
+	projectSrc := filepath.Join(tests.GetTestResourcesPath(), "go", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
 	err := fileutils.CopyDir(projectSrc, projectTarget, false)
 	if err != nil {
@@ -329,14 +360,17 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 		t.Error("build info was not generated correctly, no modules were created.")
 	}
 	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
-		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
+		t.Error("Incorrect number of dependencies found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
 	}
 	if expectedArtifacts != len(buildInfo.Modules[0].Artifacts) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedArtifacts, " Found:", len(buildInfo.Modules[0].Artifacts))
 	}
 }
 
-// Validate the build.name and build.number properties
+// This function counts the following:
+// #1 The number of artifacts in the build-info JSON.
+// #2 The number of artifact with the build.name and build.number properties.
+// Validates that #1 == #2
 func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
 	flags.SetArtifactoryDetails(artAuth)
@@ -346,7 +380,7 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags)
+		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 		}
@@ -611,6 +645,7 @@ func initBuildToolsTest(t *testing.T) {
 	if !*tests.TestBuildTools {
 		t.Skip("Skipping build tools test. To run build tools tests add the '-test.buildTools=true' option.")
 	}
+	createJfrogHomeConfig(t)
 }
 
 func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
@@ -618,7 +653,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 		t.Error(err)
 	}
 
-	caches := filepath.Join(workingDirectory, "caches")
+	caches := ioutils.FixWinPath(filepath.Join(workingDirectory, "caches"))
 	// Run install with -cache argument to download the artifacts from Artifactory
 	// This done to be sure the artifacts exists in Artifactory
 	artifactoryCli.Exec("npm-install", tests.NpmRemoteRepo, "--npm-args=-cache="+caches)
@@ -633,7 +668,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 }
 
 func cleanBuildToolsTest() {
-	if *tests.TestBuildTools || *tests.TestVgo || *tests.TestNuget {
+	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
 		os.Unsetenv(config.JfrogHomeEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()

@@ -5,14 +5,15 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 )
 
 func Remove(serviceName string, flags *RemoveFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services/" + serviceName
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	resp, body, err := httputils.SendDelete(missionControlUrl, nil, httpClientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(missionControlUrl, nil, httpClientDetails)
 	if err != nil {
 		return err
 	}

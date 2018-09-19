@@ -67,6 +67,7 @@ func downloadDependencies() (string, error) {
 	filename := fmt.Sprintf("build-info-extractor-maven3-%s-uber.jar", mavenExtractorDependencyVersion)
 	filePath := fmt.Sprintf("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-maven3/%s", mavenExtractorDependencyVersion)
 	downloadPath := path.Join(filePath, filename)
+
 	err = utils.DownloadFromBintrayIfNeeded(downloadPath, filename, dependenciesPath)
 	if err != nil {
 		return "", err

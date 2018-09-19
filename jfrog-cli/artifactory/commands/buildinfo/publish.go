@@ -3,6 +3,7 @@ package buildinfo
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
         "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
@@ -57,6 +58,9 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 	sort.Sort(partials)
 
 	buildInfo := buildinfo.New()
+	buildInfo.SetAgentName(cliutils.ClientAgent)
+	buildInfo.SetAgentVersion(cliutils.GetVersion())
+	buildInfo.SetBuildAgentVersion(cliutils.GetVersion())
 	buildInfo.Name = buildName
 	buildInfo.Number = buildNumber
 	buildGeneralDetails, err := utils.ReadBuildInfoGeneralDetails(buildName, buildNumber)

@@ -5,17 +5,18 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -191,13 +192,13 @@ func TestBintrayUploads(t *testing.T) {
 	bintrayExpectedUploadNonFlatRecursive := tests.BintrayExpectedUploadNonFlatRecursive
 	bintrayExpectedUploadNonFlatNonRecursive := tests.BintrayExpectedUploadNonFlatNonRecursive
 	for i := range bintrayExpectedUploadNonFlatRecursive {
-		if runtime.GOOS != "windows" && strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
+		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatRecursive[i].Path = bintrayExpectedUploadNonFlatRecursive[i].Path[1:]
 		}
 	}
 
 	for i := range bintrayExpectedUploadNonFlatNonRecursive {
-		if runtime.GOOS != "windows" && strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
+		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatNonRecursive[i].Path = bintrayExpectedUploadNonFlatNonRecursive[i].Path[1:]
 		}
 	}
@@ -363,7 +364,8 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, _, err := httputils.SendGet(apiUrl, true, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(apiUrl, true, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -435,7 +437,8 @@ func createBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := httputils.SendPost(apiUrl, content, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendPost(apiUrl, content, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
 	}
@@ -454,7 +457,8 @@ func deleteBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	resp, body, err := httputils.SendDelete(apiUrl, nil, clientDetails)
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, err := client.SendDelete(apiUrl, nil, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		log.Error(err)
 		os.Exit(1)

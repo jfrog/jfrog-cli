@@ -9,7 +9,6 @@ import (
 	"os"
 	"syscall"
 	"strings"
-	"runtime"
 )
 
 // @param allowUsingSavedPassword - Prevent changing username or url without changing the password.
@@ -22,7 +21,7 @@ func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials, allo
 		allowUsingSavedPassword = false
 	}
 	if details.GetPassword() == "" {
-		print("Password: ")
+		print("Password/API key: ")
 		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 		err = errorutils.CheckError(err)
 		if err != nil {
@@ -74,7 +73,7 @@ func FixWinPath(filePath string) string {
 }
 
 func PrepareFilePathForWindows(path string) string {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		path = strings.Replace(path, "\\", "\\\\", -1)
 		path = strings.Replace(path, "/", "\\\\", -1)
 	}
@@ -82,7 +81,7 @@ func PrepareFilePathForWindows(path string) string {
 }
 
 func PrepareFilePathForUnix(path string) string {
-	if runtime.GOOS == "windows" {
+	if cliutils.IsWindows() {
 		path = strings.Replace(path, "\\\\", "/", -1)
 		path = strings.Replace(path, "\\", "/", -1)
 	}
