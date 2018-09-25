@@ -1,19 +1,29 @@
 package golang
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/version"
 	"os"
 	"os/exec"
 	"strings"
 )
 
+const minSupportedArtifactoryVersion = "6.2.0"
+const newPublishAPI = "6.5.0"
+
 func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, buildNumber string, details *config.ArtifactoryDetails) (succeeded, failed int, err error) {
 	err = validatePrerequisites()
+	if err != nil {
+		return
+	}
+
+	useNewApi, err := shouldUseNewApi(details)
 	if err != nil {
 		return
 	}
@@ -33,7 +43,7 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 
 	// Publish the package to Artifactory
 	if publishPackage {
-		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, details)
+		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, details, useNewApi)
 		if err != nil {
 			return
 		}
@@ -42,7 +52,7 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	// Publish the package dependencies to Artifactory
 	depsList := strings.Split(dependencies, ",")
 	if len(depsList) > 0 {
-		succeeded, failed, err = goProject.PublishDependencies(targetRepo, details, depsList)
+		succeeded, failed, err = goProject.PublishDependencies(targetRepo, details, depsList, useNewApi)
 	}
 	if err != nil {
 		return
@@ -57,6 +67,25 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	}
 
 	return
+}
+
+// Returns if new api that supported from Artifactory version 6.5.0 should be used
+// or the previous supported API (version 6.2.0 and above).
+func shouldUseNewApi(details *config.ArtifactoryDetails) (bool, error) {
+	artifactoryVersion, err := utils.GetArtifactoryVersion(details)
+	if err != nil {
+		return false, err
+	}
+
+	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
+		return false, errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+	}
+
+	if version.Compare(artifactoryVersion, newPublishAPI) < 0 && artifactoryVersion != "development" {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {

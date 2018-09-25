@@ -8,8 +8,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	servicesutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"io"
@@ -85,7 +86,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	return artifactory.New(serviceConfig)
 }
 
-func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultItem) []services.DeleteItem {
+func ConvertResultItemArrayToDeleteItemArray(resultItems []servicesutils.ResultItem) []services.DeleteItem {
 	deleteItems := make([]services.DeleteItem, len(resultItems))
 	for i, item := range resultItems {
 		deleteItems[i] = item
@@ -117,6 +118,28 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 		return errorutils.CheckError(errors.New("The repository '" + repository + "' dose not exists."))
 	}
 	return nil
+}
+
+func GetArtifactoryVersion(details *config.ArtifactoryDetails) (string, error) {
+	artAuth, err := details.CreateArtAuthConfig()
+	if err != nil {
+		return "", err
+	}
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(details.GetUrl()+"api/system/version", true, artAuth.CreateHttpClientDetails())
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
+	}
+
+	serverValues := strings.Split(resp.Header.Get("Server"), "/")
+	if len(serverValues) != 2 {
+		err = errors.New("Cannot parse Artifactory version from the server header.")
+	}
+	return strings.TrimSpace(serverValues[1]), errorutils.CheckError(err)
 }
 
 func RunCmdOutput(config CmdConfig) ([]byte, error) {

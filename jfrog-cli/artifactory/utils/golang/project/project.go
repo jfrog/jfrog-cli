@@ -23,8 +23,8 @@ import (
 // Represent go project
 type Go interface {
 	Dependencies() []dependencies.Dependency
-	PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error
-	PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string) (succeeded, failed int, err error)
+	PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails, useNewApi bool) error
+	PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string, useNewApi bool) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
 }
 
@@ -59,7 +59,7 @@ func (project *goProject) Dependencies() []dependencies.Dependency {
 }
 
 // Publish go project to Artifactory.
-func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails, useNewApi bool) error {
 	log.Info("Publishing", project.getId(), "to", targetRepo)
 	servicesManager, err := utils.CreateServiceManager(details, false)
 	if err != nil {
@@ -79,21 +79,23 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	}
 	defer fileutils.RemoveTempDir()
 
-	params := &_go.GoParamsImpl{}
-	params.Version = project.version
-	params.Props = props
-	params.TargetRepo = targetRepo
-
-	params.ModContent = project.modContent
-	params.ZipPath, err = project.archiveProject(project.version)
+	artifactsInfo := &_go.ArtifactsInfoImpl{}
+	artifactsInfo.Version = project.version
+	artifactsInfo.Props = props
+	artifactsInfo.TargetRepo = targetRepo
+	artifactsInfo.ModuleId = project.getId()
+	artifactsInfo.ModContent = project.modContent
+	artifactsInfo.ZipPath, err = project.archiveProject(project.version)
 	if err != nil {
 		return err
 	}
-
+	params := &_go.GoParamsImpl{}
+	params.NewApi = useNewApi
+	params.ArtifactsInfo = artifactsInfo
 	return servicesManager.PublishGoProject(params)
 }
 
-func (project *goProject) PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string) (succeeded, failed int, err error) {
+func (project *goProject) PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string, useNewApi bool) (succeeded, failed int, err error) {
 	log.Info("Publishing package dependencies...")
 	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
 
@@ -109,7 +111,7 @@ func (project *goProject) PublishDependencies(targetRepo string, details *config
 			}
 		}
 		if includeDependency {
-			err = dependency.Publish(targetRepo, details)
+			err = dependency.Publish(targetRepo, details, useNewApi)
 			if err != nil {
 				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
 				log.Error("Failed to publish", dependency.GetId(), ":", err)

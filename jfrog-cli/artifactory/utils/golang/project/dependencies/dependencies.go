@@ -42,17 +42,21 @@ func (dependency *Dependency) GetId() string {
 	return dependency.id
 }
 
-func (dependency *Dependency) Publish(targetRepo string, details *config.ArtifactoryDetails) error {
+func (dependency *Dependency) Publish(targetRepo string, details *config.ArtifactoryDetails, useNewApi bool) error {
 	log.Info("Publishing:", dependency.id, "to", targetRepo)
 	servicesManager, err := utils.CreateServiceManager(details, false)
 	if err != nil {
 		return err
 	}
+	artifactsInfo := &_go.ArtifactsInfoImpl{}
+	artifactsInfo.ZipPath = dependency.zipPath
+	artifactsInfo.ModContent = dependency.modContent
+	artifactsInfo.Version = dependency.version
+	artifactsInfo.TargetRepo = targetRepo
+	artifactsInfo.ModuleId = dependency.id
 	params := &_go.GoParamsImpl{}
-	params.ZipPath = dependency.zipPath
-	params.ModContent = dependency.modContent
-	params.Version = dependency.version
-	params.TargetRepo = targetRepo
+	params.NewApi = useNewApi
+	params.ArtifactsInfo = artifactsInfo
 
 	return servicesManager.PublishGoProject(params)
 }
