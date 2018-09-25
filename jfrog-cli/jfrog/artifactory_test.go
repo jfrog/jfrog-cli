@@ -2210,13 +2210,9 @@ func TestGitLfsCleanup(t *testing.T) {
 	var filePath = ioutils.PrepareFilePathForWindows("../testsdata/gitlfs/(4b)(*)")
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/{2}{1}")
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/")
-	separator := "/"
-	if cliutils.IsWindows() {
-		separator = "\\"
-	}
-	refs := strings.Join([]string{"refs", "heads", "*"}, separator)
+	refs := strings.Join([]string{"refs", "heads", "*"}, fileutils.GetFileSeparator())
 	dotGitPath := getCliDotGitPath(t)
-	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.LfsRepo, "--refs="+refs, "--quiet=true")
+	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.LfsRepo, "--refs=HEAD,"+refs, "--quiet=true")
 	isExistInArtifactory(tests.GitLfsExpected, tests.GetFilePath(tests.GitLfsAssertSpec), t)
 	cleanArtifactoryTest()
 }
