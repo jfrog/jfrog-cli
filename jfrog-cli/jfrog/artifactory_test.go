@@ -2603,7 +2603,7 @@ func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
 			t.Error(err)
 			t.FailNow()
 		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(&rtutils.SearchParamsImpl{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
+		currentResultItems, err := rtutils.SearchBySpecFiles(rtutils.SearchParams{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 			t.FailNow()

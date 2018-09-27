@@ -216,7 +216,7 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 
 // Search for image layers in Artifactory
 func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	params := &utils.SearchParamsImpl{}
+	params := utils.SearchParams{}
 	params.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	params.Pattern = imagePathPattern
 	results, err := serviceManager.Search(params)

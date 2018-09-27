@@ -25,7 +25,7 @@ func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) (
 		if err != nil {
 			return nil, err
 		}
-		currentResultItems, err := servicesManager.Search(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: params})
+		currentResultItems, err := servicesManager.Search(clientutils.SearchParams{ArtifactoryCommonParams: params})
 		if err != nil {
 			return nil, err
 		}

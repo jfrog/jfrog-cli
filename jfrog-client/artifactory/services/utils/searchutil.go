@@ -24,16 +24,11 @@ const (
 	NONE
 )
 
-type SearchParams interface {
-	FileGetter
-	GetFile() *ArtifactoryCommonParams
-}
-
-type SearchParamsImpl struct {
+type SearchParams struct {
 	*ArtifactoryCommonParams
 }
 
-func (s *SearchParamsImpl) GetFile() *ArtifactoryCommonParams {
+func (s *SearchParams) GetFile() *ArtifactoryCommonParams {
 	return s.ArtifactoryCommonParams
 }
 

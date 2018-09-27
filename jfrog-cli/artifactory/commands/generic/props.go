@@ -58,7 +58,7 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			log.Error(err)
 			continue
 		}
-		currentResultItems, err := servicesManager.Search(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: params})
+		currentResultItems, err := servicesManager.Search(clientutils.SearchParams{ArtifactoryCommonParams: params})
 		if err != nil {
 			log.Error(err)
 			continue

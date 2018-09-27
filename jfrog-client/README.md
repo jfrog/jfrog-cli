@@ -59,7 +59,7 @@
     commonParams := &utils.ArtifactoryCommonParams{}
     commonParams.Pattern = "repo/*/*.zip"
     
-    params := &services.SearchParamsImpl{ArtifactoryCommonParams: commonParams}
+    params := services.SearchParams{ArtifactoryCommonParams: commonParams}
     rtManager.DownloadFiles(params)
 ```
 
@@ -149,7 +149,7 @@
 ```
     commonParams := &utils.ArtifactoryCommonParams{}
     commonParams.Pattern = "repo/*/*.zip"
-    item, err := rtManager.Search(&clientutils.SearchParamsImpl{ArtifactoryCommonParams: commonParams})
+    item, err := rtManager.Search(&clientutils.SearchParams{ArtifactoryCommonParams: commonParams})
     // Check for errors
     var items []clientutils.ResultItem
     items = append(items, item)
