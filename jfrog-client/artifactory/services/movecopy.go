@@ -149,8 +149,8 @@ func (mc *MoveCopyService) moveFile(sourcePath, destPath string) (bool, error) {
 		return false, err
 	}
 	httpClientsDetails := mc.GetArtifactoryDetails().CreateHttpClientDetails()
-	client := httpclient.NewDefaultHttpClient()
-	resp, body, err := client.SendPost(requestFullUrl, nil, httpClientsDetails)
+
+	resp, body, err := mc.client.SendPost(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
@@ -170,18 +170,17 @@ func (mc *MoveCopyService) createPathForMoveAction(destPath string) (bool, error
 		return true, nil
 	}
 
-	return createPathInArtifactory(destPath, mc)
+	return mc.createPathInArtifactory(destPath, mc)
 }
 
-func createPathInArtifactory(destPath string, conf utils.CommonConf) (bool, error) {
+func (mc *MoveCopyService) createPathInArtifactory(destPath string, conf utils.CommonConf) (bool, error) {
 	rtUrl := conf.GetArtifactoryDetails().GetUrl()
 	requestFullUrl, err := utils.BuildArtifactoryUrl(rtUrl, destPath, map[string]string{})
 	if err != nil {
 		return false, err
 	}
 	httpClientsDetails := conf.GetArtifactoryDetails().CreateHttpClientDetails()
-	client := httpclient.NewDefaultHttpClient()
-	resp, body, err := client.SendPut(requestFullUrl, nil, httpClientsDetails)
+	resp, body, err := mc.client.SendPut(requestFullUrl, nil, httpClientsDetails)
 	if err != nil {
 		return false, err
 	}
