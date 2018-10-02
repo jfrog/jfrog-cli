@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/version"
 	"strings"
 )
 
@@ -27,20 +28,22 @@ func (gs *GoService) SetArtDetails(artDetails auth.ArtifactoryDetails) {
 }
 
 func (gs *GoService) PublishPackage(params GoParams) error {
-	artifactsInfo := params.GetArtifactsInfo()
-	url, err := utils.BuildArtifactoryUrl(gs.ArtDetails.GetUrl(), "api/go/"+artifactsInfo.GetTargetRepo(), make(map[string]string))
+	url, err := utils.BuildArtifactoryUrl(gs.ArtDetails.GetUrl(), "api/go/"+params.GetTargetRepo(), make(map[string]string))
 	clientDetails := gs.ArtDetails.CreateHttpClientDetails()
 
-	utils.AddHeader("X-GO-MODULE-VERSION", artifactsInfo.GetVersion(), &clientDetails.Headers)
-	utils.AddHeader("X-GO-MODULE-CONTENT", base64.StdEncoding.EncodeToString(artifactsInfo.GetModContent()), &clientDetails.Headers)
-
-	if params.ShouldUseNewApi() {
-		createUrlPath(artifactsInfo, &url)
+	utils.AddHeader("X-GO-MODULE-VERSION", params.GetVersion(), &clientDetails.Headers)
+	utils.AddHeader("X-GO-MODULE-CONTENT", base64.StdEncoding.EncodeToString(params.GetModContent()), &clientDetails.Headers)
+	artifactoryVersion, err := gs.ArtDetails.GetVersion()
+	if err != nil {
+		return err
+	}
+	if !shouldUseHeaders(artifactoryVersion) {
+		createUrlPath(params, &url)
 	} else {
-		addPropertiesHeaders(artifactsInfo.GetProps(), &clientDetails.Headers)
+		addPropertiesHeaders(params.GetProps(), &clientDetails.Headers)
 	}
 
-	resp, body, err := gs.client.UploadFile(artifactsInfo.GetZipPath(), url, clientDetails, 0)
+	resp, body, err := gs.client.UploadFile(params.GetZipPath(), url, clientDetails, 0)
 	if err != nil {
 		return err
 	}
@@ -60,9 +63,9 @@ func addPropertiesHeaders(props string, headers *map[string]string) error {
 	return nil
 }
 
-func createUrlPath(artifactsInfo ArtifactsInfo, url *string) error {
-	*url = strings.Join([]string{*url, artifactsInfo.GetModuleId(), "@v", artifactsInfo.GetVersion() + ".zip"}, "/")
-	properties, err := utils.ParseProperties(artifactsInfo.GetProps(), utils.JoinCommas)
+func createUrlPath(params GoParams, url *string) error {
+	*url = strings.Join([]string{*url, params.GetModuleId(), "@v", params.GetVersion() + ".zip"}, "/")
+	properties, err := utils.ParseProperties(params.GetProps(), utils.JoinCommas)
 	if err != nil {
 		return err
 	}
@@ -75,7 +78,16 @@ func createUrlPath(artifactsInfo ArtifactsInfo, url *string) error {
 	return nil
 }
 
-type ArtifactsInfo interface {
+// Returns true if needed to use properties as header or false if need to use matrix params.
+func shouldUseHeaders(artifactoryVersion string) bool {
+	propertiesApi := "6.5.0"
+	if version.Compare(artifactoryVersion, propertiesApi) < 0 && artifactoryVersion != "development" {
+		return true
+	}
+	return false
+}
+
+type GoParams interface {
 	GetZipPath() string
 	GetModContent() []byte
 	GetProps() string
@@ -84,7 +96,7 @@ type ArtifactsInfo interface {
 	GetModuleId() string
 }
 
-type ArtifactsInfoImpl struct {
+type GoParamsImpl struct {
 	ZipPath    string
 	ModContent []byte
 	Version    string
@@ -93,44 +105,26 @@ type ArtifactsInfoImpl struct {
 	ModuleId   string
 }
 
-func (ai *ArtifactsInfoImpl) GetZipPath() string {
-	return ai.ZipPath
+func (gpi *GoParamsImpl) GetZipPath() string {
+	return gpi.ZipPath
 }
 
-func (ai *ArtifactsInfoImpl) GetModContent() []byte {
-	return ai.ModContent
+func (gpi *GoParamsImpl) GetModContent() []byte {
+	return gpi.ModContent
 }
 
-func (ai *ArtifactsInfoImpl) GetVersion() string {
-	return ai.Version
+func (gpi *GoParamsImpl) GetVersion() string {
+	return gpi.Version
 }
 
-func (ai *ArtifactsInfoImpl) GetProps() string {
-	return ai.Props
+func (gpi *GoParamsImpl) GetProps() string {
+	return gpi.Props
 }
 
-func (ai *ArtifactsInfoImpl) GetTargetRepo() string {
-	return ai.TargetRepo
+func (gpi *GoParamsImpl) GetTargetRepo() string {
+	return gpi.TargetRepo
 }
 
-func (ai *ArtifactsInfoImpl) GetModuleId() string {
-	return ai.ModuleId
-}
-
-type GoParams interface {
-	ShouldUseNewApi() bool
-	GetArtifactsInfo() ArtifactsInfo
-}
-
-type GoParamsImpl struct {
-	NewApi        bool
-	ArtifactsInfo ArtifactsInfo
-}
-
-func (gpi *GoParamsImpl) ShouldUseNewApi() bool {
-	return gpi.NewApi
-}
-
-func (gpi *GoParamsImpl) GetArtifactsInfo() ArtifactsInfo {
-	return gpi.ArtifactsInfo
+func (gpi *GoParamsImpl) GetModuleId() string {
+	return gpi.ModuleId
 }

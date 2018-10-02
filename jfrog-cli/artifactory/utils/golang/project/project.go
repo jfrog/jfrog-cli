@@ -5,14 +5,14 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/go"
+	cliutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	cliutils "github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,8 +23,8 @@ import (
 // Represent go project
 type Go interface {
 	Dependencies() []dependencies.Dependency
-	PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails, useNewApi bool) error
-	PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string, useNewApi bool) (succeeded, failed int, err error)
+	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
+	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
 }
 
@@ -59,12 +59,8 @@ func (project *goProject) Dependencies() []dependencies.Dependency {
 }
 
 // Publish go project to Artifactory.
-func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails, useNewApi bool) error {
+func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error {
 	log.Info("Publishing", project.getId(), "to", targetRepo)
-	servicesManager, err := utils.CreateServiceManager(details, false)
-	if err != nil {
-		return err
-	}
 
 	props, err := utils.CreateBuildProperties(buildName, buildNumber)
 	if err != nil {
@@ -79,23 +75,21 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	}
 	defer fileutils.RemoveTempDir()
 
-	artifactsInfo := &_go.ArtifactsInfoImpl{}
-	artifactsInfo.Version = project.version
-	artifactsInfo.Props = props
-	artifactsInfo.TargetRepo = targetRepo
-	artifactsInfo.ModuleId = project.getId()
-	artifactsInfo.ModContent = project.modContent
-	artifactsInfo.ZipPath, err = project.archiveProject(project.version)
+	params := &_go.GoParamsImpl{}
+	params.Version = project.version
+	params.Props = props
+	params.TargetRepo = targetRepo
+	params.ModuleId = project.getId()
+	params.ModContent = project.modContent
+	params.ZipPath, err = project.archiveProject(project.version)
 	if err != nil {
 		return err
 	}
-	params := &_go.GoParamsImpl{}
-	params.NewApi = useNewApi
-	params.ArtifactsInfo = artifactsInfo
+
 	return servicesManager.PublishGoProject(params)
 }
 
-func (project *goProject) PublishDependencies(targetRepo string, details *config.ArtifactoryDetails, includeDepSlice []string, useNewApi bool) (succeeded, failed int, err error) {
+func (project *goProject) PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
 	log.Info("Publishing package dependencies...")
 	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
 
@@ -111,7 +105,7 @@ func (project *goProject) PublishDependencies(targetRepo string, details *config
 			}
 		}
 		if includeDependency {
-			err = dependency.Publish(targetRepo, details, useNewApi)
+			err = dependency.Publish(targetRepo, servicesManager)
 			if err != nil {
 				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
 				log.Error("Failed to publish", dependency.GetId(), ":", err)

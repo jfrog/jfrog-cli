@@ -1,8 +1,14 @@
 package auth
 
 import (
+	"errors"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"net/http"
+	"strings"
 )
 
 func NewArtifactoryDetails() ArtifactoryDetails {
@@ -15,7 +21,7 @@ type ArtifactoryDetails interface {
 	GetPassword() string
 	GetApiKey() string
 	GetSshAuthHeaders() map[string]string
-
+	GetVersion() (string, error)
 	SetUrl(url string)
 	SetUser(user string)
 	SetPassword(password string)
@@ -32,6 +38,7 @@ type artifactoryDetails struct {
 	User           string            `json:"-"`
 	Password       string            `json:"-"`
 	ApiKey         string            `json:"-"`
+	version        string            `json:"-"`
 	SshAuthHeaders map[string]string `json:"-"`
 }
 
@@ -91,4 +98,34 @@ func (rt *artifactoryDetails) CreateHttpClientDetails() httputils.HttpClientDeta
 		Password: rt.Password,
 		ApiKey:   rt.ApiKey,
 		Headers:  utils.CopyMap(rt.SshAuthHeaders)}
+}
+
+func (rt *artifactoryDetails) GetVersion() (string, error) {
+	var err error
+	if rt.version == "" {
+		rt.version, err = rt.getArtifactoryVersion()
+		if err != nil {
+			return "", err
+		}
+		log.Debug("The Artifactory version is:", rt.version)
+	}
+	return rt.version, nil
+}
+
+func (rt *artifactoryDetails) getArtifactoryVersion() (string, error) {
+	client := httpclient.NewDefaultHttpClient()
+	resp, body, _, err := client.SendGet(rt.GetUrl()+"api/system/version", true, rt.CreateHttpClientDetails())
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + utils.IndentJson(body)))
+	}
+
+	serverValues := strings.Split(resp.Header.Get("Server"), "/")
+	if len(serverValues) != 2 {
+		err = errors.New("Cannot parse Artifactory version from the server header.")
+	}
+	return strings.TrimSpace(serverValues[1]), errorutils.CheckError(err)
 }

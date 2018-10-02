@@ -171,3 +171,7 @@ func (sm *ArtifactoryServicesManager) Ping() ([]byte, error) {
 	pingService.ArtDetails = sm.config.GetArtDetails()
 	return pingService.Ping()
 }
+
+func (sm *ArtifactoryServicesManager) GetConfig() Config {
+	return sm.config
+}
