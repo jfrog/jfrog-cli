@@ -2,7 +2,7 @@ package dependencies
 
 import (
 	"encoding/xml"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"reflect"
 	"sort"
 	"testing"

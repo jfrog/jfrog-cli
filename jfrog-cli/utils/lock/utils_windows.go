@@ -2,7 +2,7 @@ package lock
 
 import (
 	"syscall"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 // This file will be compiled on windows.

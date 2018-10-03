@@ -3,13 +3,13 @@ package commands
 import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/packages"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/repositories"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/services/versions"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/bintray"
+	"github.com/jfrog/jfrog-client-go/bintray/services"
+	"github.com/jfrog/jfrog-client-go/bintray/services/packages"
+	"github.com/jfrog/jfrog-client-go/bintray/services/repositories"
+	"github.com/jfrog/jfrog-client-go/bintray/services/versions"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 func Upload(config bintray.Config, uploadDetails *services.UploadParams) (uploaded int, failed int, err error) {

@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/helpers"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/bintray/auth"
+	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"io"
 	"net/http"
 	"strings"

@@ -2,12 +2,12 @@ package inttestutils
 
 import (
 	"encoding/json"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/httputils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) buildinfo.BuildInfo {

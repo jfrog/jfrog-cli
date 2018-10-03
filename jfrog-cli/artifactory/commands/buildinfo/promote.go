@@ -3,7 +3,7 @@ package buildinfo
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
 func Promote(flags *BuildPromotionConfiguration) error {

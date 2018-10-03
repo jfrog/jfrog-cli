@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils/checksum"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
 	"os"
 	"path/filepath"
 	"reflect"

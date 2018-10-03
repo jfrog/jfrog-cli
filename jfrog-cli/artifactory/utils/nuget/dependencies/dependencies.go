@@ -3,8 +3,8 @@ package dependencies
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 var extractors []Extractor

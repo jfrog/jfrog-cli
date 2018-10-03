@@ -4,8 +4,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 type SearchResult struct {

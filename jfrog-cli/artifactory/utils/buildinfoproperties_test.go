@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/spf13/viper"
 	"os"
 	"testing"
