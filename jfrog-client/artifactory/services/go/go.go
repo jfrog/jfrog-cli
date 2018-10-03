@@ -78,7 +78,8 @@ func createUrlPath(params GoParams, url *string) error {
 	return nil
 }
 
-// Returns true if needed to use properties as header or false if need to use matrix params.
+// Returns true if needed to use properties as header (Artifactory version between 6.2.0 and 6.5.0)
+// or false if need to use matrix params (Artifactory version 6.5.0 and above).
 func shouldUseHeaders(artifactoryVersion string) bool {
 	propertiesApi := "6.5.0"
 	if version.Compare(artifactoryVersion, propertiesApi) < 0 && artifactoryVersion != "development" {

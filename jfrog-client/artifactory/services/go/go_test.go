@@ -25,3 +25,30 @@ func TestCreateUrlPath(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldUseHeaders(t *testing.T) {
+	tests := []struct {
+		artifactoryVersion string
+		expectedResult     bool
+	}{
+		{"6.5.0", false},
+		{"6.2.0", true},
+		{"5.9.0", true},
+		{"6.0.0", true},
+		{"6.6.0", false},
+		{"development", false},
+		{"6.10.2", false},
+	}
+	for _, test := range tests {
+		t.Run(test.artifactoryVersion, func(t *testing.T) {
+			result := shouldUseHeaders(test.artifactoryVersion)
+			if result && !test.expectedResult {
+				t.Error("Expected:", test.expectedResult, "Got:", result)
+			}
+
+			if !result && test.expectedResult {
+				t.Error("Expected:", test.expectedResult, "Got:", result)
+			}
+		})
+	}
+}
