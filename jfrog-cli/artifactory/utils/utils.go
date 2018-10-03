@@ -8,7 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/auth/cert"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	servicesutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
@@ -85,7 +85,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	return artifactory.New(serviceConfig)
 }
 
-func ConvertResultItemArrayToDeleteItemArray(resultItems []clientutils.ResultItem) []services.DeleteItem {
+func ConvertResultItemArrayToDeleteItemArray(resultItems []servicesutils.ResultItem) []services.DeleteItem {
 	deleteItems := make([]services.DeleteItem, len(resultItems))
 	for i, item := range resultItems {
 		deleteItems[i] = item

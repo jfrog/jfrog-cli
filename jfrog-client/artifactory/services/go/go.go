@@ -6,6 +6,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/errors/httperrors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/version"
+	"strings"
 )
 
 type GoService struct {
@@ -31,7 +33,16 @@ func (gs *GoService) PublishPackage(params GoParams) error {
 
 	utils.AddHeader("X-GO-MODULE-VERSION", params.GetVersion(), &clientDetails.Headers)
 	utils.AddHeader("X-GO-MODULE-CONTENT", base64.StdEncoding.EncodeToString(params.GetModContent()), &clientDetails.Headers)
-	addPropertiesHeaders(params.GetProps(), &clientDetails.Headers)
+	artifactoryVersion, err := gs.ArtDetails.GetVersion()
+	if err != nil {
+		return err
+	}
+	if !shouldUseHeaders(artifactoryVersion) {
+		createUrlPath(params, &url)
+	} else {
+		addPropertiesHeaders(params.GetProps(), &clientDetails.Headers)
+	}
+
 	resp, body, err := gs.client.UploadFile(params.GetZipPath(), url, clientDetails, 0)
 	if err != nil {
 		return err
@@ -39,6 +50,7 @@ func (gs *GoService) PublishPackage(params GoParams) error {
 	return httperrors.CheckResponseStatus(resp, body, 201)
 }
 
+// This is needed when using Artifactory older then 6.5.0
 func addPropertiesHeaders(props string, headers *map[string]string) error {
 	properties, err := utils.ParseProperties(props, utils.JoinCommas)
 	if err != nil {
@@ -51,12 +63,38 @@ func addPropertiesHeaders(props string, headers *map[string]string) error {
 	return nil
 }
 
+func createUrlPath(params GoParams, url *string) error {
+	*url = strings.Join([]string{*url, params.GetModuleId(), "@v", params.GetVersion() + ".zip"}, "/")
+	properties, err := utils.ParseProperties(params.GetProps(), utils.JoinCommas)
+	if err != nil {
+		return err
+	}
+	*url = strings.Join([]string{*url, properties.ToEncodedString()}, ";")
+	if strings.HasSuffix(*url, ";") {
+		tempUrl := *url
+		tempUrl = tempUrl[:len(tempUrl)-1]
+		*url = tempUrl
+	}
+	return nil
+}
+
+// Returns true if needed to use properties as header (Artifactory version between 6.2.0 and 6.5.0)
+// or false if need to use matrix params (Artifactory version 6.5.0 and above).
+func shouldUseHeaders(artifactoryVersion string) bool {
+	propertiesApi := "6.5.0"
+	if version.Compare(artifactoryVersion, propertiesApi) < 0 && artifactoryVersion != "development" {
+		return true
+	}
+	return false
+}
+
 type GoParams interface {
 	GetZipPath() string
 	GetModContent() []byte
 	GetProps() string
 	GetVersion() string
 	GetTargetRepo() string
+	GetModuleId() string
 }
 
 type GoParamsImpl struct {
@@ -65,6 +103,7 @@ type GoParamsImpl struct {
 	Version    string
 	Props      string
 	TargetRepo string
+	ModuleId   string
 }
 
 func (gpi *GoParamsImpl) GetZipPath() string {
@@ -85,4 +124,8 @@ func (gpi *GoParamsImpl) GetProps() string {
 
 func (gpi *GoParamsImpl) GetTargetRepo() string {
 	return gpi.TargetRepo
+}
+
+func (gpi *GoParamsImpl) GetModuleId() string {
+	return gpi.ModuleId
 }

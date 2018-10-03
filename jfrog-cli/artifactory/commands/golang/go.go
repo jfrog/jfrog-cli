@@ -1,12 +1,14 @@
 package golang
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/version"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,6 +18,19 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	err = validatePrerequisites()
 	if err != nil {
 		return
+	}
+
+	serviceManager, err := utils.CreateServiceManager(details, false)
+	if err != nil {
+		return 0, 0, err
+	}
+	artifactoryVersion, err := serviceManager.GetConfig().GetArtDetails().GetVersion()
+	if err != nil {
+		return
+	}
+
+	if !isMinSupportedVersion(artifactoryVersion) {
+		return 0, 0, errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
 	}
 
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
@@ -33,7 +48,7 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 
 	// Publish the package to Artifactory
 	if publishPackage {
-		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, details)
+		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, serviceManager)
 		if err != nil {
 			return
 		}
@@ -42,7 +57,7 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	// Publish the package dependencies to Artifactory
 	depsList := strings.Split(dependencies, ",")
 	if len(depsList) > 0 {
-		succeeded, failed, err = goProject.PublishDependencies(targetRepo, details, depsList)
+		succeeded, failed, err = goProject.PublishDependencies(targetRepo, serviceManager, depsList)
 	}
 	if err != nil {
 		return
@@ -57,6 +72,14 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	}
 
 	return
+}
+
+func isMinSupportedVersion(artifactoryVersion string) bool {
+	minSupportedArtifactoryVersion := "6.2.0"
+	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
+		return false
+	}
+	return true
 }
 
 func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {

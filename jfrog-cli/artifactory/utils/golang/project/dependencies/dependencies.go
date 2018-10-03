@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	golangutil "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/go"
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
@@ -42,17 +42,14 @@ func (dependency *Dependency) GetId() string {
 	return dependency.id
 }
 
-func (dependency *Dependency) Publish(targetRepo string, details *config.ArtifactoryDetails) error {
+func (dependency *Dependency) Publish(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager) error {
 	log.Info("Publishing:", dependency.id, "to", targetRepo)
-	servicesManager, err := utils.CreateServiceManager(details, false)
-	if err != nil {
-		return err
-	}
 	params := &_go.GoParamsImpl{}
 	params.ZipPath = dependency.zipPath
 	params.ModContent = dependency.modContent
 	params.Version = dependency.version
 	params.TargetRepo = targetRepo
+	params.ModuleId = dependency.id
 
 	return servicesManager.PublishGoProject(params)
 }
