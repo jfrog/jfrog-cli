@@ -126,12 +126,12 @@ func PrepareLocalPathForUpload(localPath string, useRegExp bool) string {
 		localPath = localPath[3:]
 	}
 	if !useRegExp {
-		localPath = PathToRegExp(localPath)
+		localPath = pathToRegExp(localPath)
 	}
 	return localPath
 }
 
-func PathToRegExp(localPath string) string {
+func pathToRegExp(localPath string) string {
 	var SPECIAL_CHARS = []string{".", "^", "$", "+"}
 	for _, char := range SPECIAL_CHARS {
 		localPath = strings.Replace(localPath, char, "\\"+char, -1)
@@ -145,20 +145,28 @@ func PathToRegExp(localPath string) string {
 	return localPath
 }
 
-// Replaces matched regular expression from sourceString to corresponding {i} at destString.
-// For example:
-//      regexpString = "1(.*)234" ; sourceString = "1hello234" ; destString = "{1}"
+// Replaces matched regular expression from foundPath to corresponding {i} at destString.
+// Example 1:
+//      providedPath = "repoA/1(.*)234" ; foundPath = "repoA/1hello234" ; destination = "{1}" ; ignoreRepo = false
 //      returns "hello"
-func ReformatRegexp(regexpString, sourceString, destString string) (string, error) {
-	r, err := regexp.Compile(regexpString)
+// Example 2:
+//      providedPath = "repoA/1(.*)234" ; foundPath = "repoB/1hello234" ; destination = "{1}" ; ignoreRepo = true
+//      returns "hello"
+func ReformatDestByPaths(providedPath, foundPath, destination string, ignoreRepo bool) (string, error) {
+	if ignoreRepo {
+		providedPath = cleanRepoFromPath(providedPath)
+		foundPath = cleanRepoFromPath(foundPath)
+	}
+	providedPath = pathToRegExp(providedPath)
+	r, err := regexp.Compile(providedPath)
 	err = errorutils.CheckError(err)
 	if err != nil {
 		return "", err
 	}
 
-	groups := r.FindStringSubmatch(sourceString)
+	groups := r.FindStringSubmatch(foundPath)
 	size := len(groups)
-	target := destString
+	target := destination
 	if size > 0 {
 		for i := 1; i < size; i++ {
 			group := strings.Replace(groups[i], "\\", "/", -1)
@@ -166,6 +174,13 @@ func ReformatRegexp(regexpString, sourceString, destString string) (string, erro
 		}
 	}
 	return target, nil
+}
+
+func cleanRepoFromPath(path string) string {
+	if idx := strings.Index(path, "/"); idx != -1 {
+		return path[idx:]
+	}
+	return path
 }
 
 func GetLogMsgPrefix(threadId int, dryRun bool) string {

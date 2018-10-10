@@ -4,17 +4,20 @@ import "testing"
 import "reflect"
 
 func TestReformatRegexp(t *testing.T) {
-	assertReformatRegexp("1(.*)234", "1hello234", "{1}", "hello", t)
-	assertReformatRegexp("1234", "1hello234", "{1}", "{1}", t)
-	assertReformatRegexp("1(2.*5)6", "123456", "{1}", "2345", t)
-	assertReformatRegexp("(.*) somthing", "doing somthing", "{1} somthing else", "doing somthing else", t)
-	assertReformatRegexp("(switch) (this)", "switch this", "{2} {1}", "this switch", t)
-	assertReformatRegexp("before(.*)middle(.*)after", "before123middle456after", "{2}{1}{2}", "456123456", t)
-	assertReformatRegexp("", "nothing should change", "nothing should change", "nothing should change", t)
+	assertReformatDestByPaths("1(*)234", "1hello234", "{1}", "hello", true, t)
+	assertReformatDestByPaths("1234", "1hello234", "{1}", "{1}", true, t)
+	assertReformatDestByPaths("1(2*5)6", "123456", "{1}", "2345", true, t)
+	assertReformatDestByPaths("(*) somthing", "doing somthing", "{1} somthing else", "doing somthing else", true, t)
+	assertReformatDestByPaths("(switch) (this)", "switch this", "{2} {1}", "this switch", true, t)
+	assertReformatDestByPaths("before(*)middle(*)after", "before123middle456after", "{2}{1}{2}", "456123456", true, t)
+	assertReformatDestByPaths("foo/before(*)middle(*)after", "foo/before123middle456after", "{2}{1}{2}", "456123456", true, t)
+	assertReformatDestByPaths("foo/before(*)middle(*)after", "bar/before123middle456after", "{2}{1}{2}", "456123456", true, t)
+	assertReformatDestByPaths("foo/before(*)middle(*)after", "bar/before123middle456after", "{2}{1}{2}", "{2}{1}{2}", false, t)
+	assertReformatDestByPaths("", "nothing should change", "nothing should change", "nothing should change", true, t)
 }
 
-func assertReformatRegexp(regexp, source, dest, expected string, t *testing.T) {
-	result, err := ReformatRegexp(regexp, source, dest)
+func assertReformatDestByPaths(regexp, source, dest, expected string, ignoreRepo bool, t *testing.T) {
+	result, err := ReformatDestByPaths(regexp, source, dest, ignoreRepo)
 	if err != nil {
 		t.Error(err.Error())
 	}

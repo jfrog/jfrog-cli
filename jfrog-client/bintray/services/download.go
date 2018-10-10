@@ -14,10 +14,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"path/filepath"
 )
 
 func NewDownloadService(client *httpclient.HttpClient) *DownloadService {
@@ -179,8 +179,7 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 		return errorutils.CheckError(errors.New("Bintray " + err.Error()))
 	}
 
-	regexpPattern := clientutils.PathToRegExp(downloadParams.Path)
-	placeHolderTarget, err := clientutils.ReformatRegexp(regexpPattern, cleanPath, downloadParams.TargetPath)
+	placeHolderTarget, err := clientutils.ReformatDestByPaths(downloadParams.Path, cleanPath, downloadParams.TargetPath, false)
 
 	if err != nil {
 		return err
@@ -228,12 +227,12 @@ func (ds *DownloadService) downloadBintrayFile(downloadParams *DownloadFileParam
 		if redirectUrl != "" {
 			err = nil
 			concurrentDownloadFlags := httpclient.ConcurrentDownloadFlags{
-				DownloadPath: redirectUrl,
-				FileName:     	   localFileName,
-				LocalFileName:     localFileName,
-				LocalPath:    	   localPath,
-				FileSize:          details.Size,
-				SplitCount:        ds.SplitCount}
+				DownloadPath:  redirectUrl,
+				FileName:      localFileName,
+				LocalFileName: localFileName,
+				LocalPath:     localPath,
+				FileSize:      details.Size,
+				SplitCount:    ds.SplitCount}
 
 			err = client.DownloadFileConcurrently(concurrentDownloadFlags, "", httpClientsDetails)
 			if err != nil {

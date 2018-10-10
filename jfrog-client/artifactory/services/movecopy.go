@@ -71,7 +71,7 @@ func (mc *MoveCopyService) moveAql(params MoveCopyParams) (successCount, failedC
 	if err != nil {
 		return
 	}
-	successCount, failedCount, err = mc.moveFiles("", resultItems, params)
+	successCount, failedCount, err = mc.moveFiles(resultItems, params)
 	return
 }
 
@@ -82,8 +82,7 @@ func (mc *MoveCopyService) moveWildcard(params MoveCopyParams) (successCount, fa
 	if err != nil {
 		return
 	}
-	regexpPath := clientutils.PathToRegExp(params.GetFile().Pattern)
-	successCount, failedCount, err = mc.moveFiles(regexpPath, resultItems, params)
+	successCount, failedCount, err = mc.moveFiles(resultItems, params)
 	return
 }
 
@@ -94,7 +93,7 @@ func reduceMovePaths(resultItems []utils.ResultItem, params MoveCopyParams) []ut
 	return utils.ReduceDirResult(resultItems, utils.FilterTopChainResults)
 }
 
-func (mc *MoveCopyService) moveFiles(regexpPath string, resultItems []utils.ResultItem, params MoveCopyParams) (successCount, failedCount int, err error) {
+func (mc *MoveCopyService) moveFiles(resultItems []utils.ResultItem, params MoveCopyParams) (successCount, failedCount int, err error) {
 	successCount = 0
 	failedCount = 0
 	resultItems = reduceMovePaths(resultItems, params)
@@ -109,7 +108,7 @@ func (mc *MoveCopyService) moveFiles(regexpPath string, resultItems []utils.Resu
 				destPathLocal = clientutils.TrimPath(destPathLocal + "/" + v.Path + "/")
 			}
 		}
-		destFile, err := clientutils.ReformatRegexp(regexpPath, v.GetItemRelativePath(), destPathLocal)
+		destFile, err := clientutils.ReformatDestByPaths(params.GetFile().Pattern, v.GetItemRelativePath(), destPathLocal, true)
 		if err != nil {
 			log.Error(err)
 			continue
