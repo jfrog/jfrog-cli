@@ -5,13 +5,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"strconv"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 )
 
 func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration) (successCount, failCount int, err error) {

@@ -4,8 +4,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
 func Delete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) (successCount, failCount int, err error) {
