@@ -2,16 +2,16 @@ package generic
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"strconv"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 )
 
 func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration) (successCount, failCount int, err error) {
@@ -68,9 +68,12 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 	if errorOccurred {
 		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors. Please review the logs")
 	}
+	if configuration.DryRun {
+		return totalExpected, 0, err
+	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
-	if isCollectBuildInfo && !configuration.DryRun {
+	if isCollectBuildInfo {
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Dependencies = buildDependencies
 		}
