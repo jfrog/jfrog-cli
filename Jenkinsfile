@@ -14,7 +14,7 @@ node {
     def goRoot = tool 'go-1.11'
     dir('temp'){
         cliWorkspace = pwd()
-        withEnv(["GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+        withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
             stage 'Go get'
             sh 'go version'
             sh 'go get -f -u github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog'
