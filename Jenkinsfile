@@ -12,18 +12,24 @@ node {
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
-    dir('temp'){
+    dir('temp') {
         cliWorkspace = pwd()
         withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
             stage 'Go get'
             sh 'go version'
-            sh 'go get -f -u github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog'
-            if (BRANCH?.trim()) {
-                dir("src/github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog") {
-                    sh "git checkout $BRANCH"
-                    sh 'go install'
+            sh 'mkdir -p src/github.com/jfrog'
+            dir('src/github.com/jfrog') {
+                sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
+                if (BRANCH?.trim()) {
+                    dir("jfrog-cli-go") {
+                        sh "git checkout $BRANCH"
+                        dir('jfrog-cli/jfrog') {
+                            sh 'go install'
+                        }
+                    }
                 }
             }
+
             if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
                 print "publishing npm package"
                 publishNpmPackage()
