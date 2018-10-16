@@ -11,12 +11,12 @@ node {
     repo = 'jfrog-cli-go'
     sh 'rm -rf temp'
     sh 'mkdir temp'
-
+    def goRoot = tool 'go-1.11'
     dir('temp') {
         cliWorkspace = pwd()
         jfrogCliParentDir = "${cliWorkspace}/src/github.com/jfrog/"
         jfrogCliDir = "${jfrogCliParentDir}jfrog-cli-go/"
-        withEnv(["GO111MODULE=on","GOPATH=${cliWorkspace}","JFROG_CLI_OFFER_CONFIG=false"]) {
+        withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
             stage 'Go get'
             sh 'go version'
             sh "mkdir -p $jfrogCliParentDir"
@@ -32,15 +32,19 @@ node {
                 }
             }
 
-
-            // Publish to Bintray
-            sh 'bin/jfrog --version > version'
-            version = readFile('version').trim().split(" ")[2]
-            print "publishing version: $version"
-            for (int i = 0; i < architectures.size(); i++) {
-                def currentBuild = architectures[i]
-                stage "Build ${currentBuild.pkg}"
-                buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+            if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
+                print "publishing npm package"
+                publishNpmPackage()
+            } else {
+                // Publish to Bintray
+                sh 'bin/jfrog --version > version'
+                version = readFile('version').trim().split(" ")[2]
+                print "publishing version: $version"
+                for (int i = 0; i < architectures.size(); i++) {
+                    def currentBuild = architectures[i]
+                    stage "Build ${currentBuild.pkg}"
+                    buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+                }
             }
         }
     }
