@@ -109,7 +109,7 @@ func TestGeneratedBuildInfoFile(t *testing.T) {
 	if !actualConfig.IsSet(generatedBuildInfoKey) {
 		t.Error(generatedBuildInfoKey, "key does not exists")
 	}
-	if !fileutils.IsPathExists(actualConfig.GetString(generatedBuildInfoKey)) {
+	if !fileutils.IsPathExists(false, actualConfig.GetString(generatedBuildInfoKey)) {
 		t.Error("Path: ", actualConfig.GetString(generatedBuildInfoKey), "does not exists")
 	}
 	defer os.Remove(actualConfig.GetString(generatedBuildInfoKey))

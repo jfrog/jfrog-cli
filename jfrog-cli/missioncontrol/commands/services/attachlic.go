@@ -6,13 +6,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func AttachLic(service_name string, flags *AttachLicFlags) error {
@@ -91,7 +91,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		return
 	}
 	var dir bool
-	dir, err = fileutils.IsDir(filepath)
+	dir, err = fileutils.IsDir(false, filepath)
 	if err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		}
 	}
 	var exists bool
-	exists, err = fileutils.IsFileExists(filepath)
+	exists, err = fileutils.IsFileExists(false, filepath)
 	if err != nil {
 		return
 	}
@@ -113,7 +113,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		}
 	}
 	_, directory := fileutils.GetFileAndDirFromPath(filepath)
-	isPathExists := fileutils.IsPathExists(directory)
+	isPathExists := fileutils.IsPathExists(false, directory)
 	if !isPathExists {
 		os.MkdirAll(directory, 0700)
 	}

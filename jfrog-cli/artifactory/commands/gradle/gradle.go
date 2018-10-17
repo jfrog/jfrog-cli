@@ -1,9 +1,10 @@
 package gradle
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -14,7 +15,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 const gradleExtractorDependencyVersion = "4.7.5"
@@ -91,7 +91,7 @@ func getInitScript(gradleDependenciesDir, gradlePluginFilename string) (string, 
 	}
 	initScriptPath := filepath.Join(gradleDependenciesDir, gradleInitScriptTemplate)
 
-	exists, err := fileutils.IsFileExists(initScriptPath)
+	exists, err := fileutils.IsFileExists(false, initScriptPath)
 	if exists || err != nil {
 		return initScriptPath, err
 	}
@@ -99,7 +99,7 @@ func getInitScript(gradleDependenciesDir, gradlePluginFilename string) (string, 
 	gradlePluginPath := filepath.Join(gradleDependenciesDir, gradlePluginFilename)
 	gradlePluginPath = strings.Replace(gradlePluginPath, "\\", "\\\\", -1)
 	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", gradlePluginPath, -1)
-	if !fileutils.IsPathExists(gradleDependenciesDir) {
+	if !fileutils.IsPathExists(false, gradleDependenciesDir) {
 		err = os.MkdirAll(gradleDependenciesDir, 0777)
 		if errorutils.CheckError(err) != nil {
 			return "", err

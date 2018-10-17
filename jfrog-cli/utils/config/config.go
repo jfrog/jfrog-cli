@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
@@ -17,7 +18,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -194,7 +194,7 @@ func readConf() (*ConfigV1, error) {
 		return nil, err
 	}
 	config := new(ConfigV1)
-	exists, err := fileutils.IsFileExists(confFilePath)
+	exists, err := fileutils.IsFileExists(false, confFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ type ArtifactoryDetails struct {
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
 	// Deprecated, use password option instead.
-	ApiKey         string            `json:"apiKey,omitempty"`
+	ApiKey string `json:"apiKey,omitempty"`
 }
 
 type BintrayDetails struct {

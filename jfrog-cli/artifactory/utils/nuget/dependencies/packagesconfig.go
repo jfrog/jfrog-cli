@@ -30,7 +30,7 @@ type packagesExtractor struct {
 
 func (extractor *packagesExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
 	packagesConfigPath := filepath.Join(projectRoot, packagesFilePath)
-	exists, err := fileutils.IsFileExists(packagesConfigPath)
+	exists, err := fileutils.IsFileExists(false, packagesConfigPath)
 	if exists {
 		log.Debug("Found", packagesConfigPath, "file for project:", projectName)
 		return true, err
@@ -108,7 +108,7 @@ func createAlternativeVersionForms(originalVersion string) []string {
 
 	var alternativeVersions []string
 
-	for i := 4; i > 0 ; i-- {
+	for i := 4; i > 0; i-- {
 		version := strings.Join(versionSlice[:i], ".")
 		if version != originalVersion {
 			alternativeVersions = append(alternativeVersions, version)
@@ -191,7 +191,7 @@ func searchRootDependencies(dfsHelper map[string]*dfsHelper, currentId string, a
 func createNugetPackage(packagesPath string, nuget xmlPackage, nPackage *nugetPackage) (*nugetPackage, error) {
 	nupkgPath := filepath.Join(packagesPath, nPackage.id, nPackage.version, strings.Join([]string{nPackage.id, nPackage.version, "nupkg"}, "."))
 
-	exists, err := fileutils.IsFileExists(nupkgPath)
+	exists, err := fileutils.IsFileExists(false, nupkgPath)
 
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 	}
 
 	globalPackagesPath := strings.TrimSpace(strings.TrimPrefix(string(output), "global-packages:"))
-	exists, err := fileutils.IsDirExists(globalPackagesPath)
+	exists, err := fileutils.IsDirExists(false, globalPackagesPath)
 	if err != nil {
 		return "", err
 	}

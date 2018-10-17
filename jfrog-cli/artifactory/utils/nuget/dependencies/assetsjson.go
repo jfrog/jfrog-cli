@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -10,7 +11,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"errors"
 )
 
 var assetsFilePath = filepath.Join("obj", "project.assets.json")
@@ -27,7 +27,7 @@ type assetsExtractor struct {
 
 func (extractor *assetsExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
 	assetsFilePath := filepath.Join(projectRoot, assetsFilePath)
-	exists, err := fileutils.IsFileExists(assetsFilePath)
+	exists, err := fileutils.IsFileExists(false, assetsFilePath)
 	if exists {
 		log.Debug("Found", assetsFilePath, "file for project:", projectName)
 		return true, err
@@ -99,7 +99,7 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 			return nil, err
 		}
 		nupkgFilePath := filepath.Join(packagesPath, library.Path, nupkgFileName)
-		exists, err := fileutils.IsFileExists(nupkgFilePath)
+		exists, err := fileutils.IsFileExists(false, nupkgFilePath)
 		if err != nil {
 			return nil, err
 		}
