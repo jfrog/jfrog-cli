@@ -91,7 +91,7 @@ func getInitScript(gradleDependenciesDir, gradlePluginFilename string) (string, 
 	}
 	initScriptPath := filepath.Join(gradleDependenciesDir, gradleInitScriptTemplate)
 
-	exists, err := fileutils.IsFileExists(false, initScriptPath)
+	exists, err := fileutils.IsFileExists(initScriptPath, false)
 	if exists || err != nil {
 		return initScriptPath, err
 	}
@@ -99,7 +99,7 @@ func getInitScript(gradleDependenciesDir, gradlePluginFilename string) (string, 
 	gradlePluginPath := filepath.Join(gradleDependenciesDir, gradlePluginFilename)
 	gradlePluginPath = strings.Replace(gradlePluginPath, "\\", "\\\\", -1)
 	initScriptContent := strings.Replace(utils.GradleInitScript, "${pluginLibDir}", gradlePluginPath, -1)
-	if !fileutils.IsPathExists(false, gradleDependenciesDir) {
+	if !fileutils.IsPathExists(gradleDependenciesDir, false) {
 		err = os.MkdirAll(gradleDependenciesDir, 0777)
 		if errorutils.CheckError(err) != nil {
 			return "", err

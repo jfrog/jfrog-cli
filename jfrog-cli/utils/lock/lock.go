@@ -75,7 +75,7 @@ func (lock *Lock) createLockDirWithPermissions() (string, error) {
 	}
 	// The lock created in the lock folder within JFrog CLI Home Dir
 	folderName := filepath.Join(homeDir, "lock")
-	exists, err := fileutils.IsDirExists(false, folderName)
+	exists, err := fileutils.IsDirExists(folderName, false)
 	if !exists {
 		err = fileutils.CreateDirIfNotExist(folderName)
 		if err != nil {
@@ -138,7 +138,7 @@ func (lock *Lock) Lock() error {
 // Or the process that created the lock still running.
 func (lock *Lock) removeOtherLockOrWait(otherLock Lock, filesList *[]string) error {
 	// Check if file exists.
-	exists, err := fileutils.IsFileExists(false, otherLock.fileName)
+	exists, err := fileutils.IsFileExists(otherLock.fileName, false)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (lock *Lock) getLocks(filesList []string) (Locks, error) {
 // Removes the lock file so other process can continue.
 func (lock *Lock) Unlock() error {
 	log.Debug("Releasing lock: ", lock.fileName)
-	exists, err := fileutils.IsFileExists(false, lock.fileName)
+	exists, err := fileutils.IsFileExists(lock.fileName, false)
 	if err != nil {
 		return err
 	}

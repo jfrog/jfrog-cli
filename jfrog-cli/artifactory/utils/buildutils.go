@@ -113,7 +113,7 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	}
 	detailsFilePath := filepath.Join(partialsBuildDir, BuildInfoDetails)
 	var exists bool
-	exists, err = fileutils.IsFileExists(false, detailsFilePath)
+	exists, err = fileutils.IsFileExists(detailsFilePath, false)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func GetGeneratedBuildsInfo(buildName, buildNumber string) ([]*buildinfo.BuildIn
 
 	var generatedBuildsInfo []*buildinfo.BuildInfo
 	for _, buildFile := range buildFiles {
-		dir, err := fileutils.IsDir(false, buildFile)
+		dir, err := fileutils.IsDirExists(buildFile, false)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +186,7 @@ func ReadPartialBuildInfoFiles(buildName, buildNumber string) (buildinfo.Partial
 		return nil, err
 	}
 	for _, buildFile := range buildFiles {
-		dir, err := fileutils.IsDir(false, buildFile)
+		dir, err := fileutils.IsDirExists(buildFile, false)
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +228,7 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 	if err != nil {
 		return err
 	}
-	exists, err := fileutils.IsDirExists(false, tempDirPath)
+	exists, err := fileutils.IsDirExists(tempDirPath, false)
 	if err != nil {
 		return err
 	}

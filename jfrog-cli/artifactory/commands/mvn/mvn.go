@@ -80,7 +80,7 @@ func downloadDependencies() (string, error) {
 func createClassworldsConfig(dependenciesPath string) error {
 	classworldsPath := filepath.Join(dependenciesPath, ClasswordConfFileName)
 
-	if fileutils.IsPathExists(false, classworldsPath) {
+	if fileutils.IsPathExists(classworldsPath, false) {
 		return nil
 	}
 	return errorutils.CheckError(ioutil.WriteFile(classworldsPath, []byte(utils.ClassworldsConf), 0644))

@@ -109,7 +109,7 @@ func TestUnlock(t *testing.T) {
 		t.Error(err)
 	}
 
-	exists, err := fileutils.IsFileExists(false, lock.fileName)
+	exists, err := fileutils.IsFileExists(lock.fileName, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -120,7 +120,7 @@ func TestUnlock(t *testing.T) {
 
 	lock.Unlock()
 
-	exists, err = fileutils.IsFileExists(false, lock.fileName)
+	exists, err = fileutils.IsFileExists(lock.fileName, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -134,7 +134,7 @@ func TestCreateFile(t *testing.T) {
 	pid := os.Getpid()
 	lock, folderName := getLock(pid, t)
 
-	exists, err := fileutils.IsFileExists(false, lock.fileName)
+	exists, err := fileutils.IsFileExists(lock.fileName, false)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

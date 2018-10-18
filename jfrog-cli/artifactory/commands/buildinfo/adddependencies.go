@@ -114,13 +114,17 @@ func getDependenciesBySpecFileParams(addDepsParams *specutils.ArtifactoryCommonP
 		return nil, err
 	}
 
-	isDir, err := fileutils.IsDir(false, rootPath)
+	isDir, err := fileutils.IsDirExists(rootPath, false)
 	if err != nil {
 		return nil, err
 	}
 
 	if !isDir || fileutils.IsPathSymlink(addDepsParams.GetPattern()) {
-		return []string{fspatterns.GetSingleFileToUpload(rootPath, "", false, false).LocalPath}, nil
+		artifact, err := fspatterns.GetSingleFileToUpload(rootPath, "", false, false)
+		if err != nil {
+			return nil, err
+		}
+		return []string{artifact.LocalPath}, nil
 	}
 	return collectPatternMatchingFiles(addDepsParams, rootPath)
 }

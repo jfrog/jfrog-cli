@@ -91,7 +91,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		return
 	}
 	var dir bool
-	dir, err = fileutils.IsDir(false, filepath)
+	dir, err = fileutils.IsDirExists(filepath, false)
 	if err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		}
 	}
 	var exists bool
-	exists, err = fileutils.IsFileExists(false, filepath)
+	exists, err = fileutils.IsFileExists(filepath, false)
 	if err != nil {
 		return
 	}
@@ -113,7 +113,7 @@ func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
 		}
 	}
 	_, directory := fileutils.GetFileAndDirFromPath(filepath)
-	isPathExists := fileutils.IsPathExists(false, directory)
+	isPathExists := fileutils.IsPathExists(directory, false)
 	if !isPathExists {
 		os.MkdirAll(directory, 0700)
 	}

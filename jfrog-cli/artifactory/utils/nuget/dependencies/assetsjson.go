@@ -27,7 +27,7 @@ type assetsExtractor struct {
 
 func (extractor *assetsExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
 	assetsFilePath := filepath.Join(projectRoot, assetsFilePath)
-	exists, err := fileutils.IsFileExists(false, assetsFilePath)
+	exists, err := fileutils.IsFileExists(assetsFilePath, false)
 	if exists {
 		log.Debug("Found", assetsFilePath, "file for project:", projectName)
 		return true, err
@@ -99,7 +99,7 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 			return nil, err
 		}
 		nupkgFilePath := filepath.Join(packagesPath, library.Path, nupkgFileName)
-		exists, err := fileutils.IsFileExists(false, nupkgFilePath)
+		exists, err := fileutils.IsFileExists(nupkgFilePath, false)
 		if err != nil {
 			return nil, err
 		}

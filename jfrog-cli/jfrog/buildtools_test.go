@@ -628,7 +628,7 @@ func createNpmProject(t *testing.T, dir string) string {
 	}
 
 	// failure can be ignored
-	npmrcExists, err := fileutils.IsFileExists(false, filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"))
+	npmrcExists, err := fileutils.IsFileExists(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), false)
 	if err != nil {
 		t.Error(err)
 	}

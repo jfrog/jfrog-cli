@@ -62,7 +62,7 @@ func init() {
 }
 
 func CleanFileSystem() {
-	isExist, err := fileutils.IsDirExists(false, Out)
+	isExist, err := fileutils.IsDirExists(Out, false)
 	if err != nil {
 		log.Error(err)
 	}
@@ -179,7 +179,7 @@ func getFileByOs(fileName string) string {
 
 func GetFilePath(fileName string) string {
 	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeparator() + fileName
-	isExists, _ := fileutils.IsFileExists(false, filePath)
+	isExists, _ := fileutils.IsFileExists(filePath, false)
 	if isExists {
 		return filePath
 	}

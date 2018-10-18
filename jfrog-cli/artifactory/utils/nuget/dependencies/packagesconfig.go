@@ -30,7 +30,7 @@ type packagesExtractor struct {
 
 func (extractor *packagesExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
 	packagesConfigPath := filepath.Join(projectRoot, packagesFilePath)
-	exists, err := fileutils.IsFileExists(false, packagesConfigPath)
+	exists, err := fileutils.IsFileExists(packagesConfigPath, false)
 	if exists {
 		log.Debug("Found", packagesConfigPath, "file for project:", projectName)
 		return true, err
@@ -191,7 +191,7 @@ func searchRootDependencies(dfsHelper map[string]*dfsHelper, currentId string, a
 func createNugetPackage(packagesPath string, nuget xmlPackage, nPackage *nugetPackage) (*nugetPackage, error) {
 	nupkgPath := filepath.Join(packagesPath, nPackage.id, nPackage.version, strings.Join([]string{nPackage.id, nPackage.version, "nupkg"}, "."))
 
-	exists, err := fileutils.IsFileExists(false, nupkgPath)
+	exists, err := fileutils.IsFileExists(nupkgPath, false)
 
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 	}
 
 	globalPackagesPath := strings.TrimSpace(strings.TrimPrefix(string(output), "global-packages:"))
-	exists, err := fileutils.IsDirExists(false, globalPackagesPath)
+	exists, err := fileutils.IsDirExists(globalPackagesPath, false)
 	if err != nil {
 		return "", err
 	}

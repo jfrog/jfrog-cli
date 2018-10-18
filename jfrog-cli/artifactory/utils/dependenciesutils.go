@@ -16,7 +16,7 @@ import (
 // targetPath: local download target path.
 func DownloadFromBintrayIfNeeded(downloadPath, filename, targetPath string) error {
 	targetFile := filepath.Join(targetPath, filename)
-	exists, err := fileutils.IsFileExists(false, targetFile)
+	exists, err := fileutils.IsFileExists(targetFile, false)
 	if exists || err != nil {
 		return err
 	}
