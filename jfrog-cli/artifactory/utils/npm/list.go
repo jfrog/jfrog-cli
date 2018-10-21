@@ -2,8 +2,8 @@ package npm
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"

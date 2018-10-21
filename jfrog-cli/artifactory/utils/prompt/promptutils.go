@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/prompt"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"github.com/spf13/viper"
 	"os"
 )

@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray/commands"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
 	"errors"
 )

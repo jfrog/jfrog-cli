@@ -3,10 +3,10 @@ package generic
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/services/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {

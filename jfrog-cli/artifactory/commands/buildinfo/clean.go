@@ -1,7 +1,7 @@
 package buildinfo
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 )
 

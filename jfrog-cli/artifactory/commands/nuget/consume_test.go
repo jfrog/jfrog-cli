@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
 	"os"
 	"reflect"
