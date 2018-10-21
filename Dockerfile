@@ -1,4 +1,4 @@
-FROM golang:1.10-alpine as builder
+FROM golang:1.11-alpine as builder
 WORKDIR /go/src/github.com/jfrog/jfrog-cli-go
 COPY . /go/src/github.com/jfrog/jfrog-cli-go
 RUN CGO_ENABLED=0 GOOS=linux go build github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog
