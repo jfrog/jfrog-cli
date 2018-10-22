@@ -15,16 +15,22 @@ import (
 )
 
 func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration) (successCount, failCount int, err error) {
+
+	// Create Service Manager:
 	servicesManager, err := createDownloadServiceManager(configuration.ArtDetails, configuration)
 	if err != nil {
 		return 0, 0, err
 	}
+
+	// Build Info Collection:
 	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
 	if isCollectBuildInfo && !configuration.DryRun {
 		if err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
 			return 0, 0, err
 		}
 	}
+
+	// Temp Directory:
 	if !configuration.DryRun {
 		err = fileutils.CreateTempDirPath()
 		if err != nil {
@@ -32,31 +38,22 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 		}
 		defer fileutils.RemoveTempDir()
 	}
+
+	// Download Loop:
 	var filesInfo []clientutils.FileInfo
 	var totalExpected int
 	var errorOccurred = false
 	for i := 0; i < len(downloadSpec.Files); i++ {
-		params, err := downloadSpec.Get(i).ToArtifatoryDownloadParams()
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
-		flat, err := downloadSpec.Get(i).IsFlat(false)
+
+		downParams, err := GetDownloadParams(downloadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 
-		explode, err := downloadSpec.Get(i).IsExplode(false)
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
+		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(downParams)
 
-		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(&services.DownloadParamsImpl{ArtifactoryCommonParams: params, ValidateSymlink: configuration.ValidateSymlink, Symlink: configuration.Symlink, Flat: flat, Explode: explode, Retries: configuration.Retries})
 		totalExpected += expected
 		filesInfo = append(filesInfo, currentBuildDependencies...)
 		if err != nil {
@@ -65,6 +62,7 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 			continue
 		}
 	}
+
 	if errorOccurred {
 		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors. Please review the logs")
 	}
@@ -72,6 +70,8 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 		return totalExpected, 0, err
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
+
+	// Build Info
 	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
 	if isCollectBuildInfo {
 		populateFunc := func(partial *buildinfo.Partial) {
@@ -131,4 +131,36 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 		return nil, err
 	}
 	return artifactory.New(serviceConfig)
+}
+
+func GetDownloadParams(f *spec.File, configuration *DownloadConfiguration) (downParams services.DownloadParams, err error) {
+	downParams = services.NewDownloadParams()
+
+	downParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+
+	downParams.Recursive, err = f.IsRecursive(true)
+	if err != nil {
+		return
+	}
+
+	downParams.IncludeDirs, err = f.IsIncludeDirs(false)
+	if err != nil {
+		return
+	}
+
+	downParams.Flat, err = f.IsFlat(false)
+	if err != nil {
+		return
+	}
+
+	downParams.Explode, err = f.IsExplode(false)
+	if err != nil {
+		return
+	}
+
+	downParams.Symlink = configuration.Symlink
+	downParams.ValidateSymlink = configuration.ValidateSymlink
+	downParams.Retries = configuration.Retries
+
+	return
 }

@@ -44,7 +44,7 @@ func (dependency *Dependency) GetId() string {
 
 func (dependency *Dependency) Publish(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager) error {
 	log.Info("Publishing:", dependency.id, "to", targetRepo)
-	params := &_go.GoParamsImpl{}
+	params := _go.NewGoParams()
 	params.ZipPath = dependency.zipPath
 	params.ModContent = dependency.modContent
 	params.Version = dependency.version

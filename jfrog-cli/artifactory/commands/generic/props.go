@@ -17,7 +17,10 @@ func SetProps(spec *spec.SpecFiles, props string, threads int, artDetails *confi
 	}
 
 	resultItems := searchItems(spec, servicesManager)
-	success, err := servicesManager.SetProps(&services.PropsParamsImpl{Items: resultItems, Props: props})
+
+	propsParams := GetPropsParams(resultItems, props)
+
+	success, err := servicesManager.SetProps(propsParams)
 	return success, len(resultItems) - success, err
 }
 
@@ -28,7 +31,10 @@ func DeleteProps(spec *spec.SpecFiles, props string, threads int, artDetails *co
 	}
 
 	resultItems := searchItems(spec, servicesManager)
-	success, err := servicesManager.DeleteProps(&services.PropsParamsImpl{Items: resultItems, Props: props})
+
+	propsParams := GetPropsParams(resultItems, props)
+
+	success, err := servicesManager.DeleteProps(propsParams)
 	return success, len(resultItems) - success, err
 }
 
@@ -53,17 +59,44 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 
 func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem) {
 	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+		searchParams, err := GetSearchParamsForProps(spec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		currentResultItems, err := servicesManager.Search(clientutils.SearchParams{ArtifactoryCommonParams: params})
+
+		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 		resultItems = append(resultItems, currentResultItems...)
 	}
+	return
+}
+
+func GetPropsParams(resultItems []clientutils.ResultItem, properties string) (propsParams services.PropsParams) {
+	propsParams = services.NewPropsParams()
+	propsParams.Items = resultItems
+	propsParams.Props = properties
+
+	return
+}
+
+func GetSearchParamsForProps(f *spec.File) (searchParams services.SearchParams, err error) {
+	searchParams = services.NewSearchParams()
+
+	searchParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+
+	searchParams.Recursive, err = f.IsRecursive(true)
+	if err != nil {
+		return
+	}
+
+	searchParams.IncludeDirs, err = f.IsIncludeDirs(false)
+	if err != nil {
+		return
+	}
+
 	return
 }

@@ -15,10 +15,8 @@ func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetai
 		return err
 	}
 
-	params := new(services.XrayScanParamsImpl)
-	params.BuildName = buildName
-	params.BuildNumber = buildNumber
-	result, err := servicesManager.XrayScanBuild(params)
+	xrayScanParams := GetXrayScanParams(buildName, buildNumber)
+	result, err := servicesManager.XrayScanBuild(xrayScanParams)
 	if err != nil {
 		return err
 	}
@@ -26,4 +24,13 @@ func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetai
 	log.Info("Xray scan completed.")
 	log.Output(clientutils.IndentJson(result))
 	return err
+}
+
+func GetXrayScanParams(buildName, buildNumber string) (xrayScanParams services.XrayScanParams) {
+
+	xrayScanParams = services.NewXrayScanParams()
+	xrayScanParams.BuildName = buildName
+	xrayScanParams.BuildNumber = buildNumber
+
+	return
 }

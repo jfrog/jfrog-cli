@@ -75,7 +75,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	}
 	defer fileutils.RemoveTempDir()
 
-	params := &_go.GoParamsImpl{}
+	params := _go.NewGoParams()
 	params.Version = project.version
 	params.Props = props
 	params.TargetRepo = targetRepo

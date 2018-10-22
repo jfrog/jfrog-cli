@@ -137,7 +137,7 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 	if err != nil {
 		return nil, err
 	}
-	up := &services.UploadParamsImp{}
+	up := services.UploadParams{}
 	up.ArtifactoryCommonParams = &specutils.ArtifactoryCommonParams{Pattern: npmp.packedFilePath, Target: target}
 	if npmp.collectBuildInfo {
 		utils.SaveBuildGeneralDetails(npmp.cliConfiguration.BuildName, npmp.cliConfiguration.BuildNumber)

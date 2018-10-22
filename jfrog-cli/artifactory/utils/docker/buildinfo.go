@@ -137,7 +137,7 @@ func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return builder.serviceManager.SetProps(&services.PropsParamsImpl{Items: builder.layers, Props: props})
+	return builder.serviceManager.SetProps(services.PropsParams{Items: builder.layers, Props: props})
 }
 
 // Create docker build info
@@ -216,10 +216,10 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 
 // Search for image layers in Artifactory
 func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	params := utils.SearchParams{}
-	params.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
-	params.Pattern = imagePathPattern
-	results, err := serviceManager.Search(params)
+	searchParams := services.NewSearchParams()
+	searchParams.Pattern = imagePathPattern
+
+	results, err := serviceManager.SearchFiles(searchParams)
 	if err != nil {
 		return nil, err
 	}
