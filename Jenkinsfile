@@ -46,7 +46,7 @@ node {
                 sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
-                publishCliVersion()
+                publishCliVersion(architectures)
 
                 // Build and publish docker image to Bintray
                 stage("Build and Publish Docker Image") {
@@ -57,7 +57,7 @@ node {
     }
 }
 
-def publishCliVersion() {
+def publishCliVersion(architectures) {
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
         stage ("Build ${currentBuild.pkg}") {
