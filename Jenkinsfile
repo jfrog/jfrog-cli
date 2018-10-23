@@ -44,7 +44,7 @@ node {
 
                 // Publish to Bintray
                 sh 'bin/jfrog --version > version'
-                version = readFile('version').trim().split(" ")[2]
+                def version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
                 /*for (int i = 0; i < architectures.size(); i++) {
                     def currentBuild = architectures[i]
@@ -56,7 +56,7 @@ node {
                 // Build and publish Dockerfile
                 stage("Build and Publish Docker Image") {
                     dir("$jfrogCliRepoDir") {
-                        docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:${version}")
+                        docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
                         sh 'docker login --username=$USER_NAME --password=$KEY barbelity-docker-cli-images.bintray.io/library'
                         sh 'docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version'
                     }
