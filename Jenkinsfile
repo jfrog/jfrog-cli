@@ -43,10 +43,10 @@ node {
                 }*/
 
                 // Publish to Bintray
-                /*sh 'bin/jfrog --version > version'
+                sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
-                for (int i = 0; i < architectures.size(); i++) {
+                /*for (int i = 0; i < architectures.size(); i++) {
                     def currentBuild = architectures[i]
                     stage ("Build ${currentBuild.pkg}") {
                         buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
