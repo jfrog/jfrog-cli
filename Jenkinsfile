@@ -69,16 +69,8 @@ def publishCliVersion(architectures) {
 def buildPublishDockerImage(version, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
         docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
-        sh('#!/bin/sh -e\n' + 'echo $KEY' + 'docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library')
-        sh("docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
-
-
-        /*sh '''#!/bin/bash
-            echo $KEY | docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library
-            docker push barbelity-docker-cli-images.bintray.io/library/cli-image:version
-        '''*/
-        //sh 'echo $KEY | docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library'
-        //sh "docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version"
+        sh '#!/bin/sh -e\n' + 'echo $KEY' + 'docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library'
+        sh "docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version"
     }
 }
 
