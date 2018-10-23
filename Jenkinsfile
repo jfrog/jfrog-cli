@@ -52,17 +52,25 @@ node {
                         buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
                     }
                 }
+
+                // Build and publish Dockerfile
+                dir("$jfrogCliRepoDir") {
+                    docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
+                    sh 'docker login --user=$USER_NAME --key=$KEY'
+                    sh 'docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version'
+                }
             }
         }
     }
 }
 
-def buildDockerImage() {
+def buildDockerImage(version) {
     sh """#!/bin/bash
-        docker build -t <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
-        docker login --user=$USER_NAME --key=$KEY
-        docker push <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
+        docker build -t barbelity-docker-cli-images.bintray.io/library/cli-image:$version
     """
+
+    //docker login --user=$USER_NAME --key=$KEY
+    //docker push <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
 }
 
 def uploadToBintray(pkg, fileName) {
