@@ -7,7 +7,7 @@ node {
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe']
     ]
 
-    subject = 'jfrog'
+    subject = 'barbelity'
     repo = 'jfrog-cli-go'
     sh 'rm -rf temp'
     sh 'mkdir temp'
@@ -72,7 +72,7 @@ def uploadToBintray(pkg, fileName) {
 def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def extension = fileExtension == null ? '' : fileExtension
     def fileName = "jfrog$fileExtension"
-    dir("${jfrogCliDir}jfrog-cli/jfrog") {
+    dir("${jfrogCliDir}") {
         sh "env GOOS=$goos GOARCH=$goarch GO111MODULE=on go build"
         sh "mv $fileName $cliWorkspace"
     }
