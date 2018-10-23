@@ -8,8 +8,8 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
-func GetPathsToDelete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) ([]clientutils.ResultItem, error) {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func GetPathsToDelete(deleteSpec *spec.SpecFiles, configuration *DeleteConfiguration) ([]clientutils.ResultItem, error) {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +29,8 @@ func GetPathsToDelete(deleteSpec *spec.SpecFiles, flags *DeleteConfiguration) ([
 	return resultItems, nil
 }
 
-func DeleteFiles(resultItems []clientutils.ResultItem, flags *DeleteConfiguration) (successCount, failedCount int, err error) {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func DeleteFiles(resultItems []clientutils.ResultItem, configuration *DeleteConfiguration) (successCount, failedCount int, err error) {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return 0, 0, err
 	}
