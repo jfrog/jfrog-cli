@@ -12,42 +12,55 @@ node {
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
+
     dir('temp') {
         cliWorkspace = pwd()
-        jfrogCliParentDir = "${cliWorkspace}/src/github.com/jfrog/"
-        jfrogCliDir = "${jfrogCliParentDir}jfrog-cli-go/"
-        withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
-            stage 'Go get'
-            sh 'go version'
-            sh "mkdir -p $jfrogCliParentDir"
-            dir("$jfrogCliParentDir") {
-                sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
-                if (BRANCH?.trim()) {
-                    dir('jfrog-cli-go') {
-                        sh "git checkout $BRANCH"
-                        dir('jfrog-cli/jfrog') {
-                            sh 'go install'
-                        }
-                    }
-                }
+        stage('Clone') {
+            sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
+            if (BRANCH?.trim()) {
+                sh "git checkout $BRANCH"
             }
+        }
 
-            if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
+        if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
+            stage('Npm Publish') {
                 print "publishing npm package"
                 publishNpmPackage()
-            } else {
+            }
+        } else {
+            jfrogCliRepoDir = "${cliWorkSpace}/${repo}/"
+            jfrogCliDir = "${jfrogCliRepoDir}jfrog-cli/jfrog"
+            sh 'echo jfrogCliDir=$jfrogCliDir'
+
+            withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+                stage('Go Install') {
+                    sh 'go version'
+                    dir("$jfrogCliDir") {
+                        sh 'go install'
+                    }
+                }
+
                 // Publish to Bintray
                 sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
                 for (int i = 0; i < architectures.size(); i++) {
                     def currentBuild = architectures[i]
-                    stage "Build ${currentBuild.pkg}"
-                    buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+                    stage ("Build ${currentBuild.pkg}") {
+                        buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+                    }
                 }
             }
         }
     }
+}
+
+def buildDockerImage() {
+    sh """#!/bin/bash
+        docker build -t <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
+        docker login --user=$USER_NAME --key=$KEY
+        docker push <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
+    """
 }
 
 def uploadToBintray(pkg, fileName) {
