@@ -30,7 +30,7 @@ node {
                 publishNpmPackage()
             }
         } else {
-            jfrogCliRepoDir = "${cliWorkSpace}/${repo}/"
+            jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
             jfrogCliDir = "${jfrogCliRepoDir}jfrog-cli/jfrog"
             sh 'echo jfrogCliDir=$jfrogCliDir'
 
