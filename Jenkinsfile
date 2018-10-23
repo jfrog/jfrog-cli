@@ -71,7 +71,7 @@ def buildPublishDockerImage(version, jfrogCliRepoDir) {
         docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
         sh '''#!/bin/bash
             echo $KEY | docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library
-            docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version
+            docker push barbelity-docker-cli-images.bintray.io/library/cli-image:version
         '''
 
         //sh 'echo $KEY | docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library'
