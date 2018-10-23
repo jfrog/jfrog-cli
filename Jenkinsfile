@@ -1,5 +1,5 @@
 node {
-    //cleanWs()
+    cleanWs()
     def architectures = [
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: ''],
@@ -9,20 +9,20 @@ node {
 
     subject = 'barbelity'
     repo = 'jfrog-cli-go'
-    //sh 'rm -rf temp'
-    //sh 'mkdir temp'
+    sh 'rm -rf temp'
+    sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
 
     dir('temp') {
         cliWorkspace = pwd()
-        /*stage('Clone') {
+        stage('Clone') {
             sh 'git clone https://github.com/barbelity/jfrog-cli-go.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
                 }
             }
-        }*/
+        }
 
         if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
             stage('Npm Publish') {
@@ -35,12 +35,12 @@ node {
             sh 'echo jfrogCliDir=$jfrogCliDir'
 
             withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
-                /*stage('Go Install') {
+                stage('Go Install') {
                     sh 'go version'
                     dir("$jfrogCliDir") {
                         sh 'go install'
                     }
-                }*/
+                }
 
                 // Publish to Bintray
                 sh 'bin/jfrog --version > version'
