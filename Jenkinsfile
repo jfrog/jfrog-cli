@@ -7,7 +7,7 @@ node {
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe']
     ]
 
-    subject = 'barbelity'
+    subject = 'jfrog'
     repo = 'jfrog-cli-go'
     sh 'rm -rf temp'
     sh 'mkdir temp'
@@ -16,7 +16,7 @@ node {
     dir('temp') {
         cliWorkspace = pwd()
         stage('Clone') {
-            sh 'git clone https://github.com/barbelity/jfrog-cli-go.git'
+            sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
@@ -46,7 +46,7 @@ node {
                 sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
-                //publishCliVersion(architectures)
+                publishCliVersion(architectures)
 
                 // Build and publish docker image to Bintray
                 stage("Build and Publish Docker Image") {
@@ -68,9 +68,9 @@ def publishCliVersion(architectures) {
 
 def buildPublishDockerImage(version, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
-        docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
-        sh '#!/bin/sh -e\n' + 'echo $KEY' + 'docker login --username=$USER_NAME --password-stdin barbelity-docker-cli-images.bintray.io/library'
-        sh "docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version"
+        docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
+        sh '#!/bin/sh -e\n' + 'echo $KEY' + 'docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
+        sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
     }
 }
 
