@@ -1,5 +1,5 @@
 node {
-    //cleanWs()
+    cleanWs()
     def architectures = [
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: ''],
@@ -9,20 +9,20 @@ node {
 
     subject = 'barbelity'
     repo = 'jfrog-cli-go'
-    //sh 'rm -rf temp'
-    //sh 'mkdir temp'
+    sh 'rm -rf temp'
+    sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
 
     dir('temp') {
         cliWorkspace = pwd()
-        /*stage('Clone') {
+        stage('Clone') {
             sh 'git clone https://github.com/barbelity/jfrog-cli-go.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
                 }
             }
-        }*/
+        }
 
         if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
             stage('Npm Publish') {
@@ -32,47 +32,46 @@ node {
         } else {
             jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
             jfrogCliDir = "${jfrogCliRepoDir}jfrog-cli/jfrog"
-            sh 'echo jfrogCliDir=$jfrogCliDir'
+            sh "echo jfrogCliDir=$jfrogCliDir"
 
             withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
-                /*stage('Go Install') {
+                stage('Go Install') {
                     sh 'go version'
                     dir("$jfrogCliDir") {
                         sh 'go install'
                     }
-                }*/
+                }
 
-                // Publish to Bintray
+                // Build and publish cli versions to Bintray
                 sh 'bin/jfrog --version > version'
-                def version = readFile('version').trim().split(" ")[2]
+                version = readFile('version').trim().split(" ")[2]
                 print "publishing version: $version"
-                /*for (int i = 0; i < architectures.size(); i++) {
-                    def currentBuild = architectures[i]
-                    stage ("Build ${currentBuild.pkg}") {
-                        buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
-                    }
-                }*/
+                publishCliVersion()
 
-                // Build and publish Dockerfile
+                // Build and publish docker image to Bintray
                 stage("Build and Publish Docker Image") {
-                    dir("$jfrogCliRepoDir") {
-                        docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
-                        sh 'docker login --username=$USER_NAME --password=$KEY barbelity-docker-cli-images.bintray.io/library'
-                        sh "docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version"
-                    }
+                    buildPublishDockerImage(version, jfrogCliRepoDir)
                 }
             }
         }
     }
 }
 
-def buildDockerImage(version) {
-    sh """#!/bin/bash
-        docker build -t barbelity-docker-cli-images.bintray.io/library/cli-image:$version
-    """
+def publishCliVersion() {
+    for (int i = 0; i < architectures.size(); i++) {
+        def currentBuild = architectures[i]
+        stage ("Build ${currentBuild.pkg}") {
+            buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+        }
+    }
+}
 
-    //docker login --user=$USER_NAME --key=$KEY
-    //docker push <bintray-username>-docker-<docker-repository>.bintray.io/<something>/<image-name>:<version>
+def buildPublishDockerImage(version, jfrogCliRepoDir) {
+    dir("$jfrogCliRepoDir") {
+        docker.build("barbelity-docker-cli-images.bintray.io/library/cli-image:$version")
+        sh 'docker login --username=$USER_NAME --password=$KEY barbelity-docker-cli-images.bintray.io/library'
+        sh "docker push barbelity-docker-cli-images.bintray.io/library/cli-image:$version"
+    }
 }
 
 def uploadToBintray(pkg, fileName) {
