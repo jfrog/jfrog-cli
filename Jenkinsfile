@@ -9,8 +9,8 @@ node {
 
     subject = 'barbelity'
     repo = 'jfrog-cli-go'
-    sh 'rm -rf temp'
-    sh 'mkdir temp'
+    //sh 'rm -rf temp'
+    //sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
 
     dir('temp') {
