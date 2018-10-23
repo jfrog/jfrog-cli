@@ -17,8 +17,10 @@ node {
         cliWorkspace = pwd()
         stage('Clone') {
             sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
-            if (BRANCH?.trim()) {
-                sh "git checkout $BRANCH"
+            dir("$repo") {
+                if (BRANCH?.trim()) {
+                    sh "git checkout $BRANCH"
+                }
             }
         }
 
