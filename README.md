@@ -16,15 +16,17 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 # Download and Installation
 
 You can get the executable directly from the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or you can download the source files from this GitHub project and build it yourself.
-
-You can also [install JFrog CLI using NPM](https://www.npmjs.com/package/jfrog-cli-go) by running:
+## NPM
 ````
 npm install jfrog-cli-go
 ````
-
-and on Mac you can use:
+## Homebrew
 ````
 brew install jfrog-cli-go
+````
+## Docker
+````
+docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
 ````
 
 # Building the Executable
@@ -149,11 +151,11 @@ and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
 ## Using JFrog CLI Docker Image
-The JFrog CLI Docker image may be pulled from Bintray by executing the corresponding Docker command:
+The docker image of JFrog CLI can be pulled from Bintray by running the following command:
 ````
 docker pull docker.bintray.io/jfrog/jfrog-cli-go:latest
 ````
-In order to use the image for executing single CLI commands, use the following:
+Run a JFrog CLI command using docker as follows:
 ````
 docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
 ````
