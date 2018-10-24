@@ -148,5 +148,15 @@ JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
 
+## Using JFrog CLI Docker Image
+The JFrog CLI Docker image may be pulled from Bintray by executing the corresponding Docker command:
+````
+docker pull docker.bintray.io/jfrog/jfrog-cli-go:latest
+````
+In order to use the image for executing single CLI commands, use the following:
+````
+docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
+````
+
 # Release Notes
 The release are available on [Bintray](https://bintray.com/jfrog/jfrog-cli-go/jfrog-cli-linux-amd64#release).
