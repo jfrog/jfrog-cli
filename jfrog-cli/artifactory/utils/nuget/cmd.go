@@ -3,7 +3,7 @@ package nuget
 import (
 	"os/exec"
 	"io"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 func NewNugetCmd() (*Cmd, error) {

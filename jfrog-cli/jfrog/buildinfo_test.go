@@ -9,13 +9,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/httpclient"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func TestBuildAddDependenciesFromHomeDir(t *testing.T) {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils/log"
-	clientTests "github.com/jfrog/jfrog-cli-go/jfrog-client/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	clientTests "github.com/jfrog/jfrog-client-go/utils/tests"
 	"os"
 	"path/filepath"
 	"testing"

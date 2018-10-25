@@ -9,7 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/utils"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"os"
 )
 

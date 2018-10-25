@@ -3,7 +3,7 @@ package buildinfo
 import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-cli-go/jfrog-client/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"path/filepath"
 	"strings"
 	"testing"
