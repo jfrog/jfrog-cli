@@ -15,7 +15,7 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 
 # Download and Installation
 
-You can get the executable directly from the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or you can download the source files from this GitHub project and build it yourself.
+You can download the executable directly using the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or istall it with npm, homebrew or docker.
 ## NPM
 ````
 npm install jfrog-cli-go
