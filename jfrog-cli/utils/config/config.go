@@ -22,12 +22,12 @@ import (
 
 // This is the default server id. It is used when adding a server config without providing a server ID
 const (
-	DefaultServerId = "Default-Server"
-	JfrogHomeDirEnv = "JFROG_CLI_HOME_DIR"
-	JfrogHomeEnv    = "JFROG_CLI_HOME" // Old environment variable.
-	// Only used to support users relying on it before introducing JfrogHomeDirEnv
+	DefaultServerId   = "Default-Server"
+	JfrogHomeDirEnv   = "JFROG_CLI_HOME_DIR"
 	JfrogConfigFile   = "jfrog-cli.conf"
 	JfrogDependencies = "dependencies"
+	// Deprecated:
+	JfrogHomeEnv = "JFROG_CLI_HOME"
 )
 
 func IsArtifactoryConfExists() (bool, error) {
@@ -241,25 +241,22 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 }
 
 func GetJfrogHomeDir() (string, error) {
-	// If JfrogHomeDirEnv exists, use it.
-	// Else if JfrogHomeEnv exists, use it by adding .jfrog at the end.
-	// The second variable was left only to support users relying on it before introducing JfrogHomeDirEnv,
-	// shouldn't be used otherwise.
 
+	// The JfrogHomeEnv environment variable has been deprecated and replaced with JfrogHomeDirEnv
 	if os.Getenv(JfrogHomeDirEnv) != "" {
 		return os.Getenv(JfrogHomeDirEnv), nil
 	} else if os.Getenv(JfrogHomeEnv) != "" {
 		return path.Join(os.Getenv(JfrogHomeEnv), ".jfrog"), nil
 	}
 
-	userDir := fileutils.GetHomeDir()
-	if userDir == "" {
+	userHomeDir := fileutils.GetHomeDir()
+	if userHomeDir == "" {
 		err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
 		if err != nil {
 			return "", err
 		}
 	}
-	return filepath.Join(userDir, ".jfrog"), nil
+	return filepath.Join(userHomeDir, ".jfrog"), nil
 }
 
 func GetJfrogDependenciesPath() (string, error) {
