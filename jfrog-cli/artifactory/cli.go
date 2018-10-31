@@ -1658,7 +1658,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 	}
 
 	var val bool
-	val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err = clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	cliutils.ExitOnErr(err)
 
 	if !val {

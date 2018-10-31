@@ -1,6 +1,7 @@
 package missioncontrol
 
 import (
+	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
@@ -16,7 +17,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"strings"
-	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -232,7 +232,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	if exists {
 		return nil, nil
 	}
-	val, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err := clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func configure(c *cli.Context) {
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'."))
+			cliutils.ExitOnErr(errors.New("Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
 		flags, err := createConfigFlags(c)

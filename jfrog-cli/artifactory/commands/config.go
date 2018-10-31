@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"sync"
 )
 
@@ -124,19 +123,10 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		allowUsingSavedPassword = false
 	}
 	if fileutils.IsSshUrl(details.Url) {
-		useAgentPrompt := &prompt.YesNo{
-			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
-			Label:   "useSshAgent",
-			Default: "n",
-		}
-		if err := useAgentPrompt.Read(); err != nil {
+		if err := getSshKeyPath(details); err != nil {
 			return err
 		}
-		if !useAgentPrompt.GetResults().GetBool("useSshAgent") {
-			if err := readSshKeyPathFromConsole(details, defaultDetails); err != nil {
-				return err
-			}
-		}
+
 	} else {
 		if details.ApiKey == "" && details.Password == "" {
 			ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
@@ -145,9 +135,10 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 	return nil
 }
 
-func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
+func getSshKeyPath(details *config.ArtifactoryDetails) error {
+	// If path not provided, read from console:
 	if details.SshKeyPath == "" {
-		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
+		ioutils.ScanFromConsole("SSH key file path (optional)", &details.SshKeyPath, "")
 	}
 
 	details.SshKeyPath = clientutils.ReplaceTildeWithUserHome(details.SshKeyPath)
@@ -156,7 +147,7 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 		return err
 	}
 	if !exists {
-		log.Warn("Could not find SSH key file at:", details.SshKeyPath)
+		log.Info("Could not find SSH key file at:", details.SshKeyPath, ". SSH connection via agent only.")
 	}
 	return nil
 }
