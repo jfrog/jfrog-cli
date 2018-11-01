@@ -2,9 +2,13 @@ package docker
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"os/exec"
 	"path"
@@ -15,6 +19,9 @@ func New(imageTag string) Image {
 	return &image{tag: imageTag}
 }
 
+// Docker login error message
+const dockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
+
 // Docker image
 type Image interface {
 	Push() error
@@ -23,11 +30,16 @@ type Image interface {
 	Tag() string
 	Path() string
 	Name() string
+	Pull() error
 }
 
 // Internal implementation of docker image
 type image struct {
 	tag string
+}
+
+type DockerLoginConfig struct {
+	ArtifactoryDetails *config.ArtifactoryDetails
 }
 
 // Push docker image
@@ -75,6 +87,12 @@ func (image *image) Name() string {
 		return image.tag[indexOfLastSlash+1:] + ":latest"
 	}
 	return image.tag[indexOfLastSlash+1:]
+}
+
+// Pull docker image
+func (image *image) Pull() error {
+	cmd := &pullCmd{image: image}
+	return utils.RunCmd(cmd)
 }
 
 // Image push command
@@ -200,5 +218,86 @@ func (loginCmd *LoginCmd) GetStdWriter() io.WriteCloser {
 }
 
 func (loginCmd *LoginCmd) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+// Image push command
+type pullCmd struct {
+	image *image
+}
+
+func (pullCmd *pullCmd) GetCmd() *exec.Cmd {
+	var cmd []string
+	cmd = append(cmd, "docker")
+	cmd = append(cmd, "pull")
+	cmd = append(cmd, pullCmd.image.tag)
+	return exec.Command(cmd[0], cmd[1:]...)
+}
+
+func (pullCmd *pullCmd) GetEnv() map[string]string {
+	return map[string]string{}
+}
+
+func (pullCmd *pullCmd) GetStdWriter() io.WriteCloser {
+	return nil
+}
+func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*artifactory.ArtifactoryServicesManager, error) {
+	certPath, err := utils.GetJfrogSecurityDir()
+	if err != nil {
+		return nil, err
+	}
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	configBuilder := artifactory.NewConfigBuilder().
+		SetArtDetails(artAuth).
+		SetCertificatesPath(certPath).
+		SetLogger(log.Logger).
+		SetThreads(threads)
+
+	if threads != 0 {
+		configBuilder.SetThreads(threads)
+	}
+
+	serviceConfig, err := configBuilder.Build()
+	return artifactory.New(serviceConfig)
+}
+
+// First will try to login assuming a proxy-less tag (e.g. "registry-address/docker-repo/image:ver").
+// If fails, we will try assuming a reverse proxy tag (e.g. "registry-address-docker-repo/image:ver").
+func DockerLogin(imageTag string, config *DockerLoginConfig) error {
+	imageRegistry, err := ResolveRegistryFromTag(imageTag)
+	if err != nil {
+		return err
+	}
+
+	cmd := &LoginCmd{DockerRegistry: imageRegistry, Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
+	err = utils.RunCmd(cmd)
+
+	if exitCode := cliutils.GetExitCode(err, 0, 0, false); exitCode == cliutils.ExitCodeNoError {
+		// Login succeeded
+		return nil
+	}
+
+	indexOfSlash := strings.Index(imageRegistry, "/")
+	if indexOfSlash < 0 {
+		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage, imageRegistry)))
+	}
+
+	cmd = &LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
+	err = utils.RunCmd(cmd)
+	if err != nil {
+		// Login failed for both attempts
+		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage,
+			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
+	}
+
+	// Login succeeded
 	return nil
 }

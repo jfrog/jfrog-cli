@@ -31,6 +31,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/deleteprops"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
@@ -359,6 +360,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:      "docker-pull",
+			Flags:     getDockerPullFlags(),
+			Aliases:   []string{"dpl"},
+			Usage:     dockerpull.Description,
+			HelpName:  common.CreateUsage("rt docker-pull", dockerpull.Description, dockerpull.Usage),
+			UsageText: dockerpull.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				dockerPullCmd(c)
+			},
+		},
+		{
 			Name:      "npm-install",
 			Flags:     getNpmFlags(),
 			Aliases:   []string{"npmi"},
@@ -679,6 +692,13 @@ func getDockerPushFlags() []cli.Flag {
 	flags = append(flags, getBuildToolFlags()...)
 	flags = append(flags, getServerFlags()...)
 	flags = append(flags, getThreadsFlag())
+	return flags
+}
+
+func getDockerPullFlags() []cli.Flag {
+	var flags []cli.Flag
+	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getServerFlags()...)
 	return flags
 }
 
@@ -1227,8 +1247,21 @@ func dockerPushCmd(c *cli.Context) {
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
-	dockerPushConfig := &docker.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
-	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, artDetails, getThreadsCount(c))
+	cliutils.ExitOnErr(err)
+}
+
+func dockerPullCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	imageTag := c.Args().Get(0)
+	sourceRepo := c.Args().Get(1)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	validateBuildParams(buildName, buildNumber)
+	err := docker.PullDockerImage(imageTag, sourceRepo, buildName, buildNumber, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
