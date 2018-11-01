@@ -6,8 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -62,7 +62,7 @@ func init() {
 }
 
 func CleanFileSystem() {
-	isExist, err := fileutils.IsDirExists(Out)
+	isExist, err := fileutils.IsDirExists(Out, false)
 	if err != nil {
 		log.Error(err)
 	}
@@ -179,7 +179,7 @@ func getFileByOs(fileName string) string {
 
 func GetFilePath(fileName string) string {
 	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeparator() + fileName
-	isExists, _ := fileutils.IsFileExists(filePath)
+	isExists, _ := fileutils.IsFileExists(filePath, false)
 	if isExists {
 		return filePath
 	}

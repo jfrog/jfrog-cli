@@ -196,7 +196,7 @@ func readConf() (*ConfigV1, error) {
 		return nil, err
 	}
 	config := new(ConfigV1)
-	exists, err := fileutils.IsFileExists(confFilePath)
+	exists, err := fileutils.IsFileExists(confFilePath, false)
 	if err != nil {
 		return nil, err
 	}
