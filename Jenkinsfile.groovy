@@ -44,7 +44,7 @@ node {
             }
         }
 
-        if ($EXECUTION_MODE.equals("Publish packages")) {
+        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             /*stage('Npm Publish') {
                 print "publishing npm package"
                 publishNpmPackage()
@@ -54,7 +54,7 @@ node {
                 buildPublishDockerImage(version, jfrogCliRepoDir)
             }*/
             print "Inside publish packages"
-        } else if ($EXECUTION_MODE.equals("Build CLI")) {
+        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             /*withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
                 print "publishing version: $version"
                 publishCliVersion(architectures)
