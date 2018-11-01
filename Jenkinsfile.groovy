@@ -37,7 +37,7 @@ node {
                     }
                 }
 
-                // Build and publish cli versions to Bintray
+                // Extract cli version
                 sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
                 print "CLI version: $version"
@@ -45,21 +45,19 @@ node {
         }
 
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
-            /*stage('Npm Publish') {
+            stage('Npm Publish') {
                 print "publishing npm package"
                 publishNpmPackage()
             }
 
             stage('Build and Publish Docker Image') {
                 buildPublishDockerImage(version, jfrogCliRepoDir)
-            }*/
-            print "Inside publish packages"
+            }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
-            /*withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+            withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
                 print "publishing version: $version"
                 publishCliVersion(architectures)
-            }*/
-            print "Inside build cli"
+            }
         }
     }
 }
