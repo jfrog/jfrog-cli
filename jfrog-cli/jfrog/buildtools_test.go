@@ -9,10 +9,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -53,7 +53,10 @@ func CleanBuildToolsTests() {
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
 
-	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
+	err := os.Setenv(config.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
+	if err != nil {
+		t.Error(err)
+	}
 	jfrogHomePath, err := config.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err)
@@ -628,7 +631,7 @@ func createNpmProject(t *testing.T, dir string) string {
 	}
 
 	// failure can be ignored
-	npmrcExists, err := fileutils.IsFileExists(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"))
+	npmrcExists, err := fileutils.IsFileExists(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -669,7 +672,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
-		os.Unsetenv(config.JfrogHomeEnv)
+		os.Unsetenv(config.JfrogHomeDirEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()
 	}

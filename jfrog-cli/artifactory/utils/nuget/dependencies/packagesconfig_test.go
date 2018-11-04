@@ -147,13 +147,7 @@ func TestLoadNuspec(t *testing.T) {
 }
 
 func TestExtractDependencies(t *testing.T) {
-	extractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
-	packagesConfig, err := extractor.loadPackagesConfig(filepath.Join("testdata", "packagesproject"))
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = extractor.extract(packagesConfig, filepath.Join("testdata", "packagesproject", "localcache"))
+	extractor, err := extractDependencies(filepath.Join("testdata", "packagesproject", "localcache"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -187,4 +181,24 @@ func TestExtractDependencies(t *testing.T) {
 	if !reflect.DeepEqual(expectedDirectDependencies, directDependencies) {
 		t.Errorf("Expected: %s, Got: %s", expectedDirectDependencies, directDependencies)
 	}
+}
+
+func TestPackageNotFoundWithoutFailure(t *testing.T) {
+	_, err := extractDependencies(filepath.Join("testdata", "packagesproject", "localcachenotexists"))
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func extractDependencies(globalPackagePath string) (Extractor, error) {
+	extractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
+	packagesConfig, err := extractor.loadPackagesConfig(filepath.Join("testdata", "packagesproject"))
+	if err != nil {
+		return extractor, err
+	}
+	err = extractor.extract(packagesConfig, globalPackagePath)
+	if err != nil {
+		return extractor, err
+	}
+	return extractor, nil
 }

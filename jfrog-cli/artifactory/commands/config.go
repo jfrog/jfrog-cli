@@ -151,7 +151,7 @@ func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails)
 	}
 
 	details.SshKeyPath = clientutils.ReplaceTildeWithUserHome(details.SshKeyPath)
-	exists, err := fileutils.IsFileExists(details.SshKeyPath)
+	exists, err := fileutils.IsFileExists(details.SshKeyPath, false)
 	if err != nil {
 		return err
 	}

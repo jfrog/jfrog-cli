@@ -79,7 +79,9 @@ func (solution *solution) loadProjects() error {
 			if err != nil {
 				return err
 			}
-			solution.projects = append(solution.projects, proj)
+			if proj.Extractor() != nil {
+				solution.projects = append(solution.projects, proj)
+			}
 		}
 		return nil
 	})

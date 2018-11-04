@@ -2,6 +2,7 @@ package mvn
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -15,7 +16,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 const mavenExtractorDependencyVersion = "2.11.1"
@@ -80,7 +80,7 @@ func downloadDependencies() (string, error) {
 func createClassworldsConfig(dependenciesPath string) error {
 	classworldsPath := filepath.Join(dependenciesPath, ClasswordConfFileName)
 
-	if fileutils.IsPathExists(classworldsPath) {
+	if fileutils.IsPathExists(classworldsPath, false) {
 		return nil
 	}
 	return errorutils.CheckError(ioutil.WriteFile(classworldsPath, []byte(utils.ClassworldsConf), 0644))
