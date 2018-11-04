@@ -24,17 +24,12 @@ node {
             }
         }
 
-        if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
-            stage('Npm Publish') {
-                print "publishing npm package"
-                publishNpmPackage()
-            }
-        } else {
+        stage('Go Install') {
             jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
             jfrogCliDir = "${jfrogCliRepoDir}jfrog-cli/jfrog"
             sh "echo jfrogCliDir=$jfrogCliDir"
 
-            withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+            withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
                 stage('Go Install') {
                     sh 'go version'
                     dir("$jfrogCliDir") {
@@ -42,16 +37,26 @@ node {
                     }
                 }
 
-                // Build and publish cli versions to Bintray
+                // Extract cli version
                 sh 'bin/jfrog --version > version'
                 version = readFile('version').trim().split(" ")[2]
+                print "CLI version: $version"
+            }
+        }
+
+        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+            stage('Npm Publish') {
+                print "publishing npm package"
+                publishNpmPackage()
+            }
+
+            stage('Build and Publish Docker Image') {
+                buildPublishDockerImage(version, jfrogCliRepoDir)
+            }
+        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+            withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
                 print "publishing version: $version"
                 publishCliVersion(architectures)
-
-                // Build and publish docker image to Bintray
-                stage("Build and Publish Docker Image") {
-                    buildPublishDockerImage(version, jfrogCliRepoDir)
-                }
             }
         }
     }
@@ -60,7 +65,7 @@ node {
 def publishCliVersion(architectures) {
     for (int i = 0; i < architectures.size(); i++) {
         def currentBuild = architectures[i]
-        stage ("Build ${currentBuild.pkg}") {
+        stage("Build ${currentBuild.pkg}") {
             buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
         }
     }
@@ -93,7 +98,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def publishNpmPackage() {
-    dir ('${jfrogCliDir}npm/') {
+    dir('${jfrogCliDir}npm/') {
         sh '''#!/bin/bash
             echo "Downloading npm..."
             wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
