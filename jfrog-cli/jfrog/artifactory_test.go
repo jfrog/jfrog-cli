@@ -133,6 +133,18 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadFromVirtual(t *testing.T) {
+	initArtifactoryTest(t)
+
+	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a", "*"), tests.Repo1, "--flat=false")
+	artifactoryCli.Exec("dl", tests.VirtualRepo+"/testsdata/(*)", tests.Out+fileutils.GetFileSeparator()+"{1}", "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	tests.IsExistLocally(tests.VirtualDownloadExpected, paths, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 	initArtifactoryTest(t)
 	filePath := getSpecialCharFilePath()
@@ -2514,6 +2526,7 @@ func createReposIfNeeded() {
 	repos := map[string]string{
 		tests.Repo1:             tests.SpecsTestRepositoryConfig,
 		tests.Repo2:             tests.MoveRepositoryConfig,
+		tests.VirtualRepo:       tests.VirtualRepositoryConfig,
 		tests.LfsRepo:           tests.GitLfsTestRepositoryConfig,
 		tests.JcenterRemoteRepo: tests.JcenterRemoteRepositoryConfig,
 		tests.NpmLocalRepo:      tests.NpmLocalRepositoryConfig,
@@ -2529,6 +2542,7 @@ func createReposIfNeeded() {
 
 func deleteRepos() {
 	repos := []string{
+		tests.VirtualRepo,
 		tests.Repo1,
 		tests.Repo2,
 		tests.LfsRepo,
