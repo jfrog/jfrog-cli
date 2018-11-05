@@ -136,7 +136,7 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 	initArtifactoryTest(t)
 
-	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "a", "*"), tests.Repo1, "--flat=false")
+	artifactoryCli.Exec("upload", ioutils.PrepareFilePathForWindows("../testsdata/a/*"), tests.Repo1, "--flat=false")
 	artifactoryCli.Exec("dl", tests.VirtualRepo+"/testsdata/(*)", tests.Out+fileutils.GetFileSeparator()+"{1}", "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
