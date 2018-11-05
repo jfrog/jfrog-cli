@@ -28,6 +28,8 @@ import (
 	"testing"
 )
 
+const DockerTestImage string = "jfrog_cli_test_image"
+
 func InitBuildToolsTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
@@ -306,14 +308,14 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerPushTest("jfrog_cli_test_image", t)
+	runDockerPushTest(DockerTestImage, t)
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerPushTest("jfrog_cli_test_image/multiple", t)
+	runDockerPushTest(DockerTestImage + "/multiple", t)
 }
 
 // Run docker push to Artifactory
@@ -337,7 +339,7 @@ func TestDockerPull(t *testing.T) {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
 
-	imageName := "jfrog_cli_test_image"
+	imageName := DockerTestImage
 	imageTag := buildTestDockerImage(imageName)
 
 	// Push docker image using docker client

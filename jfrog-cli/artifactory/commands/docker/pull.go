@@ -40,7 +40,7 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, sourceRepo, buildName, buildNumber, serviceManager, false)
+	builder := docker.BuildInfoBuilder(image, sourceRepo, buildName, buildNumber, serviceManager, docker.Pull)
 	buildInfo, err := builder.Build()
 	if err != nil {
 		return err

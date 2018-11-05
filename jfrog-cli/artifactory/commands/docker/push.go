@@ -40,7 +40,7 @@ func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, targetRepo, buildName, buildNumber, serviceManager, true)
+	builder := docker.BuildInfoBuilder(image, targetRepo, buildName, buildNumber, serviceManager, docker.Push)
 	buildInfo, err := builder.Build()
 	if err != nil {
 		return err

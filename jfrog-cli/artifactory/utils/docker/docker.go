@@ -15,12 +15,12 @@ import (
 	"strings"
 )
 
+// Docker login error message
+const DockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
+
 func New(imageTag string) Image {
 	return &image{tag: imageTag}
 }
-
-// Docker login error message
-const dockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
 
 // Docker image
 type Image interface {
@@ -221,7 +221,7 @@ func (loginCmd *LoginCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-// Image push command
+// Image pull command
 type pullCmd struct {
 	image *image
 }
@@ -241,6 +241,7 @@ func (pullCmd *pullCmd) GetEnv() map[string]string {
 func (pullCmd *pullCmd) GetStdWriter() io.WriteCloser {
 	return nil
 }
+
 func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
@@ -287,14 +288,14 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 
 	indexOfSlash := strings.Index(imageRegistry, "/")
 	if indexOfSlash < 0 {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage, imageRegistry)))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage, imageRegistry)))
 	}
 
 	cmd = &LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
 	err = utils.RunCmd(cmd)
 	if err != nil {
 		// Login failed for both attempts
-		return errorutils.CheckError(errors.New(fmt.Sprintf(dockerLoginFailureMessage,
+		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
 			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
 	}
 
