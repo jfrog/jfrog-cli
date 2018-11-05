@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// Push docker image and create build info if needed
-func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails, threads int) error {
+// Pull docker image and create build info if needed
+func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails) error {
 	// Perform login
 	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
 	err := docker.DockerLogin(imageTag, loginConfig)
@@ -16,12 +16,12 @@ func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	// Perform push
+	// Perform pull
 	if strings.LastIndex(imageTag, ":") == -1 {
 		imageTag = imageTag + ":latest"
 	}
 	image := docker.New(imageTag)
-	err = image.Push()
+	err = image.Pull()
 	if err != nil {
 		return err
 	}
@@ -35,12 +35,12 @@ func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	serviceManager, err := docker.CreateServiceManager(artDetails, threads)
+	serviceManager, err := docker.CreateServiceManager(artDetails, 0)
 	if err != nil {
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, targetRepo, buildName, buildNumber, serviceManager, docker.Push)
+	builder := docker.BuildInfoBuilder(image, sourceRepo, buildName, buildNumber, serviceManager, docker.Pull)
 	buildInfo, err := builder.Build()
 	if err != nil {
 		return err

@@ -28,6 +28,8 @@ import (
 	"testing"
 )
 
+const DockerTestImage string = "jfrog_cli_test_image"
+
 func InitBuildToolsTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
@@ -309,23 +311,19 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest("jfrog_cli_test_image", t)
+	runDockerPushTest(DockerTestImage, t)
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest("jfrog_cli_test_image/multiple", t)
+	runDockerPushTest(DockerTestImage + "/multiple", t)
 }
 
 // Run docker push to Artifactory
-func runDockerTest(imageName string, t *testing.T) {
-	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
-	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
-	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
-	utils.RunCmd(imageBuilder)
-
+func runDockerPushTest(imageName string, t *testing.T) {
+	imageTag := buildTestDockerImage(imageName)
 	buildName := "docker-build"
 	buildNumber := "1"
 
@@ -334,28 +332,67 @@ func runDockerTest(imageName string, t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
-	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, t)
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, 7, t)
 
-	deleteFlags := new(generic.DeleteConfiguration)
-	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
-	deleteFlags.ArtDetails = artifactoryDetails
-	generic.Delete(deleteSpec, deleteFlags)
+	dockerTestCleanup(imageName, buildName)
 }
 
-func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies int, t *testing.T) {
+func TestDockerPull(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+
+	imageName := DockerTestImage
+	imageTag := buildTestDockerImage(imageName)
+
+	// Push docker image using docker client
+	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
+
+	buildName := "docker-pull"
+	buildNumber := "1"
+
+	// Pull docker image using docker client
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+
+	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
+	validateDockerBuild(buildName, buildNumber, imagePath, 0, 7, 7, t)
+
+	dockerTestCleanup(imageName, buildName)
+}
+
+func buildTestDockerImage(imageName string) string {
+	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
+	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
+	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
+	utils.RunCmd(imageBuilder)
+	return imageTag
+}
+
+func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	result, err := generic.Search(specFile, artifactoryDetails)
 	if err != nil {
 		log.Error(err)
 		t.Error(err)
 	}
-	if expectedArtifacts != len(result) {
+	if expectedItemsInArtifactory != len(result) {
 		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(result))
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
+}
+
+func dockerTestCleanup(imageName, buildName string) {
+	// Remove build from Artifactory
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+	// Remove image from Artifactory
+	deleteFlags := new(generic.DeleteConfiguration)
+	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+	deleteFlags.ArtDetails = artifactoryDetails
+	generic.Delete(deleteSpec, deleteFlags)
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
