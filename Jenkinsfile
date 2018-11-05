@@ -76,6 +76,7 @@ def buildPublishDockerImage(version, jfrogCliRepoDir) {
         docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
         sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
         sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
+        sh "docker tag jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
     }
 }
 
