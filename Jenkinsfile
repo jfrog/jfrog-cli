@@ -47,7 +47,7 @@ node {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             stage('Npm Publish') {
                 print "publishing npm package"
-                publishNpmPackage()
+                publishNpmPackage(jfrogCliRepoDir)
             }
 
             stage('Build and Publish Docker Image') {
@@ -98,8 +98,8 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     sh "rm $fileName"
 }
 
-def publishNpmPackage() {
-    dir('${jfrogCliDir}npm/') {
+def publishNpmPackage(jfrogCliRepoDir) {
+    dir(jfrogCliRepoDir+'npm/') {
         sh '''#!/bin/bash
             echo "Downloading npm..."
             wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
