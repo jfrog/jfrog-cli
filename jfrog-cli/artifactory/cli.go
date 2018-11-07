@@ -233,7 +233,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "build-scan",
-			Flags:     getServerFlags(),
+			Flags:     getBuildScanFlags(),
 			Aliases:   []string{"bs"},
 			Usage:     buildscan.Description,
 			HelpName:  common.CreateUsage("rt build-scan", buildscan.Description, buildscan.Usage),
@@ -1088,6 +1088,15 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
+func getBuildScanFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.BoolTFlag{
+			Name:  "fail",
+			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, in case that a 'Fail Build' rule is matched during the build scan.",
+		},
+	}...)
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1608,10 +1617,9 @@ func buildAddGitCmd(c *cli.Context) {
 
 func buildScanCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails)
-	cliutils.ExitOnErr(err)
+	failBuild, err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails, c.BoolT("fail"))
+	cliutils.ExitBuildScan(failBuild, err)
 }
 
 func buildCleanCmd(c *cli.Context) {

@@ -8,9 +8,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
-	"runtime"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -30,6 +30,7 @@ type ExitCode struct {
 var ExitCodeNoError = ExitCode{0}
 var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
+var ExitCodeBuildScan = ExitCode{3}
 
 func PanicOnError(err error) error {
 	if err != nil {
@@ -56,6 +57,13 @@ func FailNoOp(err error, success, failed int, failNoOp bool) {
 	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode != ExitCodeNoError {
 		traceExit(exitCode, err)
 	}
+}
+
+func ExitBuildScan(failBuild bool, err error) {
+	if failBuild {
+		traceExit(ExitCodeBuildScan, err)
+	}
+	ExitOnErr(err)
 }
 
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
