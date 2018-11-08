@@ -43,11 +43,11 @@ Navigate to a directory where you want to create the jfrog-cli-go project, **out
 If the `GOPATH` variable is not set, it uses the following values by default: 
 $HOME/go on Unix-like systems **or** %USERPROFILE%\go on Windows
 
-Verify that the `GO111MODULE` is either unset, or explicitly set to `auto`.
+Verify that the `GO111MODULE` variable is either unset, or explicitly set to `auto`.
 
 ## Download and Build the CLI
 
-Download the jfrog-cli-go project, clone it by executing the following command:
+Clone the jfrog-cli-go project by executing the following command:
 ````
 git clone https://github.com/jfrog/jfrog-cli-go/
 ````
