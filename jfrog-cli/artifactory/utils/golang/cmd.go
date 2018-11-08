@@ -4,11 +4,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 	"io"
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const GOPROXY = "GOPROXY"
@@ -88,7 +90,7 @@ func RunGo(goArg string) error {
 	}
 
 	protocolRegExp := utils.CmdOutputPattern{
-		RegExp:    regExp,
+		RegExp: regExp,
 	}
 	protocolRegExp.ExecFunc = protocolRegExp.MaskCredentials
 
@@ -105,13 +107,69 @@ func RunGo(goArg string) error {
 	return utils.RunCmdWithOutputParser(goCmd, &protocolRegExp, &notFoundRegExp)
 }
 
-// Using go mod download command to download all the dependencies before publishing to Artifactory
-func DownloadDependenciesDirectly() error {
+// Using go mod download {dependency} command to download the dependency
+func DownloadDependency(dependencyName string) error {
 	goCmd, err := NewCmd()
 	if err != nil {
 		return err
 	}
 
-	goCmd.Command = []string{"mod", "download"}
+	goCmd.Command = []string{"mod", "download", "-json", dependencyName}
 	return utils.RunCmd(goCmd)
+}
+
+// Runs go mod graph command and returns slice of the dependencies
+func GetDependenciesGraph() (map[string]bool, error) {
+	log.Debug("Running go mod graph command")
+	goCmd, err := NewCmd()
+	if err != nil {
+		return nil, err
+	}
+	goCmd.Command = []string{"mod", "graph"}
+	output, err := utils.RunCmdOutput(goCmd)
+	return outputToMap(string(output)), errorutils.CheckError(err)
+}
+
+func outputToMap(output string) map[string]bool {
+	lineOutput := strings.Split(output, "\n")
+	var result []string
+	mapOfDeps := map[string]bool{}
+	for _, line := range lineOutput {
+
+		splitLine := strings.Split(line, " ")
+		if len(splitLine) == 2 {
+			mapOfDeps[splitLine[1]] = true
+			result = append(result, splitLine[1])
+		}
+	}
+	return mapOfDeps
+}
+
+// Using go mod download command to download all the dependencies before publishing to Artifactory
+func RunGoModTidy() error {
+	log.Debug("Running go mod tidy command")
+	goCmd, err := NewCmd()
+	if err != nil {
+		return err
+	}
+
+	goCmd.Command = []string{"mod", "tidy"}
+	_, err = utils.RunCmdOutput(goCmd)
+	return err
+}
+
+// Returns the root dir where the go.mod located.
+func GetRootDir() (string, error) {
+	goCmd, err := NewCmd()
+	if err != nil {
+		return "", err
+	}
+
+	goCmd.Command = []string{"list"}
+	goCmd.CommandFlags = []string{"-m", "-f={{.Dir}}"}
+	output, err := utils.RunCmdOutput(goCmd)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return string(output), nil
 }

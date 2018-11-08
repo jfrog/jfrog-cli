@@ -1,39 +1,13 @@
 package dependencies
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"io/ioutil"
+	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 )
-
-func TestParseListOutput(t *testing.T) {
-	content := []byte(`github.com/you/hello
-github.com/Sirupsen/logrus v1.0.6
-golang.org/x/crypto v0.0.0-20180802221240-56440b844dfe
-golang.org/x/sys v0.0.0-20180802203216-0ffbfd41fbef
-golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c
-rsc.io/quote v1.5.2
-rsc.io/sampler v1.3.0
-	`)
-
-	actual, err := parseListOutput(content)
-	if err != nil {
-		t.Error(err)
-	}
-	expected := map[string]string{
-		"github.com/Sirupsen/logrus": "v1.0.6",
-		"golang.org/x/crypto":        "v0.0.0-20180802221240-56440b844dfe",
-		"golang.org/x/sys":           "v0.0.0-20180802203216-0ffbfd41fbef",
-		"golang.org/x/text":          "v0.0.0-20170915032832-14c0d48ead0c",
-		"rsc.io/quote":               "v1.5.2",
-		"rsc.io/sampler":             "v1.3.0",
-	}
-
-	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("Expecting: \n%s \nGot: \n%s", expected, actual)
-	}
-}
 
 func TestGetPackageZipLocation(t *testing.T) {
 	cachePath := filepath.Join(tests.GetBaseDir(true), "zip", "download")
@@ -81,5 +55,37 @@ func TestGetDependencyName(t *testing.T) {
 				t.Errorf("Test name: %s: Expected: %s, Got: %s", test.dependencyName, test.expectedPath, actual)
 			}
 		})
+	}
+}
+
+func TestCreateDependencyWithMod(t *testing.T) {
+	baseDir := tests.GetBaseDir(true)
+	cachePath := filepath.Join(baseDir, "zip")
+	modContent := "module github.com/test"
+	dep := Dependency{
+		id:         "github.com/test:v1.2.3",
+		modContent: []byte(modContent),
+		zipPath:    filepath.Join(cachePath, "v1.2.3.zip"),
+	}
+	pathReturned, err := createDependencyWithMod(baseDir, dep)
+	if err != nil {
+		t.Error(err)
+	}
+	path := filepath.Join(baseDir, "github.com", "test@v1.2.3", "go.mod")
+	if path != pathReturned {
+		t.Error(fmt.Sprintf("Expected %s, got %s", path, pathReturned))
+	}
+
+	mod, err := ioutil.ReadFile(pathReturned)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if modContent != string(mod) {
+		t.Error(fmt.Sprintf("Expected %s, got %s", modContent, string(mod)))
+	}
+	err = os.RemoveAll(filepath.Join(baseDir, "github.com"))
+	if err != nil {
+		t.Error(err)
 	}
 }

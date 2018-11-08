@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	golangutil "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -26,6 +27,7 @@ type Go interface {
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
+	LoadDependencies() error
 }
 
 type goProject struct {
@@ -49,13 +51,19 @@ func Load(version string) (Go, error) {
 		return nil, err
 	}
 	goProject.projectPath = pwd
-	goProject.dependencies, err = dependencies.Load()
 	return goProject, err
 }
 
 // Get the go project dependencies.
 func (project *goProject) Dependencies() []dependencies.Dependency {
 	return project.dependencies
+}
+
+// Get the project dependencies.
+func (project *goProject) LoadDependencies() error {
+	var err error
+	project.dependencies, err = dependencies.Load()
+	return err
 }
 
 // Publish go project to Artifactory.
@@ -69,11 +77,13 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 	// Temp directory for the project archive.
 	// The directory will be deleted at the end.
-	err = fileutils.CreateTempDirPath()
-	if err != nil {
-		return err
+	if !fileutils.IsTempDirInit() {
+		err = fileutils.CreateTempDirPath()
+		if err != nil {
+			return err
+		}
+		defer fileutils.RemoveTempDir()
 	}
-	defer fileutils.RemoveTempDir()
 
 	params := &_go.GoParamsImpl{}
 	params.Version = project.version
@@ -91,7 +101,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 func (project *goProject) PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
 	log.Info("Publishing package dependencies...")
-	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
+	includeDep := cliutils.ConvertSliceToMap(includeDepSlice)
 
 	skip := 0
 	_, includeAll := includeDep["ALL"]
@@ -99,13 +109,12 @@ func (project *goProject) PublishDependencies(targetRepo string, servicesManager
 	for _, dependency := range dependencies {
 		includeDependency := includeAll
 		if !includeDependency {
-			id := strings.Split(dependency.GetId(), ":")
-			if includedVersion, included := includeDep[id[0]]; included && strings.EqualFold(includedVersion, id[1]) {
+			if _, included := includeDep[dependency.GetId()]; included {
 				includeDependency = true
 			}
 		}
 		if includeDependency {
-			err = dependency.Publish(targetRepo, servicesManager)
+			err = dependency.Publish("", targetRepo, servicesManager)
 			if err != nil {
 				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
 				log.Error("Failed to publish", dependency.GetId(), ":", err)
@@ -144,7 +153,12 @@ func (project *goProject) getId() string {
 
 // Read go.mod file and add it as an artifact to the build info
 func (project *goProject) readModFile(projectPath string) error {
-	modFile, err := os.Open(filepath.Join(projectPath, "go.mod"))
+	modFilePath, err := golangutil.GetRootDir()
+	if err != nil {
+		return err
+	}
+
+	modFile, err := os.Open(filepath.Join(strings.TrimSpace(modFilePath), "go.mod"))
 	if err != nil {
 		return errorutils.CheckError(err)
 	}

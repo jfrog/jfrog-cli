@@ -736,6 +736,10 @@ func getGoFlags() []cli.Flag {
 			Name:  "no-registry",
 			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy",
 		},
+		cli.BoolFlag{
+			Name:  "deps-tidy",
+			Usage: "[Default: false] Set to true if you want to create full mod files for all the dependencies and publish them to Artifactory.",
+		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
@@ -1353,7 +1357,7 @@ func goCmd(c *cli.Context) {
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	err := golang.ExecuteGo(c.Bool("deps-tidy"), c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
