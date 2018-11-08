@@ -64,7 +64,7 @@ func getDependencies(cachePath string) ([]Dependency, error) {
 		return nil, err
 	}
 	goCmd.Command = []string{"list"}
-	goCmd.CommandFlags = []string{"-m", "all"}
+	goCmd.CommandFlags = []string{"-m", "-f", "{{or .Replace .String}}", "all"}
 	output, err := utils.RunCmdOutput(goCmd)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
