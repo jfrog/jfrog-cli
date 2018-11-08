@@ -41,7 +41,7 @@ Please download `Go 1.11` or above.
 Navigate to a directory where you want to create the jfrog-cli-go project, **outside** the `$GOPATH` tree.
 
 If the `GOPATH` variable is not set, it uses the following values by default: 
-$HOME/go on Unix-like systems **or** %USERPROFILE%\go on Windows
+`$HOME/go` on Unix-like systems **or** `%USERPROFILE%\go` on Windows
 
 Verify that the `GO111MODULE` variable is either unset, or explicitly set to `auto`.
 
