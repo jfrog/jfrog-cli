@@ -10,6 +10,7 @@
 #   2. Create a remote Nuget repository in Artifactory:
 #     A. Repository Key: choco
 #     B. Url: https://chocolatey.org
+#     * We'll use Chocolatey package manager to download Gradle Nuget package through Artifactory's cache.
 #
 # = Override credentials in Appveyor in case of a fork =
 #   1. In the project at Appveyor - Go to settings -> Environment.
