@@ -38,14 +38,16 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
 Please download `Go 1.11` or above.
 
-Navigate to the directory where you want to create the jfrog-cli-go project, and set the value of the `GOPATH` environment variable to the full path of this directory.
+Navigate to a directory where you want to create the jfrog-cli-go project, **outside** the `$GOPATH` tree.
 
-The JFrog CLI is built using go modules.
-To enable go modules, set the value of the `GO111MODULE` to `on`.
+If the `GOPATH` variable is not set, it uses the following values by default: 
+$HOME/go on Unix-like systems **or** %USERPROFILE%\go on Windows
+
+Verify that the `GO111MODULE` is either unset, or explicitly set to `auto`.
 
 ## Download and Build the CLI
 
-To download the jfrog-cli-go project, clone it by executing the following command:
+Download the jfrog-cli-go project, clone it by executing the following command:
 ````
 git clone https://github.com/jfrog/jfrog-cli-go/
 ````
@@ -54,7 +56,7 @@ Build the project by navigating to the jfrog folder and executing the go build c
 cd jfrog-cli-go/jfrog-cli/jfrog/
 go build
 ````
-Once completed, you will find the JFrog CLI executable at the current directory.
+Once completed, you will find the JFrog CLI executable at your current directory.
 
 # Tests
 
