@@ -8,10 +8,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/lock"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io/ioutil"
 	"sync"
 )
 
@@ -59,6 +61,8 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 			return nil, err
 		}
 	}
+	// Not saving ssh Passphrase
+	details.SshPassphrase = ""
 	err = config.SaveArtifactoryConf(configurations)
 	return details, err
 }
@@ -136,20 +140,43 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 }
 
 func getSshKeyPath(details *config.ArtifactoryDetails) error {
-	// If path not provided, read from console:
+	// If path not provided as a key, read from console:
 	if details.SshKeyPath == "" {
 		ioutils.ScanFromConsole("SSH key file path (optional)", &details.SshKeyPath, "")
 	}
 
+	// If path still not provided, return and warn about relying on agent.
+	if details.SshKeyPath == "" {
+		log.Info("SSH Key path not provided. Specify a key path using flags, or rely on ssh-agent only.")
+		return nil
+	}
+
+	// If SSH key path provided, check if exists:
 	details.SshKeyPath = clientutils.ReplaceTildeWithUserHome(details.SshKeyPath)
 	exists, err := fileutils.IsFileExists(details.SshKeyPath)
 	if err != nil {
 		return err
 	}
-	if !exists {
-		log.Info("Could not find SSH key file at:", details.SshKeyPath, ". SSH connection via agent only.")
+
+	if exists {
+		sshKeyBytes, err := ioutil.ReadFile(details.SshKeyPath)
+		if err != nil {
+			return nil
+		}
+		encryptedKey, err := auth.IsEncrypted(sshKeyBytes)
+		// If exists and not encrypted (or error occurred), return without asking for passphrase
+		if err != nil || !encryptedKey {
+			return err
+		} else {
+			log.Info("The key file at the specified path is encrypted.")
+			log.Info("You may pass the passphrase as a flag when authentication required, or you will be prompted to enter it.")
+		}
+	} else {
+		log.Info("Could not find key in provided path. You may place the key file there later.")
+		log.Info("If you choose to use an encrypted key, you may pass the passphrase as a flag when authentication required, or you will be prompted to enter it.")
 	}
-	return nil
+
+	return err
 }
 
 func ShowConfig(serverName string) error {
