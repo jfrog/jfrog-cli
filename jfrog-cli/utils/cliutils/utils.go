@@ -8,9 +8,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
-	"runtime"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -169,6 +169,9 @@ func varsAsMap(vars []string) map[string]string {
 	result := map[string]string{}
 	for _, v := range vars {
 		keyVal := strings.SplitN(v, "=", 2)
+		if keyVal[0] == "" {
+			continue
+		}
 		result[keyVal[0]] = keyVal[1]
 	}
 	return result
