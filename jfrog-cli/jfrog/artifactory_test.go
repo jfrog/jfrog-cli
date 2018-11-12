@@ -86,6 +86,8 @@ func authenticate() string {
 	return cred
 }
 
+// A Jfrog CLI to be used to execute a config task.
+// Removed the ssh-passphrase flag that cannot be passed to with a config command
 func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
 		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
