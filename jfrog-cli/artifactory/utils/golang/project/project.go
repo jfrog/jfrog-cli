@@ -42,11 +42,11 @@ type goProject struct {
 // Load go project.
 func Load(version string) (Go, error) {
 	goProject := &goProject{version: version}
-	pwd, err := os.Getwd()
+	pwd, err := goProject.readModFile()
 	if err != nil {
 		return nil, err
 	}
-	err = goProject.readModFile(pwd)
+	err = os.Chdir(pwd)
 	if err != nil {
 		return nil, err
 	}
@@ -152,31 +152,31 @@ func (project *goProject) getId() string {
 }
 
 // Read go.mod file and add it as an artifact to the build info
-func (project *goProject) readModFile(projectPath string) error {
+func (project *goProject) readModFile() (string, error) {
 	modFilePath, err := golangutil.GetRootDir()
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	modFile, err := os.Open(filepath.Join(strings.TrimSpace(modFilePath), "go.mod"))
+	modFilePath = strings.TrimSpace(modFilePath)
+	modFile, err := os.Open(filepath.Join(modFilePath, "go.mod"))
 	if err != nil {
-		return errorutils.CheckError(err)
+		return modFilePath, errorutils.CheckError(err)
 	}
 	defer modFile.Close()
 	content, err := ioutil.ReadAll(modFile)
 	if err != nil {
-		return errorutils.CheckError(err)
+		return modFilePath, errorutils.CheckError(err)
 	}
 
 	// Read module name
 	project.moduleName, err = parseModuleName(string(content))
 	if err != nil {
-		return err
+		return modFilePath, err
 	}
 
 	checksums, err := checksum.Calc(bytes.NewBuffer(content))
 	if err != nil {
-		return err
+		return modFilePath, err
 	}
 	project.modContent = content
 
@@ -184,7 +184,7 @@ func (project *goProject) readModFile(projectPath string) error {
 	artifact := buildinfo.Artifact{Name: project.version + ".mod"}
 	artifact.Checksum = &buildinfo.Checksum{Sha1: checksums[checksum.SHA1], Md5: checksums[checksum.MD5]}
 	project.artifacts = append(project.artifacts, artifact)
-	return nil
+	return modFilePath, nil
 }
 
 // Archive the go project.

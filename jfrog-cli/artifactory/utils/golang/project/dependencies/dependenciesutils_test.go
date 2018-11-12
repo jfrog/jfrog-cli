@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -87,5 +88,33 @@ func TestCreateDependencyWithMod(t *testing.T) {
 	err = os.RemoveAll(filepath.Join(baseDir, "github.com"))
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestMergeReplaceDependenciesWithGraphDependencies(t *testing.T) {
+	tests := []struct {
+		name              string
+		replaceDeps       []string
+		graphDependencies map[string]bool
+		expectedMap       map[string]bool
+	}{
+		{"missingInGraphMap", []string{"replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.1.0", "replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-cli-go", "replace github.com/jfrog/jfrog-client-go => /path/to/mod/file"}, map[string]bool{},
+			map[string]bool{"github.com/jfrog/jfrog-client-go@v0.1.0": true}},
+		{"existsInGraphMap", []string{"replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.1.0", "replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-cli-go", "replace github.com/jfrog/jfrog-client-go => /path/to/mod/file"}, map[string]bool{"github.com/jfrog/jfrog-client-go@v0.1.0": true},
+			map[string]bool{"github.com/jfrog/jfrog-client-go@v0.1.0": true}},
+		{"addToGraphMap", []string{"replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.1.0", "replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-cli-go", "replace github.com/jfrog/jfrog-client-go => /path/to/mod/file"}, map[string]bool{"github.com/jfrog/jfrog-cli-go@v1.21.0": true},
+			map[string]bool{"github.com/jfrog/jfrog-cli-go@v1.21.0": true, "github.com/jfrog/jfrog-client-go@v0.1.0": true}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := mergeReplaceDependenciesWithGraphDependencies(test.replaceDeps, test.graphDependencies)
+			if err != nil {
+				t.Error(err)
+			}
+			if !reflect.DeepEqual(test.expectedMap, test.graphDependencies) {
+				t.Errorf("Test name: %s: Expected: %v, Got: %v", test.name, test.expectedMap, test.graphDependencies)
+			}
+		})
 	}
 }

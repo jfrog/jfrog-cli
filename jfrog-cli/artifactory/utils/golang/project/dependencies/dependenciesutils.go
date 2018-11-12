@@ -25,12 +25,21 @@ import (
 
 // Collects the dependencies of the project
 func CollectProjectNeededDependencies(targetRepo string, details *config.ArtifactoryDetails) (map[string]bool, error) {
-	depSlice, err := golang.GetDependenciesGraph()
+	dependenciesMap, err := golang.GetDependenciesGraph()
+	if err != nil {
+		return nil, err
+	}
+	replaceDependencies, err := getReplaceDependencies()
 	if err != nil {
 		return nil, err
 	}
 
-	projectDependencies, err := downloadDependencies(depSlice, details, targetRepo)
+	// Merge replaceDependencies with dependenciesToPublish
+	err = mergeReplaceDependenciesWithGraphDependencies(replaceDependencies, dependenciesMap)
+	if err != nil {
+		return nil, err
+	}
+	projectDependencies, err := downloadDependencies(dependenciesMap, details, targetRepo)
 	if err != nil {
 		return projectDependencies, err
 	}
@@ -139,10 +148,10 @@ func replaceExclamationMarkWithUpperCase(moduleName string) string {
 func downloadDependency(downloadFromArtifactory bool, fullDependencyName, targetRepo string, details *config.ArtifactoryDetails) error {
 	var err error
 	if downloadFromArtifactory {
-		log.Debug("Downloading dependency from Artifactory")
+		log.Debug("Downloading dependency from Artifactory:", fullDependencyName)
 		err = golang.SetGoProxyEnvVar(details, targetRepo)
 	} else {
-		log.Debug("Downloading dependency from VCS", fullDependencyName)
+		log.Debug("Downloading dependency from VCS:", fullDependencyName)
 		err = os.Unsetenv(golang.GOPROXY)
 	}
 	if errorutils.CheckError(err) != nil {
@@ -422,4 +431,50 @@ func (reg *RegExp) GetNotEmptyModRegex() *regexp.Regexp {
 
 func (reg *RegExp) GetIndirectRegex() *regexp.Regexp {
 	return reg.indirectRegex
+}
+
+func mergeReplaceDependenciesWithGraphDependencies(replaceDeps []string, graphDependencies map[string]bool) error {
+	for _, replaceLine := range replaceDeps {
+		// Remove unnecessary spaces
+		replaceLine = strings.TrimSpace(replaceLine)
+		log.Debug(replaceLine)
+		// Split to get the right side that is the replace of the dependency
+		replaceDeps := strings.Split(replaceLine, "=>")
+		// Perform validation
+		if len(replaceDeps) < 2 {
+			log.Debug("The following replace line includes less then two elements", replaceDeps)
+			continue
+		}
+		replacesInfo := strings.TrimSpace(replaceDeps[1])
+		newDependency := strings.Split(replacesInfo, " ")
+		if len(newDependency) != 2 {
+			log.Debug("The replacer is not pointing to a VCS version", newDependency[0])
+			continue
+		}
+		// Check if the dependency in the map, if not add to the map
+		_, exists := graphDependencies[newDependency[0]+"@"+newDependency[1]]
+		if !exists {
+			log.Debug("Adding dependency", newDependency[0], newDependency[1])
+			graphDependencies[newDependency[0]+"@"+newDependency[1]] = true
+		}
+	}
+	return nil
+}
+
+func getReplaceDependencies() ([]string, error) {
+	replaceRegExp, err := utils.GetRegExp(`\s*replace (?:[\(\w\.@:%_\+-.~#?&]?.+)`)
+	if err != nil {
+		return nil, err
+	}
+	rootDir, err := golang.GetRootDir()
+	if err != nil {
+		return nil, err
+	}
+	modFilePath := filepath.Join(strings.TrimSpace(rootDir), "go.mod")
+	modFileContent, err := ioutil.ReadFile(modFilePath)
+	if err != nil {
+		return nil, err
+	}
+	replaceDependencies := replaceRegExp.FindAllString(string(modFileContent), -1)
+	return replaceDependencies, nil
 }
