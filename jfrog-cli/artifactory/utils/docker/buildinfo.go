@@ -78,7 +78,7 @@ func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
 	return builder.createBuildInfo()
 }
 
-// Search validate and create artifacts and dependencies of docker image.
+// Search, validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	// Search for all the image layer to get the local path inside Artifactory (supporting virtual repos).
 	searchResults, err := builder.getImageLayersFromArtifactory()
@@ -103,7 +103,7 @@ func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	return builder.handlePull(manifestDependency, configLayerDependency, manifest, searchResults)
 }
 
-// First we will try to get assuming using a reverse proxy (sub domain or port methods)
+// First we will try to get assuming using a reverse proxy (sub domain or port methods).
 // If fails, we will try the repository path (proxy-less).
 func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error) {
 	var searchResults map[string]utils.ResultItem
@@ -131,7 +131,7 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 	// In case of pulling a from remote/virtual repository eventually pulling from docker-hub, and the tag does not contain organization,
 	// search for the image under '<repository>/library/' in Artifactory.
 	imageHierarchyLevel := strings.Count(imagePath[1:], "/")
-	if builder.commandType == Push || (builder.commandType == Pull && imageHierarchyLevel > 1) {
+	if builder.commandType == Push || (builder.commandType == Pull && imageHierarchyLevel > 2) {
 		// Layers not found in the required path.
 		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
 	}
@@ -147,7 +147,7 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 
 	// Assume proxy-less.
 	indexOfFirstSlash := strings.Index(builder.image.Path()[1:], "/")
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:indexOfFirstSlash], "library", builder.image.Path()[indexOfFirstSlash+1:], "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:indexOfFirstSlash + 1], "library", builder.image.Path()[indexOfFirstSlash + 1:], "*"), builder.serviceManager)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +169,8 @@ func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDepen
 		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
-			// Check if layer exists as marker in Artifactory
-			item, layerExists = searchResults[layerFileName+".marker"]
+			// Check if layer marker exists in Artifactory
+			item, layerExists = searchResults[layerFileName + ".marker"]
 			if !layerExists {
 				return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " or its marker in Artifactory"))
 			}
