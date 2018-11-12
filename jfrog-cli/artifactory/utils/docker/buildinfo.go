@@ -111,52 +111,46 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 
 	// Search layers - assuming reverse proxy.
 	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.repository, imagePath, "*"), builder.serviceManager)
-	if err != nil {
-		return nil, err
-	}
-	if searchResults != nil {
-		return searchResults, nil
+	if err != nil || searchResults != nil {
+		return searchResults, err
 	}
 
 	// Search layers - assuming proxy-less (repository path).
 	// Need to remove the "/" from the image path.
 	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:], "*"), builder.serviceManager)
-	if err != nil {
-		return nil, err
-	}
-	if searchResults != nil {
-		return searchResults, nil
+	if err != nil || searchResults != nil {
+		return searchResults, err
 	}
 
-	// In case of pulling a from remote/virtual repository eventually pulling from docker-hub, and the tag does not contain organization,
-	// search for the image under '<repository>/library/' in Artifactory.
-	imageHierarchyLevel := strings.Count(imagePath[1:], "/")
-	if builder.commandType == Push || (builder.commandType == Pull && imageHierarchyLevel > 2) {
-		// Layers not found in the required path.
+	if builder.commandType == Push {
 		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
 	}
 
-	// Assume reverse proxy.
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
-	if err != nil {
-		return nil, err
-	}
-	if searchResults != nil {
-		return searchResults, nil
+	// If image path includes more than 3 slashes, Artifactory doesn't store this image under 'library',
+	// thus we should not look further.
+	if strings.Count(imagePath, "/") > 3 {
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
 	}
 
-	// Assume proxy-less.
-	indexOfFirstSlash := strings.Index(builder.image.Path()[1:], "/")
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:indexOfFirstSlash + 1], "library", builder.image.Path()[indexOfFirstSlash + 1:], "*"), builder.serviceManager)
-	if err != nil {
-		return nil, err
+	// Assume reverse proxy - this time with 'library' as part of the path.
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
 	}
-	if searchResults != nil {
-		return searchResults, nil
+
+	// Assume proxy-less - this time with 'library' as part of the path.
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
 	}
 
 	// Image layers not found.
 	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+}
+
+func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
+	endOfRepoNameIndex := strings.Index(builder.image.Path()[1:], "/")
+	return path.Join(builder.repository, "library", builder.image.Path()[endOfRepoNameIndex+ 1:])
 }
 
 func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDependency buildinfo.Dependency, imageManifest *manifest, searchResults map[string]utils.ResultItem) error {
