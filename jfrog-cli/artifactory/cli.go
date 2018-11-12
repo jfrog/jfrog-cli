@@ -1092,7 +1092,7 @@ func getBuildScanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "fail",
-			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, in case that a 'Fail Build' rule is matched during the build scan.",
+			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.",
 		},
 	}...)
 }
