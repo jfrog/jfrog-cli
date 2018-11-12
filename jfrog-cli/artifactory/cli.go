@@ -1040,7 +1040,12 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
 	}
-	return append(flags, getCommonFlags()...)
+	flags = append(flags, getBaseFlags()...)
+	return append(flags,
+		cli.StringFlag{
+			Name:  "ssh-key-path",
+			Usage: "[Optional] SSH key file path.",
+		})
 }
 
 func getBuildDiscardFlags() []cli.Flag {

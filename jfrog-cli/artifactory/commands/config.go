@@ -61,8 +61,6 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 			return nil, err
 		}
 	}
-	// Not saving ssh Passphrase
-	details.SshPassphrase = ""
 	err = config.SaveArtifactoryConf(configurations)
 	return details, err
 }
@@ -169,11 +167,11 @@ func getSshKeyPath(details *config.ArtifactoryDetails) error {
 			return err
 		} else {
 			log.Info("The key file at the specified path is encrypted.")
-			log.Info("You may pass the passphrase as a flag when authentication required, or you will be prompted to enter it.")
+			log.Info("Please pass the ssh-passphrase as a flag when authentication required.")
 		}
 	} else {
 		log.Info("Could not find key in provided path. You may place the key file there later.")
-		log.Info("If you choose to use an encrypted key, you may pass the passphrase as a flag when authentication required, or you will be prompted to enter it.")
+		log.Info("If you choose to use an encrypted key, you may pass the passphrase as a flag when authentication required.")
 	}
 
 	return err
