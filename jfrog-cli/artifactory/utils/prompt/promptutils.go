@@ -34,7 +34,7 @@ func (server *ServerConfig) Set(config *viper.Viper) error {
 }
 
 func VerifyConfigFile(configFilePath string) error {
-	exists, err := fileutils.IsFileExists(configFilePath)
+	exists, err := fileutils.IsFileExists(configFilePath, false)
 	if err != nil {
 		return err
 	}

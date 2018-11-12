@@ -13,7 +13,7 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		To avoid having automation scripts interrupted, set this value to false, and instead,
 		provide product server details using the config command.
 
-	JFROG_CLI_HOME
+	JFROG_CLI_HOME_DIR
 		[Default: ~/.jfrog]
 		Defines the JFrog CLI home directory path.
 		`

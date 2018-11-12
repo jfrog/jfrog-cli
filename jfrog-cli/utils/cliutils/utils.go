@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,7 @@ type ExitCode struct {
 var ExitCodeNoError = ExitCode{0}
 var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
+var ExitCodeBuildScan = ExitCode{3}
 
 func PanicOnError(err error) error {
 	if err != nil {
@@ -47,6 +49,13 @@ func FailNoOp(err error, success, failed int, failNoOp bool) {
 	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode != ExitCodeNoError {
 		traceExit(exitCode, err)
 	}
+}
+
+func ExitBuildScan(failBuild bool, err error) {
+	if failBuild {
+		traceExit(ExitCodeBuildScan, err)
+	}
+	ExitOnErr(err)
 }
 
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
@@ -150,6 +159,9 @@ func varsAsMap(vars []string) map[string]string {
 	result := map[string]string{}
 	for _, v := range vars {
 		keyVal := strings.SplitN(v, "=", 2)
+		if keyVal[0] == "" {
+			continue
+		}
 		result[keyVal[0]] = keyVal[1]
 	}
 	return result

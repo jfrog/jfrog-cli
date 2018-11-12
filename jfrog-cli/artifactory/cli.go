@@ -31,6 +31,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/deleteprops"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
@@ -232,7 +233,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "build-scan",
-			Flags:     getServerFlags(),
+			Flags:     getBuildScanFlags(),
 			Aliases:   []string{"bs"},
 			Usage:     buildscan.Description,
 			HelpName:  common.CreateUsage("rt build-scan", buildscan.Description, buildscan.Usage),
@@ -356,6 +357,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				dockerPushCmd(c)
+			},
+		},
+		{
+			Name:      "docker-pull",
+			Flags:     getDockerPullFlags(),
+			Aliases:   []string{"dpl"},
+			Usage:     dockerpull.Description,
+			HelpName:  common.CreateUsage("rt docker-pull", dockerpull.Description, dockerpull.Usage),
+			UsageText: dockerpull.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				dockerPullCmd(c)
 			},
 		},
 		{
@@ -679,6 +692,13 @@ func getDockerPushFlags() []cli.Flag {
 	flags = append(flags, getBuildToolFlags()...)
 	flags = append(flags, getServerFlags()...)
 	flags = append(flags, getThreadsFlag())
+	return flags
+}
+
+func getDockerPullFlags() []cli.Flag {
+	var flags []cli.Flag
+	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getServerFlags()...)
 	return flags
 }
 
@@ -1073,6 +1093,15 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
+func getBuildScanFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.BoolTFlag{
+			Name:  "fail",
+			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.",
+		},
+	}...)
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1232,8 +1261,21 @@ func dockerPushCmd(c *cli.Context) {
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
-	dockerPushConfig := &docker.DockerPushConfig{ArtifactoryDetails: artDetails, Threads: getThreadsCount(c)}
-	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, dockerPushConfig)
+	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, artDetails, getThreadsCount(c))
+	cliutils.ExitOnErr(err)
+}
+
+func dockerPullCmd(c *cli.Context) {
+	if c.NArg() != 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	imageTag := c.Args().Get(0)
+	sourceRepo := c.Args().Get(1)
+	buildName := c.String("build-name")
+	buildNumber := c.String("build-number")
+	validateBuildParams(buildName, buildNumber)
+	err := docker.PullDockerImage(imageTag, sourceRepo, buildName, buildNumber, artDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1580,10 +1622,9 @@ func buildAddGitCmd(c *cli.Context) {
 
 func buildScanCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails)
-	cliutils.ExitOnErr(err)
+	failBuild, err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails, c.BoolT("fail"))
+	cliutils.ExitBuildScan(failBuild, err)
 }
 
 func buildCleanCmd(c *cli.Context) {

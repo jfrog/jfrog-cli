@@ -1,2 +1,3 @@
 .idea
 *.iml
+jfrog-cli/testsdata/go/project1/go.sum

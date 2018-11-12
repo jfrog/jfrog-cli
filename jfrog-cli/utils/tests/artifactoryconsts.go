@@ -7,6 +7,7 @@ import (
 const (
 	Repo1                                  = "jfrog-cli-tests-repo1"
 	Repo2                                  = "jfrog-cli-tests-repo2"
+	VirtualRepo                            = "jfrog-cli-tests-virtual-repo"
 	JcenterRemoteRepo                      = "jfrog-cli-tests-jcenter-remote"
 	LfsRepo                                = "jfrog-cli-tests-lfs-repo"
 	NpmLocalRepo                           = "jfrog-cli-tests-npm-local-repo"
@@ -44,6 +45,7 @@ const (
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	MoveRepositoryConfig                   = "move_repository_config.json"
 	SpecsTestRepositoryConfig              = "specs_test_repository_config.json"
+	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	JcenterRemoteRepositoryConfig          = "jcenter_remote_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
@@ -304,6 +306,18 @@ var BuildDeleteExpected = []string{
 var ExtractedDownload = []string{
 	filepath.Join(Out, "randFile"),
 	filepath.Join(Out, "concurrent.tar.gz"),
+}
+
+var VirtualDownloadExpected = []string{
+	filepath.Join(Out, "a/a1.in"),
+	filepath.Join(Out, "a/a2.in"),
+	filepath.Join(Out, "a/a3.in"),
+	filepath.Join(Out, "a/b/b1.in"),
+	filepath.Join(Out, "a/b/b2.in"),
+	filepath.Join(Out, "a/b/b3.in"),
+	filepath.Join(Out, "a/b/c/c1.in"),
+	filepath.Join(Out, "a/b/c/c2.in"),
+	filepath.Join(Out, "a/b/c/c3.in"),
 }
 
 var MassiveDownload = []string{
