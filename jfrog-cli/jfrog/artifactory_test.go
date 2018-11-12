@@ -45,6 +45,9 @@ import (
 // JFrog CLI for Artifactory commands
 var artifactoryCli *tests.JfrogCli
 
+// JFrog CLI for config command only (doesn't pass the --ssh-passphrase flag)
+var configArtifactoryCli *tests.JfrogCli
+
 var artifactoryDetails *config.ArtifactoryDetails
 var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
@@ -56,6 +59,7 @@ func InitArtifactoryTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	configArtifactoryCli = createConfigJfrogCLI(cred)
 	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
@@ -80,6 +84,13 @@ func authenticate() string {
 	artifactoryDetails.Url = artAuth.GetUrl()
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
+}
+
+func createConfigJfrogCLI(cred string) *tests.JfrogCli {
+	if strings.Contains(cred, " --ssh-passphrase=") {
+		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
+	}
+	return tests.NewJfrogCli(main, "jfrog rt", cred)
 }
 
 func getArtifactoryTestCredentials() string {
@@ -2621,7 +2632,7 @@ func getCliDotGitPath(t *testing.T) string {
 }
 
 func deleteServerConfig() {
-	artifactoryCli.Exec("c", "delete", tests.RtServerId, "--interactive=false")
+	configArtifactoryCli.Exec("c", "delete", tests.RtServerId, "--interactive=false")
 }
 
 // This function will create server config and return the entire passphrase flag if it needed.
@@ -2630,7 +2641,7 @@ func createServerConfigAndReturnPassphrase() (passphrase string) {
 	if *tests.RtSshPassphrase != "" {
 		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
 	}
-	artifactoryCli.Exec("c", tests.RtServerId, "--interactive=false")
+	configArtifactoryCli.Exec("c", tests.RtServerId, "--interactive=false")
 	return passphrase
 }
 
