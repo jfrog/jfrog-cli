@@ -1,5 +1,5 @@
 {
-  "key": "jfrog-cli-tests-repo2",
+  "key": "${REPO2}",
   "packageType": "generic",
   "description": "",
   "notes": "",

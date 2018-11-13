@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo2/*_target/*.in",
+      "pattern": "${REPO2}/*_target/*.in",
       "recursive": "true"
     }
   ]

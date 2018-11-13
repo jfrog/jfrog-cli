@@ -1,5 +1,5 @@
 {
-  "key" : "jfrog-cli-tests-virtual-repo",
+  "key" : "${VIRTUAL_REPO}",
   "packageType" : "generic",
   "description" : "",
   "notes" : "",
@@ -23,7 +23,7 @@
   "enableVagrantSupport" : false,
   "enableGitLfsSupport" : false,
   "enableDistRepoSupport" : false,
-  "repositories" : [ "jfrog-cli-tests-repo1" ],
+  "repositories" : [ "${REPO1}" ],
   "artifactoryRequestsCanRetrieveRemoteArtifacts" : false,
   "keyPair" : "",
   "pomRepositoryReferencesCleanupPolicy" : "discard_active_reference",

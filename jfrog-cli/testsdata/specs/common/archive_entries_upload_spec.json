@@ -2,23 +2,23 @@
   "files": [
     {
       "pattern": "../testsdata/archives/a.zip",
-      "target": "jfrog-cli-tests-repo1/archives/"
+      "target": "${REPO1}/archives/"
     },
     {
       "pattern": "../testsdata/archives/b.zip",
-      "target": "jfrog-cli-tests-repo1/archives/"
+      "target": "${REPO1}/archives/"
     },
     {
       "pattern": "../testsdata/archives/c.zip",
-      "target": "jfrog-cli-tests-repo1/zips/"
+      "target": "${REPO1}/zips/"
     },
     {
       "pattern": "../testsdata/archives/d.zip",
-      "target": "jfrog-cli-tests-repo1/archives/"
+      "target": "${REPO1}/archives/"
     },
     {
       "pattern": "../testsdata/a/*",
-      "target": "jfrog-cli-tests-repo1/archives/",
+      "target": "${REPO1}/archives/",
       "flat": "true"
     }
   ]

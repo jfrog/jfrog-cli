@@ -2,10 +2,10 @@ version: 1
 type: maven
 
 resolver:
-    releaseRepo: jfrog-cli-tests-jcenter-remote
-    snapshotRepo: jfrog-cli-tests-jcenter-remote
+    releaseRepo: ${JCENTER_REMOTE_REPO}
+    snapshotRepo: ${JCENTER_REMOTE_REPO}
     serverID: default
 deployer:
-    releaseRepo: jfrog-cli-tests-repo1
-    snapshotRepo: jfrog-cli-tests-repo1
+    releaseRepo: ${REPO1}
+    snapshotRepo: ${REPO1}
     serverID: default

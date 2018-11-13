@@ -63,7 +63,7 @@ func createJfrogHomeConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
+	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,7 +74,10 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
+	if err != nil {
+		t.Error(err)
+	}
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
 }
@@ -84,8 +87,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUsernamePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.MavenUsernamePasswordTemplate, true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,7 +102,12 @@ func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.MavenDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
@@ -108,6 +115,10 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
+	if err != nil {
+		t.Error(err)
+	}
 
 	runAndValidateGradle(buildGradlePath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -118,8 +129,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.GradleUseramePasswordTemplate, true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -166,6 +176,11 @@ func initGoTest(t *testing.T) {
 	// Move when go will be supported and check Artifactory version.
 	if !isRepoExist(tests.GoLocalRepo) {
 		repoConfig := tests.GetTestResourcesPath() + tests.GoLocalRepositoryConfig
+		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 		execCreateRepoRest(repoConfig, tests.GoLocalRepo)
 	}
 }
@@ -318,7 +333,7 @@ func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerPushTest(DockerTestImage + "/multiple", t)
+	runDockerPushTest(DockerTestImage+"/multiple", t)
 }
 
 // Run docker push to Artifactory
@@ -412,7 +427,11 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 // #2 The number of artifact with the build.name and build.number properties.
 // Validates that #1 == #2
 func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
+	searchGoSpecFile, err := tests.CreateSpec(tests.SearchGo)
+	if err != nil {
+		t.Error(err)
+	}
+	spec, flags := getSpecAndCommonFlags(searchGoSpecFile)
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
@@ -629,19 +648,23 @@ func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) 
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GradleDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 }
 
 func createGradleProject(t *testing.T) string {
 	srcBuildFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "build.gradle")
-	targetPomPath := filepath.Join(tests.Out, "gradleproject")
-	buildGradlePath, err := copyTemplateFile(srcBuildFile, targetPomPath, "build.gradle", false)
+	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
 	if err != nil {
 		t.Error(err)
 	}
 
 	srcSettingsFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "settings.gradle")
-	_, err = copyTemplateFile(srcSettingsFile, targetPomPath, "settings.gradle", false)
+	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -651,8 +674,7 @@ func createGradleProject(t *testing.T) string {
 
 func createMavenProject(t *testing.T) string {
 	srcPomFile := filepath.Join(tests.GetTestResourcesPath(), "mavenproject", "pom.xml")
-	targetPomPath := filepath.Join(tests.Out, "mavenproject")
-	pomPath, err := copyTemplateFile(srcPomFile, targetPomPath, "pom.xml", false)
+	pomPath, err := tests.ReplaceTemplateVariables(srcPomFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -662,7 +684,7 @@ func createMavenProject(t *testing.T) string {
 func createNpmProject(t *testing.T, dir string) string {
 	srcPackageJson := filepath.Join(tests.GetTestResourcesPath(), "npm", dir, "package.json")
 	targetPackageJson := filepath.Join(tests.Out, dir)
-	packageJson, err := copyTemplateFile(srcPackageJson, targetPackageJson, "package.json", false)
+	packageJson, err := tests.ReplaceTemplateVariables(srcPackageJson, targetPackageJson)
 	if err != nil {
 		t.Error(err)
 	}
@@ -674,7 +696,7 @@ func createNpmProject(t *testing.T, dir string) string {
 	}
 
 	if npmrcExists {
-		if _, err = copyTemplateFile(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson, ".npmrc", false); err != nil {
+		if _, err = tests.ReplaceTemplateVariables(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson); err != nil {
 			t.Error(err)
 		}
 	}
@@ -782,14 +804,14 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.NpmDeployedArtifacts,
+	isExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.NpmDeployedScopedArtifacts,
+	isExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
