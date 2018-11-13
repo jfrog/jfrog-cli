@@ -482,15 +482,12 @@ func getBaseFlags() []cli.Flag {
 }
 
 func getCommonFlags() []cli.Flag {
-	return append(getBaseFlags(),
+	flags := append(getBaseFlags(),
 		cli.StringFlag{
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path.",
-		},
-		cli.StringFlag{
-			Name:  "ssh-passphrase",
-			Usage: "[Optional] SSH key passphrase.",
 		})
+	return append(flags, getSshKeyPathFlag()...)
 }
 
 func getServerFlags() []cli.Flag {
@@ -1060,7 +1057,18 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
 	}
-	return append(flags, getCommonFlags()...)
+	flags = append(flags, getBaseFlags()...)
+	return append(flags,
+		getSshKeyPathFlag()...)
+}
+
+func getSshKeyPathFlag() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "ssh-key-path",
+			Usage: "[Optional] SSH key file path.",
+		},
+	}
 }
 
 func getBuildDiscardFlags() []cli.Flag {
@@ -1699,7 +1707,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 	}
 
 	var val bool
-	val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err = clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	cliutils.ExitOnErr(err)
 
 	if !val {

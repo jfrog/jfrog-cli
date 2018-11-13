@@ -9,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -35,14 +34,6 @@ var ExitCodeBuildScan = ExitCode{3}
 func PanicOnError(err error) error {
 	if err != nil {
 		panic(err)
-	}
-	return err
-}
-
-func CheckErrorWithMessage(err error, message string) error {
-	if err != nil {
-		log.Error(message)
-		err = errorutils.CheckError(err)
 	}
 	return err
 }
@@ -128,16 +119,6 @@ func GetVersion() string {
 
 func GetConfigVersion() string {
 	return "1"
-}
-
-func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
-	envVarValue := os.Getenv(flagName)
-	if envVarValue == "" {
-		return defValue, nil
-	}
-	val, err := strconv.ParseBool(envVarValue)
-	err = CheckErrorWithMessage(err, "can't parse environment variable "+flagName)
-	return val, err
 }
 
 func GetDocumentationMessage() string {
