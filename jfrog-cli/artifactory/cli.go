@@ -484,8 +484,8 @@ func getBaseFlags() []cli.Flag {
 func getCommonFlags() []cli.Flag {
 	flags := append(getBaseFlags(),
 		cli.StringFlag{
-			Name:  "ssh-key-path",
-			Usage: "[Optional] SSH key file path.",
+			Name:  "ssh-passphrase",
+			Usage: "[Optional] SSH key passphrase.",
 		})
 	return append(flags, getSshKeyPathFlag()...)
 }
