@@ -318,14 +318,19 @@ func GetBaseDir(setToParentDir bool) (baseDir string) {
 }
 
 func GetNonVirtualRepositories() map[string]string {
-	return map[string]string{
-		Repo1:             SpecsTestRepositoryConfig,
-		Repo2:             MoveRepositoryConfig,
-		LfsRepo:           GitLfsTestRepositoryConfig,
-		JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
-		NpmLocalRepo:      NpmLocalRepositoryConfig,
-		NpmRemoteRepo:     NpmRemoteRepositoryConfig,
+	nonVirtualRepos := map[string]string{
+		Repo1:   SpecsTestRepositoryConfig,
+		Repo2:   MoveRepositoryConfig,
+		LfsRepo: GitLfsTestRepositoryConfig,
 	}
+
+	if *TestBuildTools {
+		nonVirtualRepos[JcenterRemoteRepo] = JcenterRemoteRepositoryConfig
+		nonVirtualRepos[NpmLocalRepo] = NpmLocalRepositoryConfig
+		nonVirtualRepos[NpmRemoteRepo] = NpmRemoteRepositoryConfig
+	}
+
+	return nonVirtualRepos
 }
 
 func GetVirtualRepositories() map[string]string {
