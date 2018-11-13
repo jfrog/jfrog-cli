@@ -1,15 +1,15 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo1/",
+      "pattern": "${REPO1}/",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/",
+      "pattern": "${REPO2}/",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-lfs-repo/",
+      "pattern": "${LfsRepo}/",
       "recursive": "true"
     }
   ]

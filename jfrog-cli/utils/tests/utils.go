@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,12 +63,19 @@ func init() {
 }
 
 func CleanFileSystem() {
-	isExist, err := fileutils.IsDirExists(Out, false)
-	if err != nil {
-		log.Error(err)
-	}
-	if isExist {
-		os.RemoveAll(Out)
+	removeDirs(Out, Temp)
+}
+
+func removeDirs(dirs ...string) {
+	for _, dir := range dirs {
+		isExist, err := fileutils.IsDirExists(dir, false)
+		if err != nil {
+			log.Error(err)
+		}
+		if isExist {
+			os.RemoveAll(dir)
+		}
+
 	}
 }
 
@@ -307,4 +315,85 @@ func GetBaseDir(setToParentDir bool) (baseDir string) {
 	}
 	baseDir = filepath.Join(pwd, "testdata")
 	return
+}
+
+func GetNonVirtualRepositories() map[string]string {
+	return map[string]string{
+		Repo1:             SpecsTestRepositoryConfig,
+		Repo2:             MoveRepositoryConfig,
+		LfsRepo:           GitLfsTestRepositoryConfig,
+		JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
+		NpmLocalRepo:      NpmLocalRepositoryConfig,
+		NpmRemoteRepo:     NpmRemoteRepositoryConfig,
+	}
+}
+
+func GetVirtualRepositories() map[string]string {
+	return map[string]string{
+		VirtualRepo: VirtualRepositoryConfig,
+	}
+}
+
+func getRepositoriesNameMap() map[string]string {
+	return map[string]string{
+		"${REPO1}":             Repo1,
+		"${REPO2}":             Repo2,
+		"${VirtualRepo}":       VirtualRepo,
+		"${LfsRepo}":           LfsRepo,
+		"${JcenterRemoteRepo}": JcenterRemoteRepo,
+		"${NpmLocalRepo}":      NpmLocalRepo,
+		"${NpmRemoteRepo}":     NpmRemoteRepo,
+		"${GoRepo}":            GoLocalRepo,
+	}
+}
+
+func ReplaceTemplateVariables(path, destPath string, replaceCredentials bool) (string, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	repos := getRepositoriesNameMap()
+	for repoName, repoValue := range repos {
+		content = bytes.Replace(content, []byte(repoName), []byte(repoValue), -1)
+	}
+	if destPath == "" {
+		destPath, err = os.Getwd()
+		if err != nil {
+			return "", errorutils.CheckError(err)
+		}
+		destPath = filepath.Join(destPath, Temp)
+	}
+	err = os.MkdirAll(destPath, 0700)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	template := filepath.Join(destPath, filepath.Base(path))
+	log.Debug("Writing content information to:", template)
+	if replaceCredentials {
+		for authenticationName, authenticationValue := range getAuthenticationMap() {
+			content = bytes.Replace(content, []byte(authenticationName), []byte(authenticationValue), -1)
+		}
+	}
+
+	err = ioutil.WriteFile(template, []byte(content), 0700)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	// Now that the content is good we need to write the output to a file.
+	return template, nil
+}
+
+func PreparePath(fileName string) (string, error) {
+	searchFilePath := GetFilePath(fileName)
+	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "", false)
+	return searchFilePath, err
+}
+
+func getAuthenticationMap() map[string]string {
+	return map[string]string{
+		"${RT_URL}":      *RtUrl,
+		"${RT_API_KEY}":  *RtApiKey,
+		"${RT_USERNAME}": *RtUser,
+		"${RT_PASSWORD}": *RtPassword,
+	}
 }

@@ -1,5 +1,5 @@
 {
-  "key": "jfrog-cli-tests-npm-local-repo",
+  "key": "${NpmLocalRepo}",
   "packageType": "npm",
   "repoLayoutRef": "npm-default",
   "enableNpmSupport": true,

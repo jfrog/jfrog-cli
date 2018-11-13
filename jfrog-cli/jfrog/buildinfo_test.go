@@ -10,12 +10,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
@@ -160,14 +160,20 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	buildNameNotToPromote := "cli-test-build-not-to-promote"
 
 	//upload files with buildName and buildNumber
-	specFile := tests.GetFilePath(tests.UploadSpec)
+	specFile, err := tests.PreparePath(tests.UploadSpec)
+	if err != nil {
+		t.Error(err)
+	}
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildNameNotToPromote, "--build-number="+buildNumber)
 
 	//cleanup buildInfo
 	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
 
 	//upload files with buildName and buildNumber
-	specFile = tests.GetFilePath(tests.SimpleUploadSpec)
+	specFile, err = tests.PreparePath(tests.SimpleUploadSpec)
+	if err != nil {
+		t.Error(err)
+	}
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	//publish buildInfo
@@ -178,7 +184,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 
 	//validate files are uploaded with the build info name and number
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo2, tests.Repo2+"/*", props, t)
+	isExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo2(), tests.Repo2+"/*", props, t)
 
 	//cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
@@ -272,7 +278,10 @@ func TestReadGitConfig(t *testing.T) {
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) []byte {
 	//upload files with buildName and buildNumber
-	specFile := tests.GetFilePath(tests.SimpleUploadSpec)
+	specFile, err := tests.PreparePath(tests.SimpleUploadSpec)
+	if err != nil {
+		t.Error(err)
+	}
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	//publish buildInfo
@@ -284,7 +293,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 
 	//validate files are uploaded with the build info name and number
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.SimpleUploadExpectedRepo1, tests.Repo1+"/*", props, t)
+	isExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo1(), tests.Repo1+"/*", props, t)
 
 	//download build info
 	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)
@@ -311,10 +320,6 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, t *test
 }
 
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {
-	type expectedDependency struct {
-		id     string
-		scopes []string
-	}
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.BuildAddDepsBuildName, buildInfoTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was not created

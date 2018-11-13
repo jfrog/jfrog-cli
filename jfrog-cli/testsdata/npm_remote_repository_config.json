@@ -1,5 +1,5 @@
 {
-  "key": "jfrog-cli-tests-npm-remote-repo",
+  "key": "${NpmRemoteRepo}",
   "packageType": "npm",
   "repoLayoutRef": "npm-default",
   "enableNpmSupport": true,

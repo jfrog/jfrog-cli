@@ -2,7 +2,7 @@
   "files": [
     {
       "pattern": "../testsdata/empty/*",
-      "target": "jfrog-cli-tests-repo1/",
+      "target": "${REPO1}/",
       "flat": "true",
       "recursive": "true",
       "includeDirs": "true"
