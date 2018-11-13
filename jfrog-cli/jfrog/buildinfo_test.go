@@ -160,7 +160,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	buildNameNotToPromote := "cli-test-build-not-to-promote"
 
 	//upload files with buildName and buildNumber
-	specFile, err := tests.PreparePath(tests.UploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -170,7 +170,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
 
 	//upload files with buildName and buildNumber
-	specFile, err = tests.PreparePath(tests.SimpleUploadSpec)
+	specFile, err = tests.CreateSpec(tests.SimpleUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -278,7 +278,7 @@ func TestReadGitConfig(t *testing.T) {
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) []byte {
 	//upload files with buildName and buildNumber
-	specFile, err := tests.PreparePath(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}

@@ -1,5 +1,5 @@
 {
-  "key" : "${VirtualRepo}",
+  "key" : "${VIRTUAL_REPO}",
   "packageType" : "generic",
   "description" : "",
   "notes" : "",

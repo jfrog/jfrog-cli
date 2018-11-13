@@ -2,7 +2,7 @@ version: 1
 type: gradle
 
 resolver:
-    repo: ${JcenterRemoteRepo}
+    repo: ${JCENTER_REMOTE_REPO}
     serverID: default
 deployer:
     repo: ${REPO1}

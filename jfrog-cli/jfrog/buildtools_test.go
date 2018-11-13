@@ -63,7 +63,7 @@ func createJfrogHomeConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath, true)
+	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,7 +74,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "", false)
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,7 +87,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUsernamePasswordTemplate)
-	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "", true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -102,7 +102,7 @@ func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	searchSpec, err := tests.PreparePath(tests.SearchAllRepo1)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -115,7 +115,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "", false)
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -129,7 +129,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
-	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "", true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -176,7 +176,7 @@ func initGoTest(t *testing.T) {
 	// Move when go will be supported and check Artifactory version.
 	if !isRepoExist(tests.GoLocalRepo) {
 		repoConfig := tests.GetTestResourcesPath() + tests.GoLocalRepositoryConfig
-		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "", false)
+		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
@@ -427,7 +427,7 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 // #2 The number of artifact with the build.name and build.number properties.
 // Validates that #1 == #2
 func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
-	searchGoSpecFile, err := tests.PreparePath(tests.SearchGo)
+	searchGoSpecFile, err := tests.CreateSpec(tests.SearchGo)
 	if err != nil {
 		t.Error(err)
 	}
@@ -648,7 +648,7 @@ func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) 
 	if err != nil {
 		t.Error(err)
 	}
-	searchSpec, err := tests.PreparePath(tests.SearchAllRepo1)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -658,13 +658,13 @@ func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) 
 
 func createGradleProject(t *testing.T) string {
 	srcBuildFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "build.gradle")
-	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "", false)
+	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
 	if err != nil {
 		t.Error(err)
 	}
 
 	srcSettingsFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "settings.gradle")
-	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "", false)
+	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -674,7 +674,7 @@ func createGradleProject(t *testing.T) string {
 
 func createMavenProject(t *testing.T) string {
 	srcPomFile := filepath.Join(tests.GetTestResourcesPath(), "mavenproject", "pom.xml")
-	pomPath, err := tests.ReplaceTemplateVariables(srcPomFile, "", false)
+	pomPath, err := tests.ReplaceTemplateVariables(srcPomFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -684,7 +684,7 @@ func createMavenProject(t *testing.T) string {
 func createNpmProject(t *testing.T, dir string) string {
 	srcPackageJson := filepath.Join(tests.GetTestResourcesPath(), "npm", dir, "package.json")
 	targetPackageJson := filepath.Join(tests.Out, dir)
-	packageJson, err := tests.ReplaceTemplateVariables(srcPackageJson, targetPackageJson, false)
+	packageJson, err := tests.ReplaceTemplateVariables(srcPackageJson, targetPackageJson)
 	if err != nil {
 		t.Error(err)
 	}
@@ -696,7 +696,7 @@ func createNpmProject(t *testing.T, dir string) string {
 	}
 
 	if npmrcExists {
-		if _, err = tests.ReplaceTemplateVariables(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson, false); err != nil {
+		if _, err = tests.ReplaceTemplateVariables(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson); err != nil {
 			t.Error(err)
 		}
 	}

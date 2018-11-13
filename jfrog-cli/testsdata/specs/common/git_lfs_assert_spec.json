@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "${LfsRepo}/*",
+      "pattern": "${LFS_REPO}/*",
       "recursive": "true"
     }
   ]

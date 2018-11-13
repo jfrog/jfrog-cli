@@ -2,8 +2,8 @@ version: 1
 type: maven
 
 resolver:
-    releaseRepo: ${JcenterRemoteRepo}
-    snapshotRepo: ${JcenterRemoteRepo}
+    releaseRepo: ${JCENTER_REMOTE_REPO}
+    snapshotRepo: ${JCENTER_REMOTE_REPO}
     username: ${RT_USERNAME}
     password: ${RT_PASSWORD}
     url: ${RT_URL}

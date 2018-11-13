@@ -2,8 +2,8 @@ version: 1
 type: maven
 
 resolver:
-    releaseRepo: ${JcenterRemoteRepo}
-    snapshotRepo: ${JcenterRemoteRepo}
+    releaseRepo: ${JCENTER_REMOTE_REPO}
+    snapshotRepo: ${JCENTER_REMOTE_REPO}
     serverID: default
 deployer:
     releaseRepo: ${REPO1}

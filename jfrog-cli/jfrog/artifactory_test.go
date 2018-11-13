@@ -118,12 +118,12 @@ func getSshCredentials() string {
 
 func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.PreparePath(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,10 +136,10 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
 	passphrase := createServerConfigAndReturnPassphrase()
 	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", "")
-	specFile, err := tests.PreparePath(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
 
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -153,7 +153,7 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	filePath := getSpecialCharFilePath()
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1)
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -234,7 +234,7 @@ func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/a1.in", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -249,7 +249,7 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/someFile", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -269,7 +269,7 @@ func TestArtifactoryDirectoryCopy(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -283,7 +283,7 @@ func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*/", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -297,7 +297,7 @@ func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/inner", tests.Repo2, "--flat=true")
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -313,7 +313,7 @@ func TestArtifactoryCopyPathsTwice(t *testing.T) {
 
 	log.Info("Copy Folder to root twice")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,7 +353,7 @@ func TestArtifactoryDirectoryCopyPatternEndsWithSlash(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/path/", tests.Repo2, "--flat=true")
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -368,7 +368,7 @@ func TestArtifactoryCopyAnyItemUsingWildcardFlat(t *testing.T) {
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/someFile", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*", tests.Repo2)
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -384,7 +384,7 @@ func TestArtifactoryCopyAnyItemRecursive(t *testing.T) {
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/a/b/")
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/aFile", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/a*", tests.Repo2, "--recursive=true")
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -398,7 +398,7 @@ func TestArtifactoryCopyAndRenameFolder(t *testing.T) {
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/inner/")
 	artifactoryCli.Exec("cp", tests.Repo1+"/*", tests.Repo2+"/newPath")
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -410,11 +410,11 @@ func TestArtifactoryCopyAnyItemUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
 
-	specFile, err := tests.PreparePath(tests.CopyItemsSpec)
+	specFile, err := tests.CreateSpec(tests.CopyItemsSpec)
 	if err != nil {
 		t.Error(err)
 	}
-	searchPath, err := tests.PreparePath(tests.SearchRepo2)
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -437,11 +437,11 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -452,7 +452,7 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("cp", tests.Repo1+"/data/ "+tests.Repo2+"/", "--exclude-patterns=*b*;*c*")
 
 	// Validate files are moved by build number
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -466,11 +466,11 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -478,12 +478,12 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Copy by spec
-	specFile, err := tests.PreparePath(tests.MoveCopySpecExclude)
+	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("cp", "--spec="+specFile)
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -497,7 +497,7 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 
 func TestArtifactoryUploadDebian(t *testing.T) {
 	initArtifactoryTest(t)
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
@@ -511,7 +511,7 @@ func TestArtifactoryUploadDebian(t *testing.T) {
 func TestArtifactoryUploadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", filepath.Join("..", "testsdata", "archives", "a.zip"), tests.Repo1, "--explode=true")
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -883,7 +883,7 @@ func TestArtifactoryUploadFromHomeDir(t *testing.T) {
 	initArtifactoryTest(t)
 	testFileRel, testFileAbs := createFileInHomeDir(t, "cliTestFile.txt")
 	artifactoryCli.Exec("upload", testFileRel, tests.Repo1, "--recursive=false")
-	searchTxtPath, err := tests.PreparePath(tests.SearchTxt)
+	searchTxtPath, err := tests.CreateSpec(tests.SearchTxt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -907,7 +907,7 @@ func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
 	artifactoryCli.Exec("upload", ioutils.PrepareFilePathForWindows("../testsdata/a/a*"), tests.Repo1, "--exclude-patterns=*a2*;*a3.in")
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -920,7 +920,7 @@ func TestArtifactoryUploadExcludeByCli1Regex(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
 	artifactoryCli.Exec("upload", ioutils.PrepareFilePathForWindows("../testsdata/a/a(.*)"), tests.Repo1, "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true")
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -954,7 +954,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	artifactoryCli.Exec("upload", ioutils.FixWinPath(filepath.Join(absDirPath, "*")), tests.Repo1, "--exclude-patterns=*cliTestFile1*")
 
 	// Check files exists in artifactory
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -991,7 +991,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	artifactoryCli.Exec("upload", absDirPath+"(.*)", tests.Repo1, "--exclude-patterns=(.*c)liTestFile1.*", "--regexp=true")
 
 	// Check files exists in artifactory
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1006,14 +1006,14 @@ func TestArtifactoryUploadExcludeBySpecWildcard(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFile, err := tests.PreparePath(tests.UploadSpecExclude)
+	specFile, err := tests.CreateSpec(tests.UploadSpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Validate files are moved by build number
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1028,14 +1028,14 @@ func TestArtifactoryUploadExcludeBySpecRegex(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFile, err := tests.PreparePath(tests.UploadSpecExcludeRegex)
+	specFile, err := tests.CreateSpec(tests.UploadSpecExcludeRegex)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Validate files are moved by build number
-	searchFilePath, err := tests.PreparePath(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1053,13 +1053,13 @@ func TestArtifactoryCopySpec(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	specFile, err := tests.PreparePath(tests.MoveCopyDeleteSpec)
+	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
-	searchMoveDeleteSpecPath, err := tests.PreparePath(tests.SearchMoveDeleteRepoSpec)
+	searchMoveDeleteSpecPath, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1301,14 +1301,14 @@ func TestArtifactoryDelete(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	specFile, err := tests.PreparePath(tests.MoveCopyDeleteSpec)
+	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/*", "--quiet=true")
 
-	searchMoveDeleteSpec, err := tests.PreparePath(tests.SearchMoveDeleteRepoSpec)
+	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1324,7 +1324,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 		t.Error(err)
 	}
 
-	specFile, err := tests.PreparePath(tests.MoveCopyDeleteSpec)
+	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1342,7 +1342,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
-	searchMoveDeleteSpec, err := tests.PreparePath(tests.SearchMoveDeleteRepoSpec)
+	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1396,7 +1396,7 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	deleteSpecPath, err := tests.PreparePath(tests.DeleteSpec)
+	deleteSpecPath, err := tests.CreateSpec(tests.DeleteSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1420,11 +1420,11 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1436,7 +1436,7 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("del", tests.Repo1+"/data/", "--quiet=true", "--exclude-patterns=*b1.in;*b2.in;*b3.in;*c1.in")
 
 	// Validate files are deleted
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1450,18 +1450,18 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 func TestArtifactoryDeleteExcludeBySpec(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFileA)
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
-	specFile, err := tests.PreparePath(tests.DelSpecExclude)
+	specFile, err := tests.CreateSpec(tests.DelSpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1470,7 +1470,7 @@ func TestArtifactoryDeleteExcludeBySpec(t *testing.T) {
 	artifactoryCli.Exec("del", "--spec="+specFile, "--quiet=true")
 
 	// Validate files are deleted
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1489,7 +1489,7 @@ func TestArtifactoryDisplyedPathToDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	specFile, err := tests.PreparePath(tests.DeleteComplexSpec)
+	specFile, err := tests.CreateSpec(tests.DeleteComplexSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1511,7 +1511,7 @@ func TestArtifactoryDeleteBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	specFile, err := tests.PreparePath(tests.DeleteComplexSpec)
+	specFile, err := tests.CreateSpec(tests.DeleteComplexSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1528,7 +1528,7 @@ func TestArtifactoryDeleteBySpec(t *testing.T) {
 func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
-	specFile, err := tests.PreparePath(tests.DownloadSpec)
+	specFile, err := tests.CreateSpec(tests.DownloadSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1541,11 +1541,11 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 
 func TestArtifactoryMassiveUploadSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.PreparePath(tests.UploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
-	resultSpecFile, err := tests.PreparePath(tests.Search)
+	resultSpecFile, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1800,13 +1800,13 @@ func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	specFile, err := tests.PreparePath(tests.UploadEmptyDirs)
+	specFile, err := tests.CreateSpec(tests.UploadEmptyDirs)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
-	specFile, err = tests.PreparePath(tests.DownloadEmptyDirs)
+	specFile, err = tests.CreateSpec(tests.DownloadEmptyDirs)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -1911,16 +1911,16 @@ func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.BuildDownloadSpec)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpec)
 	if err != nil {
 		t.Error(err)
 	}
 	// Upload files with buildName and buildNumber
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1952,7 +1952,7 @@ func TestArtifactoryDownloadArtifactDoesntExistInBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build1", "10"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.BuildDownloadSpecNoBuildNumber)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoBuildNumber)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1983,7 +1983,7 @@ func TestArtifactoryDownloadByShaAndBuild(t *testing.T) {
 	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameB, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.BuildDownloadSpecNoBuildNumber)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoBuildNumber)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2020,7 +2020,7 @@ func TestArtifactoryDownloadByShaAndBuildName(t *testing.T) {
 	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameB, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.BuildDownloadSpecNoBuildNumber)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoBuildNumber)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2056,11 +2056,11 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	// Upload files with buildName and buildNumber
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2089,7 +2089,7 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 
 func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	initArtifactoryTest(t)
-	uploadSpecFile, err := tests.PreparePath(tests.ArchiveEntriesUpload)
+	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2105,7 +2105,7 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 
 func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	initArtifactoryTest(t)
-	uploadSpecFile, err := tests.PreparePath(tests.ArchiveEntriesUpload)
+	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2122,11 +2122,11 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 
 func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	uploadSpecFile, err := tests.PreparePath(tests.ArchiveEntriesUpload)
+	uploadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesUpload)
 	if err != nil {
 		t.Error(err)
 	}
-	downloadSpecFile, err := tests.PreparePath(tests.ArchiveEntriesDownload)
+	downloadSpecFile, err := tests.CreateSpec(tests.ArchiveEntriesDownload)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2167,11 +2167,11 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2194,17 +2194,17 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 
 func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.PreparePath(tests.DownloadSpecExclude)
+	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2229,11 +2229,11 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files with buildName and buildNumber
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2241,7 +2241,7 @@ func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
 
 	// Download by spec
-	specFile, err := tests.PreparePath(tests.DownloadSpecExclude)
+	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2331,7 +2331,7 @@ func TestArtifactoryDownloadByShaAndBuildNameWithSort(t *testing.T) {
 	buildNameA, buildNameB, buildNumberA, buildNumberB, buildNumberC := "cli-test-build1", "cli-test-build2", "10", "11", "12"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameA, artHttpDetails)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameB, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.BuildDownloadSpecNoBuildNumberWithSort)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoBuildNumberWithSort)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2364,16 +2364,16 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.CopyByBuildSpec)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildSpec)
 	if err != nil {
 		t.Error(err)
 	}
 	// Upload files with buildName and buildNumber: a* uploaded with build number "10", b* uploaded with build number "11"
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2388,7 +2388,7 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
 	// Validate files are Copied by build number
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2454,17 +2454,17 @@ func TestArtifactoryCopyByBuildOverridingByInlineFlag(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.CopyByBuildSpec)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildSpec)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Upload files with buildName and buildNumber: b* uploaded with build number "10", a* uploaded with build number "11"
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2479,7 +2479,7 @@ func TestArtifactoryCopyByBuildOverridingByInlineFlag(t *testing.T) {
 	artifactoryCli.Exec("copy", "--build="+buildName+" --spec="+specFile)
 
 	// Validate files are Copied by build number
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2495,17 +2495,17 @@ func TestArtifactoryMoveByBuildUsingFlags(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.CopyByBuildSpec)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildSpec)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Upload files with buildName and buildNumber
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2520,7 +2520,7 @@ func TestArtifactoryMoveByBuildUsingFlags(t *testing.T) {
 	artifactoryCli.Exec("move", "--build="+buildName+"/11 --spec="+specFile)
 
 	// Validate files are moved by build number
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2540,11 +2540,11 @@ func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2555,7 +2555,7 @@ func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("move", tests.Repo1+"/data/ "+tests.Repo2+"/", "--exclude-patterns=*b*;*c*")
 
 	// Validate excluded files didn't move
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2568,17 +2568,17 @@ func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 
 func TestArtifactoryMoveExcludeBySpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.PreparePath(tests.MoveCopySpecExclude)
+	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2589,7 +2589,7 @@ func TestArtifactoryMoveExcludeBySpec(t *testing.T) {
 	artifactoryCli.Exec("move", "--spec="+specFile)
 
 	// Validate excluded files didn't move
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2604,17 +2604,17 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.PreparePath(tests.CopyByBuildSpec)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildSpec)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Upload files with buildName and buildNumber
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2629,7 +2629,7 @@ func TestArtifactoryDeleteByLatestBuild(t *testing.T) {
 	artifactoryCli.Exec("delete", "--build="+buildName+"/LATEST --quiet=true --spec="+specFile)
 
 	// Validate files are deleted by build number
-	cpMvDlByBuildAssertSpec, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2649,7 +2649,7 @@ func TestGitLfsCleanup(t *testing.T) {
 	refs := strings.Join([]string{"refs", "heads", "*"}, fileutils.GetFileSeparator())
 	dotGitPath := getCliDotGitPath(t)
 	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.LfsRepo, "--refs=HEAD,"+refs, "--quiet=true")
-	gitlfsSpecFile, err := tests.PreparePath(tests.GitLfsAssertSpec)
+	gitlfsSpecFile, err := tests.CreateSpec(tests.GitLfsAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2674,7 +2674,7 @@ func TestSummaryReport(t *testing.T) {
 	newLog.SetOutputWriter(buffer)
 	log.SetLogger(newLog)
 
-	specFile, err := tests.PreparePath(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2693,7 +2693,7 @@ func TestSummaryReport(t *testing.T) {
 	artifactoryCli.Exec("set-props", path.Join(tests.Repo1, "*.in"), "prop=val")
 	verifySummary(t, buffer, 9, 0, previousLog)
 
-	specFile, err = tests.PreparePath(tests.DownloadSpec)
+	specFile, err = tests.CreateSpec(tests.DownloadSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2831,7 +2831,7 @@ func prepUploadFiles() {
 }
 
 func prepCopyFiles() error {
-	specFile, err := tests.PreparePath(tests.PrepareCopy)
+	specFile, err := tests.CreateSpec(tests.PrepareCopy)
 	if err != nil {
 		return err
 	}
@@ -2894,7 +2894,7 @@ func createRepos(repos map[string]string) {
 	for repoName, configFile := range repos {
 		if !isRepoExist(repoName) {
 			repoConfig := tests.GetTestResourcesPath() + configFile
-			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "", false)
+			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
 			if err != nil {
 				log.Error(err)
 				os.Exit(1)
@@ -2910,9 +2910,11 @@ func createRandomReposName() {
 	tests.Repo2 += "-" + timestamp
 	tests.VirtualRepo += "-" + timestamp
 	tests.LfsRepo += "-" + timestamp
-	tests.JcenterRemoteRepo += "-" + timestamp
-	tests.NpmLocalRepo += "-" + timestamp
-	tests.NpmRemoteRepo += "-" + timestamp
+	if *tests.TestBuildTools {
+		tests.JcenterRemoteRepo += "-" + timestamp
+		tests.NpmLocalRepo += "-" + timestamp
+		tests.NpmRemoteRepo += "-" + timestamp
+	}
 	if *tests.TestGo {
 		tests.GoLocalRepo += "-" + timestamp
 	}
@@ -2938,7 +2940,7 @@ func deleteRepos() {
 func cleanArtifactory() {
 	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpecFile := tests.GetFilePath(tests.DeleteSpec)
-	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "", false)
+	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -3022,11 +3024,11 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFileA, err := tests.PreparePath(tests.SplitUploadSpecA)
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
-	specFileB, err := tests.PreparePath(tests.SplitUploadSpecB)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -3038,7 +3040,7 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 	artifactoryCli.Exec(command, tests.Repo1+"/data/*a* "+tests.Repo2+"/", "--dry-run")
 
 	// Validate files weren't affected
-	cpMvSpecFilePath, err := tests.PreparePath(tests.CpMvDlByBuildAssertSpec)
+	cpMvSpecFilePath, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	if err != nil {
 		t.Error(err)
 	}

@@ -9,7 +9,7 @@
       "recursive": "true"
     },
     {
-      "pattern": "${LfsRepo}/",
+      "pattern": "${LFS_REPO}/",
       "recursive": "true"
     }
   ]

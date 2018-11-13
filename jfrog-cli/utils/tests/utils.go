@@ -336,18 +336,22 @@ func GetVirtualRepositories() map[string]string {
 
 func getRepositoriesNameMap() map[string]string {
 	return map[string]string{
-		"${REPO1}":             Repo1,
-		"${REPO2}":             Repo2,
-		"${VirtualRepo}":       VirtualRepo,
-		"${LfsRepo}":           LfsRepo,
-		"${JcenterRemoteRepo}": JcenterRemoteRepo,
-		"${NpmLocalRepo}":      NpmLocalRepo,
-		"${NpmRemoteRepo}":     NpmRemoteRepo,
-		"${GoRepo}":            GoLocalRepo,
+		"${REPO1}":               Repo1,
+		"${REPO2}":               Repo2,
+		"${VIRTUAL_REPO}":        VirtualRepo,
+		"${LFS_REPO}":            LfsRepo,
+		"${JCENTER_REMOTE_REPO}": JcenterRemoteRepo,
+		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
+		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,
+		"${GO_REPO}":             GoLocalRepo,
+		"${RT_URL}":              *RtUrl,
+		"${RT_API_KEY}":          *RtApiKey,
+		"${RT_USERNAME}":         *RtUser,
+		"${RT_PASSWORD}":         *RtPassword,
 	}
 }
 
-func ReplaceTemplateVariables(path, destPath string, replaceCredentials bool) (string, error) {
+func ReplaceTemplateVariables(path, destPath string) (string, error) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", errorutils.CheckError(err)
@@ -367,33 +371,18 @@ func ReplaceTemplateVariables(path, destPath string, replaceCredentials bool) (s
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-	template := filepath.Join(destPath, filepath.Base(path))
-	log.Debug("Writing content information to:", template)
-	if replaceCredentials {
-		for authenticationName, authenticationValue := range getAuthenticationMap() {
-			content = bytes.Replace(content, []byte(authenticationName), []byte(authenticationValue), -1)
-		}
-	}
-
-	err = ioutil.WriteFile(template, []byte(content), 0700)
+	specPath := filepath.Join(destPath, filepath.Base(path))
+	log.Debug("Creating spec file at:", specPath)
+	err = ioutil.WriteFile(specPath, []byte(content), 0700)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-	// Now that the content is good we need to write the output to a file.
-	return template, nil
+
+	return specPath, nil
 }
 
-func PreparePath(fileName string) (string, error) {
+func CreateSpec(fileName string) (string, error) {
 	searchFilePath := GetFilePath(fileName)
-	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "", false)
+	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
 	return searchFilePath, err
-}
-
-func getAuthenticationMap() map[string]string {
-	return map[string]string{
-		"${RT_URL}":      *RtUrl,
-		"${RT_API_KEY}":  *RtApiKey,
-		"${RT_USERNAME}": *RtUser,
-		"${RT_PASSWORD}": *RtPassword,
-	}
 }

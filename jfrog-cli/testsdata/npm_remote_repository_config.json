@@ -1,5 +1,5 @@
 {
-  "key": "${NpmRemoteRepo}",
+  "key": "${NPM_REMOTE_REPO}",
   "packageType": "npm",
   "repoLayoutRef": "npm-default",
   "enableNpmSupport": true,
