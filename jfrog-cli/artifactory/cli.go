@@ -482,15 +482,12 @@ func getBaseFlags() []cli.Flag {
 }
 
 func getCommonFlags() []cli.Flag {
-	return append(getBaseFlags(),
+	flags := append(getBaseFlags(),
 		cli.StringFlag{
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path.",
-		},
-		cli.StringFlag{
-			Name:  "ssh-passphrase",
-			Usage: "[Optional] SSH key passphrase.",
 		})
+	return append(flags, getSshKeyPathFlag()...)
 }
 
 func getServerFlags() []cli.Flag {
@@ -1062,10 +1059,16 @@ func getConfigFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	return append(flags,
+		getSshKeyPathFlag()...)
+}
+
+func getSshKeyPathFlag() []cli.Flag {
+	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "ssh-key-path",
 			Usage: "[Optional] SSH key file path.",
-		})
+		},
+	}
 }
 
 func getBuildDiscardFlags() []cli.Flag {

@@ -145,7 +145,7 @@ func getSshKeyPath(details *config.ArtifactoryDetails) error {
 
 	// If path still not provided, return and warn about relying on agent.
 	if details.SshKeyPath == "" {
-		log.Info("SSH Key path not provided. Specify a key path using flags, or rely on ssh-agent only.")
+		log.Info("SSH Key path not provided. You can also specify a key path using the --ssh-key-path command option. If no key will be specified, you will rely on ssh-agent only.")
 		return nil
 	}
 
@@ -165,13 +165,11 @@ func getSshKeyPath(details *config.ArtifactoryDetails) error {
 		// If exists and not encrypted (or error occurred), return without asking for passphrase
 		if err != nil || !encryptedKey {
 			return err
-		} else {
-			log.Info("The key file at the specified path is encrypted.")
-			log.Info("Please pass the ssh-passphrase as a flag when authentication required.")
 		}
+		log.Info("The key file at the specified path is encrypted, you may pass the passphrase as an option with every command (but config).")
+
 	} else {
-		log.Info("Could not find key in provided path. You may place the key file there later.")
-		log.Info("If you choose to use an encrypted key, you may pass the passphrase as a flag when authentication required.")
+		log.Info("Could not find key in provided path. You may place the key file there later. If you choose to use an encrypted key, you may pass the passphrase as an option with every command.")
 	}
 
 	return err
