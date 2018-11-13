@@ -31,21 +31,21 @@ rsc.io/sampler@v1.3.0 golang.org/x/text@v0.0.0-20170915032832-14c0d48ead0c
 	`
 
 	actual := outputToMap(content)
-	expected := []string{
-		"github.com/dsnet/compress@v0.0.0-20171208185109-cc9eb1d7ad76",
-		"github.com/golang/snappy@v0.0.0-20180518054509-2e65f85255db",
-		"github.com/mholt/archiver@v2.1.0+incompatible",
-		"github.com/nwaples/rardecode@v0.0.0-20171029023500-e06696f847ae",
-		"github.com/pierrec/lz4@v2.0.5+incompatible",
-		"github.com/ulikunitz/xz@v0.5.4",
-		"golang.org/x/text@v0.3.1-0.20180807135948-17ff2d5776d2",
-		"golang.org/x/tools@v0.0.0-20181006002542-f60d9635b16a",
-		"rsc.io/quote@v1.5.2",
-		"rsc.io/sampler@v1.3.0",
-		"golang.org/x/text@v0.0.0-20170915032832-14c0d48ead0c",
+	expected := map[string]bool{
+		"github.com/dsnet/compress@v0.0.0-20171208185109-cc9eb1d7ad76":true,
+		"github.com/golang/snappy@v0.0.0-20180518054509-2e65f85255db":true,
+		"github.com/mholt/archiver@v2.1.0+incompatible":true,
+		"github.com/nwaples/rardecode@v0.0.0-20171029023500-e06696f847ae":true,
+		"github.com/pierrec/lz4@v2.0.5+incompatible":true,
+		"github.com/ulikunitz/xz@v0.5.4":true,
+		"golang.org/x/text@v0.3.1-0.20180807135948-17ff2d5776d2":true,
+		"golang.org/x/tools@v0.0.0-20181006002542-f60d9635b16a":true,
+		"rsc.io/quote@v1.5.2":true,
+		"rsc.io/sampler@v1.3.0":true,
+		"golang.org/x/text@v0.0.0-20170915032832-14c0d48ead0c":true,
 	}
 
 	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("Expecting: \n%s \nGot: \n%s", expected, actual)
+		t.Errorf("Expecting: \n%v \nGot: \n%v", expected, actual)
 	}
 }
