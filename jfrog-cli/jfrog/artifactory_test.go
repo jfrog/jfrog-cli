@@ -2926,10 +2926,12 @@ func deleteRepos() {
 		tests.Repo1,
 		tests.Repo2,
 		tests.LfsRepo,
-		tests.JcenterRemoteRepo,
-		tests.NpmLocalRepo,
-		tests.NpmRemoteRepo,
 	}
+
+	if *tests.TestBuildTools {
+		repos = append(repos, tests.JcenterRemoteRepo, tests.NpmLocalRepo, tests.NpmRemoteRepo)
+	}
+
 	for _, repoName := range repos {
 		if isRepoExist(repoName) {
 			execDeleteRepoRest(repoName)
