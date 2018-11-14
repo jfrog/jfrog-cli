@@ -233,7 +233,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "build-scan",
-			Flags:     getServerFlags(),
+			Flags:     getBuildScanFlags(),
 			Aliases:   []string{"bs"},
 			Usage:     buildscan.Description,
 			HelpName:  common.CreateUsage("rt build-scan", buildscan.Description, buildscan.Usage),
@@ -482,15 +482,12 @@ func getBaseFlags() []cli.Flag {
 }
 
 func getCommonFlags() []cli.Flag {
-	return append(getBaseFlags(),
-		cli.StringFlag{
-			Name:  "ssh-key-path",
-			Usage: "[Optional] SSH key file path.",
-		},
+	flags := append(getBaseFlags(),
 		cli.StringFlag{
 			Name:  "ssh-passphrase",
 			Usage: "[Optional] SSH key passphrase.",
 		})
+	return append(flags, getSshKeyPathFlag()...)
 }
 
 func getServerFlags() []cli.Flag {
@@ -1060,7 +1057,18 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
 		},
 	}
-	return append(flags, getCommonFlags()...)
+	flags = append(flags, getBaseFlags()...)
+	return append(flags,
+		getSshKeyPathFlag()...)
+}
+
+func getSshKeyPathFlag() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "ssh-key-path",
+			Usage: "[Optional] SSH key file path.",
+		},
+	}
 }
 
 func getBuildDiscardFlags() []cli.Flag {
@@ -1084,6 +1092,15 @@ func getBuildDiscardFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "async",
 			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.",
+		},
+	}...)
+}
+
+func getBuildScanFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.BoolTFlag{
+			Name:  "fail",
+			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.",
 		},
 	}...)
 }
@@ -1608,10 +1625,9 @@ func buildAddGitCmd(c *cli.Context) {
 
 func buildScanCmd(c *cli.Context) {
 	validateBuildInfoArgument(c)
-
 	artDetails := createArtifactoryDetailsByFlags(c, true)
-	err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails)
-	cliutils.ExitOnErr(err)
+	failBuild, err := buildinfo.XrayScan(c.Args().Get(0), c.Args().Get(1), artDetails, c.BoolT("fail"))
+	cliutils.ExitBuildScan(failBuild, err)
 }
 
 func buildCleanCmd(c *cli.Context) {
@@ -1691,7 +1707,7 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 	}
 
 	var val bool
-	val, err = cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err = clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	cliutils.ExitOnErr(err)
 
 	if !val {

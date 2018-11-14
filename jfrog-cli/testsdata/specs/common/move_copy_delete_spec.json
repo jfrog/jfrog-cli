@@ -1,69 +1,69 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo2/flat_recursive_source/a/*",
-      "target": "jfrog-cli-tests-repo2/flat_recursive_target/",
+      "pattern": "${REPO2}/flat_recursive_source/a/*",
+      "target": "${REPO2}/flat_recursive_target/",
       "flat": "true",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/3_only_flat_recursive_source/a/*3*",
-      "target": "jfrog-cli-tests-repo2/3_only_flat_recursive_target/",
+      "pattern": "${REPO2}/3_only_flat_recursive_source/a/*3*",
+      "target": "${REPO2}/3_only_flat_recursive_target/",
       "flat": "true",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/flat_nonrecursive_source/a/*",
-      "target": "jfrog-cli-tests-repo2/flat_nonrecursive_target/",
+      "pattern": "${REPO2}/flat_nonrecursive_source/a/*",
+      "target": "${REPO2}/flat_nonrecursive_target/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/nonflat_recursive_source/a/*",
-      "target": "jfrog-cli-tests-repo2/nonflat_recursive_target/",
+      "pattern": "${REPO2}/nonflat_recursive_source/a/*",
+      "target": "${REPO2}/nonflat_recursive_target/",
       "flat": "false",
       "recursive": "true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/nonflat_nonrecursive_source/a/*",
-      "target": "jfrog-cli-tests-repo2/nonflat_nonrecursive_target/",
+      "pattern": "${REPO2}/nonflat_nonrecursive_source/a/*",
+      "target": "${REPO2}/nonflat_nonrecursive_target/",
       "flat": "false",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/simple_source/a/a1.in",
-      "target": "jfrog-cli-tests-repo2/simple_target/",
+      "pattern": "${REPO2}/simple_source/a/a1.in",
+      "target": "${REPO2}/simple_target/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/rename_source/a/a1.in",
-      "target": "jfrog-cli-tests-repo2/rename_target/RENAMED.in",
+      "pattern": "${REPO2}/rename_source/a/a1.in",
+      "target": "${REPO2}/rename_target/RENAMED.in",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/simple_placeholder_source/(a)/a1.in",
-      "target": "jfrog-cli-tests-repo2/simple_placeholder_target/{1}/",
+      "pattern": "${REPO2}/simple_placeholder_source/(a)/a1.in",
+      "target": "${REPO2}/simple_placeholder_target/{1}/",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/pattern_placeholder_source/(*)/(*).in",
-      "target": "jfrog-cli-tests-repo2/pattern_placeholder_target/{1}/{2}.in",
+      "pattern": "${REPO2}/pattern_placeholder_source/(*)/(*).in",
+      "target": "${REPO2}/pattern_placeholder_target/{1}/{2}.in",
       "flat": "true",
       "recursive": "false"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/properties_source/*",
-      "target": "jfrog-cli-tests-repo2/properties_target/",
+      "pattern": "${REPO2}/properties_source/*",
+      "target": "${REPO2}/properties_target/",
       "flat": "false",
       "recursive": "true",
       "props": "searchMe=true"
     },
     {
-      "pattern": "jfrog-cli-tests-repo2/defaults_recursive_nonflat_source/*",
-      "target": "jfrog-cli-tests-repo2/defaults_recursive_nonflat_target/"
+      "pattern": "${REPO2}/defaults_recursive_nonflat_source/*",
+      "target": "${REPO2}/defaults_recursive_nonflat_target/"
     }
   ]
 }

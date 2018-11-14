@@ -1,28 +1,28 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo1/data/testsdata/a/",
+      "pattern": "${REPO1}/data/testsdata/a/",
       "target": "out/download/aql_by_artifacts/data/",
       "recursive": "false",
       "flat": "true",
       "excludePatterns": ["*/a1.in", "*a3.in", null, "*c2.in"]
     },
     {
-      "pattern": "jfrog-cli-tests-repo1/data/testsdata/a/b/",
+      "pattern": "${REPO1}/data/testsdata/a/b/",
       "target": "out/download/aql_by_artifacts/data/",
       "recursive": "true",
       "flat": "true",
       "excludePatterns": ["data/testsdata/a/*/*"]
     },
     {
-      "pattern": "jfrog-cli-tests-repo1/data/testsdata/a/b/c/",
+      "pattern": "${REPO1}/data/testsdata/a/b/c/",
       "target": "out/download/aql_by_artifacts/data/",
       "recursive": "false",
       "flat": "true",
       "excludePatterns": ["data/testsdata/a/b/c/c2.i?"]
     },
     {
-      "pattern": "jfrog-cli-tests-repo1/data/testsdata/a/b/",
+      "pattern": "${REPO1}/data/testsdata/a/b/",
       "target": "out/download/aql_by_artifacts/data/",
       "recursive": "true",
       "flat": "true",

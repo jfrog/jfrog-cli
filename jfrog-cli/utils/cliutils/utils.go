@@ -8,9 +8,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
-	"strconv"
-	"strings"
 	"runtime"
+	"strings"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -30,18 +29,11 @@ type ExitCode struct {
 var ExitCodeNoError = ExitCode{0}
 var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
+var ExitCodeBuildScan = ExitCode{3}
 
 func PanicOnError(err error) error {
 	if err != nil {
 		panic(err)
-	}
-	return err
-}
-
-func CheckErrorWithMessage(err error, message string) error {
-	if err != nil {
-		log.Error(message)
-		err = errorutils.CheckError(err)
 	}
 	return err
 }
@@ -56,6 +48,13 @@ func FailNoOp(err error, success, failed int, failNoOp bool) {
 	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode != ExitCodeNoError {
 		traceExit(exitCode, err)
 	}
+}
+
+func ExitBuildScan(failBuild bool, err error) {
+	if failBuild {
+		traceExit(ExitCodeBuildScan, err)
+	}
+	ExitOnErr(err)
 }
 
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
@@ -122,16 +121,6 @@ func GetConfigVersion() string {
 	return "1"
 }
 
-func GetBoolEnvValue(flagName string, defValue bool) (bool, error) {
-	envVarValue := os.Getenv(flagName)
-	if envVarValue == "" {
-		return defValue, nil
-	}
-	val, err := strconv.ParseBool(envVarValue)
-	err = CheckErrorWithMessage(err, "can't parse environment variable "+flagName)
-	return val, err
-}
-
 func GetDocumentationMessage() string {
 	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
 }
@@ -169,6 +158,9 @@ func varsAsMap(vars []string) map[string]string {
 	result := map[string]string{}
 	for _, v := range vars {
 		keyVal := strings.SplitN(v, "=", 2)
+		if keyVal[0] == "" {
+			continue
+		}
 		result[keyVal[0]] = keyVal[1]
 	}
 	return result

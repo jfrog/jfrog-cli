@@ -1,6 +1,7 @@
 package bintray
 
 import (
+	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/commands"
 	accesskeysdoc "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/bintray/accesskeys"
@@ -40,7 +41,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -611,7 +611,7 @@ func configure(c *cli.Context) {
 		} else if c.Args().Get(0) == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args().Get(0)+"'. Available arguments are 'show' and 'clear'."))
+			cliutils.ExitOnErr(errors.New("Unknown argument '" + c.Args().Get(0) + "'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
 		interactive := c.BoolT("interactive")
@@ -934,7 +934,7 @@ func accessKeys(c *cli.Context) {
 	case "update":
 		err = commands.UpdateAccessKey(btConfig, createAccessKeysParams(c, org, keyId))
 	default:
-		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before the key argument. Got "+c.Args().Get(0)))
+		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before the key argument. Got " + c.Args().Get(0)))
 	}
 	cliutils.ExitOnErr(err)
 }
@@ -979,7 +979,7 @@ func handleEntitlements(c *cli.Context) {
 		}
 		err = commands.DeleteEntitlement(btConfig, id, versionPath)
 	default:
-		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before "+c.Args().Get(1)+". Got "+c.Args().Get(0)))
+		cliutils.ExitOnErr(errors.New("Expecting show, create, update or delete before " + c.Args().Get(1) + ". Got " + c.Args().Get(0)))
 	}
 	cliutils.ExitOnErr(err)
 }
@@ -1164,7 +1164,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 	if exists {
 		return nil, nil
 	}
-	val, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err := clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	if err != nil {
 		return nil, err
 	}

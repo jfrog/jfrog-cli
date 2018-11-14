@@ -40,6 +40,8 @@ github.com/jfrog/jfrog-client-go v0.0.0-20181022134807-708611ac5084 h1:7MWY8BY+d
 github.com/jfrog/jfrog-client-go v0.0.0-20181022134807-708611ac5084/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
 github.com/jfrog/jfrog-client-go v0.1.0 h1:88HAcAKn4uPYWIWJV5CKncn15e8ELzzwvuqkMewD2aA=
 github.com/jfrog/jfrog-client-go v0.1.0/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
+github.com/jfrog/jfrog-client-go v0.1.1 h1:UezsDghhlrgpVcOXYSqz9jP8MrgbaPcNT8zjDvZxTsQ=
+github.com/jfrog/jfrog-client-go v0.1.1/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
