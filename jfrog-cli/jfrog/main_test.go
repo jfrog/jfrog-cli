@@ -37,7 +37,7 @@ func tearDownIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestBuildTools {
+	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
 		CleanBuildToolsTests()
 	}
 }

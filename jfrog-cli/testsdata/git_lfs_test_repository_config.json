@@ -1,5 +1,5 @@
 {
-  "key" : "jfrog-cli-tests-lfs-repo",
+  "key" : "${LFS_REPO}",
   "packageType" : "gitlfs",
   "description" : "",
   "notes" : "",

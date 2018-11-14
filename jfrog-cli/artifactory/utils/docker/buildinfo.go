@@ -3,6 +3,7 @@ package docker
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	buildutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -18,6 +19,8 @@ const (
 	Pull CommandType = "pull"
 	Push CommandType = "push"
 )
+
+const ImageNotFoundErrorMessage string = "Could not find docker image in Artifactory, expecting image ID: %s"
 
 // Docker image build info builder
 type Builder interface {
@@ -75,34 +78,7 @@ func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
 	return builder.createBuildInfo()
 }
 
-// First we will try to get assuming using a reverse proxy (sub domain or port methods)
-// If fails, we will try the repository path (proxy-less).
-func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error) {
-	var searchResults map[string]utils.ResultItem
-	// Try to get layers, assuming reverse proxy
-	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.repository, builder.image.Path(), "*"), builder.serviceManager)
-	if err != nil {
-		return nil, err
-	}
-	// Try to get layers, assuming proxy-less (repository path)
-	if searchResults == nil {
-		// Need to remove the "/" from the image path
-		searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.image.Path()[1:], "*"), builder.serviceManager)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if searchResults == nil {
-		// Layers not found in the required path.
-		return nil, errorutils.CheckError(errors.New("Found incorrect docker image, expecting image ID: " + builder.imageId))
-	}
-
-	return searchResults, nil
-}
-
-// Search validate and create artifacts and dependencies of docker image.
+// Search, validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	// Search for all the image layer to get the local path inside Artifactory (supporting virtual repos).
 	searchResults, err := builder.getImageLayersFromArtifactory()
@@ -121,32 +97,104 @@ func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	}
 
 	if builder.commandType == Push {
-		builder.artifacts = append(builder.artifacts, manifestArtifact)
-		builder.artifacts = append(builder.artifacts, configLayerArtifact)
-	} else {
-		builder.dependencies = append(builder.dependencies, manifestDependency)
-		builder.dependencies = append(builder.dependencies, configLayerDependency)
+		return builder.handlePush(manifestArtifact, configLayerArtifact, manifest, configLayer, searchResults)
 	}
 
-	builder.layers = append(builder.layers, searchResults["manifest.json"])
-	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
-	for i := 0; i < configLayer.getNumberLayers(); i++ {
-		layerFileName := digestToLayer(manifest.Layers[i].Digest)
+	return builder.handlePull(manifestDependency, configLayerDependency, manifest, searchResults)
+}
+
+// First we will try to get assuming using a reverse proxy (sub domain or port methods).
+// If fails, we will try the repository path (proxy-less).
+func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error) {
+	var searchResults map[string]utils.ResultItem
+	imagePath := builder.image.Path()
+
+	// Search layers - assuming reverse proxy.
+	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.repository, imagePath, "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
+	}
+
+	// Search layers - assuming proxy-less (repository path).
+	// Need to remove the "/" from the image path.
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:], "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
+	}
+
+	if builder.commandType == Push {
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+	}
+
+	// If image path includes more than 3 slashes, Artifactory doesn't store this image under 'library',
+	// thus we should not look further.
+	if strings.Count(imagePath, "/") > 3 {
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+	}
+
+	// Assume reverse proxy - this time with 'library' as part of the path.
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
+	}
+
+	// Assume proxy-less - this time with 'library' as part of the path.
+	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
+	if err != nil || searchResults != nil {
+		return searchResults, err
+	}
+
+	// Image layers not found.
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+}
+
+func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
+	endOfRepoNameIndex := strings.Index(builder.image.Path()[1:], "/")
+	return path.Join(builder.repository, "library", builder.image.Path()[endOfRepoNameIndex+ 1:])
+}
+
+func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDependency buildinfo.Dependency, imageManifest *manifest, searchResults map[string]utils.ResultItem) error {
+	// Add dependencies
+	builder.dependencies = append(builder.dependencies, manifestDependency)
+	builder.dependencies = append(builder.dependencies, configLayerDependency)
+
+	// Add image layers as dependencies
+	for i := 0; i < len(imageManifest.Layers); i++ {
+		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
-			return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + "in Artifactory"))
-		}
-
-		if builder.commandType == Push {
-			// Decide if layer is a dependency
-			if i < configLayer.getNumberOfDependentLayers() {
-				builder.dependencies = append(builder.dependencies, item.ToDependency())
+			// Check if layer marker exists in Artifactory
+			item, layerExists = searchResults[layerFileName + ".marker"]
+			if !layerExists {
+				return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " or its marker in Artifactory"))
 			}
-			builder.artifacts = append(builder.artifacts, item.ToArtifact())
-		} else {
+		}
+		builder.dependencies = append(builder.dependencies, item.ToDependency())
+	}
+	return nil
+}
+
+func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifact buildinfo.Artifact, imageManifest *manifest, configurationLayer *configLayer, searchResults map[string]utils.ResultItem) error {
+	// Add artifacts
+	builder.artifacts = append(builder.artifacts, manifestArtifact)
+	builder.artifacts = append(builder.artifacts, configLayerArtifact)
+	// Add layers
+	builder.layers = append(builder.layers, searchResults["manifest.json"])
+	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
+
+	// Add image layers as artifacts and dependencies
+	for i := 0; i < configurationLayer.getNumberLayers(); i++ {
+		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
+		item, layerExists := searchResults[layerFileName]
+		if !layerExists {
+			return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " in Artifactory"))
+		}
+		// Decide if the layer is also a dependency
+		if i < configurationLayer.getNumberOfDependentLayers() {
 			builder.dependencies = append(builder.dependencies, item.ToDependency())
 		}
 
+		builder.artifacts = append(builder.artifacts, item.ToArtifact())
 		builder.layers = append(builder.layers, item)
 	}
 	return nil

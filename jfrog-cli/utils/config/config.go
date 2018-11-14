@@ -3,21 +3,17 @@ package config
 import (
 	"bytes"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -376,65 +372,12 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.Artifa
 	artAuth.SetUser(artifactoryDetails.User)
 	artAuth.SetPassword(artifactoryDetails.Password)
 	if artifactoryDetails.sshAuthenticationRequired() {
-		var sshKey, sshPassphrase []byte
-		var err error
-		if len(artifactoryDetails.SshKeyPath) > 0 {
-			sshKey, sshPassphrase, err = readSshKeyAndPassphrase(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
-			if err != nil {
-				return nil, err
-			}
-		}
-		err = artAuth.AuthenticateSsh(sshKey, sshPassphrase)
+		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return artAuth, nil
-}
-
-func readSshKeyAndPassphrase(sshKeyPath, sshPassphrase string) ([]byte, []byte, error) {
-	sshKey, err := ioutil.ReadFile(utils.ReplaceTildeWithUserHome(sshKeyPath))
-	if errorutils.CheckError(err) != nil {
-		return nil, nil, err
-	}
-	if len(sshPassphrase) == 0 {
-		encryptedKey, err := isEncrypted(sshKey)
-		if errorutils.CheckError(err) != nil {
-			return nil, nil, err
-		}
-		if encryptedKey {
-			sshPassphrase, err = readSshPassphrase(sshKeyPath)
-			if errorutils.CheckError(err) != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	return sshKey, []byte(sshPassphrase), err
-}
-
-func readSshPassphrase(sshKeyPath string) (string, error) {
-	offerConfig, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
-	if err != nil || !offerConfig {
-		return "", err
-	}
-	simplePrompt := &prompt.Simple{
-		Msg:   "Enter passphrase for key '" + sshKeyPath + "': ",
-		Mask:  true,
-		Label: "sshPassphrase",
-	}
-	if err = simplePrompt.Read(); err != nil {
-		return "", err
-	}
-	return simplePrompt.GetResults().GetString("sshPassphrase"), nil
-}
-
-func isEncrypted(buffer []byte) (bool, error) {
-	block, _ := pem.Decode(buffer)
-	if block == nil {
-		return false, errors.New("SSH: no key found")
-	}
-	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED"), nil
 }
 
 func (missionControlDetails *MissionControlDetails) SetUser(username string) {

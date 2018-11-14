@@ -2,12 +2,12 @@ version: 1
 type: gradle
 
 resolver:
-    repo: jfrog-cli-tests-jcenter-remote
+    repo: ${JCENTER_REMOTE_REPO}
     username: ${RT_USERNAME}
     password: ${RT_PASSWORD}
     url: ${RT_URL}
 deployer:
-    repo: jfrog-cli-tests-repo1
+    repo: ${REPO1}
     username: ${RT_USERNAME}
     password: ${RT_PASSWORD}
     url: ${RT_URL}

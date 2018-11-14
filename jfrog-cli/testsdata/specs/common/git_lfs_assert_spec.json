@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-lfs-repo/*",
+      "pattern": "${LFS_REPO}/*",
       "recursive": "true"
     }
   ]

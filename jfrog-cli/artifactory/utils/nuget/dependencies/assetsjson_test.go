@@ -22,6 +22,7 @@ func TestJson(t *testing.T) {
   },
   "libraries": {
     "dep1/1.0.1": {
+      "type": "project",
       "path": "dep1/path/1.0.1",
       "files": [
         "file1",
@@ -67,7 +68,7 @@ func TestJson(t *testing.T) {
 			"dep2/1.0.2": targetDependency{Dependencies: map[string]string{"dep1": "1.0.1"}},
 		}},
 		Libraries: map[string]library{
-			"dep1/1.0.1": {Path: "dep1/path/1.0.1", Files: []string{"file1", "file2"}},
+			"dep1/1.0.1": {Type: "project", Path: "dep1/path/1.0.1", Files: []string{"file1", "file2"}},
 			"dep2/1.0.2": {Path: "dep2/path/1.0.2", Files: []string{"file1", "file2"}},
 		},
 		Project: project{Version: "1.0.0", Restore: restore{PackagesPath: "path/to/packages"},

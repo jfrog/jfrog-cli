@@ -1,8 +1,8 @@
 {
   "files": [
     {
-      "pattern": "jfrog-cli-tests-repo1/data/",
-      "target": "jfrog-cli-tests-repo2/",
+      "pattern": "${REPO1}/data/",
+      "target": "${REPO2}/",
       "excludePatterns": ["*b*", "*c*"]
     }
   ]

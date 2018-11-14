@@ -94,6 +94,9 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 	dependencies := map[string]*buildinfo.Dependency{}
 	packagesPath := assets.Project.Restore.PackagesPath
 	for dependencyId, library := range assets.Libraries {
+		if library.Type == "project" {
+			continue
+		}
 		nupkgFileName, err := library.getNupkgFileName()
 		if err != nil {
 			return nil, err
@@ -156,6 +159,7 @@ type targetDependency struct {
 }
 
 type library struct {
+	Type  string   `json:"type,omitempty"`
 	Path  string   `json:"path,omitempty"`
 	Files []string `json:"files,omitempty"`
 }
