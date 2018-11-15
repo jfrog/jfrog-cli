@@ -79,7 +79,8 @@ func (dependency *Dependency) PopulateDependenciesModAndPublish(cachePath, tempD
 			log.Debug("Overwriting the mod file in the cache from the one from Artifactory", dependency.GetId())
 			moduleAndVersion := strings.Split(dependency.GetId(), ":")
 			path = overwriteModFileWithinCache(cachePath, targetRepo, moduleAndVersion[0], moduleAndVersion[1], details, httpclient.NewDefaultHttpClient())
-			dependency.UpdateModContent(depsTidy, path)
+			err = dependency.UpdateModContent(depsTidy, path)
+			logErrorIfOccurred(err)
 			shouldRunGoModCommand = false
 		}
 		log.Debug("Entering dependency", dependency.GetId())
@@ -101,6 +102,12 @@ func (dependency *Dependency) publishDependencyAndPopulateTransitive(path, cache
 	// If the mod is not empty, populate transitive dependencies
 	if depsTidy && dependency.PatternMatched(regExp.GetNotEmptyModRegex()) {
 		dependency.setTransitiveDependencies(targetRepo, graphDependencies, details)
+	}
+
+	published, _ := global.GetGlobalVariables().GetGlobalMap()[dependency.GetId()]
+	if !published {
+		err = dependency.writeModToGoCache(cachePath)
+		logErrorIfOccurred(err)
 	}
 
 	// Populate and publish the transitive dependencies.
@@ -129,34 +136,38 @@ func (dependency *Dependency) updateCacheAndPublishDependency(cachePath, path, t
 	global := global.GetGlobalVariables()
 	dependenciesMap := global.GetGlobalMap()
 	published, _ := dependenciesMap[dependency.GetId()]
+	failed := false
 	if !published {
 		if depsTidy {
 			// Now we need to check if there are some indirect dependencies in the go.mod file:
 			dependency.updateModWithoutIndirect(cachePath, path, depsTidy, regExp)
 		}
+		log.Debug("Writing the new mod content to cache of the dependency", dependency.GetId())
+		err := dependency.writeModToGoCache(cachePath)
+		logErrorIfOccurred(err)
 
 		serviceManager, err := utils.CreateServiceManager(details, false)
 		if err != nil {
-			if depsTidy {
-				global.IncreaseFailures()
-			}
+			global.IncreaseFailures()
 			return err
 		}
-		totalOutOf := fmt.Sprintf("%d/%d", global.GetSuccess(), global.GetTotal())
+		totalOutOf := fmt.Sprintf("%d/%d", global.GetSuccess() + 1, global.GetTotal())
 		dependenciesMap[dependency.GetId()] = true
 		// Publish the dependency
 		err = dependency.Publish(totalOutOf, targetRepo, serviceManager)
 		if err != nil {
+			global.IncreaseFailures()
+			failed = true
 			if depsTidy {
 				log.Debug("Received and error:", err.Error())
 			} else {
-				global.IncreaseFailures()
 				return err
 			}
 		}
-
 	}
-	global.IncreaseSuccess()
+	if !failed {
+		global.IncreaseSuccess()
+	}
 	return nil
 }
 
@@ -254,9 +265,6 @@ func (dependency *Dependency) updateModWithoutIndirect(cachePath, path string, d
 		_, err := populateModAndGetDependenciesGraph(path, true, false)
 		logErrorIfOccurred(err)
 		err = dependency.UpdateModContent(depsTidy, path)
-		logErrorIfOccurred(err)
-		log.Debug("Writing the new mod content to cache of the dependency", dependency.GetId())
-		err = dependency.writeModToGoCache(cachePath)
 		logErrorIfOccurred(err)
 	}
 }
