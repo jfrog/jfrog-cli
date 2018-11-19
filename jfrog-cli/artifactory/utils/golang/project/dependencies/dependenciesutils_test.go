@@ -63,7 +63,7 @@ func TestCreateDependencyWithMod(t *testing.T) {
 	baseDir := tests.GetBaseDir(true)
 	cachePath := filepath.Join(baseDir, "zip")
 	modContent := "module github.com/test"
-	dep := Dependency{
+	dep := Package{
 		id:         "github.com/test:v1.2.3",
 		modContent: []byte(modContent),
 		zipPath:    filepath.Join(cachePath, "v1.2.3.zip"),

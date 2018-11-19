@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/global"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -18,13 +17,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"unicode"
 )
 
 // Collects the dependencies of the project
-func CollectProjectNeededDependencies(targetRepo string, details *config.ArtifactoryDetails) (map[string]bool, error) {
+func CollectProjectNeededDependencies(targetRepo string, cache *golang.DynamicCache,details *config.ArtifactoryDetails) (map[string]bool, error) {
 	dependenciesMap, err := golang.GetDependenciesGraph()
 	if err != nil {
 		return nil, err
@@ -39,29 +37,16 @@ func CollectProjectNeededDependencies(targetRepo string, details *config.Artifac
 	if err != nil {
 		return nil, err
 	}
-	projectDependencies, err := downloadDependencies(dependenciesMap, details, targetRepo)
+	projectDependencies, err := downloadDependencies(targetRepo, cache, dependenciesMap, details)
 	if err != nil {
 		return projectDependencies, err
 	}
 	return projectDependencies, nil
 }
 
-func GetRootDirAndUnsetProxyEnv(depsTidy bool) (string, error) {
-	err := os.Unsetenv(golang.GOPROXY)
-	if err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	var rootDir string
-	if depsTidy {
-		rootDir, err = golang.GetRootDir()
-	}
-	return rootDir, err
-}
-
-func downloadDependencies(depSlice map[string]bool, details *config.ArtifactoryDetails, targetRepo string) (map[string]bool, error) {
+func downloadDependencies(targetRepo string, cache *golang.DynamicCache, depSlice map[string]bool, details *config.ArtifactoryDetails) (map[string]bool, error) {
 	client := httpclient.NewDefaultHttpClient()
-	global := global.GetGlobalVariables()
-	globalDependenciesMap := global.GetGlobalMap()
+	cacheDependenciesMap := cache.GetGlobalMap()
 	dependenciesMap := map[string]bool{}
 	for module := range depSlice {
 		nameAndVersion := strings.Split(module, "@")
@@ -71,13 +56,13 @@ func downloadDependencies(depSlice map[string]bool, details *config.ArtifactoryD
 		}
 
 		if resp.StatusCode == 200 {
-			globalDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = true
+			cacheDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = true
 			err = downloadDependency(true, module, targetRepo, details)
 			dependenciesMap[module] = true
 		}
 
 		if resp.StatusCode == 404 {
-			globalDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = false
+			cacheDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = false
 			err = downloadDependency(false, module, "", nil)
 			dependenciesMap[module] = false
 		}
@@ -104,7 +89,7 @@ func performHeadRequest(details *config.ArtifactoryDetails, client *httpclient.H
 }
 
 // Creating dependency with the mod file in the temp directory
-func createDependencyWithMod(tempDir string, dep Dependency) (path string, err error) {
+func createDependencyWithMod(tempDir string, dep Package) (path string, err error) {
 	moduleId := dep.GetId()
 	moduleInfo := strings.Split(moduleId, ":")
 
@@ -200,7 +185,7 @@ func populateModAndGetDependenciesGraph(path string, shouldRunGoModCommand, shou
 }
 
 // Downloads the mod file from Artifactory to the Go cache
-func overwriteModFileWithinCache(cachePath, targetRepo, name, version string, details *config.ArtifactoryDetails, client *httpclient.HttpClient) string {
+func downloadModFileFromArtifactoryToLocalCache(cachePath, targetRepo, name, version string, details *config.ArtifactoryDetails, client *httpclient.HttpClient) string {
 	pathToModuleCache := filepath.Join(cachePath, name, "@v")
 	dirExists, err := fileutils.IsDirExists(pathToModuleCache, false)
 	if err != nil {
@@ -253,8 +238,8 @@ func GetRegex() (regExp *RegExp, err error) {
 	return
 }
 
-func downloadAndCreateDependency(cachePath, name, version, fullDependencyName, targetRepo string, downloadedFromArtifactory bool, details *config.ArtifactoryDetails) (*Dependency, error) {
-	// Dependency is missing within the cache!! need to download it...
+func downloadAndCreateDependency(cachePath, name, version, fullDependencyName, targetRepo string, downloadedFromArtifactory bool, details *config.ArtifactoryDetails) (*Package, error) {
+	// Dependency is missing within the cache. Need to download it...
 	err := downloadDependency(downloadedFromArtifactory, fullDependencyName, targetRepo, details)
 	if err != nil {
 		return nil, err
@@ -284,7 +269,7 @@ func shouldDownloadFromArtifactory(module, version, targetRepo string, details *
 	return false, nil
 }
 
-func loadDependencies(cachePath string) ([]Dependency, error) {
+func loadDependencies(cachePath string) ([]Package, error) {
 	modulesMap, err := golang.GetDependenciesGraph()
 	if err != nil {
 		return nil, err
@@ -295,8 +280,8 @@ func loadDependencies(cachePath string) ([]Dependency, error) {
 	return GetDependencies(cachePath, modulesMap)
 }
 
-func GetDependencies(cachePath string, moduleSlice map[string]bool) ([]Dependency, error) {
-	deps := []Dependency{}
+func GetDependencies(cachePath string, moduleSlice map[string]bool) ([]Package, error) {
+	var deps []Package
 	for module := range moduleSlice {
 		moduleInfo := strings.Split(module, "@")
 		name := getDependencyName(moduleInfo[0])
@@ -328,7 +313,7 @@ func getDependencyName(name string) string {
 
 // Creates a go dependency.
 // Returns a nil value in case the dependency does not include a zip in the cache.
-func createDependency(cachePath, dependencyName, version string) (*Dependency, error) {
+func createDependency(cachePath, dependencyName, version string) (*Package, error) {
 	// We first check if the this dependency has a zip binary in the local go cache.
 	// If it does not, nil is returned. This seems to be a bug in go.
 	zipPath, err := getPackageZipLocation(cachePath, dependencyName, version)
@@ -341,7 +326,7 @@ func createDependency(cachePath, dependencyName, version string) (*Dependency, e
 		return nil, nil
 	}
 
-	dep := Dependency{}
+	dep := Package{}
 
 	dep.id = strings.Join([]string{dependencyName, version}, ":")
 	dep.version = version
@@ -418,19 +403,6 @@ func getGOPATH() (string, error) {
 		return "", fmt.Errorf("Could not find GOPATH env: %s", err.Error())
 	}
 	return strings.TrimSpace(string(output)), nil
-}
-
-type RegExp struct {
-	notEmptyModRegex *regexp.Regexp
-	indirectRegex    *regexp.Regexp
-}
-
-func (reg *RegExp) GetNotEmptyModRegex() *regexp.Regexp {
-	return reg.notEmptyModRegex
-}
-
-func (reg *RegExp) GetIndirectRegex() *regexp.Regexp {
-	return reg.indirectRegex
 }
 
 func mergeReplaceDependenciesWithGraphDependencies(replaceDeps []string, graphDependencies map[string]bool) error {

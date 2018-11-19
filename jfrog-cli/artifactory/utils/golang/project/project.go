@@ -23,7 +23,7 @@ import (
 
 // Represent go project
 type Go interface {
-	Dependencies() []dependencies.Dependency
+	Dependencies() []dependencies.Package
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
@@ -31,7 +31,7 @@ type Go interface {
 }
 
 type goProject struct {
-	dependencies []dependencies.Dependency
+	dependencies []dependencies.Package
 	artifacts    []buildinfo.Artifact
 	modContent   []byte
 	moduleName   string
@@ -55,7 +55,7 @@ func Load(version string) (Go, error) {
 }
 
 // Get the go project dependencies.
-func (project *goProject) Dependencies() []dependencies.Dependency {
+func (project *goProject) Dependencies() []dependencies.Package {
 	return project.dependencies
 }
 

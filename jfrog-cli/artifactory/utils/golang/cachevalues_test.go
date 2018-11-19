@@ -1,4 +1,4 @@
-package global
+package golang
 
 import (
 	"math/rand"
@@ -6,11 +6,11 @@ import (
 )
 
 func TestSuccessValues(t *testing.T) {
-	global1 := GetGlobalVariables()
+	global1 := GetStaticCache()
 	var success int
 	global1.IncreaseSuccess()
 	success++
-	global2 := GetGlobalVariables()
+	global2 := GetStaticCache()
 	if global2.GetSuccess() != success {
 		t.Error("Expected to get", success, ", got:", global2.GetSuccess())
 	}
@@ -41,11 +41,11 @@ func TestSuccessValues(t *testing.T) {
 }
 
 func TestFailureValues(t *testing.T) {
-	global1 := GetGlobalVariables()
+	global1 := GetStaticCache()
 	var failure int
 	global1.IncreaseFailures()
 	failure++
-	global2 := GetGlobalVariables()
+	global2 := GetStaticCache()
 	if global2.GetFailures() != failure {
 		t.Error("Expected to get", failure, ", got:", global2.GetFailures())
 	}
@@ -76,11 +76,11 @@ func TestFailureValues(t *testing.T) {
 }
 
 func TestTotalValue(t *testing.T) {
-	global1 := GetGlobalVariables()
+	global1 := GetStaticCache()
 	var total int
 	global1.IncreaseTotal(1)
 	total++
-	global2 := GetGlobalVariables()
+	global2 := GetStaticCache()
 	if global2.GetTotal() != total {
 		t.Error("Expected to get", total, ", got:", global2.GetTotal())
 	}
@@ -97,7 +97,7 @@ func TestTotalValue(t *testing.T) {
 	}
 
 	randValue := rand.Intn(100)
-	global3 := GetGlobalVariables()
+	global3 := GetStaticCache()
 	global3.IncreaseTotal(randValue)
 	total += randValue
 	if global2.GetTotal() != total {
@@ -106,11 +106,11 @@ func TestTotalValue(t *testing.T) {
 }
 
 func TestGlobalMap(t *testing.T) {
-	global1 := GetGlobalVariables()
+	global1 := GetStaticCache()
 	globalMap := global1.GetGlobalMap()
 	globalMap["key"] = false
 
-	global2 := GetGlobalVariables()
+	global2 := GetStaticCache()
 	globalMap2 := global2.GetGlobalMap()
 	value, ok := globalMap2["key"]
 	if !ok {

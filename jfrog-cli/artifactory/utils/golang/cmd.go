@@ -120,13 +120,14 @@ func DownloadDependency(dependencyName string) error {
 
 // Runs go mod graph command and returns slice of the dependencies
 func GetDependenciesGraph() (map[string]bool, error) {
-	log.Debug("Running go mod graph command")
+	log.Info("Running go mod graph command")
 	goCmd, err := NewCmd()
 	if err != nil {
 		return nil, err
 	}
 	goCmd.Command = []string{"mod", "graph"}
 	output, err := utils.RunCmdOutput(goCmd)
+	log.Debug(string(output))
 	return outputToMap(string(output)), errorutils.CheckError(err)
 }
 
@@ -147,7 +148,7 @@ func outputToMap(output string) map[string]bool {
 
 // Using go mod download command to download all the dependencies before publishing to Artifactory
 func RunGoModTidy() error {
-	log.Debug("Running go mod tidy command")
+	log.Info("Running go mod tidy command")
 	goCmd, err := NewCmd()
 	if err != nil {
 		return err
