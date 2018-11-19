@@ -158,7 +158,7 @@ func varsAsMap(vars []string) map[string]string {
 	result := map[string]string{}
 	for _, v := range vars {
 		keyVal := strings.SplitN(v, "=", 2)
-		if keyVal[0] == "" {
+		if len(keyVal) != 2 {
 			continue
 		}
 		result[keyVal[0]] = keyVal[1]
