@@ -6,128 +6,57 @@ import (
 )
 
 func TestSuccessValues(t *testing.T) {
-	global1 := GetStaticCache()
+	cache := DependenciesCache{}
 	var success int
-	global1.IncreaseSuccess()
+	cache.IncrementSuccess()
 	success++
-	global2 := GetStaticCache()
-	if global2.GetSuccess() != success {
-		t.Error("Expected to get", success, ", got:", global2.GetSuccess())
-	}
-
-	global2.IncreaseSuccess()
+	cache.IncrementSuccess()
 	success++
-	global2.IncreaseSuccess()
+	cache.IncrementSuccess()
 	success++
-	global2.IncreaseSuccess()
-	success++
-
-	if global1.GetSuccess() != success {
-		t.Error("Expected to get", success, ", got:", global2.GetSuccess())
-	}
-
-	randValue := rand.Intn(100)
-
-	i := 0
-	for i < randValue {
-		global1.IncreaseSuccess()
-		success++
-		i++
-	}
-
-	if global2.GetSuccess() != success {
-		t.Error("Expected to get", success, ", got:", global2.GetSuccess())
+	if cache.GetSuccesses() != success {
+		t.Error("Expected to get", success, ", got:", cache.GetSuccesses())
 	}
 }
 
 func TestFailureValues(t *testing.T) {
-	global1 := GetStaticCache()
-	var failure int
-	global1.IncreaseFailures()
-	failure++
-	global2 := GetStaticCache()
-	if global2.GetFailures() != failure {
-		t.Error("Expected to get", failure, ", got:", global2.GetFailures())
-	}
-
-	global2.IncreaseFailures()
-	failure++
-	global2.IncreaseFailures()
-	failure++
-	global2.IncreaseFailures()
-	failure++
-
-	if global1.GetFailures() != failure {
-		t.Error("Expected to get", failure, ", got:", global2.GetFailures())
-	}
-
-	randValue := rand.Intn(100)
-
-	i := 0
-	for i < randValue {
-		global1.IncreaseFailures()
-		failure++
-		i++
-	}
-
-	if global2.GetFailures() != failure {
-		t.Error("Expected to get", failure, ", got:", global2.GetFailures())
+	cache := DependenciesCache{}
+	var failures int
+	cache.IncrementFailures()
+	failures++
+	cache.IncrementFailures()
+	failures++
+	cache.IncrementFailures()
+	failures++
+	if cache.GetFailures() != failures {
+		t.Error("Expected to get", failures, ", got:", cache.GetSuccesses())
 	}
 }
 
 func TestTotalValue(t *testing.T) {
-	global1 := GetStaticCache()
+	cache := DependenciesCache{}
 	var total int
-	global1.IncreaseTotal(1)
+	cache.IncrementTotal(1)
 	total++
-	global2 := GetStaticCache()
-	if global2.GetTotal() != total {
-		t.Error("Expected to get", total, ", got:", global2.GetTotal())
+	if cache.GetTotal() != total {
+		t.Error("Expected to get", total, ", got:", cache.GetTotal())
 	}
 
-	global2.IncreaseTotal(1)
+	cache.IncrementTotal(1)
 	total++
-	global2.IncreaseTotal(1)
+	cache.IncrementTotal(1)
 	total++
-	global2.IncreaseTotal(1)
+	cache.IncrementTotal(1)
 	total++
 
-	if global1.GetTotal() != total {
-		t.Error("Expected to get", total, ", got:", global2.GetTotal())
+	if cache.GetTotal() != total {
+		t.Error("Expected to get", total, ", got:", cache.GetTotal())
 	}
 
 	randValue := rand.Intn(100)
-	global3 := GetStaticCache()
-	global3.IncreaseTotal(randValue)
+	cache.IncrementTotal(randValue)
 	total += randValue
-	if global2.GetTotal() != total {
-		t.Error("Expected to get", total, ", got:", global2.GetFailures())
-	}
-}
-
-func TestGlobalMap(t *testing.T) {
-	global1 := GetStaticCache()
-	globalMap := global1.GetGlobalMap()
-	globalMap["key"] = false
-
-	global2 := GetStaticCache()
-	globalMap2 := global2.GetGlobalMap()
-	value, ok := globalMap2["key"]
-	if !ok {
-		t.Error("Expected key were not found in second map")
-	}
-
-	if value {
-		t.Error("Expected value false but got true for the second map")
-	}
-
-	globalMap2["key"] = true
-	value, ok = globalMap["key"]
-	if !ok {
-		t.Error("Expected key were not found in first map")
-	}
-
-	if !value {
-		t.Error("Expected value true but got false")
+	if cache.GetTotal() != total {
+		t.Error("Expected to get", total, ", got:", cache.GetTotal())
 	}
 }

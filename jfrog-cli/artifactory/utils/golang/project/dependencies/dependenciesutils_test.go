@@ -3,6 +3,7 @@ package dependencies
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -60,6 +61,15 @@ func TestGetDependencyName(t *testing.T) {
 }
 
 func TestCreateDependencyWithMod(t *testing.T) {
+	err := fileutils.CreateTempDirPath()
+	if err != nil {
+		t.Error(err)
+	}
+	defer fileutils.RemoveTempDir()
+	tempDir, err := fileutils.GetTempDirPath()
+	if err != nil {
+		t.Error(err)
+	}
 	baseDir := tests.GetBaseDir(true)
 	cachePath := filepath.Join(baseDir, "zip")
 	modContent := "module github.com/test"
@@ -68,11 +78,11 @@ func TestCreateDependencyWithMod(t *testing.T) {
 		modContent: []byte(modContent),
 		zipPath:    filepath.Join(cachePath, "v1.2.3.zip"),
 	}
-	pathReturned, err := createDependencyWithMod(baseDir, dep)
+	pathReturned, err := createDependencyWithMod(dep)
 	if err != nil {
 		t.Error(err)
 	}
-	path := filepath.Join(baseDir, "github.com", "test@v1.2.3", "go.mod")
+	path := filepath.Join(tempDir, "github.com", "test@v1.2.3", "go.mod")
 	if path != pathReturned {
 		t.Error(fmt.Sprintf("Expected %s, got %s", path, pathReturned))
 	}
@@ -85,7 +95,7 @@ func TestCreateDependencyWithMod(t *testing.T) {
 	if modContent != string(mod) {
 		t.Error(fmt.Sprintf("Expected %s, got %s", modContent, string(mod)))
 	}
-	err = os.RemoveAll(filepath.Join(baseDir, "github.com"))
+	err = os.RemoveAll(filepath.Join(tempDir, "github.com"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -108,10 +118,7 @@ func TestMergeReplaceDependenciesWithGraphDependencies(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := mergeReplaceDependenciesWithGraphDependencies(test.replaceDeps, test.graphDependencies)
-			if err != nil {
-				t.Error(err)
-			}
+			mergeReplaceDependenciesWithGraphDependencies(test.replaceDeps, test.graphDependencies)
 			if !reflect.DeepEqual(test.expectedMap, test.graphDependencies) {
 				t.Errorf("Test name: %s: Expected: %v, Got: %v", test.name, test.expectedMap, test.graphDependencies)
 			}

@@ -77,13 +77,11 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 	// Temp directory for the project archive.
 	// The directory will be deleted at the end.
-	if !fileutils.IsTempDirInit() {
-		err = fileutils.CreateTempDirPath()
-		if err != nil {
-			return err
-		}
-		defer fileutils.RemoveTempDir()
+	err = fileutils.CreateTempDirPath()
+	if err != nil {
+		return err
 	}
+	defer fileutils.RemoveTempDir()
 
 	params := &_go.GoParamsImpl{}
 	params.Version = project.version
@@ -157,7 +155,6 @@ func (project *goProject) readModFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	modFilePath = strings.TrimSpace(modFilePath)
 	modFile, err := os.Open(filepath.Join(modFilePath, "go.mod"))
 	if err != nil {
 		return modFilePath, errorutils.CheckError(err)

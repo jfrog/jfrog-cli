@@ -1,53 +1,43 @@
 package golang
 
-var cache DynamicCache
-
-type DynamicCache struct {
+type DependenciesCache struct {
 	modulesPublished map[string]bool
-	success          int
+	successes        int
 	failures         int
 	total            int
 }
 
-func (dc *DynamicCache) GetGlobalMap() map[string]bool {
+func (dc *DependenciesCache) GetMap() map[string]bool {
 	dc.initMap()
 	return dc.modulesPublished
 }
 
-func (dc *DynamicCache) GetSuccess() int {
-	return dc.success
+func (dc *DependenciesCache) GetSuccesses() int {
+	return dc.successes
 }
 
-func (dc *DynamicCache) GetFailures() int {
+func (dc *DependenciesCache) GetFailures() int {
 	return dc.failures
 }
 
-func (dc *DynamicCache) GetTotal() int {
+func (dc *DependenciesCache) GetTotal() int {
 	return dc.total
 }
 
-func (dc *DynamicCache) IncreaseSuccess() {
-	dc.success += 1
+func (dc *DependenciesCache) IncrementSuccess() {
+	dc.successes += 1
 }
 
-func (dc *DynamicCache) IncreaseFailures() {
+func (dc *DependenciesCache) IncrementFailures() {
 	dc.failures += 1
 }
 
-func (dc *DynamicCache) IncreaseTotal(sum int) {
+func (dc *DependenciesCache) IncrementTotal(sum int) {
 	dc.total += sum
 }
 
-func (dc *DynamicCache) initMap() {
+func (dc *DependenciesCache) initMap() {
 	if dc.modulesPublished == nil {
 		dc.modulesPublished = make(map[string]bool)
 	}
-}
-
-func GetStaticCache() DynamicCache {
-	if &cache == nil {
-		cache = DynamicCache{}
-	}
-	cache.initMap()
-	return cache
 }

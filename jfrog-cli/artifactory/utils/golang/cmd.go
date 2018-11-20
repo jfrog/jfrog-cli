@@ -127,7 +127,9 @@ func GetDependenciesGraph() (map[string]bool, error) {
 	}
 	goCmd.Command = []string{"mod", "graph"}
 	output, err := utils.RunCmdOutput(goCmd)
-	log.Debug(string(output))
+	if len(output) != 0 {
+		log.Debug(string(output))
+	}
 	return outputToMap(string(output)), errorutils.CheckError(err)
 }
 
@@ -136,7 +138,6 @@ func outputToMap(output string) map[string]bool {
 	var result []string
 	mapOfDeps := map[string]bool{}
 	for _, line := range lineOutput {
-
 		splitLine := strings.Split(line, " ")
 		if len(splitLine) == 2 {
 			mapOfDeps[splitLine[1]] = true
@@ -172,5 +173,5 @@ func GetRootDir() (string, error) {
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-	return string(output), nil
+	return strings.TrimSpace(string(output)), nil
 }

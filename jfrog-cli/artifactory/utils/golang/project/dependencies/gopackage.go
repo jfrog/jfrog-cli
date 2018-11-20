@@ -7,9 +7,9 @@ import (
 )
 
 type GoPackage interface {
-	PopulateModIfNeededAndPublish(targetRepo string, cache *golang.DynamicCache,details *config.ArtifactoryDetails) error
+	PopulateModAndPublish(targetRepo string, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error
 	Init() error
-	prepareAndPublish(targetRepo string, cache *golang.DynamicCache, details *config.ArtifactoryDetails) error
+	prepareAndPublish(targetRepo string, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error
 	New(cachePath string, dependency Package) GoPackage
 }
 

@@ -68,22 +68,24 @@ func (dependencyPackage *Package) Init() error {
 	return nil
 }
 
-func (dependencyPackage *Package) PopulateModIfNeededAndPublish(targetRepo string, cache *golangutil.DynamicCache, details *config.ArtifactoryDetails) error {
+func (dependencyPackage *Package) PopulateModAndPublish(targetRepo string, cache *golangutil.DependenciesCache, details *config.ArtifactoryDetails) error {
 	return dependencyPackage.prepareAndPublish(targetRepo, cache, details)
 }
+
 // Prepare for publishing and publish the dependency to Artifactory
-func (dependencyPackage *Package) prepareAndPublish(targetRepo string, cache *golangutil.DynamicCache, details *config.ArtifactoryDetails) error {
+func (dependencyPackage *Package) prepareAndPublish(targetRepo string, cache *golangutil.DependenciesCache, details *config.ArtifactoryDetails) error {
 	serviceManager, err := utils.CreateServiceManager(details, false)
 	if err != nil {
-		cache.IncreaseFailures()
+		cache.IncrementFailures()
 		return err
 	}
-	totalOutOf := fmt.Sprintf("%d/%d", cache.GetSuccess()+1, cache.GetTotal())
-	err = dependencyPackage.Publish(totalOutOf, targetRepo, serviceManager)
+	successOutOfTotal := fmt.Sprintf("%d/%d", cache.GetSuccesses()+1, cache.GetTotal())
+	err = dependencyPackage.Publish(successOutOfTotal, targetRepo, serviceManager)
 	if err != nil {
+		cache.IncrementFailures()
 		return err
 	}
-	cache.IncreaseSuccess()
+	cache.IncrementSuccess()
 	return nil
 }
 

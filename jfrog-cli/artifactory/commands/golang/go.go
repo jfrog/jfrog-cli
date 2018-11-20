@@ -2,6 +2,7 @@ package golang
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
@@ -107,9 +108,9 @@ func ExecuteGo(depsTidy, noRegistry bool, goArg, targetRepo, buildName, buildNum
 	}
 	err := goutils.RunGo(goArg)
 	if err != nil {
-		if shouldDownloadDependencyDirectly(err, noRegistry) {
+		if dependencyNotFoundInArtifactory(err, noRegistry) {
 			log.Info("Received", err.Error(), "from Artifactory. Trying download the dependencies from the VCS and upload them to Artifactory...")
-			err = retrieveAndPublish(targetRepo, goArg, depsTidy, details)
+			err = downloadFromVcsAndPublish(targetRepo, goArg, depsTidy, details)
 			if err != nil {
 				return err
 			}
@@ -134,26 +135,26 @@ func ExecuteGo(depsTidy, noRegistry bool, goArg, targetRepo, buildName, buildNum
 	return err
 }
 
-func retrieveAndPublish(targetRepo, goArg string, depsTidy bool, details *config.ArtifactoryDetails) error {
+// Downloads all dependencies from VCS and publish them to Artifactory.
+func downloadFromVcsAndPublish(targetRepo, goArg string, depsTidy bool, details *config.ArtifactoryDetails) error {
 	// Need to run Go without Artifactory to resolve all dependencies.
-	cache := goutils.GetStaticCache()
+	cache := goutils.DependenciesCache{}
 	wd, rootDir, err := collectDependenciesPopulateAndPublish(targetRepo, depsTidy, &cache, details)
 	if err != nil {
-		if depsTidy {
-			log.Debug("Received and error:", err)
-		} else {
+		if !depsTidy {
 			return err
 		}
+		log.Error("Received an error:", err)
 	}
 	// Lets run the same command again now that all the dependencies were downloaded.
 	// Need to run only if the command is not go mod download or go mod tidy since this was run by the CLI to download and publish to Artifactory
-	log.Info("Finished with following stats:", cache.GetSuccess(), "/", cache.GetTotal())
+	log.Info(fmt.Sprintf("Done building and publishing %d go dependencies to Artifactory out of a total of %d dependencies.", cache.GetSuccesses(), cache.GetTotal()))
 	if !strings.Contains(goArg, "mod download") || !strings.Contains(goArg, "mod tidy") {
 		if depsTidy {
-			// Remove first the go.sum file that contains previous information from the go mod tidy run without Artifactory
+			// Remove the go.sum file, since it includes information which is not up to date (it was created by the "go mod tidy" command executed without Artifactory
 			err = removeGoSumFile(wd, rootDir)
 			if err != nil {
-				log.Debug("Received and error:", err)
+				log.Error("Received an error:", err)
 			}
 		}
 		err = goutils.RunGo(goArg)
@@ -161,8 +162,8 @@ func retrieveAndPublish(targetRepo, goArg string, depsTidy bool, details *config
 	return err
 }
 
-// Returns true if needed to download and publish to Artifactory.
-func shouldDownloadDependencyDirectly(err error, noRegistry bool) bool {
+// Returns true if a dependency was not found Artifactory.
+func dependencyNotFoundInArtifactory(err error, noRegistry bool) bool {
 	if !noRegistry && strings.EqualFold(err.Error(), "404 Not Found") {
 		return true
 	}
@@ -178,21 +179,26 @@ func validatePrerequisites() error {
 }
 
 // Download the dependencies from VCS and publish them to Artifactory.
-func collectDependenciesPopulateAndPublish(targetRepo string, depsTidy bool, cache *goutils.DynamicCache, details *config.ArtifactoryDetails) (wd, rootProjectDir string, err error) {
+func collectDependenciesPopulateAndPublish(targetRepo string, depsTidy bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) (wd, rootProjectDir string, err error) {
 	err = os.Unsetenv(goutils.GOPROXY)
 	if err != nil {
 		return
 	}
-	dependenciesToPublish, err := projectDep.CollectProjectNeededDependencies(targetRepo, cache, details)
+	dependenciesToPublish, err := projectDep.CollectProjectDependencies(targetRepo, cache, details)
 	if err != nil {
 		return
 	}
 	if len(dependenciesToPublish) > 0 {
 		var dependency projectDep.GoPackage
 		if depsTidy {
+			err = fileutils.CreateTempDirPath()
+			if err != nil {
+				return "", "", err
+			}
+			defer fileutils.RemoveTempDir()
+
 			dependency = &projectDep.PackageWithDeps{}
 			err = dependency.Init()
-			defer fileutils.RemoveTempDir()
 			if err != nil {
 				return
 			}
@@ -218,7 +224,7 @@ func collectDependenciesPopulateAndPublish(targetRepo string, depsTidy bool, cac
 	return
 }
 
-func runPopulateAndPublishDependencies(targetRepo string, depsTidy bool, dependenciesInterface projectDep.GoPackage, dependenciesToPublish map[string]bool, cache *goutils.DynamicCache, details *config.ArtifactoryDetails) error {
+func runPopulateAndPublishDependencies(targetRepo string, depsTidy bool, dependenciesInterface projectDep.GoPackage, dependenciesToPublish map[string]bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) error {
 	cachePath, err := projectDep.GetCachePath()
 	if err != nil {
 		return err
@@ -229,10 +235,10 @@ func runPopulateAndPublishDependencies(targetRepo string, depsTidy bool, depende
 		return err
 	}
 
-	cache.IncreaseTotal(len(dependencies))
+	cache.IncrementTotal(len(dependencies))
 	for _, dep := range dependencies {
 		dependenciesInterface = dependenciesInterface.New(cachePath, dep)
-		err := dependenciesInterface.PopulateModIfNeededAndPublish(targetRepo, cache, details)
+		err := dependenciesInterface.PopulateModAndPublish(targetRepo, cache, details)
 		if err != nil {
 			if depsTidy {
 				log.Warn(err)
@@ -251,7 +257,7 @@ func removeGoSumFile(wd, rootDir string) error {
 		return errorutils.CheckError(err)
 	}
 
-	goSumFile := filepath.Join(strings.TrimSpace(rootDir), "go.sum")
+	goSumFile := filepath.Join(rootDir, "go.sum")
 	exists, err := fileutils.IsFileExists(goSumFile, false)
 	if err != nil {
 		return err

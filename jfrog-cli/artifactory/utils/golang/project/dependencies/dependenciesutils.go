@@ -22,7 +22,7 @@ import (
 )
 
 // Collects the dependencies of the project
-func CollectProjectNeededDependencies(targetRepo string, cache *golang.DynamicCache,details *config.ArtifactoryDetails) (map[string]bool, error) {
+func CollectProjectDependencies(targetRepo string, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) (map[string]bool, error) {
 	dependenciesMap, err := golang.GetDependenciesGraph()
 	if err != nil {
 		return nil, err
@@ -33,10 +33,7 @@ func CollectProjectNeededDependencies(targetRepo string, cache *golang.DynamicCa
 	}
 
 	// Merge replaceDependencies with dependenciesToPublish
-	err = mergeReplaceDependenciesWithGraphDependencies(replaceDependencies, dependenciesMap)
-	if err != nil {
-		return nil, err
-	}
+	mergeReplaceDependenciesWithGraphDependencies(replaceDependencies, dependenciesMap)
 	projectDependencies, err := downloadDependencies(targetRepo, cache, dependenciesMap, details)
 	if err != nil {
 		return projectDependencies, err
@@ -44,9 +41,9 @@ func CollectProjectNeededDependencies(targetRepo string, cache *golang.DynamicCa
 	return projectDependencies, nil
 }
 
-func downloadDependencies(targetRepo string, cache *golang.DynamicCache, depSlice map[string]bool, details *config.ArtifactoryDetails) (map[string]bool, error) {
+func downloadDependencies(targetRepo string, cache *golang.DependenciesCache, depSlice map[string]bool, details *config.ArtifactoryDetails) (map[string]bool, error) {
 	client := httpclient.NewDefaultHttpClient()
-	cacheDependenciesMap := cache.GetGlobalMap()
+	cacheDependenciesMap := cache.GetMap()
 	dependenciesMap := map[string]bool{}
 	for module := range depSlice {
 		nameAndVersion := strings.Split(module, "@")
@@ -89,7 +86,11 @@ func performHeadRequest(details *config.ArtifactoryDetails, client *httpclient.H
 }
 
 // Creating dependency with the mod file in the temp directory
-func createDependencyWithMod(tempDir string, dep Package) (path string, err error) {
+func createDependencyWithMod(dep Package) (path string, err error) {
+	tempDir, err := fileutils.GetTempDirPath()
+	if err != nil {
+		return "", err
+	}
 	moduleId := dep.GetId()
 	moduleInfo := strings.Split(moduleId, ":")
 
@@ -144,7 +145,7 @@ func downloadDependency(downloadFromArtifactory bool, fullDependencyName, target
 	}
 
 	err = golang.DownloadDependency(fullDependencyName)
-	return errorutils.CheckError(err)
+	return err
 }
 
 func populateModAndGetDependenciesGraph(path string, shouldRunGoModCommand, shouldRunGoGraph bool) (output map[string]bool, err error) {
@@ -189,7 +190,7 @@ func downloadModFileFromArtifactoryToLocalCache(cachePath, targetRepo, name, ver
 	pathToModuleCache := filepath.Join(cachePath, name, "@v")
 	dirExists, err := fileutils.IsDirExists(pathToModuleCache, false)
 	if err != nil {
-		log.Debug("Received and error:", err)
+		log.Error("Received an error:", err)
 		return ""
 	}
 
@@ -198,7 +199,7 @@ func downloadModFileFromArtifactoryToLocalCache(cachePath, targetRepo, name, ver
 		log.Debug("Downloading mod file from Artifactory:", url)
 		auth, err := details.CreateArtAuthConfig()
 		if err != nil {
-			log.Debug("Received and error:", err)
+			log.Error("Received an error:", err)
 			return ""
 		}
 		downloadFileDetails := &httpclient.DownloadFileDetails{
@@ -210,7 +211,7 @@ func downloadModFileFromArtifactoryToLocalCache(cachePath, targetRepo, name, ver
 		}
 		resp, err := client.DownloadFile(downloadFileDetails, "", auth.CreateHttpClientDetails(), 3, false)
 		if err != nil {
-			log.Debug("Received and error:", err)
+			log.Error("Received an error:", err)
 			return ""
 		}
 
@@ -252,9 +253,9 @@ func downloadAndCreateDependency(cachePath, name, version, fullDependencyName, t
 	return dep, nil
 }
 
-func logErrorIfOccurred(err error) {
+func logError(err error) {
 	if err != nil {
-		log.Debug("Received and error:", err)
+		log.Error("Received an error:", err)
 	}
 }
 
@@ -405,11 +406,11 @@ func getGOPATH() (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func mergeReplaceDependenciesWithGraphDependencies(replaceDeps []string, graphDependencies map[string]bool) error {
+func mergeReplaceDependenciesWithGraphDependencies(replaceDeps []string, graphDeps map[string]bool) {
 	for _, replaceLine := range replaceDeps {
 		// Remove unnecessary spaces
 		replaceLine = strings.TrimSpace(replaceLine)
-		log.Debug(replaceLine)
+		log.Debug("Working on the following replace line:", replaceLine)
 		// Split to get the right side that is the replace of the dependency
 		replaceDeps := strings.Split(replaceLine, "=>")
 		// Perform validation
@@ -424,13 +425,12 @@ func mergeReplaceDependenciesWithGraphDependencies(replaceDeps []string, graphDe
 			continue
 		}
 		// Check if the dependency in the map, if not add to the map
-		_, exists := graphDependencies[newDependency[0]+"@"+newDependency[1]]
+		_, exists := graphDeps[newDependency[0]+"@"+newDependency[1]]
 		if !exists {
 			log.Debug("Adding dependency", newDependency[0], newDependency[1])
-			graphDependencies[newDependency[0]+"@"+newDependency[1]] = true
+			graphDeps[newDependency[0]+"@"+newDependency[1]] = true
 		}
 	}
-	return nil
 }
 
 func getReplaceDependencies() ([]string, error) {
@@ -442,7 +442,7 @@ func getReplaceDependencies() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	modFilePath := filepath.Join(strings.TrimSpace(rootDir), "go.mod")
+	modFilePath := filepath.Join(rootDir, "go.mod")
 	modFileContent, err := ioutil.ReadFile(modFilePath)
 	if err != nil {
 		return nil, err
