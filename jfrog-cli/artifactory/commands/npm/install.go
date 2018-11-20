@@ -243,7 +243,7 @@ func (npmi *npmInstall) setDependenciesList() (err error) {
 }
 
 func (npmi *npmInstall) collectDependenciesChecksums() error {
-	log.Info("Collecting dependencies information, this might take several minuets...")
+	log.Info("Collecting dependencies information... This may take a few minuets...")
 	servicesManager, err := utils.CreateServiceManager(npmi.cliConfig.ArtDetails, false)
 	if err != nil {
 		return err

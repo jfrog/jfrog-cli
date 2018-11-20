@@ -12,7 +12,7 @@ import (
 )
 
 func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetails, failBuild bool) (buildFailed bool, err error) {
-	log.Info("Performing Xray build scan, this operation might take few minutes...")
+	log.Info("Triggered Xray build scan... The scan may take a few minutes.")
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return false, err

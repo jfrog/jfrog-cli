@@ -86,7 +86,7 @@ func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetai
 			return conf, nil
 		}
 	}
-	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Server id '%s' dose not exists.", serverName)))
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Server id '%s' does not exist.", serverName)))
 }
 
 func GetAndRemoveConfiguration(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, []*ArtifactoryDetails) {

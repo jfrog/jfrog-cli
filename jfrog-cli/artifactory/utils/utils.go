@@ -114,7 +114,7 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 	}
 
 	if !repoExists {
-		return errorutils.CheckError(errors.New("The repository '" + repository + "' dose not exists."))
+		return errorutils.CheckError(errors.New("The repository '" + repository + "' does not exist."))
 	}
 	return nil
 }
