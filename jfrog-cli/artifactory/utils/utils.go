@@ -114,7 +114,7 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 	}
 
 	if !repoExists {
-		return errorutils.CheckError(errors.New("The repository '" + repository + "' dose not exists."))
+		return errorutils.CheckError(errors.New("The repository '" + repository + "' does not exist."))
 	}
 	return nil
 }
@@ -176,6 +176,13 @@ func RunCmdWithOutputParser(config CmdConfig, regExpStruct ...*CmdOutputPattern)
 	}
 
 	cmd := config.GetCmd()
+	if config.GetStdWriter() == nil {
+		cmd.Stdout = os.Stdout
+	} else {
+		cmd.Stdout = config.GetStdWriter()
+		defer config.GetStdWriter().Close()
+	}
+
 	cmdReader, err := cmd.StderrPipe()
 	if err != nil {
 		return errorutils.CheckError(err)

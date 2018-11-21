@@ -296,7 +296,12 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if details.Password == "" {
 		return details, nil
 	}
+
+	// New-line required after the password input:
+	fmt.Println()
+
 	log.Info("Encrypting password...")
+
 	artAuth, err := details.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
