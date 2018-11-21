@@ -6,11 +6,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/add"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/scripts/list"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/attachlic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/detachlic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/services/remove"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/commands/services"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/commands/scripts"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
@@ -36,6 +38,12 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Aliases:   []string{"c"},
 			Action:    configure,
+		},
+		{
+			Name:        "scripts",
+			Aliases:     []string{"sc"},
+			Usage:       "Scripts",
+			Subcommands: getScSubCommands(),
 		},
 	}
 }
@@ -77,6 +85,18 @@ func getRtiSubCommands() []cli.Command {
 			UsageText: detachlic.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action:    detachLicense,
+		},
+	}
+}
+
+func getScSubCommands() []cli.Command {
+	return []cli.Command{
+		{
+			Name:      "list",
+			Usage:     list.Description,
+			HelpName:  common.CreateUsage("mc script list", list.Description, list.Usage),
+			ArgsUsage: common.CreateEnvVars(),
+			Action:    listScripts,
 		},
 	}
 }
@@ -170,6 +190,15 @@ func getConfigFlags() []cli.Flag {
 		},
 	}
 	return append(flags, getFlags()...)
+}
+
+func listScripts(c *cli.Context) {
+	missionControlDetails, err := createMissionControlDetails(c, true)
+	if err != nil {
+		return
+	}
+	err = scripts.ListScripts(missionControlDetails)
+	cliutils.ExitOnErr(err)
 }
 
 func addService(c *cli.Context) {
