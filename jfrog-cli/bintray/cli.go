@@ -292,12 +292,12 @@ func getFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "user",
 			Value: "",
-			Usage: "[Optional] Bintray username. If not set, the subject sent as part of the command argument is used for authentication.",
+			Usage: "[Optional] Bintray username. If not set, the subject sent as part of the command argument is used for authentication.` `",
 		},
 		cli.StringFlag{
 			Name:  "key",
 			Value: "",
-			Usage: "[Mandatory] Bintray API key",
+			Usage: "[Mandatory] Bintray API key` `",
 		},
 	}
 }
@@ -307,7 +307,7 @@ func getStreamFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "include",
 			Value: "",
-			Usage: "[Optional] List of events type in the form of \"value1;value2;...\" leave empty to include all.",
+			Usage: "[Optional] List of events type in the form of \"value1;value2;...\" leave empty to include all.` `",
 		},
 	}...)
 }
@@ -323,7 +323,7 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, cli.StringFlag{
 		Name:  "licenses",
 		Value: "",
-		Usage: "[Optional] Default package licenses in the form of Apache-2.0,GPL-3.0...",
+		Usage: "[Optional] Default package licenses in the form of Apache-2.0,GPL-3.0...` `",
 	})
 }
 
@@ -332,12 +332,12 @@ func getPackageFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "licenses",
 			Value: "",
-			Usage: "[Mandatory for OSS] Package licenses in the form of Apache-2.0,GPL-3.0...",
+			Usage: "[Mandatory for OSS] Package licenses in the form of Apache-2.0,GPL-3.0...` `",
 		},
 		cli.StringFlag{
 			Name:  "vcs-url",
 			Value: "",
-			Usage: "[Mandatory for OSS] Package VCS URL.",
+			Usage: "[Mandatory for OSS] Package VCS URL.` `",
 		},
 		cli.BoolFlag{
 			Name:  "pub-dn",
@@ -350,37 +350,37 @@ func getPackageFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "desc",
 			Value: "",
-			Usage: "[Optional] Package description.",
+			Usage: "[Optional] Package description.` `",
 		},
 		cli.StringFlag{
 			Name:  "labels",
 			Value: "",
-			Usage: "[Optional] Package lables in the form of \"lable11\",\"lable2\"...",
+			Usage: "[Optional] Package lables in the form of \"lable11\",\"lable2\"...` `",
 		},
 		cli.StringFlag{
 			Name:  "cust-licenses",
 			Value: "",
-			Usage: "[Optional] Package custom licenses in the form of \"my-license-1\",\"my-license-2\"...",
+			Usage: "[Optional] Package custom licenses in the form of \"my-license-1\",\"my-license-2\"...` `",
 		},
 		cli.StringFlag{
 			Name:  "website-url",
 			Value: "",
-			Usage: "[Optional] Package web site URL.",
+			Usage: "[Optional] Package web site URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "issuetracker-url",
 			Value: "",
-			Usage: "[Optional] Package Issues Tracker URL.",
+			Usage: "[Optional] Package Issues Tracker URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "github-repo",
 			Value: "",
-			Usage: "[Optional] Package Github repository.",
+			Usage: "[Optional] Package Github repository.` `",
 		},
 		cli.StringFlag{
 			Name:  "github-rel-notes",
 			Value: "",
-			Usage: "[Optional] Github release notes file.",
+			Usage: "[Optional] Github release notes file.` `",
 		},
 	}
 }
@@ -394,22 +394,22 @@ func getVersionFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "desc",
 			Value: "",
-			Usage: "[Optional] Version description.",
+			Usage: "[Optional] Version description.` `",
 		},
 		cli.StringFlag{
 			Name:  "released",
 			Value: "",
-			Usage: "[Optional] Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)",
+			Usage: "[Optional] Release date in ISO8601 format (yyyy-MM-dd'T'HH:mm:ss.SSSZ)` `",
 		},
 		cli.StringFlag{
 			Name:  "github-rel-notes",
 			Value: "",
-			Usage: "[Optional] Github release notes file.",
+			Usage: "[Optional] Github release notes file.` `",
 		},
 		cli.StringFlag{
 			Name:  "vcs-tag",
 			Value: "",
-			Usage: "[Optional] VCS tag.",
+			Usage: "[Optional] VCS tag.` `",
 		},
 	}
 }
@@ -438,12 +438,12 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
-			Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+			Usage: "[Default: 5120] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 		},
 		cli.StringFlag{
 			Name:  "split-count",
 			Value: "",
-			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.",
+			Usage: "[Default: 3] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 		},
 		cli.BoolFlag{
 			Name:  "unpublished",
@@ -460,7 +460,7 @@ func getDownloadVersionFlags() []cli.Flag {
 	flags := append(getFlags(), cli.StringFlag{
 		Name:  "threads",
 		Value: "",
-		Usage: "[Default: 3] Number of artifacts to download in parallel.",
+		Usage: "[Default: 3] Number of artifacts to download in parallel.` `",
 	})
 	return append(flags, getDownloadFlags()...)
 }
@@ -494,7 +494,7 @@ func getUploadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "threads",
 			Value: "",
-			Usage: "[Default: 3] Number of artifacts to upload in parallel.",
+			Usage: "[Default: 3] Number of artifacts to upload in parallel.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -503,7 +503,7 @@ func getUploadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "deb",
 			Value: "",
-			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture.",
+			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture.` `",
 		},
 	}...)
 }
@@ -512,19 +512,19 @@ func getEntitlementsFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "id",
-			Usage: "[Optional] Entitlement ID. Used for entitlements update.",
+			Usage: "[Optional] Entitlement ID. Used for entitlements update.` `",
 		},
 		cli.StringFlag{
 			Name:  "access",
-			Usage: "[Optional] Entitlement access. Used for entitlements creation and update.",
+			Usage: "[Optional] Entitlement access. Used for entitlements creation and update.` `",
 		},
 		cli.StringFlag{
 			Name:  "keys",
-			Usage: "[Optional] Used for entitlements creation and update. List of Access Keys in the form of \"key1\",\"key2\"...",
+			Usage: "[Optional] Used for entitlements creation and update. List of Access Keys in the form of \"key1\",\"key2\"...` `",
 		},
 		cli.StringFlag{
 			Name:  "path",
-			Usage: "[Optional] Entitlement path. Used for entitlements creating and update.",
+			Usage: "[Optional] Entitlement path. Used for entitlements creating and update.` `",
 		},
 	}...)
 }
@@ -533,35 +533,35 @@ func getAccessKeysFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "org",
-			Usage: "[Optional] Bintray organization",
+			Usage: "[Optional] Bintray organization` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Optional] Access Key password.",
+			Usage: "[Optional] Access Key password.` `",
 		},
 		cli.StringFlag{
 			Name:  "expiry",
-			Usage: "[Optional] Access Key expiry (required for 'jfrog bt acc-keys show/create/update/delete'",
+			Usage: "[Optional] Access Key expiry (required for 'jfrog bt acc-keys show/create/update/delete'` `",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-url",
-			Usage: "[Optional] You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.",
+			Usage: "[Optional] You can optionally provide an existence check directive, in the form of a callback URL, to verify whether the source identity of the Access Key still exists.` `",
 		},
 		cli.StringFlag{
 			Name:  "ex-check-cache",
-			Usage: "[Optional] You can optionally provide the period in seconds for the callback URL results cache.",
+			Usage: "[Optional] You can optionally provide the period in seconds for the callback URL results cache.` `",
 		},
 		cli.StringFlag{
 			Name:  "white-cidrs",
-			Usage: "[Optional] Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will allow access only for those IPs that exist in that address range.",
+			Usage: "[Optional] Specifying white CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will allow access only for those IPs that exist in that address range.` `",
 		},
 		cli.StringFlag{
 			Name:  "black-cidrs",
-			Usage: "[Optional] Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.",
+			Usage: "[Optional] Specifying black CIDRs in the form of 127.0.0.1/22,193.5.0.1/92 will block access for all IPs that exist in the specified range.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "api-only",
-			Usage: "[Default: true] You can set api_only to false to allow access keys access to Bintray UI as well as to the API.",
+			Usage: "[Default: true] You can set api_only to false to allow access keys access to Bintray UI as well as to the API.` `",
 		},
 	}...)
 }
@@ -570,27 +570,27 @@ func getUrlSigningFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "expiry",
-			Usage: "[Optional] An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.",
+			Usage: "[Optional] An expiry date for the URL, in Unix epoch time in milliseconds, after which the URL will be invalid. By default, expiry date will be 24 hours.` `",
 		},
 		cli.StringFlag{
 			Name:  "valid-for",
-			Usage: "[Optional] The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.",
+			Usage: "[Optional] The number of seconds since generation before the URL expires. Mutually exclusive with the --expiry option.` `",
 		},
 		cli.StringFlag{
 			Name:  "callback-id",
-			Usage: "[Optional] An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.",
+			Usage: "[Optional] An applicative identifier for the request. This identifier appears in download logs and is used in email and download webhook notifications.` `",
 		},
 		cli.StringFlag{
 			Name:  "callback-email",
-			Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.",
+			Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.` `",
 		},
 		cli.StringFlag{
 			Name:  "callback-url",
-			Usage: "[Optional] A webhook URL to call when a user has used the download URL.",
+			Usage: "[Optional] A webhook URL to call when a user has used the download URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "callback-method",
-			Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.",
+			Usage: "[Optional] HTTP method to use for making the callback. Will use POST by default. Supported methods are: GET, POST, PUT and HEAD.` `",
 		},
 	}...)
 }
@@ -598,7 +598,7 @@ func getUrlSigningFlags() []cli.Flag {
 func getGpgSigningFlags() []cli.Flag {
 	return append(getFlags(), cli.StringFlag{
 		Name:  "passphrase",
-		Usage: "[Optional] GPG passphrase.",
+		Usage: "[Optional] GPG passphrase.` `",
 	})
 }
 

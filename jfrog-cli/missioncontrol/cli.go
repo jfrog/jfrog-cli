@@ -85,15 +85,15 @@ func getFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Optional] Mission Control URL",
+			Usage: "[Optional] Mission Control URL` `",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Optional] Mission Control username",
+			Usage: "[Optional] Mission Control username` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Optional] Mission Control password",
+			Usage: "[Optional] Mission Control password` `",
 		},
 	}
 }
@@ -111,23 +111,23 @@ func getAddServiceFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "service-url",
-			Usage: "[Mandatory] Service URL.",
+			Usage: "[Mandatory] Service URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "service-user",
-			Usage: "[Mandatory] Service username.",
+			Usage: "[Mandatory] Service username.` `",
 		},
 		cli.StringFlag{
 			Name:  "service-password",
-			Usage: "[Mandatory] Service password.",
+			Usage: "[Mandatory] Service password.` `",
 		},
 		cli.StringFlag{
 			Name:  "desc",
-			Usage: "[Optional] Service description.",
+			Usage: "[Optional] Service description.` `",
 		},
 		cli.StringFlag{
 			Name:  "site-name",
-			Usage: "[Optional] Service site name, e.g. US.",
+			Usage: "[Optional] Service site name, e.g. US.` `",
 		},
 	}...)
 }
@@ -136,19 +136,19 @@ func getAttachLicenseFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID",
+			Usage: "[Mandatory] license bucket ID` `",
 		},
 		cli.StringFlag{
 			Name:  "license-path",
-			Usage: "[Optional] Full path to the license file",
+			Usage: "[Optional] Full path to the license file` `",
 		},
 		cli.BoolFlag{
 			Name:  "override",
-			Usage: "[Default: false] Set to true to override licence file.",
+			Usage: "[Default: false] Set to true to override licence file.` `",
 		},
 		cli.BoolFlag{
 			Name:  "deploy",
-			Usage: "[Default: false] Set to true to deploy licence to service.",
+			Usage: "[Default: false] Set to true to deploy licence to service.` `",
 		},
 	}...)
 }
@@ -157,7 +157,7 @@ func getDetachLicenseFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID",
+			Usage: "[Mandatory] license bucket ID` `",
 		},
 	}...)
 }
