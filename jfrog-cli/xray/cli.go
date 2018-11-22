@@ -1,6 +1,7 @@
 package xray
 
 import (
+	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/xray/offlineupdate"
@@ -8,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray/commands"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
-	"errors"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -31,19 +31,19 @@ func offlineUpdateFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "license-id",
-			Usage: "[Mandatory] Xray license ID",
+			Usage: "[Mandatory] Xray license ID` `",
 		},
 		cli.StringFlag{
 			Name:  "from",
-			Usage: "[Optional] From update date in YYYY-MM-DD format.",
+			Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
 		},
 		cli.StringFlag{
 			Name:  "to",
-			Usage: "[Optional] To update date in YYYY-MM-DD format.",
+			Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
 		},
 		cli.StringFlag{
 			Name:  "version",
-			Usage: "[Optional] Xray API version.",
+			Usage: "[Optional] Xray API version.` `",
 		},
 	}
 }

@@ -460,7 +460,7 @@ func getUrlFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Optional] Artifactory URL.",
+			Usage: "[Optional] Artifactory URL.` `",
 		},
 	}
 }
@@ -469,15 +469,15 @@ func getBaseFlags() []cli.Flag {
 	return append(getUrlFlag(),
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Optional] Artifactory username.",
+			Usage: "[Optional] Artifactory username.` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Optional] Artifactory password.",
+			Usage: "[Optional] Artifactory password.` `",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[Optional] Artifactory API key.",
+			Usage: "[Optional] Artifactory API key.` `",
 		})
 }
 
@@ -485,7 +485,7 @@ func getCommonFlags() []cli.Flag {
 	flags := append(getBaseFlags(),
 		cli.StringFlag{
 			Name:  "ssh-passphrase",
-			Usage: "[Optional] SSH key passphrase.",
+			Usage: "[Optional] SSH key passphrase.` `",
 		})
 	return append(flags, getSshKeyPathFlag()...)
 }
@@ -498,19 +498,19 @@ func getSortLimitFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "sort-by",
-			Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields",
+			Usage: "[Optional] A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain. For more information, see https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language#ArtifactoryQueryLanguage-EntitiesandFields` `",
 		},
 		cli.StringFlag{
 			Name:  "sort-order",
-			Usage: "[Default: asc] The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.",
+			Usage: "[Default: asc] The order by which fields in the 'sort-by' option should be sorted. Accepts 'asc' or 'desc'.` `",
 		},
 		cli.StringFlag{
 			Name:  "limit",
-			Usage: "[Optional] The maximum number of items to fetch. Usually used with the 'sort-by' option.",
+			Usage: "[Optional] The maximum number of items to fetch. Usually used with the 'sort-by' option.` `",
 		},
 		cli.StringFlag{
 			Name:  "offset",
-			Usage: "[Optional] The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.",
+			Usage: "[Optional] The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option.` `",
 		},
 	}
 }
@@ -520,51 +520,51 @@ func getUploadFlags() []cli.Flag {
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name. Providing this option will record all uploaded artifacts for later build info publication.",
+			Usage: "[Optional] Build name. Providing this option will record all uploaded artifacts for later build info publication.` `",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number. Providing this option will record all uploaded artifacts for later build info publication.",
+			Usage: "[Optional] Build number. Providing this option will record all uploaded artifacts for later build info publication.` `",
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.` `",
 		},
 		cli.StringFlag{
 			Name:  "deb",
-			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.",
+			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be uploaded to Artifactory.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "flat",
-			Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.",
+			Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
 		},
 		cli.BoolFlag{
 			Name:  "regexp",
-			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.",
+			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of upload retries.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of upload retries.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "explode",
-			Usage: "[Default: false] Set to true to extract an archive after it is deployed to Artifactory.",
+			Usage: "[Default: false] Set to true to extract an archive after it is deployed to Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "symlinks",
-			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.",
+			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.",
+			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -578,57 +578,57 @@ func getDownloadFlags() []cli.Flag {
 	return append(downloadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Build name. Providing this option will record all downloaded artifacts for later build info publication.",
+			Usage: "[Optional] Build name. Providing this option will record all downloaded artifacts for later build info publication.` `",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Build number. Providing this option will record all downloaded artifacts for later build info publication.",
+			Usage: "[Optional] Build number. Providing this option will record all downloaded artifacts for later build info publication.` `",
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to include the download of artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to include the download of artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "flat",
-			Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.",
+			Usage: "[Default: false] Set to true if you do not wish to have the Artifactory repository path structure created locally for your downloaded files.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
-			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
 		},
 		cli.StringFlag{
 			Name:  "split-count",
 			Value: "",
-			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadSplitCount) + "] Number of parts to split a file when downloading. Set to 0 for no splits.` `",
 		},
 		cli.StringFlag{
 			Name:  "retries",
-			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of download retries.",
+			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of download retries.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "explode",
-			Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.",
+			Usage: "[Default: false] Set to true to extract an archive after it is downloaded from Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "validate-symlinks",
-			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.",
+			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.",
+			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -641,11 +641,11 @@ func getBuildToolFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Providing this option will collect and record build info for this build name.",
+			Usage: "[Optional] Providing this option will collect and record build info for this build name.` `",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.",
+			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.` `",
 		},
 	}
 }
@@ -653,21 +653,21 @@ func getBuildToolFlags() []cli.Flag {
 func getServerIdFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "server-id",
-		Usage: "[Optional] Artifactory server ID configured using the config command.",
+		Usage: "[Optional] Artifactory server ID configured using the config command.` `",
 	}
 }
 
 func getFailNoOpFlag() cli.Flag {
 	return cli.BoolFlag{
 		Name:  "fail-no-op",
-		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.",
+		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.` `",
 	}
 }
 
 func getExcludePatternsFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "exclude-patterns",
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.",
+		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
 	}
 }
 
@@ -675,11 +675,11 @@ func getSpecFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "spec",
-			Usage: "[Optional] Path to a File Spec.",
+			Usage: "[Optional] Path to a File Spec.` `",
 		},
 		cli.StringFlag{
 			Name:  "spec-vars",
-			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.",
+			Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the File Spec. In the File Spec, the variables should be used as follows: ${key1}.` `",
 		},
 	}
 }
@@ -703,7 +703,7 @@ func getNpmFlags() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
-			Usage: "[Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"",
+			Usage: "[Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 		},
 	}
 	npmFlags = append(npmFlags, getBaseFlags()...)
@@ -715,11 +715,11 @@ func getNugetFlags() []cli.Flag {
 	nugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 value1 arg2 value2\"",
+			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 value1 arg2 value2\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Optional] Path to the solution.",
+			Usage: "[Optional] Path to the solution.` `",
 		},
 	}
 	nugetFlags = append(nugetFlags, getBaseFlags()...)
@@ -731,11 +731,11 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy",
+			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "deps-tidy",
-			Usage: "[Default: false] Set to true if you want to create full mod files for all the dependencies and publish them to Artifactory.",
+			Usage: "[Default: false] Set to true if you want to create full mod files for all the dependencies and publish them to Artifactory.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -749,11 +749,11 @@ func getGoPublishFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "deps",
 			Value: "",
-			Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.",
+			Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "self",
-			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..",
+			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -768,23 +768,23 @@ func getMoveFlags() []cli.Flag {
 	return append(moveFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to move artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "flat",
-			Usage: "[Default: false] If set to false, files are moved according to their file system hierarchy.",
+			Usage: "[Default: false] If set to false, files are moved according to their file system hierarchy.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -799,23 +799,23 @@ func getCopyFlags() []cli.Flag {
 	return append(copyFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to copy artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "flat",
-			Usage: "[Default: false] If set to false, files are copied according to their file system hierarchy.",
+			Usage: "[Default: false] If set to false, files are copied according to their file system hierarchy.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -829,23 +829,23 @@ func getDeleteFlags() []cli.Flag {
 	return append(deleteFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "quiet",
-			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+			Usage: "[Default: false] Set to true to skip the delete confirmation message.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -859,15 +859,15 @@ func getSearchFlags() []cli.Flag {
 	return append(searchFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.",
+			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -879,7 +879,7 @@ func getSetPropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.",
+			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.` `",
 		},
 	}
 	return append(flags, getPropertiesFlags()...)
@@ -889,7 +889,7 @@ func getDeletePropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.",
+			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.` `",
 		},
 	}
 	return append(flags, getPropertiesFlags()...)
@@ -900,15 +900,15 @@ func getPropertiesFlags() []cli.Flag {
 	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.",
+			Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.` `",
 		},
 		cli.StringFlag{
 			Name:  "build",
-			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		cli.BoolFlag{
 			Name:  "include-dirs",
-			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.",
+			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.` `",
 		},
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -920,7 +920,7 @@ func getPropertiesFlags() []cli.Flag {
 func getArchiveEntriesFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "archive-entries",
-		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.",
+		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
 	}
 }
 
@@ -928,7 +928,7 @@ func getThreadsFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "threads",
 		Value: "",
-		Usage: "[Default: 3] Number of working threads.",
+		Usage: "[Default: 3] Number of working threads.` `",
 	}
 }
 
@@ -936,19 +936,19 @@ func getBuildPublishFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-url",
-			Usage: "[Optional] Can be used for setting the CI server build URL in the build-info.",
+			Usage: "[Optional] Can be used for setting the CI server build URL in the build-info.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "env-include",
-			Usage: "[Default: *] List of patterns in the form of \"value1;value2;...\" Only environment variables match those patterns will be included.",
+			Usage: "[Default: *] List of patterns in the form of \"value1;value2;...\" Only environment variables match those patterns will be included.` `",
 		},
 		cli.StringFlag{
 			Name:  "env-exclude",
-			Usage: "[Default: *password*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.",
+			Usage: "[Default: *password*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
 		},
 	}...)
 }
@@ -957,15 +957,15 @@ func getBuildAddDependenciesFlags() []cli.Flag {
 	return append(getSpecFlags(), []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
-			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.",
+			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
 		},
 		cli.BoolFlag{
 			Name:  "regexp",
-			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.",
+			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.",
+			Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
 		},
 		getExcludePatternsFlag(),
 	}...)
@@ -975,27 +975,27 @@ func getBuildPromotionFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "status",
-			Usage: "[Optional] Build promotion status.",
+			Usage: "[Optional] Build promotion status.` `",
 		},
 		cli.StringFlag{
 			Name:  "comment",
-			Usage: "[Optional] Build promotion comment.",
+			Usage: "[Optional] Build promotion comment.` `",
 		},
 		cli.StringFlag{
 			Name:  "source-repo",
-			Usage: "[Optional] Build promotion source repository.",
+			Usage: "[Optional] Build promotion source repository.` `",
 		},
 		cli.BoolFlag{
 			Name:  "include-dependencies",
-			Usage: "[Default: false] If set to true, the build dependencies are also promoted.",
+			Usage: "[Default: false] If set to true, the build dependencies are also promoted.` `",
 		},
 		cli.BoolFlag{
 			Name:  "copy",
-			Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.",
+			Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.",
+			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.` `",
 		},
 	}...)
 }
@@ -1004,27 +1004,27 @@ func getBuildDistributeFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "source-repos",
-			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.",
+			Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.` `",
 		},
 		cli.StringFlag{
 			Name:  "passphrase",
-			Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.",
+			Usage: "[Optional] If specified, Artifactory will GPG sign the build deployed to Bintray and apply the specified passphrase.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "publish",
-			Usage: "[Default: true] If true, builds are published when deployed to Bintray.",
+			Usage: "[Default: true] If true, builds are published when deployed to Bintray.` `",
 		},
 		cli.BoolFlag{
 			Name:  "override",
-			Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.",
+			Usage: "[Default: false] If true, Artifactory overwrites builds already existing in the target path in Bintray.` `",
 		},
 		cli.BoolFlag{
 			Name:  "async",
-			Usage: "[Default: false] If true, the build will be distributed asynchronously.",
+			Usage: "[Default: false] If true, the build will be distributed asynchronously.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.",
+			Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.` `",
 		},
 	}...)
 }
@@ -1033,19 +1033,19 @@ func getGitLfsCleanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "refs",
-			Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.",
+			Usage: "[Default: refs/remotes/*] List of Git references in the form of \"ref1,ref2,...\" which should be preserved.` `",
 		},
 		cli.StringFlag{
 			Name:  "repo",
-			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.",
+			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.` `",
 		},
 		cli.BoolFlag{
 			Name:  "quiet",
-			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+			Usage: "[Default: false] Set to true to skip the delete confirmation message.` `",
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.",
+			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.` `",
 		},
 	}...)
 }
@@ -1054,11 +1054,11 @@ func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "interactive",
-			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.",
+			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "enc-password",
-			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.",
+			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -1070,7 +1070,7 @@ func getSshKeyPathFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "ssh-key-path",
-			Usage: "[Optional] SSH key file path.",
+			Usage: "[Optional] SSH key file path.` `",
 		},
 	}
 }
@@ -1079,23 +1079,23 @@ func getBuildDiscardFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "max-days",
-			Usage: "[Optional] The maximum number of days to keep builds in Artifactory.",
+			Usage: "[Optional] The maximum number of days to keep builds in Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "max-builds",
-			Usage: "[Optional] The maximum number of builds to store in Artifactory.",
+			Usage: "[Optional] The maximum number of builds to store in Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "exclude-builds",
-			Usage: "[Optional] List of build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.",
+			Usage: "[Optional] List of build numbers in the form of \"value1,value2,...\", that should not be removed from Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "delete-artifacts",
-			Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.",
+			Usage: "[Default: false] If set to true, automatically removes build artifacts stored in Artifactory.` `",
 		},
 		cli.BoolFlag{
 			Name:  "async",
-			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.",
+			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.` `",
 		},
 	}...)
 }
@@ -1104,7 +1104,7 @@ func getBuildScanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "fail",
-			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.",
+			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
 		},
 	}...)
 }
