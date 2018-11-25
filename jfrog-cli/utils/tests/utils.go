@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
