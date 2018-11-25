@@ -8,11 +8,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/lock"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/prompt"
+	"io/ioutil"
 	"sync"
 )
 
@@ -124,19 +125,10 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		allowUsingSavedPassword = false
 	}
 	if fileutils.IsSshUrl(details.Url) {
-		useAgentPrompt := &prompt.YesNo{
-			Msg:     "Would you like to use SSH agent (y/n) [${default}]? ",
-			Label:   "useSshAgent",
-			Default: "n",
-		}
-		if err := useAgentPrompt.Read(); err != nil {
+		if err := getSshKeyPath(details); err != nil {
 			return err
 		}
-		if !useAgentPrompt.GetResults().GetBool("useSshAgent") {
-			if err := readSshKeyPathFromConsole(details, defaultDetails); err != nil {
-				return err
-			}
-		}
+
 	} else {
 		if details.ApiKey == "" && details.Password == "" {
 			ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
@@ -145,20 +137,42 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 	return nil
 }
 
-func readSshKeyPathFromConsole(details, savedDetails *config.ArtifactoryDetails) error {
+func getSshKeyPath(details *config.ArtifactoryDetails) error {
+	// If path not provided as a key, read from console:
 	if details.SshKeyPath == "" {
-		ioutils.ScanFromConsole("SSH key file path", &details.SshKeyPath, savedDetails.SshKeyPath)
+		ioutils.ScanFromConsole("SSH key file path (optional)", &details.SshKeyPath, "")
 	}
 
+	// If path still not provided, return and warn about relying on agent.
+	if details.SshKeyPath == "" {
+		log.Info("SSH Key path not provided. You can also specify a key path using the --ssh-key-path command option. If no key will be specified, you will rely on ssh-agent only.")
+		return nil
+	}
+
+	// If SSH key path provided, check if exists:
 	details.SshKeyPath = clientutils.ReplaceTildeWithUserHome(details.SshKeyPath)
-	exists, err := fileutils.IsFileExists(details.SshKeyPath)
+	exists, err := fileutils.IsFileExists(details.SshKeyPath, false)
 	if err != nil {
 		return err
 	}
-	if !exists {
-		log.Warn("Could not find SSH key file at:", details.SshKeyPath)
+
+	if exists {
+		sshKeyBytes, err := ioutil.ReadFile(details.SshKeyPath)
+		if err != nil {
+			return nil
+		}
+		encryptedKey, err := auth.IsEncrypted(sshKeyBytes)
+		// If exists and not encrypted (or error occurred), return without asking for passphrase
+		if err != nil || !encryptedKey {
+			return err
+		}
+		log.Info("The key file at the specified path is encrypted, you may pass the passphrase as an option with every command (but config).")
+
+	} else {
+		log.Info("Could not find key in provided path. You may place the key file there later. If you choose to use an encrypted key, you may pass the passphrase as an option with every command.")
 	}
-	return nil
+
+	return err
 }
 
 func ShowConfig(serverName string) error {
@@ -282,7 +296,12 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if details.Password == "" {
 		return details, nil
 	}
+
+	// New-line required after the password input:
+	fmt.Println()
+
 	log.Info("Encrypting password...")
+
 	artAuth, err := details.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err

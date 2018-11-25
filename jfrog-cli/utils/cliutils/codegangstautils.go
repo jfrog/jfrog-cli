@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"strconv"
 	"strings"
 )
@@ -9,7 +10,7 @@ import (
 func GetIntFlagValue(c *cli.Context, flagName string, defValue int) (int, error) {
 	if c.IsSet(flagName) {
 		flagIntVal, err := strconv.Atoi(c.String(flagName))
-		err = CheckErrorWithMessage(err, "can't parse "+flagName+" value: "+c.String(flagName))
+		err = utils.CheckErrorWithMessage(err, "can't parse "+flagName+" value: "+c.String(flagName))
 		return flagIntVal, err
 	}
 	return defValue, nil

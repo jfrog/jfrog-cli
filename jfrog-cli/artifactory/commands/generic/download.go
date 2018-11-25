@@ -72,8 +72,8 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 
 	// Build Info
-	buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
 	if isCollectBuildInfo {
+		buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Dependencies = buildDependencies
 		}
@@ -89,6 +89,7 @@ func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buil
 		dependency := buildinfo.Dependency{Checksum: &buildinfo.Checksum{}}
 		dependency.Md5 = fileInfo.Md5
 		dependency.Sha1 = fileInfo.Sha1
+		// Artifact name in build info as the name in artifactory
 		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.ArtifactoryPath)
 		dependency.Id = filename
 		buildDependecies[i] = dependency

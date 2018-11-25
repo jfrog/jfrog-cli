@@ -30,7 +30,7 @@ type packagesExtractor struct {
 
 func (extractor *packagesExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
 	packagesConfigPath := filepath.Join(projectRoot, packagesFilePath)
-	exists, err := fileutils.IsFileExists(packagesConfigPath)
+	exists, err := fileutils.IsFileExists(packagesConfigPath, false)
 	if exists {
 		log.Debug("Found", packagesConfigPath, "file for project:", projectName)
 		return true, err
@@ -91,14 +91,26 @@ func (extractor *packagesExtractor) extract(packagesConfig *packagesConfig, glob
 				}
 			}
 		}
-		extractor.allDependencies[id] = pack.dependency
-		extractor.childrenMap[id] = pack.getDependencies()
+		if pack != nil {
+			extractor.allDependencies[id] = pack.dependency
+			extractor.childrenMap[id] = pack.getDependencies()
+		} else {
+			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s and therefore not"+
+				" added to the dependecy tree. This might be because the package already exists in a different NuGet cache,"+
+				" possibly the SDK cache. Removing the package from this cache may resolve the issue", nuget.Id, nuget.Version ,globalPackagesCache))
+		}
 	}
 	return nil
 }
 
 // NuGet allows the version will be with missing or unnecessary zeros
 // This method will return a list of the possible alternative versions
+// "1.0" --> []string{"1.0.0.0", "1.0.0", "1"}
+// "1" --> []string{"1.0.0.0", "1.0.0", "1.0"}
+// "1.2" --> []string{"1.2.0.0", "1.2.0"}
+// "1.22.33" --> []string{"1.22.33.0"}
+// "1.22.33.44" --> []string{}
+// "1.0.2" --> []string{"1.0.2.0"}
 func createAlternativeVersionForms(originalVersion string) []string {
 	versionSlice := strings.Split(originalVersion, ".")
 	versionSliceSize := len(versionSlice)
@@ -108,7 +120,7 @@ func createAlternativeVersionForms(originalVersion string) []string {
 
 	var alternativeVersions []string
 
-	for i := 4; i > 0 ; i-- {
+	for i := 4; i > 0; i-- {
 		version := strings.Join(versionSlice[:i], ".")
 		if version != originalVersion {
 			alternativeVersions = append(alternativeVersions, version)
@@ -191,16 +203,13 @@ func searchRootDependencies(dfsHelper map[string]*dfsHelper, currentId string, a
 func createNugetPackage(packagesPath string, nuget xmlPackage, nPackage *nugetPackage) (*nugetPackage, error) {
 	nupkgPath := filepath.Join(packagesPath, nPackage.id, nPackage.version, strings.Join([]string{nPackage.id, nPackage.version, "nupkg"}, "."))
 
-	exists, err := fileutils.IsFileExists(nupkgPath)
+	exists, err := fileutils.IsFileExists(nupkgPath, false)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if !exists {
-		if !strings.HasSuffix(nPackage.version, ".0") {
-			return nil, errorutils.CheckError(fmt.Errorf("File %s.%s doesn't exists", nuget.Id, nuget.Version))
-		}
 		return nil, nil
 	}
 
@@ -269,7 +278,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 	}
 
 	globalPackagesPath := strings.TrimSpace(strings.TrimPrefix(string(output), "global-packages:"))
-	exists, err := fileutils.IsDirExists(globalPackagesPath)
+	exists, err := fileutils.IsDirExists(globalPackagesPath, false)
 	if err != nil {
 		return "", err
 	}

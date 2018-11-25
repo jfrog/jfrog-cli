@@ -15,16 +15,18 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 
 # Download and Installation
 
-You can get the executable directly from the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or you can download the source files from this GitHub project and build it yourself.
-
-You can also [install JFrog CLI using NPM](https://www.npmjs.com/package/jfrog-cli-go) by running:
+You can download the executable directly using the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or install it with npm, homebrew or docker.
+## NPM
 ````
 npm install jfrog-cli-go
 ````
-
-and on Mac you can use:
+## Homebrew
 ````
 brew install jfrog-cli-go
+````
+## Docker
+````
+docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
 ````
 
 # Building the Executable
@@ -34,17 +36,26 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 ## Install Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
-Please download `Go 1.9` or above.
-
-Navigate to the directory where you want to create the jfrog-cli-go project, and set the value of the GOPATH environment variable to the full path of this directory.
+Please download `Go 1.11` or above.
 
 ## Download and Build the CLI
 
-To download the jfrog-cli-go project, execute the following command:
+Navigate to a directory where you want to create the jfrog-cli-go project, **outside** the `$GOPATH` tree.
+
+If the `GOPATH` variable is unset, it's default value is the go folder under the user home.
+
+Verify that the `GO111MODULE` variable is either unset, or explicitly set to `auto`.
+
+Clone the jfrog-cli-go project by executing the following command:
 ````
-go get github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog
+git clone https://github.com/jfrog/jfrog-cli-go/
 ````
-Go will download and build the project on your machine. Once complete, you will find the JFrog CLI executable under your `$GOPATH/bin` directory.
+Build the project by navigating to the jfrog folder and executing the go build command:
+````
+cd jfrog-cli-go/jfrog-cli/jfrog/
+go build
+````
+Once completed, you will find the JFrog CLI executable at your current directory.
 
 # Tests
 
@@ -147,6 +158,16 @@ We welcome pull requests from the community.
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+
+## Using JFrog CLI Docker Image
+The docker image of JFrog CLI can be pulled from Bintray by running the following command:
+````
+docker pull docker.bintray.io/jfrog/jfrog-cli-go:latest
+````
+Run a JFrog CLI command using docker as follows:
+````
+docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
+````
 
 # Release Notes
 The release are available on [Bintray](https://bintray.com/jfrog/jfrog-cli-go/jfrog-cli-linux-amd64#release).

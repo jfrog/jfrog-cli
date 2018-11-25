@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	golangutil "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -22,14 +23,15 @@ import (
 
 // Represent go project
 type Go interface {
-	Dependencies() []dependencies.Dependency
+	Dependencies() []dependencies.Package
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
+	LoadDependencies() error
 }
 
 type goProject struct {
-	dependencies []dependencies.Dependency
+	dependencies []dependencies.Package
 	artifacts    []buildinfo.Artifact
 	modContent   []byte
 	moduleName   string
@@ -40,22 +42,28 @@ type goProject struct {
 // Load go project.
 func Load(version string) (Go, error) {
 	goProject := &goProject{version: version}
-	pwd, err := os.Getwd()
+	pwd, err := goProject.readModFile()
 	if err != nil {
 		return nil, err
 	}
-	err = goProject.readModFile(pwd)
+	err = os.Chdir(pwd)
 	if err != nil {
 		return nil, err
 	}
 	goProject.projectPath = pwd
-	goProject.dependencies, err = dependencies.Load()
 	return goProject, err
 }
 
 // Get the go project dependencies.
-func (project *goProject) Dependencies() []dependencies.Dependency {
+func (project *goProject) Dependencies() []dependencies.Package {
 	return project.dependencies
+}
+
+// Get the project dependencies.
+func (project *goProject) LoadDependencies() error {
+	var err error
+	project.dependencies, err = dependencies.Load()
+	return err
 }
 
 // Publish go project to Artifactory.
@@ -91,7 +99,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 func (project *goProject) PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
 	log.Info("Publishing package dependencies...")
-	includeDep := cliutils.GetMapFromStringSlice(includeDepSlice, ":")
+	includeDep := cliutils.ConvertSliceToMap(includeDepSlice)
 
 	skip := 0
 	_, includeAll := includeDep["ALL"]
@@ -99,13 +107,12 @@ func (project *goProject) PublishDependencies(targetRepo string, servicesManager
 	for _, dependency := range dependencies {
 		includeDependency := includeAll
 		if !includeDependency {
-			id := strings.Split(dependency.GetId(), ":")
-			if includedVersion, included := includeDep[id[0]]; included && strings.EqualFold(includedVersion, id[1]) {
+			if _, included := includeDep[dependency.GetId()]; included {
 				includeDependency = true
 			}
 		}
 		if includeDependency {
-			err = dependency.Publish(targetRepo, servicesManager)
+			err = dependency.Publish("", targetRepo, servicesManager)
 			if err != nil {
 				err = errors.New("Failed to publish " + dependency.GetId() + " due to: " + err.Error())
 				log.Error("Failed to publish", dependency.GetId(), ":", err)
@@ -143,26 +150,30 @@ func (project *goProject) getId() string {
 }
 
 // Read go.mod file and add it as an artifact to the build info
-func (project *goProject) readModFile(projectPath string) error {
-	modFile, err := os.Open(filepath.Join(projectPath, "go.mod"))
+func (project *goProject) readModFile() (string, error) {
+	modFilePath, err := golangutil.GetRootDir()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return "", err
+	}
+	modFile, err := os.Open(filepath.Join(modFilePath, "go.mod"))
+	if err != nil {
+		return modFilePath, errorutils.CheckError(err)
 	}
 	defer modFile.Close()
 	content, err := ioutil.ReadAll(modFile)
 	if err != nil {
-		return errorutils.CheckError(err)
+		return modFilePath, errorutils.CheckError(err)
 	}
 
 	// Read module name
 	project.moduleName, err = parseModuleName(string(content))
 	if err != nil {
-		return err
+		return modFilePath, err
 	}
 
 	checksums, err := checksum.Calc(bytes.NewBuffer(content))
 	if err != nil {
-		return err
+		return modFilePath, err
 	}
 	project.modContent = content
 
@@ -170,7 +181,7 @@ func (project *goProject) readModFile(projectPath string) error {
 	artifact := buildinfo.Artifact{Name: project.version + ".mod"}
 	artifact.Checksum = &buildinfo.Checksum{Sha1: checksums[checksum.SHA1], Md5: checksums[checksum.MD5]}
 	project.artifacts = append(project.artifacts, artifact)
-	return nil
+	return modFilePath, nil
 }
 
 // Archive the go project.

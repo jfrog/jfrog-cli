@@ -10,7 +10,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"strconv"
@@ -96,12 +95,7 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *UploadConfiguration) (suc
 func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildinfo.Artifact {
 	buildArtifacts := make([]buildinfo.Artifact, len(filesInfo))
 	for i, fileInfo := range filesInfo {
-		artifact := buildinfo.Artifact{Checksum: &buildinfo.Checksum{}}
-		artifact.Sha1 = fileInfo.Sha1
-		artifact.Md5 = fileInfo.Md5
-		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.LocalPath)
-		artifact.Name = filename
-		buildArtifacts[i] = artifact
+		buildArtifacts[i] = fileInfo.ToBuildArtifacts()
 	}
 	return buildArtifacts
 }

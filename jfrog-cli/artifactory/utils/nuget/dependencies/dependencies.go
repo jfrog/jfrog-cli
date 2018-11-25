@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 var extractors []Extractor
@@ -68,7 +68,8 @@ func getCompatibleExtractor(projectName, projectRoot string) (Extractor, error) 
 			return extractor.new(projectName, projectRoot)
 		}
 	}
-	return nil, errorutils.CheckError(fmt.Errorf("Unsupported project dependencies for project: %s", projectName))
+	log.Debug(fmt.Sprintf("Unsupported project dependencies for project: %s", projectName))
+	return nil, nil
 }
 
 type root []*tree

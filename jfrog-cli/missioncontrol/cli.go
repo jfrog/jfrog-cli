@@ -1,6 +1,7 @@
 package missioncontrol
 
 import (
+	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/missioncontrol/config"
@@ -16,7 +17,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"strings"
-	"errors"
 )
 
 func GetCommands() []cli.Command {
@@ -85,15 +85,15 @@ func getFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Optional] Mission Control URL",
+			Usage: "[Optional] Mission Control URL` `",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Optional] Mission Control username",
+			Usage: "[Optional] Mission Control username` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Optional] Mission Control password",
+			Usage: "[Optional] Mission Control password` `",
 		},
 	}
 }
@@ -111,23 +111,23 @@ func getAddServiceFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "service-url",
-			Usage: "[Mandatory] Service URL.",
+			Usage: "[Mandatory] Service URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "service-user",
-			Usage: "[Mandatory] Service username.",
+			Usage: "[Mandatory] Service username.` `",
 		},
 		cli.StringFlag{
 			Name:  "service-password",
-			Usage: "[Mandatory] Service password.",
+			Usage: "[Mandatory] Service password.` `",
 		},
 		cli.StringFlag{
 			Name:  "desc",
-			Usage: "[Optional] Service description.",
+			Usage: "[Optional] Service description.` `",
 		},
 		cli.StringFlag{
 			Name:  "site-name",
-			Usage: "[Optional] Service site name, e.g. US.",
+			Usage: "[Optional] Service site name, e.g. US.` `",
 		},
 	}...)
 }
@@ -136,19 +136,19 @@ func getAttachLicenseFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID",
+			Usage: "[Mandatory] license bucket ID` `",
 		},
 		cli.StringFlag{
 			Name:  "license-path",
-			Usage: "[Optional] Full path to the license file",
+			Usage: "[Optional] Full path to the license file` `",
 		},
 		cli.BoolFlag{
 			Name:  "override",
-			Usage: "[Default: false] Set to true to override licence file.",
+			Usage: "[Default: false] Set to true to override licence file.` `",
 		},
 		cli.BoolFlag{
 			Name:  "deploy",
-			Usage: "[Default: false] Set to true to deploy licence to service.",
+			Usage: "[Default: false] Set to true to deploy licence to service.` `",
 		},
 	}...)
 }
@@ -157,7 +157,7 @@ func getDetachLicenseFlags() []cli.Flag {
 	return append(getFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID",
+			Usage: "[Mandatory] license bucket ID` `",
 		},
 	}...)
 }
@@ -232,7 +232,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	if exists {
 		return nil, nil
 	}
-	val, err := cliutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err := clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func configure(c *cli.Context) {
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.ExitOnErr(errors.New("Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'."))
+			cliutils.ExitOnErr(errors.New("Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'."))
 		}
 	} else {
 		flags, err := createConfigFlags(c)

@@ -109,18 +109,22 @@ func prepareArtifactoryParams(specFile spec.File) (*specutils.ArtifactoryCommonP
 
 func getDependenciesBySpecFileParams(addDepsParams *specutils.ArtifactoryCommonParams) ([]string, error) {
 	addDepsParams.SetPattern(clientutils.ReplaceTildeWithUserHome(addDepsParams.GetPattern()))
-	rootPath, err := fspatterns.GetRootPath(addDepsParams.GetPattern(), addDepsParams.IsRegexp())
+	rootPath, err := fspatterns.GetRootPath(addDepsParams.GetPattern(), addDepsParams.IsRegexp(), false)
 	if err != nil {
 		return nil, err
 	}
 
-	isDir, err := fileutils.IsDir(rootPath)
+	isDir, err := fileutils.IsDirExists(rootPath, false)
 	if err != nil {
 		return nil, err
 	}
 
 	if !isDir || fileutils.IsPathSymlink(addDepsParams.GetPattern()) {
-		return []string{fspatterns.GetSingleFileToUpload(rootPath, "", false).LocalPath}, nil
+		artifact, err := fspatterns.GetSingleFileToUpload(rootPath, "", false, false)
+		if err != nil {
+			return nil, err
+		}
+		return []string{artifact.LocalPath}, nil
 	}
 	return collectPatternMatchingFiles(addDepsParams, rootPath)
 }

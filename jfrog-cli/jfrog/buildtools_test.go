@@ -29,6 +29,8 @@ import (
 	"testing"
 )
 
+const DockerTestImage string = "jfrog_cli_test_image"
+
 func InitBuildToolsTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
@@ -54,12 +56,15 @@ func CleanBuildToolsTests() {
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
 
-	err := os.Setenv(config.JfrogHomeEnv, filepath.Join(tests.Out, "jfroghome"))
+	err := os.Setenv(config.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
+	if err != nil {
+		t.Error(err)
+	}
 	jfrogHomePath, err := config.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = copyTemplateFile(templateConfigPath, jfrogHomePath, config.JfrogConfigFile, true)
+	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,7 +75,10 @@ func TestMavenBuildWithServerID(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenServerIDConfig)
-
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
+	if err != nil {
+		t.Error(err)
+	}
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
 }
@@ -80,8 +88,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.MavenUsernamePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.MavenUsernamePasswordTemplate, true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -96,7 +103,12 @@ func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.MavenDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func TestGradleBuildWithServerID(t *testing.T) {
@@ -104,6 +116,10 @@ func TestGradleBuildWithServerID(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	configFilePath := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleServerIDConfig)
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
+	if err != nil {
+		t.Error(err)
+	}
 
 	runAndValidateGradle(buildGradlePath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -114,8 +130,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 
 	buildGradlePath := createGradleProject(t)
 	srcConfigTemplate := filepath.Join(tests.GetTestResourcesPath(), "buildspecs", tests.GradleUseramePasswordTemplate)
-	targetBuildSpecPath := filepath.Join(tests.Out, "buildspecs")
-	configFilePath, err := copyTemplateFile(srcConfigTemplate, targetBuildSpecPath, tests.GradleUseramePasswordTemplate, true)
+	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,6 +177,11 @@ func initGoTest(t *testing.T) {
 	// Move when go will be supported and check Artifactory version.
 	if !isRepoExist(tests.GoLocalRepo) {
 		repoConfig := tests.GetTestResourcesPath() + tests.GoLocalRepositoryConfig
+		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
 		execCreateRepoRest(repoConfig, tests.GoLocalRepo)
 	}
 }
@@ -307,23 +327,19 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest("jfrog_cli_test_image", t)
+	runDockerPushTest(DockerTestImage, t)
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerTest("jfrog_cli_test_image/multiple", t)
+	runDockerPushTest(DockerTestImage+"/multiple", t)
 }
 
 // Run docker push to Artifactory
-func runDockerTest(imageName string, t *testing.T) {
-	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
-	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
-	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
-	utils.RunCmd(imageBuilder)
-
+func runDockerPushTest(imageName string, t *testing.T) {
+	imageTag := buildTestDockerImage(imageName)
 	buildName := "docker-build"
 	buildNumber := "1"
 
@@ -332,28 +348,67 @@ func runDockerTest(imageName string, t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
-	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, t)
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, 7, t)
 
-	deleteFlags := new(generic.DeleteConfiguration)
-	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
-	deleteFlags.ArtDetails = artifactoryDetails
-	tests.DeleteUtilForCleanUp(deleteSpec, deleteFlags)
+	dockerTestCleanup(imageName, buildName)
 }
 
-func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies int, t *testing.T) {
+func TestDockerPull(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+
+	imageName := DockerTestImage
+	imageTag := buildTestDockerImage(imageName)
+
+	// Push docker image using docker client
+	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
+
+	buildName := "docker-pull"
+	buildNumber := "1"
+
+	// Pull docker image using docker client
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+
+	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
+	validateDockerBuild(buildName, buildNumber, imagePath, 0, 7, 7, t)
+
+	dockerTestCleanup(imageName, buildName)
+}
+
+func buildTestDockerImage(imageName string) string {
+	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
+	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
+	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
+	utils.RunCmd(imageBuilder)
+	return imageTag
+}
+
+func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	result, err := generic.Search(specFile, artifactoryDetails)
 	if err != nil {
 		log.Error(err)
 		t.Error(err)
 	}
-	if expectedArtifacts != len(result) {
+	if expectedItemsInArtifactory != len(result) {
 		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(result))
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
+}
+
+func dockerTestCleanup(imageName, buildName string) {
+	// Remove build from Artifactory
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+	// Remove image from Artifactory
+	deleteFlags := new(generic.DeleteConfiguration)
+	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+	deleteFlags.ArtDetails = artifactoryDetails
+	generic.Delete(deleteSpec, deleteFlags)
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
@@ -373,11 +428,14 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 // #2 The number of artifact with the build.name and build.number properties.
 // Validates that #1 == #2
 func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePath(tests.SearchGo))
+	searchGoSpecFile, err := tests.CreateSpec(tests.SearchGo)
+	if err != nil {
+		t.Error(err)
+	}
+	spec, flags := getSpecAndCommonFlags(searchGoSpecFile)
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
-
 		searchParams, err := generic.GetSearchParams(spec.Get(i))
 		if err != nil {
 			t.Error(err)
@@ -592,19 +650,23 @@ func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) 
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GradleDeployedArtifacts, tests.GetFilePath(tests.SearchAllRepo1), t)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 }
 
 func createGradleProject(t *testing.T) string {
 	srcBuildFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "build.gradle")
-	targetPomPath := filepath.Join(tests.Out, "gradleproject")
-	buildGradlePath, err := copyTemplateFile(srcBuildFile, targetPomPath, "build.gradle", false)
+	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
 	if err != nil {
 		t.Error(err)
 	}
 
 	srcSettingsFile := filepath.Join(tests.GetTestResourcesPath(), "gradleproject", "settings.gradle")
-	_, err = copyTemplateFile(srcSettingsFile, targetPomPath, "settings.gradle", false)
+	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -614,8 +676,7 @@ func createGradleProject(t *testing.T) string {
 
 func createMavenProject(t *testing.T) string {
 	srcPomFile := filepath.Join(tests.GetTestResourcesPath(), "mavenproject", "pom.xml")
-	targetPomPath := filepath.Join(tests.Out, "mavenproject")
-	pomPath, err := copyTemplateFile(srcPomFile, targetPomPath, "pom.xml", false)
+	pomPath, err := tests.ReplaceTemplateVariables(srcPomFile, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -625,19 +686,19 @@ func createMavenProject(t *testing.T) string {
 func createNpmProject(t *testing.T, dir string) string {
 	srcPackageJson := filepath.Join(tests.GetTestResourcesPath(), "npm", dir, "package.json")
 	targetPackageJson := filepath.Join(tests.Out, dir)
-	packageJson, err := copyTemplateFile(srcPackageJson, targetPackageJson, "package.json", false)
+	packageJson, err := tests.ReplaceTemplateVariables(srcPackageJson, targetPackageJson)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// failure can be ignored
-	npmrcExists, err := fileutils.IsFileExists(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"))
+	npmrcExists, err := fileutils.IsFileExists(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), false)
 	if err != nil {
 		t.Error(err)
 	}
 
 	if npmrcExists {
-		if _, err = copyTemplateFile(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson, ".npmrc", false); err != nil {
+		if _, err = tests.ReplaceTemplateVariables(filepath.Join(filepath.Dir(srcPackageJson), ".npmrc"), targetPackageJson); err != nil {
 			t.Error(err)
 		}
 	}
@@ -672,7 +733,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
-		os.Unsetenv(config.JfrogHomeEnv)
+		os.Unsetenv(config.JfrogHomeDirEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()
 	}
@@ -745,14 +806,14 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.NpmDeployedArtifacts,
+	isExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.NpmDeployedScopedArtifacts,
+	isExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)

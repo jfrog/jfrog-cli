@@ -3,7 +3,7 @@
     {
       "aql": {
         "items.find": {
-          "repo": "jfrog-cli-tests-repo1",
+          "repo": "${REPO1}",
           "$or": [
             {
               "$and": [

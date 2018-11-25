@@ -6,12 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -63,12 +63,19 @@ func init() {
 }
 
 func CleanFileSystem() {
-	isExist, err := fileutils.IsDirExists(Out)
-	if err != nil {
-		log.Error(err)
-	}
-	if isExist {
-		os.RemoveAll(Out)
+	removeDirs(Out, Temp)
+}
+
+func removeDirs(dirs ...string) {
+	for _, dir := range dirs {
+		isExist, err := fileutils.IsDirExists(dir, false)
+		if err != nil {
+			log.Error(err)
+		}
+		if isExist {
+			os.RemoveAll(dir)
+		}
+
 	}
 }
 
@@ -180,7 +187,7 @@ func getFileByOs(fileName string) string {
 
 func GetFilePath(fileName string) string {
 	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeparator() + fileName
-	isExists, _ := fileutils.IsFileExists(filePath)
+	isExists, _ := fileutils.IsFileExists(filePath, false)
 	if isExists {
 		return filePath
 	}
@@ -316,4 +323,79 @@ func DeleteUtilForCleanUp(deleteSpec *spec.SpecFiles, flags *generic.DeleteConfi
 	}
 
 	return generic.DeleteFiles(pathsToDelete, flags)
+}
+
+func GetNonVirtualRepositories() map[string]string {
+	nonVirtualRepos := map[string]string{
+		Repo1:   SpecsTestRepositoryConfig,
+		Repo2:   MoveRepositoryConfig,
+		LfsRepo: GitLfsTestRepositoryConfig,
+	}
+
+	if *TestBuildTools {
+		nonVirtualRepos[JcenterRemoteRepo] = JcenterRemoteRepositoryConfig
+		nonVirtualRepos[NpmLocalRepo] = NpmLocalRepositoryConfig
+		nonVirtualRepos[NpmRemoteRepo] = NpmRemoteRepositoryConfig
+	}
+
+	return nonVirtualRepos
+}
+
+func GetVirtualRepositories() map[string]string {
+	return map[string]string{
+		VirtualRepo: VirtualRepositoryConfig,
+	}
+}
+
+func getRepositoriesNameMap() map[string]string {
+	return map[string]string{
+		"${REPO1}":               Repo1,
+		"${REPO2}":               Repo2,
+		"${VIRTUAL_REPO}":        VirtualRepo,
+		"${LFS_REPO}":            LfsRepo,
+		"${JCENTER_REMOTE_REPO}": JcenterRemoteRepo,
+		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
+		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,
+		"${GO_REPO}":             GoLocalRepo,
+		"${RT_URL}":              *RtUrl,
+		"${RT_API_KEY}":          *RtApiKey,
+		"${RT_USERNAME}":         *RtUser,
+		"${RT_PASSWORD}":         *RtPassword,
+	}
+}
+
+func ReplaceTemplateVariables(path, destPath string) (string, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	repos := getRepositoriesNameMap()
+	for repoName, repoValue := range repos {
+		content = bytes.Replace(content, []byte(repoName), []byte(repoValue), -1)
+	}
+	if destPath == "" {
+		destPath, err = os.Getwd()
+		if err != nil {
+			return "", errorutils.CheckError(err)
+		}
+		destPath = filepath.Join(destPath, Temp)
+	}
+	err = os.MkdirAll(destPath, 0700)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	specPath := filepath.Join(destPath, filepath.Base(path))
+	log.Debug("Creating spec file at:", specPath)
+	err = ioutil.WriteFile(specPath, []byte(content), 0700)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+
+	return specPath, nil
+}
+
+func CreateSpec(fileName string) (string, error) {
+	searchFilePath := GetFilePath(fileName)
+	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
+	return searchFilePath, err
 }

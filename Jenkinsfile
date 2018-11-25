@@ -12,41 +12,72 @@ node {
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.11'
+
     dir('temp') {
         cliWorkspace = pwd()
-        jfrogCliParentDir = "${cliWorkspace}/src/github.com/jfrog/"
-        jfrogCliDir = "${jfrogCliParentDir}jfrog-cli-go/"
-        withEnv(["GO111MODULE=on","GOROOT=$goRoot","GOPATH=${cliWorkspace}","PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
-            stage 'Go get'
-            sh 'go version'
-            sh "mkdir -p $jfrogCliParentDir"
-            dir("$jfrogCliParentDir") {
-                sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
+        stage('Clone') {
+            sh 'git clone https://github.com/jfrog/jfrog-cli-go.git'
+            dir("$repo") {
                 if (BRANCH?.trim()) {
-                    dir('jfrog-cli-go') {
-                        sh "git checkout $BRANCH"
-                        dir('jfrog-cli/jfrog') {
-                            sh 'go install'
-                        }
-                    }
-                }
-            }
-
-            if ("$PUBLISH_NPM_PACKAGE".toBoolean()) {
-                print "publishing npm package"
-                publishNpmPackage()
-            } else {
-                // Publish to Bintray
-                sh 'bin/jfrog --version > version'
-                version = readFile('version').trim().split(" ")[2]
-                print "publishing version: $version"
-                for (int i = 0; i < architectures.size(); i++) {
-                    def currentBuild = architectures[i]
-                    stage "Build ${currentBuild.pkg}"
-                    buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+                    sh "git checkout $BRANCH"
                 }
             }
         }
+
+        stage('Go Install') {
+            jfrogCliRepoDir = "${cliWorkspace}/${repo}/"
+            jfrogCliDir = "${jfrogCliRepoDir}jfrog-cli/jfrog"
+            sh "echo jfrogCliDir=$jfrogCliDir"
+
+            withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+                stage('Go Install') {
+                    sh 'go version'
+                    dir("$jfrogCliDir") {
+                        sh 'go install'
+                    }
+                }
+
+                // Extract cli version
+                sh 'bin/jfrog --version > version'
+                version = readFile('version').trim().split(" ")[2]
+                print "CLI version: $version"
+            }
+        }
+
+        if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
+            stage('Npm Publish') {
+                print "publishing npm package"
+                publishNpmPackage(jfrogCliRepoDir)
+            }
+
+            stage('Build and Publish Docker Image') {
+                buildPublishDockerImage(version, jfrogCliRepoDir)
+            }
+        } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
+            withEnv(["GO111MODULE=on", "GOROOT=$goRoot", "GOPATH=${cliWorkspace}", "PATH+GOROOT=${goRoot}/bin", "JFROG_CLI_OFFER_CONFIG=false"]) {
+                print "publishing version: $version"
+                publishCliVersion(architectures)
+            }
+        }
+    }
+}
+
+def publishCliVersion(architectures) {
+    for (int i = 0; i < architectures.size(); i++) {
+        def currentBuild = architectures[i]
+        stage("Build ${currentBuild.pkg}") {
+            buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
+        }
+    }
+}
+
+def buildPublishDockerImage(version, jfrogCliRepoDir) {
+    dir("$jfrogCliRepoDir") {
+        docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
+        sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
+        sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
+        sh "docker tag jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
+        sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
     }
 }
 
@@ -59,7 +90,7 @@ def uploadToBintray(pkg, fileName) {
 def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def extension = fileExtension == null ? '' : fileExtension
     def fileName = "jfrog$fileExtension"
-    dir("${jfrogCliDir}jfrog-cli/jfrog") {
+    dir("${jfrogCliDir}") {
         sh "env GOOS=$goos GOARCH=$goarch GO111MODULE=on go build"
         sh "mv $fileName $cliWorkspace"
     }
@@ -68,8 +99,8 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     sh "rm $fileName"
 }
 
-def publishNpmPackage() {
-    dir ('${jfrogCliDir}npm/') {
+def publishNpmPackage(jfrogCliRepoDir) {
+    dir(jfrogCliRepoDir+'npm/') {
         sh '''#!/bin/bash
             echo "Downloading npm..."
             wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
