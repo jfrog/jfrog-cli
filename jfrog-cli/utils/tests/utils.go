@@ -317,6 +317,7 @@ func GetBaseDir(setToParentDir bool) (baseDir string) {
 	baseDir = filepath.Join(pwd, "testdata")
 	return
 }
+
 func DeleteFiles(deleteSpec *spec.SpecFiles, flags *generic.DeleteConfiguration) (successCount, failCount int, err error) {
 	pathsToDelete, err := generic.GetPathsToDelete(deleteSpec, flags)
 	if err != nil {

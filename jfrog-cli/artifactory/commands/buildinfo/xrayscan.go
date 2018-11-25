@@ -58,5 +58,5 @@ func getXrayScanParams(buildName, buildNumber string) services.XrayScanParams {
 	xrayScanParams.BuildName = buildName
 	xrayScanParams.BuildNumber = buildNumber
 
-	return
+	return xrayScanParams
 }
