@@ -6,16 +6,16 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
-func Promote(flags *BuildPromotionConfiguration) error {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func Promote(configuration *BuildPromotionConfiguration) error {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return err
 	}
-	return servicesManager.PromoteBuild(flags.PromotionParamsImpl)
+	return servicesManager.PromoteBuild(configuration.PromotionParams)
 }
 
 type BuildPromotionConfiguration struct {
-	*services.PromotionParamsImpl
+	services.PromotionParams
 	ArtDetails *config.ArtifactoryDetails
 	DryRun     bool
 }

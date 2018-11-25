@@ -4,6 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -14,18 +15,25 @@ type SearchResult struct {
 }
 
 func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
+
+	// Service Manager
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return nil, err
 	}
+
+	// Search Loop
 	log.Info("Searching artifacts...")
 	var resultItems []clientutils.ResultItem
 	for i := 0; i < len(searchSpec.Files); i++ {
-		params, err := searchSpec.Get(i).ToArtifatorySearchParams()
+
+		searchParams, err := GetSearchParams(searchSpec.Get(i))
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
-		currentResultItems, err := servicesManager.Search(clientutils.SearchParams{ArtifactoryCommonParams: params})
+
+		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
 			return nil, err
 		}
@@ -52,5 +60,16 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 		}
 		result[i] = *tempResult
 	}
+	return
+}
+
+func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err error) {
+	searchParams = services.NewSearchParams()
+	searchParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+	searchParams.Recursive, err = f.IsRecursive(true)
+	if err != nil {
+		return
+	}
+
 	return
 }

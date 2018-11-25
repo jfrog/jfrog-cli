@@ -6,15 +6,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
-func BuildDiscard(flags *BuildDiscardConfiguration) error {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, false)
+func BuildDiscard(configuration *BuildDiscardConfiguration) error {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, false)
 	if err != nil {
 		return err
 	}
-	return servicesManager.DiscardBuilds(flags.DiscardBuildsParamsImpl)
+	return servicesManager.DiscardBuilds(configuration.DiscardBuildsParams)
 }
 
 type BuildDiscardConfiguration struct {
 	ArtDetails *config.ArtifactoryDetails
-	*services.DiscardBuildsParamsImpl
+	services.DiscardBuildsParams
 }

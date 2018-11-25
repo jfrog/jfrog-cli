@@ -6,16 +6,16 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
-func Distribute(flags *BuildDistributionConfiguration) error {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func Distribute(configuration *BuildDistributionConfiguration) error {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return err
 	}
-	return servicesManager.DistributeBuild(flags.BuildDistributionParamsImpl)
+	return servicesManager.DistributeBuild(configuration.BuildDistributionParams)
 }
 
 type BuildDistributionConfiguration struct {
-	*services.BuildDistributionParamsImpl
+	services.BuildDistributionParams
 	ArtDetails *config.ArtifactoryDetails
 	DryRun     bool
 }

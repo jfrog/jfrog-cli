@@ -150,7 +150,7 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 
 func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
 	endOfRepoNameIndex := strings.Index(builder.image.Path()[1:], "/")
-	return path.Join(builder.repository, "library", builder.image.Path()[endOfRepoNameIndex+ 1:])
+	return path.Join(builder.repository, "library", builder.image.Path()[endOfRepoNameIndex+1:])
 }
 
 func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDependency buildinfo.Dependency, imageManifest *manifest, searchResults map[string]utils.ResultItem) error {
@@ -164,7 +164,7 @@ func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDepen
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
 			// Check if layer marker exists in Artifactory
-			item, layerExists = searchResults[layerFileName + ".marker"]
+			item, layerExists = searchResults[layerFileName+".marker"]
 			if !layerExists {
 				return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " or its marker in Artifactory"))
 			}
@@ -206,7 +206,7 @@ func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return builder.serviceManager.SetProps(&services.PropsParamsImpl{Items: builder.layers, Props: props})
+	return builder.serviceManager.SetProps(services.PropsParams{Items: builder.layers, Props: props})
 }
 
 // Create docker build info
@@ -295,10 +295,10 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 
 // Search for image layers in Artifactory
 func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	params := utils.SearchParams{}
-	params.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
-	params.Pattern = imagePathPattern
-	results, err := serviceManager.Search(params)
+	searchParams := services.NewSearchParams()
+	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
+	searchParams.Pattern = imagePathPattern
+	results, err := serviceManager.SearchFiles(searchParams)
 	if err != nil {
 		return nil, err
 	}

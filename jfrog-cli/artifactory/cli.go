@@ -1940,7 +1940,7 @@ func createBuildInfoConfiguration(c *cli.Context) (flags *buildinfocmd.Configura
 }
 
 func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buildinfo.BuildPromotionConfiguration) {
-	promotionParamsImpl := new(services.PromotionParamsImpl)
+	promotionParamsImpl := services.NewPromotionParams()
 	promotionParamsImpl.Comment = c.String("comment")
 	promotionParamsImpl.SourceRepo = c.String("source-repo")
 	promotionParamsImpl.Status = c.String("status")
@@ -1948,7 +1948,7 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promoteConfiguration = new(buildinfo.BuildPromotionConfiguration)
 	promoteConfiguration.DryRun = c.Bool("dry-run")
-	promoteConfiguration.PromotionParamsImpl = promotionParamsImpl
+	promoteConfiguration.PromotionParams = promotionParamsImpl
 	promoteConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	promoteConfiguration.BuildName = c.Args().Get(0)
 	promoteConfiguration.BuildNumber = c.Args().Get(1)
@@ -1957,7 +1957,7 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 }
 
 func createBuildDiscardConfiguration(c *cli.Context) (discardConfiguration *buildinfo.BuildDiscardConfiguration) {
-	discardParamsImpl := new(services.DiscardBuildsParamsImpl)
+	discardParamsImpl := services.NewDiscardBuildsParams()
 	discardParamsImpl.DeleteArtifacts = c.Bool("delete-artifacts")
 	discardParamsImpl.MaxBuilds = c.String("max-builds")
 	discardParamsImpl.MaxDays = c.String("max-days")
@@ -1965,13 +1965,13 @@ func createBuildDiscardConfiguration(c *cli.Context) (discardConfiguration *buil
 	discardParamsImpl.Async = c.Bool("async")
 	discardParamsImpl.BuildName = c.Args().Get(0)
 	discardConfiguration = new(buildinfo.BuildDiscardConfiguration)
-	discardConfiguration.DiscardBuildsParamsImpl = discardParamsImpl
+	discardConfiguration.DiscardBuildsParams = discardParamsImpl
 	discardConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
 
 func createBuildDistributionConfiguration(c *cli.Context) (distributeConfiguration *buildinfo.BuildDistributionConfiguration) {
-	distributeParamsImpl := new(services.BuildDistributionParamsImpl)
+	distributeParamsImpl := services.NewBuildDistributionParams()
 	distributeParamsImpl.Publish = c.BoolT("publish")
 	distributeParamsImpl.OverrideExistingFiles = c.Bool("override")
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
@@ -1979,7 +1979,7 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
 	distributeConfiguration = new(buildinfo.BuildDistributionConfiguration)
 	distributeConfiguration.DryRun = c.Bool("dry-run")
-	distributeConfiguration.BuildDistributionParamsImpl = distributeParamsImpl
+	distributeConfiguration.BuildDistributionParams = distributeParamsImpl
 	distributeConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	distributeConfiguration.BuildName = c.Args().Get(0)
 	distributeConfiguration.BuildNumber = c.Args().Get(1)
@@ -1989,12 +1989,13 @@ func createBuildDistributionConfiguration(c *cli.Context) (distributeConfigurati
 
 func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {
 	gitLfsCleanConfiguration = new(generic.GitLfsCleanConfiguration)
-	refs := c.String("refs")
-	if len(refs) == 0 {
-		refs = "refs/remotes/*"
+
+	gitLfsCleanConfiguration.Refs = c.String("refs")
+	if len(gitLfsCleanConfiguration.Refs) == 0 {
+		gitLfsCleanConfiguration.Refs = "refs/remotes/*"
 	}
-	repo := c.String("repo")
-	gitLfsCleanConfiguration.GitLfsCleanParamsImpl = &services.GitLfsCleanParamsImpl{Repo: repo, Refs: refs}
+
+	gitLfsCleanConfiguration.Repo = c.String("repo")
 	gitLfsCleanConfiguration.Quiet = c.Bool("quiet")
 	gitLfsCleanConfiguration.DryRun = c.Bool("dry-run")
 	gitLfsCleanConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
@@ -2002,7 +2003,7 @@ func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *g
 	if c.NArg() == 1 {
 		dotGitPath = c.Args().Get(0)
 	}
-	gitLfsCleanConfiguration.GitLfsCleanParamsImpl.GitPath = dotGitPath
+	gitLfsCleanConfiguration.GitPath = dotGitPath
 	return
 }
 

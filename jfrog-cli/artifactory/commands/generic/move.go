@@ -1,31 +1,32 @@
 package generic
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 // Moves the artifacts using the specified move pattern.
-func Move(moveSpec *spec.SpecFiles, flags *MoveConfiguration) (successCount, failCount int, err error) {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func Move(moveSpec *spec.SpecFiles, configuration *MoveConfiguration) (successCount, failCount int, err error) {
+
+	// Create Service Manager:
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return
 	}
+
+	// Move Loop:
 	for i := 0; i < len(moveSpec.Files); i++ {
-		params, err := moveSpec.Get(i).ToArtifatoryMoveCopyParams()
+
+		moveParams, err := getMoveParams(moveSpec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		flat, err := moveSpec.Get(i).IsFlat(false)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-		partialSuccess, partialFailed, err := servicesManager.Move(&services.MoveCopyParamsImpl{ArtifactoryCommonParams: params, Flat: flat})
+
+		partialSuccess, partialFailed, err := servicesManager.Move(moveParams)
 		successCount += partialSuccess
 		failCount += partialFailed
 		if err != nil {
@@ -37,6 +38,21 @@ func Move(moveSpec *spec.SpecFiles, flags *MoveConfiguration) (successCount, fai
 }
 
 type MoveConfiguration struct {
-	DryRun                bool
-	ArtDetails            *config.ArtifactoryDetails
+	DryRun     bool
+	ArtDetails *config.ArtifactoryDetails
+}
+
+func getMoveParams(f *spec.File) (moveParams services.MoveCopyParams, err error) {
+	moveParams = services.NewMoveCopyParams()
+	moveParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+	moveParams.Recursive, err = f.IsRecursive(true)
+	if err != nil {
+		return
+	}
+
+	moveParams.Flat, err = f.IsFlat(false)
+	if err != nil {
+		return
+	}
+	return
 }

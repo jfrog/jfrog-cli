@@ -18,7 +18,9 @@ import (
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCount, failCount int, err error) {
+func Upload(uploadSpec *spec.SpecFiles, configuration *UploadConfiguration) (successCount, failCount int, err error) {
+
+	// Create Service Manager:
 	certPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
 		return 0, 0, err
@@ -27,7 +29,7 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 	if err != nil {
 		return 0, 0, err
 	}
-	servicesConfig, err := createUploadServiceConfig(flags.ArtDetails, flags, certPath, minChecksumDeploySize)
+	servicesConfig, err := createUploadServiceConfig(configuration.ArtDetails, configuration, certPath, minChecksumDeploySize)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -35,42 +37,32 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 	if err != nil {
 		return 0, 0, err
 	}
-	isCollectBuildInfo := len(flags.BuildName) > 0 && len(flags.BuildNumber) > 0
-	if isCollectBuildInfo && !flags.DryRun {
-		if err := utils.SaveBuildGeneralDetails(flags.BuildName, flags.BuildNumber); err != nil {
+
+	// Build Info Collection:
+	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
+	if isCollectBuildInfo && !configuration.DryRun {
+		if err := utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
 			return 0, 0, err
 		}
 		for i := 0; i < len(uploadSpec.Files); i++ {
-			addBuildProps(&uploadSpec.Get(i).Props, flags.BuildName, flags.BuildNumber)
+			addBuildProps(&uploadSpec.Get(i).Props, configuration.BuildName, configuration.BuildNumber)
 		}
 	}
 
-	uploadParamImp := createBaseUploadParams(flags)
+	// Upload Loop:
 	var filesInfo []clientutils.FileInfo
 	var errorOccurred = false
 	for i := 0; i < len(uploadSpec.Files); i++ {
-		params, err := uploadSpec.Get(i).ToArtifatoryUploadParams()
+
+		uploadParams, err := getUploadParams(uploadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
-		uploadParamImp.ArtifactoryCommonParams = params
-		flat, err := uploadSpec.Get(i).IsFlat(true)
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
-		uploadParamImp.Flat = flat
-		explode, err := uploadSpec.Get(i).IsExplode(false)
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
-		uploadParamImp.ExplodeArchive = explode
-		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParamImp)
+
+		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParams)
+
 		filesInfo = append(filesInfo, artifacts...)
 		failCount += failed
 		successCount += uploaded
@@ -80,6 +72,7 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 			continue
 		}
 	}
+
 	if errorOccurred {
 		err = errors.New("Upload finished with errors. Please review the logs")
 		return
@@ -87,12 +80,14 @@ func Upload(uploadSpec *spec.SpecFiles, flags *UploadConfiguration) (successCoun
 	if failCount > 0 {
 		return
 	}
-	if isCollectBuildInfo && !flags.DryRun {
+
+	// Build Info
+	if isCollectBuildInfo && !configuration.DryRun {
 		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Artifacts = buildArtifacts
 		}
-		err = utils.SavePartialBuildInfo(flags.BuildName, flags.BuildNumber, populateFunc)
+		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc)
 	}
 	return
 }
@@ -119,14 +114,6 @@ func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *Upl
 		SetLogger(log.Logger).
 		Build()
 	return servicesConfig, err
-}
-
-func createBaseUploadParams(flags *UploadConfiguration) *services.UploadParamsImp {
-	uploadParamImp := &services.UploadParamsImp{}
-	uploadParamImp.Deb = flags.Deb
-	uploadParamImp.Symlink = flags.Symlink
-	uploadParamImp.Retries = flags.Retries
-	return uploadParamImp
 }
 
 func getMinChecksumDeploySize() (int64, error) {
@@ -169,4 +156,38 @@ type UploadConfiguration struct {
 	ExplodeArchive        bool
 	ArtDetails            *config.ArtifactoryDetails
 	Retries               int
+}
+
+func getUploadParams(f *spec.File, configuration *UploadConfiguration) (uploadParams services.UploadParams, err error) {
+	uploadParams = services.NewUploadParams()
+	uploadParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+	uploadParams.Recursive, err = f.IsRecursive(true)
+	if err != nil {
+		return
+	}
+
+	uploadParams.Regexp, err = f.IsRegexp(false)
+	if err != nil {
+		return
+	}
+
+	uploadParams.IncludeDirs, err = f.IsIncludeDirs(false)
+	if err != nil {
+		return
+	}
+
+	uploadParams.Flat, err = f.IsFlat(true)
+	if err != nil {
+		return
+	}
+
+	uploadParams.ExplodeArchive, err = f.IsExplode(false)
+	if err != nil {
+		return
+	}
+
+	uploadParams.Deb = configuration.Deb
+	uploadParams.Symlink = configuration.Symlink
+	uploadParams.Retries = configuration.Retries
+	return
 }
