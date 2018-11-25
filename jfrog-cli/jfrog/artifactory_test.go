@@ -2950,7 +2950,7 @@ func cleanArtifactory() {
 	}
 	deleteSpec, _ := spec.CreateSpecFromFile(deleteSpecFile, nil)
 	deleteFlags.ArtDetails = artifactoryDetails
-	tests.DeleteUtilForCleanUp(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, deleteFlags)
 }
 
 func searchInArtifactory(specFile string) (result []generic.SearchResult, err error) {

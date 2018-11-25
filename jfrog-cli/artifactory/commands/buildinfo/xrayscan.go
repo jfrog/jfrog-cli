@@ -18,7 +18,7 @@ func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetai
 		return false, err
 	}
 
-	xrayScanParams := GetXrayScanParams(buildName, buildNumber)
+	xrayScanParams := getXrayScanParams(buildName, buildNumber)
 	result, err := servicesManager.XrayScanBuild(xrayScanParams)
 	if err != nil {
 		return false, err
@@ -53,9 +53,8 @@ type scanSummary struct {
 	Url         string `json:"more_details_url,omitempty"`
 }
 
-func GetXrayScanParams(buildName, buildNumber string) (xrayScanParams services.XrayScanParams) {
-
-	xrayScanParams = services.NewXrayScanParams()
+func getXrayScanParams(buildName, buildNumber string) services.XrayScanParams {
+	xrayScanParams := services.NewXrayScanParams()
 	xrayScanParams.BuildName = buildName
 	xrayScanParams.BuildNumber = buildNumber
 

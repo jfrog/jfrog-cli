@@ -408,7 +408,7 @@ func dockerTestCleanup(imageName, buildName string) {
 	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
 	deleteFlags.ArtDetails = artifactoryDetails
-	tests.DeleteUtilForCleanUp(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, deleteFlags)
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {

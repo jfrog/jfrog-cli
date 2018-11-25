@@ -59,7 +59,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 
 func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem) {
 	for i := 0; i < len(spec.Files); i++ {
-		searchParams, err := GetSearchParamsForProps(spec.Get(i))
+		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
@@ -83,11 +83,9 @@ func GetPropsParams(resultItems []clientutils.ResultItem, properties string) (pr
 	return
 }
 
-func GetSearchParamsForProps(f *spec.File) (searchParams services.SearchParams, err error) {
+func getSearchParamsForProps(f *spec.File) (searchParams services.SearchParams, err error) {
 	searchParams = services.NewSearchParams()
-
 	searchParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	searchParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -97,6 +95,5 @@ func GetSearchParamsForProps(f *spec.File) (searchParams services.SearchParams, 
 	if err != nil {
 		return
 	}
-
 	return
 }

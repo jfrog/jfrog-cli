@@ -15,7 +15,7 @@ func GetPathsToDelete(deleteSpec *spec.SpecFiles, configuration *DeleteConfigura
 	}
 	var resultItems []clientutils.ResultItem
 	for i := 0; i < len(deleteSpec.Files); i++ {
-		deleteParams, err := GetDeleteParams(deleteSpec.Get(i))
+		deleteParams, err := getDeleteParams(deleteSpec.Get(i))
 		if err != nil {
 			return nil, err
 		}
@@ -44,15 +44,12 @@ type DeleteConfiguration struct {
 	DryRun     bool
 }
 
-func GetDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err error) {
+func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err error) {
 	deleteParams = services.NewDeleteParams()
-
 	deleteParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	deleteParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
 	}
-
 	return
 }

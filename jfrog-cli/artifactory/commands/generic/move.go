@@ -20,7 +20,7 @@ func Move(moveSpec *spec.SpecFiles, configuration *MoveConfiguration) (successCo
 	// Move Loop:
 	for i := 0; i < len(moveSpec.Files); i++ {
 
-		moveParams, err := GetMoveParams(moveSpec.Get(i))
+		moveParams, err := getMoveParams(moveSpec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
@@ -42,11 +42,9 @@ type MoveConfiguration struct {
 	ArtDetails *config.ArtifactoryDetails
 }
 
-func GetMoveParams(f *spec.File) (moveParams services.MoveCopyParams, err error) {
+func getMoveParams(f *spec.File) (moveParams services.MoveCopyParams, err error) {
 	moveParams = services.NewMoveCopyParams()
-
 	moveParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	moveParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -56,6 +54,5 @@ func GetMoveParams(f *spec.File) (moveParams services.MoveCopyParams, err error)
 	if err != nil {
 		return
 	}
-
 	return
 }

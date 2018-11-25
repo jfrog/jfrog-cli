@@ -54,7 +54,7 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *UploadConfiguration) (suc
 	var errorOccurred = false
 	for i := 0; i < len(uploadSpec.Files); i++ {
 
-		uploadParams, err := GetUploadParams(uploadSpec.Get(i), configuration)
+		uploadParams, err := getUploadParams(uploadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -158,12 +158,9 @@ type UploadConfiguration struct {
 	Retries               int
 }
 
-func GetUploadParams(f *spec.File, configuration *UploadConfiguration) (uploadParams services.UploadParams, err error) {
-
+func getUploadParams(f *spec.File, configuration *UploadConfiguration) (uploadParams services.UploadParams, err error) {
 	uploadParams = services.NewUploadParams()
-
 	uploadParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	uploadParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -192,6 +189,5 @@ func GetUploadParams(f *spec.File, configuration *UploadConfiguration) (uploadPa
 	uploadParams.Deb = configuration.Deb
 	uploadParams.Symlink = configuration.Symlink
 	uploadParams.Retries = configuration.Retries
-
 	return
 }

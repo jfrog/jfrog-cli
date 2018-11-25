@@ -15,7 +15,7 @@ func PrepareGitLfsClean(configuration *GitLfsCleanConfiguration) ([]clientutils.
 		return nil, err
 	}
 
-	gitLfsCleanParams := GetGitLfsCleanParams(configuration)
+	gitLfsCleanParams := getGitLfsCleanParams(configuration)
 
 	return servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
 }
@@ -43,7 +43,7 @@ type GitLfsCleanConfiguration struct {
 	GitPath    string
 }
 
-func GetGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanParams services.GitLfsCleanParams) {
+func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanParams services.GitLfsCleanParams) {
 	gitLfsCleanParams = services.NewGitLfsCleanParams()
 
 	gitLfsCleanParams.GitPath = configuration.GitPath

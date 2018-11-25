@@ -20,7 +20,7 @@ func Copy(copySpec *spec.SpecFiles, configuration *CopyConfiguration) (successCo
 	// Copy Loop:
 	for i := 0; i < len(copySpec.Files); i++ {
 
-		copyParams, err := GetCopyParams(copySpec.Get(i))
+		copyParams, err := getCopyParams(copySpec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
@@ -42,11 +42,9 @@ type CopyConfiguration struct {
 	ArtDetails *config.ArtifactoryDetails
 }
 
-func GetCopyParams(f *spec.File) (copyParams services.MoveCopyParams, err error) {
+func getCopyParams(f *spec.File) (copyParams services.MoveCopyParams, err error) {
 	copyParams = services.NewMoveCopyParams()
-
 	copyParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	copyParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -56,6 +54,5 @@ func GetCopyParams(f *spec.File) (copyParams services.MoveCopyParams, err error)
 	if err != nil {
 		return
 	}
-
 	return
 }

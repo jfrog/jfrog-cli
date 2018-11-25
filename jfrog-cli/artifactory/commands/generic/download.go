@@ -45,7 +45,7 @@ func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration
 	var errorOccurred = false
 	for i := 0; i < len(downloadSpec.Files); i++ {
 
-		downParams, err := GetDownloadParams(downloadSpec.Get(i), configuration)
+		downParams, err := getDownloadParams(downloadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -134,11 +134,9 @@ func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	return artifactory.New(serviceConfig)
 }
 
-func GetDownloadParams(f *spec.File, configuration *DownloadConfiguration) (downParams services.DownloadParams, err error) {
+func getDownloadParams(f *spec.File, configuration *DownloadConfiguration) (downParams services.DownloadParams, err error) {
 	downParams = services.NewDownloadParams()
-
 	downParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	downParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -162,6 +160,5 @@ func GetDownloadParams(f *spec.File, configuration *DownloadConfiguration) (down
 	downParams.Symlink = configuration.Symlink
 	downParams.ValidateSymlink = configuration.ValidateSymlink
 	downParams.Retries = configuration.Retries
-
 	return
 }
