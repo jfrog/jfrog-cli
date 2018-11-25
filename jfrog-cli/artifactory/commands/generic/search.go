@@ -64,11 +64,8 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 }
 
 func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err error) {
-
 	searchParams = services.NewSearchParams()
-
 	searchParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
-
 	searchParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return

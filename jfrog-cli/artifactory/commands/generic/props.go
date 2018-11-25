@@ -79,7 +79,6 @@ func GetPropsParams(resultItems []clientutils.ResultItem, properties string) (pr
 	propsParams = services.NewPropsParams()
 	propsParams.Items = resultItems
 	propsParams.Props = properties
-
 	return
 }
 

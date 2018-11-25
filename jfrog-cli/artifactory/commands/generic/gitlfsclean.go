@@ -45,7 +45,6 @@ type GitLfsCleanConfiguration struct {
 
 func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanParams services.GitLfsCleanParams) {
 	gitLfsCleanParams = services.NewGitLfsCleanParams()
-
 	gitLfsCleanParams.GitPath = configuration.GitPath
 	gitLfsCleanParams.Refs = configuration.Refs
 	gitLfsCleanParams.Repo = configuration.Repo
