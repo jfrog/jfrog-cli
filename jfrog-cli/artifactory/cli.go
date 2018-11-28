@@ -2041,8 +2041,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 	return
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *generic.DownloadConfiguration) {
-	downloadConfiguration = new(generic.DownloadConfiguration)
+func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration) {
+	downloadConfiguration = new(utils.DownloadConfiguration)
 	downloadConfiguration.DryRun = c.Bool("dry-run")
 	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadConfiguration.MinSplitSize = getMinSplit(c)

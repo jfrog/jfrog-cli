@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+
 func TestCovertConfigV0ToV1(t *testing.T) {
 	configV0 := `
 		{
@@ -152,7 +153,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 		t.Error(errors.New("Failed to get default server."))
 	}
 
-	serverDetails, err = GetArtifactoryConfByServerId("notDefault", configV1.Artifactory)
+	serverDetails, err = getArtifactoryConfByServerId("notDefault", configV1.Artifactory)
 	if err != nil {
 		t.Error(err.Error())
 	}
