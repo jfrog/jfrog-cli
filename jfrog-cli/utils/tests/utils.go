@@ -196,7 +196,7 @@ func GetFilePath(fileName string) string {
 }
 
 func GetTestsLogsDir() (string, error) {
-	tempDirPath := filepath.Join(os.TempDir(), "jfrog_tests_logs")
+	tempDirPath := filepath.Join(cliutils.GetTempDir(), "jfrog_tests_logs")
 	return tempDirPath, fileutils.CreateDirIfNotExist(tempDirPath)
 }
 
