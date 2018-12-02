@@ -52,7 +52,7 @@ func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename s
 	downloadPath := path.Join(filePath, gradlePluginFilename)
 
 	filepath.Join(gradleDependenciesDir, gradlePluginFilename)
-	err = utils.DownloadExreactorIfNeeded(downloadPath, filepath.Join(gradleDependenciesDir, gradlePluginFilename))
+	err = utils.DownloadExtractorIfNeeded(downloadPath, filepath.Join(gradleDependenciesDir, gradlePluginFilename))
 	return
 }
 

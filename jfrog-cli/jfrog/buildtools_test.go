@@ -608,8 +608,14 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 	createServerConfigAndReturnPassphrase()
 
 	unsetEnvVars := func() {
-		os.Unsetenv(utils.JCenterRemoteServerEnv)
-		os.Unsetenv(utils.JCenterRemoteRepoEnv)
+		err := os.Unsetenv(utils.JCenterRemoteServerEnv)
+		if err != nil {
+			t.Error(err)
+		}
+		err = os.Unsetenv(utils.JCenterRemoteRepoEnv)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 	unsetEnvVars()
 	defer unsetEnvVars()
@@ -617,35 +623,38 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 	// The utils.JCenterRemoteServerEnv env var is not set, so extractor1.jar should be downloaded from jcenter.
 	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
 	expectedRemotePath := path.Join("bintray/jcenter", downloadPath)
-	artDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
-	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Still, the utils.JCenterRemoteServerEnv env var is not set, so the download should be from jcemter.
+	// Still, the utils.JCenterRemoteServerEnv env var is not set, so the download should be from jcenter.
 	// Expecting a different download path this time.
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor2.jar"
 	expectedRemotePath = path.Join("bintray/jcenter", downloadPath)
-	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
-	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
 
 	// Setting the utils.JCenterRemoteServerEnv env var now,
 	// Expecting therefore the download to be from the the server ID configured by this env var.
-	os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
-	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
+	err := os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
+	if err != nil {
+		t.Error(err)
+	}
+	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join("jcenter", downloadPath)
-	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
-	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
 
 	// Still expecting the download to be from the same server ID, but this time, not through a remote repo named
 	// jcenter, but through test-remote-repo.
 	testRemoteRepo := "test-remote-repo"
-	os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
-	downloadPath = "1org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
+	err = os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
+	if err != nil {
+		t.Error(err)
+	}
+	downloadPath = "1org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
-	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
-	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
 }
 
-func validateJcenterRemoteDetails(t *testing.T, err error, artDetails *config.ArtifactoryDetails, remotePath, expectedRemotePath string) {
+func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
+	artDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
 	if err != nil {
 		t.Error(err)
 	}

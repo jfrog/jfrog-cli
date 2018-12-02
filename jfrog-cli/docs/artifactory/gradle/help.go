@@ -12,7 +12,7 @@ const Arguments string = `	tasks and options
 
 const EnvVar string = `	JFROG_CLI_JCENTER_REMOTE_SERVER
 		Configured Artifactory server ID from which to download the jar needed by the gradle command.
-		The Artifactory server should include a remote maven repository named jcemter, which proxies jcenter.
+		The Artifactory server should include a remote maven repository named jcenter, which proxies jcenter.
 
 	JFROG_CLI_JCENTER_REMOTE_REPO
 		[Default: jcenter]

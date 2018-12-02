@@ -21,8 +21,8 @@ import (
 
 const (
 	// This env var should be used for downloading the extractor jars through an Artifactory remote
-	// repository, instead of downloading directly from jcemter. The remote repository should be
-	// configured to proxy jcemter.
+	// repository, instead of downloading directly from jcenter. The remote repository should be
+	// configured to proxy jcenter.
 	// The env var should store a server ID configured by JFrog CLI.
 	JCenterRemoteServerEnv = "JFROG_CLI_JCENTER_REMOTE_SERVER"
 	// If the JCenterRemoteServerEnv env var is used, a maven remote repository named jcenter is assumed.
@@ -38,7 +38,7 @@ const (
 // downloadPath: The Bintray or Artifactory download path.
 // filename: The local file name.
 // targetPath: The local download path (without the file name).
-func DownloadExreactorIfNeeded(downloadPath, targetPath string) error {
+func DownloadExtractorIfNeeded(downloadPath, targetPath string) error {
 	// If the file exists locally, we're done.
 	exists, err := fileutils.IsFileExists(targetPath, false)
 	if exists || err != nil {

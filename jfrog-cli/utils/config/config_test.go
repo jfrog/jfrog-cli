@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestCovertConfigV0ToV1(t *testing.T) {
 	configV0 := `
 		{

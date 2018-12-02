@@ -68,7 +68,7 @@ func downloadDependencies() (string, error) {
 	filePath := fmt.Sprintf("org/jfrog/buildinfo/build-info-extractor-maven3/%s", mavenExtractorDependencyVersion)
 	downloadPath := path.Join(filePath, filename)
 
-	err = utils.DownloadExreactorIfNeeded(downloadPath, filepath.Join(dependenciesPath, filename))
+	err = utils.DownloadExtractorIfNeeded(downloadPath, filepath.Join(dependenciesPath, filename))
 	if err != nil {
 		return "", err
 	}
