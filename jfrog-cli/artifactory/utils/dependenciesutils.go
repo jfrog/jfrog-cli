@@ -89,6 +89,7 @@ func getJcenterRemoteRepoName() string {
 
 func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, downloadPath, targetPath string) error {
 	downloadUrl := fmt.Sprintf("%s%s", artDetails.Url, downloadPath)
+	log.Info("Downloading build-info-extractor from", downloadUrl)
 	filename, localDir := fileutils.GetFileAndDirFromPath(targetPath)
 
 	downloadFileDetails := &httpclient.DownloadFileDetails{
