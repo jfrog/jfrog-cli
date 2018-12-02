@@ -309,7 +309,7 @@ func GetCommands() []cli.Command {
 			Usage:     mvndoc.Description,
 			HelpName:  common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText: mvndoc.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			ArgsUsage: common.CreateEnvVars(mvndoc.EnvVar),
 			Action: func(c *cli.Context) {
 				mvnCmd(c)
 			},
@@ -331,7 +331,7 @@ func GetCommands() []cli.Command {
 			Usage:     gradledoc.Description,
 			HelpName:  common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText: gradledoc.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			ArgsUsage: common.CreateEnvVars(gradledoc.EnvVar),
 			Action: func(c *cli.Context) {
 				gradleCmd(c)
 			},
@@ -2041,8 +2041,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 	return
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *generic.DownloadConfiguration) {
-	downloadConfiguration = new(generic.DownloadConfiguration)
+func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration) {
+	downloadConfiguration = new(utils.DownloadConfiguration)
 	downloadConfiguration.DryRun = c.Bool("dry-run")
 	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadConfiguration.MinSplitSize = getMinSplit(c)

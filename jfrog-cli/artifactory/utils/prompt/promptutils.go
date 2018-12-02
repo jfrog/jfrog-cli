@@ -131,12 +131,7 @@ func getServersIdAndDefault() ([]string, string, error) {
 }
 
 func GetRepositories(resolveRes *viper.Viper, repoTypes ...utils.RepoType) ([]string, error) {
-	var artDetails *config.ArtifactoryDetails
-	configs, err := config.GetAllArtifactoryConfigs()
-	if err != nil {
-		return []string{}, err
-	}
-	artDetails, err = config.GetArtifactoryConfByServerId(resolveRes.GetString(utils.SERVER_ID), configs)
+	artDetails, err := config.GetArtifactoryConf(resolveRes.GetString(utils.SERVER_ID))
 	if err != nil {
 		return nil, err
 	}

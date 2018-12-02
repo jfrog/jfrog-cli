@@ -62,7 +62,7 @@ func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) 
 	if len(serverId) == 0 {
 		return GetDefaultArtifactoryConf(details)
 	}
-	return GetArtifactoryConfByServerId(serverId, details)
+	return getArtifactoryConfByServerId(serverId, details)
 }
 
 func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
@@ -80,13 +80,22 @@ func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetai
 }
 
 // Returns the configured server or error if the server id not found
-func GetArtifactoryConfByServerId(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
+func GetArtifactoryConf(serverId string) (*ArtifactoryDetails, error) {
+	configs, err := GetAllArtifactoryConfigs()
+	if err != nil {
+		return nil, err
+	}
+	return getArtifactoryConfByServerId(serverId, configs)
+}
+
+// Returns the configured server or error if the server id not found
+func getArtifactoryConfByServerId(serverId string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
 	for _, conf := range configs {
-		if conf.ServerId == serverName {
+		if conf.ServerId == serverId {
 			return conf, nil
 		}
 	}
-	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Server id '%s' does not exist.", serverName)))
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' does not exist.", serverId)))
 }
 
 func GetAndRemoveConfiguration(serverName string, configs []*ArtifactoryDetails) (*ArtifactoryDetails, []*ArtifactoryDetails) {

@@ -48,10 +48,11 @@ func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename s
 	gradleDependenciesDir = filepath.Join(dependenciesPath, "gradle", gradleExtractorDependencyVersion)
 	gradlePluginFilename = fmt.Sprintf("build-info-extractor-gradle-%s-uber.jar", gradleExtractorDependencyVersion)
 
-	filePath := fmt.Sprintf("jfrog/jfrog-jars/org/jfrog/buildinfo/build-info-extractor-gradle/%s", gradleExtractorDependencyVersion)
+	filePath := fmt.Sprintf("org/jfrog/buildinfo/build-info-extractor-gradle/%s", gradleExtractorDependencyVersion)
 	downloadPath := path.Join(filePath, gradlePluginFilename)
 
-	err = utils.DownloadFromBintrayIfNeeded(downloadPath, gradlePluginFilename, gradleDependenciesDir)
+	filepath.Join(gradleDependenciesDir, gradlePluginFilename)
+	err = utils.DownloadExtractorIfNeeded(downloadPath, filepath.Join(gradleDependenciesDir, gradlePluginFilename))
 	return
 }
 
