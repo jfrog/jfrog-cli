@@ -9,17 +9,20 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func PrepareGitLfsClean(flags *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func PrepareGitLfsClean(configuration *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return nil, err
 	}
-	return servicesManager.GetUnreferencedGitLfsFiles(flags)
+
+	gitLfsCleanParams := getGitLfsCleanParams(configuration)
+
+	return servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
 }
 
-func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, flags *GitLfsCleanConfiguration) error {
-	log.Info("Deleting", len(files), "files from", flags.Repo, "...")
-	servicesManager, err := utils.CreateServiceManager(flags.ArtDetails, flags.DryRun)
+func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, configuration *GitLfsCleanConfiguration) error {
+	log.Info("Deleting", len(files), "files from", configuration.Repo, "...")
+	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return err
 	}
@@ -32,8 +35,18 @@ func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, flags *GitLfs
 }
 
 type GitLfsCleanConfiguration struct {
-	*services.GitLfsCleanParamsImpl
 	ArtDetails *config.ArtifactoryDetails
 	Quiet      bool
 	DryRun     bool
+	Refs       string
+	Repo       string
+	GitPath    string
+}
+
+func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanParams services.GitLfsCleanParams) {
+	gitLfsCleanParams = services.NewGitLfsCleanParams()
+	gitLfsCleanParams.GitPath = configuration.GitPath
+	gitLfsCleanParams.Refs = configuration.Refs
+	gitLfsCleanParams.Repo = configuration.Repo
+	return
 }

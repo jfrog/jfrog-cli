@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -22,9 +23,8 @@ const BuildInfoDetails = "details"
 const BuildTempPath = "jfrog/builds/"
 
 func GetBuildDir(buildName, buildNumber string) (string, error) {
-	tempDir := os.TempDir()
 	encodedDirName := base64.StdEncoding.EncodeToString([]byte(buildName + "_" + buildNumber))
-	buildsDir := filepath.Join(tempDir, BuildTempPath, encodedDirName)
+	buildsDir := filepath.Join(cliutils.GetTempDir(), BuildTempPath, encodedDirName)
 	err := os.MkdirAll(buildsDir, 0777)
 	if errorutils.CheckError(err) != nil {
 		return "", err

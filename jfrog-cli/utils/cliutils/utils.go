@@ -170,6 +170,14 @@ func IsWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
+func GetTempDir() string {
+	tempDirPath := os.Getenv("JFROG_CLI_TEMP_DIR")
+	if tempDirPath != "" {
+		return tempDirPath
+	}
+	return os.TempDir()
+}
+
 type Credentials interface {
 	SetUser(string)
 	SetPassword(string)

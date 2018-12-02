@@ -95,7 +95,7 @@ func (dependencyPackage *Package) Publish(summary string, targetRepo string, ser
 		message += ":" + summary
 	}
 	log.Info(message)
-	params := &_go.GoParamsImpl{}
+	params := _go.NewGoParams()
 	params.ZipPath = dependencyPackage.zipPath
 	params.ModContent = dependencyPackage.modContent
 	params.Version = dependencyPackage.version

@@ -150,8 +150,7 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 		return "", errorutils.CheckError(errors.New("Incompatible build config, expected: " + buildType.String() + " got: " + config.GetString("type")))
 	}
 
-	tempDir := os.TempDir()
-	propertiesPath := filepath.Join(tempDir, PROPERTIES_TEMP_PATH)
+	propertiesPath := filepath.Join(cliutils.GetTempDir(), PROPERTIES_TEMP_PATH)
 	err := os.MkdirAll(propertiesPath, 0777)
 	if errorutils.CheckError(err) != nil {
 		return "", err

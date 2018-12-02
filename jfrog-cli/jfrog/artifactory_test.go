@@ -19,6 +19,7 @@ import (
 	cliproxy "github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
 	"github.com/jfrog/jfrog-client-go/httpclient"
@@ -2949,7 +2950,7 @@ func cleanArtifactory() {
 	}
 	deleteSpec, _ := spec.CreateSpecFromFile(deleteSpecFile, nil)
 	deleteFlags.ArtDetails = artifactoryDetails
-	generic.Delete(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, deleteFlags)
 }
 
 func searchInArtifactory(specFile string) (result []generic.SearchResult, err error) {
@@ -3063,12 +3064,14 @@ func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+
+		searchParams, err := generic.GetSearchParams(spec.Get(i))
 		if err != nil {
 			t.Error(err)
 			t.FailNow()
 		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(rtutils.SearchParams{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
+
+		currentResultItems, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 			t.FailNow()

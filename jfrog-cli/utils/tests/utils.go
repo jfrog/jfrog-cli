@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -195,7 +196,7 @@ func GetFilePath(fileName string) string {
 }
 
 func GetTestsLogsDir() (string, error) {
-	tempDirPath := filepath.Join(os.TempDir(), "jfrog_tests_logs")
+	tempDirPath := filepath.Join(cliutils.GetTempDir(), "jfrog_tests_logs")
 	return tempDirPath, fileutils.CreateDirIfNotExist(tempDirPath)
 }
 
@@ -315,6 +316,15 @@ func GetBaseDir(setToParentDir bool) (baseDir string) {
 	}
 	baseDir = filepath.Join(pwd, "testdata")
 	return
+}
+
+func DeleteFiles(deleteSpec *spec.SpecFiles, flags *generic.DeleteConfiguration) (successCount, failCount int, err error) {
+	pathsToDelete, err := generic.GetPathsToDelete(deleteSpec, flags)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return generic.DeleteFiles(pathsToDelete, flags)
 }
 
 func GetNonVirtualRepositories() map[string]string {

@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -407,7 +408,7 @@ func dockerTestCleanup(imageName, buildName string) {
 	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
 	deleteFlags.ArtDetails = artifactoryDetails
-	generic.Delete(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, deleteFlags)
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
@@ -435,11 +436,12 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
-		params, err := spec.Get(i).ToArtifatorySetPropsParams()
+		searchParams, err := generic.GetSearchParams(spec.Get(i))
 		if err != nil {
 			t.Error(err)
 		}
-		currentResultItems, err := rtutils.SearchBySpecFiles(rtutils.SearchParams{ArtifactoryCommonParams: params}, flags, rtutils.ALL)
+
+		currentResultItems, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		if err != nil {
 			t.Error("Failed Searching files:", err)
 		}

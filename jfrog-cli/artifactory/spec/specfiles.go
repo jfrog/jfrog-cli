@@ -68,7 +68,7 @@ type File struct {
 	Flat            string
 	Regexp          string
 	IncludeDirs     string
-	ArchiveEntries string
+	ArchiveEntries  string
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
@@ -83,88 +83,12 @@ func (f File) IsRegexp(defaultValue bool) (bool, error) {
 	return clientutils.StringToBool(f.Regexp, defaultValue)
 }
 
-func (f *File) ToArtifatoryUploadParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-
-	recursive, err := clientutils.StringToBool(f.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-
-	regexp, err := clientutils.StringToBool(f.Regexp, false)
-	if err != nil {
-		return nil, err
-	}
-	params.Regexp = regexp
-
-	includeDirs, err := clientutils.StringToBool(f.IncludeDirs, false)
-	if err != nil {
-		return nil, err
-	}
-	params.IncludeDirs = includeDirs
-	return params, nil
+func (f File) IsRecursive(defaultValue bool) (bool, error) {
+	return clientutils.StringToBool(f.Recursive, defaultValue)
 }
 
-func (f *File) ToArtifatoryDownloadParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-	recursive, err := clientutils.StringToBool(f.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-
-	includeDirs, err := clientutils.StringToBool(f.IncludeDirs, false)
-	if err != nil {
-		return nil, err
-	}
-	params.IncludeDirs = includeDirs
-	return params, nil
-}
-
-func (f *File) ToArtifatoryDeleteParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-	recursive, err := clientutils.StringToBool(f.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-	return params, nil
-}
-
-func (f *File) ToArtifatorySearchParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-	recursive, err := clientutils.StringToBool(f.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-
-	return params, nil
-}
-
-func (f *File) ToArtifatoryMoveCopyParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-	recursive, err := clientutils.StringToBool(f.Recursive, true)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-	return params, nil
-}
-
-func (f *File) ToArtifatorySetPropsParams() (*utils.ArtifactoryCommonParams, error) {
-	params := f.ToArtifactoryCommonParams()
-	recursive, err := clientutils.StringToBool(f.Recursive, false)
-	if err != nil {
-		return nil, err
-	}
-	params.Recursive = recursive
-	params.IncludeDirs, err = clientutils.StringToBool(f.IncludeDirs, false)
-	if err != nil {
-		return nil, err
-	}
-	return params, nil
+func (f File) IsIncludeDirs(defaultValue bool) (bool, error) {
+	return clientutils.StringToBool(f.IncludeDirs, defaultValue)
 }
 
 func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
