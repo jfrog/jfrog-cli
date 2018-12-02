@@ -604,6 +604,59 @@ func TestNpm(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
+func TestGetJcenterRemoteDetails(t *testing.T) {
+	createServerConfigAndReturnPassphrase()
+
+	unsetEnvVars := func() {
+		os.Unsetenv(utils.JCenterRemoteServerEnv)
+		os.Unsetenv(utils.JCenterRemoteRepoEnv)
+	}
+	unsetEnvVars()
+	defer unsetEnvVars()
+
+	// The utils.JCenterRemoteServerEnv env var is not set, so extractor1.jar should be downloaded from jcenter.
+	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
+	expectedRemotePath := path.Join("bintray/jcenter", downloadPath)
+	artDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
+	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+
+	// Still, the utils.JCenterRemoteServerEnv env var is not set, so the download should be from jcemter.
+	// Expecting a different download path this time.
+	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor2.jar"
+	expectedRemotePath = path.Join("bintray/jcenter", downloadPath)
+	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
+	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+
+	// Setting the utils.JCenterRemoteServerEnv env var now,
+	// Expecting therefore the download to be from the the server ID configured by this env var.
+	os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
+	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
+	expectedRemotePath = path.Join("jcenter", downloadPath)
+	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
+	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+
+	// Still expecting the download to be from the same server ID, but this time, not through a remote repo named
+	// jcenter, but through test-remote-repo.
+	testRemoteRepo := "test-remote-repo"
+	os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
+	downloadPath = "1org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
+	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
+	artDetails, remotePath, err = utils.GetJcenterRemoteDetails(downloadPath)
+	validateJcenterRemoteDetails(t, err, artDetails, remotePath, expectedRemotePath)
+}
+
+func validateJcenterRemoteDetails(t *testing.T, err error, artDetails *config.ArtifactoryDetails, remotePath, expectedRemotePath string) {
+	if err != nil {
+		t.Error(err)
+	}
+	if remotePath != expectedRemotePath {
+		t.Error("Expected remote path to be", expectedRemotePath, "but got", remotePath)
+	}
+	if os.Getenv(utils.JCenterRemoteServerEnv) != "" && artDetails == nil {
+		t.Error("Expected a server to be returned")
+	}
+}
+
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
 	if postTestFileInfoErr != nil && !os.IsNotExist(postTestFileInfoErr) {
 		t.Error(postTestFileInfoErr)
@@ -710,6 +763,9 @@ func initBuildToolsTest(t *testing.T) {
 		t.Skip("Skipping build tools test. To run build tools tests add the '-test.buildTools=true' option.")
 	}
 	createJfrogHomeConfig(t)
+	cred := authenticate()
+	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	configArtifactoryCli = createConfigJfrogCLI(cred)
 }
 
 func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {

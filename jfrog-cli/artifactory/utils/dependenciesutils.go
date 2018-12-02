@@ -16,11 +16,23 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"os"
+	"path"
+)
+
+const (
+	// This env var should be used for downloading the extractor jars through an Artifactory remote
+	// repository, instead of downloading directly from jcemter. The remote repository should be
+	// configured to proxy jcemter.
+	// The env var should store a server ID configured by JFrog CLI.
+	JCenterRemoteServerEnv = "JFROG_CLI_JCENTER_REMOTE_SERVER"
+	// If the JCenterRemoteServerEnv env var is used, a maven remote repository named jcenter is assumed.
+	// This env var can be used to use a different remote repository name.
+	JCenterRemoteRepoEnv = "JFROG_CLI_JCENTER_REMOTE_REPO"
 )
 
 // Download the relevant build-info-extractor jar, if it does not already exist locally.
 // By default, the jar is downloaded directly from jcenter.
-// If the JFROG_CLI_JCENTER_REMOTE_SERVER environment variable is configured, the jar will be
+// If the JCenterRemoteServerEnv environment variable is configured, the jar will be
 // downloaded from a remote Artifactory repository which proxies jcenter.
 //
 // downloadPath: The Bintray or Artifactory download path.
@@ -33,25 +45,42 @@ func DownloadExreactorIfNeeded(downloadPath, targetPath string) error {
 		return err
 	}
 
-	// Download through a remote repository in Artifactory, if configured to do so.
-	jcenterRemoteServerId := os.Getenv("JFROG_CLI_JCENTER_REMOTE_SERVER")
-	if jcenterRemoteServerId != "" {
-		artDetails, err := config.GetArtifactoryConf(jcenterRemoteServerId)
-		if err != nil {
-			return err
-		}
+	artDetails, remotePath, err := GetJcenterRemoteDetails(downloadPath)
+	if err != nil {
+		return err
+	}
 
-		downloadPath := fmt.Sprintf("%s/%s", getJcenterRemoteRepoName(), downloadPath)
-		return downloadFileFromArtifactory(artDetails, downloadPath, targetPath)
+	// Download through a remote repository in Artifactory, if configured to do so.
+	if artDetails != nil {
+		return downloadFileFromArtifactory(artDetails, remotePath, targetPath)
 	}
 
 	// If not configured to download through a remote repository in Artifactory,
 	// download from jcenter.
-	return downloadFileFromBintray("bintray/jcenter/"+downloadPath, targetPath)
+	return downloadFileFromBintray(remotePath, targetPath)
+}
+
+func GetJcenterRemoteDetails(downloadPath string) (artDetails *config.ArtifactoryDetails, remotePath string, err error) {
+	// Download through a remote repository in Artifactory, if configured to do so.
+	serverId := os.Getenv(JCenterRemoteServerEnv)
+	if serverId != "" {
+		artDetails, err = config.GetArtifactoryConf(serverId)
+		if err != nil {
+			return
+		}
+
+		remotePath = path.Join(getJcenterRemoteRepoName(), downloadPath)
+		return
+	}
+
+	// If not configured to download through a remote repository in Artifactory,
+	// download from jcenter.
+	remotePath = path.Join("bintray/jcenter", downloadPath)
+	return
 }
 
 func getJcenterRemoteRepoName() string {
-	jcenterRemoteRepo := os.Getenv("JFROG_CLI_JCENTER_REMOTE_REPO")
+	jcenterRemoteRepo := os.Getenv(JCenterRemoteRepoEnv)
 	if jcenterRemoteRepo == "" {
 		jcenterRemoteRepo = "jcenter"
 	}
