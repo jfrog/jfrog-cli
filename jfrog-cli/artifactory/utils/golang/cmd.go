@@ -7,9 +7,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -157,7 +159,28 @@ func RunGoModTidy() error {
 
 	goCmd.Command = []string{"mod", "tidy"}
 	_, err = utils.RunCmdOutput(goCmd)
+	if err != nil {
+		return err
+	}
+
+	err = signModFile()
 	return err
+}
+
+func signModFile() error {
+	rootDir, err := GetRootDir()
+	if err != nil {
+		return err
+	}
+	modFilePath := filepath.Join(rootDir, "go.mod")
+	stat, err := os.Stat(modFilePath)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	modFileContent, err := ioutil.ReadFile(modFilePath)
+	newContent := append([]byte("// Edited by JFrog CLI\n\n"), modFileContent...)
+	err = ioutil.WriteFile(modFilePath, newContent, stat.Mode())
+	return errorutils.CheckError(err)
 }
 
 // Returns the root dir where the go.mod located.

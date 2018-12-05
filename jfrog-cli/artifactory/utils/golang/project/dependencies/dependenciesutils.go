@@ -56,9 +56,7 @@ func downloadDependencies(targetRepo string, cache *golang.DependenciesCache, de
 			cacheDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = true
 			err = downloadDependency(true, module, targetRepo, details)
 			dependenciesMap[module] = true
-		}
-
-		if resp.StatusCode == 404 {
+		} else if resp.StatusCode == 404 {
 			cacheDependenciesMap[getDependencyName(nameAndVersion[0])+":"+nameAndVersion[1]] = false
 			err = downloadDependency(false, module, "", nil)
 			dependenciesMap[module] = false
@@ -337,7 +335,7 @@ func createDependency(cachePath, dependencyName, version string) (*Package, erro
 		return &dep, errorutils.CheckError(err)
 	}
 
-	// Mod file dependency
+	// Mod file dependency for the build-info
 	modDependency := buildinfo.Dependency{Id: dep.id}
 	checksums, err := checksum.Calc(bytes.NewBuffer(dep.modContent))
 	if err != nil {
@@ -345,7 +343,7 @@ func createDependency(cachePath, dependencyName, version string) (*Package, erro
 	}
 	modDependency.Checksum = &buildinfo.Checksum{Sha1: checksums[checksum.SHA1], Md5: checksums[checksum.MD5]}
 
-	// Zip file dependency
+	// Zip file dependency for the build-info
 	zipDependency := buildinfo.Dependency{Id: dep.id}
 	fileDetails, err := fileutils.GetFileDetails(dep.zipPath)
 	if err != nil {
