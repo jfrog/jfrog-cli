@@ -31,18 +31,20 @@ func GetCachePath() (string, error) {
 
 // Represent go dependency package.
 type Package struct {
-	buildInfoDependencies []buildinfo.Dependency
-	id                    string
-	modContent            []byte
-	zipPath               string
-	version               string
+	buildInfoDependencies  []buildinfo.Dependency
+	id                     string
+	modContent             []byte
+	zipPath                string
+	version                string
+	recursiveTidyOverwrite bool
 }
 
-func (dependencyPackage *Package) New(cachePath string, dep Package) GoPackage {
+func (dependencyPackage *Package) New(cachePath string, dep Package, recursiveTidyOverwrite bool) GoPackage {
 	dependencyPackage.modContent = dep.modContent
 	dependencyPackage.zipPath = dep.zipPath
 	dependencyPackage.version = dep.version
 	dependencyPackage.id = dep.id
+	dependencyPackage.recursiveTidyOverwrite = recursiveTidyOverwrite
 	dependencyPackage.buildInfoDependencies = dep.buildInfoDependencies
 	return dependencyPackage
 }

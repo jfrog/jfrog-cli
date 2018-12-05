@@ -10,7 +10,7 @@ type GoPackage interface {
 	PopulateModAndPublish(targetRepo string, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error
 	Init() error
 	prepareAndPublish(targetRepo string, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error
-	New(cachePath string, dependency Package) GoPackage
+	New(cachePath string, dependency Package, recursiveTidyOverwrite bool) GoPackage
 }
 
 type RegExp struct {
