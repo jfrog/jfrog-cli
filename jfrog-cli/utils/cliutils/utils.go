@@ -121,6 +121,10 @@ func GetConfigVersion() string {
 	return "1"
 }
 
+func GetBundleConfigVersion() string {
+	return "1"
+}
+
 func GetDocumentationMessage() string {
 	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
 }

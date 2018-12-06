@@ -18,10 +18,12 @@ import (
 
 // This is the default server id. It is used when adding a server config without providing a server ID
 const (
-	DefaultServerId   = "Default-Server"
-	JfrogHomeDirEnv   = "JFROG_CLI_HOME_DIR"
-	JfrogConfigFile   = "jfrog-cli.conf"
-	JfrogDependencies = "dependencies"
+	DefaultServerId       = "Default-Server"
+	DefaultBundleConfigId = "Default-Bundle-Config"
+	JfrogHomeDirEnv       = "JFROG_CLI_HOME_DIR"
+	JfrogConfigFile       = "jfrog-cli.conf"
+	JfrogBundleConfigFile = "jfrog-bundle.conf"
+	JfrogDependencies     = "dependencies"
 	// Deprecated:
 	JfrogHomeEnv = "JFROG_CLI_HOME"
 )
@@ -182,7 +184,7 @@ func saveConfig(config *ConfigV1) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	path, err := getConfFilePath()
+	path, err := getConfFilePath(JfrogConfigFile)
 	if err != nil {
 		return err
 	}
@@ -196,7 +198,7 @@ func saveConfig(config *ConfigV1) error {
 }
 
 func readConf() (*ConfigV1, error) {
-	confFilePath, err := getConfFilePath()
+	confFilePath, err := getConfFilePath(JfrogConfigFile)
 	if err != nil {
 		return nil, err
 	}
@@ -222,13 +224,9 @@ func readConf() (*ConfigV1, error) {
 
 // The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
 func convertIfNecessary(content []byte) ([]byte, error) {
-	version, err := jsonparser.GetString(content, "Version")
+	version, err := readVersion(content)
 	if err != nil {
-		if err.Error() == "Key path not found" {
-			version = "0"
-		} else {
-			return nil, errorutils.CheckError(err)
-		}
+		return nil, errorutils.CheckError(err)
 	}
 	switch version {
 	case "0":
@@ -243,6 +241,16 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 		content, err = json.Marshal(&result)
 	}
 	return content, err
+}
+
+func readVersion(content []byte) (string, error) {
+	version, err := jsonparser.GetString(content, "Version")
+	if err != nil {
+		if err.Error() == "Key path not found" {
+			return "0", nil
+		}
+	}
+	return version, err
 }
 
 func GetJfrogHomeDir() (string, error) {
@@ -272,13 +280,16 @@ func GetJfrogDependenciesPath() (string, error) {
 	return filepath.Join(jfrogHome, JfrogDependencies), nil
 }
 
-func getConfFilePath() (string, error) {
+func getConfFilePath(confFileName string) (string, error) {
 	confPath, err := GetJfrogHomeDir()
 	if err != nil {
 		return "", err
 	}
-	os.MkdirAll(confPath, 0777)
-	return filepath.Join(confPath, JfrogConfigFile), nil
+	err = os.MkdirAll(confPath, 0777)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(confPath, confFileName), nil
 }
 
 type ConfigV1 struct {

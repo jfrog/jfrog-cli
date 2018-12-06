@@ -18,13 +18,12 @@ import (
 )
 
 // Internal golang locking for the same process.
-var mutux sync.Mutex
+var mutex sync.Mutex
 
-func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
-	shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
-	mutux.Lock()
+func Config(details, defaultDetails *config.ArtifactoryDetails, interactive, shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
+	mutex.Lock()
 	lockFile, err := lock.CreateLock()
-	defer mutux.Unlock()
+	defer mutex.Unlock()
 	defer lockFile.Unlock()
 
 	if err != nil {

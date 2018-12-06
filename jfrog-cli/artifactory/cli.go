@@ -7,6 +7,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/bundle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/golang"
@@ -49,6 +50,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/upgradeBundle"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/upgradeBundleConfig"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/common"
@@ -451,6 +454,30 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				pingCmd(c)
+			},
+		},
+		{
+			Name:      "upgrade-bundle",
+			Flags:     getServerFlags(),
+			Aliases:   []string{"ub"},
+			Usage:     upgradeBundle.Description,
+			HelpName:  common.CreateUsage("rt upgrade-bundle", upgradeBundle.Description, upgradeBundle.Usage),
+			UsageText: upgradeBundle.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				upgradeBundleCmd(c)
+			},
+		},
+		{
+			Name:      "upgrade-bundle-config",
+			Flags:     getBundleConfigFlags(),
+			Aliases:   []string{"ubc"},
+			Usage:     upgradeBundleConfig.Description,
+			HelpName:  common.CreateUsage("rt upgrade-bundle-config", upgradeBundleConfig.Description, upgradeBundleConfig.Usage),
+			UsageText: upgradeBundleConfig.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) {
+				upgradeBundleConfigCmd(c)
 			},
 		},
 	}
@@ -1070,6 +1097,16 @@ func getConfigFlags() []cli.Flag {
 		getSshKeyPathFlag()...)
 }
 
+func getBundleConfigFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.BoolTFlag{
+			Name:  "interactive",
+			Usage: "[Default: true] Set to false if you do not want the bundle config command to be interactive. If true, the --bundle-name option becomes optional.` `",
+		},
+	}
+	return append(flags, getBaseFlags()...)
+}
+
 func getSshKeyPathFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
@@ -1241,6 +1278,55 @@ func configCmd(c *cli.Context) {
 	}
 	validateConfigFlags(configCommandConfiguration)
 	_, err := commands.Config(configCommandConfiguration.ArtDetails, nil, configCommandConfiguration.Interactive, configCommandConfiguration.EncPassword, serverId)
+	cliutils.ExitOnErr(err)
+}
+
+func upgradeBundleConfigCmd(c *cli.Context) {
+	if len(c.Args()) > 2 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	var bundleConfigId string
+	configCommandConfiguration := createBundleConfigCommandConfiguration(c)
+	if len(c.Args()) > 0 {
+		switch c.Args()[0] {
+		case "delete":
+			if len(c.Args()) == 1 {
+				cliutils.PrintHelpAndExitWithError("Please specify bundle configuration ID to delete.", c)
+			}
+			bundleConfigDetails, err := config.GetBundleSpecificConfig(bundleConfigId)
+			cliutils.ExitOnErr(err)
+			if bundleConfigDetails.IsEmpty() {
+				log.Info("\"" + bundleConfigId + "\" configuration could not be found.")
+				return
+			}
+			if !configCommandConfiguration.Interactive {
+				cliutils.ExitOnErr(bundle.DeleteConfig(bundleConfigId))
+				return
+			}
+			if !cliutils.InteractiveConfirm("Are you sure you want to delete \"" + bundleConfigId + "\" configuration?") {
+				return
+			}
+			cliutils.ExitOnErr(bundle.DeleteConfig(bundleConfigId))
+			return
+		case "use":
+			cliutils.ExitOnErr(bundle.Use(bundleConfigId))
+			return
+		case "show":
+			cliutils.ExitOnErr(bundle.ShowConfig(bundleConfigId))
+			return
+		case "clear":
+			if len(c.Args()) == 2 {
+				cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+			}
+			cliutils.ExitOnErr(bundle.ClearConfig(configCommandConfiguration.Interactive))
+			return
+		default:
+			bundleConfigId = c.Args()[1]
+		}
+	}
+	validateBundleConfigFlags(configCommandConfiguration)
+	err := bundle.Config(configCommandConfiguration.BundleDetails, configCommandConfiguration.Interactive, bundleConfigId)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1420,6 +1506,15 @@ func pingCmd(c *cli.Context) {
 		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
 	}
 	log.Output(string(clientutils.IndentJson(resBody)))
+}
+
+func upgradeBundleCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	artDetails := createArtifactoryDetails(c, true)
+	err := bundle.UpgradeBundle(artDetails, c.Args().Get(0))
+	cliutils.ExitOnErr(err)
 }
 
 func downloadCmd(c *cli.Context) {
@@ -1784,6 +1879,15 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 		}
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
+	return
+}
+
+func createBundleConfigDetails(c *cli.Context) (details *config.BundleDetails) {
+	details = new(config.BundleDetails)
+	details.Name = c.String("bundle-name")
+	details.Version = c.String("bundle-version")
+	details.ScriptPath = c.String("script-path")
+	details.ServerId = c.String("server-id")
 	return
 }
 
@@ -2177,6 +2281,19 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
 		cliutils.ExitOnErr(errors.New("The --url option is mandatory when the --interactive option is set to false"))
+	}
+}
+
+func createBundleConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *bundle.ConfigCommandConfiguration) {
+	configCommandConfiguration = new(bundle.ConfigCommandConfiguration)
+	configCommandConfiguration.BundleDetails = createBundleConfigDetails(c)
+	configCommandConfiguration.Interactive = c.BoolT("interactive")
+	return
+}
+
+func validateBundleConfigFlags(configCommandConfiguration *bundle.ConfigCommandConfiguration) {
+	if !configCommandConfiguration.Interactive && configCommandConfiguration.BundleDetails.Name == "" {
+		cliutils.ExitOnErr(errors.New("The --bundle-name option is mandatory when the --interactive option is set to false"))
 	}
 }
 
