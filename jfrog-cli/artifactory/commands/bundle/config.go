@@ -28,7 +28,7 @@ func Config(details *config.BundleDetails, interactive bool, bundleConfigId stri
 	}
 	details, defaultDetails, configurations, err := prepareConfigurationData(bundleConfigId, details, interactive)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	if interactive {
 		getConfigurationFromUser(details, defaultDetails)
@@ -66,7 +66,7 @@ func prepareConfigurationData(bundleConfigId string, details *config.BundleDetai
 	if interactive && bundleConfigId == "" {
 		ioutils.ScanFromConsole("Bundle config ID", &bundleConfigId, defaultDetails.BundleConfigId)
 	}
-	details.ServerId = resolveBundleConfigId(bundleConfigId, details, defaultDetails)
+	details.BundleConfigId = resolveBundleConfigId(bundleConfigId, details, defaultDetails)
 
 	// Remove and get the bundle config details from the configurations list
 	tempConfiguration, configurations := config.GetAndRemoveBundleConfiguration(details.BundleConfigId, configurations)
@@ -108,7 +108,7 @@ func getConfigurationFromUser(details, defaultDetails *config.BundleDetails) {
 		ioutils.ScanFromConsole("Bundle name", &details.Name, defaultDetails.Name)
 	}
 	if details.Version == "" {
-		ioutils.ScanFromConsole("Bundle version", &details.Version, defaultDetails.Version)
+		ioutils.ScanFromConsole("Bundle version constraint", &details.Version, defaultDetails.Version)
 	}
 	if details.ScriptPath == "" {
 		ioutils.ScanFromConsole("Installation script path", &details.ScriptPath, defaultDetails.ScriptPath)
@@ -146,7 +146,7 @@ func printConfigs(configuration []*config.BundleDetails) {
 			log.Output("Name: " + details.Name)
 		}
 		if details.Version != "" {
-			log.Output("Version: " + details.Version)
+			log.Output("Version constraint: " + details.Version)
 		}
 		if details.ScriptPath != "" {
 			log.Output("Installation script path: " + details.ScriptPath)
@@ -188,12 +188,12 @@ func Use(bundleConfigId string) error {
 		return err
 	}
 	var bundleConfigFound *config.BundleDetails
-	newDefaultServer := true
+	newDefaultBundleConfig := true
 	for _, bundleConfig := range configurations {
 		if bundleConfig.BundleConfigId == bundleConfigId {
 			bundleConfigFound = bundleConfig
 			if bundleConfig.IsDefault {
-				newDefaultServer = false
+				newDefaultBundleConfig = false
 				break
 			}
 			bundleConfig.IsDefault = true
@@ -203,7 +203,7 @@ func Use(bundleConfigId string) error {
 	}
 	// Need to save only if we found a bundle configuration with the bundleConfigId
 	if bundleConfigFound != nil {
-		if newDefaultServer {
+		if newDefaultBundleConfig {
 			err = config.SaveBundleConf(configurations)
 			if err != nil {
 				return err

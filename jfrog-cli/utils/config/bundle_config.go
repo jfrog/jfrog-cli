@@ -20,19 +20,19 @@ func GetBundleConf(bundleId string) (*BundleDetails, error) {
 	return getBundleConfByBundleId(bundleId, configs)
 }
 
-// Returns the configured server or error if the server id not found
-func getBundleConfByBundleId(serverId string, configs []*BundleDetails) (*BundleDetails, error) {
+// Returns the configured bundle config or error if not found
+func getBundleConfByBundleId(bundleConfigId string, configs []*BundleDetails) (*BundleDetails, error) {
 	for _, conf := range configs {
-		if conf.ServerId == serverId {
+		if conf.BundleConfigId == bundleConfigId {
 			return conf, nil
 		}
 	}
-	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Bundle config '%s' does not exist.", serverId)))
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Bundle config '%s' does not exist.", bundleConfigId)))
 }
 
 func GetAndRemoveBundleConfiguration(bundleId string, configs []*BundleDetails) (*BundleDetails, []*BundleDetails) {
 	for i, conf := range configs {
-		if conf.ServerId == bundleId {
+		if conf.BundleConfigId == bundleId {
 			configs = append(configs[:i], configs[i+1:]...)
 			return conf, configs
 		}
@@ -43,7 +43,7 @@ func GetAndRemoveBundleConfiguration(bundleId string, configs []*BundleDetails) 
 func SaveBundleConf(details []*BundleDetails) error {
 	conf, err := readBundleConf()
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	conf.Bundle = details
 	return saveBundleConfig(conf)
@@ -87,7 +87,7 @@ func GetDefaultBundleConf(configs []*BundleDetails) (*BundleDetails, error) {
 			return conf, nil
 		}
 	}
-	return nil, errorutils.CheckError(errors.New("Couldn't find default server."))
+	return nil, errorutils.CheckError(errors.New("Couldn't find default bundle config."))
 }
 
 func saveBundleConfig(configToSave *BundleConfigV1) error {

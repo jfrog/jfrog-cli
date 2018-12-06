@@ -1151,7 +1151,7 @@ func getBuildScanFlags() []cli.Flag {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
-	artDetails := createArtifactoryDetails(c, includeConfig)
+	artDetails := createArtifactoryDetails(c, includeConfig, "")
 	if artDetails.Url == "" {
 		cliutils.ExitOnErr(errors.New("The --url option is mandatory"))
 	}
@@ -1310,6 +1310,9 @@ func upgradeBundleConfigCmd(c *cli.Context) {
 			cliutils.ExitOnErr(bundle.DeleteConfig(bundleConfigId))
 			return
 		case "use":
+			if len(c.Args()) == 1 {
+				cliutils.PrintHelpAndExitWithError("Please specify bundle configuration ID to use.", c)
+			}
 			cliutils.ExitOnErr(bundle.Use(bundleConfigId))
 			return
 		case "show":
@@ -1322,12 +1325,11 @@ func upgradeBundleConfigCmd(c *cli.Context) {
 			cliutils.ExitOnErr(bundle.ClearConfig(configCommandConfiguration.Interactive))
 			return
 		default:
-			bundleConfigId = c.Args()[1]
+			bundleConfigId = c.Args()[0]
 		}
 	}
 	validateBundleConfigFlags(configCommandConfiguration)
-	err := bundle.Config(configCommandConfiguration.BundleDetails, configCommandConfiguration.Interactive, bundleConfigId)
-	cliutils.ExitOnErr(err)
+	cliutils.ExitOnErr(bundle.Config(configCommandConfiguration.BundleDetails, configCommandConfiguration.Interactive, bundleConfigId))
 }
 
 func mvnCmd(c *cli.Context) {
@@ -1500,7 +1502,7 @@ func pingCmd(c *cli.Context) {
 	if c.NArg() > 0 {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent.", c)
 	}
-	artDetails := createArtifactoryDetails(c, true)
+	artDetails := createArtifactoryDetails(c, true, "")
 	resBody, err := generic.Ping(artDetails)
 	if err != nil {
 		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
@@ -1512,8 +1514,10 @@ func upgradeBundleCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	artDetails := createArtifactoryDetails(c, true)
-	err := bundle.UpgradeBundle(artDetails, c.Args().Get(0))
+	bundleConfigDetails, err := config.GetBundleConf(c.Args().Get(0))
+	cliutils.ExitOnErr(err)
+	artDetails := createArtifactoryDetails(c, true, bundleConfigDetails.ServerId)
+	err = bundle.UpgradeBundle(artDetails, bundleConfigDetails)
 	cliutils.ExitOnErr(err)
 }
 
@@ -1655,7 +1659,7 @@ func searchCmd(c *cli.Context) {
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
-	artDetails := createArtifactoryDetails(c, true)
+	artDetails := createArtifactoryDetails(c, true, "")
 	searchResults, err := generic.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(searchResults)
@@ -1826,14 +1830,14 @@ func offerConfig(c *cli.Context) (details *config.ArtifactoryDetails) {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return
 	}
-	details = createArtifactoryDetails(c, false)
+	details = createArtifactoryDetails(c, false, "")
 	encPassword := c.BoolT("enc-password")
 	details, err = commands.Config(nil, details, true, encPassword, "")
 	cliutils.ExitOnErr(err)
 	return
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails) {
+func createArtifactoryDetails(c *cli.Context, includeConfig bool, preferredServerId string) (details *config.ArtifactoryDetails) {
 	if includeConfig {
 		details := offerConfig(c)
 		if details != nil {
@@ -1848,6 +1852,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.ServerId = c.String("server-id")
+	if details.ServerId == "" {
+		details.ServerId = preferredServerId
+	}
 
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.
@@ -2272,7 +2279,7 @@ func createNpmConfiguration(c *cli.Context) (npmConfiguration *npmutils.CliConfi
 
 func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ArtDetails = createArtifactoryDetails(c, false)
+	configCommandConfiguration.ArtDetails = createArtifactoryDetails(c, false, "")
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
 	configCommandConfiguration.Interactive = c.BoolT("interactive")
 	return
