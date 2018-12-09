@@ -458,7 +458,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "upgrade-bundle",
-			Flags:     getServerFlags(),
+			Flags:     getUpgradeBundleFlags(),
 			Aliases:   []string{"ub"},
 			Usage:     upgradeBundle.Description,
 			HelpName:  common.CreateUsage("rt upgrade-bundle", upgradeBundle.Description, upgradeBundle.Usage),
@@ -470,7 +470,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "upgrade-bundle-config",
-			Flags:     getBundleConfigFlags(),
+			Flags:     getUpgradeBundleConfigFlags(),
 			Aliases:   []string{"ubc"},
 			Usage:     upgradeBundleConfig.Description,
 			HelpName:  common.CreateUsage("rt upgrade-bundle-config", upgradeBundleConfig.Description, upgradeBundleConfig.Usage),
@@ -1097,7 +1097,17 @@ func getConfigFlags() []cli.Flag {
 		getSshKeyPathFlag()...)
 }
 
-func getBundleConfigFlags() []cli.Flag {
+func getUpgradeBundleFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] If true, installation is only simulated. In that case, it will not run the installation script.` `",
+		},
+	}
+	return append(flags, getBaseFlags()...)
+}
+
+func getUpgradeBundleConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "interactive",
@@ -1294,7 +1304,7 @@ func upgradeBundleConfigCmd(c *cli.Context) {
 			if len(c.Args()) == 1 {
 				cliutils.PrintHelpAndExitWithError("Please specify bundle configuration ID to delete.", c)
 			}
-			bundleConfigDetails, err := config.GetBundleSpecificConfig(bundleConfigId)
+			bundleConfigDetails, err := config.GetBundleConf(bundleConfigId)
 			cliutils.ExitOnErr(err)
 			if bundleConfigDetails.IsEmpty() {
 				log.Info("\"" + bundleConfigId + "\" configuration could not be found.")
@@ -1316,10 +1326,13 @@ func upgradeBundleConfigCmd(c *cli.Context) {
 			cliutils.ExitOnErr(bundle.Use(bundleConfigId))
 			return
 		case "show":
+			if len(c.Args()) == 2 {
+				bundleConfigId = c.Args()[1]
+			}
 			cliutils.ExitOnErr(bundle.ShowConfig(bundleConfigId))
 			return
 		case "clear":
-			if len(c.Args()) == 2 {
+			if len(c.Args()) > 1 {
 				cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 			}
 			cliutils.ExitOnErr(bundle.ClearConfig(configCommandConfiguration.Interactive))
@@ -1330,6 +1343,18 @@ func upgradeBundleConfigCmd(c *cli.Context) {
 	}
 	validateBundleConfigFlags(configCommandConfiguration)
 	cliutils.ExitOnErr(bundle.Config(configCommandConfiguration.BundleDetails, configCommandConfiguration.Interactive, bundleConfigId))
+}
+
+func upgradeBundleCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	bundleConfigDetails, err := config.GetBundleConf(c.Args().Get(0))
+	cliutils.ExitOnErr(err)
+	artDetails := createArtifactoryDetails(c, true, bundleConfigDetails.ServerId)
+
+	err = bundle.UpgradeBundle(artDetails, bundleConfigDetails, c.Bool("dry-run"))
+	cliutils.ExitOnErr(err)
 }
 
 func mvnCmd(c *cli.Context) {
@@ -1508,17 +1533,6 @@ func pingCmd(c *cli.Context) {
 		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
 	}
 	log.Output(string(clientutils.IndentJson(resBody)))
-}
-
-func upgradeBundleCmd(c *cli.Context) {
-	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
-	}
-	bundleConfigDetails, err := config.GetBundleConf(c.Args().Get(0))
-	cliutils.ExitOnErr(err)
-	artDetails := createArtifactoryDetails(c, true, bundleConfigDetails.ServerId)
-	err = bundle.UpgradeBundle(artDetails, bundleConfigDetails)
-	cliutils.ExitOnErr(err)
 }
 
 func downloadCmd(c *cli.Context) {
@@ -1892,7 +1906,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool, preferredServe
 func createBundleConfigDetails(c *cli.Context) (details *config.BundleDetails) {
 	details = new(config.BundleDetails)
 	details.Name = c.String("bundle-name")
-	details.Version = c.String("bundle-version")
+	details.VersionConstraints = c.String("bundle-version")
 	details.ScriptPath = c.String("script-path")
 	details.ServerId = c.String("server-id")
 	return

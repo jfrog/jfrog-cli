@@ -1,19 +1,21 @@
 package upgradeBundleConfig
 
-const Description = "Copy files."
+const Description string = "Configures a release bundle-config."
 
-var Usage = []string{"jfrog rt cp [command options] <source pattern> <target pattern>",
-	"jfrog rt cp --spec=<File Spec path> [command options]"}
+var Usage = []string{"jfrog rt ubc [command options] [bundle-config ID]",
+	"jfrog rt ubc show [bundle-config ID]",
+	"jfrog rt ubc [--interactive=<true|false>] delete <bundle-config ID>",
+	"jfrog rt ubc [--interactive=<true|false>] clear"}
 
-const Arguments string = `	source Pattern
-		Specifies the source path in Artifactory, from which the artifacts should be copied,
-		in the following format: <repository name>/<repository path>. You can use wildcards to specify multiple artifacts.
+const Arguments string = `	bundle-config ID
+		A unique ID for the new Bundle configuration.
 
-	target Pattern
-		Specifies the target path in Artifactory, to which the artifacts should be copied, in the following format: <repository name>/<repository path>.
-		If the pattern ends with a slash, the target path is assumed to be a folder. For example, if you specify the target as "repo-name/a/b/",
-		then "b" is assumed to be a folder in Artifactory into which files should be copied.
-		If there is no terminal slash, the target path is assumed to be a file to which the copied file should be renamed.
-		For example, if you specify the target as "repo-name/a/b", the copied file is renamed to "b" in Artifactory.
-		For flexibility in specifying the upload path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding
-		tokens in the source path that are enclosed in parenthesis.`
+	show
+		Shows the stored configuration.
+		In case this argument is followed by a configured bundle-config ID, then only this bundle-config is shown.
+
+	delete
+		This argument should be followed by a configured bundle-config ID. The configuration for this bundle-config ID will be deleted.
+
+	clear
+		Clears all stored configuration.`

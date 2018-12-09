@@ -40,8 +40,8 @@ func GetAndRemoveBundleConfiguration(bundleId string, configs []*BundleDetails) 
 	return nil, configs
 }
 
-func SaveBundleConf(details []*BundleDetails) error {
-	conf, err := readBundleConf()
+func SaveBundleConfigs(details []*BundleDetails) error {
+	conf, err := readBundleConfig()
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -49,8 +49,22 @@ func SaveBundleConf(details []*BundleDetails) error {
 	return saveBundleConfig(conf)
 }
 
+func EditBundleConfig(bundleDetails *BundleDetails) error {
+	bundleConfigs, err := GetAllBundleConfigs()
+	if err != nil {
+		return err
+	}
+	for i, config := range bundleConfigs {
+		if config.BundleConfigId == bundleDetails.BundleConfigId {
+			bundleConfigs[i] = bundleDetails
+			return SaveBundleConfigs(bundleConfigs)
+		}
+	}
+	return errors.New(fmt.Sprintf("Bundle config id %s not found", bundleDetails.BundleConfigId))
+}
+
 func GetAllBundleConfigs() ([]*BundleDetails, error) {
-	conf, err := readBundleConf()
+	conf, err := readBundleConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -59,21 +73,6 @@ func GetAllBundleConfigs() ([]*BundleDetails, error) {
 		return make([]*BundleDetails, 0), nil
 	}
 	return details, nil
-}
-
-func GetBundleSpecificConfig(bundleConfigId string) (*BundleDetails, error) {
-	conf, err := readBundleConf()
-	if err != nil {
-		return nil, err
-	}
-	details := conf.Bundle
-	if details == nil || len(details) == 0 {
-		return new(BundleDetails), nil
-	}
-	if len(bundleConfigId) == 0 {
-		return GetDefaultBundleConf(details)
-	}
-	return getBundleConfByBundleId(bundleConfigId, details)
 }
 
 func GetDefaultBundleConf(configs []*BundleDetails) (*BundleDetails, error) {
@@ -114,7 +113,7 @@ func saveBundleConfig(configToSave *BundleConfigV1) error {
 	return nil
 }
 
-func readBundleConf() (*BundleConfigV1, error) {
+func readBundleConfig() (*BundleConfigV1, error) {
 	confFilePath, err := getConfFilePath(JfrogBundleConfigFile)
 	if err != nil {
 		return nil, err
@@ -144,30 +143,35 @@ type BundleConfigV1 struct {
 }
 
 type BundleDetails struct {
-	BundleConfigId string `json:"bundleConfigId,omitempty"`
-	ServerId       string `json:"serverId,omitempty"`
-	Name           string `json:"name,omitempty"`
-	Version        string `json:"version,omitempty"`
-	ScriptPath     string `json:"scriptPath,omitempty"`
-	IsDefault      bool   `json:"isDefault,omitempty"`
+	BundleConfigId     string `json:"bundleConfigId,omitempty"`
+	ServerId           string `json:"serverId,omitempty"`
+	Name               string `json:"name,omitempty"`
+	VersionConstraints string `json:"versionConstraints,omitempty"`
+	CurrentVersion     string `json:"currentVersion,omitempty"`
+	ScriptPath         string `json:"scriptPath,omitempty"`
+	IsDefault          bool   `json:"isDefault,omitempty"`
 }
 
-func (artifactoryDetails *BundleDetails) IsEmpty() bool {
-	return len(artifactoryDetails.Name) == 0
+func (bundleDetails *BundleDetails) IsEmpty() bool {
+	return len(bundleDetails.Name) == 0
 }
 
-func (artifactoryDetails *BundleDetails) SetServerId(serverId string) {
-	artifactoryDetails.ServerId = serverId
+func (bundleDetails *BundleDetails) SetServerId(serverId string) {
+	bundleDetails.ServerId = serverId
 }
 
-func (artifactoryDetails *BundleDetails) SetName(name string) {
-	artifactoryDetails.Name = name
+func (bundleDetails *BundleDetails) SetName(name string) {
+	bundleDetails.Name = name
 }
 
-func (artifactoryDetails *BundleDetails) SetVersion(version string) {
-	artifactoryDetails.Version = version
+func (bundleDetails *BundleDetails) SetVersionConstraints(versionConstraints string) {
+	bundleDetails.VersionConstraints = versionConstraints
 }
 
-func (artifactoryDetails *BundleDetails) SetScriptPath(scriptPath string) {
-	artifactoryDetails.ScriptPath = scriptPath
+func (bundleDetails *BundleDetails) SetCurrentVersion(currentVersion string) {
+	bundleDetails.CurrentVersion = currentVersion
+}
+
+func (bundleDetails *BundleDetails) SetScriptPath(scriptPath string) {
+	bundleDetails.ScriptPath = scriptPath
 }

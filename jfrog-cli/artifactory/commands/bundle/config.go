@@ -16,10 +16,8 @@ import (
 var mutex sync.Mutex
 
 func Config(details *config.BundleDetails, interactive bool, bundleConfigId string) error {
-	mutex.Lock()
-	lockFile, err := lock.CreateLock()
-	defer unlockMutexes(lockFile)
-	if err != nil {
+	// Lock scope
+	if err := guard(); err != nil {
 		return err
 	}
 
@@ -38,13 +36,19 @@ func Config(details *config.BundleDetails, interactive bool, bundleConfigId stri
 		details.IsDefault = true
 	}
 
-	return config.SaveBundleConf(configurations)
+	return config.SaveBundleConfigs(configurations)
 }
 
-func unlockMutexes(lockFile lock.Lock) {
+func guard() error {
+	mutex.Lock()
+	bundleLockFile, err := lock.CreateLock()
+	defer unlockBundles(bundleLockFile)
+	return err
+}
+
+func unlockBundles(lockFile lock.Lock) {
 	mutex.Unlock()
-	err := lockFile.Unlock()
-	if err != nil {
+	if err := lockFile.Unlock(); err != nil {
 		log.Error("An error occurred while trying to unlock bundle config file mutex", err)
 	}
 }
@@ -101,16 +105,19 @@ func resolveBundleConfigId(bundleConfigId string, details *config.BundleDetails,
 }
 
 func getConfigurationFromUser(details, defaultDetails *config.BundleDetails) {
-	if details.ServerId == "" {
+	for details.ServerId == "" {
 		ioutils.ScanFromConsole("Server ID", &details.ServerId, defaultDetails.ServerId)
 	}
-	if details.Name == "" {
+	for details.Name == "" {
 		ioutils.ScanFromConsole("Bundle name", &details.Name, defaultDetails.Name)
 	}
-	if details.Version == "" {
-		ioutils.ScanFromConsole("Bundle version constraint", &details.Version, defaultDetails.Version)
+	if details.CurrentVersion == "" {
+		ioutils.ScanFromConsole("Current bundle version (optional)", &details.CurrentVersion, defaultDetails.CurrentVersion)
 	}
-	if details.ScriptPath == "" {
+	for details.VersionConstraints == "" {
+		ioutils.ScanFromConsole("Bundle version constraints", &details.VersionConstraints, defaultDetails.VersionConstraints)
+	}
+	for details.ScriptPath == "" {
 		ioutils.ScanFromConsole("Installation script path", &details.ScriptPath, defaultDetails.ScriptPath)
 	}
 }
@@ -118,15 +125,14 @@ func getConfigurationFromUser(details, defaultDetails *config.BundleDetails) {
 func ShowConfig(bundleConfigId string) error {
 	var configuration []*config.BundleDetails
 	if bundleConfigId != "" {
-		singleConfig, err := config.GetBundleSpecificConfig(bundleConfigId)
+		singleConfig, err := config.GetBundleConf(bundleConfigId)
 		if err != nil {
 			return err
 		}
 		configuration = []*config.BundleDetails{singleConfig}
 	} else {
 		var err error
-		configuration, err = config.GetAllBundleConfigs()
-		if err != nil {
+		if configuration, err = config.GetAllBundleConfigs(); err != nil {
 			return err
 		}
 	}
@@ -137,26 +143,33 @@ func ShowConfig(bundleConfigId string) error {
 func printConfigs(configuration []*config.BundleDetails) {
 	for _, details := range configuration {
 		if details.BundleConfigId != "" {
-			log.Output("Bundle config ID: " + details.BundleConfigId)
+			log.Output("Bundle config ID:", details.BundleConfigId)
 		}
 		if details.ServerId != "" {
-			log.Output("Server ID: " + details.ServerId)
+			log.Output("Server ID:", details.ServerId)
 		}
 		if details.Name != "" {
-			log.Output("Name: " + details.Name)
+			log.Output("Name:", details.Name)
 		}
-		if details.Version != "" {
-			log.Output("Version constraint: " + details.Version)
+		if details.CurrentVersion != "" {
+			log.Output("Current bundle version:", details.CurrentVersion)
+		}
+		if details.VersionConstraints != "" {
+			log.Output("Bundle version constraints:", details.VersionConstraints)
 		}
 		if details.ScriptPath != "" {
-			log.Output("Installation script path: " + details.ScriptPath)
+			log.Output("Installation script path:", details.ScriptPath)
 		}
-		log.Output("Default: ", details.IsDefault)
+		log.Output("Default:", details.IsDefault)
 		log.Output()
 	}
 }
 
 func DeleteConfig(bundleConfigId string) error {
+	// Lock scope
+	if err := guard(); err != nil {
+		return err
+	}
 	bundleConfigs, err := config.GetAllBundleConfigs()
 	if err != nil {
 		return err
@@ -175,7 +188,7 @@ func DeleteConfig(bundleConfigId string) error {
 		bundleConfigs[0].IsDefault = true
 	}
 	if isFoundName {
-		return config.SaveBundleConf(bundleConfigs)
+		return config.SaveBundleConfigs(bundleConfigs)
 	}
 	log.Info("\"" + bundleConfigId + "\" configuration could not be found.\n")
 	return nil
@@ -183,6 +196,10 @@ func DeleteConfig(bundleConfigId string) error {
 
 // Set the default configuration
 func Use(bundleConfigId string) error {
+	// Lock scope
+	if err := guard(); err != nil {
+		return err
+	}
 	configurations, err := config.GetAllBundleConfigs()
 	if err != nil {
 		return err
@@ -204,25 +221,29 @@ func Use(bundleConfigId string) error {
 	// Need to save only if we found a bundle configuration with the bundleConfigId
 	if bundleConfigFound != nil {
 		if newDefaultBundleConfig {
-			err = config.SaveBundleConf(configurations)
+			err = config.SaveBundleConfigs(configurations)
 			if err != nil {
 				return err
 			}
 		}
-		log.Info(fmt.Sprintf("Using bundle config ID '%s' (%s/%s).", bundleConfigFound.BundleConfigId, bundleConfigFound.Name, bundleConfigFound.Version))
+		log.Info(fmt.Sprintf("Using bundle config ID '%s' (%s/%s).", bundleConfigFound.BundleConfigId, bundleConfigFound.Name, bundleConfigFound.VersionConstraints))
 		return nil
 	}
 	return errorutils.CheckError(errors.New(fmt.Sprintf("Could not find a bundle config with ID '%s'.", bundleConfigId)))
 }
 
 func ClearConfig(interactive bool) error {
+	// Lock scope
+	if err := guard(); err != nil {
+		return err
+	}
 	if interactive {
 		confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete all the configurations?")
 		if !confirmed {
 			return nil
 		}
 	}
-	return config.SaveBundleConf(make([]*config.BundleDetails, 0))
+	return config.SaveBundleConfigs(make([]*config.BundleDetails, 0))
 }
 
 func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
