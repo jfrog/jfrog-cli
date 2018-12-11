@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "target": "out/download/aql_by_build/",
+      "build": "cli-test-build/10"
+    }
+  ]
+}

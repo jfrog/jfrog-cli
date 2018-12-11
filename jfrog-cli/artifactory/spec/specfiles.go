@@ -12,6 +12,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
+const fileSpecWithBuildNoRepoValidationMessage = "Spec cannot include both the 'build' and '%s' properties when 'pattern' property doesn't specify a repository"
+const fileSpecCannotIncludeBothPropertiesValidationMessage = "Spec cannot include both the '%s' and '%s' properties"
+
 type SpecFiles struct {
 	Files []File
 }
@@ -107,7 +110,7 @@ func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	return params
 }
 
-func ValidateSpec(files []File, isTargetMandatory bool) error {
+func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error {
 	if len(files) == 0 {
 		return errors.New("Spec must include at least one file group")
 	}
@@ -118,28 +121,23 @@ func ValidateSpec(files []File, isTargetMandatory bool) error {
 		isTarget := len(file.Target) > 0
 		isSortOrder := len(file.SortOrder) > 0
 		isSortBy := len(file.SortBy) > 0
-		isOffset := file.Offset > 0
-		isLimit := file.Limit > 0
 		isBuild := len(file.Build) > 0
 		isValidSortOrder := file.SortOrder == "asc" || file.SortOrder == "desc"
 
 		if isTargetMandatory && !isTarget {
 			return errors.New("Spec must include the target properties")
 		}
-		if !isAql && !isPattern {
+		if !isSearchBasedSpec && !isAql && !isPattern {
 			return errors.New("Spec must include either the aql or pattern properties")
 		}
+		if isSearchBasedSpec && !isAql && !isPattern && !isBuild {
+			return errors.New("Spec must include either the aql, pattern or build properties")
+		}
 		if isAql && isPattern {
-			return errors.New("Spec cannot include both the aql and pattern properties")
+			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "pattern"))
 		}
 		if isAql && isExcludePattern {
-			return errors.New("Spec cannot include both the aql and exclude-patterns properties")
-		}
-		if isBuild && isOffset {
-			return errors.New("Spec cannot include both the 'build' and 'offset' properties")
-		}
-		if isBuild && isLimit {
-			return errors.New("Spec cannot include both the 'build' and 'limit' properties")
+			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "exclude-patterns"))
 		}
 		if !isSortBy && isSortOrder {
 			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
@@ -147,6 +145,48 @@ func ValidateSpec(files []File, isTargetMandatory bool) error {
 		if isSortOrder && !isValidSortOrder {
 			return errors.New("The value of 'sort-order'can only be 'asc' or 'desc'.")
 		}
+		if isBuild && isSearchBasedSpec {
+			err := validateFileSpecWithBuild(file, isExcludePattern)
+			if err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
+
+func validateFileSpecWithBuild(file File, isExcludePattern bool) error {
+	isOffset := file.Offset > 0
+	isLimit := file.Limit > 0
+	isArchiveEntries := len(file.ArchiveEntries) > 0
+	isIncludeDirs := len(file.IncludeDirs) > 0
+	isRecursive := len(file.Recursive) > 0
+	isProps := len(file.Props) > 0
+
+	if isOffset {
+		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "offset"))
+	}
+	if isLimit {
+		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "limit"))
+	}
+
+	if file.Pattern == "*" || file.Pattern == "" {
+		if isExcludePattern {
+			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "exclude-patterns"))
+		}
+		if isArchiveEntries {
+			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "archive-entries"))
+		}
+		if isRecursive {
+			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "recursive"))
+		}
+		if isIncludeDirs {
+			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "include-dirs"))
+		}
+		if isProps {
+			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "props"))
+		}
+	}
+
 	return nil
 }
