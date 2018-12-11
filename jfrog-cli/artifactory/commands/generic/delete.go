@@ -29,12 +29,11 @@ func GetPathsToDelete(deleteSpec *spec.SpecFiles, configuration *DeleteConfigura
 	return resultItems, nil
 }
 
-func DeleteFiles(resultItems []clientutils.ResultItem, configuration *DeleteConfiguration) (successCount, failedCount int, err error) {
+func DeleteFiles(deleteItems []clientutils.ResultItem, configuration *DeleteConfiguration) (successCount, failedCount int, err error) {
 	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return 0, 0, err
 	}
-	deleteItems := utils.ConvertResultItemArrayToDeleteItemArray(resultItems)
 	deletedCount, err := servicesManager.DeleteFiles(deleteItems)
 	return deletedCount, len(deleteItems) - deletedCount, err
 }
