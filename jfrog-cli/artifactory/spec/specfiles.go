@@ -12,8 +12,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-const fileSpecWithBuildNoRepoValidationMessage = "Spec cannot include both the 'build' and '%s' properties when 'pattern' property doesn't specify a repository"
-const fileSpecCannotIncludeBothPropertiesValidationMessage = "Spec cannot include both the '%s' and '%s' properties"
+const fileSpecWithBuildNoRepoValidationMessage = "Spec cannot include both 'build' and '%s', if 'pattern' is empty or '*'."
+const fileSpecCannotIncludeBothPropertiesValidationMessage = "Spec cannot include both '%s' and '%s.'"
 
 type SpecFiles struct {
 	Files []File
@@ -125,13 +125,13 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		isValidSortOrder := file.SortOrder == "asc" || file.SortOrder == "desc"
 
 		if isTargetMandatory && !isTarget {
-			return errors.New("Spec must include the target properties")
+			return errors.New("Spec must include target.")
 		}
 		if !isSearchBasedSpec && !isAql && !isPattern {
-			return errors.New("Spec must include either the aql or pattern properties")
+			return errors.New("Spec must include either aql or pattern.")
 		}
 		if isSearchBasedSpec && !isAql && !isPattern && !isBuild {
-			return errors.New("Spec must include either the aql, pattern or build properties")
+			return errors.New("Spec must include either aql, pattern or build.")
 		}
 		if isAql && isPattern {
 			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "pattern"))

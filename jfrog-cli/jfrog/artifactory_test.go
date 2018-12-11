@@ -1947,7 +1947,7 @@ func TestArtifactoryDownloadByPatternAndBuildUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadByBuildOnlyUsingSpec(t *testing.T) {
+func TestArtifactoryDownloadByBuildNoPatternUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
