@@ -7,9 +7,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -120,17 +122,54 @@ func DownloadDependency(dependencyName string) error {
 
 // Runs go mod graph command and returns slice of the dependencies
 func GetDependenciesGraph() (map[string]bool, error) {
-	log.Info("Running go mod graph command")
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// Read and store the content of the go.mod file,
+	// because it may change by the "go mod graph" command.
+	var modFilePath string
+	var modFileContent []byte
+	var modFileStat os.FileInfo
+	modFilePath, modFileContent, modFileStat, err = getModFileDetails()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Running 'go mod graph' in", pwd)
 	goCmd, err := NewCmd()
 	if err != nil {
 		return nil, err
 	}
 	goCmd.Command = []string{"mod", "graph"}
+
+	// Restore the content of the go.mod file, to make sure it stays the same as before
+	// running the "go mod graph" command.
+	err = ioutil.WriteFile(modFilePath, modFileContent, modFileStat.Mode())
+	if err != nil {
+		return nil, err
+	}
+
 	output, err := utils.RunCmdOutput(goCmd)
 	if len(output) != 0 {
 		log.Debug(string(output))
 	}
 	return outputToMap(string(output)), errorutils.CheckError(err)
+}
+
+func getModFileDetails() (modFilePath string, modFileContent []byte, modFileStat os.FileInfo, err error) {
+	rootDir, err := GetRootDir()
+	if err != nil {
+		return
+	}
+	modFilePath = filepath.Join(rootDir, "go.mod")
+	modFileStat, err = os.Stat(modFilePath)
+	if err != nil {
+		return
+	}
+	modFileContent, err = ioutil.ReadFile(modFilePath)
+	return
 }
 
 func outputToMap(output string) map[string]bool {
@@ -149,7 +188,12 @@ func outputToMap(output string) map[string]bool {
 
 // Using go mod download command to download all the dependencies before publishing to Artifactory
 func RunGoModTidy() error {
-	log.Info("Running go mod tidy command")
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	log.Info("Running 'go mod tidy' in", pwd)
 	goCmd, err := NewCmd()
 	if err != nil {
 		return err
@@ -157,7 +201,28 @@ func RunGoModTidy() error {
 
 	goCmd.Command = []string{"mod", "tidy"}
 	_, err = utils.RunCmdOutput(goCmd)
+	if err != nil {
+		return err
+	}
+
+	err = signModFile()
 	return err
+}
+
+func signModFile() error {
+	rootDir, err := GetRootDir()
+	if err != nil {
+		return err
+	}
+	modFilePath := filepath.Join(rootDir, "go.mod")
+	stat, err := os.Stat(modFilePath)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	modFileContent, err := ioutil.ReadFile(modFilePath)
+	newContent := append([]byte("// Edited by JFrog CLI\n\n"), modFileContent...)
+	err = ioutil.WriteFile(modFilePath, newContent, stat.Mode())
+	return errorutils.CheckError(err)
 }
 
 // Returns the root dir where the go.mod located.

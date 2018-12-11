@@ -21,14 +21,16 @@ type PackageWithDeps struct {
 	transitiveDependencies []PackageWithDeps
 	regExp                 *RegExp
 	runGoModCommand        bool
+	recursiveTidyOverwrite bool
 	cachePath              string
 }
 
 // Creates a new dependency
-func (pwd *PackageWithDeps) New(cachePath string, dependency Package) GoPackage {
+func (pwd *PackageWithDeps) New(cachePath string, dependency Package, recursiveTidyOverwrite bool) GoPackage {
 	pwd.Dependency = &dependency
 	pwd.cachePath = cachePath
 	pwd.transitiveDependencies = nil
+	pwd.recursiveTidyOverwrite = recursiveTidyOverwrite
 	return pwd
 }
 
@@ -155,11 +157,13 @@ func (pwd *PackageWithDeps) updateCacheAndPublishDependency(path, targetRepo str
 	dependenciesMap := cache.GetMap()
 	published, _ := dependenciesMap[pwd.Dependency.GetId()]
 	if !published {
-		// Now we need to check if there are some indirect dependencies in the go.mod file:
-		pwd.updateModWithoutIndirect(path, cache)
-		log.Debug("Writing the new mod content to cache of the dependency", pwd.Dependency.GetId())
-		err := pwd.writeModContentToGoCache()
-		logError(err)
+		if pwd.recursiveTidyOverwrite {
+			// Now we need to check if there are some indirect dependencies in the go.mod file:
+			pwd.updateModWithoutIndirect(path, cache)
+			log.Debug("Writing the new mod content to cache of the dependency", pwd.Dependency.GetId())
+			err := pwd.writeModContentToGoCache()
+			logError(err)
+		}
 		return pwd.prepareAndPublish(targetRepo, cache, details)
 	}
 	return nil
@@ -185,7 +189,7 @@ func (pwd *PackageWithDeps) setTransitiveDependencies(targetRepo string, graphDe
 			name := getDependencyName(module[0])
 			_, exists := dependenciesMap[name+":"+module[1]]
 			if !exists {
-				// Check if the dependency in the cache
+				// Check if the dependency is in the local cache.
 				dep, err := createDependency(pwd.cachePath, name, module[1])
 				logError(err)
 				if err != nil {
@@ -199,7 +203,7 @@ func (pwd *PackageWithDeps) setTransitiveDependencies(targetRepo string, graphDe
 					continue
 				}
 				if dep == nil {
-					// Dependency is missing within the cache. Need to download it...
+					// Dependency is missing in the local cache. Need to download it...
 					dep, err = downloadAndCreateDependency(pwd.cachePath, name, module[1], transitiveDependency, targetRepo, downloadedFromArtifactory, details)
 					logError(err)
 					if err != nil {
@@ -216,7 +220,7 @@ func (pwd *PackageWithDeps) setTransitiveDependencies(targetRepo string, graphDe
 					dependenciesMap[name+":"+module[1]] = downloadedFromArtifactory
 				}
 			} else {
-				log.Debug("Dependency", transitiveDependency, "was add previously.")
+				log.Debug("Dependency", transitiveDependency, "has been previously added.")
 			}
 		}
 	}

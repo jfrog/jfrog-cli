@@ -94,7 +94,7 @@ func isMinSupportedVersion(artifactoryVersion string) bool {
 	return true
 }
 
-func ExecuteGo(depsTidy, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
 		err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
@@ -110,7 +110,7 @@ func ExecuteGo(depsTidy, noRegistry bool, goArg, targetRepo, buildName, buildNum
 	if err != nil {
 		if dependencyNotFoundInArtifactory(err, noRegistry) {
 			log.Info("Received", err.Error(), "from Artifactory. Trying download the dependencies from the VCS and upload them to Artifactory...")
-			err = downloadFromVcsAndPublish(targetRepo, goArg, depsTidy, details)
+			err = downloadFromVcsAndPublish(targetRepo, goArg, recursiveTidy, recursiveTidyOverwrite, details)
 			if err != nil {
 				return err
 			}
@@ -136,12 +136,12 @@ func ExecuteGo(depsTidy, noRegistry bool, goArg, targetRepo, buildName, buildNum
 }
 
 // Downloads all dependencies from VCS and publish them to Artifactory.
-func downloadFromVcsAndPublish(targetRepo, goArg string, depsTidy bool, details *config.ArtifactoryDetails) error {
+func downloadFromVcsAndPublish(targetRepo, goArg string, recursiveTidy, recursiveTidyOverwrite bool, details *config.ArtifactoryDetails) error {
 	// Need to run Go without Artifactory to resolve all dependencies.
 	cache := goutils.DependenciesCache{}
-	wd, rootDir, err := collectDependenciesPopulateAndPublish(targetRepo, depsTidy, &cache, details)
+	wd, rootDir, err := collectDependenciesPopulateAndPublish(targetRepo, recursiveTidy, recursiveTidyOverwrite, &cache, details)
 	if err != nil {
-		if !depsTidy {
+		if !recursiveTidy {
 			return err
 		}
 		log.Error("Received an error:", err)
@@ -150,7 +150,7 @@ func downloadFromVcsAndPublish(targetRepo, goArg string, depsTidy bool, details 
 	// Need to run only if the command is not go mod download or go mod tidy since this was run by the CLI to download and publish to Artifactory
 	log.Info(fmt.Sprintf("Done building and publishing %d go dependencies to Artifactory out of a total of %d dependencies.", cache.GetSuccesses(), cache.GetTotal()))
 	if !strings.Contains(goArg, "mod download") || !strings.Contains(goArg, "mod tidy") {
-		if depsTidy {
+		if recursiveTidy {
 			// Remove the go.sum file, since it includes information which is not up to date (it was created by the "go mod tidy" command executed without Artifactory
 			err = removeGoSumFile(wd, rootDir)
 			if err != nil {
@@ -179,52 +179,48 @@ func validatePrerequisites() error {
 }
 
 // Download the dependencies from VCS and publish them to Artifactory.
-func collectDependenciesPopulateAndPublish(targetRepo string, depsTidy bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) (wd, rootProjectDir string, err error) {
+func collectDependenciesPopulateAndPublish(targetRepo string, recursiveTidy, recursiveTidyOverwrite bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) (wd, rootProjectDir string, err error) {
 	err = os.Unsetenv(goutils.GOPROXY)
 	if err != nil {
 		return
 	}
 	dependenciesToPublish, err := projectDep.CollectProjectDependencies(targetRepo, cache, details)
-	if err != nil {
+	if err != nil || len(dependenciesToPublish) == 0 {
 		return
 	}
-	if len(dependenciesToPublish) > 0 {
-		var dependency projectDep.GoPackage
-		if depsTidy {
-			err = fileutils.CreateTempDirPath()
-			if err != nil {
-				return "", "", err
-			}
-			defer fileutils.RemoveTempDir()
 
-			dependency = &projectDep.PackageWithDeps{}
-			err = dependency.Init()
-			if err != nil {
-				return
-			}
-			wd, err = os.Getwd()
-			if err != nil {
-				return "", "", errorutils.CheckError(err)
-			}
-
-			// Preparations before starting
-			rootProjectDir, err = goutils.GetRootDir()
-			if err != nil {
-				return
-			}
-		} else {
-			dependency = &projectDep.Package{}
+	var dependency projectDep.GoPackage
+	if recursiveTidy {
+		err = fileutils.CreateTempDirPath()
+		if err != nil {
+			return "", "", err
 		}
+		defer fileutils.RemoveTempDir()
 
-		err = runPopulateAndPublishDependencies(targetRepo, depsTidy, dependency, dependenciesToPublish, cache, details)
+		dependency = &projectDep.PackageWithDeps{}
+		err = dependency.Init()
 		if err != nil {
 			return
 		}
+		wd, err = os.Getwd()
+		if err != nil {
+			return "", "", errorutils.CheckError(err)
+		}
+
+		// Preparations before starting
+		rootProjectDir, err = goutils.GetRootDir()
+		if err != nil {
+			return
+		}
+	} else {
+		dependency = &projectDep.Package{}
 	}
+
+	err = runPopulateAndPublishDependencies(targetRepo, recursiveTidy, recursiveTidyOverwrite, dependency, dependenciesToPublish, cache, details)
 	return
 }
 
-func runPopulateAndPublishDependencies(targetRepo string, depsTidy bool, dependenciesInterface projectDep.GoPackage, dependenciesToPublish map[string]bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) error {
+func runPopulateAndPublishDependencies(targetRepo string, recursiveTidy, recursiveTidyOverwrite bool, dependenciesInterface projectDep.GoPackage, dependenciesToPublish map[string]bool, cache *goutils.DependenciesCache, details *config.ArtifactoryDetails) error {
 	cachePath, err := projectDep.GetCachePath()
 	if err != nil {
 		return err
@@ -237,10 +233,10 @@ func runPopulateAndPublishDependencies(targetRepo string, depsTidy bool, depende
 
 	cache.IncrementTotal(len(dependencies))
 	for _, dep := range dependencies {
-		dependenciesInterface = dependenciesInterface.New(cachePath, dep)
+		dependenciesInterface = dependenciesInterface.New(cachePath, dep, recursiveTidyOverwrite)
 		err := dependenciesInterface.PopulateModAndPublish(targetRepo, cache, details)
 		if err != nil {
-			if depsTidy {
+			if recursiveTidy {
 				log.Warn(err)
 				continue
 			}

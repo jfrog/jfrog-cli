@@ -19,7 +19,3 @@ task initProject(description: 'Initialize project directory structure.') {
         }
     }
 }
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.0'
-}

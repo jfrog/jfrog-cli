@@ -309,7 +309,7 @@ func GetCommands() []cli.Command {
 			Usage:     mvndoc.Description,
 			HelpName:  common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText: mvndoc.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			ArgsUsage: common.CreateEnvVars(mvndoc.EnvVar),
 			Action: func(c *cli.Context) {
 				mvnCmd(c)
 			},
@@ -331,7 +331,7 @@ func GetCommands() []cli.Command {
 			Usage:     gradledoc.Description,
 			HelpName:  common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText: gradledoc.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			ArgsUsage: common.CreateEnvVars(gradledoc.EnvVar),
 			Action: func(c *cli.Context) {
 				gradleCmd(c)
 			},
@@ -734,8 +734,12 @@ func getGoFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
-			Name:  "deps-tidy",
-			Usage: "[Default: false] Set to true if you want to create full mod files for all the dependencies and publish them to Artifactory.` `",
+			Name:  "recursive-tidy",
+			Usage: "[Default: false] Set to true if you wish that all dependencies published to Artifactory have a mod file, which includes dependencies.` `",
+		},
+		cli.BoolFlag{
+			Name:  "recursive-tidy-overwrite",
+			Usage: "[Default: false] Can be used only with the --recursive-tidy option set to true. If set to true, the dependencies mod files are tidies, before publishing them to Artifactory.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -1374,7 +1378,7 @@ func goCmd(c *cli.Context) {
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-	err := golang.ExecuteGo(c.Bool("deps-tidy"), c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	err := golang.ExecuteGo(c.Bool("recursive-tidy"), c.Bool("recursive-tidy-overwrite"), c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
@@ -2041,8 +2045,8 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 	return
 }
 
-func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *generic.DownloadConfiguration) {
-	downloadConfiguration = new(generic.DownloadConfiguration)
+func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration) {
+	downloadConfiguration = new(utils.DownloadConfiguration)
 	downloadConfiguration.DryRun = c.Bool("dry-run")
 	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadConfiguration.MinSplitSize = getMinSplit(c)

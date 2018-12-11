@@ -4,8 +4,6 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -14,10 +12,10 @@ import (
 	"strconv"
 )
 
-func Download(downloadSpec *spec.SpecFiles, configuration *DownloadConfiguration) (successCount, failCount int, err error) {
+func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfiguration) (successCount, failCount int, err error) {
 
 	// Create Service Manager:
-	servicesManager, err := createDownloadServiceManager(configuration.ArtDetails, configuration)
+	servicesManager, err := utils.CreateDownloadServiceManager(configuration.ArtDetails, configuration)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -97,44 +95,7 @@ func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buil
 	return buildDependecies
 }
 
-type DownloadConfiguration struct {
-	Threads         int
-	SplitCount      int
-	MinSplitSize    int64
-	BuildName       string
-	BuildNumber     string
-	DryRun          bool
-	Symlink         bool
-	ValidateSymlink bool
-	ArtDetails      *config.ArtifactoryDetails
-	Retries         int
-}
-
-func createDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := utils.GetJfrogSecurityDir()
-	if err != nil {
-		return nil, err
-	}
-	artAuth, err := artDetails.CreateArtAuthConfig()
-	if err != nil {
-		return nil, err
-	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
-		SetArtDetails(artAuth).
-		SetDryRun(flags.DryRun).
-		SetCertificatesPath(certPath).
-		SetSplitCount(flags.SplitCount).
-		SetMinSplitSize(flags.MinSplitSize).
-		SetThreads(flags.Threads).
-		SetLogger(log.Logger).
-		Build()
-	if err != nil {
-		return nil, err
-	}
-	return artifactory.New(serviceConfig)
-}
-
-func getDownloadParams(f *spec.File, configuration *DownloadConfiguration) (downParams services.DownloadParams, err error) {
+func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration) (downParams services.DownloadParams, err error) {
 	downParams = services.NewDownloadParams()
 	downParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
 	downParams.Recursive, err = f.IsRecursive(true)
