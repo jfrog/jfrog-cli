@@ -478,6 +478,10 @@ func getBaseFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "apikey",
 			Usage: "[Optional] Artifactory API key.` `",
+		},
+		cli.StringFlag{
+			Name:  "access-token",
+			Usage: "[Optional] Artifactory access token.` `",
 		})
 }
 
@@ -1416,10 +1420,11 @@ func pingCmd(c *cli.Context) {
 	}
 	artDetails := createArtifactoryDetails(c, true)
 	resBody, err := generic.Ping(artDetails)
+	resString := string(clientutils.IndentJson(resBody))
 	if err != nil {
-		cliutils.FailNoOp(err, 0, 1, isFailNoOp(c))
+		cliutils.ExitOnErr(errors.New(err.Error() + "\n" + resString))
 	}
-	log.Output(string(clientutils.IndentJson(resBody)))
+	log.Output(resString)
 }
 
 func downloadCmd(c *cli.Context) {
@@ -1752,6 +1757,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.Password = c.String("password")
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
+	details.AccessToken = c.String("access-token")
 	details.ServerId = c.String("server-id")
 
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
@@ -1781,6 +1787,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.SshKeyPath == "" {
 				details.SshKeyPath = confDetails.SshKeyPath
 			}
+			if details.AccessToken == "" {
+				details.AccessToken = confDetails.AccessToken
+			}
 		}
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
@@ -1789,11 +1798,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 
 func credentialsChanged(details *config.ArtifactoryDetails) bool {
 	return details.Url != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshAuthHeaderSet()
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshAuthHeaderSet() ||
+		details.AccessToken != ""
 }
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
-	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != ""
+	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != "" || details.AccessToken != ""
 }
 
 func getDebFlag(c *cli.Context) (deb string) {

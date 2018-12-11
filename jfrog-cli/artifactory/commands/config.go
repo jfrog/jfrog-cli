@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
@@ -13,8 +14,10 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"sync"
+	"syscall"
 )
 
 // Internal golang locking for the same process.
@@ -124,15 +127,35 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
 		allowUsingSavedPassword = false
 	}
+	// Ssh-Key
 	if fileutils.IsSshUrl(details.Url) {
-		if err := getSshKeyPath(details); err != nil {
+		return getSshKeyPath(details)
+	}
+	// Api-Key/Password/Access-Token
+	if details.ApiKey == "" && details.Password == "" && details.AccessToken == "" {
+		err := readAccessTokenFromConsole(details)
+		if err != nil {
 			return err
 		}
-
-	} else {
-		if details.ApiKey == "" && details.Password == "" {
-			ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
+		if len(details.GetAccessToken()) == 0 {
+			return ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
 		}
+	}
+	return nil
+}
+
+func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
+	print("Access token (Leave blank for username and password): ")
+	byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return err
+	}
+	// New-line required after the access token input:
+	fmt.Println()
+	if len(byteToken) > 0 {
+		details.SetAccessToken(string(byteToken))
+		_, err := generic.Ping(details) // Check the access token with Artifactory
+		return err
 	}
 	return nil
 }
@@ -210,6 +233,9 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 		}
 		if details.Password != "" {
 			log.Output("Password: ***")
+		}
+		if details.AccessToken != "" {
+			log.Output("Access token: ***")
 		}
 		if details.SshKeyPath != "" {
 			log.Output("SSH key file path: " + details.SshKeyPath)
@@ -315,9 +341,9 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url)}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url), details.AccessToken != ""}
 	if cliutils.SumTrueValues(boolArr) > 1 {
-		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key or RSA tokens."))
+		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key, RSA tokens or access tokens"))
 	}
 	return nil
 }
