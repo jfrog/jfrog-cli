@@ -3,6 +3,7 @@ package golang
 import (
 	"errors"
 	"fmt"
+	"github.com/Masterminds/semver"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
@@ -11,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -88,10 +88,7 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 
 func isMinSupportedVersion(artifactoryVersion string) bool {
 	minSupportedArtifactoryVersion := "6.2.0"
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
-		return false
-	}
-	return true
+	return artifactoryVersion == "development" || semver.MustParse(artifactoryVersion).Compare(semver.MustParse(minSupportedArtifactoryVersion)) >= 0
 }
 
 func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {

@@ -5,9 +5,10 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io"
 	"io/ioutil"
+	"strings"
 )
 
-func Version(executablePath string) ([]byte, error) {
+func Version(executablePath string) (string, error) {
 
 	pipeReader, pipeWriter := io.Pipe()
 	defer pipeReader.Close()
@@ -21,14 +22,15 @@ func Version(executablePath string) ([]byte, error) {
 
 	data, err := ioutil.ReadAll(pipeReader)
 	if err != nil {
-		return nil, errorutils.CheckError(err)
+		return "", errorutils.CheckError(err)
 	}
 
 	if npmError != nil {
-		return nil, errorutils.CheckError(npmError)
+		return "", errorutils.CheckError(npmError)
 	}
 
-	return data, nil
+	npmVersion := strings.TrimSpace(string(data))
+	return npmVersion, nil
 }
 
 func createVersionCmdConfig(executablePath string, pipeWriter *io.PipeWriter) *NpmConfig {

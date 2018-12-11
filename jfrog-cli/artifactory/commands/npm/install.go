@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Masterminds/semver"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/parallel"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
@@ -17,7 +18,6 @@ import (
 	cliutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/version"
 	"github.com/mattn/go-shellwords"
 	"io/ioutil"
 	"net/http"
@@ -104,7 +104,7 @@ func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error)
 	}
 
 	npmi.npmAuth = string(npmAuth)
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
+	if artifactoryVersion != "development" && semver.MustParse(artifactoryVersion).Compare(semver.MustParse(minSupportedArtifactoryVersion)) < 0 {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 
@@ -291,7 +291,7 @@ func (npmi *npmInstall) validateNpmVersion() error {
 	if err != nil {
 		return err
 	}
-	if version.Compare(string(npmVersion), minSupportedNpmVersion) < 0 {
+	if semver.MustParse(npmVersion).Compare(semver.MustParse(minSupportedNpmVersion)) < 0 {
 		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil
