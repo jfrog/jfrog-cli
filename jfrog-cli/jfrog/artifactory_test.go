@@ -2461,7 +2461,7 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
-	// Copy by build build number "10" from spec, a* should be copied
+	// Copy by build name "cli-test-build" and build number "10" from spec, a* should be copied
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
 	// Validate files are Copied by build number
@@ -2476,11 +2476,11 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryCopyByBuildNoPatternUsingSpec(t *testing.T) {
+func TestArtifactoryCopyByBuildPatternAllUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	specFile, err := tests.CreateSpec(tests.CopyByBuildSpecNoPattern)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildPatternAllSpec)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2500,7 +2500,7 @@ func TestArtifactoryCopyByBuildNoPatternUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
-	// Copy by build build number "10" from spec, a* should be copied
+	// Copy by build name "cli-test-build" and build number "10" from spec, a* should be copied
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
 	// Validate files are Copied by build number
