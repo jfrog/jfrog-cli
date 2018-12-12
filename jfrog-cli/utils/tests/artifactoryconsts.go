@@ -35,7 +35,7 @@ const (
 	SearchTxt                              = "search_txt.json"
 	SearchMoveDeleteRepoSpec               = "search_move_delete_repo_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
-	CopyByBuildSpecNoPattern               = "move_copy_delete_by_build_no_pattern_spec.json"
+	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	MoveRepositoryConfig                   = "move_repository_config.json"
