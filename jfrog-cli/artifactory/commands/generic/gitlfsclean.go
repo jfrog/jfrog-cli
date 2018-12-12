@@ -20,13 +20,12 @@ func PrepareGitLfsClean(configuration *GitLfsCleanConfiguration) ([]clientutils.
 	return servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
 }
 
-func DeleteLfsFilesFromArtifactory(files []clientutils.ResultItem, configuration *GitLfsCleanConfiguration) error {
-	log.Info("Deleting", len(files), "files from", configuration.Repo, "...")
+func DeleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem, configuration *GitLfsCleanConfiguration) error {
+	log.Info("Deleting", len(deleteItems), "files from", configuration.Repo, "...")
 	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
 	if err != nil {
 		return err
 	}
-	deleteItems := utils.ConvertResultItemArrayToDeleteItemArray(files)
 	_, err = servicesManager.DeleteFiles(deleteItems)
 	if err != nil {
 		return errorutils.CheckError(err)
