@@ -147,9 +147,9 @@ func downloadFromVcsAndPublish(targetRepo, goArg string, recursiveTidy, recursiv
 		log.Error("Received an error:", err)
 	}
 	// Lets run the same command again now that all the dependencies were downloaded.
-	// Need to run only if the command is not go mod download or go mod tidy since this was run by the CLI to download and publish to Artifactory
+	// Need to run only if the command is not go mod download and go mod tidy since this was run by the CLI to download and publish to Artifactory
 	log.Info(fmt.Sprintf("Done building and publishing %d go dependencies to Artifactory out of a total of %d dependencies.", cache.GetSuccesses(), cache.GetTotal()))
-	if !strings.Contains(goArg, "mod download") || !strings.Contains(goArg, "mod tidy") {
+	if !strings.Contains(goArg, "mod download") && !strings.Contains(goArg, "mod tidy") {
 		if recursiveTidy {
 			// Remove the go.sum file, since it includes information which is not up to date (it was created by the "go mod tidy" command executed without Artifactory
 			err = removeGoSumFile(wd, rootDir)

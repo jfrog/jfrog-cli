@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
@@ -184,6 +185,7 @@ func initGoTest(t *testing.T) {
 		}
 		execCreateRepoRest(repoConfig, tests.GoLocalRepo)
 	}
+	authenticate()
 }
 
 func initNugetTest(t *testing.T) {
@@ -241,7 +243,10 @@ func TestGoBuildInfo(t *testing.T) {
 	// 2. Publish build-info.
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
+
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	cleanGoCache(t)
+
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 0)
@@ -252,8 +257,13 @@ func TestGoBuildInfo(t *testing.T) {
 	// 3. Validate the total count of dependencies and artifacts added to the build-info.
 	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
 	buildNumber = "2"
+
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	cleanGoCache(t)
+
 	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
+	cleanGoCache(t)
+
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 2)
@@ -290,8 +300,11 @@ func TestGoPublishResolve(t *testing.T) {
 
 	// Download dependencies without Artifactory
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo)
+	cleanGoCache(t)
+
 	// Publish dependency project to Artifactory
 	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0")
+	cleanGoCache(t)
 
 	err = os.Chdir(project2Path)
 	if err != nil {
@@ -300,6 +313,7 @@ func TestGoPublishResolve(t *testing.T) {
 
 	// Build the second project, download dependencies from Artifactory
 	artifactoryCli.Exec("go", "build", tests.GoLocalRepo)
+	cleanGoCache(t)
 
 	// Restore workspace
 	err = os.Chdir(wd)
@@ -307,6 +321,23 @@ func TestGoPublishResolve(t *testing.T) {
 		t.Error(err)
 	}
 	cleanGoTest()
+}
+
+func cleanGoCache(t *testing.T) {
+	log.Info("Cleaning go cache by running: 'go clean -modcache'")
+
+	golang.SetGoProxyEnvVar(artifactoryDetails, tests.GoLocalRepo)
+	defer os.Unsetenv(golang.GOPROXY)
+
+	goCmd, err := golang.NewCmd()
+	if err != nil {
+		t.Error(err)
+	}
+	goCmd.Command = []string{"clean", "-modcache"}
+	err = utils.RunCmd(goCmd)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func createGoProject(t *testing.T, projectName string) string {
