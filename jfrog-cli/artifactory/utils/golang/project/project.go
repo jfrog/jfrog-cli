@@ -89,6 +89,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	params.TargetRepo = targetRepo
 	params.ModuleId = project.getId()
 	params.ModContent = project.modContent
+	params.ModPath = filepath.Join(project.projectPath, "go.mod")
 	params.ZipPath, err = project.archiveProject(project.version)
 	if err != nil {
 		return err

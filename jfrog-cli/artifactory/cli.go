@@ -1426,7 +1426,7 @@ func downloadCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
+	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
@@ -1468,7 +1468,7 @@ func moveCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
+	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
@@ -1490,7 +1490,7 @@ func copyCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
+	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
@@ -1512,7 +1512,7 @@ func deleteCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
+	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
@@ -1548,7 +1548,7 @@ func searchCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && c.IsSet("spec"))) {
+	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
@@ -1831,7 +1831,7 @@ func getCopyMoveSpec(c *cli.Context) (copyMoveSpec *spec.SpecFiles) {
 	for i := 0; i < len(copyMoveSpec.Files); i++ {
 		overrideFieldsIfSet(copyMoveSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(copyMoveSpec.Files, true)
+	err = spec.ValidateSpec(copyMoveSpec.Files, true, true)
 	cliutils.ExitOnErr(err)
 	return
 }
@@ -1859,7 +1859,7 @@ func getDeleteSpec(c *cli.Context) (deleteSpec *spec.SpecFiles) {
 	for i := 0; i < len(deleteSpec.Files); i++ {
 		overrideFieldsIfSet(deleteSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(deleteSpec.Files, false)
+	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	cliutils.ExitOnErr(err)
 	return
 }
@@ -1923,6 +1923,8 @@ func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
 	for i := 0; i < len(searchSpec.Files); i++ {
 		overrideFieldsIfSet(searchSpec.Get(i), c)
 	}
+	err = spec.ValidateSpec(searchSpec.Files, false, true)
+	cliutils.ExitOnErr(err)
 	return
 }
 
@@ -2040,7 +2042,7 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideFieldsIfSet(downloadSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	cliutils.ExitOnErr(err)
 	return
 }
@@ -2106,7 +2108,7 @@ func getFileSystemSpec(c *cli.Context, isTargetMandatory bool) *spec.SpecFiles {
 		overrideFieldsIfSet(fsSpec.Get(i), c)
 	}
 	fixWinUploadFilesPath(fsSpec)
-	err = spec.ValidateSpec(fsSpec.Files, isTargetMandatory)
+	err = spec.ValidateSpec(fsSpec.Files, isTargetMandatory, false)
 	cliutils.ExitOnErr(err)
 	return fsSpec
 }
@@ -2205,17 +2207,44 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 }
 
 func validateCommonContext(c *cli.Context) {
-	if c.IsSet("build") && c.IsSet("offset") {
-		cliutils.ExitOnErr(errors.New("The 'offset' option cannot be used together with the 'build' option"))
+	// Validate build
+	if c.IsSet("build") {
+		if c.IsSet("offset") {
+			cliutils.ExitOnErr(errors.New("Cannot use 'offset' together with 'build'"))
+		}
+		if c.IsSet("limit") {
+			cliutils.ExitOnErr(errors.New("Cannot use 'limit' together with 'build'"))
+		}
+
+		// Allow pattern as '*' or empty only for build search without more filters
+		pattern := c.Args().Get(0)
+		if pattern == "*" || pattern == "" {
+			if c.IsSet("props") {
+				cliutils.ExitOnErr(errors.New("Cannot use 'props' together with 'build' if 'pattern' is empty or '*'"))
+			}
+			if c.IsSet("exclude-patterns") {
+				cliutils.ExitOnErr(errors.New("Cannot use 'exclude-patterns' together with 'build' if 'pattern' is empty or '*'"))
+			}
+			if c.IsSet("archive-entries") {
+				cliutils.ExitOnErr(errors.New("Cannot use 'archive-entries' together with 'build' if 'pattern' is empty or '*'"))
+			}
+			if c.IsSet("recursive") {
+				cliutils.ExitOnErr(errors.New("Cannot use 'recursive' together with 'build' if 'pattern' is empty or '*'"))
+			}
+			if c.IsSet("include-dirs") {
+				cliutils.ExitOnErr(errors.New("Cannot use 'include-dirs' together with 'build' if 'pattern' is empty or '*'"))
+			}
+		}
 	}
-	if c.IsSet("build") && c.IsSet("limit") {
-		cliutils.ExitOnErr(errors.New("The 'limit' option cannot be used together with the 'build' option"))
-	}
-	if c.IsSet("sort-order") && !c.IsSet("sort-by") {
-		cliutils.ExitOnErr(errors.New("The 'sort-order' option cannot be used without the 'sort-by' option"))
-	}
-	if c.IsSet("sort-order") && !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
-		cliutils.ExitOnErr(errors.New("The 'sort-order' option can only accept 'asc' or 'desc' as values"))
+
+	// Validate sort-order
+	if c.IsSet("sort-order") {
+		if !c.IsSet("sort-by") {
+			cliutils.ExitOnErr(errors.New("Cannot use 'sort-order' without the 'sort-by' option"))
+		}
+		if !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
+			cliutils.ExitOnErr(errors.New("The 'sort-order' option can only accept 'asc' or 'desc' as values"))
+		}
 	}
 }
 

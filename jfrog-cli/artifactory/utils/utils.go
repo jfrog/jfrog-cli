@@ -7,8 +7,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth/cert"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -83,14 +81,6 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 		return nil, err
 	}
 	return artifactory.New(serviceConfig)
-}
-
-func ConvertResultItemArrayToDeleteItemArray(resultItems []servicesutils.ResultItem) []services.DeleteItem {
-	deleteItems := make([]services.DeleteItem, len(resultItems))
-	for i, item := range resultItems {
-		deleteItems[i] = item
-	}
-	return deleteItems
 }
 
 func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
