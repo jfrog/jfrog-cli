@@ -3,7 +3,6 @@ package golang
 import (
 	"errors"
 	"fmt"
-	"github.com/Masterminds/semver"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
@@ -12,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,8 +33,8 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 		return
 	}
 
-	if !isMinSupportedVersion(artifactoryVersion) {
-		return 0, 0, errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
+	if err := isMinSupportedVersion(artifactoryVersion); err != nil {
+		return 0, 0, errorutils.CheckError(err)
 	}
 
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
@@ -86,9 +86,19 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	return
 }
 
-func isMinSupportedVersion(artifactoryVersion string) bool {
+func isMinSupportedVersion(artifactoryVersion string) error {
+	if artifactoryVersion == "development" {
+		return nil
+	}
 	minSupportedArtifactoryVersion := "6.2.0"
-	return artifactoryVersion == "development" || semver.MustParse(artifactoryVersion).Compare(semver.MustParse(minSupportedArtifactoryVersion)) >= 0
+	isSupported, err := version.NewVersion(artifactoryVersion).IsAtLeast(minSupportedArtifactoryVersion)
+	if err != nil {
+		return err
+	}
+	if !isSupported {
+		return errors.New("This operation requires Artifactory version 6.2.0 or higher.")
+	}
+	return nil
 }
 
 func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Masterminds/semver"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/parallel"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
@@ -18,6 +17,7 @@ import (
 	cliutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"github.com/mattn/go-shellwords"
 	"io/ioutil"
 	"net/http"
@@ -104,8 +104,8 @@ func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error)
 	}
 
 	npmi.npmAuth = string(npmAuth)
-	if artifactoryVersion != "development" && semver.MustParse(artifactoryVersion).Compare(semver.MustParse(minSupportedArtifactoryVersion)) < 0 {
-		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+	if err = npmi.validateArtifactoryVersion(artifactoryVersion); err != nil {
+		return err
 	}
 
 	if err = utils.CheckIfRepoExists(repo, npmi.artDetails); err != nil {
@@ -286,12 +286,30 @@ func (npmi *npmInstall) saveDependenciesData() error {
 	return nil
 }
 
+func (npmi *npmInstall) validateArtifactoryVersion(artifactoryVersion string) error {
+	if artifactoryVersion == "development" {
+		return nil
+	}
+	isSupported, err := version.NewVersion(artifactoryVersion).IsAtLeast(minSupportedArtifactoryVersion)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	if !isSupported {
+		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+	}
+	return nil
+}
+
 func (npmi *npmInstall) validateNpmVersion() error {
 	npmVersion, err := npm.Version(npmi.executablePath)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
-	if semver.MustParse(npmVersion).Compare(semver.MustParse(minSupportedNpmVersion)) < 0 {
+	isSupported, err := version.NewVersion(npmVersion).IsAtLeast(minSupportedNpmVersion)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	if !isSupported {
 		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil

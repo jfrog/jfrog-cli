@@ -1,6 +1,7 @@
 module github.com/jfrog/jfrog-cli-go
 
 require (
+	github.com/Masterminds/semver v1.4.2
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gofrog v1.0.2
@@ -13,4 +14,4 @@ require (
 	gopkg.in/yaml.v2 v2.2.1
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.1.4-0.20181213101111-6a0910d81750
