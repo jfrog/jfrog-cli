@@ -1,4 +1,4 @@
-package dependency // import "github.com/jfrog/dependency"
+package dependency
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package main // import "github.com/jfrog/project"
+package main
 
 import "github.com/jfrog/dependency"
 
