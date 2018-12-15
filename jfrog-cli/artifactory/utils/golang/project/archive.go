@@ -3,6 +3,7 @@ package project
 import (
 	"archive/zip"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
@@ -33,7 +34,7 @@ func archiveProject(writer io.Writer, sourcePath, module, version string, exclud
 		}
 		defer file.Close()
 
-		zipFile, err := zipWriter.Create(fileName)
+		zipFile, err := zipWriter.Create(ioutils.PrepareFilePathForUnix(fileName))
 		if err != nil {
 			return err
 		}
