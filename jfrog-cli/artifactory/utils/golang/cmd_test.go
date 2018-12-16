@@ -1,10 +1,11 @@
 package golang
 
 import (
-	"reflect"
-	"testing"
 	"os"
 	"path/filepath"
+	"reflect"
+	"testing"
+	"github.com/magiconair/properties/assert"
 )
 
 func TestOutputToMap(t *testing.T) {
@@ -118,6 +119,4 @@ func TestGetProjectDir(t *testing.T) {
 	}
 	if root == projectRoot {
 		t.Error("Expecting a different value than", root)
-	}
 }
-

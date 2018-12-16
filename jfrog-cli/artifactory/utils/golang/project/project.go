@@ -3,10 +3,11 @@ package project
 import (
 	"bytes"
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
@@ -17,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -279,7 +279,7 @@ func (project *goProject) getId() string {
 	return project.moduleName
 }
 
-// Read go.mod file and add it as an artifact to the xbuild info
+// Read go.mod file and add it as an artifact to the build info.
 func (project *goProject) readModFile() error {
 	var err error
 	project.projectPath, err = golang.GetProjectRoot()

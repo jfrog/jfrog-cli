@@ -1,14 +1,14 @@
 package golang
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 	"io"
-	"errors"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -159,6 +159,11 @@ func GetDependenciesGraph() (map[string]bool, error) {
 	}
 	goCmd.Command = []string{"mod", "graph"}
 
+	output, err := utils.RunCmdOutput(goCmd)
+	if len(output) != 0 {
+		log.Debug(string(output))
+	}
+
 	// Restore the the go.mod and go.sum files, to make sure they stay the same as before
 	// running the "go mod graph" command.
 	err = ioutil.WriteFile(filepath.Join(projectDir, "go.mod"), modFileContent, modFileStat.Mode())
@@ -172,10 +177,6 @@ func GetDependenciesGraph() (map[string]bool, error) {
 		}
 	}
 
-	output, err := utils.RunCmdOutput(goCmd)
-	if len(output) != 0 {
-		log.Debug(string(output))
-	}
 	return outputToMap(string(output)), errorutils.CheckError(err)
 }
 
@@ -252,6 +253,16 @@ func GetProjectRoot() (string, error) {
 		return wd, errorutils.CheckError(err)
 	}
 
+	// Get the OS root.
+	osRoot := os.Getenv("SYSTEMDRIVE")
+	if osRoot != "" {
+		// If this is a Windows machine:
+		osRoot += "\\"
+	} else {
+		// Unix:
+		osRoot = "/"
+	}
+
 	// Check if the current directory includes the go.mod file. If not, check the parent directpry
 	// and so on.
 	for {
@@ -262,7 +273,7 @@ func GetProjectRoot() (string, error) {
 		}
 
 		// If this the OS root, we can stop.
-		if wd == string(os.PathSeparator) {
+		if wd == osRoot {
 			break
 		}
 
