@@ -252,6 +252,7 @@ func GetProjectRoot() (string, error) {
 	if err != nil {
 		return wd, errorutils.CheckError(err)
 	}
+	defer os.Chdir(wd)
 
 	// Get the OS root.
 	osRoot := os.Getenv("SYSTEMDRIVE")
