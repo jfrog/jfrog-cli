@@ -739,7 +739,7 @@ func getGoFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "recursive-tidy",
-			Usage: "[Default: false] Set to true if you wish that all dependencies published to Artifactory have a mod file, which includes dependencies.` `",
+			Usage: "[Default: false] Set to true to make sure all dependencies published to Artifactory have a mod file, which includes dependencies.` `",
 		},
 		cli.BoolFlag{
 			Name:  "recursive-tidy-overwrite",
