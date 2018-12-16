@@ -13,14 +13,6 @@ import (
 	"path/filepath"
 )
 
-func Load() ([]Package, error) {
-	cachePath, err := GetCachePath()
-	if err != nil {
-		return nil, err
-	}
-	return loadDependencies(cachePath)
-}
-
 func GetCachePath() (string, error) {
 	goPath, err := getGOPATH()
 	if err != nil {

@@ -268,17 +268,6 @@ func shouldDownloadFromArtifactory(module, version, targetRepo string, details *
 	return false, nil
 }
 
-func loadDependencies(cachePath string) ([]Package, error) {
-	modulesMap, err := golang.GetDependenciesGraph()
-	if err != nil {
-		return nil, err
-	}
-	if modulesMap == nil {
-		return nil, nil
-	}
-	return GetDependencies(cachePath, modulesMap)
-}
-
 func GetDependencies(cachePath string, moduleSlice map[string]bool) ([]Package, error) {
 	var deps []Package
 	for module := range moduleSlice {
@@ -437,7 +426,7 @@ func getReplaceDependencies() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	rootDir, err := golang.GetRootDir()
+	rootDir, err := golang.GetProjectRoot()
 	if err != nil {
 		return nil, err
 	}
