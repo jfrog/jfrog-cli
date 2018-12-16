@@ -128,14 +128,28 @@ func GetDependenciesGraph() (map[string]bool, error) {
 		return nil, err
 	}
 
-	// Read and store the content of the go.mod file,
-	// because it may change by the "go mod graph" command.
-	var modFilePath string
-	var modFileContent []byte
-	var modFileStat os.FileInfo
-	modFilePath, modFileContent, modFileStat, err = getModFileDetails()
+	projectDir, err := GetProjectRoot()
 	if err != nil {
 		return nil, err
+	}
+
+	// Read and store the details of the go.mod and go.sum files,
+	// because they may change by the "go mod graph" command.
+	modFileContent, modFileStat, err := getFileDetails(filepath.Join(projectDir, "go.mod"))
+	if err != nil {
+		return nil, err
+	}
+	sumFileExists, err := fileutils.IsFileExists(filepath.Join(projectDir, "go.sum"), false)
+	if err != nil {
+		return nil, err
+	}
+	var sumFileContent []byte
+	var sumFileStat os.FileInfo
+	if sumFileExists {
+		sumFileContent, sumFileStat, err = getFileDetails(filepath.Join(projectDir, "go.sum"))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.Info("Running 'go mod graph' in", pwd)
@@ -145,11 +159,17 @@ func GetDependenciesGraph() (map[string]bool, error) {
 	}
 	goCmd.Command = []string{"mod", "graph"}
 
-	// Restore the content of the go.mod file, to make sure it stays the same as before
+	// Restore the the go.mod and go.sum files, to make sure they stay the same as before
 	// running the "go mod graph" command.
-	err = ioutil.WriteFile(modFilePath, modFileContent, modFileStat.Mode())
+	err = ioutil.WriteFile(filepath.Join(projectDir, "go.mod"), modFileContent, modFileStat.Mode())
 	if err != nil {
 		return nil, err
+	}
+	if sumFileExists {
+		err = ioutil.WriteFile(filepath.Join(projectDir, "go.sum"), sumFileContent, sumFileStat.Mode())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	output, err := utils.RunCmdOutput(goCmd)
@@ -159,17 +179,13 @@ func GetDependenciesGraph() (map[string]bool, error) {
 	return outputToMap(string(output)), errorutils.CheckError(err)
 }
 
-func getModFileDetails() (modFilePath string, modFileContent []byte, modFileStat os.FileInfo, err error) {
-	rootDir, err := GetProjectRoot()
-	if err != nil {
+func getFileDetails(filePath string) (modFileContent []byte, modFileStat os.FileInfo, err error) {
+	modFileStat, err = os.Stat(filePath)
+	if errorutils.CheckError(err) != nil {
 		return
 	}
-	modFilePath = filepath.Join(rootDir, "go.mod")
-	modFileStat, err = os.Stat(modFilePath)
-	if err != nil {
-		return
-	}
-	modFileContent, err = ioutil.ReadFile(modFilePath)
+	modFileContent, err = ioutil.ReadFile(filePath)
+	errorutils.CheckError(err)
 	return
 }
 
