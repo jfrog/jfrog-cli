@@ -16,6 +16,8 @@ func TestBasicAuth(t *testing.T) {
 }
 
 func TestApiKey(t *testing.T) {
+	// API key is no longer allowed to be configured without providing a username.
+	// This test is here to make sure that old configurations (with API key and no username) are still accepted.
 	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
 		User: "", Password: "",
 		ApiKey: "apiKey", SshKeyPath: "", AccessToken: "",

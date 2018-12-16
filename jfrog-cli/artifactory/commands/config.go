@@ -145,10 +145,10 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 }
 
 func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
-	print("Access token (Leave blank for username and password): ")
+	print("Access token (Leave blank for username and password/API key): ")
 	byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	// New-line required after the access token input:
 	fmt.Println()
@@ -343,7 +343,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url), details.AccessToken != ""}
 	if cliutils.SumTrueValues(boolArr) > 1 {
-		return errorutils.CheckError(errors.New("Only one authentication method is allowd: Username/Password, API key, RSA tokens or access tokens"))
+		return errorutils.CheckError(errors.New("Only one authentication method is allowed: Username + Password/API key, RSA Token (SSH) or Access Token."))
 	}
 	return nil
 }
