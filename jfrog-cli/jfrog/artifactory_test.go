@@ -66,11 +66,13 @@ func InitArtifactoryTests() {
 }
 
 func authenticate() string {
-	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
 	cred := "--url=" + *tests.RtUrl
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
+		} else if *tests.RtAccessToken != "" {
+			artifactoryDetails.AccessToken = *tests.RtAccessToken
 		} else {
 			artifactoryDetails.User = *tests.RtUser
 			artifactoryDetails.Password = *tests.RtPassword
@@ -102,6 +104,9 @@ func getArtifactoryTestCredentials() string {
 	}
 	if *tests.RtApiKey != "" {
 		return " --apikey=" + *tests.RtApiKey
+	}
+	if *tests.RtAccessToken != "" {
+		return " --access-token=" + *tests.RtAccessToken
 	}
 	return " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
 }

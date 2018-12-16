@@ -27,6 +27,7 @@ var RtPassword *string
 var RtApiKey *string
 var RtSshKeyPath *string
 var RtSshPassphrase *string
+var RtAccessToken *string
 var BtUser *string
 var BtKey *string
 var BtOrg *string
@@ -48,6 +49,7 @@ func init() {
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
+	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
 	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
