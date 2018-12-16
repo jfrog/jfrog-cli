@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
@@ -326,15 +325,8 @@ func TestGoPublishResolve(t *testing.T) {
 func cleanGoCache(t *testing.T) {
 	log.Info("Cleaning go cache by running: 'go clean -modcache'")
 
-	golang.SetGoProxyEnvVar(artifactoryDetails, tests.GoLocalRepo)
-	defer os.Unsetenv(golang.GOPROXY)
-
-	goCmd, err := golang.NewCmd()
-	if err != nil {
-		t.Error(err)
-	}
-	goCmd.Command = []string{"clean", "-modcache"}
-	err = utils.RunCmd(goCmd)
+	cmd := exec.Command("go", "clean", "-modcache")
+	err := cmd.Run()
 	if err != nil {
 		t.Error(err)
 	}

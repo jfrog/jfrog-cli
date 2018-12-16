@@ -3,6 +3,8 @@ package golang
 import (
 	"reflect"
 	"testing"
+	"os"
+	"path/filepath"
 )
 
 func TestOutputToMap(t *testing.T) {
@@ -49,3 +51,73 @@ rsc.io/sampler@v1.3.0 golang.org/x/text@v0.0.0-20170915032832-14c0d48ead0c
 		t.Errorf("Expecting: \n%v \nGot: \n%v", expected, actual)
 	}
 }
+
+func TestGetProjectDir(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Chdir(wd)
+
+	// CD into a directory with a go.mod file.
+	projectRoot := filepath.Join("testdata", "project")
+	err = os.Chdir(projectRoot)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Make projectRoot an absolute path.
+	projectRoot, err = os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Get the project root.
+	root, err := GetProjectRoot()
+	if err != nil {
+		t.Error(err)
+	}
+	if root != projectRoot {
+		t.Error("Expecting", projectRoot, "got:", root)
+	}
+
+	// CD back to the original directory.
+	if err := os.Chdir(wd); err != nil {
+		t.Error(err)
+	}
+
+	// CD into a sub directory in the same project, and expect to get the same project root.
+	os.Chdir(wd)
+	projectSubDirectory := filepath.Join("testdata", "project", "dir")
+	err = os.Chdir(projectSubDirectory)
+	if err != nil {
+		t.Error(err)
+	}
+	root, err = GetProjectRoot()
+	if err != nil {
+		t.Error(err)
+	}
+	if root != projectRoot {
+		t.Error("Expecting", projectRoot, "got:", root)
+	}
+
+	// CD back to the original directory.
+	if err := os.Chdir(wd); err != nil {
+		t.Error(err)
+	}
+
+	// Now CD into a directory outside the project, and expect to get a different project root.
+	noProjectRoot := filepath.Join("testdata", "noproject")
+	err = os.Chdir(noProjectRoot)
+	if err != nil {
+		t.Error(err)
+	}
+	root, err = GetProjectRoot()
+	if err != nil {
+		t.Error(err)
+	}
+	if root == projectRoot {
+		t.Error("Expecting a different value than", root)
+	}
+}
+

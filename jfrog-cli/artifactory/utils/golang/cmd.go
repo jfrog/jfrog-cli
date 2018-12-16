@@ -5,8 +5,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/mattn/go-shellwords"
 	"io"
+	"errors"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -105,7 +107,6 @@ func RunGo(goArg string) error {
 		RegExp: regExp,
 	}
 	notFoundRegExp.ExecFunc = notFoundRegExp.ErrorOnNotFound
-
 	return utils.RunCmdWithOutputParser(goCmd, &protocolRegExp, &notFoundRegExp)
 }
 
@@ -159,7 +160,7 @@ func GetDependenciesGraph() (map[string]bool, error) {
 }
 
 func getModFileDetails() (modFilePath string, modFileContent []byte, modFileStat os.FileInfo, err error) {
-	rootDir, err := GetRootDir()
+	rootDir, err := GetProjectRoot()
 	if err != nil {
 		return
 	}
@@ -210,7 +211,7 @@ func RunGoModTidy() error {
 }
 
 func signModFile() error {
-	rootDir, err := GetRootDir()
+	rootDir, err := GetProjectRoot()
 	if err != nil {
 		return err
 	}
@@ -226,17 +227,40 @@ func signModFile() error {
 }
 
 // Returns the root dir where the go.mod located.
-func GetRootDir() (string, error) {
-	goCmd, err := NewCmd()
+func GetProjectRoot() (string, error) {
+	// Create a map to store all paths visited, to avoid running in circles.
+	visitedPaths := make(map[string]bool)
+	// Get the current directory.
+	wd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return wd, errorutils.CheckError(err)
 	}
 
-	goCmd.Command = []string{"list"}
-	goCmd.CommandFlags = []string{"-m", "-f={{.Dir}}"}
-	output, err := utils.RunCmdOutput(goCmd)
-	if err != nil {
-		return "", errorutils.CheckError(err)
+	// Check if the current directory includes the go.mod file. If not, check the parent directpry
+	// and so on.
+	for {
+		// If the go.mod is found the current directory, return the path.
+		exists, err := fileutils.IsFileExists(filepath.Join(wd, "go.mod"), false)
+		if err != nil || exists {
+			return wd, err
+		}
+
+		// If this the OS root, we can stop.
+		if wd == string(os.PathSeparator) {
+			break
+		}
+
+		// Save this path.
+		visitedPaths[wd] = true
+		// CD to the parent directory.
+		wd = filepath.Dir(wd)
+		os.Chdir(wd)
+
+		// If we already visited this directory, it means that there's a loop and we can stop.
+		if visitedPaths[wd] {
+			return "", errorutils.CheckError(errors.New("Could not find go.mod for project."))
+		}
 	}
-	return strings.TrimSpace(string(output)), nil
+
+	return "", errorutils.CheckError(errors.New("Could not find go.mod for project."))
 }
