@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "*",
+      "target": "${REPO2}/",
+      "flat": "false",
+      "build": "cli-test-build/10"
+    }
+  ]
+}

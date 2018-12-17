@@ -13,14 +13,6 @@ import (
 	"path/filepath"
 )
 
-func Load() ([]Package, error) {
-	cachePath, err := GetCachePath()
-	if err != nil {
-		return nil, err
-	}
-	return loadDependencies(cachePath)
-}
-
 func GetCachePath() (string, error) {
 	goPath, err := getGOPATH()
 	if err != nil {
@@ -35,6 +27,7 @@ type Package struct {
 	id                     string
 	modContent             []byte
 	zipPath                string
+	modPath                string
 	version                string
 	recursiveTidyOverwrite bool
 }
@@ -103,6 +96,7 @@ func (dependencyPackage *Package) Publish(summary string, targetRepo string, ser
 	params.Version = dependencyPackage.version
 	params.TargetRepo = targetRepo
 	params.ModuleId = dependencyPackage.id
+	params.ModPath = dependencyPackage.modPath
 
 	return servicesManager.PublishGoProject(params)
 }

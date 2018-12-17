@@ -75,6 +75,7 @@ Optional flags:
 | `-rt.apikey` | [Optional] Artifactory API key. |
 | `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
+| `-rt.accessToken` | [Optional] Artifactory access token. |
 
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>

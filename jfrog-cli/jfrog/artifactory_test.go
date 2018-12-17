@@ -66,11 +66,13 @@ func InitArtifactoryTests() {
 }
 
 func authenticate() string {
-	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
+	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
 	cred := "--url=" + *tests.RtUrl
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
+		} else if *tests.RtAccessToken != "" {
+			artifactoryDetails.AccessToken = *tests.RtAccessToken
 		} else {
 			artifactoryDetails.User = *tests.RtUser
 			artifactoryDetails.Password = *tests.RtPassword
@@ -102,6 +104,9 @@ func getArtifactoryTestCredentials() string {
 	}
 	if *tests.RtApiKey != "" {
 		return " --apikey=" + *tests.RtApiKey
+	}
+	if *tests.RtAccessToken != "" {
+		return " --access-token=" + *tests.RtAccessToken
 	}
 	return " --user=" + *tests.RtUser + " --password=" + *tests.RtPassword
 }
@@ -1908,11 +1913,50 @@ func testChecksumDownload(t *testing.T, outFileName string) {
 	}
 }
 
-func TestArtifactoryDownloadByBuildUsingSpec(t *testing.T) {
+func TestArtifactoryDownloadByPatternAndBuildUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	specFile, err := tests.CreateSpec(tests.BuildDownloadSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	// Upload files with buildName and buildNumber
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	if err != nil {
+		t.Error(err)
+	}
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+buildName, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+buildName, "--build-number="+buildNumberB)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--spec="+specFile)
+
+	// Validate files are downloaded by build number
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildDownload(), paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildNoPatternUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecNoPattern)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2079,6 +2123,43 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+	// Upload files with buildName and buildNumber
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	if err != nil {
+		t.Error(err)
+	}
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	if err != nil {
+		t.Error(err)
+	}
+
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+buildName, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+buildName, "--build-number="+buildNumberB)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Download by build number, a1 should not be downloaded, b1 should
+	artifactoryCli.Exec("download * "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumberA)
+
+	// Validate files are downloaded by build number
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownloadNoPattern(), paths)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -2385,7 +2466,46 @@ func TestArtifactoryCopyByBuildUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
-	// Copy by build build number "10" from spec, a* should be copied
+	// Copy by build name "cli-test-build" and build number "10" from spec, a* should be copied
+	artifactoryCli.Exec("copy", "--spec="+specFile)
+
+	// Validate files are Copied by build number
+	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetBuildCopyExpected(), cpMvDlByBuildAssertSpec, t)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCopyByBuildPatternAllUsingSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	specFile, err := tests.CreateSpec(tests.CopyByBuildPatternAllSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	// Upload files with buildName and buildNumber: a* uploaded with build number "10", b* uploaded with build number "11"
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	if err != nil {
+		t.Error(err)
+	}
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+buildName, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("upload", "--spec="+specFileB, "--build-name="+buildName, "--build-number="+buildNumberB)
+
+	// Publish buildInfo
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
+
+	// Copy by build name "cli-test-build" and build number "10" from spec, a* should be copied
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
 	// Validate files are Copied by build number

@@ -158,6 +158,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
 	buildNameNotToPromote := "cli-test-build-not-to-promote"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	//upload files with buildName and buildNumber
 	specFile, err := tests.CreateSpec(tests.UploadSpec)
@@ -196,6 +197,8 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	gitCollectCliRunner := tests.NewJfrogCli(main, "jfrog rt", "")
 	buildName, buildNumber := "cli-test-build", "13"
 	dotGitPath := ioutils.FixWinPath(getCliDotGitPath(t))
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
 	gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, dotGitPath)
 
 	//publish buildInfo

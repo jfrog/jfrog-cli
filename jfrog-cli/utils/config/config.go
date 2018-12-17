@@ -324,6 +324,7 @@ type ArtifactoryDetails struct {
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
 	SshPassphrase  string            `json:"SshPassphrase,omitempty"`
 	SshAuthHeaders map[string]string `json:"SshAuthHeaders,omitempty"`
+	AccessToken    string            `json:"accessToken,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
 	// Deprecated, use password option instead.
@@ -360,6 +361,10 @@ func (artifactoryDetails *ArtifactoryDetails) SetPassword(password string) {
 	artifactoryDetails.Password = password
 }
 
+func (artifactoryDetails *ArtifactoryDetails) SetAccessToken(accessToken string) {
+	artifactoryDetails.AccessToken = accessToken
+}
+
 func (artifactoryDetails *ArtifactoryDetails) GetApiKey() string {
 	return artifactoryDetails.ApiKey
 }
@@ -374,6 +379,10 @@ func (artifactoryDetails *ArtifactoryDetails) GetUser() string {
 
 func (artifactoryDetails *ArtifactoryDetails) GetPassword() string {
 	return artifactoryDetails.Password
+}
+
+func (artifactoryDetails *ArtifactoryDetails) GetAccessToken() string {
+	return artifactoryDetails.AccessToken
 }
 
 func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
@@ -391,6 +400,7 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.Artifa
 	artAuth.SetApiKey(artifactoryDetails.ApiKey)
 	artAuth.SetUser(artifactoryDetails.User)
 	artAuth.SetPassword(artifactoryDetails.Password)
+	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
 	if artifactoryDetails.sshAuthenticationRequired() {
 		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
 		if err != nil {

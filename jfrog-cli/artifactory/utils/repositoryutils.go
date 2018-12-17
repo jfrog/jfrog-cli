@@ -4,10 +4,10 @@ import (
 	"errors"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"net/http"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 type RepoType int

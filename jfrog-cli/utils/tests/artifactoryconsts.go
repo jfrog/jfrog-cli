@@ -16,6 +16,7 @@ const (
 	Temp                                   = "tmp"
 	DownloadSpec                           = "download_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
+	BuildDownloadSpecNoPattern             = "build_download_spec_no_pattern.json"
 	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
 	SimpleUploadSpec                       = "simple_upload_spec.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
@@ -34,6 +35,7 @@ const (
 	SearchTxt                              = "search_txt.json"
 	SearchMoveDeleteRepoSpec               = "search_move_delete_repo_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
+	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	MoveRepositoryConfig                   = "move_repository_config.json"
@@ -495,6 +497,18 @@ func GetBuildSimpleDownload() []string {
 		filepath.Join(Out, "download", "simple_by_build"),
 		filepath.Join(Out, "download", "simple_by_build", "data"),
 		filepath.Join(Out, "download", "simple_by_build", "data", "b1.in"),
+	}
+}
+
+func GetBuildSimpleDownloadNoPattern() []string {
+	return []string{
+		Out,
+		filepath.Join(Out, "download"),
+		filepath.Join(Out, "download", "simple_by_build"),
+		filepath.Join(Out, "download", "simple_by_build", "data"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a1.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a2.in"),
+		filepath.Join(Out, "download", "simple_by_build", "data", "a3.in"),
 	}
 }
 
