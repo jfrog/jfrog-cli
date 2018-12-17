@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/bundle"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/mcuadros/go-version"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io"
 	"os/exec"
 )
@@ -51,7 +51,7 @@ func UpgradeBundle(artDetails *config.ArtifactoryDetails, bundleConfigDetails *c
 	}
 
 	// Run installation script
-	if err := installNewVersion(bundleConfigDetails); err != nil {
+	if err := installNewVersion(bundleConfigDetails, latestMatchedVersion); err != nil {
 		return err
 	}
 
@@ -62,16 +62,16 @@ func UpgradeBundle(artDetails *config.ArtifactoryDetails, bundleConfigDetails *c
 // Return latest version in 'COMPLETE' status that matched the bundle config constraints.
 func getLatestMatchedVersion(versionConstraints string, versions []bundle.Version) string {
 	var versionStrings []string
-	constraintGroup := version.NewConstrainGroupFromString(versionConstraints)
+
+	//constraintGroup := version.NewConstrainGroupFromString(versionConstraints)
 	for _, ver := range versions {
-		if ver.Status == bundle.Complete && constraintGroup.Match(ver.Version) {
+		if ver.Status == bundle.Complete && version.IsMatch(ver.Version, versionConstraints) {
 			versionStrings = append(versionStrings, ver.Version)
 		}
 	}
 	if len(versionStrings) == 0 {
 		return ""
 	}
-	version.Sort(versionStrings)
 	return versionStrings[len(versionStrings)-1]
 }
 
@@ -80,12 +80,20 @@ func isLatestVersion(currentVersion, latestMatchedVersion string) bool {
 	if currentVersion == "" {
 		return false
 	}
-	return version.Compare(currentVersion, latestMatchedVersion, ">=")
+	return version.Compare(currentVersion, latestMatchedVersion) >= 0
 }
 
-func installNewVersion(bundleConfigDetails *config.BundleDetails) error {
+func installNewVersion(bundleConfigDetails *config.BundleDetails, latestMatchedVersion string) error {
 	log.Output("Running", bundleConfigDetails.ScriptPath)
-	commandConfig := &bundleInstallationScript{bundleConfigDetails.ScriptPath}
+	env := map[string]string{
+		"BUNDLE_NAME":    bundleConfigDetails.Name,
+		"BUNDLE_VERSION": latestMatchedVersion,
+	}
+	commandConfig := &bundleInstallationScript{
+		scriptPath: bundleConfigDetails.ScriptPath,
+		env:        env,
+	}
+
 	if err := utils.RunCmd(commandConfig); err != nil {
 		return err
 	}
@@ -103,7 +111,7 @@ func (config *bundleInstallationScript) GetCmd() *exec.Cmd {
 }
 
 func (config *bundleInstallationScript) GetEnv() map[string]string {
-	return map[string]string{}
+	return config.env
 }
 
 func (config *bundleInstallationScript) GetStdWriter() io.WriteCloser {
@@ -116,4 +124,5 @@ func (config *bundleInstallationScript) GetErrWriter() io.WriteCloser {
 
 type bundleInstallationScript struct {
 	scriptPath string
+	env        map[string]string
 }
