@@ -206,7 +206,7 @@ func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
 	}
 
 	cmd := "echo $DOCKER_PASS " + cmdLogin
-	return exec.Command("bash", "-c", cmd)
+	return exec.Command("sh", "-c", cmd)
 }
 
 func (loginCmd *LoginCmd) GetEnv() map[string]string {
@@ -285,6 +285,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 		// Login succeeded
 		return nil
 	}
+	log.Debug("Docker login while assuming proxy-less failed:", err)
 
 	indexOfSlash := strings.Index(imageRegistry, "/")
 	if indexOfSlash < 0 {
@@ -296,7 +297,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	if err != nil {
 		// Login failed for both attempts
 		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
-			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
+			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash])) + err.Error()))
 	}
 
 	// Login succeeded
