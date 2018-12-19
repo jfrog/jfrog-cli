@@ -206,7 +206,7 @@ func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
 	}
 
 	cmd := "echo $DOCKER_PASS " + cmdLogin
-	return exec.Command("bash", "-c", cmd)
+	return exec.Command("sh", "-c", cmd)
 }
 
 func (loginCmd *LoginCmd) GetEnv() map[string]string {
@@ -285,6 +285,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 		// Login succeeded
 		return nil
 	}
+	log.Debug("Docker login proxy-less failed:", err)
 
 	indexOfSlash := strings.Index(imageRegistry, "/")
 	if indexOfSlash < 0 {
@@ -294,6 +295,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	cmd = &LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
 	err = utils.RunCmd(cmd)
 	if err != nil {
+		log.Debug("Docker login using reverse proxy failed:", err)
 		// Login failed for both attempts
 		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
 			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
