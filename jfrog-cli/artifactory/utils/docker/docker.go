@@ -285,7 +285,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 		// Login succeeded
 		return nil
 	}
-	log.Debug("Docker login proxy-less failed:", err)
+	log.Debug("Docker login while assuming proxy-less failed:", err)
 
 	indexOfSlash := strings.Index(imageRegistry, "/")
 	if indexOfSlash < 0 {
@@ -295,10 +295,9 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	cmd = &LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
 	err = utils.RunCmd(cmd)
 	if err != nil {
-		log.Debug("Docker login using reverse proxy failed:", err)
 		// Login failed for both attempts
 		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
-			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash]))))
+			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash])) + err.Error()))
 	}
 
 	// Login succeeded
