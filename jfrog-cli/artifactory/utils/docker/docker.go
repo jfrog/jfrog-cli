@@ -297,7 +297,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	if err != nil {
 		// Login failed for both attempts
 		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
-			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash])) + err.Error()))
+			fmt.Sprintf("%s, %s", imageRegistry, imageRegistry[:indexOfSlash])) + " " + err.Error()))
 	}
 
 	// Login succeeded
