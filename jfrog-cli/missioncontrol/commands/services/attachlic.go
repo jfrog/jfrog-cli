@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -39,51 +40,29 @@ func AttachLic(service_name string, flags *AttachLicFlags) error {
 		return errorutils.CheckError(errors.New(resp.Status + ". " + utils.ReadMissionControlHttpMessage(body)))
 	}
 	log.Debug("Mission Control response: " + resp.Status)
+
 	if flags.LicensePath == "" {
-		var m Message
-		m, err = extractJsonValue(body)
-		if err != nil {
-			return err
-		}
-		requestContent, err = json.Marshal(m)
-		err = errorutils.CheckError(err)
-		if err != nil {
-			return err
-		}
-		log.Output(string(requestContent))
-	} else {
-		var licenseKey []byte
-		licenseKey, err = getLicenseFromJson(body)
-		if err != nil {
-			return err
-		}
-		err = saveLicense(flags.LicensePath, licenseKey)
-		if err != nil {
-			return err
-		}
+		// Print response body to log
+		log.Output(clientutils.IndentJson(body))
+		return nil
 	}
-	return nil
-}
 
-func getLicenseFromJson(body []byte) (licenseKey []byte, err error) {
-	var m Message
-	m, err = extractJsonValue(body)
-	if err != nil {
-		return
-	}
-	licenseKey = []byte(m.LicenseKey)
-	return
-}
-
-func extractJsonValue(body []byte) (m Message, err error) {
-	data := &Data{}
-	err = json.Unmarshal(body, &data)
+	// Extract license from response
+	var licenseKey licenseKey
+	err = json.Unmarshal(body, &licenseKey)
 	err = errorutils.CheckError(err)
 	if err != nil {
-		return
+		return err
 	}
-	m = data.Data
-	return
+
+	// Save license to file
+	licenseKeyString := []byte(licenseKey.LicenseKey)
+	err = saveLicense(flags.LicensePath, licenseKeyString)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func prepareLicenseFile(filepath string, overrideFile bool) (err error) {
@@ -140,10 +119,6 @@ type AttachLicFlags struct {
 	Deploy                bool
 }
 
-type Message struct {
-	LicenseKey string `json:"licenseKey,omitempty"`
-}
-
-type Data struct {
-	Data Message
+type licenseKey struct {
+	LicenseKey string `json:"license_key,omitempty"`
 }
