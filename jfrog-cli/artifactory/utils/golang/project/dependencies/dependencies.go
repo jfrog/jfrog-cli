@@ -39,6 +39,7 @@ func (dependencyPackage *Package) New(cachePath string, dep Package, recursiveTi
 	dependencyPackage.id = dep.id
 	dependencyPackage.recursiveTidyOverwrite = recursiveTidyOverwrite
 	dependencyPackage.buildInfoDependencies = dep.buildInfoDependencies
+	dependencyPackage.modPath = dep.modPath
 	return dependencyPackage
 }
 
