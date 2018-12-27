@@ -35,7 +35,7 @@ const DockerTestImage string = "jfrog_cli_test_image"
 func InitBuildToolsTests() {
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	createReposIfNeeded()
 	cleanBuildToolsTest()
 }
@@ -46,7 +46,7 @@ func InitDockerTests() {
 	}
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 }
 
 func CleanBuildToolsTests() {
@@ -800,7 +800,7 @@ func initBuildToolsTest(t *testing.T) {
 	}
 	createJfrogHomeConfig(t)
 	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	configArtifactoryCli = createConfigJfrogCLI(cred)
 }
 

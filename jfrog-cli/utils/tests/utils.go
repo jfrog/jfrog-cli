@@ -216,16 +216,16 @@ type PackageSearchResultItem struct {
 }
 
 type JfrogCli struct {
-	main        func()
+	main        func() error
 	prefix      string
 	credentials string
 }
 
-func NewJfrogCli(mainFunc func(), prefix, credentials string) *JfrogCli {
-	return &JfrogCli{mainFunc, prefix, credentials}
+func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
+	return &JfrogCli{mainFunc,prefix, credentials}
 }
 
-func (cli *JfrogCli) Exec(args ...string) {
+func (cli *JfrogCli) Exec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
 	output := strings.Split(cli.prefix, spaceSplit)
@@ -243,7 +243,7 @@ func (cli *JfrogCli) Exec(args ...string) {
 	}
 
 	log.Info("[Command]", strings.Join(output, " "))
-	cli.main()
+	return cli.main()
 }
 
 func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {

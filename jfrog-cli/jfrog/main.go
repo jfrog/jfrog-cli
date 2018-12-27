@@ -66,6 +66,11 @@ Environment Variables:
 `
 
 func main() {
+	err := execMain()
+	cliutils.ExitOnErr(err)
+}
+
+func execMain() error {
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
 	utils.SetUserAgent(fmt.Sprintf("%s/%s", cliutils.ClientAgent, cliutils.GetVersion()))
 
@@ -79,7 +84,7 @@ func main() {
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
 	err := app.Run(args)
-	cliutils.ExitOnErr(err)
+	return err
 }
 
 func getCommands() []cli.Command {
