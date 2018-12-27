@@ -3,6 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
@@ -18,15 +28,6 @@ import (
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const DockerTestImage string = "jfrog_cli_test_image"
@@ -711,7 +712,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 		t.Error(err)
 	}
 	if bcpNpmrc != nil {
-		t.Errorf("The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when runnung the configuration:\n%v", npmTest)
+		t.Errorf("The file 'jfrog.npmrc.backup' was supposed to be deleted but it was not when running the configuration:\n%v", npmTest)
 	}
 }
 

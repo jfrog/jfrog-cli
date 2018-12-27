@@ -2,6 +2,10 @@ package bintray
 
 import (
 	"errors"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/commands"
 	accesskeysdoc "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/bintray/accesskeys"
@@ -38,9 +42,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/bintray/services/versions"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -582,7 +583,7 @@ func getUrlSigningFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "callback-email",
-			Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requiers a callback_id. The callback-id will be included in the mail message.` `",
+			Usage: "[Optional] An email address to send mail to when a user has used the download URL. This requires a callback_id. The callback-id will be included in the mail message.` `",
 		},
 		cli.StringFlag{
 			Name:  "callback-url",
