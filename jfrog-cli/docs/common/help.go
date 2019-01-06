@@ -16,4 +16,8 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 	JFROG_CLI_HOME_DIR
 		[Default: ~/.jfrog]
 		Defines the JFrog CLI home directory path.
+	
+	JFROG_CLI_SHOW_UPDATE
+		[Default: true]
+		If true, JFrog CLI shows whether you're running the latest version.
 		`

@@ -1,15 +1,19 @@
 package cliutils
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"runtime"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"runtime"
-	"strings"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -114,7 +118,49 @@ func confirmAnswer(answer string) bool {
 }
 
 func GetVersion() string {
+	if ok, _ := utils.GetBoolEnvValue("JFROG_CLI_SHOW_UPDATE", true); ok {
+		latestRelease, err := getLatestRelease()
+		if err != nil {
+			return CliVersion
+		}
+
+		if CliVersion == latestRelease {
+			return fmt.Sprintf("%s (you're running the latest version)", CliVersion)
+		}
+		return fmt.Sprintf("%s (there is a newer version available [v%s])", CliVersion, latestRelease)
+	}
 	return CliVersion
+}
+
+func getLatestRelease() (string, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://registry.npmjs.org/jfrog-cli-go/latest", nil)
+	if err != nil {
+		log.Output("Error creating HTTP request: %s", err.Error())
+		return "", err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Output("Error sending HTTP request: %s", err.Error())
+		return "", err
+	}
+
+	if res.StatusCode != 200 {
+		log.Output("Error receiving HTTP response (HTTP/[%d]): %s", res.StatusCode, err.Error())
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	var data map[string]interface{}
+
+	if err := json.Unmarshal(body, &data); err != nil {
+		log.Output("Error unmarshalling HTTP response: %s", err.Error())
+		return "", err
+	}
+
+	return data["version"].(string), nil
 }
 
 func GetConfigVersion() string {
