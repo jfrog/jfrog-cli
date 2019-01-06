@@ -59,7 +59,7 @@ func InitArtifactoryTests() {
 	}
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(main, "jfrog rt", cred)
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	configArtifactoryCli = createConfigJfrogCLI(cred)
 	createReposIfNeeded()
 	cleanArtifactoryTest()
@@ -95,7 +95,7 @@ func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
 		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
 	}
-	return tests.NewJfrogCli(main, "jfrog rt", cred)
+	return tests.NewJfrogCli(execMain, "jfrog rt", cred)
 }
 
 func getArtifactoryTestCredentials() string {
@@ -141,7 +141,7 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
 	passphrase := createServerConfigAndReturnPassphrase()
-	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", "")
+	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
 
@@ -792,7 +792,7 @@ func TestXrayScanBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	xrayServerPort := xray.StartXrayMockServer()
 	serverUrl := "--url=http://localhost:" + strconv.Itoa(xrayServerPort)
-	artifactoryCommandExecutor := tests.NewJfrogCli(main, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
+	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", serverUrl+getArtifactoryTestCredentials())
 	artifactoryCommandExecutor.Exec("build-scan", xray.CleanScanBuildName, "3")
 
 	cleanArtifactoryTest()
