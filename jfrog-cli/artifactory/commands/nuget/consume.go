@@ -2,6 +2,7 @@ package nuget
 
 import (
 	"fmt"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution"
@@ -11,11 +12,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
 	"strings"
-	"io/ioutil"
 )
 
 type Params struct {
@@ -126,7 +127,7 @@ func prepareAndRunCmd(params *Params) error {
 	if err != nil {
 		return err
 	}
-	err = utils.RunCmd(cmd)
+	err = gofrogcmd.RunCmd(cmd)
 	if err != nil {
 		return err
 	}
@@ -240,7 +241,7 @@ func addNugetSource(configFileName, sourceUrl, user, password string) error {
 	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceUrl)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-password", password)
-	output, err := utils.RunCmdOutput(cmd)
+	output, err := gofrogcmd.RunCmdOutput(cmd)
 	log.Debug("Running command: Add sources. Output:", string(output))
 	return err
 }
@@ -257,7 +258,7 @@ func addNugetApiKey(user, password, configFileName string) error {
 	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", SOURCE_NAME)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
 
-	output, err := utils.RunCmdOutput(cmd)
+	output, err := gofrogcmd.RunCmdOutput(cmd)
 	log.Debug("Running command: SetApiKey. Output:", string(output))
 	return err
 }

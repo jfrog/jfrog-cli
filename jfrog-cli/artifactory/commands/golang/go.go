@@ -2,12 +2,12 @@ package golang
 
 import (
 	"errors"
+	"github.com/jfrog/gocmd"
+	"github.com/jfrog/gocmd/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 	"os/exec"
 	"strings"
@@ -89,7 +89,7 @@ func isMinSupportedVersion(artifactoryVersion string) bool {
 	return true
 }
 
-func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+func ExecuteGo(tidyEnum golang.TidyEnum, noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
 		err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
@@ -97,30 +97,18 @@ func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, ta
 			return err
 		}
 	}
-
-	if !noRegistry {
-		goutils.SetGoProxyEnvVar(details, targetRepo)
-	}
-
 	// The version is not necessary because we are collecting the dependencies only.
 	goProject, err := project.Load("-")
 	if err != nil {
 		return err
 	}
 
-	err = goutils.RunGo(goArg)
-
+	serviceManager, err := utils.CreateServiceManager(details, false)
 	if err != nil {
-		if dependencyNotFoundInArtifactory(err, noRegistry) {
-			log.Info("Received", err.Error(), "from Artifactory. Trying download the dependencies from the VCS and upload them to Artifactory...")
-			err = goProject.DownloadFromVcsAndPublish(targetRepo, goArg, recursiveTidy, recursiveTidyOverwrite, details)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
+		return err
 	}
+
+	err = gocmd.ExecuteGo(goArg, targetRepo, tidyEnum, noRegistry, serviceManager)
 
 	if isCollectBuildInfo {
 		err = goProject.LoadDependencies()
@@ -131,14 +119,6 @@ func ExecuteGo(recursiveTidy, recursiveTidyOverwrite, noRegistry bool, goArg, ta
 	}
 
 	return err
-}
-
-// Returns true if a dependency was not found Artifactory.
-func dependencyNotFoundInArtifactory(err error, noRegistry bool) bool {
-	if !noRegistry && strings.EqualFold(err.Error(), "404 Not Found") {
-		return true
-	}
-	return false
 }
 
 func validatePrerequisites() error {

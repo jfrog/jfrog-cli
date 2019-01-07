@@ -2,6 +2,7 @@ package gradle
 
 import (
 	"fmt"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
@@ -34,7 +35,7 @@ func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) e
 		return err
 	}
 	defer os.Remove(gradleRunConfig.env[gradleBuildInfoProperties])
-	if err := utils.RunCmd(gradleRunConfig); err != nil {
+	if err := gofrogcmd.RunCmd(gradleRunConfig); err != nil {
 		return err
 	}
 	return nil

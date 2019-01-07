@@ -1,7 +1,7 @@
 package npm
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/mattn/go-shellwords"
 )
@@ -13,7 +13,7 @@ func Pack(npmFlags, executablePath string) error {
 	}
 
 	configListCmdConfig := createPackCmdConfig(executablePath, splitFlags)
-	if err := utils.RunCmd(configListCmdConfig); err != nil {
+	if err := gofrogcmd.RunCmd(configListCmdConfig); err != nil {
 		return errorutils.CheckError(err)
 	}
 

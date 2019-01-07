@@ -3,7 +3,7 @@ package dependencies
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -97,7 +97,7 @@ func (extractor *packagesExtractor) extract(packagesConfig *packagesConfig, glob
 		} else {
 			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s and therefore not"+
 				" added to the dependecy tree. This might be because the package already exists in a different NuGet cache,"+
-				" possibly the SDK cache. Removing the package from this cache may resolve the issue", nuget.Id, nuget.Version ,globalPackagesCache))
+				" possibly the SDK cache. Removing the package from this cache may resolve the issue", nuget.Id, nuget.Version, globalPackagesCache))
 		}
 	}
 	return nil
@@ -272,7 +272,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 	localsCmd.Command = []string{"locals", "global-packages"}
 	localsCmd.CommandFlags = []string{"-list"}
 
-	output, err := utils.RunCmdOutput(localsCmd)
+	output, err := gofrogcmd.RunCmdOutput(localsCmd)
 	if err != nil {
 		return "", err
 	}

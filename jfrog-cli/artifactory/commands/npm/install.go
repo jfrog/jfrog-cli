@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/parallel"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
@@ -225,7 +226,7 @@ func (npmi *npmInstall) runInstall() error {
 		npmi.collectBuildInfo = false
 	}
 
-	return errorutils.CheckError(utils.RunCmd(installCmdConfig))
+	return errorutils.CheckError(gofrogcmd.RunCmd(installCmdConfig))
 }
 
 func (npmi *npmInstall) setDependenciesList() (err error) {

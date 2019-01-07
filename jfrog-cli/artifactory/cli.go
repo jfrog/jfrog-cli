@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
+	gocmd "github.com/jfrog/gocmd/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
@@ -16,7 +17,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
@@ -437,8 +437,8 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
 			UsageText: gocommand.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
-			Action: func(c *cli.Context) {
-				goCmd(c)
+			Action: func(c *cli.Context) error {
+				return goCmd(c)
 			},
 		},
 		{
@@ -1364,7 +1364,7 @@ func goPublishCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func goCmd(c *cli.Context) {
+func goCmd(c *cli.Context) error {
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1375,6 +1375,10 @@ func goCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
+	if c.IsSet("recursive-tidy") && c.IsSet("recursive-tidy-overwrite") {
+		cliutils.PrintHelpAndExitWithError("Please choose one of the following options: recursive-tidy or recursive-tidy-overwrite. Both are not allowed", c)
+	}
+
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	goArg := c.Args().Get(0)
@@ -1382,15 +1386,27 @@ func goCmd(c *cli.Context) {
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-	err := golang.ExecuteGo(c.Bool("recursive-tidy"), c.Bool("recursive-tidy-overwrite"), c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	tidyEnum := getTidyEnum(c)
+	err := golang.ExecuteGo(tidyEnum, c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
-		cliutils.ExitOnErr(err)
 	}
+	return err
+}
+
+func getTidyEnum(c *cli.Context) gocmd.TidyEnum {
+	tidyEnum := gocmd.TidyEnum{}
+	tidyEnum.SetNoTidy()
+	if c.Bool(tidyEnum.GetRecursiveTidy()) {
+		tidyEnum.SetRecursiveTidy()
+	} else if c.Bool(tidyEnum.GetRecursiveTidyOverwrite()) {
+		tidyEnum.SetRecursiveTidyOverwrite()
+	}
+	return tidyEnum
 }
 
 func logGoVersion() {
-	output, err := goutils.GetGoVersion()
+	output, err := gocmd.GetGoVersion()
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)

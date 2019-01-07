@@ -1,7 +1,7 @@
 package npm
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io"
 	"io/ioutil"
@@ -16,7 +16,7 @@ func Version(executablePath string) ([]byte, error) {
 
 	configListCmdConfig := createVersionCmdConfig(executablePath, pipeWriter)
 	go func() {
-		npmError = utils.RunCmd(configListCmdConfig)
+		npmError = gofrogcmd.RunCmd(configListCmdConfig)
 	}()
 
 	data, err := ioutil.ReadAll(pipeReader)

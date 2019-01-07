@@ -3,16 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
-
+	"github.com/jfrog/gocmd/golang/project/dependencies"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/mvn"
@@ -28,6 +20,15 @@ import (
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 const DockerTestImage string = "jfrog_cli_test_image"
@@ -204,10 +205,11 @@ func initNugetTest(t *testing.T) {
 	}
 }
 
-func cleanGoTest() {
+func cleanGoTest(gopath string) {
 	if isRepoExist(tests.GoLocalRepo) {
 		execDeleteRepoRest(tests.GoLocalRepo)
 	}
+	os.Setenv("GOPATH", gopath)
 	cleanBuildToolsTest()
 }
 
@@ -222,6 +224,7 @@ func TestGoBuildInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
@@ -274,7 +277,7 @@ func TestGoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	cleanGoTest()
+	cleanGoTest(gopath)
 }
 
 // Testing publishing and resolution capabilities for go projects.
@@ -290,6 +293,7 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1")
 	project2Path := createGoProject(t, "project2")
@@ -320,7 +324,153 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	cleanGoTest()
+	cleanGoTest(gopath)
+}
+
+// Testing the fallback mechanism
+// 1. Building a project with a dependency that doesn't exists not in Artifactory and not in VCS.
+// 2. The fallback mechanism will try to download from both VCS and Artifactory and then fail with an error
+// 3. Testing that the error that is returned is the right error of the fallback.
+func TestGoFallback(t *testing.T) {
+	initGoTest(t)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	projectBuild := createGoProject(t, "projectbuild")
+
+	err = os.Chdir(projectBuild)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--recursive-tidy-overwrite=true")
+	if err != nil {
+		log.Warn(err)
+		if !strings.Contains(err.Error(), dependencies.FailedToRetrieve) || !strings.Contains(err.Error(), dependencies.FromBothArtifactoryAndVcs) {
+			t.Error(err)
+		}
+	} else {
+		t.Error("Expected error but got success")
+	}
+
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoTest(gopath)
+}
+
+// Builds a project with a dependency of gofrog that is missing a mod file.
+// Test the recursive overwrite capability.
+// 1. Upload dependency.
+// 2. Upload a project that is using that dependency
+// 3. Build with recursive-tidy-overwrite set to true so the gofrog dependency will be downloaded from VCS
+// 4. Check mod file (in Artifactory) of the dependency gofrog that populated.
+// 5. Check mod file (in Artifactory) of the gofrog dependency (pkg/errors) that exists with the right content
+func TestGoRecursiveTidyOverwrite(t *testing.T) {
+	initGoTest(t)
+	testsdataTarget := filepath.Join(tests.Out, "testsdata")
+	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "go", "testsdata")
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	if err != nil {
+		t.Error(err)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	project1Path := createGoProject(t, "dependency")
+	projectMissingDependency := createGoProject(t, "projectmissingdependency")
+	projectBuild := createGoProject(t, "projectbuild")
+
+	uploadGoProject(project1Path, t)
+	uploadGoProject(projectMissingDependency, t)
+
+	err = os.Chdir(projectBuild)
+	if err != nil {
+		t.Error(err)
+	}
+	err = artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--recursive-tidy-overwrite=true")
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoCache(t)
+
+	// Need to check the mod file within Artifactory of the gofrog dependency.
+	content := downloadModFile(tests.DownloadModFileGo, wd, "gofrog", t)
+	// Check that the file was signed:
+	if !strings.Contains(string(content), "// Edited by JFrog CLI on") {
+		t.Error(fmt.Sprintf("Expected file to be signed, however, the file is not signed: %s", string(content)))
+	}
+	// Check that the mod file was populated with the dependency
+	if !strings.Contains(string(content), "require github.com/pkg/errors") {
+		t.Error(fmt.Sprintf("Expected to get one dependency github.com/pkg/errors, however, got: %s", string(content)))
+	}
+
+	// Need to check the mod file within Artifactory of the dependency of gofrog => pkg/errors.
+	content = downloadModFile(tests.DownloadModOfDependencyGo, wd, "errors", t)
+	// Check that the file was signed:
+	if !strings.Contains(string(content), "// Edited by JFrog CLI on") {
+		t.Error(fmt.Sprintf("Expected file to be signed, however, the file is not signed: %s", string(content)))
+	}
+	// Check that the mod file was populated with the dependency
+	if !strings.Contains(string(content), "module github.com/pkg/errors") {
+		t.Error(fmt.Sprintf("Expected to get module github.com/pkg/errors, however, got: %s", string(content)))
+	}
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoTest(gopath)
+}
+
+func downloadModFile(specName, wd, subDir string, t *testing.T) []byte {
+	specFile, err := tests.CreateSpec(specName)
+	if err != nil {
+		t.Error(err)
+	}
+	modDir := filepath.Join(wd, tests.Out, subDir)
+	err = os.MkdirAll(modDir, 0777)
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(modDir)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("download", "--spec="+specFile, "--flat=true")
+	files, err := fileutils.ListFiles(modDir, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(files) != 1 {
+		t.Error(fmt.Sprintf("Expected to get one mod file but got %d", len(files)))
+	}
+	content, err := ioutil.ReadFile(files[0])
+	if err != nil {
+		t.Error(err)
+	}
+	return content
+}
+
+func uploadGoProject(projectPath string, t *testing.T) {
+	err := os.Chdir(projectPath)
+	if err != nil {
+		t.Error(err)
+	}
+	// Publish project to Artifactory
+	err = artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0")
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoCache(t)
 }
 
 func cleanGoCache(t *testing.T) {
@@ -405,7 +555,7 @@ func buildTestDockerImage(imageName string) string {
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
 	dockerFilePath := filepath.Join(tests.GetTestResourcesPath(), "docker")
 	imageBuilder := &buildDockerImage{dockerTag: imageTag, dockerFilePath: dockerFilePath}
-	utils.RunCmd(imageBuilder)
+	gofrogcmd.RunCmd(imageBuilder)
 	return imageTag
 }
 
@@ -497,6 +647,24 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 		}
 		if value != buildInfo.Number {
 			t.Error("Wrong value for build.number property on", item.Name, "expected", buildInfo.Number, "got", value)
+		}
+
+		value, contains = propertiesMap["go.name"]
+		if !contains {
+			t.Error("The go.name property is missing on", item.Name)
+		}
+
+		if value == "" {
+			t.Error("The go.name value is empty for", item.Name)
+		}
+
+		value, contains = propertiesMap["go.version"]
+		if !contains {
+			t.Error("The go.version property is missing on", item.Name)
+		}
+
+		if value == "" {
+			t.Error("The go.version value is empty for", item.Name)
 		}
 
 	}

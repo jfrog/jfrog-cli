@@ -3,6 +3,7 @@ package docker
 import (
 	"errors"
 	"fmt"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
@@ -45,7 +46,7 @@ type DockerLoginConfig struct {
 // Push docker image
 func (image *image) Push() error {
 	cmd := &pushCmd{image: image}
-	return utils.RunCmd(cmd)
+	return gofrogcmd.RunCmd(cmd)
 }
 
 // Get docker image tag
@@ -56,14 +57,14 @@ func (image *image) Tag() string {
 // Get docker image ID
 func (image *image) Id() (string, error) {
 	cmd := &getImageIdCmd{image: image}
-	content, err := utils.RunCmdOutput(cmd)
+	content, err := gofrogcmd.RunCmdOutput(cmd)
 	return strings.Trim(string(content), "\n"), err
 }
 
 // Get docker parent image ID
 func (image *image) ParentId() (string, error) {
 	cmd := &getParentId{image: image}
-	content, err := utils.RunCmdOutput(cmd)
+	content, err := gofrogcmd.RunCmdOutput(cmd)
 	return strings.Trim(string(content), "\n"), err
 }
 
@@ -92,7 +93,7 @@ func (image *image) Name() string {
 // Pull docker image
 func (image *image) Pull() error {
 	cmd := &pullCmd{image: image}
-	return utils.RunCmd(cmd)
+	return gofrogcmd.RunCmd(cmd)
 }
 
 // Image push command
@@ -279,7 +280,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	}
 
 	cmd := &LoginCmd{DockerRegistry: imageRegistry, Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
-	err = utils.RunCmd(cmd)
+	err = gofrogcmd.RunCmd(cmd)
 
 	if exitCode := cliutils.GetExitCode(err, 0, 0, false); exitCode == cliutils.ExitCodeNoError {
 		// Login succeeded
@@ -293,7 +294,7 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 	}
 
 	cmd = &LoginCmd{DockerRegistry: imageRegistry[:indexOfSlash], Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
-	err = utils.RunCmd(cmd)
+	err = gofrogcmd.RunCmd(cmd)
 	if err != nil {
 		// Login failed for both attempts
 		return errorutils.CheckError(errors.New(fmt.Sprintf(DockerLoginFailureMessage,
