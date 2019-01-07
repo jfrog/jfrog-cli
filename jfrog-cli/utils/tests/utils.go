@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var RtUrl *string
@@ -402,4 +403,32 @@ func CreateSpec(fileName string) (string, error) {
 	searchFilePath := GetFilePath(fileName)
 	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
 	return searchFilePath, err
+}
+
+type testRetriesExecutionFunc func(expected []string, args []string) error
+
+type TestWithRetriesDescriptor struct {
+	FuncToRun    testRetriesExecutionFunc
+	Expected     []string
+	Args         []string
+	RetryMessage string
+}
+
+func RunWithRetries(descriptor TestWithRetriesDescriptor, t *testing.T, retryInterval, retries int) {
+	var err error = nil
+	retryMessage := "Retry %v/%v %s"
+	for i := 1; i <= retries; i++ {
+		// Execute the requested function
+		err := descriptor.FuncToRun(descriptor.Expected, descriptor.Args)
+		if err == nil {
+			return
+		}
+
+		// Going to sleep for 1 second, allowing Artifactory to index the uploaded archives
+		log.Info(fmt.Sprintf(retryMessage, i, retries, descriptor.RetryMessage))
+		time.Sleep(time.Second * time.Duration(retryInterval))
+	}
+
+	// If no success after retries, the test has failed
+	t.Error(err.Error())
 }

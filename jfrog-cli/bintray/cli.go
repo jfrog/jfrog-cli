@@ -77,8 +77,8 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("bt download-file", downloadfile.Description, downloadfile.Usage),
 			UsageText: downloadfile.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
-			Action: func(c *cli.Context) {
-				downloadFile(c)
+			Action: func(c *cli.Context) error {
+				return downloadFile(c)
 			},
 		},
 		{
@@ -817,7 +817,7 @@ func upload(c *cli.Context) {
 	}
 }
 
-func downloadFile(c *cli.Context) {
+func downloadFile(c *cli.Context) error {
 	if c.NArg() < 1 || c.NArg() > 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
@@ -835,8 +835,7 @@ func downloadFile(c *cli.Context) {
 
 	btConfig := newBintrayConfig(c)
 	downloaded, failed, err := commands.DownloadFile(btConfig, params)
-	err = cliutils.PrintSummaryReport(downloaded, failed, err)
-	cliutils.ExitOnErr(err)
+	return cliutils.PrintSummaryReport(downloaded, failed, err)
 }
 
 func signUrl(c *cli.Context) {
