@@ -242,7 +242,7 @@ func addNugetSource(configFileName, sourceUrl, user, password string) error {
 	cmd.CommandFlags = append(cmd.CommandFlags, "-username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-password", password)
 	output, err := gofrogcmd.RunCmdOutput(cmd)
-	log.Debug("Running command: Add sources. Output:", string(output))
+	log.Debug("Running command: Add sources. Output:", output)
 	return err
 }
 
@@ -259,7 +259,7 @@ func addNugetApiKey(user, password, configFileName string) error {
 	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
 
 	output, err := gofrogcmd.RunCmdOutput(cmd)
-	log.Debug("Running command: SetApiKey. Output:", string(output))
+	log.Debug("Running command: SetApiKey. Output:", output)
 	return err
 }
 

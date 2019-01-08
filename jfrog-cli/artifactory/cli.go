@@ -1411,7 +1411,7 @@ func logGoVersion() {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 		cliutils.ExitOnErr(err)
 	}
-	log.Info("Using go:", string(output))
+	log.Info("Using go:", output)
 }
 
 func createGradleConfigCmd(c *cli.Context) {

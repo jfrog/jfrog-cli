@@ -58,14 +58,14 @@ func (image *image) Tag() string {
 func (image *image) Id() (string, error) {
 	cmd := &getImageIdCmd{image: image}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
-	return strings.Trim(string(content), "\n"), err
+	return strings.Trim(content, "\n"), err
 }
 
 // Get docker parent image ID
 func (image *image) ParentId() (string, error) {
 	cmd := &getParentId{image: image}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
-	return strings.Trim(string(content), "\n"), err
+	return strings.Trim(content, "\n"), err
 }
 
 // Get docker image relative path in Artifactory

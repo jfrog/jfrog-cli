@@ -277,7 +277,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 		return "", err
 	}
 
-	globalPackagesPath := strings.TrimSpace(strings.TrimPrefix(string(output), "global-packages:"))
+	globalPackagesPath := strings.TrimSpace(strings.TrimPrefix(output, "global-packages:"))
 	exists, err := fileutils.IsDirExists(globalPackagesPath, false)
 	if err != nil {
 		return "", err
