@@ -28,7 +28,10 @@ func AttachLic(service_name string, flags *AttachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/attach_lic/buckets/" + flags.BucketId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return err
+	}
 	resp, body, err := client.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err

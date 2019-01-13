@@ -204,7 +204,10 @@ func TestCollectGitBuildInfo(t *testing.T) {
 	//publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	_, body, _, err := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)
@@ -300,7 +303,10 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 
 	//download build info
 	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	_, body, _, err := client.SendGet(buildInfoUrl, false, artHttpDetails)
 	if err != nil {
 		t.Error(err)

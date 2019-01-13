@@ -1336,7 +1336,10 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	}
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	resp, _, _, _ := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
@@ -1360,7 +1363,10 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
@@ -1374,7 +1380,10 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	prepUploadFiles()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
@@ -1409,7 +1418,10 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 
 	artifactoryCli.Exec("delete", "--spec="+deleteSpecPath, "--quiet=true")
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
 	if err != nil || resp.StatusCode != http.StatusNotFound {
 		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
@@ -2829,7 +2841,10 @@ func TestSummaryReport(t *testing.T) {
 func TestArtifactoryBuildDiscard(t *testing.T) {
 	// Initialize
 	initArtifactoryTest(t)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Upload files with buildName and buildNumber
 	filePath := ioutils.PrepareFilePathForWindows("../testsdata/a/(*)")
@@ -2967,7 +2982,12 @@ func getPathsToDelete(specFile string) []rtutils.ResultItem {
 }
 
 func execDeleteRepoRest(repoName string) {
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+		return
+	}
 	resp, body, err := client.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
@@ -2988,7 +3008,12 @@ func execCreateRepoRest(repoConfig, repoName string) {
 		return
 	}
 	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+		return
+	}
 	resp, body, err := client.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		log.Error(err)
@@ -3100,7 +3125,11 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 }
 
 func isRepoExist(repoName string) bool {
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 	resp, _, _, err := client.SendGet(artifactoryDetails.Url+tests.RepoDetailsUrl+repoName, true, artHttpDetails)
 	if err != nil {
 		log.Error(err)

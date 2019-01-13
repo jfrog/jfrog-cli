@@ -118,7 +118,7 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 		return err
 	}
 
-	client, err := artifactory.CreateArtifactoryHttpClient(serviceConfig)
+	client, err := httpclient.ClientBuilder().SetCertificatesPath(serviceConfig.GetCertifactesPath()).Build()
 	if err != nil {
 		return err
 	}
