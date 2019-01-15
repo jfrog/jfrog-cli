@@ -2788,7 +2788,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger()
+	newLog := log.NewLogger(os.Getenv("JFROG_CLI_LOG_LEVEL"))
 
 	// Set new logger with output redirection to buffer
 	buffer := &bytes.Buffer{}

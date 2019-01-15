@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 )
 
@@ -83,6 +84,7 @@ func execMain() error {
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.SubcommandHelpTemplate = subcommandHelpTemplate
+	log.SetLogger(log.NewLogger(os.Getenv("JFROG_CLI_LOG_LEVEL")))
 	err := app.Run(args)
 	return err
 }
