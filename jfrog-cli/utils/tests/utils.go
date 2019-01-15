@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var RtUrl *string
@@ -222,7 +223,7 @@ type JfrogCli struct {
 }
 
 func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
-	return &JfrogCli{mainFunc,prefix, credentials}
+	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
 func (cli *JfrogCli) Exec(args ...string) error {
@@ -402,4 +403,35 @@ func CreateSpec(fileName string) (string, error) {
 	searchFilePath := GetFilePath(fileName)
 	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
 	return searchFilePath, err
+}
+
+type testRetriesExecutionFunc func(expected, args []string) error
+
+type RunWithRetries struct {
+	Test            *testing.T
+	FuncToRun       testRetriesExecutionFunc
+	Expected        []string
+	Args            []string
+	RetryMessage    string
+	RetryInterval   int
+	NumberOfRetries int
+}
+
+func (runner *RunWithRetries) Run() {
+	var err error = nil
+	retryMessage := "Retry %v/%v %s"
+	for i := 1; i <= runner.NumberOfRetries; i++ {
+		// Execute the requested function
+		err := runner.FuncToRun(runner.Expected, runner.Args)
+		if err == nil {
+			return
+		}
+
+		// Going to sleep for RetryInterval seconds
+		log.Info(fmt.Sprintf(retryMessage, i, runner.NumberOfRetries, runner.RetryMessage))
+		time.Sleep(time.Second * time.Duration(runner.RetryInterval))
+	}
+
+	// If no success after retries, the test has failed
+	runner.Test.Error(err.Error())
 }

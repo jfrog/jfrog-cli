@@ -245,19 +245,45 @@ func TestBintrayFileDownloads(t *testing.T) {
 	path = tests.GetPath("a1.in", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=false")
 
-	bintrayCli.Exec("download-file", repositoryPath+"/a1.in", tests.Out+"/bintray/", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath+"/b1.in", tests.Out+"/bintray/x.in", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath+"/(c)1.in", tests.Out+"/bintray/z{1}.in", "--unpublished=true")
-	bintrayCli.Exec("download-file", repositoryPath+"/"+ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath())+"(a)/a1.in", tests.Out+"/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true")
+	// Define runner for testing with retries
+	retryRunner := tests.RunWithRetries{
+		Test: t,
+		FuncToRun: func(_, args []string) error {
+			// Execute Bintray downloads
+			return bintrayCli.Exec(args...)
+		},
+		RetryMessage:    "Waiting for bintray to index files...",
+		RetryInterval:   5,
+		NumberOfRetries: 25,
+	}
 
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
+	// File a1.in
+	retryRunner.Args = []string{"download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true"}
+	retryRunner.Run()
+
+	// File b1.in
+	retryRunner.Args = []string{"download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true"}
+	retryRunner.Run()
+
+	// File c1.in
+	retryRunner.Args = []string{"download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true"}
+	retryRunner.Run()
+
+	// File a/a1.in
+	retryRunner.Args = []string{"download-file", repositoryPath + "/" + ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath()) + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
+	retryRunner.Run()
+
+	//Validate that files were downloaded as expected
 	expected := []string{
 		filepath.Join(tests.Out, "bintray", "a1.in"),
 		filepath.Join(tests.Out, "bintray", "x.in"),
 		filepath.Join(tests.Out, "bintray", "zc.in"),
 		filepath.Join(tests.Out, "bintray", "a", "fullpatha1.in"),
 	}
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
 	tests.IsExistLocally(expected, paths, t)
+
+	// Cleanup
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 	cleanBintrayTest()
 }
