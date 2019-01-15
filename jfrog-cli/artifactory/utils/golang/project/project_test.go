@@ -15,6 +15,8 @@ func TestParseModuleName(t *testing.T) {
 
 module github.com/jfrog/go-example
 
+go 1.12
+
 require (
         github.com/Sirupsen/logrus v1.0.6
         golang.org/x/crypto v0.0.0-20180802221240-56440b844dfe // indirect
