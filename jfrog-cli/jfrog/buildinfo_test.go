@@ -159,6 +159,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	buildName, buildNumber := "cli-test-build", "11"
 	buildNameNotToPromote := "cli-test-build-not-to-promote"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameNotToPromote, artHttpDetails)
 
 	//upload files with buildName and buildNumber
 	specFile, err := tests.CreateSpec(tests.UploadSpec)
@@ -188,7 +189,8 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	isExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo2(), tests.Repo2+"/*", props, t)
 
 	//cleanup
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameNotToPromote, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
@@ -241,7 +243,7 @@ func TestCollectGitBuildInfo(t *testing.T) {
 		t.Error("Wrong url", "expected: "+gitConfigUrl, "Got: "+buildInfoVcsUrl)
 	}
 
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
