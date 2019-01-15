@@ -11,7 +11,10 @@ import (
 )
 
 func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) buildinfo.BuildInfo {
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		t.Error(err)
+	}
 	_, body, _, err := client.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
 	if err != nil {
 		t.Error(err)
@@ -27,7 +30,10 @@ func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, a
 }
 
 func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.HttpClientDetails) {
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+	}
 	resp, body, err := client.SendDelete(artifactoryUrl+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)

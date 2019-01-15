@@ -136,7 +136,11 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 			return err
 		}
 		log.Info("Downloading", url)
-		client := httpclient.NewDefaultHttpClient()
+		client, err := httpclient.ClientBuilder().Build()
+		if err != nil {
+			return err
+		}
+
 		details := &httpclient.DownloadFileDetails{
 			FileName:      fileName,
 			DownloadPath:  url,
@@ -184,10 +188,12 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 	httpClientDetails := httputils.HttpClientDetails{
 		Headers: headers,
 	}
-	client := httpclient.NewDefaultHttpClient()
-	resp, body, _, err := client.SendGet(updatesUrl, false, httpClientDetails)
+	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
-		errorutils.CheckError(err)
+		return
+	}
+	resp, body, _, err := client.SendGet(updatesUrl, false, httpClientDetails)
+	if errorutils.CheckError(err) != nil {
 		return
 	}
 	if err = httperrors.CheckResponseStatus(resp, body, http.StatusOK); err != nil {

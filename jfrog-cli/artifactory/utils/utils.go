@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth/cert"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -42,8 +41,10 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails
 	if err != nil {
 		return "", err
 	}
-	transport, err := cert.GetTransportWithLoadedCert(securityDir)
-	client := httpclient.NewHttpClient(&http.Client{Transport: transport})
+	client, err := httpclient.ClientBuilder().SetCertificatesPath(securityDir).Build()
+	if err != nil {
+		return "", err
+	}
 	resp, body, _, err := client.SendGet(u.String(), true, httpClientsDetails)
 	if err != nil {
 		return "", err
@@ -85,7 +86,10 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 
 func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
 	artHttpDetails := artDetails.CreateHttpClientDetails()
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return false, err
+	}
 	resp, _, _, err := client.SendGet(artDetails.GetUrl()+repoDetailsUrl+repository, true, artHttpDetails)
 	if err != nil {
 		return false, errorutils.CheckError(err)

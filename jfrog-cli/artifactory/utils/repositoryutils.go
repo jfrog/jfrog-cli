@@ -49,7 +49,10 @@ func execGetRepositories(artDetails auth.ArtifactoryDetails, repoType RepoType) 
 	apiUrl := artDetails.GetUrl() + "api/repositories?type=" + repoType.String()
 
 	httpClientsDetails := artDetails.CreateHttpClientDetails()
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return repos, err
+	}
 	resp, body, _, err := client.SendGet(apiUrl, true, httpClientsDetails)
 	if err != nil {
 		return repos, err

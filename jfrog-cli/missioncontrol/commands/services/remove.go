@@ -12,7 +12,10 @@ import (
 func Remove(serviceName string, flags *RemoveFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services/" + serviceName
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return err
+	}
 	resp, body, err := client.SendDelete(missionControlUrl, nil, httpClientDetails)
 	if err != nil {
 		return err

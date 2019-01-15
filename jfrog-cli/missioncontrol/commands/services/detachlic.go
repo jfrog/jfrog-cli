@@ -22,7 +22,10 @@ func DetachLic(service_name string, flags *DetachLicFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/detach_lic/buckets/" + bucketId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return err
+	}
 	resp, body, err := client.SendDelete(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err

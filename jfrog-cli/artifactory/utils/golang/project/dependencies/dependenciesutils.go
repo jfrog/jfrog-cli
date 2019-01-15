@@ -42,9 +42,12 @@ func CollectProjectDependencies(targetRepo string, cache *golang.DependenciesCac
 }
 
 func downloadDependencies(targetRepo string, cache *golang.DependenciesCache, depSlice map[string]bool, details *config.ArtifactoryDetails) (map[string]bool, error) {
-	client := httpclient.NewDefaultHttpClient()
 	cacheDependenciesMap := cache.GetMap()
 	dependenciesMap := map[string]bool{}
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return dependenciesMap, err
+	}
 	for module := range depSlice {
 		nameAndVersion := strings.Split(module, "@")
 		resp, err := performHeadRequest(details, client, targetRepo, nameAndVersion[0], nameAndVersion[1])

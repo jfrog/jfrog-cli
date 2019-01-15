@@ -27,7 +27,10 @@ func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return err
+	}
 	resp, body, err := client.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err

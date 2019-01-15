@@ -364,7 +364,10 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		os.Exit(1)
+	}
 	resp, body, _, err := client.SendGet(apiUrl, true, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
@@ -437,7 +440,10 @@ func createBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		os.Exit(1)
+	}
 	resp, body, err := client.SendPost(apiUrl, content, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		os.Exit(1)
@@ -457,7 +463,11 @@ func deleteBintrayRepo() {
 		Password: bintrayConfig.Key,
 		Headers:  map[string]string{"Content-Type": "application/json"}}
 
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 	resp, body, err := client.SendDelete(apiUrl, nil, clientDetails)
 	if errorutils.CheckError(err) != nil {
 		log.Error(err)

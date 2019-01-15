@@ -44,7 +44,11 @@ func (pwd *PackageWithDeps) PopulateModAndPublish(targetRepo string, cache *gola
 	if published {
 		log.Debug("Overwriting the mod file in the cache from the one from Artifactory", pwd.Dependency.GetId())
 		moduleAndVersion := strings.Split(pwd.Dependency.GetId(), ":")
-		path = downloadModFileFromArtifactoryToLocalCache(pwd.cachePath, targetRepo, moduleAndVersion[0], moduleAndVersion[1], details, httpclient.NewDefaultHttpClient())
+		client, err := httpclient.ClientBuilder().Build()
+		if err != nil {
+			return err
+		}
+		path = downloadModFileFromArtifactoryToLocalCache(pwd.cachePath, targetRepo, moduleAndVersion[0], moduleAndVersion[1], details, client)
 		err = pwd.updateModContent(path, cache)
 		logError(err)
 		pwd.runGoModCommand = false
@@ -196,7 +200,11 @@ func (pwd *PackageWithDeps) setTransitiveDependencies(targetRepo string, graphDe
 					continue
 				}
 				// Check if this dependency exists in Artifactory.
-				client := httpclient.NewDefaultHttpClient()
+				client, err := httpclient.ClientBuilder().Build()
+				logError(err)
+				if err != nil {
+					continue
+				}
 				downloadedFromArtifactory, err := shouldDownloadFromArtifactory(module[0], module[1], targetRepo, details, client)
 				logError(err)
 				if err != nil {

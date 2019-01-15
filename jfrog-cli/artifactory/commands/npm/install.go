@@ -516,7 +516,11 @@ func (npmi *npmInstall) setNpmExecutable() error {
 func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (body []byte, artifactoryVersion string, err error) {
 	authApiUrl := artDetails.GetUrl() + "api/npm/auth"
 	log.Debug("Sending npm auth request")
-	client := httpclient.NewDefaultHttpClient()
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return nil, "", err
+	}
+
 	resp, body, _, err := client.SendGet(authApiUrl, true, artDetails.CreateHttpClientDetails())
 	if err != nil {
 		return nil, "", err
