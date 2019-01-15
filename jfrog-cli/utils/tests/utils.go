@@ -223,7 +223,7 @@ type JfrogCli struct {
 }
 
 func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
-	return &JfrogCli{mainFunc,prefix, credentials}
+	return &JfrogCli{mainFunc, prefix, credentials}
 }
 
 func (cli *JfrogCli) Exec(args ...string) error {
@@ -405,30 +405,33 @@ func CreateSpec(fileName string) (string, error) {
 	return searchFilePath, err
 }
 
-type testRetriesExecutionFunc func(expected []string, args []string) error
+type testRetriesExecutionFunc func(expected, args []string) error
 
-type TestWithRetriesDescriptor struct {
-	FuncToRun    testRetriesExecutionFunc
-	Expected     []string
-	Args         []string
-	RetryMessage string
+type RunWithRetries struct {
+	Test            *testing.T
+	FuncToRun       testRetriesExecutionFunc
+	Expected        []string
+	Args            []string
+	RetryMessage    string
+	RetryInterval   int
+	NumberOfRetries int
 }
 
-func RunWithRetries(descriptor TestWithRetriesDescriptor, t *testing.T, retryInterval, retries int) {
+func (runner *RunWithRetries) Run() {
 	var err error = nil
 	retryMessage := "Retry %v/%v %s"
-	for i := 1; i <= retries; i++ {
+	for i := 1; i <= runner.NumberOfRetries; i++ {
 		// Execute the requested function
-		err := descriptor.FuncToRun(descriptor.Expected, descriptor.Args)
+		err := runner.FuncToRun(runner.Expected, runner.Args)
 		if err == nil {
 			return
 		}
 
-		// Going to sleep for 1 second, allowing Artifactory to index the uploaded archives
-		log.Info(fmt.Sprintf(retryMessage, i, retries, descriptor.RetryMessage))
-		time.Sleep(time.Second * time.Duration(retryInterval))
+		// Going to sleep for RetryInterval seconds
+		log.Info(fmt.Sprintf(retryMessage, i, runner.NumberOfRetries, runner.RetryMessage))
+		time.Sleep(time.Second * time.Duration(runner.RetryInterval))
 	}
 
 	// If no success after retries, the test has failed
-	t.Error(err.Error())
+	runner.Test.Error(err.Error())
 }

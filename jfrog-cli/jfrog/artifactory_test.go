@@ -2180,15 +2180,18 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create descriptor for running with retries
-	descriptor := tests.TestWithRetriesDescriptor{
-		FuncToRun:    validateDownloadByArchiveEntries,
-		Expected:     tests.GetBuildArchiveEntriesDownloadCli(),
-		Args:         []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"},
-		RetryMessage: "Waiting for Artifactory to index archives...",
+	descriptor := tests.RunWithRetries{
+		Test:            t,
+		FuncToRun:       validateDownloadByArchiveEntries,
+		Expected:        tests.GetBuildArchiveEntriesDownloadCli(),
+		Args:            []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"},
+		RetryMessage:    "Waiting for Artifactory to index archives...",
+		RetryInterval:   1,
+		NumberOfRetries: 120,
 	}
 
-	// Download by archive entries only those who contain c1.in, and validate results
-	tests.RunWithRetries(descriptor, t, 1, 120)
+	// Perform download by archive-entries only the archives containing c1.in, and validate results
+	descriptor.Run()
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2205,15 +2208,18 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create descriptor for running with retries
-	descriptor := tests.TestWithRetriesDescriptor{
-		FuncToRun:    validateDownloadByArchiveEntries,
-		Expected:     tests.GetBuildArchiveEntriesSpecificPathDownload(),
-		Args:         []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"},
-		RetryMessage: "Waiting for Artifactory to index archives...",
+	descriptor := tests.RunWithRetries{
+		Test:            t,
+		FuncToRun:       validateDownloadByArchiveEntries,
+		Expected:        tests.GetBuildArchiveEntriesSpecificPathDownload(),
+		Args:            []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"},
+		RetryMessage:    "Waiting for Artifactory to index archives...",
+		RetryInterval:   1,
+		NumberOfRetries: 120,
 	}
 
-	// Download by archive entries only those who contain c1.in, and validate results
-	tests.RunWithRetries(descriptor, t, 1, 120)
+	// Perform download by archive-entries only the archives containing c1.in, and validate results
+	descriptor.Run()
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2234,15 +2240,18 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create descriptor for running with retries
-	descriptor := tests.TestWithRetriesDescriptor{
-		FuncToRun:    validateDownloadByArchiveEntries,
-		Expected:     tests.GetBuildArchiveEntriesDownloadSpec(),
-		Args:         []string{"dl", "--spec=" + downloadSpecFile},
-		RetryMessage: "Waiting for Artifactory to index archives...",
+	descriptor := tests.RunWithRetries{
+		Test:            t,
+		FuncToRun:       validateDownloadByArchiveEntries,
+		Expected:        tests.GetBuildArchiveEntriesDownloadSpec(),
+		Args:            []string{"dl", "--spec=" + downloadSpecFile},
+		RetryMessage:    "Waiting for Artifactory to index archives...",
+		RetryInterval:   1,
+		NumberOfRetries: 120,
 	}
 
-	// Download by archive entries only those who contain a1.in, and validate results
-	tests.RunWithRetries(descriptor, t, 1, 120)
+	// Perform download by archive-entries only the archives containing d1.in, and validate results
+	descriptor.Run()
 
 	// Cleanup
 	cleanArtifactoryTest()
