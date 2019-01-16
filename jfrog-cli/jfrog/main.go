@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 )
 
@@ -66,6 +67,7 @@ Environment Variables:
 `
 
 func main() {
+	log.SetLogger(log.NewLogger(cliutils.GetCliLogLevel()))
 	err := execMain()
 	cliutils.ExitOnErr(err)
 }

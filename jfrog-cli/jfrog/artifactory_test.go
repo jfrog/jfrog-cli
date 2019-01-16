@@ -2821,7 +2821,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger()
+	newLog := log.NewLogger(cliutils.GetCliLogLevel())
 
 	// Set new logger with output redirection to buffer
 	buffer := &bytes.Buffer{}
