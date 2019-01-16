@@ -184,3 +184,16 @@ type Credentials interface {
 	GetUser() string
 	GetPassword() string
 }
+
+func GetCliLogLevel() log.LevelType {
+	switch os.Getenv("JFROG_CLI_LOG_LEVEL") {
+	case "ERROR":
+		return log.ERROR
+	case "WARN":
+		return log.WARN
+	case "DEBUG":
+		return log.DEBUG
+	default:
+		return log.INFO
+	}
+}

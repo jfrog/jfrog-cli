@@ -67,7 +67,7 @@ Environment Variables:
 `
 
 func main() {
-	log.SetLogger(log.NewLogger(os.Getenv("JFROG_CLI_LOG_LEVEL")))
+	log.SetLogger(log.NewLogger(cliutils.GetCliLogLevel()))
 	err := execMain()
 	cliutils.ExitOnErr(err)
 }
