@@ -3,8 +3,8 @@ package project
 import (
 	"bytes"
 	"errors"
-	"github.com/jfrog/gocmd/golang"
-	"github.com/jfrog/gocmd/golang/project/dependencies"
+	"github.com/jfrog/gocmd/utils/cmd"
+	"github.com/jfrog/gocmd/dependencies"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -63,7 +63,7 @@ func (project *goProject) loadDependencies() ([]dependencies.Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	modulesMap, err := golang.GetDependenciesGraph()
+	modulesMap, err := cmd.GetDependenciesGraph()
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (project *goProject) getId() string {
 // Read go.mod file and add it as an artifact to the build info.
 func (project *goProject) readModFile() error {
 	var err error
-	project.projectPath, err = golang.GetProjectRoot()
+	project.projectPath, err = cmd.GetProjectRoot()
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
