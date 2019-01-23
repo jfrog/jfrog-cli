@@ -28,6 +28,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/retry"
 	"github.com/mholt/archiver"
 	"io/ioutil"
 	"net"
@@ -2191,19 +2192,24 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Create descriptor for running with retries
-	descriptor := tests.RunWithRetries{
-		Test:            t,
-		FuncToRun:       validateDownloadByArchiveEntries,
-		Expected:        tests.GetBuildArchiveEntriesDownloadCli(),
-		Args:            []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"},
+	// Create executor for running with retries
+	retryExecutor := retry.RetryExecutor{
+		RetriesNum:      120,
+		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		RetryInterval:   1,
-		NumberOfRetries: 120,
+		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
+			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(), []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
+		},
+		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
+			return err != nil, err
+		},
 	}
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	descriptor.Run()
+	_, err = retryExecutor.Execute()
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2219,19 +2225,24 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Create descriptor for running with retries
-	descriptor := tests.RunWithRetries{
-		Test:            t,
-		FuncToRun:       validateDownloadByArchiveEntries,
-		Expected:        tests.GetBuildArchiveEntriesSpecificPathDownload(),
-		Args:            []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"},
+	// Create executor for running with retries
+	retryExecutor := retry.RetryExecutor{
+		RetriesNum:      120,
+		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		RetryInterval:   1,
-		NumberOfRetries: 120,
+		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
+			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(), []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
+		},
+		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
+			return err != nil, err
+		},
 	}
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	descriptor.Run()
+	_, err = retryExecutor.Execute()
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2251,31 +2262,36 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	// Upload archives
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
-	// Create descriptor for running with retries
-	descriptor := tests.RunWithRetries{
-		Test:            t,
-		FuncToRun:       validateDownloadByArchiveEntries,
-		Expected:        tests.GetBuildArchiveEntriesDownloadSpec(),
-		Args:            []string{"dl", "--spec=" + downloadSpecFile},
+	// Create executor for running with retries
+	retryExecutor := retry.RetryExecutor{
+		RetriesNum:      120,
+		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		RetryInterval:   1,
-		NumberOfRetries: 120,
+		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
+			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(), []string{"dl", "--spec=" + downloadSpecFile})
+		},
+		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
+			return err != nil, err
+		},
 	}
 
 	// Perform download by archive-entries only the archives containing d1.in, and validate results
-	descriptor.Run()
+	_, err = retryExecutor.Execute()
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	// Cleanup
 	cleanArtifactoryTest()
 }
 
-func validateDownloadByArchiveEntries(expected []string, args []string) error {
+func validateDownloadByArchiveEntries(expected []string, args []string) (retry.ExecutionHandlerReturn, error) {
 	// Execute the requested cli command
 	artifactoryCli.Exec(args...)
 
 	// Validate files are downloaded as expected
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	return tests.ValidateListsIdentical(expected, paths)
+	return nil, tests.ValidateListsIdentical(expected, paths)
 }
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
