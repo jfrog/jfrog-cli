@@ -249,43 +249,40 @@ func TestBintrayFileDownloads(t *testing.T) {
 	// Define executor for testing with retries
 	var args []string
 	retryExecutor := retry.RetryExecutor{
-		RetriesNum:      25,
+		MaxRetries:      25,
 		RetriesInterval: 5,
 		RetryMessage:    "Waiting for bintray to index files...",
-		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
+		ExecutionHandler: func() (bool, error) {
 			// Execute Bintray downloads
-			return nil, bintrayCli.Exec(args...)
-		},
-		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
-			return err != nil, err
+			err := bintrayCli.Exec(args...)
+			if err != nil {
+				return true, err
+			}
+			return false, nil
 		},
 	}
 
 	// File a1.in
 	args = []string{"download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true"}
-	_, err := retryExecutor.Execute()
-	if err != nil {
+	if err := retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
 	// File b1.in
 	args = []string{"download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true"}
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err := retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
 	// File c1.in
 	args = []string{"download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true"}
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err := retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
 	// File a/a1.in
 	args = []string{"download-file", repositoryPath + "/" + ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath()) + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err := retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 

@@ -2194,20 +2194,20 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 
 	// Create executor for running with retries
 	retryExecutor := retry.RetryExecutor{
-		RetriesNum:      120,
+		MaxRetries:      120,
 		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
-			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(), []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
-		},
-		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
-			return err != nil, err
+		ExecutionHandler: func() (bool, error) {
+			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(), []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
+			if err != nil {
+				return true, err
+			}
+			return false, nil
 		},
 	}
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err = retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -2227,20 +2227,21 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 
 	// Create executor for running with retries
 	retryExecutor := retry.RetryExecutor{
-		RetriesNum:      120,
+		MaxRetries:      120,
 		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
-			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(), []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
-		},
-		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
-			return err != nil, err
+		ExecutionHandler: func() (bool, error) {
+			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(), []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
+			if err != nil {
+				return true, err
+			}
+
+			return false, nil
 		},
 	}
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err = retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -2264,20 +2265,21 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 
 	// Create executor for running with retries
 	retryExecutor := retry.RetryExecutor{
-		RetriesNum:      120,
+		MaxRetries:      120,
 		RetriesInterval: 1,
 		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (retry.ExecutionHandlerReturn, error) {
-			return validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(), []string{"dl", "--spec=" + downloadSpecFile})
-		},
-		ResultHandler: func(execReturn retry.ExecutionHandlerReturn, err error) (bool, error) {
-			return err != nil, err
+		ExecutionHandler: func() (bool, error) {
+			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(), []string{"dl", "--spec=" + downloadSpecFile})
+			if err != nil {
+				return true, err
+			}
+
+			return false, nil
 		},
 	}
 
 	// Perform download by archive-entries only the archives containing d1.in, and validate results
-	_, err = retryExecutor.Execute()
-	if err != nil {
+	if err = retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -2285,13 +2287,13 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func validateDownloadByArchiveEntries(expected []string, args []string) (retry.ExecutionHandlerReturn, error) {
+func validateDownloadByArchiveEntries(expected []string, args []string) (error) {
 	// Execute the requested cli command
 	artifactoryCli.Exec(args...)
 
 	// Validate files are downloaded as expected
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	return nil, tests.ValidateListsIdentical(expected, paths)
+	return tests.ValidateListsIdentical(expected, paths)
 }
 
 func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
