@@ -118,7 +118,7 @@ func confirmAnswer(answer string) bool {
 }
 
 func GetVersion() string {
-	if ok, _ := utils.GetBoolEnvValue("JFROG_CLI_SHOW_UPDATE", true); ok {
+	if ok, _ := utils.GetBoolEnvValue("JFROG_CLI_SHOW_VERSION_UPDATE", true); ok {
 		latestRelease, err := getLatestRelease()
 		if err != nil {
 			return CliVersion
