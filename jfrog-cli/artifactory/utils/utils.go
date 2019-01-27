@@ -81,7 +81,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.New(serviceConfig)
+	return artifactory.New(&artAuth, serviceConfig)
 }
 
 func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {

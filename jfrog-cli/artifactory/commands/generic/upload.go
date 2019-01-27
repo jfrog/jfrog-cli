@@ -4,8 +4,6 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -18,7 +16,7 @@ import (
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *spec.SpecFiles, configuration *UploadConfiguration) (successCount, failCount int, err error) {
+func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration) (successCount, failCount int, err error) {
 
 	// Create Service Manager:
 	certPath, err := utils.GetJfrogSecurityDir()
@@ -29,11 +27,7 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *UploadConfiguration) (suc
 	if err != nil {
 		return 0, 0, err
 	}
-	servicesConfig, err := createUploadServiceConfig(configuration.ArtDetails, configuration, certPath, minChecksumDeploySize)
-	if err != nil {
-		return 0, 0, err
-	}
-	servicesManager, err := artifactory.New(servicesConfig)
+	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath, minChecksumDeploySize)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -100,22 +94,6 @@ func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildin
 	return buildArtifacts
 }
 
-func createUploadServiceConfig(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, minChecksumDeploySize int64) (artifactory.Config, error) {
-	artAuth, err := artDetails.CreateArtAuthConfig()
-	if err != nil {
-		return nil, err
-	}
-	servicesConfig, err := artifactory.NewConfigBuilder().
-		SetArtDetails(artAuth).
-		SetDryRun(flags.DryRun).
-		SetCertificatesPath(certPath).
-		SetMinChecksumDeploy(minChecksumDeploySize).
-		SetThreads(flags.Threads).
-		SetLogger(log.Logger).
-		Build()
-	return servicesConfig, err
-}
-
 func getMinChecksumDeploySize() (int64, error) {
 	minChecksumDeploySize := os.Getenv("JFROG_CLI_MIN_CHECKSUM_DEPLOY_SIZE_KB")
 	if minChecksumDeploySize == "" {
@@ -145,20 +123,7 @@ func addBuildProps(props *string, buildName, buildNumber string) error {
 	return nil
 }
 
-type UploadConfiguration struct {
-	Deb                   string
-	Threads               int
-	MinChecksumDeploySize int64
-	BuildName             string
-	BuildNumber           string
-	DryRun                bool
-	Symlink               bool
-	ExplodeArchive        bool
-	ArtDetails            *config.ArtifactoryDetails
-	Retries               int
-}
-
-func getUploadParams(f *spec.File, configuration *UploadConfiguration) (uploadParams services.UploadParams, err error) {
+func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (uploadParams services.UploadParams, err error) {
 	uploadParams = services.NewUploadParams()
 	uploadParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
 	uploadParams.Recursive, err = f.IsRecursive(true)

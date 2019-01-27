@@ -27,7 +27,7 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.New(serviceConfig)
+	return artifactory.New(&artAuth, serviceConfig)
 }
 
 type DownloadConfiguration struct {

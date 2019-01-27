@@ -267,7 +267,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*
 	}
 
 	serviceConfig, err := configBuilder.Build()
-	return artifactory.New(serviceConfig)
+	return artifactory.New(&artAuth, serviceConfig)
 }
 
 // First will try to login assuming a proxy-less tag (e.g. "registry-address/docker-repo/image:ver").

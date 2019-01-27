@@ -85,6 +85,7 @@ func authenticate() string {
 	}
 	artifactoryDetails.SshAuthHeaders = artAuth.GetSshAuthHeaders()
 	artifactoryDetails.Url = artAuth.GetUrl()
+	artifactoryDetails.SshUrl = artAuth.GetSshUrl()
 	artHttpDetails = artAuth.CreateHttpClientDetails()
 	return cred
 }

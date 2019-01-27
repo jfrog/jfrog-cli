@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/errors/httperrors"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -196,8 +195,8 @@ func getFilesList(updatesUrl string, flags *OfflineUpdatesFlags) (vulnerabilitie
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	if err = httperrors.CheckResponseStatus(resp, body, http.StatusOK); err != nil {
-		errorutils.CheckError(errors.New("Response: " + err.Error()))
+	if err = errorutils.CheckResponseStatus(resp, http.StatusOK); err != nil {
+		err = errorutils.CheckError(errors.New("Response: " + err.Error()))
 		return
 	}
 
