@@ -28,7 +28,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/retry"
 	"github.com/mholt/archiver"
 	"io/ioutil"
 	"net"
@@ -2193,18 +2192,8 @@ func TestArtifactoryDownloadByArchiveEntriesCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create executor for running with retries
-	retryExecutor := retry.RetryExecutor{
-		MaxRetries:      120,
-		RetriesInterval: 1,
-		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (bool, error) {
-			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(), []string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
-			if err != nil {
-				return true, err
-			}
-			return false, nil
-		},
-	}
+	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadCli(),
+		[]string{"dl", tests.Repo1, "out/", "--archive-entries=(*)c1.in", "--flat=true"})
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
 	if err = retryExecutor.Execute(); err != nil {
@@ -2226,19 +2215,8 @@ func TestArtifactoryDownloadByArchiveEntriesSpecificPathCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create executor for running with retries
-	retryExecutor := retry.RetryExecutor{
-		MaxRetries:      120,
-		RetriesInterval: 1,
-		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (bool, error) {
-			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(), []string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
-			if err != nil {
-				return true, err
-			}
-
-			return false, nil
-		},
-	}
+	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesSpecificPathDownload(),
+		[]string{"dl", tests.Repo1, "out/", "--archive-entries=b/c/c1.in", "--flat=true"})
 
 	// Perform download by archive-entries only the archives containing c1.in, and validate results
 	if err = retryExecutor.Execute(); err != nil {
@@ -2264,19 +2242,8 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 
 	// Create executor for running with retries
-	retryExecutor := retry.RetryExecutor{
-		MaxRetries:      120,
-		RetriesInterval: 1,
-		RetryMessage:    "Waiting for Artifactory to index archives...",
-		ExecutionHandler: func() (bool, error) {
-			err := validateDownloadByArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(), []string{"dl", "--spec=" + downloadSpecFile})
-			if err != nil {
-				return true, err
-			}
-
-			return false, nil
-		},
-	}
+	retryExecutor := createRetryExecutorForArchiveEntries(tests.GetBuildArchiveEntriesDownloadSpec(),
+		[]string{"dl", "--spec=" + downloadSpecFile})
 
 	// Perform download by archive-entries only the archives containing d1.in, and validate results
 	if err = retryExecutor.Execute(); err != nil {
@@ -2287,7 +2254,23 @@ func TestArtifactoryDownloadByArchiveEntriesSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func validateDownloadByArchiveEntries(expected []string, args []string) (error) {
+func createRetryExecutorForArchiveEntries(expected []string, args []string) *clientutils.RetryExecutor {
+	return &clientutils.RetryExecutor{
+		MaxRetries:      120,
+		RetriesInterval: 1,
+		ErrorMessage:    "Waiting for Artifactory to index archives...",
+		ExecutionHandler: func() (bool, error) {
+			err := validateDownloadByArchiveEntries(expected, args)
+			if err != nil {
+				return true, err
+			}
+
+			return false, nil
+		},
+	}
+}
+
+func validateDownloadByArchiveEntries(expected []string, args []string) error {
 	// Execute the requested cli command
 	artifactoryCli.Exec(args...)
 

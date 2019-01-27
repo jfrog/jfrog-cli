@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/retry"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -248,10 +247,10 @@ func TestBintrayFileDownloads(t *testing.T) {
 
 	// Define executor for testing with retries
 	var args []string
-	retryExecutor := retry.RetryExecutor{
+	retryExecutor := utils.RetryExecutor{
 		MaxRetries:      25,
 		RetriesInterval: 5,
-		RetryMessage:    "Waiting for bintray to index files...",
+		ErrorMessage:    "Waiting for bintray to index files...",
 		ExecutionHandler: func() (bool, error) {
 			// Execute Bintray downloads
 			err := bintrayCli.Exec(args...)
