@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/httpclient"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
@@ -118,12 +119,13 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 		return err
 	}
 
-	client, err := httpclient.ClientBuilder().SetCertificatesPath(serviceConfig.GetCertifactesPath()).Build()
+	client, err := rthttpclient.ArtifactoryClientBuilder().SetCertificatesPath(serviceConfig.GetCertifactesPath()).SetArtDetails(&auth).Build()
 	if err != nil {
 		return err
 	}
 
-	resp, err := client.DownloadFile(downloadFileDetails, "", auth.CreateHttpClientDetails(), 3, false)
+	httpClientDetails := auth.CreateHttpClientDetails()
+	resp, err := client.DownloadFile(downloadFileDetails, "", &httpClientDetails, 3, false)
 	if err == nil && resp.StatusCode != http.StatusOK {
 		err = errorutils.CheckError(errors.New(resp.Status + " received when attempting to download " + downloadUrl))
 	}

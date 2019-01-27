@@ -54,7 +54,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 		SetThreads(threads).
 		Build()
 
-	return artifactory.New(serviceConfig)
+	return artifactory.New(&artAuth, serviceConfig)
 }
 
 func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem) {

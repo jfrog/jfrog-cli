@@ -308,6 +308,7 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 
 type ArtifactoryDetails struct {
 	Url            string            `json:"url,omitempty"`
+	SshUrl         string            `json:"-"`
 	User           string            `json:"user,omitempty"`
 	Password       string            `json:"password,omitempty"`
 	SshKeyPath     string            `json:"sshKeyPath,omitempty"`
@@ -378,19 +379,18 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 	return len(artifactoryDetails.SshAuthHeaders) > 0
 }
 
-func (artifactoryDetails *ArtifactoryDetails) sshAuthenticationRequired() bool {
-	return !artifactoryDetails.SshAuthHeaderSet() && fileutils.IsSshUrl(artifactoryDetails.Url)
-}
-
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {
 	artAuth := auth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
+	artAuth.SetSshUrl(artifactoryDetails.SshUrl)
 	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
 	artAuth.SetApiKey(artifactoryDetails.ApiKey)
 	artAuth.SetUser(artifactoryDetails.User)
 	artAuth.SetPassword(artifactoryDetails.Password)
 	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
-	if artifactoryDetails.sshAuthenticationRequired() {
+	artAuth.SetSshKeyPath(artifactoryDetails.SshKeyPath)
+	artAuth.SetSshPassphrase(artifactoryDetails.SshPassphrase)
+	if artAuth.IsSshAuthentication() && !artAuth.IsSshAuthHeaderSet() {
 		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
 		if err != nil {
 			return nil, err

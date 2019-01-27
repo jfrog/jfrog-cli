@@ -2142,8 +2142,8 @@ func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
 	}
 }
 
-func createUploadConfiguration(c *cli.Context) (uploadConfiguration *generic.UploadConfiguration) {
-	uploadConfiguration = new(generic.UploadConfiguration)
+func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration) {
+	uploadConfiguration = new(utils.UploadConfiguration)
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
