@@ -37,6 +37,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gopublish"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gorecursivepublish"
 	gradledoc "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/move"
@@ -446,9 +447,9 @@ func GetCommands() []cli.Command {
 			Name:      "go-recursive-publish",
 			Flags:     getGoRecursivePublishFlags(),
 			Aliases:   []string{"grp"},
-			Usage:     gocommand.Description,
-			HelpName:  common.CreateUsage("rt grp", gocommand.Description, gocommand.Usage),
-			UsageText: gocommand.Arguments,
+			Usage:     gorecursivepublish.Description,
+			HelpName:  common.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
+			UsageText: gorecursivepublish.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				goRecursivePublishCmd(c)
@@ -758,8 +759,7 @@ func getGoFlags() []cli.Flag {
 }
 
 func getGoRecursivePublishFlags() []cli.Flag {
-	flags := append(getBaseFlags(), getServerIdFlag())
-	return flags
+	return append(getBaseFlags(), getServerIdFlag())
 }
 
 func getGoPublishFlags() []cli.Flag {
