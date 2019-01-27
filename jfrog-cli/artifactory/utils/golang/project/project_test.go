@@ -1,11 +1,21 @@
 package project
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestParseModuleName(t *testing.T) {
-	content := `
+	expected := "github.com/jfrog/go-example"
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{"moduleNameWithoutQuotationMarks", `
 
 module github.com/jfrog/go-example
+
+go 1.12
 
 require (
         github.com/Sirupsen/logrus v1.0.6
@@ -13,22 +23,8 @@ require (
         golang.org/x/sys v0.0.0-20180802203216-0ffbfd41fbef // indirect
         rsc.io/quote v1.5.2
 )
-	`
-
-	expected := "github.com/jfrog/go-example"
-	actual, err := parseModuleName(content)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if actual != expected {
-		t.Errorf("Expected: %s, got: %s.", expected, actual)
-	}
-}
-
-func TestParseModuleNameWithQuotationMarks(t *testing.T) {
-	content := `
+	`, expected},
+		{"ModuleNameWithQuotationMarks", `
 
 module "github.com/jfrog/go-example"
 
@@ -38,22 +34,8 @@ require (
         golang.org/x/sys v0.0.0-20180802203216-0ffbfd41fbef // indirect
         rsc.io/quote v1.5.2
 )
-	`
-
-	expected := "github.com/jfrog/go-example"
-	actual, err := parseModuleName(content)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if actual != expected {
-		t.Errorf("Expected: %s, got: %s.", expected, actual)
-	}
-}
-
-func TestParseModuleNameWithoutSlash(t *testing.T) {
-	content := `
+	`, expected},
+		{"ModuleNameWithoutSlash", `
 
 module go4.org
 
@@ -63,16 +45,20 @@ require (
         golang.org/x/sys v0.0.0-20180802203216-0ffbfd41fbef // indirect
         rsc.io/quote v1.5.2
 )
-	`
-
-	expected := "go4.org"
-	actual, err := parseModuleName(content)
-
-	if err != nil {
-		t.Error(err)
+	`, "go4.org"},
 	}
 
-	if actual != expected {
-		t.Errorf("Expected: %s, got: %s.", expected, actual)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := parseModuleName(test.content)
+
+			if err != nil {
+				t.Error(err)
+			}
+
+			if actual != test.expected {
+				t.Errorf("Expected: %s, got: %s.", test.expected, actual)
+			}
+		})
 	}
 }

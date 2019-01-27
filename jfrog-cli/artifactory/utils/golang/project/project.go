@@ -3,11 +3,9 @@ package project
 import (
 	"bytes"
 	"errors"
-	"fmt"
+	"github.com/jfrog/gocmd/utils/cmd"
+	"github.com/jfrog/gocmd/dependencies"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project/dependencies"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
@@ -30,7 +28,6 @@ type Go interface {
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
 	LoadDependencies() error
-	DownloadFromVcsAndPublish(targetRepo, goArg string, recursiveTidy, recursiveTidyOverwrite bool, details *config.ArtifactoryDetails) error
 }
 
 type goProject struct {
@@ -61,124 +58,12 @@ func (project *goProject) LoadDependencies() error {
 	return err
 }
 
-// Downloads all dependencies from VCS and publish them to Artifactory.
-func (project *goProject) DownloadFromVcsAndPublish(targetRepo, goArg string, recursiveTidy, recursiveTidyOverwrite bool, details *config.ArtifactoryDetails) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	rootProjectDir, err := golang.GetProjectRoot()
-	if err != nil {
-		return err
-	}
-
-	// Need to run Go without Artifactory to resolve all dependencies.
-	cache := golang.DependenciesCache{}
-	err = collectDependenciesPopulateAndPublish(targetRepo, recursiveTidy, recursiveTidyOverwrite, &cache, details)
-	if err != nil {
-		if !recursiveTidy {
-			return err
-		}
-		log.Error("Received an error:", err)
-	}
-	// Lets run the same command again now that all the dependencies were downloaded.
-	// Need to run only if the command is not go mod download and go mod tidy since this was run by the CLI to download and publish to Artifactory
-	log.Info(fmt.Sprintf("Done building and publishing %d go dependencies to Artifactory out of a total of %d dependencies.", cache.GetSuccesses(), cache.GetTotal()))
-
-	if !strings.Contains(goArg, "mod download") && !strings.Contains(goArg, "mod tidy") {
-		if recursiveTidy {
-			// Remove the go.sum file, since it includes information which is not up to date (it was created by the "go mod tidy" command executed without Artifactory
-			err = removeGoSumFile(wd, rootProjectDir)
-			if err != nil {
-				log.Error("Received an error:", err)
-			}
-		}
-		err = golang.RunGo(goArg)
-	}
-	return err
-}
-
-// Download the dependencies from VCS and publish them to Artifactory.
-func collectDependenciesPopulateAndPublish(targetRepo string, recursiveTidy, recursiveTidyOverwrite bool, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error {
-	err := os.Unsetenv(golang.GOPROXY)
-	if err != nil {
-		return err
-	}
-	dependenciesToPublish, err := dependencies.CollectProjectDependencies(targetRepo, cache, details)
-	if err != nil || len(dependenciesToPublish) == 0 {
-		return err
-	}
-
-	var dependency dependencies.GoPackage
-	if recursiveTidy {
-		err = fileutils.CreateTempDirPath()
-		if err != nil {
-			return err
-		}
-		defer fileutils.RemoveTempDir()
-
-		dependency = &dependencies.PackageWithDeps{}
-		err = dependency.Init()
-		if err != nil {
-			return err
-		}
-	} else {
-		dependency = &dependencies.Package{}
-	}
-
-	return runPopulateAndPublishDependencies(targetRepo, recursiveTidy, recursiveTidyOverwrite, dependency, dependenciesToPublish, cache, details)
-}
-
-func runPopulateAndPublishDependencies(targetRepo string, recursiveTidy, recursiveTidyOverwrite bool, dependenciesInterface dependencies.GoPackage, dependenciesToPublish map[string]bool, cache *golang.DependenciesCache, details *config.ArtifactoryDetails) error {
-	cachePath, err := dependencies.GetCachePath()
-	if err != nil {
-		return err
-	}
-
-	dependencies, err := dependencies.GetDependencies(cachePath, dependenciesToPublish)
-	if err != nil {
-		return err
-	}
-
-	cache.IncrementTotal(len(dependencies))
-	for _, dep := range dependencies {
-		dependenciesInterface = dependenciesInterface.New(cachePath, dep, recursiveTidyOverwrite)
-		err := dependenciesInterface.PopulateModAndPublish(targetRepo, cache, details)
-		if err != nil {
-			if recursiveTidy {
-				log.Warn(err)
-				continue
-			}
-			return err
-		}
-	}
-	return nil
-}
-
-func removeGoSumFile(wd, rootDir string) error {
-	log.Debug("Changing back to the working directory")
-	err := os.Chdir(wd)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-
-	goSumFile := filepath.Join(rootDir, "go.sum")
-	exists, err := fileutils.IsFileExists(goSumFile, false)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return errorutils.CheckError(os.Remove(goSumFile))
-	}
-	return nil
-}
-
 func (project *goProject) loadDependencies() ([]dependencies.Package, error) {
 	cachePath, err := dependencies.GetCachePath()
 	if err != nil {
 		return nil, err
 	}
-	modulesMap, err := golang.GetDependenciesGraph()
+	modulesMap, err := cmd.GetDependenciesGraph()
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +160,7 @@ func (project *goProject) getId() string {
 // Read go.mod file and add it as an artifact to the build info.
 func (project *goProject) readModFile() error {
 	var err error
-	project.projectPath, err = golang.GetProjectRoot()
+	project.projectPath, err = cmd.GetProjectRoot()
 	if err != nil {
 		return errorutils.CheckError(err)
 	}

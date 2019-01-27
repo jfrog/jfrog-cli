@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "${GO_REPO}/github.com/jfrog/gofrog/*.mod"
+    }
+  ]
+}

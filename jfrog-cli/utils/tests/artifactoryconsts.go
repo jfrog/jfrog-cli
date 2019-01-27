@@ -30,6 +30,8 @@ const (
 	PrepareCopy                            = "prepare_copy.json"
 	Search                                 = "search.json"
 	SearchGo                               = "search_go.json"
+	DownloadModFileGo                      = "downloadmodfile_go.json"
+	DownloadModOfDependencyGo              = "downloadmodofdependency_go.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchTxt                              = "search_txt.json"
