@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/utils/httpclient"
+	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/httpclient"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
