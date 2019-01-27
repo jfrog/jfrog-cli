@@ -31,6 +31,8 @@ github.com/jfrog/jfrog-client-go v0.1.4-0.20181213101111-6a0910d81750 h1:4FaJOGM
 github.com/jfrog/jfrog-client-go v0.1.4-0.20181213101111-6a0910d81750/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
 github.com/jfrog/jfrog-client-go v0.2.1 h1:FwA/acGVa6Ry978/wI6Tqux0WBz9LzRd3MwMIp9kpME=
 github.com/jfrog/jfrog-client-go v0.2.1/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
+github.com/jfrog/jfrog-client-go v0.2.2 h1:Y9buCW+c/nRkty2GSpXTJQe28GoAG3ZvFgCua3LYdQA=
+github.com/jfrog/jfrog-client-go v0.2.2/go.mod h1:g0MPAQDBbGWqn473RyKpGEUttjSm78kVyX+0gMasT3I=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
@@ -54,6 +56,7 @@ github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pierrec/lz4 v2.0.5+incompatible h1:2xWsjqPFWcplujydGg4WmhC/6fZqK42wMM8aXeqhl0I=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
+github.com/pkg/errors v0.8.0 h1:WdK/asTD0HN+q6hsWO3/vpuAkAr+tw6aNJNDFFf0+qw=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sergi/go-diff v1.0.0 h1:Kpca3qRNrduNnOQeazBd0ysaKrUJiIuISHxogkT9RPQ=
