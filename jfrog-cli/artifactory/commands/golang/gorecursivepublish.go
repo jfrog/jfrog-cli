@@ -1,9 +1,9 @@
 package golang
 
 import (
-	"github.com/jfrog/gocmd"
-	"github.com/jfrog/gocmd/utils/cmd"
 	"github.com/jfrog/gocmd/dependencies"
+	"github.com/jfrog/gocmd/executers"
+	"github.com/jfrog/gocmd/utils/cmd"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -17,53 +17,53 @@ func Execute(targetRepo, goModEditMessage string, serviceManager *artifactory.Ar
 	if err != nil {
 		return err
 	}
-	rgf := goConfigInfo{}
+	gci := goConfigInfo{}
 	wd, err := os.Getwd()
 	if err != nil {
-		return rgf.revert(wd, err)
+		return gci.revert(wd, err)
 	}
 	if !modFileExists {
-		err = rgf.prepareModFile(wd, goModEditMessage)
+		err = gci.prepareModFile(wd, goModEditMessage)
 		if err != nil {
 			return err
 		}
 	} else {
 		log.Debug("Using existing root mod file.")
-		rgf.modFileContent, rgf.modFileStat, err = cmd.GetFileDetails("go.mod")
+		gci.modFileContent, gci.modFileStat, err = cmd.GetFileDetails("go.mod")
 		if err != nil {
 			return err
 		}
-		rgf.shouldRevertSumFile, err = fileutils.IsFileExists("go.sum", false)
+		gci.shouldRevertSumFile, err = fileutils.IsFileExists("go.sum", false)
 		if err != nil {
 			return err
 		}
-		if rgf.shouldRevertSumFile {
-			rgf.sumFileContent, rgf.sumFileStat, err = cmd.GetFileDetails("go.sum")
+		if gci.shouldRevertSumFile {
+			gci.sumFileContent, gci.sumFileStat, err = cmd.GetFileDetails("go.sum")
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	err = gocmd.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
+	err = executers.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
 	if err != nil {
 		if !modFileExists {
 			log.Debug("Graph failed, preparing to run go mod tidy on the root project since got the following error:", err.Error())
-			err = rgf.prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMessage, serviceManager)
+			err = gci.prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMessage, serviceManager)
 			if err != nil {
-				return rgf.revert(wd, err)
+				return gci.revert(wd, err)
 			}
 		} else {
-			return rgf.revert(wd, err)
+			return gci.revert(wd, err)
 		}
 	}
 
-	if rgf.shouldRevertModFile || rgf.shouldRevertSumFile {
-		err = os.Chdir(wd)
-		if err != nil {
-			return rgf.revert(wd, err)
-		}
-		return rgf.revert(wd, nil)
+	err = os.Chdir(wd)
+	if err != nil {
+		return gci.revert(wd, err)
+	}
+	if gci.shouldRevertModFile || gci.shouldRevertSumFile {
+		return gci.revert(wd, nil)
 	}
 	return nil
 }
@@ -153,7 +153,7 @@ func (gci *goConfigInfo) prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEdi
 		return err
 	}
 	// Perform collection again after tidy finished successfully.
-	err = gocmd.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
+	err = executers.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
 	if err != nil {
 		return gci.revert(wd, err)
 	}

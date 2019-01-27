@@ -1400,6 +1400,10 @@ func goCmd(c *cli.Context) error {
 }
 
 func goRecursivePublishCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
 	targetRepo := c.Args().Get(0)
 	if targetRepo == "" {
 		cliutils.PrintHelpAndExitWithError("Missing target repo.", c)
