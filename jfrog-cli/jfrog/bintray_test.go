@@ -245,33 +245,45 @@ func TestBintrayFileDownloads(t *testing.T) {
 	path = tests.GetPath("a1.in", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=false")
 
-	// Define runner for testing with retries
-	retryRunner := tests.RunWithRetries{
-		Test: t,
-		FuncToRun: func(_, args []string) error {
+	// Define executor for testing with retries
+	var args []string
+	retryExecutor := utils.RetryExecutor{
+		MaxRetries:      25,
+		RetriesInterval: 5,
+		ErrorMessage:    "Waiting for bintray to index files...",
+		ExecutionHandler: func() (bool, error) {
 			// Execute Bintray downloads
-			return bintrayCli.Exec(args...)
+			err := bintrayCli.Exec(args...)
+			if err != nil {
+				return true, err
+			}
+			return false, nil
 		},
-		RetryMessage:    "Waiting for bintray to index files...",
-		RetryInterval:   5,
-		NumberOfRetries: 25,
 	}
 
 	// File a1.in
-	retryRunner.Args = []string{"download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true"}
-	retryRunner.Run()
+	args = []string{"download-file", repositoryPath + "/a1.in", tests.Out + "/bintray/", "--unpublished=true"}
+	if err := retryExecutor.Execute(); err != nil {
+		t.Error(err.Error())
+	}
 
 	// File b1.in
-	retryRunner.Args = []string{"download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true"}
-	retryRunner.Run()
+	args = []string{"download-file", repositoryPath + "/b1.in", tests.Out + "/bintray/x.in", "--unpublished=true"}
+	if err := retryExecutor.Execute(); err != nil {
+		t.Error(err.Error())
+	}
 
 	// File c1.in
-	retryRunner.Args = []string{"download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true"}
-	retryRunner.Run()
+	args = []string{"download-file", repositoryPath + "/(c)1.in", tests.Out + "/bintray/z{1}.in", "--unpublished=true"}
+	if err := retryExecutor.Execute(); err != nil {
+		t.Error(err.Error())
+	}
 
 	// File a/a1.in
-	retryRunner.Args = []string{"download-file", repositoryPath + "/" + ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath()) + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
-	retryRunner.Run()
+	args = []string{"download-file", repositoryPath + "/" + ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath()) + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
+	if err := retryExecutor.Execute(); err != nil {
+		t.Error(err.Error())
+	}
 
 	//Validate that files were downloaded as expected
 	expected := []string{
