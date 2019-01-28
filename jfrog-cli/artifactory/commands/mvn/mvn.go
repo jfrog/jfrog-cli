@@ -3,6 +3,7 @@ package mvn
 import (
 	"errors"
 	"fmt"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -41,7 +42,7 @@ func Mvn(goals, configPath string, configuration *utils.BuildConfiguration) erro
 	}
 
 	defer os.Remove(mvnRunConfig.buildInfoProperties)
-	if err := utils.RunCmd(mvnRunConfig); err != nil {
+	if err := gofrogcmd.RunCmd(mvnRunConfig); err != nil {
 		return err
 	}
 

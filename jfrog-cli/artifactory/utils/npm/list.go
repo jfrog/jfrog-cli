@@ -1,7 +1,7 @@
 package npm
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
@@ -30,7 +30,7 @@ func (listCmd *listCommand) exec() (outData, errData []byte, err error) {
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		cmdErrors[0] = utils.RunCmd(listCmd.cmdConfig)
+		cmdErrors[0] = gofrogcmd.RunCmd(listCmd.cmdConfig)
 	}()
 
 	go func() {
