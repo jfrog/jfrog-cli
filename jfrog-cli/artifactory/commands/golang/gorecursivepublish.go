@@ -77,7 +77,7 @@ func (gmi *goModInfo) revert(wd string, err error) error {
 }
 
 func (gmi *goModInfo) prepareModFile(wd, goModEditMessage string) error {
-	err := cmd.RunGoModInit("", goModEditMessage)
+	err := cmd.RunGoModInit("")
 	if err != nil {
 		return err
 	}
