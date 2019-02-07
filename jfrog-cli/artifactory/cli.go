@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/gocmd/utils/cmd"
+	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
@@ -60,6 +60,7 @@ import (
 	rtclientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/mattn/go-shellwords"
 	"os"
 	"strconv"
 	"strings"
@@ -1387,12 +1388,15 @@ func goCmd(c *cli.Context) error {
 
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
-	goArg := c.Args().Get(0)
+	goArg, err := shellwords.Parse(c.Args().Get(0))
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+	}
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
 	logGoVersion()
-	err := golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	err = golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}

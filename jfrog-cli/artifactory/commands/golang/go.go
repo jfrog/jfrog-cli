@@ -1,13 +1,13 @@
 package golang
 
 import (
-	"github.com/jfrog/gocmd/executers"
+	"github.com/jfrog/gocmd"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
-func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+func ExecuteGo(noRegistry bool, goArg []string, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
 		err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
@@ -26,7 +26,7 @@ func ExecuteGo(noRegistry bool, goArg, targetRepo, buildName, buildNumber string
 		return err
 	}
 
-	err = executers.PublishDependencies(goArg, targetRepo, noRegistry, serviceManager)
+	err = GoCmd.RunWithFallbacksAndPublish(goArg, targetRepo, noRegistry, serviceManager)
 
 	if isCollectBuildInfo {
 		err = goProject.LoadDependencies()

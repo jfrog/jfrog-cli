@@ -3,8 +3,9 @@ package project
 import (
 	"bytes"
 	"errors"
-	"github.com/jfrog/gocmd/utils/cmd"
+	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
+	executersutils"github.com/jfrog/gocmd/executers/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -59,7 +60,7 @@ func (project *goProject) LoadDependencies() error {
 }
 
 func (project *goProject) loadDependencies() ([]executers.Package, error) {
-	cachePath, err := executers.GetCachePath()
+	cachePath, err := executersutils.GetCachePath()
 	if err != nil {
 		return nil, err
 	}

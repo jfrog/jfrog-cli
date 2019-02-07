@@ -1,8 +1,10 @@
 package golang
 
 import (
+	"github.com/jfrog/gocmd"
+	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
-	"github.com/jfrog/gocmd/utils/cmd"
+	"github.com/jfrog/gocmd/executers/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -33,8 +35,7 @@ func Execute(targetRepo, goModEditMessage string, serviceManager *artifactory.Ar
 			return err
 		}
 	}
-
-	err = executers.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
+	err = GoCmd.RecursivePublish(targetRepo, goModEditMessage, serviceManager)
 	if err != nil {
 		if !modFileExists {
 			log.Debug("Graph failed, preparing to run go mod tidy on the root project since got the following error:", err.Error())
@@ -81,7 +82,7 @@ func (gmi *goModInfo) prepareModFile(wd, goModEditMessage string) error {
 	if err != nil {
 		return err
 	}
-	regExp, err := executers.GetRegex()
+	regExp, err := utils.GetRegex()
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func (gmi *goModInfo) prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMe
 		return err
 	}
 	// Perform collection again after tidy finished successfully.
-	err = executers.DownloadFromVcsWithPopulation(targetRepo, goModEditMessage, serviceManager)
+	err = GoCmd.RecursivePublish(targetRepo, goModEditMessage, serviceManager)
 	if err != nil {
 		return gmi.revert(wd, err)
 	}
