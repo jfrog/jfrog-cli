@@ -1130,7 +1130,7 @@ func getBuildAddGitFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "config",
-			Usage: "[Optional] Path to configuration file.` `",
+			Usage: "[Optional] Path to a configuration file.` `",
 		},
 	}
 }

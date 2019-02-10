@@ -113,6 +113,7 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 	if err != nil {
 		return nil, err
 	}
+
 	// Get latest build-info from Artifactory.
 	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: config.BuildNumber}
 	buildInfo, err := sm.GetBuildInfo(buildInfoParams)
@@ -126,7 +127,7 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 		lastVcsRevision = buildInfo.Vcs.Revision
 	}
 
-	// Get log with limit, from latest commit.
+	// Get log with limit, starting from the latest commit.
 	logCmd := &LogCmd{gitPath: config.DotGitPath, logLimit: issuesConfig.LogLimit, lastVcsRevision: lastVcsRevision}
 	var foundIssues []buildinfo.AffectedIssue
 	protocolRegExp := gofrogcmd.CmdOutputPattern{
@@ -136,7 +137,7 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 
 			// Check for out of bound results.
 			if len(pattern.MatchedResults) - 1 < issuesConfig.KeyGroupIndex || len(pattern.MatchedResults) - 1 < issuesConfig.SummaryGroupIndex {
-				return "", errors.New("Unexpected result while parsing build-issues from git log")
+				return "", errors.New("Unexpected result while parsing issues from git log. Make sure that the regular expression used to find issues, includes two capturing groups, for the issue ID and the summary.")
 			}
 			// Create found Affected Issue.
 			foundIssue := buildinfo.AffectedIssue{Key: pattern.MatchedResults[issuesConfig.KeyGroupIndex], Summary: pattern.MatchedResults[issuesConfig.SummaryGroupIndex], Aggregated: false}
@@ -150,18 +151,24 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 	}
 
 	// Change working dir to where .git is.
-	os.Chdir(config.DotGitPath)
+	wd, err := os.Getwd()
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
+	defer os.Chdir(wd)
+	err = os.Chdir(config.DotGitPath)
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
 
 	// Run git command.
 	_, exitOk, err := gofrogcmd.RunCmdWithOutputParser(logCmd, false, &protocolRegExp)
-	if err != nil || !exitOk {
-		// Error occurred during git log execution. Happens in any case git prints to stderr.
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
+	if !exitOk {
 		// May happen when trying to run git log for non-existing revision.
-		errorMsg := "Failed executing git log command"
-		if err != nil {
-			errorMsg = fmt.Sprintf("%s: %s", errorMsg, err.Error())
-		}
-		return nil, errorutils.CheckError(errors.New(errorMsg))
+		return nil, errorutils.CheckError(errors.New("Failed executing git log command."))
 	}
 
 	// Return found issues.

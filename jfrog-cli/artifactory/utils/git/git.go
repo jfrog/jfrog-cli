@@ -75,7 +75,7 @@ func (m *manager) readUrl() {
 	}
 	m.url = originUrl
 
-	//Mask url if required
+	// Mask url if required
 	regExp, err := clientutils.GetRegExp(clientutils.CredentialsInUrlRegexp)
 	if err != nil {
 		m.err = err
