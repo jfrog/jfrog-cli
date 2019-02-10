@@ -676,7 +676,6 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 		if value == "" {
 			t.Error("The go.version value is empty for", item.Name)
 		}
-
 	}
 }
 

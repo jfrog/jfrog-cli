@@ -3,6 +3,7 @@ package golang
 import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -15,6 +16,11 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 	err = validatePrerequisites()
 	if err != nil {
 		return
+	}
+
+	err = golang.LogGoVersion()
+	if err != nil {
+		return 0, 0, err
 	}
 
 	serviceManager, err := utils.CreateServiceManager(details, false)

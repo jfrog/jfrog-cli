@@ -1,6 +1,6 @@
 package gorecursivepublish
 
-const Description = "Populates and publish dependencies and transitive dependencies of the project"
+const Description = "Recursively discovers all project dependencies, both direct and indirect, and publishes them to Artifactory"
 
 var Usage = []string{`jfrog rt grp <target repository>`}
 
