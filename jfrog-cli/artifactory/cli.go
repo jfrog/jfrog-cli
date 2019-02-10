@@ -16,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
-	goutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/golang"
 	npmutils "github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildaddgit"
@@ -37,6 +36,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gopublish"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gorecursivepublish"
 	gradledoc "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/move"
@@ -59,6 +59,7 @@ import (
 	rtclientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/mattn/go-shellwords"
 	"strconv"
 	"strings"
 )
@@ -437,8 +438,20 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
 			UsageText: gocommand.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) error {
+				return goCmd(c)
+			},
+		},
+		{
+			Name:      "go-recursive-publish",
+			Flags:     getGoRecursivePublishFlags(),
+			Aliases:   []string{"grp"},
+			Usage:     gorecursivepublish.Description,
+			HelpName:  common.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
+			UsageText: gorecursivepublish.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
-				goCmd(c)
+				goRecursivePublishCmd(c)
 			},
 		},
 		{
@@ -737,19 +750,15 @@ func getGoFlags() []cli.Flag {
 			Name:  "no-registry",
 			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
-		cli.BoolFlag{
-			Name:  "recursive-tidy",
-			Usage: "[Default: false] Set to true to make sure all dependencies published to Artifactory have a mod file, which includes dependencies.` `",
-		},
-		cli.BoolFlag{
-			Name:  "recursive-tidy-overwrite",
-			Usage: "[Default: false] Can be used only with the --recursive-tidy option set to true. If set to true, the dependencies mod files are tidies, before publishing them to Artifactory.` `",
-		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
 	flags = append(flags, getBuildToolFlags()...)
 	return flags
+}
+
+func getGoRecursivePublishFlags() []cli.Flag {
+	return append(getBaseFlags(), getServerIdFlag())
 }
 
 func getGoPublishFlags() []cli.Flag {
@@ -1351,8 +1360,6 @@ func goPublishCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
-	logGoVersion()
-
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	targetRepo := c.Args().Get(0)
@@ -1364,7 +1371,7 @@ func goPublishCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func goCmd(c *cli.Context) {
+func goCmd(c *cli.Context) error {
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1377,25 +1384,32 @@ func goCmd(c *cli.Context) {
 
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
-	goArg := c.Args().Get(0)
+	goArg, err := shellwords.Parse(c.Args().Get(0))
+	if err != nil {
+		err = cliutils.PrintSummaryReport(0, 1, err)
+	}
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	logGoVersion()
-	err := golang.ExecuteGo(c.Bool("recursive-tidy"), c.Bool("recursive-tidy-overwrite"), c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	err = golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
-		cliutils.ExitOnErr(err)
 	}
+	return err
 }
 
-func logGoVersion() {
-	output, err := goutils.GetGoVersion()
-	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
-		cliutils.ExitOnErr(err)
+func goRecursivePublishCmd(c *cli.Context) {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	log.Info("Using go:", string(output))
+
+	targetRepo := c.Args().Get(0)
+	if targetRepo == "" {
+		cliutils.PrintHelpAndExitWithError("Missing target repo.", c)
+	}
+	details := createArtifactoryDetailsByFlags(c, true)
+	err := golang.Execute(targetRepo, details)
+	cliutils.ExitOnErr(err)
 }
 
 func createGradleConfigCmd(c *cli.Context) {

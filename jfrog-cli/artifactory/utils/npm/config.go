@@ -1,7 +1,7 @@
 package npm
 
 import (
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
+	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/mattn/go-shellwords"
@@ -22,7 +22,7 @@ func GetConfigList(npmFlags, executablePath string) ([]byte, error) {
 	configListCmdConfig := createConfigListCmdConfig(executablePath, splitFlags, pipeWriter)
 	var npmError error
 	go func() {
-		npmError = utils.RunCmd(configListCmdConfig)
+		npmError = gofrogcmd.RunCmd(configListCmdConfig)
 	}()
 
 	data, err := ioutil.ReadAll(pipeReader)
