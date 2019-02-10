@@ -1,6 +1,6 @@
 package buildaddgit
 
-const Description = "Capture git revision and remote url."
+const Description = "Collect VCS details from git and add them to a build."
 
 var Usage = []string{"jfrog rt bag [command options] <build name> <build number> [Path To .git]"}
 

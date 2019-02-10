@@ -60,7 +60,7 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	modules, env, vcs, err := extractBuildInfoData(partials, createIncludeFilter(config.EnvInclude), createExcludeFilter(config.EnvExclude))
+	modules, env, vcs, issues, err := extractBuildInfoData(partials, createIncludeFilter(config.EnvInclude), createExcludeFilter(config.EnvExclude))
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +73,10 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 		buildInfo.Revision = vcs.Revision
 		buildInfo.Url = vcs.Url
 	}
+	// Check for Tracker as it must be set
+	if issues.Tracker != nil && issues.Tracker.Name != "" {
+		buildInfo.Issues = &issues
+	}
 	for _, module := range modules {
 		if module.Id == "" {
 			module.Id = buildName
@@ -82,10 +86,12 @@ func createBuildInfoFromPartials(buildName, buildNumber string, config *buildinf
 	return buildInfo, nil
 }
 
-func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, error) {
+func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, buildinfo.Issues, error) {
 	var vcs buildinfo.Vcs
+	var issues buildinfo.Issues
 	env := make(map[string]string)
 	partialModules := make(map[string]partialModule)
+	issuesMap := make(map[string]*buildinfo.AffectedIssue)
 	for _, partial := range partials {
 		switch {
 		case partial.Artifacts != nil:
@@ -98,21 +104,34 @@ func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFil
 			}
 		case partial.Vcs != nil:
 			vcs = *partial.Vcs
+			if partial.Issues == nil {
+				continue
+			}
+			// Collect issues.
+			issues.Tracker = partial.Issues.Tracker
+			issues.AggregateBuildIssues = partial.Issues.AggregateBuildIssues
+			issues.AggregationBuildStatus = partial.Issues.AggregationBuildStatus
+			// If affected issues exist, add them to issues map
+			if partial.Issues.AffectedIssues != nil {
+				for i, issue := range partial.Issues.AffectedIssues {
+					issuesMap[issue.Key] = &partial.Issues.AffectedIssues[i]
+				}
+			}
 		case partial.Env != nil:
 			envAfterIncludeFilter, e := includeFilter(partial.Env)
 			if errorutils.CheckError(e) != nil {
-				return partialModulesToModules(partialModules), env, vcs, e
+				return partialModulesToModules(partialModules), env, vcs, issues, e
 			}
 			envAfterExcludeFilter, e := excludeFilter(envAfterIncludeFilter)
 			if errorutils.CheckError(e) != nil {
-				return partialModulesToModules(partialModules), env, vcs, e
+				return partialModulesToModules(partialModules), env, vcs, issues, e
 			}
 			for k, v := range envAfterExcludeFilter {
 				env[k] = v
 			}
 		}
 	}
-	return partialModulesToModules(partialModules), env, vcs, nil
+	return partialModulesToModules(partialModules), env, vcs, issuesMapToArray(issues, issuesMap), nil
 }
 
 func partialModulesToModules(partialModules map[string]partialModule) []buildinfo.Module {
@@ -123,6 +142,13 @@ func partialModulesToModules(partialModules map[string]partialModule) []buildinf
 		modules = append(modules, *createModule(moduleId, moduleArtifacts, moduleDependencies))
 	}
 	return modules
+}
+
+func issuesMapToArray(issues buildinfo.Issues, issuesMap map[string]*buildinfo.AffectedIssue) buildinfo.Issues {
+	for _, issue := range issuesMap {
+		issues.AffectedIssues = append(issues.AffectedIssues, *issue)
+	}
+	return issues
 }
 
 func addDependencyToPartialModule(dependency buildinfo.Dependency, moduleId string, partialModules map[string]partialModule) {

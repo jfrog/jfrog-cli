@@ -1,6 +1,7 @@
 package solution
 
 import (
+	"encoding/json"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"reflect"
 	"testing"
@@ -18,6 +19,8 @@ func TestEmptySolution(t *testing.T) {
 		t.Error("An error occurred while creating the build info object", err.Error())
 	}
 	if !reflect.DeepEqual(buildInfo, expected) {
-		t.Errorf("Expecting: \n%s \nGot: \n%s", expected, buildInfo)
+		expectedString, _ := json.Marshal(expected)
+		buildInfoString, _ := json.Marshal(buildInfo)
+		t.Errorf("Expecting: \n%s \nGot: \n%s", expectedString, buildInfoString)
 	}
 }

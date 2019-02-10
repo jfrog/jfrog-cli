@@ -45,7 +45,8 @@ func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 }
 
 func getBuildInfoPartials(baseDir string, t *testing.T, buildName string, buildNumber string) buildinfo.Partials {
-	err := AddGit(buildName, buildNumber, baseDir)
+	buildAddGitConfiguration := &BuildAddGitConfiguration{BuildName: buildName, BuildNumber: buildNumber, DotGitPath: baseDir}
+	err := AddGit(buildAddGitConfiguration)
 	if err != nil {
 		t.Error("Cannot run build add git due to: " + err.Error())
 		return nil

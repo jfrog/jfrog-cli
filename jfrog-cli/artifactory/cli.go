@@ -222,7 +222,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "build-add-git",
-			Flags:     []cli.Flag{},
+			Flags:     getBuildAddGitFlags(),
 			Aliases:   []string{"bag"},
 			Usage:     buildaddgit.Description,
 			HelpName:  common.CreateUsage("rt build-add-git", buildaddgit.Description, buildaddgit.Usage),
@@ -1126,6 +1126,15 @@ func getBuildScanFlags() []cli.Flag {
 	}...)
 }
 
+func getBuildAddGitFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "config",
+			Usage: "[Optional] Path to configuration file.` `",
+		},
+	}
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1642,11 +1651,8 @@ func buildAddGitCmd(c *cli.Context) {
 	if c.NArg() > 3 || c.NArg() < 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	dotGitPath := ""
-	if c.NArg() == 3 {
-		dotGitPath = c.Args().Get(2)
-	}
-	err := buildinfo.AddGit(c.Args().Get(0), c.Args().Get(1), dotGitPath)
+	buildAddGitConfiguration := createBuildAddGitConfiguration(c)
+	err := buildinfo.AddGit(buildAddGitConfiguration)
 	cliutils.ExitOnErr(err)
 }
 
@@ -2318,4 +2324,17 @@ func validatePropsCommand(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	validateCommonContext(c)
+}
+
+func createBuildAddGitConfiguration(c *cli.Context) (buildAddGitConfiguration *buildinfo.BuildAddGitConfiguration) {
+	buildAddGitConfiguration = new(buildinfo.BuildAddGitConfiguration)
+	buildAddGitConfiguration.BuildName = c.Args().Get(0)
+	buildAddGitConfiguration.BuildNumber = c.Args().Get(1)
+	dotGitPath := ""
+	if c.NArg() == 3 {
+		dotGitPath = c.Args().Get(2)
+	}
+	buildAddGitConfiguration.DotGitPath = dotGitPath
+	buildAddGitConfiguration.ConfigFilePath = c.String("config")
+	return
 }

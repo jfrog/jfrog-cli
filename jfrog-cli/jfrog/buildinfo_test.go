@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
@@ -333,9 +334,10 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, t *test
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.BuildAddDepsBuildName, buildInfoTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
+		buildInfoString, _ := json.Marshal(buildInfo)
 		// Case no module was not created
 		t.Errorf("%s test with the command: \nrt bad %s \nexpected to have module with the following dependencies: \n%s \nbut has no modules: \n%s",
-			buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, buildInfo)
+			buildInfoTestParams.description, buildInfoTestParams.commandArgs, buildInfoTestParams.expectedDependencies, buildInfoString)
 	}
 	if len(buildInfoTestParams.expectedDependencies) != len(buildInfo.Modules[0].Dependencies) {
 		// The checksums are ignored when comparing the actual and the expected
