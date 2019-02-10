@@ -3,6 +3,7 @@ package git
 import (
 	"bufio"
 	"errors"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"os"
 	"path/filepath"
@@ -73,6 +74,18 @@ func (m *manager) readUrl() {
 		originUrl += ".git"
 	}
 	m.url = originUrl
+
+	// Mask url if required
+	regExp, err := clientutils.GetRegExp(clientutils.CredentialsInUrlRegexp)
+	if err != nil {
+		m.err = err
+		return
+	}
+	matchedResult := regExp.FindString(originUrl)
+	if matchedResult == "" {
+		return
+	}
+	m.url = clientutils.MaskCredentials(originUrl, matchedResult)
 }
 
 func (m *manager) getRevisionOrBranchPath() (revision, refUrl string, err error) {
