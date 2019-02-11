@@ -81,7 +81,7 @@ func AddGit(config *BuildAddGitConfiguration) error {
 	}
 
 	// Done.
-	log.Info("Collected git revision and remote url for", config.BuildName+"/"+config.BuildNumber+".")
+	log.Info("Collected VCS details for", config.BuildName+"/"+config.BuildNumber+".")
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 	}
 
 	// Get latest build-info from Artifactory.
-	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: config.BuildNumber}
+	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: "LATEST"}
 	buildInfo, err := sm.GetBuildInfo(buildInfoParams)
 	if err != nil {
 		return nil, err
