@@ -240,7 +240,8 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
-	msg := "The CLI commands require the Mission Control URL and authentication details\n" +
+	msg := "To avoid this message in the future, set the JFROG_CLI_OFFER_CONFIG environment variable to false.\n" +
+		"The CLI commands require the Mission Control URL and authentication details\n" +
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 		"You can also configure these parameters later using the 'config' command.\n" +
 		"Configure now?"
