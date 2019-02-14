@@ -1,6 +1,7 @@
 package buildinfo
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -82,4 +83,99 @@ func checkVCSUrl(partials buildinfo.Partials, t *testing.T) {
 			break
 		}
 	}
+}
+
+func TestPopulateIssuesConfigurations(t *testing.T) {
+	// Test success scenario
+	expectedIssuesConfiguration := &IssuesConfiguration{
+		ServerID: "local",
+		TrackerName: "TESTING",
+		TrackerUrl: "http://TESTING.com",
+		Regexp: `([a-zA-Z]+-[0-9]*)\s-\s(.*)`,
+		KeyGroupIndex: 1,
+		SummaryGroupIndex: 2,
+		Aggregate: true,
+		AggregationStatus: "RELEASE",
+		LogLimit: 100,
+	}
+	ic := new(IssuesConfiguration)
+	// Build config from file
+	err := ic.populateIssuesConfigurationsFromSpec("../testdata/buildissues/issuesconfig_success.yaml")
+	// Check they are equal
+	if err != nil {
+		t.Error(fmt.Sprintf("Reading configurations file ended with error: %s", err.Error()))
+		t.FailNow()
+	}
+	if *ic != *expectedIssuesConfiguration {
+		t.Error(fmt.Sprintf("Failed reading configurations file. Expected: %+v Received: %+v", *expectedIssuesConfiguration, *ic))
+		t.FailNow()
+	}
+
+	// Test failing scenarios
+	failing := []string{
+		"../testdata/buildissues/issuesconfig_fail_no_issues.yaml",
+		"../testdata/buildissues/issuesconfig_fail_no_server.yaml",
+		"../testdata/buildissues/issuesconfig_fail_invalid_groupindex.yaml",
+		"../testdata/buildissues/issuesconfig_fail_invalid_aggregate.yaml",
+	}
+
+	for _, config := range failing {
+		err = ic.populateIssuesConfigurationsFromSpec(config)
+		if err == nil {
+			t.Error(fmt.Sprintf("Reading configurations file was supposed to end with error: %s", config))
+			t.FailNow()
+		}
+	}
+}
+
+func TestAddGitDoCollect(t *testing.T) {
+	// Create git folder with files
+	originalFolder := "issues_.git_suffix"
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, true)
+
+	// Create BuildAddGitConfiguration
+	config := BuildAddGitConfiguration{
+		IssuesConfig: &IssuesConfiguration{
+			LogLimit: 100,
+			Aggregate: false,
+			SummaryGroupIndex: 2,
+			KeyGroupIndex: 1,
+			Regexp: `(.+-[0-9]+)\s-\s(.+)`,
+			TrackerName: "test",
+		},
+		BuildNumber: "1",
+		BuildName: "cli-test-build-issues",
+		ConfigFilePath: "",
+		DotGitPath: dotGitPath,
+	}
+
+	// Collect issues
+	issues, err := config.DoCollect(config.IssuesConfig, "")
+	if err != nil {
+		// Error - should succeed
+		t.Error(err)
+	}
+	if len(issues) != 2 {
+		// Error - should be empty
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues.", len(issues))
+	}
+
+	// Clean previous git path and set new
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+	originalFolder = "issues2_.git_suffix"
+	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, true)
+
+	// Collect issues
+	issues, err = config.DoCollect(config.IssuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
+	if err != nil {
+		// Error - should succeed
+		t.Error(err)
+	}
+	if len(issues) != 2 {
+		// Error - should find 3 issues
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues.", len(issues))
+	}
+
+	// Clean git path
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 }

@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	GitLogLimit        = 100
-	ConfigIssuesPrefix = "issues."
-	ConfigParseValueError = "Failed parsing %s from configuration file: %s"
+	GitLogLimit               = 100
+	ConfigIssuesPrefix        = "issues."
+	ConfigParseValueError     = "Failed parsing %s from configuration file: %s"
 	MissingConfigurationError = "Configuration file must contain: %s"
 )
 
@@ -91,40 +91,27 @@ func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.Affect
 	// Initialize issues-configuration.
 	config.IssuesConfig = new(IssuesConfiguration)
 
-	// Build config from file.
-	err := config.IssuesConfig.populateIssuesConfigurations(config.ConfigFilePath)
+	// Create config's IssuesConfigurations from the provided spec file.
+	err := config.createIssuesConfigurations()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get latest build's VCS revision from Artifactory.
+	lastVcsRevision, err := config.getLatestVcsRevision()
 	if err != nil {
 		return nil, err
 	}
 
 	// Run issues collection.
-	return config.doCollect(config.IssuesConfig)
+	return config.DoCollect(config.IssuesConfig, lastVcsRevision)
 }
 
-func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfiguration) ([]buildinfo.AffectedIssue, error) {
+func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfiguration, lastVcsRevision string) ([]buildinfo.AffectedIssue, error) {
 	// Create regex pattern.
 	issueRegexp, err := clientutils.GetRegExp(issuesConfig.Regexp)
 	if err != nil {
 		return nil, err
-	}
-
-	// Create services manager to get build-info from Artifactory.
-	sm, err := utils.CreateServiceManager(issuesConfig.ArtDetails, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get latest build-info from Artifactory.
-	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: "LATEST"}
-	buildInfo, err := sm.GetBuildInfo(buildInfoParams)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get previous VCS Revision from BuildInfo.
-	lastVcsRevision := ""
-	if buildInfo.Vcs != nil {
-		lastVcsRevision = buildInfo.Vcs.Revision
 	}
 
 	// Get log with limit, starting from the latest commit.
@@ -136,7 +123,7 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 			// Reached here - means no error occurred.
 
 			// Check for out of bound results.
-			if len(pattern.MatchedResults) - 1 < issuesConfig.KeyGroupIndex || len(pattern.MatchedResults) - 1 < issuesConfig.SummaryGroupIndex {
+			if len(pattern.MatchedResults)-1 < issuesConfig.KeyGroupIndex || len(pattern.MatchedResults)-1 < issuesConfig.SummaryGroupIndex {
 				return "", errors.New("Unexpected result while parsing issues from git log. Make sure that the regular expression used to find issues, includes two capturing groups, for the issue ID and the summary.")
 			}
 			// Create found Affected Issue.
@@ -175,7 +162,64 @@ func (config *BuildAddGitConfiguration) doCollect(issuesConfig *IssuesConfigurat
 	return foundIssues, nil
 }
 
-func (ic *IssuesConfiguration) populateIssuesConfigurations(configFilePath string) (err error) {
+func (config *BuildAddGitConfiguration) createIssuesConfigurations() (err error) {
+	// Read file's data.
+	err = config.IssuesConfig.populateIssuesConfigurationsFromSpec(config.ConfigFilePath)
+	if err != nil {
+		return
+	}
+
+	// Build ArtifactoryDetails from provided serverID.
+	config.IssuesConfig.setArtifactoryDetails()
+	if err != nil {
+		return
+	}
+
+	// Add '/' suffix to URL if required.
+	if config.IssuesConfig.TrackerUrl != "" {
+		// Url should end with '/'
+		if !strings.HasSuffix(config.IssuesConfig.TrackerUrl, "/") {
+			config.IssuesConfig.TrackerUrl += "/"
+		}
+	}
+
+	return
+}
+
+func (config *BuildAddGitConfiguration) getLatestVcsRevision() (string, error) {
+	// Get latest build's build-info from Artifactory
+	buildInfo, err := config.getLatestBuildInfo(config.IssuesConfig)
+	if err != nil {
+		return "", err
+	}
+
+	// Get previous VCS Revision from BuildInfo.
+	lastVcsRevision := ""
+	if buildInfo.Vcs != nil {
+		lastVcsRevision = buildInfo.Vcs.Revision
+	}
+
+	return lastVcsRevision, nil
+}
+
+func (config *BuildAddGitConfiguration) getLatestBuildInfo(issuesConfig *IssuesConfiguration) (*buildinfo.BuildInfo, error) {
+	// Create services manager to get build-info from Artifactory.
+	sm, err := utils.CreateServiceManager(issuesConfig.ArtDetails, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get latest build-info from Artifactory.
+	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: "LATEST"}
+	buildInfo, err := sm.GetBuildInfo(buildInfoParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return buildInfo, nil
+}
+
+func (ic *IssuesConfiguration) populateIssuesConfigurationsFromSpec(configFilePath string) (err error) {
 	var vConfig *viper.Viper
 	vConfig, err = utils.ReadConfigFile(configFilePath, utils.YAML)
 	if err != nil {
@@ -188,26 +232,23 @@ func (ic *IssuesConfiguration) populateIssuesConfigurations(configFilePath strin
 	}
 
 	// Get server-id.
-	if !vConfig.IsSet(ConfigIssuesPrefix + "serverID") || vConfig.GetString(ConfigIssuesPrefix + "serverID") == "" {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix + "serverID")))
+	if !vConfig.IsSet(ConfigIssuesPrefix+"serverID") || vConfig.GetString(ConfigIssuesPrefix+"serverID") == "" {
+		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID")))
 	}
-	ic.setArtifactoryDetailsFromConfigFile(vConfig)
-	if err != nil {
-		return err
-	}
+	ic.ServerID = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 
 	// Set log limit.
 	ic.LogLimit = GitLogLimit
 
 	// Get tracker data
 	if !vConfig.IsSet(ConfigIssuesPrefix + "trackerName") {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix + "trackerName")))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"trackerName")))
 	}
 	ic.TrackerName = vConfig.GetString(ConfigIssuesPrefix + "trackerName")
 
 	// Get issues pattern
 	if !vConfig.IsSet(ConfigIssuesPrefix + "regexp") {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix + "regexp")))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"regexp")))
 	}
 	ic.Regexp = vConfig.GetString(ConfigIssuesPrefix + "regexp")
 
@@ -215,29 +256,23 @@ func (ic *IssuesConfiguration) populateIssuesConfigurations(configFilePath strin
 	if vConfig.IsSet(ConfigIssuesPrefix + "trackerUrl") {
 		ic.TrackerUrl = vConfig.GetString(ConfigIssuesPrefix + "trackerUrl")
 	}
-	if ic.TrackerUrl != "" {
-		// Url should end with '/'
-		if !strings.HasSuffix(ic.TrackerUrl, "/") {
-			ic.TrackerUrl += "/"
-		}
-	}
 
 	// Get issues key group index
 	if !vConfig.IsSet(ConfigIssuesPrefix + "keyGroupIndex") {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix + "keyGroupIndex")))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"keyGroupIndex")))
 	}
 	ic.KeyGroupIndex, err = strconv.Atoi(vConfig.GetString(ConfigIssuesPrefix + "keyGroupIndex"))
 	if err != nil {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix + "keyGroupIndex", err.Error())))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix+"keyGroupIndex", err.Error())))
 	}
 
 	// Get issues summary group index
 	if !vConfig.IsSet(ConfigIssuesPrefix + "summaryGroupIndex") {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix + "summaryGroupIndex")))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"summaryGroupIndex")))
 	}
 	ic.SummaryGroupIndex, err = strconv.Atoi(vConfig.GetString(ConfigIssuesPrefix + "summaryGroupIndex"))
 	if err != nil {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix + "summaryGroupIndex", err.Error())))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix+"summaryGroupIndex", err.Error())))
 	}
 
 	// Get aggregation aggregate
@@ -245,7 +280,7 @@ func (ic *IssuesConfiguration) populateIssuesConfigurations(configFilePath strin
 	if vConfig.IsSet(ConfigIssuesPrefix + "aggregate") {
 		ic.Aggregate, err = strconv.ParseBool(vConfig.GetString(ConfigIssuesPrefix + "aggregate"))
 		if err != nil {
-			return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix + "aggregate", err.Error())))
+			return errorutils.CheckError(errors.New(fmt.Sprintf(ConfigParseValueError, ConfigIssuesPrefix+"aggregate", err.Error())))
 		}
 	}
 
@@ -257,10 +292,8 @@ func (ic *IssuesConfiguration) populateIssuesConfigurations(configFilePath strin
 	return nil
 }
 
-func (ic *IssuesConfiguration) setArtifactoryDetailsFromConfigFile(vConfig *viper.Viper) error {
-	// If serverId is empty, get default config.
-	serverId := vConfig.GetString("issues.serverID")
-	artDetails, err := utilsconfig.GetArtifactoryConf(serverId)
+func (ic *IssuesConfiguration) setArtifactoryDetails() error {
+	artDetails, err := utilsconfig.GetArtifactoryConf(ic.ServerID)
 	if err != nil {
 		return err
 	}
@@ -286,6 +319,7 @@ type IssuesConfiguration struct {
 	SummaryGroupIndex int
 	Aggregate         bool
 	AggregationStatus string
+	ServerID          string
 }
 
 type LogCmd struct {
