@@ -18,7 +18,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -37,7 +36,7 @@ func AddGit(config *BuildAddGitConfiguration) error {
 
 	// Find .git folder if it wasn't provided in the command.
 	if config.DotGitPath == "" {
-		config.DotGitPath, err = fileutils.GetFileOrDirPath(".git", fileutils.Folder)
+		config.DotGitPath, err = fileutils.FindUpstream(".git", fileutils.Dir)
 		if err != nil {
 			return err
 		}
@@ -88,11 +87,17 @@ func AddGit(config *BuildAddGitConfiguration) error {
 func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.AffectedIssue, error) {
 	log.Info("Collecting build issues from VCS...")
 
+	// Check that git exists in path.
+	_, err := exec.LookPath("git")
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+
 	// Initialize issues-configuration.
 	config.IssuesConfig = new(IssuesConfiguration)
 
 	// Create config's IssuesConfigurations from the provided spec file.
-	err := config.createIssuesConfigurations()
+	err = config.createIssuesConfigurations()
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +120,7 @@ func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfigurat
 	}
 
 	// Get log with limit, starting from the latest commit.
-	logCmd := &LogCmd{gitPath: config.DotGitPath, logLimit: issuesConfig.LogLimit, lastVcsRevision: lastVcsRevision}
+	logCmd := &LogCmd{logLimit: issuesConfig.LogLimit, lastVcsRevision: lastVcsRevision}
 	var foundIssues []buildinfo.AffectedIssue
 	protocolRegExp := gofrogcmd.CmdOutputPattern{
 		RegExp: issueRegexp,
@@ -178,9 +183,7 @@ func (config *BuildAddGitConfiguration) createIssuesConfigurations() (err error)
 	// Add '/' suffix to URL if required.
 	if config.IssuesConfig.TrackerUrl != "" {
 		// Url should end with '/'
-		if !strings.HasSuffix(config.IssuesConfig.TrackerUrl, "/") {
-			config.IssuesConfig.TrackerUrl += "/"
-		}
+		config.IssuesConfig.TrackerUrl = clientutils.AddTrailingSlashIfNeeded(config.IssuesConfig.TrackerUrl)
 	}
 
 	return
@@ -323,7 +326,6 @@ type IssuesConfiguration struct {
 }
 
 type LogCmd struct {
-	gitPath         string
 	logLimit        int
 	lastVcsRevision string
 }
@@ -331,9 +333,7 @@ type LogCmd struct {
 func (logCmd *LogCmd) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "git")
-	cmd = append(cmd, "log")
-	cmd = append(cmd, "--pretty=format:%s")
-	cmd = append(cmd, "-"+strconv.Itoa(logCmd.logLimit))
+	cmd = append(cmd, "log", "--pretty=format:%s", "-"+strconv.Itoa(logCmd.logLimit))
 	if logCmd.lastVcsRevision != "" {
 		cmd = append(cmd, logCmd.lastVcsRevision+"..")
 	}

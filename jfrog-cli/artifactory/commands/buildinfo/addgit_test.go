@@ -152,28 +152,31 @@ func TestAddGitDoCollect(t *testing.T) {
 	// Collect issues
 	issues, err := config.DoCollect(config.IssuesConfig, "")
 	if err != nil {
-		// Error - should succeed
 		t.Error(err)
 	}
 	if len(issues) != 2 {
 		// Error - should be empty
-		t.Errorf("Issues list expected to have 2 issues, instead found %d issues.", len(issues))
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues: %v", len(issues), issues)
 	}
 
-	// Clean previous git path and set new
+	// Clean previous git path
 	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+	// Check if needs to fail
+	if t.Failed() {
+		t.FailNow()
+	}
+	// Set new git path
 	originalFolder = "issues2_.git_suffix"
 	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, true)
 
-	// Collect issues
+	// Collect issues - we pass a revision, so only 2 of the 4 existing issues should be collected
 	issues, err = config.DoCollect(config.IssuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
 	if err != nil {
-		// Error - should succeed
 		t.Error(err)
 	}
 	if len(issues) != 2 {
-		// Error - should find 3 issues
-		t.Errorf("Issues list expected to have 2 issues, instead found %d issues.", len(issues))
+		// Error - should find 2 issues
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues: %v", len(issues), issues)
 	}
 
 	// Clean git path

@@ -204,35 +204,30 @@ func TestCollectGitBuildInfo(t *testing.T) {
 
 	gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, dotGitPath)
 
-	//publish buildInfo
+	// Publish build-info
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
-		t.Error(err)
+	// Fetch the published build-info
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	if t.Failed() {
+		t.FailNow()
 	}
-	_, body, _, err := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName+"/"+buildNumber, false, artHttpDetails)
-	if err != nil {
-		t.Error(err)
+	if buildInfo.Vcs == nil {
+		t.Error("Received build-info with empty VCS.")
 	}
-	buildInfoVcsRevision, err := jsonparser.GetString(body, "buildInfo", "vcsRevision")
-	if err != nil {
-		t.Error(err)
-	}
-	buildInfoVcsUrl, err := jsonparser.GetString(body, "buildInfo", "vcsUrl")
-	if err != nil {
-		t.Error(err)
-	}
+
+	// Get vcs details from build-info
+	buildInfoVcsUrl := buildInfo.Vcs.Url
+	buildInfoVcsRevision := buildInfo.Vcs.Revision
 	if buildInfoVcsRevision == "" {
 		t.Error("Failed to get git revision.")
 	}
-
 	if buildInfoVcsUrl == "" {
 		t.Error("Failed to get git remote url.")
 	}
 
 	gitManager := git.NewManager(dotGitPath)
-	if err = gitManager.ReadConfig(); err != nil {
+	if err := gitManager.ReadConfig(); err != nil {
 		t.Error("Failed to read .git config file.")
 	}
 	if gitManager.GetRevision() != buildInfoVcsRevision {
