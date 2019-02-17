@@ -732,11 +732,11 @@ func getNugetFlags() []cli.Flag {
 	nugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 value1 arg2 value2\"` `",
+			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Optional] Path to the solution.` `",
+			Usage: "[Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
 	nugetFlags = append(nugetFlags, getBaseFlags()...)
