@@ -228,8 +228,8 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("rt build-add-git", buildaddgit.Description, buildaddgit.Usage),
 			UsageText: buildaddgit.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
-			Action: func(c *cli.Context) {
-				buildAddGitCmd(c)
+			Action: func(c *cli.Context) error {
+				return buildAddGitCmd(c)
 			},
 		},
 		{
@@ -1647,13 +1647,12 @@ func buildCollectEnvCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
-func buildAddGitCmd(c *cli.Context) {
+func buildAddGitCmd(c *cli.Context) error {
 	if c.NArg() > 3 || c.NArg() < 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	buildAddGitConfiguration := createBuildAddGitConfiguration(c)
-	err := buildinfo.AddGit(buildAddGitConfiguration)
-	cliutils.ExitOnErr(err)
+	return buildinfo.AddGit(buildAddGitConfiguration)
 }
 
 func buildScanCmd(c *cli.Context) {

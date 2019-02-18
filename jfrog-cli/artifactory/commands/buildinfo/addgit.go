@@ -175,7 +175,7 @@ func (config *BuildAddGitConfiguration) createIssuesConfigurations() (err error)
 	}
 
 	// Build ArtifactoryDetails from provided serverID.
-	config.IssuesConfig.setArtifactoryDetails()
+	err = config.IssuesConfig.setArtifactoryDetails()
 	if err != nil {
 		return
 	}

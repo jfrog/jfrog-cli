@@ -279,13 +279,18 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }
 
-// Need to prepare the environment, for example such as .git directory and the config, head files.
-// Renaming the already prepared directories.
-func PrepareDotGitDir(t *testing.T, path string, setToParentDir bool) (string, string) {
-	baseDir := GetBaseDir(setToParentDir)
+// Prepare the .git environment for the test. Takes an existing folder and making it .git dir.
+// path - the dir to change to .git
+// targetDir - folder containing the path, usually "testdata".
+// switchToParentDir - true if need to look for 'targetDir' in the parent of current working dir.
+func PrepareDotGitDir(t *testing.T, path, targetDir string, switchToParentDir bool) (string, string) {
+	baseDir := GetBaseDir(switchToParentDir, targetDir)
+	// Create .git path and make sure it is clean
 	dotGitPath := filepath.Join(baseDir, ".git")
 	RemovePath(dotGitPath, t)
+	// Get the path of the .git candidate path
 	dotGitPathTest := filepath.Join(baseDir, path)
+	// Rename the .git candidate
 	RenamePath(dotGitPathTest, dotGitPath, t)
 	return baseDir, dotGitPath
 }
@@ -311,12 +316,14 @@ func RenamePath(oldPath, newPath string, t *testing.T) {
 	RemovePath(oldPath, t)
 }
 
-func GetBaseDir(setToParentDir bool) (baseDir string) {
+// Build path to targetDir in current working dir.
+// If switchToParentDir is true, build path in the parent dir of current working dir.
+func GetBaseDir(switchToParentDir bool, targetDir string) (baseDir string) {
 	pwd, _ := os.Getwd()
-	if setToParentDir {
+	if switchToParentDir {
 		pwd = filepath.Dir(pwd)
 	}
-	baseDir = filepath.Join(pwd, "testdata")
+	baseDir = filepath.Join(pwd, targetDir)
 	return
 }
 

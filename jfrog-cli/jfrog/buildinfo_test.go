@@ -8,12 +8,14 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/git"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -195,51 +197,71 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestCollectGitBuildInfo(t *testing.T) {
+func TestBuildAddGit(t *testing.T) {
 	initArtifactoryTest(t)
 	gitCollectCliRunner := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	buildName, buildNumber := "cli-test-build", "13"
-	dotGitPath := ioutils.FixWinPath(getCliDotGitPath(t))
+
+	// Populate cli config with 'default' server
+	oldHomeDir := os.Getenv(config.JfrogHomeDirEnv)
+	createJfrogHomeConfig(t)
+
+	// Create .git folder for this test
+	originalFolder := "buildaddgit_.git_suffix"
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testsdata", true)
+
+	// Get path for build-add-git config file
+	pwd, _ := os.Getwd()
+	configPath := filepath.Join(pwd, "..", "testsdata", "buildaddgit_config.yaml")
+
+	// Run build-add-git
+	err := gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, baseDir, "--config="+configPath)
+	if err != nil {
+		t.Error(err)
+		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
+		t.FailNow()
+	}
+
+	// Clear previous build if exists and publish build-info
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-
-	gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, dotGitPath)
-
-	// Publish build-info
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	// Fetch the published build-info
+	// Fetch the published build-info for validation
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	if t.Failed() {
+		// Clean
+		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
 		t.FailNow()
 	}
 	if buildInfo.Vcs == nil {
 		t.Error("Received build-info with empty VCS.")
+		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
+		t.FailNow()
 	}
 
-	// Get vcs details from build-info
+	// Validate results
+	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
+	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	buildInfoVcsUrl := buildInfo.Vcs.Url
 	buildInfoVcsRevision := buildInfo.Vcs.Revision
-	if buildInfoVcsRevision == "" {
-		t.Error("Failed to get git revision.")
+	if expectedVcsRevision != buildInfoVcsRevision {
+		t.Error("Wrong revision", "expected: " + expectedVcsRevision, "Got: " + buildInfoVcsRevision)
 	}
-	if buildInfoVcsUrl == "" {
-		t.Error("Failed to get git remote url.")
+	if expectedVcsUrl != buildInfoVcsUrl {
+		t.Error("Wrong url", "expected: " + expectedVcsUrl, "Got: " + buildInfoVcsUrl)
 	}
-
-	gitManager := git.NewManager(dotGitPath)
-	if err := gitManager.ReadConfig(); err != nil {
-		t.Error("Failed to read .git config file.")
-	}
-	if gitManager.GetRevision() != buildInfoVcsRevision {
-		t.Error("Wrong revision", "expected: "+gitManager.GetRevision(), "Got: "+buildInfoVcsRevision)
+	if buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4 {
+		t.Errorf("Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
 	}
 
-	gitConfigUrl := gitManager.GetUrl()
-	if gitConfigUrl != buildInfoVcsUrl {
-		t.Error("Wrong url", "expected: "+gitConfigUrl, "Got: "+buildInfoVcsUrl)
-	}
+	// Clean
+	cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
+}
 
+func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName string) {
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	os.Setenv(config.JfrogHomeDirEnv, oldHomeDir)
 	cleanArtifactoryTest()
 }
 
