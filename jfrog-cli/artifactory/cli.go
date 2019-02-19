@@ -564,6 +564,10 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 		},
 		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		},
+		cli.StringFlag{
 			Name:  "retries",
 			Usage: "[Default: " + strconv.Itoa(cliutils.Retries) + "] Number of upload retries.` `",
 		},
@@ -584,7 +588,6 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
 		},
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getThreadsFlag(),
 	}...)
 }
@@ -684,7 +687,7 @@ func getFailNoOpFlag() cli.Flag {
 func getExcludePatternsFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "exclude-patterns",
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards.` `",
 	}
 }
 
