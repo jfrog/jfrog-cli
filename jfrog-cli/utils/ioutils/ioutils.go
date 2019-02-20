@@ -1,14 +1,14 @@
 package ioutils
 
 import (
-	"fmt"
+	"bufio"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
-	"syscall"
 	"strings"
+	"syscall"
 )
 
 // @param allowUsingSavedPassword - Prevent changing username or url without changing the password.
@@ -41,7 +41,10 @@ func ScanFromConsole(caption string, scanInto *string, defaultValue string) {
 	} else {
 		print(caption + ": ")
 	}
-	fmt.Scanln(scanInto)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	*scanInto = scanner.Text()
 	if *scanInto == "" {
 		*scanInto = defaultValue
 	}
