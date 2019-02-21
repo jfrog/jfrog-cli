@@ -1,6 +1,10 @@
 package common
 
 const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
+
+
+
+
 		[Default: INFO]
 		This variable determines the log level of the JFrog CLI.
 		Possible values are: INFO, ERROR, and DEBUG.
