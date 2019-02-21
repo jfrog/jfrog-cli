@@ -19,11 +19,13 @@ function validateNpmVersion() {
 
 function download(url) {
     // We detect proxy by looking at the environment variable
+    var agent = https;
     if(process.env.https_proxy && process.env.https_proxy.length > 0) {
+        agent = http;
         url = process.env.https_proxy + starturl.replace('https://', '/https/');
     }
 
-    https.get(url, function(res) {
+    agent.get(url, function(res) {
         if(res.statusCode == 301 || res.statusCode == 302) {
             download(res.headers.location);
         } else if (res.statusCode == 200) {
