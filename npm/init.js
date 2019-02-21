@@ -1,6 +1,7 @@
 validateNpmVersion();
 
-var https = require('follow-redirects').https;
+var https = require('https');
+var http = require('http');
 var fs = require('fs');
 var packageJson = require('./package.json');
 var fileName = getFileName();
@@ -16,15 +17,36 @@ function validateNpmVersion() {
     }
 }
 
+function redirectDetectDownload(starturl) {
+    if(process.env.https_proxy && process.env.https_proxy.length > 0) {
+        var mainurl = process.env.https_proxy + starturl.replace('https://', '/https/');
+        console.log(mainurl);
+        http.get(mainurl, function(res) {
+            if(res.statusCode == 302) {
+                redirectDetectDownload(res.headers.location);
+            } else if (res.statusCode == 200) {
+                writeToFile(res)
+            } else {
+                console.log('Unexpected status code during JFrog CLI download')
+            }
+        }).on('error', function (err) {console.error(err);});
+    } else {
+        https.get(starturl, function(res) {
+            if(res.statusCode == 302) {
+                redirectDetectDownload(res.headers.location);
+            } else if (res.statusCode == 200) {
+                writeToFile(res)
+            } else {
+                console.log('Unexpected status code during JFrog CLI download')
+            }
+        }).on('error', function (err) {console.error(err);});
+    }
+}
+
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
-    https.get({
-        hostname: 'api.bintray.com',
-        port: 443,
-        path: '/content/jfrog/jfrog-cli-go/' + version + '/' + btPackage + '/' + fileName + '?bt_package=' + btPackage,
-        agent: false,
-        followAllRedirects: true
-    }, writeToFile).on('error', function (err) {console.error(err);});
+    var startUrl = 'https://api.bintray.com/content/jfrog/jfrog-cli-go/' + version + '/' + btPackage + '/' + fileName + '?bt_package=' + btPackage;
+    redirectDetectDownload(startUrl);
 }
 
 function isValidNpmVersion() {
