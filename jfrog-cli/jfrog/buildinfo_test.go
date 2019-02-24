@@ -208,7 +208,7 @@ func TestBuildAddGit(t *testing.T) {
 
 	// Create .git folder for this test
 	originalFolder := "buildaddgit_.git_suffix"
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testsdata", true)
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testsdata"))
 
 	// Get path for build-add-git config file
 	pwd, _ := os.Getwd()

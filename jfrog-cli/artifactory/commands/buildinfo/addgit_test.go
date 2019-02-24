@@ -25,14 +25,14 @@ func TestExtractGitUrlWithoutDotGit(t *testing.T) {
 }
 
 func runTest(t *testing.T, originalDir string) {
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, "testdata", true)
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, filepath.Join("..", "testdata"))
 	buildDir := getBuildDir(t)
 	checkFailureAndClean(t, buildDir, dotGitPath)
 	partials := getBuildInfoPartials(baseDir, t, buildName, "1")
 	checkFailureAndClean(t, buildDir, dotGitPath)
 	checkVCSUrl(partials, t)
 	tests.RemovePath(buildDir, t)
-	tests.RenamePath(dotGitPath, filepath.Join(tests.GetBaseDir(true, "testdata"), originalDir), t)
+	tests.RenamePath(dotGitPath, filepath.Join(filepath.Join("..", "testdata"), originalDir), t)
 }
 
 // Clean the environment if fails
@@ -40,7 +40,7 @@ func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 	if t.Failed() {
 		t.Log("Performing cleanup...")
 		tests.RemovePath(buildDir, t)
-		tests.RenamePath(oldPath, filepath.Join(tests.GetBaseDir(true, "testdata"), withGit), t)
+		tests.RenamePath(oldPath, filepath.Join(filepath.Join("..", "testdata"), withGit), t)
 		t.FailNow()
 	}
 }
@@ -131,7 +131,7 @@ func TestPopulateIssuesConfigurations(t *testing.T) {
 func TestAddGitDoCollect(t *testing.T) {
 	// Create git folder with files
 	originalFolder := "git_issues_.git_suffix"
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testdata", true)
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
 
 	// Create BuildAddGitConfiguration
 	config := BuildAddGitConfiguration{
@@ -167,7 +167,7 @@ func TestAddGitDoCollect(t *testing.T) {
 	}
 	// Set new git path
 	originalFolder = "git_issues2_.git_suffix"
-	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, "testdata", true)
+	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
 
 	// Collect issues - we pass a revision, so only 2 of the 4 existing issues should be collected
 	issues, err = config.DoCollect(config.IssuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
