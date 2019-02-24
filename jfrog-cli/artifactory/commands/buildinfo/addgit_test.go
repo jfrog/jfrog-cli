@@ -100,7 +100,7 @@ func TestPopulateIssuesConfigurations(t *testing.T) {
 	}
 	ic := new(IssuesConfiguration)
 	// Build config from file
-	err := ic.populateIssuesConfigurationsFromSpec("../testdata/buildissues/issuesconfig_success.yaml")
+	err := ic.populateIssuesConfigsFromSpec(filepath.Join("..", "testdata", "buildissues", "issuesconfig_success.yaml"))
 	// Check they are equal
 	if err != nil {
 		t.Error(fmt.Sprintf("Reading configurations file ended with error: %s", err.Error()))
@@ -113,14 +113,14 @@ func TestPopulateIssuesConfigurations(t *testing.T) {
 
 	// Test failing scenarios
 	failing := []string{
-		"../testdata/buildissues/issuesconfig_fail_no_issues.yaml",
-		"../testdata/buildissues/issuesconfig_fail_no_server.yaml",
-		"../testdata/buildissues/issuesconfig_fail_invalid_groupindex.yaml",
-		"../testdata/buildissues/issuesconfig_fail_invalid_aggregate.yaml",
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_issues.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_server.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_groupindex.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_aggregate.yaml"),
 	}
 
 	for _, config := range failing {
-		err = ic.populateIssuesConfigurationsFromSpec(config)
+		err = ic.populateIssuesConfigsFromSpec(config)
 		if err == nil {
 			t.Error(fmt.Sprintf("Reading configurations file was supposed to end with error: %s", config))
 			t.FailNow()

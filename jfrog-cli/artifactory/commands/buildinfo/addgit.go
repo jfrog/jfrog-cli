@@ -97,7 +97,7 @@ func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.Affect
 	config.IssuesConfig = new(IssuesConfiguration)
 
 	// Create config's IssuesConfigurations from the provided spec file.
-	err = config.createIssuesConfigurations()
+	err = config.createIssuesConfigs()
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +167,9 @@ func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfigurat
 	return foundIssues, nil
 }
 
-func (config *BuildAddGitConfiguration) createIssuesConfigurations() (err error) {
+func (config *BuildAddGitConfiguration) createIssuesConfigs() (err error) {
 	// Read file's data.
-	err = config.IssuesConfig.populateIssuesConfigurationsFromSpec(config.ConfigFilePath)
+	err = config.IssuesConfig.populateIssuesConfigsFromSpec(config.ConfigFilePath)
 	if err != nil {
 		return
 	}
@@ -222,7 +222,7 @@ func (config *BuildAddGitConfiguration) getLatestBuildInfo(issuesConfig *IssuesC
 	return buildInfo, nil
 }
 
-func (ic *IssuesConfiguration) populateIssuesConfigurationsFromSpec(configFilePath string) (err error) {
+func (ic *IssuesConfiguration) populateIssuesConfigsFromSpec(configFilePath string) (err error) {
 	var vConfig *viper.Viper
 	vConfig, err = utils.ReadConfigFile(configFilePath, utils.YAML)
 	if err != nil {
