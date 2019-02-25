@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 90d9cc9bf05666e6910bdfa4f914e96c706454c3 barbelity <barb@jfrog.com> 1550163053 +0200	commit (initial): TEST-1 - Adding file1.txt
+90d9cc9bf05666e6910bdfa4f914e96c706454c3 6198a6294722fdc75a570aac505784d2ec0d1818 barbelity <barb@jfrog.com> 1550163093 +0200	commit: TEST-2 - Adding text to file1.txt
+6198a6294722fdc75a570aac505784d2ec0d1818 a9eecfb2a71b8b0a73ecf027faf6d6f3739575dd barbelity <barb@jfrog.com> 1550172526 +0200	commit: TEST-3 - Adding file2.txt
+a9eecfb2a71b8b0a73ecf027faf6d6f3739575dd b033a0e508bdb52eee25654c9e12db33ff01b8ff barbelity <barb@jfrog.com> 1550172571 +0200	commit: TEST-4 - Adding text to file2.txt

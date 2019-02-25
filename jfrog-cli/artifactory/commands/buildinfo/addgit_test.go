@@ -1,6 +1,7 @@
 package buildinfo
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -24,14 +25,14 @@ func TestExtractGitUrlWithoutDotGit(t *testing.T) {
 }
 
 func runTest(t *testing.T, originalDir string) {
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, true)
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, filepath.Join("..", "testdata"))
 	buildDir := getBuildDir(t)
 	checkFailureAndClean(t, buildDir, dotGitPath)
 	partials := getBuildInfoPartials(baseDir, t, buildName, "1")
 	checkFailureAndClean(t, buildDir, dotGitPath)
 	checkVCSUrl(partials, t)
 	tests.RemovePath(buildDir, t)
-	tests.RenamePath(dotGitPath, filepath.Join(tests.GetBaseDir(true), originalDir), t)
+	tests.RenamePath(dotGitPath, filepath.Join(filepath.Join("..", "testdata"), originalDir), t)
 }
 
 // Clean the environment if fails
@@ -39,7 +40,7 @@ func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 	if t.Failed() {
 		t.Log("Performing cleanup...")
 		tests.RemovePath(buildDir, t)
-		tests.RenamePath(oldPath, filepath.Join(tests.GetBaseDir(true), withGit), t)
+		tests.RenamePath(oldPath, filepath.Join(filepath.Join("..", "testdata"), withGit), t)
 		t.FailNow()
 	}
 }
@@ -82,4 +83,102 @@ func checkVCSUrl(partials buildinfo.Partials, t *testing.T) {
 			break
 		}
 	}
+}
+
+func TestPopulateIssuesConfigurations(t *testing.T) {
+	// Test success scenario
+	expectedIssuesConfiguration := &IssuesConfiguration{
+		ServerID: "local",
+		TrackerName: "TESTING",
+		TrackerUrl: "http://TESTING.com",
+		Regexp: `([a-zA-Z]+-[0-9]*)\s-\s(.*)`,
+		KeyGroupIndex: 1,
+		SummaryGroupIndex: 2,
+		Aggregate: true,
+		AggregationStatus: "RELEASE",
+		LogLimit: 100,
+	}
+	ic := new(IssuesConfiguration)
+	// Build config from file
+	err := ic.populateIssuesConfigsFromSpec(filepath.Join("..", "testdata", "buildissues", "issuesconfig_success.yaml"))
+	// Check they are equal
+	if err != nil {
+		t.Error(fmt.Sprintf("Reading configurations file ended with error: %s", err.Error()))
+		t.FailNow()
+	}
+	if *ic != *expectedIssuesConfiguration {
+		t.Error(fmt.Sprintf("Failed reading configurations file. Expected: %+v Received: %+v", *expectedIssuesConfiguration, *ic))
+		t.FailNow()
+	}
+
+	// Test failing scenarios
+	failing := []string{
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_issues.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_server.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_groupindex.yaml"),
+		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_aggregate.yaml"),
+	}
+
+	for _, config := range failing {
+		err = ic.populateIssuesConfigsFromSpec(config)
+		if err == nil {
+			t.Error(fmt.Sprintf("Reading configurations file was supposed to end with error: %s", config))
+			t.FailNow()
+		}
+	}
+}
+
+func TestAddGitDoCollect(t *testing.T) {
+	// Create git folder with files
+	originalFolder := "git_issues_.git_suffix"
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
+
+	// Create BuildAddGitConfiguration
+	config := BuildAddGitConfiguration{
+		IssuesConfig: &IssuesConfiguration{
+			LogLimit: 100,
+			Aggregate: false,
+			SummaryGroupIndex: 2,
+			KeyGroupIndex: 1,
+			Regexp: `(.+-[0-9]+)\s-\s(.+)`,
+			TrackerName: "test",
+		},
+		BuildNumber: "1",
+		BuildName: "cli-test-build-issues",
+		ConfigFilePath: "",
+		DotGitPath: dotGitPath,
+	}
+
+	// Collect issues
+	issues, err := config.DoCollect(config.IssuesConfig, "")
+	if err != nil {
+		t.Error(err)
+	}
+	if len(issues) != 2 {
+		// Error - should be empty
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues: %v", len(issues), issues)
+	}
+
+	// Clean previous git path
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+	// Check if needs to fail
+	if t.Failed() {
+		t.FailNow()
+	}
+	// Set new git path
+	originalFolder = "git_issues2_.git_suffix"
+	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
+
+	// Collect issues - we pass a revision, so only 2 of the 4 existing issues should be collected
+	issues, err = config.DoCollect(config.IssuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
+	if err != nil {
+		t.Error(err)
+	}
+	if len(issues) != 2 {
+		// Error - should find 2 issues
+		t.Errorf("Issues list expected to have 2 issues, instead found %d issues: %v", len(issues), issues)
+	}
+
+	// Clean git path
+	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 }

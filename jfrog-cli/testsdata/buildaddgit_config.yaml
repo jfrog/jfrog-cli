@@ -1,0 +1,10 @@
+version: 1
+issues:
+  serverID: default
+  trackerName: TESTING
+  trackerUrl: http://TESTING.com
+  regexp: ([a-zA-Z]+-[0-9]*)\s-\s(.*)
+  keyGroupIndex: 1
+  summaryGroupIndex: 2
+  aggregate: true
+  aggregationStatus: RELEASE

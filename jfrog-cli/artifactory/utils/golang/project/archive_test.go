@@ -26,7 +26,7 @@ func TestArchiveProject(t *testing.T) {
 		t.Error(err)
 	}
 	originalFolder := "test_.git_suffix"
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, false)
+	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testdata")
 	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "my/module/name", "1.0.0", regex)
 	if err != nil {
 		t.Error(err)
