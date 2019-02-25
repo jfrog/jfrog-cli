@@ -9,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -45,7 +44,6 @@ var HideUnitTestLog *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	*RtUrl = utils.AddTrailingSlashIfNeeded(*RtUrl)
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
