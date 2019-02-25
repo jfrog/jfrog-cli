@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"testing"
@@ -19,6 +20,8 @@ func TestMain(m *testing.M) {
 
 func setupIntegrationTests() {
 	flag.Parse()
+	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
+
 	if *tests.TestBintray {
 		InitBintrayTests()
 	}
