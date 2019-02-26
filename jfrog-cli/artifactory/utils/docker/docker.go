@@ -199,14 +199,10 @@ type LoginCmd struct {
 }
 
 func (loginCmd *LoginCmd) GetCmd() *exec.Cmd {
-	cmdLogin := fmt.Sprintf(`| docker login %s --username="%s" --password-stdin`, loginCmd.DockerRegistry, loginCmd.Username)
-
 	if cliutils.IsWindows() {
-		cmd := "echo %DOCKER_PASS%" + cmdLogin
-		return exec.Command("cmd", "/C", cmd)
+		return exec.Command("cmd", "/C", "echo", "%DOCKER_PASS%|", "docker", "login", loginCmd.DockerRegistry, "--username", loginCmd.Username, "--password-stdin")
 	}
-
-	cmd := "echo $DOCKER_PASS " + cmdLogin
+	cmd := "echo $DOCKER_PASS " + fmt.Sprintf(`| docker login %s --username="%s" --password-stdin`, loginCmd.DockerRegistry, loginCmd.Username)
 	return exec.Command("sh", "-c", cmd)
 }
 
