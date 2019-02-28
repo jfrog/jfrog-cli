@@ -15,6 +15,7 @@ func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *Up
 		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
+		SetSkipCertsVerify(artDetails.SkipCertsVerify).
 		SetMinChecksumDeploy(minChecksumDeploySize).
 		SetThreads(flags.Threads).
 		SetLogger(log.Logger).

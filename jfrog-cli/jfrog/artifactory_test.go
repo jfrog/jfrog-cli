@@ -570,13 +570,13 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 // Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactorySelfSignedCert(t *testing.T) {
 	initArtifactoryTest(t)
-	path, err := ioutil.TempDir("", "jfrog.cli.test.")
+	tempDirPath, err := ioutil.TempDir("", "jfrog.cli.test.")
 	err = errorutils.CheckError(err)
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.RemoveAll(path)
-	os.Setenv(config.JfrogHomeDirEnv, path)
+	defer os.RemoveAll(tempDirPath)
+	os.Setenv(config.JfrogHomeDirEnv, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
 
@@ -584,25 +584,39 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	defer os.Remove(certificate.KEY_FILE)
 	defer os.Remove(certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
-	checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
-	spec := spec.NewBuilder().Pattern(tests.Repo1 + "/*.zip").Recursive(true).BuildSpec()
+	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
+	if err != nil {
+		t.Error(err)
+	}
+
+	fileSpec := spec.NewBuilder().Pattern(tests.Repo1 + "/*.zip").Recursive(true).BuildSpec()
 	if err != nil {
 		t.Error(err)
 	}
 	parsedUrl, err := url.Parse(artifactoryDetails.Url)
 	artifactoryDetails.Url = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
-	_, err = generic.Search(spec, artifactoryDetails)
-	// The server is using self-sign certificate
-	// Without loading the certificated we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
+
+	// The server is using self-signed certificates
+	// Without loading the certificates (or skipping verification) we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
+	_, err = generic.Search(fileSpec, artifactoryDetails)
 	if _, ok := err.(*url.Error); !ok {
 		t.Error("Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
 	}
 
+	// Set skipCertsVerify to true and run again. We expect the command to succeed.
+	artifactoryDetails.SkipCertsVerify = true
+	_, err = generic.Search(fileSpec, artifactoryDetails)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Set skipCertsVerify back to false.
+	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
+	artifactoryDetails.SkipCertsVerify = false
 	securityDirPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
 		t.Error(err)
 	}
-	// We need to copy the server certificate to the Cli security dir.
 	err = fileutils.CopyFile(securityDirPath, certificate.KEY_FILE)
 	if err != nil {
 		t.Error(err)
@@ -611,10 +625,11 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = generic.Search(spec, artifactoryDetails)
+	_, err = generic.Search(fileSpec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
+
 	artifactoryDetails.Url = artAuth.GetUrl()
 	cleanArtifactoryTest()
 }

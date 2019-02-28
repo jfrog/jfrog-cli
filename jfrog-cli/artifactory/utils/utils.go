@@ -24,7 +24,7 @@ func GetJfrogSecurityDir() (string, error) {
 	return filepath.Join(homeDir, "security"), nil
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails) (string, error) {
+func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails, skipCertsVerify bool) (string, error) {
 	u, err := url.Parse(artifactoryAuth.GetUrl())
 	if err != nil {
 		return "", err
@@ -35,7 +35,10 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails
 	if err != nil {
 		return "", err
 	}
-	client, err := httpclient.ClientBuilder().SetCertificatesPath(securityDir).Build()
+	client, err := httpclient.ClientBuilder().
+		SetCertificatesPath(securityDir).
+		SetSkipCertsVerify(skipCertsVerify).
+		Build()
 	if err != nil {
 		return "", err
 	}
@@ -69,6 +72,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	serviceConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
+		SetSkipCertsVerify(artDetails.SkipCertsVerify).
 		SetDryRun(isDryRun).
 		SetLogger(log.Logger).
 		Build()
