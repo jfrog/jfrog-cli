@@ -603,16 +603,16 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 		t.Error("Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
 	}
 
-	// Set skipCertsVerify to true and run again. We expect the command to succeed.
-	artifactoryDetails.SkipCertsVerify = true
+	// Set insecureTls to true and run again. We expect the command to succeed.
+	artifactoryDetails.InsecureTls = true
 	_, err = generic.Search(fileSpec, artifactoryDetails)
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Set skipCertsVerify back to false.
+	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
-	artifactoryDetails.SkipCertsVerify = false
+	artifactoryDetails.InsecureTls = false
 	securityDirPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
 		t.Error(err)

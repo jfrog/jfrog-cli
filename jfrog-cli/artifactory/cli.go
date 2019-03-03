@@ -497,7 +497,7 @@ func getBaseFlags() []cli.Flag {
 			Usage: "[Optional] Artifactory access token.` `",
 		},
 		cli.BoolFlag{
-			Name:  "skip-certs-verify",
+			Name:  "insecure-tls",
 			Usage: "[Default: false] Insecure: Skip TLS certificates verification.` `",
 		})
 }
@@ -1790,7 +1790,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
 	details.ServerId = c.String("server-id")
-	details.SkipCertsVerify = c.Bool("skip-certs-verify")
+	details.InsecureTls = c.Bool("insecure-tls")
 
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.

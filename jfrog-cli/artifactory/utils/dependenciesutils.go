@@ -112,7 +112,7 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 	serviceConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(auth).
 		SetCertificatesPath(securityDir).
-		SetSkipCertsVerify(artDetails.SkipCertsVerify).
+		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(false).
 		SetLogger(log.Logger).
 		Build()
@@ -122,7 +122,7 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 
 	client, err := rthttpclient.ArtifactoryClientBuilder().
 		SetCertificatesPath(serviceConfig.GetCertifactesPath()).
-		SetSkipCertsVerify(artDetails.SkipCertsVerify).
+		SetInsecureTls(artDetails.InsecureTls).
 		SetArtDetails(&auth).
 		Build()
 	if err != nil {

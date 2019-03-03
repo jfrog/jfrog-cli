@@ -37,7 +37,7 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 	if details == nil {
 		details = new(config.ArtifactoryDetails)
 		if defaultDetails != nil {
-			details.SkipCertsVerify = defaultDetails.SkipCertsVerify
+			details.InsecureTls = defaultDetails.InsecureTls
 		}
 	}
 	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails, interactive)
@@ -335,7 +335,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if err != nil {
 		return nil, err
 	}
-	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, details.SkipCertsVerify)
+	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, details.InsecureTls)
 	if err != nil {
 		return nil, err
 	}
