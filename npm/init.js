@@ -2,6 +2,7 @@ validateNpmVersion();
 
 var https = require('https');
 var http = require('http');
+var url = require('url');
 var fs = require('fs');
 var packageJson = require('./package.json');
 var fileName = getFileName();
@@ -17,17 +18,35 @@ function validateNpmVersion() {
     }
 }
 
-function download(url) {
-    // We detect outbount proxy by looking at the environment variable
-    var agent = https;
-    if (process.env.https_proxy && process.env.https_proxy.length > 0) {
-        if (process.env.https_proxy.startsWith('http://')){
-            agent = http;
-            url = process.env.https_proxy + starturl.replace('https://', '/https/');
-        }
-    }
+function downloadWithProxy(myUrl) {
+    var proxyparts = url.parse(process.env.https_proxy);
+    var myUrlParts = url.parse(myUrl);
 
-    agent.get(url, function(res) {
+    http.request({
+        host: proxyparts.hostname,
+        port: proxyparts.port,
+        method: 'CONNECT',
+        path: myUrlParts.hostname + ':443'
+    }).on('connect', function(res, socket, head) {
+        https.get({
+            host: myUrlParts.hostname,
+            socket: socket,
+            path: myUrlParts.path,
+            agent: false
+        }, function(res) {
+            if (res.statusCode == 301 || res.statusCode == 302) {
+                downloadWithProxy(res.headers.location);
+            } else if (res.statusCode == 200) {
+                writeToFile(res);
+            } else {
+                console.log('Unexpected status code ' + res.statusCode + ' during JFrog CLI download');
+            }
+        }).on('error', function (err) {console.error(err);});
+    }).end();
+}
+
+function download(url) {
+    https.get(url, function(res) {
         if (res.statusCode == 301 || res.statusCode == 302) {
             download(res.headers.location);
         } else if (res.statusCode == 200) {
@@ -41,7 +60,12 @@ function download(url) {
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
     var startUrl = 'https://api.bintray.com/content/jfrog/jfrog-cli-go/' + version + '/' + btPackage + '/' + fileName + '?bt_package=' + btPackage;
-    download(startUrl);
+    // We detect outbount proxy by looking at the environment variable
+    if (process.env.https_proxy && process.env.https_proxy.length > 0) {
+        downloadWithProxy(startUrl);
+    } else {
+        download(startUrl);
+    }
 }
 
 function isValidNpmVersion() {
