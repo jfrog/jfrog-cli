@@ -13,28 +13,29 @@ downloadCli();
 
 function validateNpmVersion() {
     if (!isValidNpmVersion()) {
-        throw new Error("JFrog CLI can be installed using npm version 5.0.0 or above.")
+        throw new Error("JFrog CLI can be installed using npm version 5.0.0 or above.");
     }
 }
 
 function download(url) {
-    // We detect proxy by looking at the environment variable
+    // We detect outbount proxy by looking at the environment variable
     var agent = https;
-    if(process.env.https_proxy && process.env.https_proxy.length > 0) {
-        agent = http;
-        url = process.env.https_proxy + starturl.replace('https://', '/https/');
+    if (process.env.https_proxy && process.env.https_proxy.length > 0) {
+        if (process.env.https_proxy.startsWith('http://')){
+            agent = http;
+            url = process.env.https_proxy + starturl.replace('https://', '/https/');
+        }
     }
 
     agent.get(url, function(res) {
-        if(res.statusCode == 301 || res.statusCode == 302) {
+        if (res.statusCode == 301 || res.statusCode == 302) {
             download(res.headers.location);
         } else if (res.statusCode == 200) {
-            writeToFile(res)
+            writeToFile(res);
         } else {
-            console.log('Unexpected status code during JFrog CLI download')
+            console.log('Unexpected status code ' + res.statusCode + ' during JFrog CLI download');
         }
     }).on('error', function (err) {console.error(err);});
-
 }
 
 function downloadCli() {
@@ -48,7 +49,7 @@ function isValidNpmVersion() {
     var npmVersionCmdOut = child_process.execSync("npm version -json");
     var npmVersion = JSON.parse(npmVersionCmdOut).npm;
     // Supported since version 5.0.0
-    return parseInt(npmVersion.charAt(0)) > 4
+    return parseInt(npmVersion.charAt(0)) > 4;
 }
 
 function writeToFile(response) {
@@ -58,7 +59,7 @@ function writeToFile(response) {
     }).on('end', function () {
         file.end();
         if (!process.platform.startsWith("win")) {
-            fs.chmodSync(filePath, 0555)
+            fs.chmodSync(filePath, 0555);
         }
     }).on('error', function (err) {
         console.error(err);
@@ -68,21 +69,21 @@ function writeToFile(response) {
 function getArchitecture() {
     var platform = process.platform;
     if (platform.startsWith("win")) {
-        return "windows-amd64"
+        return "windows-amd64";
     }
     if (platform.includes("darwin")) {
-        return "mac-386"
+        return "mac-386";
     }
     if (process.arch.includes("64")) {
-        return "linux-amd64"
+        return "linux-amd64";
     }
-    return "linux-386"
+    return "linux-386";
 }
 
 function getFileName() {
     var excecutable = "jfrog";
     if (process.platform.startsWith("win")) {
-        excecutable += ".exe"
+        excecutable += ".exe";
     }
-    return excecutable
+    return excecutable;
 }
