@@ -498,7 +498,7 @@ func getBaseFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "insecure-tls",
-			Usage: "[Default: false] Insecure: Skip TLS certificates verification.` `",
+			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
 		})
 }
 
