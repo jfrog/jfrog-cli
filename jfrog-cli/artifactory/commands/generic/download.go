@@ -37,32 +37,29 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 		defer fileutils.RemoveTempDir()
 	}
 
-	// Download Loop:
-	var filesInfo []clientutils.FileInfo
-	var totalExpected int
 	var errorOccurred = false
+	var downloadParamsArray []services.DownloadParams
+	// Create DownloadParams for all File-Spec groups.
 	for i := 0; i < len(downloadSpec.Files); i++ {
-
 		downParams, err := getDownloadParams(downloadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
-
-		currentBuildDependencies, expected, err := servicesManager.DownloadFiles(downParams)
-
-		totalExpected += expected
-		filesInfo = append(filesInfo, currentBuildDependencies...)
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
+		downloadParamsArray = append(downloadParamsArray, downParams)
 	}
 
+	// Perform download.
+	filesInfo, totalExpected, err := servicesManager.DownloadFiles(downloadParamsArray...)
+	if err != nil {
+		errorOccurred = true
+		log.Error(err)
+	}
+
+	// Check for errors.
 	if errorOccurred {
-		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors. Please review the logs")
+		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors, please review the logs.")
 	}
 	if configuration.DryRun {
 		return totalExpected, 0, err
