@@ -50,6 +50,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	serviceConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
 		SetLogger(log.Logger).
 		SetThreads(threads).
 		Build()

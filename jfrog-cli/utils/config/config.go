@@ -317,6 +317,7 @@ type ArtifactoryDetails struct {
 	AccessToken    string            `json:"accessToken,omitempty"`
 	ServerId       string            `json:"serverId,omitempty"`
 	IsDefault      bool              `json:"isDefault,omitempty"`
+	InsecureTls    bool              `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }

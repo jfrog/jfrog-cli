@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/bintray/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/httpclient"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
@@ -109,17 +108,11 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 		return err
 	}
 
-	serviceConfig, err := artifactory.NewConfigBuilder().
-		SetArtDetails(auth).
+	client, err := rthttpclient.ArtifactoryClientBuilder().
 		SetCertificatesPath(securityDir).
-		SetDryRun(false).
-		SetLogger(log.Logger).
+		SetInsecureTls(artDetails.InsecureTls).
+		SetArtDetails(&auth).
 		Build()
-	if err != nil {
-		return err
-	}
-
-	client, err := rthttpclient.ArtifactoryClientBuilder().SetCertificatesPath(serviceConfig.GetCertifactesPath()).SetArtDetails(&auth).Build()
 	if err != nil {
 		return err
 	}

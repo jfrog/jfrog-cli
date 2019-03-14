@@ -495,6 +495,10 @@ func getBaseFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "access-token",
 			Usage: "[Optional] Artifactory access token.` `",
+		},
+		cli.BoolFlag{
+			Name:  "insecure-tls",
+			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
 		})
 }
 
@@ -1448,7 +1452,7 @@ func pingCmd(c *cli.Context) {
 	if c.NArg() > 0 {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent.", c)
 	}
-	artDetails := createArtifactoryDetails(c, true)
+	artDetails := createArtifactoryDetailsByFlags(c, true)
 	resBody, err := generic.Ping(artDetails)
 	resString := string(clientutils.IndentJson(resBody))
 	if err != nil {
@@ -1595,7 +1599,7 @@ func searchCmd(c *cli.Context) {
 		searchSpec = createDefaultSearchSpec(c)
 	}
 
-	artDetails := createArtifactoryDetails(c, true)
+	artDetails := createArtifactoryDetailsByFlags(c, true)
 	searchResults, err := generic.Search(searchSpec, artDetails)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(searchResults)
@@ -1786,6 +1790,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
 	details.ServerId = c.String("server-id")
+	details.InsecureTls = c.Bool("insecure-tls")
 
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.

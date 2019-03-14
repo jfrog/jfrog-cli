@@ -34,9 +34,6 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 		return nil, err
 	}
 
-	if details == nil {
-		details = new(config.ArtifactoryDetails)
-	}
 	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails, interactive)
 	if err != nil {
 		return nil, err
@@ -69,6 +66,14 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 }
 
 func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails, interactive bool) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
+	// If details is nil, initialize a new one
+	if details == nil {
+		details = new(config.ArtifactoryDetails)
+		if defaultDetails != nil {
+			details.InsecureTls = defaultDetails.InsecureTls
+		}
+	}
+
 	// Get configurations list
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
@@ -332,7 +337,7 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 	if err != nil {
 		return nil, err
 	}
-	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth)
+	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, details.InsecureTls)
 	if err != nil {
 		return nil, err
 	}

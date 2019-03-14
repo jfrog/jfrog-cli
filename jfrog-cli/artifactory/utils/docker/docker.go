@@ -256,6 +256,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*
 	configBuilder := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
 		SetLogger(log.Logger).
 		SetThreads(threads)
 
