@@ -43,32 +43,28 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration
 		}
 	}
 
-	// Upload Loop:
-	var filesInfo []clientutils.FileInfo
 	var errorOccurred = false
+	var uploadParamsArray []services.UploadParams
+	// Create UploadParams for all File-Spec groups.
 	for i := 0; i < len(uploadSpec.Files); i++ {
-
 		uploadParams, err := getUploadParams(uploadSpec.Get(i), configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
+		uploadParamsArray = append(uploadParamsArray, uploadParams)
+	}
 
-		artifacts, uploaded, failed, err := servicesManager.UploadFiles(uploadParams)
-
-		filesInfo = append(filesInfo, artifacts...)
-		failCount += failed
-		successCount += uploaded
-		if err != nil {
-			errorOccurred = true
-			log.Error(err)
-			continue
-		}
+	// Perform upload.
+	filesInfo, successCount, failCount, err := servicesManager.UploadFiles(uploadParamsArray...)
+	if err != nil {
+		errorOccurred = true
+		log.Error(err)
 	}
 
 	if errorOccurred {
-		err = errors.New("Upload finished with errors. Please review the logs")
+		err = errors.New("Upload finished with errors, Please review the logs.")
 		return
 	}
 	if failCount > 0 {
