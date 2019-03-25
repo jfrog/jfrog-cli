@@ -1151,7 +1151,7 @@ func createAccessKeysParams(c *cli.Context, org, keyId string) *accesskeys.Param
 	params.ExistenceCheckCache = cachePeriod
 	params.WhiteCidrs = c.String("white-cidrs")
 	params.BlackCidrs = c.String("black-cidrs")
-	params.ApiOnly = c.BoolT("recursive")
+	params.ApiOnly = c.BoolT("api-only")
 
 	return params
 }
