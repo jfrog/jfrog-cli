@@ -270,6 +270,10 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*
 // First will try to login assuming a proxy-less tag (e.g. "registry-address/docker-repo/image:ver").
 // If fails, we will try assuming a reverse proxy tag (e.g. "registry-address-docker-repo/image:ver").
 func DockerLogin(imageTag string, config *DockerLoginConfig) error {
+	if config.ArtifactoryDetails.ApiKey != "" && config.ArtifactoryDetails.User == "" && config.ArtifactoryDetails.Password == "" {
+		log.Info("Using --apikey, assuming you ran docker login outside of jfrog")
+		return nil
+	}
 	imageRegistry, err := ResolveRegistryFromTag(imageTag)
 	if err != nil {
 		return err
