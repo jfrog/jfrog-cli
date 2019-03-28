@@ -7,6 +7,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/curl"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/golang"
@@ -27,7 +28,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildpublish"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/buildscan"
 	configdocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/config"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
+	copydocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/copy"
+	curldocs "github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/docs/artifactory/dockerpull"
@@ -128,9 +130,9 @@ func GetCommands() []cli.Command {
 			Name:      "copy",
 			Flags:     getCopyFlags(),
 			Aliases:   []string{"cp"},
-			Usage:     copy.Description,
-			HelpName:  common.CreateUsage("rt copy", copy.Description, copy.Usage),
-			UsageText: copy.Arguments,
+			Usage:     copydocs.Description,
+			HelpName:  common.CreateUsage("rt copy", copydocs.Description, copydocs.Usage),
+			UsageText: copydocs.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				copyCmd(c)
@@ -464,6 +466,19 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				pingCmd(c)
+			},
+		},
+		{
+			Name:            "curl",
+			Flags:           getCurlFlags(),
+			Aliases:         []string{"crl"},
+			Usage:           curldocs.Description,
+			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
+			UsageText:       curldocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			Action: func(c *cli.Context) error {
+				return curlCmd(c)
 			},
 		},
 	}
@@ -1146,6 +1161,10 @@ func getBuildAddGitFlags() []cli.Flag {
 	}
 }
 
+func getCurlFlags() []cli.Flag {
+	return []cli.Flag{getServerIdFlag()}
+}
+
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
 	artDetails := createArtifactoryDetails(c, includeConfig)
 	if artDetails.Url == "" {
@@ -1722,6 +1741,14 @@ func gitLfsCleanCmd(c *cli.Context) {
 		return
 	}
 	interactiveDeleteLfsFiles(filesToDelete, configuration)
+}
+
+func curlCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	curlCommand := extractCurlCommand(c)
+	return curl.Curl(curlCommand)
 }
 
 func interactiveDeleteLfsFiles(filesToDelete []rtclientutils.ResultItem, configuration *generic.GitLfsCleanConfiguration) {
@@ -2349,4 +2376,10 @@ func createBuildAddGitConfiguration(c *cli.Context) (buildAddGitConfiguration *b
 	buildAddGitConfiguration.DotGitPath = dotGitPath
 	buildAddGitConfiguration.ConfigFilePath = c.String("config")
 	return
+}
+
+func extractCurlCommand(c *cli.Context) (command []string) {
+	command = make([]string, len(c.Args()))
+	copy(command, c.Args())
+	return command
 }
