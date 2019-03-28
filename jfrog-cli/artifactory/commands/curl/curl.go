@@ -19,7 +19,7 @@ func Curl(args []string) error {
 		return errorutils.CheckError(err)
 	}
 
-	// Create curl configuration.
+	// Create curl command.
 	command := &CurlCommand{ExecutablePath: execPath, Arguments: args}
 
 	// Get server-id, remove from the command if exists.
@@ -43,7 +43,8 @@ func Curl(args []string) error {
 	// Replace url argument with complete url.
 	command.Arguments[urlIndex] = targetUrl
 
-	// Add credentials flag to Command.
+	log.Debug(fmt.Sprintf("Executing curl command: '%s -u%s'", strings.Join(command.Arguments, " "), artDetails.User))
+	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
 	credFlag := fmt.Sprintf("-u%s:%s", artDetails.User, artDetails.Password)
 	command.Arguments = append(command.Arguments, credFlag)
 
@@ -207,7 +208,6 @@ func (curlCmd *CurlCommand) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, curlCmd.ExecutablePath)
 	cmd = append(cmd, curlCmd.Arguments...)
-	log.Debug("Executing curl command:", cmd)
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 
