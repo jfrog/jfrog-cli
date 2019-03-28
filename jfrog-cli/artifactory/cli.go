@@ -761,6 +761,10 @@ func getGoFlags() []cli.Flag {
 			Name:  "no-registry",
 			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
+		cli.BoolFlag{
+			Name:  "publishDeps",
+			Usage: "[Default: false] Set to true if you want to publish the missing dependencies to Artifactory` `",
+		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
@@ -1411,7 +1415,7 @@ func goCmd(c *cli.Context) error {
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
 
-	err = golang.ExecuteGo(c.Bool("no-registry"), goArg, targetRepo, buildName, buildNumber, details)
+	err = golang.ExecuteGo(c.Bool("no-registry"), c.Bool("publishDeps"), goArg, targetRepo, buildName, buildNumber, details)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}

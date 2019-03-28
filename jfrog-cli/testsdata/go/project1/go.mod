@@ -1,3 +1,6 @@
 module github.com/jfrog/dependency
 
-require rsc.io/quote v1.5.2
+require (
+	github.com/pkg/errors v0.8.0
+	rsc.io/quote v1.5.2
+)
