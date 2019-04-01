@@ -252,7 +252,7 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 6, 0)
+	validateBuildInfo(buildInfo, t, 8, 0)
 
 	// Now, using a new build number, do the following:
 	// 1. Build the project again.
@@ -269,7 +269,7 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 6, 2)
+	validateBuildInfo(buildInfo, t, 8, 2)
 	validateBuildInfoProperties(buildInfo, t)
 
 	err = os.Chdir(wd)
@@ -433,6 +433,44 @@ func TestGoRecursivePublish(t *testing.T) {
 	if !strings.Contains(string(content), "module github.com/pkg/errors") {
 		t.Error(fmt.Sprintf("Expected to get module github.com/pkg/errors, however, got: %s", string(content)))
 	}
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoTest(gopath)
+}
+
+// Publish also the missing dependencies to Artifactory with the publishDeps flag.
+// Checks that the dependency exists in Artifactory.
+func TestGoWithPublishDeps(t *testing.T) {
+	initGoTest(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	project1Path := createGoProject(t, "project1")
+	testsdataTarget := filepath.Join(tests.Out, "testsdata")
+	testsdataSrc := filepath.Join(tests.GetTestResourcesPath(), "go", "testsdata")
+	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(project1Path)
+	if err != nil {
+		t.Error(err)
+	}
+
+	log.Info("Using Go project located at ", project1Path)
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--publishDeps=true")
+	cleanGoCache(t)
+
+	content := downloadModFile(tests.DownloadModOfDependencyGo, wd, "errors", t)
+	if strings.Contains(string(content), " module github.com/pkg/errors") {
+		t.Error(fmt.Sprintf("Wrong mod content was downloaded: %s", string(content)))
+	}
+
 	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)

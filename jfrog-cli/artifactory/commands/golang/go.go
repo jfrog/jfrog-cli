@@ -8,7 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 )
 
-func ExecuteGo(noRegistry bool, goArg []string, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+func ExecuteGo(noRegistry, publishDeps bool, goArg []string, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
 	err := golang.LogGoVersion()
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func ExecuteGo(noRegistry bool, goArg []string, targetRepo, buildName, buildNumb
 		return err
 	}
 
-	err = gocmd.RunWithFallbacksAndPublish(goArg, targetRepo, noRegistry, serviceManager)
+	err = gocmd.RunWithFallbacksAndPublish(goArg, targetRepo, noRegistry, publishDeps, serviceManager)
 	if err != nil {
 		return err
 	}
