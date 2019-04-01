@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -54,12 +56,15 @@ EndProject`}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := parseSlnFile(test.slnPath, regExp)
+			results, err := parseSlnFile(test.slnPath, regExp)
 			if err != nil {
 				t.Error(err)
 			}
-			if !reflect.DeepEqual(test.expected, result) {
-				t.Error(fmt.Sprintf("Expected %s, got %s", test.expected, result))
+
+			replaceCarriageSign(results)
+
+			if !reflect.DeepEqual(test.expected, results) {
+				t.Error(fmt.Sprintf("Expected %s, got %s", test.expected, results))
 			}
 		})
 	}
@@ -74,16 +79,17 @@ func TestParseProject(t *testing.T) {
 		expectedProjectName string
 	}{
 		{"packagename", `Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "packagename", "packagesconfig.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
-EndProject`, "jfrog/path/test/packagesconfig.csproj", "packagename"},
+EndProject`, filepath.Join("jfrog", "path", "test", "packagesconfig.csproj"), "packagename"},
 		{"withpath", `Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "packagename", "packagesconfig/packagesconfig.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
-EndProject`, "jfrog/path/test/packagesconfig/packagesconfig.csproj", "packagename"},
+EndProject`, filepath.Join("jfrog", "path", "test", "packagesconfig", "packagesconfig.csproj"), "packagename"},
 		{"sameprojectname", `Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "packagesconfig", "packagesconfig/packagesconfig.csproj", "{D1FFA0DC-0ACC-4108-ADC1-2A71122C09AF}"
-EndProject`, "jfrog/path/test/packagesconfig/packagesconfig.csproj", "packagesconfig"},
+EndProject`, filepath.Join("jfrog", "path", "test", "packagesconfig", "packagesconfig.csproj"), "packagesconfig"},
 	}
 
+	path := filepath.Join("jfrog", "path", "test")
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			csprojPath, projectName, err := parseProject(test.projectLine, "jfrog/path/test")
+			projectName, csprojPath, err := parseProject(test.projectLine, path)
 			if err != nil {
 				t.Error(err)
 			}
@@ -126,14 +132,26 @@ EndProject`},
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.solution.getProjectsFromSlns(regExp)
+			results, err := test.solution.getProjectsFromSlns(regExp)
 			if err != nil {
 				t.Error(err)
 			}
+			replaceCarriageSign(results)
 
-			if !reflect.DeepEqual(test.expectedProjects, result) {
-				t.Error(fmt.Sprintf("Expected %s, got %s", test.expectedProjects, result))
+			if !reflect.DeepEqual(test.expectedProjects, results) {
+				t.Error(fmt.Sprintf("Expected %s, got %s", test.expectedProjects, results))
 			}
 		})
+	}
+}
+
+// Reading a file on windows adds the \r\n instead of just \n
+// This breaks string comparison.
+// Replaces each \r\n with just \n.
+func replaceCarriageSign(results []string) {
+	if runtime.GOOS == "windows" {
+		for i, result := range results {
+			results[i] = strings.Replace(result, "\r\n", "\n", -1)
+		}
 	}
 }
