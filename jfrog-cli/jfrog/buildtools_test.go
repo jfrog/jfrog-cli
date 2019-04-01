@@ -463,7 +463,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	}
 
 	log.Info("Using Go project located at ", project1Path)
-	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--publishDeps=true")
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--publish-deps=true")
 	cleanGoCache(t)
 
 	content := downloadModFile(tests.DownloadModOfDependencyGo, wd, "errors", t)
