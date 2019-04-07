@@ -7,10 +7,20 @@ import (
 	"testing"
 )
 
+const (
+	host  = "localhost"
+	port  = "8888"
+	proxy = "http://" + host + ":" + port
+)
+
 func TestCreateDefaultPropertiesFile(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy(proxy, t)
+
 	for index := range BuildTypes {
 		testCreateDefaultPropertiesFile(BuildType(index), t)
 	}
+	setProxy(proxyOrg, t)
 }
 
 func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
@@ -28,6 +38,16 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 		t.Error(err)
 	}
 
+	var yamlConfig = map[string]string{
+		HOST: host,
+		PORT: port,
+	}
+
+	var propertiesFileConfig = map[string]string{
+		"artifactory.proxy.host": yamlConfig[HOST],
+		"artifactory.proxy.port": yamlConfig[PORT],
+	}
+
 	expectedConfig := viper.New()
 	for _, partialMapping := range buildTypeConfigMapping[buildType] {
 		for propertyKey := range *partialMapping {
@@ -37,19 +57,30 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 		}
 	}
 
+	for key, value := range propertiesFileConfig {
+		expectedConfig.Set(key, value)
+	}
+
 	compareViperConfigs(t, actualConfig, expectedConfig, buildType)
 }
 
 func TestCreateSimplePropertiesFile(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy(proxy, t)
+
 	var yamlConfig = map[string]string{
 		RESOLVER_PREFIX + URL: "http://some.url.com",
 		DEPLOYER_PREFIX + URL: "http://some.other.url.com",
 		BUILD_NAME:            "buildName",
+		HOST:                  host,
+		PORT:                  port,
 	}
 	var propertiesFileConfig = map[string]string{
 		"artifactory.resolve.contextUrl": yamlConfig[RESOLVER_PREFIX+URL],
 		"artifactory.publish.contextUrl": yamlConfig[DEPLOYER_PREFIX+URL],
 		"artifactory.deploy.build.name":  yamlConfig[BUILD_NAME],
+		"artifactory.proxy.host":         yamlConfig[HOST],
+		"artifactory.proxy.port":         yamlConfig[PORT],
 	}
 
 	vConfig := viper.New()
@@ -67,6 +98,7 @@ func TestCreateSimplePropertiesFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	setProxy(proxyOrg, t)
 
 	expectedConfig := viper.New()
 	for _, partialMapping := range buildTypeConfigMapping[MAVEN] {
@@ -132,5 +164,34 @@ func compareViperConfigs(t *testing.T, actual, expected *viper.Viper, buildType 
 		if !expected.IsSet(key) {
 			t.Error("["+buildType.String()+"]: Unexpected key, value found:", "('"+key+"','"+value+"')")
 		}
+	}
+}
+
+func TestSetProxyIfNeeded(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy(proxy, t)
+	vConfig := viper.New()
+
+	err := setProxyIfDefined(vConfig)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedConfig := viper.New()
+	expectedConfig.Set(PROXY+HOST, host)
+	expectedConfig.Set(PROXY+PORT, port)
+	compareViperConfigs(t, vConfig, expectedConfig, MAVEN)
+
+	setProxy(proxyOrg, t)
+}
+
+func getOriginalProxyValue() string {
+	return os.Getenv(HttpProxy)
+}
+
+func setProxy(proxy string, t *testing.T) {
+	err := os.Setenv(HttpProxy, proxy)
+	if err != nil {
+		t.Error(err)
 	}
 }
