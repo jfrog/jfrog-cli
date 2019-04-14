@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/git"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog/inttestutils"
@@ -12,6 +13,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"io/ioutil"
 	"os"
@@ -36,6 +39,85 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	os.Remove(testFileAbs)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
 	cleanArtifactoryTest()
+}
+
+func TestBuildPromote(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA := "cli-test-build", "10"
+
+	// Upload files with buildName and buildNumber
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+buildName, "--build-number="+buildNumberA)
+	artifactoryCli.Exec("build-publish", buildName, buildNumberA)
+
+	key1 := "key"
+	value1 := "v1,v2"
+	key2 := "another"
+	value2 := "property"
+	artifactoryCli.Exec("build-promote", buildName, buildNumberA, tests.Repo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumberA, t, artHttpDetails)
+	resultItems := getResultItemsFromArtifactory(tests.SearchRepo2, t)
+
+	if len(buildInfo.Modules[0].Artifacts) != len(resultItems) {
+		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
+	}
+
+	propsMap := make(map[string]string)
+	propsMap["build.name"] = buildInfo.Name
+	propsMap["build.number"] = buildInfo.Number
+	propsMap[key1] = value1
+	propsMap[key2] = value2
+
+	validateArtifactsProperties(resultItems, t, propsMap)
+	cleanArtifactoryTest()
+}
+
+// Returns the artifacts result found by the provided spec
+func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.ResultItem {
+	searchGoSpecFile, err := tests.CreateSpec(specName)
+	if err != nil {
+		t.Error(err)
+	}
+	spec, flags := getSpecAndCommonFlags(searchGoSpecFile)
+	flags.SetArtifactoryDetails(artAuth)
+	var resultItems []rtutils.ResultItem
+	for i := 0; i < len(spec.Files); i++ {
+		searchParams, err := generic.GetSearchParams(spec.Get(i))
+		if err != nil {
+			t.Error(err)
+		}
+
+		currentResultItems, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
+		if err != nil {
+			t.Error("Failed Searching files:", err)
+		}
+		resultItems = append(resultItems, currentResultItems...)
+	}
+	return resultItems
+}
+
+// This function validates the properties on the provided artifacts. Every property within the provided map should appear on the artifact.:
+func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T, propsMap map[string]string) {
+	for _, item := range resultItems {
+		properties := item.Properties
+		if len(properties) < 1 {
+			t.Error("Failed finding properties on item:", item.GetItemRelativePath())
+		}
+		propertiesMap := convertSliceToMap(properties)
+
+		for key, value := range propsMap {
+			valueFromArtifact, contains := propertiesMap[key]
+			if !contains {
+				t.Error(fmt.Sprintf("Failed finding %s property on %s", key, item.Name))
+			}
+			if value != valueFromArtifact {
+				t.Error(fmt.Sprintf("Wrong value for %s property on %s. Expected %s, got %s.", key, item.Name, value, valueFromArtifact))
+			}
+		}
+	}
 }
 
 func TestBuildAddDependenciesDryRun(t *testing.T) {
@@ -245,10 +327,10 @@ func TestBuildAddGit(t *testing.T) {
 	buildInfoVcsUrl := buildInfo.Vcs.Url
 	buildInfoVcsRevision := buildInfo.Vcs.Revision
 	if expectedVcsRevision != buildInfoVcsRevision {
-		t.Error("Wrong revision", "expected: " + expectedVcsRevision, "Got: " + buildInfoVcsRevision)
+		t.Error("Wrong revision", "expected: "+expectedVcsRevision, "Got: "+buildInfoVcsRevision)
 	}
 	if expectedVcsUrl != buildInfoVcsUrl {
-		t.Error("Wrong url", "expected: " + expectedVcsUrl, "Got: " + buildInfoVcsUrl)
+		t.Error("Wrong url", "expected: "+expectedVcsUrl, "Got: "+buildInfoVcsUrl)
 	}
 	if buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4 {
 		t.Errorf("Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)

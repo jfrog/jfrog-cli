@@ -909,12 +909,16 @@ func getSearchFlags() []cli.Flag {
 
 func getSetPropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.` `",
-		},
+		getPropertiesFlag("Only artifacts with these properties are affected."),
 	}
 	return append(flags, getPropertiesFlags()...)
+}
+
+func getPropertiesFlag(description string) cli.Flag {
+	return cli.StringFlag{
+		Name:  "props",
+		Usage: fmt.Sprintf("[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". %s ` `", description),
+	}
 }
 
 func getDeletePropertiesFlags() []cli.Flag {
@@ -1028,7 +1032,7 @@ func getBuildPromotionFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.` `",
-		},
+		}, getPropertiesFlag("A list of properties to attach to the build's artifacts."),
 	}...)
 }
 
@@ -1998,6 +2002,7 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 	promotionParamsImpl.Status = c.String("status")
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
+	promotionParamsImpl.Properties = c.String("props")
 	promoteConfiguration = new(buildinfo.BuildPromotionConfiguration)
 	promoteConfiguration.DryRun = c.Bool("dry-run")
 	promoteConfiguration.PromotionParams = promotionParamsImpl

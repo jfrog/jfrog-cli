@@ -270,7 +270,16 @@ func TestGoBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 8, 2)
-	validateBuildInfoProperties(buildInfo, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchGo, t)
+	if len(buildInfo.Modules[0].Artifacts) != len(resultItems) {
+		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
+	}
+	propsMap := make(map[string]string)
+	propsMap["build.name"] = buildName
+	propsMap["build.number"] = buildNumber
+	propsMap["go.version"] = "v1.0.0"
+	propsMap["go.name"] = "github.com/jfrog/dependency"
+	validateArtifactsProperties(resultItems, t, propsMap)
 
 	err = os.Chdir(wd)
 	if err != nil {
