@@ -15,7 +15,7 @@ const (
 
 func TestCreateDefaultPropertiesFile(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
-	setProxy(proxy, t)
+	setProxy("", t)
 
 	for index := range BuildTypes {
 		testCreateDefaultPropertiesFile(BuildType(index), t)
@@ -38,16 +38,6 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 		t.Error(err)
 	}
 
-	var yamlConfig = map[string]string{
-		HOST: host,
-		PORT: port,
-	}
-
-	var propertiesFileConfig = map[string]string{
-		"artifactory.proxy.host": yamlConfig[HOST],
-		"artifactory.proxy.port": yamlConfig[PORT],
-	}
-
 	expectedConfig := viper.New()
 	for _, partialMapping := range buildTypeConfigMapping[buildType] {
 		for propertyKey := range *partialMapping {
@@ -57,30 +47,41 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 		}
 	}
 
-	for key, value := range propertiesFileConfig {
-		expectedConfig.Set(key, value)
-	}
-
 	compareViperConfigs(t, actualConfig, expectedConfig, buildType)
 }
 
-func TestCreateSimplePropertiesFile(t *testing.T) {
+func TestCreateSimplePropertiesFileWithProxy(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
 	setProxy(proxy, t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+		"artifactory.proxy.host":         host,
+		"artifactory.proxy.port":         port,
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+}
 
+func TestCreateSimplePropertiesFileWithoutProxy(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy("", t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+
+}
+
+func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]string) {
 	var yamlConfig = map[string]string{
 		RESOLVER_PREFIX + URL: "http://some.url.com",
 		DEPLOYER_PREFIX + URL: "http://some.other.url.com",
 		BUILD_NAME:            "buildName",
-		HOST:                  host,
-		PORT:                  port,
-	}
-	var propertiesFileConfig = map[string]string{
-		"artifactory.resolve.contextUrl": yamlConfig[RESOLVER_PREFIX+URL],
-		"artifactory.publish.contextUrl": yamlConfig[DEPLOYER_PREFIX+URL],
-		"artifactory.deploy.build.name":  yamlConfig[BUILD_NAME],
-		"artifactory.proxy.host":         yamlConfig[HOST],
-		"artifactory.proxy.port":         yamlConfig[PORT],
 	}
 
 	vConfig := viper.New()
@@ -98,7 +99,6 @@ func TestCreateSimplePropertiesFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	setProxy(proxyOrg, t)
 
 	expectedConfig := viper.New()
 	for _, partialMapping := range buildTypeConfigMapping[MAVEN] {

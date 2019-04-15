@@ -207,18 +207,18 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	return propertiesFile.Name(), nil
 }
 
-// If HTTP_PROXY env variable presented, adds to the config to deploy Gradle/Maven artifacts via proxy
+// If the HTTP_PROXY environment variable is set, add to the config proxy details.
 func setProxyIfDefined(config *viper.Viper) error {
 	// Add HTTP_PROXY if exists
 	proxy := os.Getenv(HttpProxy)
 	if proxy != "" {
 		url, err := url.Parse(proxy)
 		if err != nil {
-			return err
+			return errorutils.CheckError(err)
 		}
 		host, port, err := net.SplitHostPort(url.Host)
 		if err != nil {
-			return err
+			return errorutils.CheckError(err)
 		}
 		config.Set(PROXY+HOST, host)
 		config.Set(PROXY+PORT, port)
