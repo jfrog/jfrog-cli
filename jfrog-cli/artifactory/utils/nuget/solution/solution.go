@@ -20,6 +20,8 @@ type Solution interface {
 	GetProjects() []project.Project
 }
 
+var projectRegExp *regexp.Regexp
+
 func Load(solutionPath, slnFile string) (Solution, error) {
 	solution := &solution{path: solutionPath, slnFile: slnFile}
 	err := solution.loadProjects()
@@ -27,7 +29,9 @@ func Load(solutionPath, slnFile string) (Solution, error) {
 }
 
 type solution struct {
-	path     string
+	path string
+	// If there are more then one sln files in the directory,
+	// the user must specify as arguments the sln file that should be used.
 	slnFile  string
 	projects []project.Project
 }
@@ -67,12 +71,7 @@ func (solution *solution) GetProjects() []project.Project {
 }
 
 func (solution *solution) loadProjects() error {
-	regExp, err := utils.GetRegExp(`Project\("(.*)\nEndProject`)
-	if err != nil {
-		return err
-	}
-
-	allProjects, err := solution.getProjectsFromSlns(regExp)
+	allProjects, err := solution.getProjectsFromSlns()
 	if err != nil {
 		return err
 	}
@@ -95,25 +94,25 @@ func (solution *solution) loadProjects() error {
 	return nil
 }
 
-// Finds all the project section within the sln files. If sln file is not provided,
-// searching the entire directory for all sln files.
-// Returns slice of all the projects.
-func (solution *solution) getProjectsFromSlns(regExp *regexp.Regexp) ([]string, error) {
+// Finds all the projects by reading the content of the the sln files. If sln file is not provided,
+// finds all sln files in the directory.
+// Returns a slice with all the projects in the solution.
+func (solution *solution) getProjectsFromSlns() ([]string, error) {
 	var allProjects []string
 	if solution.slnFile == "" {
-		slnFiles, err := fileutils.ListFilesWithSpecificExtension(solution.path, ".sln")
+		slnFiles, err := fileutils.ListFilesWithExtension(solution.path, ".sln")
 		if err != nil {
 			return nil, err
 		}
 		for _, slnFile := range slnFiles {
-			projects, err := parseSlnFile(slnFile, regExp)
+			projects, err := parseSlnFile(slnFile)
 			if err != nil {
 				return nil, err
 			}
 			allProjects = append(allProjects, projects...)
 		}
 	} else {
-		projects, err := parseSlnFile(filepath.Join(solution.path, solution.slnFile), regExp)
+		projects, err := parseSlnFile(filepath.Join(solution.path, solution.slnFile))
 		if err != nil {
 			return nil, err
 		}
@@ -122,33 +121,41 @@ func (solution *solution) getProjectsFromSlns(regExp *regexp.Regexp) ([]string, 
 	return allProjects, nil
 }
 
-// Parsing the project line for the project name and path information.
+// Parses the project line for the project name and path information.
 // Returns the name and path to csproj
 func parseProject(projectLine, path string) (projectName, csprojPath string, err error) {
 	parsedLine := strings.Split(projectLine, "=")
 	if len(parsedLine) <= 1 {
-		return "", "", errors.New("Wrong number of arguments for project line:" + projectLine)
+		return "", "", errors.New("Unexpected project line format: " + projectLine)
 	}
 
 	projectInfo := strings.Split(parsedLine[1], ",")
 	if len(projectInfo) <= 2 {
-		return "", "", errors.New("Wrong number of arguments for project information: " + parsedLine[1])
+		return "", "", errors.New("Unexpected project information format: " + parsedLine[1])
 	}
-	projectName = removeApostrophes(projectInfo[0])
-	csprojPath = filepath.Join(path, removeApostrophes(projectInfo[1]))
+	projectName = removeQuotes(projectInfo[0])
+	csprojPath = filepath.Join(path, removeQuotes(projectInfo[1]))
 	return
 }
 
-// Parse the sln file and returns all the founded lines by the regex
-func parseSlnFile(slnFile string, regExp *regexp.Regexp) ([]string, error) {
+// Parse the sln file according to project regular expression and returns all the founded lines by the regex
+func parseSlnFile(slnFile string) ([]string, error) {
+	var err error
+	if projectRegExp == nil {
+		projectRegExp, err = utils.GetRegExp(`Project\("(.*)\nEndProject`)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	content, err := ioutil.ReadFile(slnFile)
 	if err != nil {
 		return nil, err
 	}
-	projects := regExp.FindAllString(string(content), -1)
+	projects := projectRegExp.FindAllString(string(content), -1)
 	return projects, nil
 }
 
-func removeApostrophes(value string) string {
+func removeQuotes(value string) string {
 	return strings.Trim(strings.TrimSpace(value), "\"")
 }

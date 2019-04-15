@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -32,10 +31,6 @@ func TestEmptySolution(t *testing.T) {
 }
 
 func TestParseSln(t *testing.T) {
-	regExp, err := utils.GetRegExp(`Project\("(.*)\nEndProject`)
-	if err != nil {
-		t.Error(err)
-	}
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -56,7 +51,7 @@ EndProject`}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			results, err := parseSlnFile(test.slnPath, regExp)
+			results, err := parseSlnFile(test.slnPath)
 			if err != nil {
 				t.Error(err)
 			}
@@ -71,7 +66,6 @@ EndProject`}},
 }
 
 func TestParseProject(t *testing.T) {
-
 	tests := []struct {
 		name                string
 		projectLine         string
@@ -104,11 +98,6 @@ EndProject`, filepath.Join("jfrog", "path", "test", "packagesconfig", "packagesc
 }
 
 func TestGetProjectsFromSlns(t *testing.T) {
-	regExp, err := utils.GetRegExp(`Project\("(.*)\nEndProject`)
-	if err != nil {
-		t.Error(err)
-	}
-
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -132,7 +121,7 @@ EndProject`},
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			results, err := test.solution.getProjectsFromSlns(regExp)
+			results, err := test.solution.getProjectsFromSlns()
 			if err != nil {
 				t.Error(err)
 			}
@@ -145,9 +134,7 @@ EndProject`},
 	}
 }
 
-// Reading a file on windows adds the \r\n instead of just \n
-// This breaks string comparison.
-// Replaces each \r\n with just \n.
+// If running on Windows, replace \r\n with \n.
 func replaceCarriageSign(results []string) {
 	if runtime.GOOS == "windows" {
 		for i, result := range results {
