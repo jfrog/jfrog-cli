@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -399,4 +400,12 @@ func CreateSpec(fileName string) (string, error) {
 	searchFilePath := GetFilePath(fileName)
 	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
 	return searchFilePath, err
+}
+
+func ConvertSliceToMap(props []utils.Property) map[string]string {
+	propsMap := make(map[string]string)
+	for _, item := range props {
+		propsMap[item.Key] = item.Value
+	}
+	return propsMap
 }
