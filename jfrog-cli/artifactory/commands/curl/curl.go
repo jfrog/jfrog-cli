@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/commands"
+	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
@@ -29,7 +29,7 @@ func Execute(args []string) error {
 	}
 
 	// Get Artifactory details for this ID.
-	artDetails, err := commands.GetConfig(serverIdValue)
+	artDetails, err := config.GetArtifactorySpecificConfig(serverIdValue)
 	if err != nil {
 		return err
 	}
