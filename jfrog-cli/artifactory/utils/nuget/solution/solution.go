@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/artifactory/utils/nuget/solution/project"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"os"
+	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -16,14 +20,19 @@ type Solution interface {
 	GetProjects() []project.Project
 }
 
-func Load(solutionPath string) (Solution, error) {
-	solution := &solution{path: solutionPath}
+var projectRegExp *regexp.Regexp
+
+func Load(solutionPath, slnFile string) (Solution, error) {
+	solution := &solution{path: solutionPath, slnFile: slnFile}
 	err := solution.loadProjects()
 	return solution, err
 }
 
 type solution struct {
-	path     string
+	path string
+	// If there are more then one sln files in the directory,
+	// the user must specify as arguments the sln file that should be used.
+	slnFile  string
 	projects []project.Project
 }
 
@@ -62,27 +71,91 @@ func (solution *solution) GetProjects() []project.Project {
 }
 
 func (solution *solution) loadProjects() error {
-	return filepath.Walk(solution.path, func(path string, f os.FileInfo, err error) error {
+	allProjects, err := solution.getProjectsFromSlns()
+	if err != nil {
+		return err
+	}
+
+	for _, projectLine := range allProjects {
+		projectName, csprojPath, err := parseProject(projectLine, solution.path)
 		if err != nil {
-			return errorutils.CheckError(err)
+			log.Error(err)
+			continue
 		}
-		if f.IsDir() {
-			return nil
+		proj, err := project.Load(projectName, filepath.Dir(csprojPath), csprojPath)
+		if err != nil {
+			log.Error(err)
+			continue
 		}
-		if filepath.Ext(f.Name()) == ".csproj" {
-			projectName := strings.TrimSuffix(f.Name(), ".csproj")
-			csprojPath, err := filepath.Rel(solution.path, path)
+		if proj.Extractor() != nil {
+			solution.projects = append(solution.projects, proj)
+		}
+	}
+	return nil
+}
+
+// Finds all the projects by reading the content of the the sln files. If sln file is not provided,
+// finds all sln files in the directory.
+// Returns a slice with all the projects in the solution.
+func (solution *solution) getProjectsFromSlns() ([]string, error) {
+	var allProjects []string
+	if solution.slnFile == "" {
+		slnFiles, err := fileutils.ListFilesWithExtension(solution.path, ".sln")
+		if err != nil {
+			return nil, err
+		}
+		for _, slnFile := range slnFiles {
+			projects, err := parseSlnFile(slnFile)
 			if err != nil {
-				return errorutils.CheckError(err)
+				return nil, err
 			}
-			proj, err := project.Load(projectName, filepath.Dir(csprojPath), csprojPath)
-			if err != nil {
-				return err
-			}
-			if proj.Extractor() != nil {
-				solution.projects = append(solution.projects, proj)
-			}
+			allProjects = append(allProjects, projects...)
 		}
-		return nil
-	})
+	} else {
+		projects, err := parseSlnFile(filepath.Join(solution.path, solution.slnFile))
+		if err != nil {
+			return nil, err
+		}
+		allProjects = append(allProjects, projects...)
+	}
+	return allProjects, nil
+}
+
+// Parses the project line for the project name and path information.
+// Returns the name and path to csproj
+func parseProject(projectLine, path string) (projectName, csprojPath string, err error) {
+	parsedLine := strings.Split(projectLine, "=")
+	if len(parsedLine) <= 1 {
+		return "", "", errors.New("Unexpected project line format: " + projectLine)
+	}
+
+	projectInfo := strings.Split(parsedLine[1], ",")
+	if len(projectInfo) <= 2 {
+		return "", "", errors.New("Unexpected project information format: " + parsedLine[1])
+	}
+	projectName = removeQuotes(projectInfo[0])
+	csprojPath = filepath.Join(path, removeQuotes(projectInfo[1]))
+	return
+}
+
+// Parse the sln file according to project regular expression and returns all the founded lines by the regex
+func parseSlnFile(slnFile string) ([]string, error) {
+	var err error
+	if projectRegExp == nil {
+		projectRegExp, err = utils.GetRegExp(`Project\("(.*)\nEndProject`)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	content, err := ioutil.ReadFile(slnFile)
+	if err != nil {
+		return nil, err
+	}
+	projects := projectRegExp.FindAllString(string(content), -1)
+	return projects, nil
+}
+
+func removeQuotes(value string) string {
+	return strings.Trim(strings.TrimSpace(value), "\"")
 }

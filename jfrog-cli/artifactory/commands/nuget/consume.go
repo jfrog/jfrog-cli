@@ -55,7 +55,12 @@ func ConsumeCmd(params *Params, solutionPath string) error {
 		return nil
 	}
 
-	sol, err := solution.Load(solutionPath)
+	slnFile := ""
+	flags := strings.Split(params.Flags, " ")
+	if len(flags) > 0 && strings.HasSuffix(flags[0], ".sln") {
+		slnFile = flags[0]
+	}
+	sol, err := solution.Load(solutionPath, slnFile)
 	if err != nil {
 		return err
 	}
@@ -76,7 +81,7 @@ func DependencyTreeCmd() error {
 		return errorutils.CheckError(err)
 	}
 
-	sol, err := solution.Load(workspace)
+	sol, err := solution.Load(workspace, "")
 	if err != nil {
 		return err
 	}
