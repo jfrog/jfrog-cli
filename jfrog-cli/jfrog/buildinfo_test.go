@@ -65,17 +65,18 @@ func TestBuildPromote(t *testing.T) {
 		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
 	}
 
-	propsMap := make(map[string]string)
-	propsMap["build.name"] = buildInfo.Name
-	propsMap["build.number"] = buildInfo.Number
-	propsMap[key1] = value1
-	propsMap[key2] = value2
+	propsMap := map[string]string{
+		"build.name":   buildInfo.Name,
+		"build.number": buildInfo.Number,
+		key1:           value1,
+		key2:           value2,
+	}
 
 	validateArtifactsProperties(resultItems, t, propsMap)
 	cleanArtifactoryTest()
 }
 
-// Returns the artifacts result found by the provided spec
+// Returns the artifacts found by the provided spec
 func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.ResultItem {
 	searchGoSpecFile, err := tests.CreateSpec(specName)
 	if err != nil {
@@ -99,14 +100,14 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 	return resultItems
 }
 
-// This function validates the properties on the provided artifacts. Every property within the provided map should appear on the artifact.:
+// This function validates the properties on the provided artifacts. Every property within the provided map should be attached to the artifact.
 func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T, propsMap map[string]string) {
 	for _, item := range resultItems {
 		properties := item.Properties
 		if len(properties) < 1 {
 			t.Error("Failed finding properties on item:", item.GetItemRelativePath())
 		}
-		propertiesMap := convertSliceToMap(properties)
+		propertiesMap := tests.ConvertSliceToMap(properties)
 
 		for key, value := range propsMap {
 			valueFromArtifact, contains := propertiesMap[key]
