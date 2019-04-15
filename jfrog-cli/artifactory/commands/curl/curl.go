@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func Curl(args []string) error {
+func Execute(args []string) error {
 	// Get curl execution path.
 	execPath, err := exec.LookPath("curl")
 	if err != nil {
@@ -34,6 +34,11 @@ func Curl(args []string) error {
 		return err
 	}
 
+	// If the command already include credentials flag, return an error.
+	if command.isCredentialsFlagExists() {
+		return errorutils.CheckError(errors.New("Curl command must not include credentials flag (-u or --user)."))
+	}
+
 	// Get target url for the curl command.
 	urlIndex, targetUrl, err := command.buildCommandUrl(artDetails.Url)
 	if err != nil {
@@ -43,7 +48,7 @@ func Curl(args []string) error {
 	// Replace url argument with complete url.
 	command.Arguments[urlIndex] = targetUrl
 
-	log.Debug(fmt.Sprintf("Executing curl command: '%s -u%s'", strings.Join(command.Arguments, " "), artDetails.User))
+	log.Debug(fmt.Sprintf("Executing curl command: '%s -u***:***'", strings.Join(command.Arguments, " ")))
 	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
 	credFlag := fmt.Sprintf("-u%s:%s", artDetails.User, artDetails.Password)
 	command.Arguments = append(command.Arguments, credFlag)
@@ -55,9 +60,15 @@ func Curl(args []string) error {
 func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (urlIndex int, urlValue string, err error) {
 	// Find command's URL argument.
 	// Representing the target API for the Curl command.
-	urlIndex, urlValue = curlCmd.findNextArg()
+	urlIndex, urlValue = curlCmd.findUrlValueAndIndex()
 	if urlIndex == -1 {
 		err = errorutils.CheckError(errors.New("Could not find argument in curl command."))
+		return
+	}
+
+	// If user provided full-url, throw an error.
+	if strings.HasPrefix(urlValue, "http://") || strings.HasPrefix(urlValue, "https://") {
+		err = errorutils.CheckError(errors.New("Curl command must not include full-url, provide only the REST API (e.g '/api/system/ping')."))
 		return
 	}
 
@@ -88,11 +99,11 @@ func (curlCmd *CurlCommand) getAndRemoveServerIdFromCommand() (string, error) {
 	return serverIdValue, nil
 }
 
-// Find an argument in Command.
+// Find the URL argument in the Curl Command.
 // A command flag is prefixed by '-' or '--'.
 // Use this method ONLY after removing all JFrog-CLI flags, i.e flags in the form: '--my-flag=value' are not allowed.
 // An argument is any provided candidate which is not a flag or a flag value.
-func (curlCmd *CurlCommand) findNextArg() (int, string) {
+func (curlCmd *CurlCommand) findUrlValueAndIndex() (int, string) {
 	skipThisArg := false
 	for index, arg := range curlCmd.Arguments {
 		// Check if shouldn't check current arg.
@@ -126,7 +137,19 @@ func (curlCmd *CurlCommand) findNextArg() (int, string) {
 	return -1, ""
 }
 
-// Find value of required flag in Command.
+// Return true if the curl command includes credentials flag.
+// The searched flags are not CLI flags.
+func (curlCmd *CurlCommand) isCredentialsFlagExists() (bool) {
+	for _, arg := range curlCmd.Arguments {
+		if strings.HasPrefix(arg, "-u") || arg == "--user" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Find value of required CLI flag in Command.
 // If flag does not exist, returned indexes are -1 and error is nil.
 // Return values:
 // err - error if flag exists but failed to extract its value.
@@ -166,7 +189,7 @@ func (curlCmd *CurlCommand) findFlag(flagName string) (flagIndex, flagValueIndex
 // Value-index can either be same as flag's index, or the next one.
 // Return error if flag is found, but couldn't extract value.
 // If the provided index doesn't contain the searched flag, return flagIndex = -1.
-func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex int) (string, int, error) {
+func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex int) (flagValue string, flagValueIndex int, err error) {
 	indexValue := curlCmd.Arguments[flagIndex]
 
 	// Check if flag is in form '--server-id=myServer'

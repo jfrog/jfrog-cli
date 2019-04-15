@@ -83,13 +83,39 @@ func TestFindNextArg(t *testing.T) {
 
 	for index, test := range args {
 		command.Arguments = test
-		actualArgIndex, actualArg := command.findNextArg()
+		actualArgIndex, actualArg := command.findUrlValueAndIndex()
 
 		if actualArgIndex != expected[index].int {
 			t.Errorf("Expected arg index of: %d, got: %d.", expected[index].int, actualArgIndex)
 		}
 		if actualArg != expected[index].string {
 			t.Errorf("Expected arg index of: %s, got: %s.", expected[index].string, actualArg)
+		}
+	}
+}
+
+func TestIsCredsFlagExists(t *testing.T) {
+	command := &CurlCommand{}
+	args := [][]string{
+		{"-X", "GET", "arg1", "--foo", "bar", "-uaaa:ppp"},
+		{"-X", "GET", "--server-idea", "foo", "-u", "aaa:ppp", "/api/arg2"},
+		{"-XGET", "--foo", "bar", "--foo-bar", "--user", "meow", "-Ttest"},
+		{"-XGET", "--foo", "bar", "--foo-bar", "-Ttest"},
+	}
+
+	expected := []bool {
+		true,
+		true,
+		true,
+		false,
+	}
+
+	for index, test := range args {
+		command.Arguments = test
+		flagExists := command.isCredentialsFlagExists()
+
+		if flagExists != expected[index] {
+			t.Errorf("Expected flag existstence to be: %t, got: %t.", expected[index], flagExists)
 		}
 	}
 }

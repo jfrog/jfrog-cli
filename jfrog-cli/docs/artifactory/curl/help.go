@@ -1,6 +1,6 @@
 package curl
 
-const Description = "Run Curl commands to Artifactory APIs."
+const Description = "Run Curl commands to use Artifactory REST API."
 
 var Usage = []string{`jfrog rt curl [command options] <curl command>`}
 

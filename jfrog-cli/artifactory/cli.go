@@ -471,7 +471,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:            "curl",
 			Flags:           getCurlFlags(),
-			Aliases:         []string{"crl"},
+			Aliases:         []string{"cl"},
 			Usage:           curldocs.Description,
 			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
 			UsageText:       curldocs.Arguments,
@@ -1748,7 +1748,7 @@ func curlCmd(c *cli.Context) error {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	curlCommand := extractCurlCommand(c)
-	return curl.Curl(curlCommand)
+	return curl.Execute(curlCommand)
 }
 
 func interactiveDeleteLfsFiles(filesToDelete []rtclientutils.ResultItem, configuration *generic.GitLfsCleanConfiguration) {
