@@ -270,7 +270,17 @@ func TestGoBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 8, 2)
-	validateBuildInfoProperties(buildInfo, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchGo, t)
+	if len(buildInfo.Modules[0].Artifacts) != len(resultItems) {
+		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
+	}
+	propsMap := map[string]string{
+		"build.name":   buildName,
+		"build.number": buildNumber,
+		"go.version":   "v1.0.0",
+		"go.name":      "github.com/jfrog/dependency",
+	}
+	validateArtifactsProperties(resultItems, t, propsMap)
 
 	err = os.Chdir(wd)
 	if err != nil {
@@ -679,7 +689,7 @@ func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
 		if len(properties) < 1 {
 			t.Error("Failed setting properties on item:", item.GetItemRelativePath())
 		}
-		propertiesMap := convertSliceToMap(properties)
+		propertiesMap := tests.ConvertSliceToMap(properties)
 		value, contains := propertiesMap["build.name"]
 
 		if !contains {
@@ -754,14 +764,6 @@ func createNugetProject(t *testing.T, projectName string) string {
 		}
 	}
 	return projectTarget
-}
-
-func convertSliceToMap(props []rtutils.Property) map[string]string {
-	propsMap := make(map[string]string)
-	for _, item := range props {
-		propsMap[item.Key] = item.Value
-	}
-	return propsMap
 }
 
 func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expectedDependencies int) {

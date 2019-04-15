@@ -548,10 +548,6 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Optional] Build number. Providing this option will record all uploaded artifacts for later build info publication.` `",
 		},
 		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\" to be attached to the uploaded artifacts.` `",
-		},
-		cli.StringFlag{
 			Name:  "deb",
 			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.` `",
 		},
@@ -587,6 +583,7 @@ func getUploadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
 		},
+		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getUploadExcludePatternsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
@@ -604,10 +601,6 @@ func getDownloadFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build-number",
 			Usage: "[Optional] Build number. Providing this option will record all downloaded artifacts for later build info publication.` `",
-		},
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be downloaded.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -651,6 +644,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "include-dirs",
 			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.` `",
 		},
+		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
@@ -811,13 +805,10 @@ func getMoveFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be moved.` `",
-		},
-		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getPropertiesFlag("Only artifacts with these properties will be moved."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -842,13 +833,10 @@ func getCopyFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be copied.` `",
-		},
-		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -859,10 +847,6 @@ func getDeleteFlags() []cli.Flag {
 	deleteFlags := append(getServerFlags(), getSortLimitFlags()...)
 	deleteFlags = append(deleteFlags, getSpecFlags()...)
 	return append(deleteFlags, []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be deleted.` `",
-		},
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.` `",
@@ -879,6 +863,7 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getPropertiesFlag("Only artifacts with these properties will be deleted."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -889,10 +874,6 @@ func getSearchFlags() []cli.Flag {
 	searchFlags := append(getServerFlags(), getSortLimitFlags()...)
 	searchFlags = append(searchFlags, getSpecFlags()...)
 	return append(searchFlags, []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties will be returned.` `",
-		},
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] Set to false if you do not wish to search artifacts inside sub-folders in Artifactory.` `",
@@ -901,6 +882,7 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -909,12 +891,16 @@ func getSearchFlags() []cli.Flag {
 
 func getSetPropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts with these properties are affected.` `",
-		},
+		getPropertiesFlag("Only artifacts with these properties are affected."),
 	}
 	return append(flags, getPropertiesFlags()...)
+}
+
+func getPropertiesFlag(description string) cli.Flag {
+	return cli.StringFlag{
+		Name:  "props",
+		Usage: fmt.Sprintf("[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". %s ` `", description),
+	}
 }
 
 func getDeletePropertiesFlags() []cli.Flag {
@@ -1028,7 +1014,7 @@ func getBuildPromotionFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.` `",
-		},
+		}, getPropertiesFlag("A list of properties to attach to the build artifacts."),
 	}...)
 }
 
@@ -1998,6 +1984,7 @@ func createBuildPromoteConfiguration(c *cli.Context) (promoteConfiguration *buil
 	promotionParamsImpl.Status = c.String("status")
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
+	promotionParamsImpl.Properties = c.String("props")
 	promoteConfiguration = new(buildinfo.BuildPromotionConfiguration)
 	promoteConfiguration.DryRun = c.Bool("dry-run")
 	promoteConfiguration.PromotionParams = promotionParamsImpl
