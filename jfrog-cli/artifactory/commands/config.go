@@ -54,7 +54,6 @@ func Config(details *config.ArtifactoryDetails, defaultDetails *config.Artifacto
 		return nil, err
 	}
 
-	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	if shouldEncPassword {
 		details, err = EncryptPassword(details)
 		if err != nil {
@@ -136,6 +135,7 @@ func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails
 	if fileutils.IsSshUrl(details.Url) {
 		return getSshKeyPath(details)
 	}
+	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	// Api-Key/Password/Access-Token
 	if details.ApiKey == "" && details.Password == "" && details.AccessToken == "" {
 		err := readAccessTokenFromConsole(details)

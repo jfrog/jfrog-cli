@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-go/jfrog-cli/utils/config"
+	"strings"
 	"testing"
 )
 
@@ -82,4 +83,21 @@ func configStructToString(artConfig *config.ArtifactoryDetails) string {
 	artConfig.IsDefault = false
 	marshaledStruct, _ := json.Marshal(*artConfig)
 	return string(marshaledStruct)
+}
+
+func TestGetConfigurationFromUser(t *testing.T) {
+	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
+		User: "admin", Password: "password",
+		ApiKey: "", SshKeyPath: "", AccessToken: "",
+		ServerId:  "test",
+		IsDefault: false}
+
+	err := getConfigurationFromUser(&inputDetails, &inputDetails)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !strings.HasSuffix(inputDetails.GetUrl(), "/") {
+		t.Error("Expected url to end with /")
+	}
 }
