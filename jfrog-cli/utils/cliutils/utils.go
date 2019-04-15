@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"runtime"
 	"strings"
@@ -15,10 +16,20 @@ import (
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
 
+var cliTempDir string
+
 func init() {
+	// Initialize error handling.
 	if os.Getenv("JFROG_CLI_ERROR_HANDLING") == string(OnErrorPanic) {
 		errorutils.CheckError = PanicOnError
 	}
+
+	// Initialize the temp base-dir path of the CLI executions.
+	cliTempDir = os.Getenv("JFROG_CLI_TEMP_DIR")
+	if cliTempDir == "" {
+		cliTempDir = os.TempDir()
+	}
+	fileutils.SetTempDirBase(cliTempDir)
 }
 
 // Exit codes:
@@ -170,12 +181,10 @@ func IsWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
-func GetTempDir() string {
-	tempDirPath := os.Getenv("JFROG_CLI_TEMP_DIR")
-	if tempDirPath != "" {
-		return tempDirPath
-	}
-	return os.TempDir()
+// Return the path of CLI temp dir.
+// This path should be persistent, meaning - should not be cleared at the end of a CLI run.
+func GetCliPersistentTempDirPath() string {
+	return cliTempDir
 }
 
 type Credentials interface {
