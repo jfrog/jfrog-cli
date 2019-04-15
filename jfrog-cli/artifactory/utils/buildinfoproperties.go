@@ -8,6 +8,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -17,6 +19,7 @@ type BuildType int
 const (
 	MAVEN BuildType = iota
 	GRADLE
+	HttpProxy = "HTTP_PROXY"
 )
 
 var BuildTypes = []string{
@@ -69,6 +72,10 @@ const PROPERTIES_TEMP_PREFIX = "buildInfoProperties"
 const PROPERTIES_TEMP_PATH = "jfrog/properties/"
 const GENERATED_BUILD_INFO_TEMP_PREFIX = "generatedBuildInfo"
 
+const PROXY = "proxy."
+const HOST = "host"
+const PORT = "port"
+
 // Config mapping are used to create buildInfo properties file to be used by BuildInfo extractors.
 // Build config provided by the user may contain other properties that will not be included in the properties file.
 var defaultPropertiesValues = map[string]string{
@@ -106,6 +113,8 @@ var commonConfigMapping = map[string]string{
 	"artifactory.deploy.build.name":                      BUILD_NAME,
 	"artifactory.deploy.build.number":                    BUILD_NUMBER,
 	"buildInfo.generated.build.info":                     GENERATED_BUILD_INFO,
+	"artifactory.proxy.host":                             PROXY + HOST,
+	"artifactory.proxy.port":                             PROXY + PORT,
 }
 
 var mavenConfigMapping = map[string]string{
@@ -175,6 +184,11 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 		return "", err
 	}
 
+	err = setProxyIfDefined(config)
+	if err != nil {
+		return "", err
+	}
+
 	// Iterate all the required properties keys according to the buildType and create properties file.
 	// If a value is provided by the build config file write it,
 	// otherwise use the default value from defaultPropertiesValues map.
@@ -191,6 +205,25 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 		}
 	}
 	return propertiesFile.Name(), nil
+}
+
+// If the HTTP_PROXY environment variable is set, add to the config proxy details.
+func setProxyIfDefined(config *viper.Viper) error {
+	// Add HTTP_PROXY if exists
+	proxy := os.Getenv(HttpProxy)
+	if proxy != "" {
+		url, err := url.Parse(proxy)
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		host, port, err := net.SplitHostPort(url.Host)
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		config.Set(PROXY+HOST, host)
+		config.Set(PROXY+PORT, port)
+	}
+	return nil
 }
 
 func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error {

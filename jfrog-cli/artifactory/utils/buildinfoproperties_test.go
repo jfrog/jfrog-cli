@@ -7,10 +7,20 @@ import (
 	"testing"
 )
 
+const (
+	host  = "localhost"
+	port  = "8888"
+	proxy = "http://" + host + ":" + port
+)
+
 func TestCreateDefaultPropertiesFile(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy("", t)
+
 	for index := range BuildTypes {
 		testCreateDefaultPropertiesFile(BuildType(index), t)
 	}
+	setProxy(proxyOrg, t)
 }
 
 func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
@@ -40,16 +50,38 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 	compareViperConfigs(t, actualConfig, expectedConfig, buildType)
 }
 
-func TestCreateSimplePropertiesFile(t *testing.T) {
+func TestCreateSimplePropertiesFileWithProxy(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy(proxy, t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+		"artifactory.proxy.host":         host,
+		"artifactory.proxy.port":         port,
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+}
+
+func TestCreateSimplePropertiesFileWithoutProxy(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy("", t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+
+}
+
+func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]string) {
 	var yamlConfig = map[string]string{
 		RESOLVER_PREFIX + URL: "http://some.url.com",
 		DEPLOYER_PREFIX + URL: "http://some.other.url.com",
 		BUILD_NAME:            "buildName",
-	}
-	var propertiesFileConfig = map[string]string{
-		"artifactory.resolve.contextUrl": yamlConfig[RESOLVER_PREFIX+URL],
-		"artifactory.publish.contextUrl": yamlConfig[DEPLOYER_PREFIX+URL],
-		"artifactory.deploy.build.name":  yamlConfig[BUILD_NAME],
 	}
 
 	vConfig := viper.New()
@@ -132,5 +164,34 @@ func compareViperConfigs(t *testing.T, actual, expected *viper.Viper, buildType 
 		if !expected.IsSet(key) {
 			t.Error("["+buildType.String()+"]: Unexpected key, value found:", "('"+key+"','"+value+"')")
 		}
+	}
+}
+
+func TestSetProxyIfNeeded(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	setProxy(proxy, t)
+	vConfig := viper.New()
+
+	err := setProxyIfDefined(vConfig)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedConfig := viper.New()
+	expectedConfig.Set(PROXY+HOST, host)
+	expectedConfig.Set(PROXY+PORT, port)
+	compareViperConfigs(t, vConfig, expectedConfig, MAVEN)
+
+	setProxy(proxyOrg, t)
+}
+
+func getOriginalProxyValue() string {
+	return os.Getenv(HttpProxy)
+}
+
+func setProxy(proxy string, t *testing.T) {
+	err := os.Setenv(HttpProxy, proxy)
+	if err != nil {
+		t.Error(err)
 	}
 }
