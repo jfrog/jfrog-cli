@@ -83,7 +83,7 @@ func TestFindNextArg(t *testing.T) {
 
 	for index, test := range args {
 		command.Arguments = test
-		actualArgIndex, actualArg := command.findUrlValueAndIndex()
+		actualArgIndex, actualArg := command.findUriValueAndIndex()
 
 		if actualArgIndex != expected[index].int {
 			t.Errorf("Expected arg index of: %d, got: %d.", expected[index].int, actualArgIndex)
@@ -156,8 +156,8 @@ func TestBuildCommandUrl(t *testing.T) {
 	tests := []struct {
 		name      string
 		arguments []string
-		urlIndex  int
-		urlValue  string
+		uriIndex  int
+		uriValue  string
 		expectErr bool
 	}{
 		{"test1", []string{"-X", "GET", "/api/build/test1", "--server-id", "test1", "--foo", "bar"}, 2, "http://artifactory:8081/artifactory/api/build/test1", false},
@@ -172,7 +172,7 @@ func TestBuildCommandUrl(t *testing.T) {
 	for _, test := range tests {
 		command.Arguments = test.arguments
 		t.Run(test.name, func(t *testing.T) {
-			urlIndex, urlValue, err := command.buildCommandUrl(urlPrefix)
+			uriIndex, uriValue, err := command.buildCommandUrl(urlPrefix)
 
 			// Check errors.
 			if err != nil && !test.expectErr {
@@ -184,11 +184,11 @@ func TestBuildCommandUrl(t *testing.T) {
 
 			if err == nil {
 				// Validate results.
-				if urlValue != test.urlValue {
-					t.Errorf("Expected url value of: %s, got: %s.", test.urlValue, urlValue)
+				if uriValue != test.uriValue {
+					t.Errorf("Expected uri value of: %s, got: %s.", test.uriValue, uriValue)
 				}
-				if urlIndex != test.urlIndex {
-					t.Errorf("Expected url index of: %d, got: %d.", test.urlIndex, urlIndex)
+				if uriIndex != test.uriIndex {
+					t.Errorf("Expected uri index of: %d, got: %d.", test.uriIndex, uriIndex)
 				}
 			}
 		})

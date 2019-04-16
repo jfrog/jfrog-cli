@@ -34,19 +34,19 @@ func Execute(args []string) error {
 		return err
 	}
 
-	// If the command already include credentials flag, return an error.
+	// If the command already includes credentials flag, return an error.
 	if command.isCredentialsFlagExists() {
 		return errorutils.CheckError(errors.New("Curl command must not include credentials flag (-u or --user)."))
 	}
 
 	// Get target url for the curl command.
-	urlIndex, targetUrl, err := command.buildCommandUrl(artDetails.Url)
+	uriIndex, targetUri, err := command.buildCommandUrl(artDetails.Url)
 	if err != nil {
 		return err
 	}
 
 	// Replace url argument with complete url.
-	command.Arguments[urlIndex] = targetUrl
+	command.Arguments[uriIndex] = targetUri
 
 	log.Debug(fmt.Sprintf("Executing curl command: '%s -u***:***'", strings.Join(command.Arguments, " ")))
 	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
@@ -57,28 +57,28 @@ func Execute(args []string) error {
 	return gofrogcmd.RunCmd(command)
 }
 
-func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (urlIndex int, urlValue string, err error) {
+func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int, uriValue string, err error) {
 	// Find command's URL argument.
 	// Representing the target API for the Curl command.
-	urlIndex, urlValue = curlCmd.findUrlValueAndIndex()
-	if urlIndex == -1 {
+	uriIndex, uriValue = curlCmd.findUriValueAndIndex()
+	if uriIndex == -1 {
 		err = errorutils.CheckError(errors.New("Could not find argument in curl command."))
 		return
 	}
 
 	// If user provided full-url, throw an error.
-	if strings.HasPrefix(urlValue, "http://") || strings.HasPrefix(urlValue, "https://") {
-		err = errorutils.CheckError(errors.New("Curl command must not include full-url, provide only the REST API (e.g '/api/system/ping')."))
+	if strings.HasPrefix(uriValue, "http://") || strings.HasPrefix(uriValue, "https://") {
+		err = errorutils.CheckError(errors.New("Curl command must not include full-url, but only the REST API URI (e.g '/api/system/ping')."))
 		return
 	}
 
 	// Trim '/' prefix if exists.
-	if strings.HasPrefix(urlValue, "/") {
-		urlValue = strings.TrimPrefix(urlValue, "/")
+	if strings.HasPrefix(uriValue, "/") {
+		uriValue = strings.TrimPrefix(uriValue, "/")
 	}
 
 	// Attach Artifactory's url to the api.
-	urlValue = artifactoryUrl + urlValue
+	uriValue = artifactoryUrl + uriValue
 
 	return
 }
@@ -103,7 +103,7 @@ func (curlCmd *CurlCommand) getAndRemoveServerIdFromCommand() (string, error) {
 // A command flag is prefixed by '-' or '--'.
 // Use this method ONLY after removing all JFrog-CLI flags, i.e flags in the form: '--my-flag=value' are not allowed.
 // An argument is any provided candidate which is not a flag or a flag value.
-func (curlCmd *CurlCommand) findUrlValueAndIndex() (int, string) {
+func (curlCmd *CurlCommand) findUriValueAndIndex() (int, string) {
 	skipThisArg := false
 	for index, arg := range curlCmd.Arguments {
 		// Check if shouldn't check current arg.
