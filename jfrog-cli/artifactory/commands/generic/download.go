@@ -28,15 +28,6 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 		}
 	}
 
-	// Temp Directory:
-	if !configuration.DryRun {
-		err = fileutils.CreateTempDirPath()
-		if err != nil {
-			return 0, 0, err
-		}
-		defer fileutils.RemoveTempDir()
-	}
-
 	var errorOccurred = false
 	var downloadParamsArray []services.DownloadParams
 	// Create DownloadParams for all File-Spec groups.

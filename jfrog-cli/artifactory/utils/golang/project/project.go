@@ -85,11 +85,12 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 	// Temp directory for the project archive.
 	// The directory will be deleted at the end.
-	err = fileutils.CreateTempDirPath()
+	var tempDirPath string
+	tempDirPath, err = fileutils.CreateTempDir()
 	if err != nil {
 		return err
 	}
-	defer fileutils.RemoveTempDir()
+	defer fileutils.RemoveTempDir(tempDirPath)
 
 	params := _go.NewGoParams()
 	params.Version = project.version
@@ -98,7 +99,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	params.ModuleId = project.getId()
 	params.ModContent = project.modContent
 	params.ModPath = filepath.Join(project.projectPath, "go.mod")
-	params.ZipPath, err = project.archiveProject(project.version)
+	params.ZipPath, err = project.archiveProject(project.version, tempDirPath)
 	if err != nil {
 		return err
 	}
@@ -198,11 +199,7 @@ func (project *goProject) readModFile() error {
 
 // Archive the go project.
 // Returns the path of the temp archived project file.
-func (project *goProject) archiveProject(version string) (string, error) {
-	tempDir, err := fileutils.GetTempDirPath()
-	if err != nil {
-		return "", err
-	}
+func (project *goProject) archiveProject(version, tempDir string) (string, error) {
 	tempFile, err := ioutil.TempFile(tempDir, "project.zip")
 	if err != nil {
 		return "", errorutils.CheckError(err)
