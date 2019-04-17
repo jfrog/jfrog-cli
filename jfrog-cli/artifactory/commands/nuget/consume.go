@@ -34,18 +34,19 @@ const SOURCE_NAME = "JFrogCli"
 func ConsumeCmd(params *Params, solutionPath string) error {
 	log.Info("Running nuget...")
 	// Use temp dir to save config file, the config will be removed at the end.
-	err := fileutils.CreateTempDirPath()
+	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		return err
 	}
-	defer fileutils.RemoveTempDir()
+	defer fileutils.RemoveTempDir(tempDirPath)
+
 
 	solutionPath, err = changeWorkingDir(solutionPath)
 	if err != nil {
 		return err
 	}
 
-	err = prepareAndRunCmd(params)
+	err = prepareAndRunCmd(params, tempDirPath)
 	if err != nil {
 		return err
 	}
@@ -117,7 +118,7 @@ func changeWorkingDir(newWorkingDir string) (string, error) {
 
 // Prepares the nuget configuration file within the temp directory
 // Runs NuGet itself with the arguments and flags provided.
-func prepareAndRunCmd(params *Params) error {
+func prepareAndRunCmd(params *Params, configDirPath string) error {
 	cmd, err := createNugetCmd(params)
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func prepareAndRunCmd(params *Params) error {
 		return errorutils.CheckError(err)
 	}
 
-	err = prepareConfigFile(params, cmd)
+	err = prepareConfigFile(params, cmd, configDirPath)
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,7 @@ func prepareAndRunCmd(params *Params) error {
 // Checks if the user provided input such as -configfile flag or -Source flag.
 // If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
-func prepareConfigFile(params *Params, cmd *nuget.Cmd) error {
+func prepareConfigFile(params *Params, cmd *nuget.Cmd, configDirPath string) error {
 	currentConfigPath, err := getFlagValueIfExists("-configfile", cmd)
 	if err != nil {
 		return err
@@ -160,7 +161,7 @@ func prepareConfigFile(params *Params, cmd *nuget.Cmd) error {
 		return nil
 	}
 
-	err = initNewConfig(params, cmd)
+	err = initNewConfig(params, cmd, configDirPath)
 	return err
 }
 
@@ -180,9 +181,9 @@ func getFlagValueIfExists(cmdFlag string, cmd *nuget.Cmd) (string, error) {
 }
 
 // Initializing a new NuGet config file that NuGet will use into a temp file
-func initNewConfig(params *Params, cmd *nuget.Cmd) error {
+func initNewConfig(params *Params, cmd *nuget.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
-	configFile, err := writeToTempConfigFile(cmd)
+	configFile, err := writeToTempConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
@@ -207,12 +208,8 @@ func addNugetAuthenticationToNewConfig(params *Params, configFile *os.File) erro
 }
 
 // Creates the temp file and writes the config template into the file for NuGet can use it.
-func writeToTempConfigFile(cmd *nuget.Cmd) (*os.File, error) {
-	tempDir, err := fileutils.GetTempDirPath()
-	if err != nil {
-		return nil, err
-	}
-	configFile, err := ioutil.TempFile(tempDir, "jfrog.cli.nuget.")
+func writeToTempConfigFile(cmd *nuget.Cmd, tempDirPath string) (*os.File, error) {
+	configFile, err := ioutil.TempFile(tempDirPath, "jfrog.cli.nuget.")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}

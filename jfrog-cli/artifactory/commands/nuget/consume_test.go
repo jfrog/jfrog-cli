@@ -64,16 +64,15 @@ func TestInitNewConfig(t *testing.T) {
 		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
 	}
 
-	err := fileutils.CreateTempDirPath()
+	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		t.Error(err)
 	}
-
-	defer fileutils.RemoveTempDir()
+	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &nuget.Cmd{}
 	params := &Params{ArtifactoryDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
-	configFile, err := writeToTempConfigFile(c)
+	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
 	}

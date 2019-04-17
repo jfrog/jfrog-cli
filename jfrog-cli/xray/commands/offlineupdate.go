@@ -111,7 +111,7 @@ func validateDates(from, to int64) error {
 }
 
 func getXrayTempDir() (string, error) {
-	xrayDir := filepath.Join(cliutils.GetTempDir(), "jfrog", "xray")
+	xrayDir := filepath.Join(cliutils.GetCliPersistentTempDirPath(), "jfrog", "xray")
 	if err := os.MkdirAll(xrayDir, 0777); err != nil {
 		errorutils.CheckError(err)
 		return "", nil

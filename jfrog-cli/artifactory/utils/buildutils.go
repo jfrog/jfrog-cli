@@ -24,7 +24,7 @@ const BuildTempPath = "jfrog/builds/"
 
 func GetBuildDir(buildName, buildNumber string) (string, error) {
 	encodedDirName := base64.StdEncoding.EncodeToString([]byte(buildName + "_" + buildNumber))
-	buildsDir := filepath.Join(cliutils.GetTempDir(), BuildTempPath, encodedDirName)
+	buildsDir := filepath.Join(cliutils.GetCliPersistentTempDirPath(), BuildTempPath, encodedDirName)
 	err := os.MkdirAll(buildsDir, 0777)
 	if errorutils.CheckError(err) != nil {
 		return "", err
@@ -107,10 +107,10 @@ func SaveBuildInfo(buildName, buildNumber string, buildInfo *buildinfo.BuildInfo
 
 func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	partialsBuildDir, err := getPartialsBuildDir(buildName, buildNumber)
-	log.Debug("Saving build general details at: " + partialsBuildDir)
 	if err != nil {
 		return err
 	}
+	log.Debug("Saving build general details at: " + partialsBuildDir)
 	detailsFilePath := filepath.Join(partialsBuildDir, BuildInfoDetails)
 	var exists bool
 	exists, err = fileutils.IsFileExists(detailsFilePath, false)
