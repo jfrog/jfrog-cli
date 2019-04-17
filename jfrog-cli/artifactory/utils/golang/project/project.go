@@ -85,8 +85,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 
 	// Temp directory for the project archive.
 	// The directory will be deleted at the end.
-	var tempDirPath string
-	tempDirPath, err = fileutils.CreateTempDir()
+	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		return err
 	}
