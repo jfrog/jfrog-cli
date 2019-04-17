@@ -36,10 +36,14 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOl
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jfrog/gocmd v0.1.7 h1:aVn7bWDdzJFIzozJF6+n211F0suZTVhGztFF6et3cNU=
 github.com/jfrog/gocmd v0.1.7/go.mod h1:QLKheRI6EhlYEqSqKPQWaj9lrixCOTwaxxqGjEVptEk=
+github.com/jfrog/gocmd v0.1.8 h1:pcjuuSJt9jMsLnfXVzkEnf2FgTu9Y++zi2Cl/p6n69A=
+github.com/jfrog/gocmd v0.1.8/go.mod h1:4/YMPykLuGiJkS5+bsASO+ezDNIIQkRnnKZyIak2K6M=
 github.com/jfrog/gofrog v1.0.4 h1:jtMkCBEsGOC/URxeHXGLZNFjOAMfvDn0UhN+0uXo1GA=
 github.com/jfrog/gofrog v1.0.4/go.mod h1:4Caxvc8B2K1A798G1Ne+SsUICRPPre4GpgcFqj+EXJ8=
 github.com/jfrog/jfrog-client-go v0.3.2 h1:vtRy7IbRtbMPObpDLTYMb0c91iNEAsZgPod2DMUrbrA=
 github.com/jfrog/jfrog-client-go v0.3.2/go.mod h1:z0TT7uU1IcpkiEgySOE7UD/0f/Vzg85wEOixa5IQTas=
+github.com/jfrog/jfrog-client-go v0.3.3 h1:rh3pLmgbW4cnkVVksuknpK67KD7+HViLgFFA8iBmrlE=
+github.com/jfrog/jfrog-client-go v0.3.3/go.mod h1:z0TT7uU1IcpkiEgySOE7UD/0f/Vzg85wEOixa5IQTas=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
