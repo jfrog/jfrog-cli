@@ -18,6 +18,6 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		Defines the JFrog CLI home directory path.
 
 	JFROG_CLI_TEMP_DIR
-		[Default: The operating system's' temp directory]
+		[Default: The operating system's temp directory]
 		Defines the temp directory used by JFrog CLI.
 		`
