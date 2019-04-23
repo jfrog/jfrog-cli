@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "..\\testsdata\\a\\b\\*",
+      "pattern": "testsdata\\a\\b\\*",
       "target": "${REPO1}/data/",
       "flat": "true",
       "recursive": "false"

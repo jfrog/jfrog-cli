@@ -1,23 +1,23 @@
 {
   "files": [
     {
-      "pattern": "..\\testsdata\\a\\a*",
+      "pattern": "testsdata\\a\\a*",
       "target": "${REPO1}",
       "flat": "true",
       "recursive": "true",
       "excludePatterns": ["*a2.*", "*a3.in", null]
     },
     {
-      "pattern": "..\\testsdata\\a\\b\\b*",
+      "pattern": "testsdata\\a\\b\\b*",
       "target": "${REPO1}",
       "excludePatterns": [null, "*b2.*", "*b3.in"]
     },
     {
-      "pattern": "..\\testsdata\\a\\b\\c\\*",
+      "pattern": "testsdata\\a\\b\\c\\*",
       "target": "${REPO1}",
       "flat": "true",
       "recursive": "true",
-      "excludePatterns": ["..\\testsdata\\a\\b\\c\\c1.in"]
+      "excludePatterns": ["testsdata\\a\\b\\c\\c1.in"]
     }
   ]
 }
