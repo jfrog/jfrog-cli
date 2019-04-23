@@ -171,7 +171,7 @@ func TestBuildAddDependencies(t *testing.T) {
 		{description: "'rt bad' simple cli", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*")}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/a1.in")}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' none recursive", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*"), "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
-		{description: "'rt bad' special chars recursive", commandArgs: []string{ioutils.PrepareFilePathForWindows(getSpecialCharFilePath())}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*"), "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
 		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
 		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},

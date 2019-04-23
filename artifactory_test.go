@@ -433,11 +433,7 @@ func TestArtifactoryCopyAnyItemUsingSpec(t *testing.T) {
 }
 
 func getSpecialCharFilePath() string {
-	return ioutils.PrepareFilePathForWindows("testsdata/" + getSpecialCharFile())
-}
-
-func getSpecialCharFile() string {
-	return "a$+~&^a#/a*"
+	return ioutils.PrepareFilePathForWindows("testsdata/a$+~&^a#/a*")
 }
 
 func TestArtifactoryCopyNoSpec(t *testing.T) {
