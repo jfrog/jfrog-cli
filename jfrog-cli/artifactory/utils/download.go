@@ -20,8 +20,6 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
-		SetSplitCount(flags.SplitCount).
-		SetMinSplitSize(flags.MinSplitSize).
 		SetThreads(flags.Threads).
 		SetLogger(log.Logger).
 		Build()

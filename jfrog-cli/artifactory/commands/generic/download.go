@@ -86,6 +86,11 @@ func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buil
 func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration) (downParams services.DownloadParams, err error) {
 	downParams = services.NewDownloadParams()
 	downParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+	downParams.Symlink = configuration.Symlink
+	downParams.ValidateSymlink = configuration.ValidateSymlink
+	downParams.MinSplitSize = configuration.MinSplitSize
+	downParams.SplitCount = configuration.SplitCount
+
 	downParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -106,8 +111,5 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 		return
 	}
 
-	downParams.Symlink = configuration.Symlink
-	downParams.ValidateSymlink = configuration.ValidateSymlink
-	downParams.Retries = configuration.Retries
 	return
 }

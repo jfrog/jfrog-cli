@@ -825,6 +825,8 @@ func downloadFile(c *cli.Context) error {
 	params := services.NewDownloadFileParams()
 	params.Flat = c.Bool("flat")
 	params.IncludeUnpublished = c.Bool("unpublished")
+	params.MinSplitSize = getMinSplitFlag(c)
+	params.SplitCount = getSplitCountFlag(c)
 	params.PathDetails, err = utils.CreatePathDetails(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
 
@@ -1023,8 +1025,6 @@ func newBintrayConfig(c *cli.Context) bintray.Config {
 		SetBintrayDetails(btDetails).
 		SetDryRun(c.Bool("dry-run")).
 		SetThreads(getThreadsOptionValue(c)).
-		SetMinSplitSize(getMinSplitFlag(c)).
-		SetSplitCount(getSplitCountFlag(c)).
 		SetLogger(log.Logger).
 		Build()
 	return btConfig
