@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "pattern": "testsdata/a/*",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/a/b/*",
+      "recursive": "false"
+    }
+  ]
+}

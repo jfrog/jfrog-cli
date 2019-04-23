@@ -1,0 +1,75 @@
+{
+  "files": [
+    {
+      "pattern": "testsdata/a/*",
+      "target": "${REPO1}/spec-copy-test/flat_recursive/",
+      "flat": "true",
+      "recursive": "true"
+    },
+    {
+      "pattern": "testsdata/a/*3*",
+      "target": "${REPO1}/spec-copy-test/3_only_flat_recursive/",
+      "flat": "true",
+      "recursive": "true"
+    },
+    {
+      "pattern": "testsdata/a/*",
+      "target": "${REPO1}/spec-copy-test/flat_nonrecursive/",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/a/*",
+      "target": "${REPO1}/spec-copy-test/nonflat_recursive/",
+      "flat": "false",
+      "recursive": "true"
+    },
+    {
+      "pattern": "testsdata/a/*",
+      "target": "${REPO1}/spec-copy-test/nonflat_nonrecursive/",
+      "flat": "false",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/a/a1.in",
+      "target": "${REPO1}/spec-copy-test/simple/",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/a/a1.in",
+      "target": "${REPO1}/spec-copy-test/rename/a1.out",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/(*)/(*).in",
+      "target": "${REPO1}/spec-copy-test/pattern_placeholder/{1}/{2}.in",
+      "flat": "true",
+      "recursive": "false"
+    },
+    {
+      "pattern": "testsdata/*",
+      "target": "${REPO1}/spec-copy-test/properties/",
+      "flat": "false",
+      "recursive": "true",
+      "props": "searchMe=true"
+    },
+    {
+      "pattern": "testsdata/*",
+      "target": "${REPO1}/spec-copy-test/defaults_recursive_nonflat/"
+    },
+    {
+      "pattern": "testsdata/*",
+      "target": "${REPO1}/spec-copy-test/copy-to-existing/",
+      "flat": "true",
+      "recursive": "true"
+    },
+    {
+      "pattern": "testsdata/*",
+      "target": "${REPO1}/spec-copy-test/copy-to-existing/",
+      "flat": "true",
+      "recursive": "true"
+    }
+  ]
+}

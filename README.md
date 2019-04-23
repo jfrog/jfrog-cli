@@ -52,7 +52,7 @@ git clone https://github.com/jfrog/jfrog-cli-go/
 ````
 Build the project by navigating to the jfrog folder and executing the go build command:
 ````
-cd jfrog-cli-go/jfrog-cli/jfrog/
+cd jfrog-cli-go/jfrog/
 go build
 ````
 Once completed, you will find the JFrog CLI executable at your current directory.
@@ -63,7 +63,7 @@ Once completed, you will find the JFrog CLI executable at your current directory
 #### General tests
 To run Artifactory tests execute the following command: 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog
+go test -v github.com/jfrog/jfrog-cli-go
 ````
 Optional flags:
 
@@ -88,7 +88,7 @@ Optional flags:
 
 To run build tools tests execute the following command:
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.buildTools=true
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
 ````
 ##### Limitation
 * Currently, build integration support only http(s) connections to Artifactory using username and password.
@@ -97,7 +97,7 @@ go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false
 
 To run docker push tests execute the following command (fill out the missing parameters as described below):
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
 
 ##### Mandatory Parameters
@@ -116,7 +116,7 @@ To run go tests:
 * Run the following command:
 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.go=true 
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
 ````
 
 #### NuGet tests
@@ -127,7 +127,7 @@ To run NuGet tests:
 * Run the following command:
 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.nuget=true 
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
 ````
 
 ### Bintray tests
@@ -135,7 +135,7 @@ Bintray tests credentials are taken from the CLI configuration. If non configure
 
 To run Bintray tests execute the following command: 
 ````
-go test -v github.com/jfrog/jfrog-cli-go/jfrog-cli/jfrog -test.artifactory=false -test.bintray=true
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.bintray=true
 ````
 Flags:
 
