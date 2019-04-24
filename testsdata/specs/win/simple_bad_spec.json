@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "a\\*"
+      "pattern": "testsdata\\a\\*"
     }
   ]
 }
