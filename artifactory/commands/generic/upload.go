@@ -23,11 +23,11 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration
 	if err != nil {
 		return 0, 0, err
 	}
-	minChecksumDeploySize, err := getMinChecksumDeploySize()
+	configuration.MinChecksumDeploySize, err = getMinChecksumDeploySize()
 	if err != nil {
 		return 0, 0, err
 	}
-	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath, minChecksumDeploySize)
+	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -122,6 +122,10 @@ func addBuildProps(props *string, buildName, buildNumber string) error {
 func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (uploadParams services.UploadParams, err error) {
 	uploadParams = services.NewUploadParams()
 	uploadParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
+	uploadParams.Deb = configuration.Deb
+	uploadParams.Symlink = configuration.Symlink
+	uploadParams.MinChecksumDeploy = configuration.MinChecksumDeploySize
+
 	uploadParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
 		return
@@ -147,8 +151,5 @@ func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (up
 		return
 	}
 
-	uploadParams.Deb = configuration.Deb
-	uploadParams.Symlink = configuration.Symlink
-	uploadParams.Retries = configuration.Retries
 	return
 }
