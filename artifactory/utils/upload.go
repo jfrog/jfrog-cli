@@ -6,7 +6,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, minChecksumDeploySize int64) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string) (*artifactory.ArtifactoryServicesManager, error) {
 	artAuth, err := artDetails.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
@@ -16,7 +16,6 @@ func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *Up
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
-		SetMinChecksumDeploy(minChecksumDeploySize).
 		SetThreads(flags.Threads).
 		SetLogger(log.Logger).
 		Build()
