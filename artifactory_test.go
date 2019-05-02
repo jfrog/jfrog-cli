@@ -15,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
+	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
@@ -58,6 +59,8 @@ func InitArtifactoryTests() {
 		return
 	}
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	// Disable progress bar:
+	os.Setenv("CI", "true")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	configArtifactoryCli = createConfigJfrogCLI(cred)
@@ -2838,7 +2841,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger(cliutils.GetCliLogLevel())
+	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
 
 	// Set new logger with output redirection to buffer
 	buffer := &bytes.Buffer{}

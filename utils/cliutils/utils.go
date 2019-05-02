@@ -6,8 +6,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"runtime"
 	"strings"
@@ -192,17 +192,4 @@ type Credentials interface {
 	SetPassword(string)
 	GetUser() string
 	GetPassword() string
-}
-
-func GetCliLogLevel() log.LevelType {
-	switch os.Getenv("JFROG_CLI_LOG_LEVEL") {
-	case "ERROR":
-		return log.ERROR
-	case "WARN":
-		return log.WARN
-	case "DEBUG":
-		return log.DEBUG
-	default:
-		return log.INFO
-	}
 }

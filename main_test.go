@@ -2,16 +2,15 @@ package main
 
 import (
 	"flag"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
-	log.SetLogger(log.NewLogger(cliutils.GetCliLogLevel()))
+	log.SetDefaultLogger()
 	setupIntegrationTests()
 	result := m.Run()
 	tearDownIntegrationTests()
