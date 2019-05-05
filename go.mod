@@ -9,7 +9,6 @@ require (
 	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-shellwords v1.0.3
 	github.com/mholt/archiver v2.1.0+incompatible
-	github.com/pkg/errors v0.8.1
 	github.com/spf13/viper v1.2.1
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
 	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0 // indirect
