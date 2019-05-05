@@ -360,6 +360,7 @@ func getRepositoriesNameMap() map[string]string {
 		"${RT_API_KEY}":          *RtApiKey,
 		"${RT_USERNAME}":         *RtUser,
 		"${RT_PASSWORD}":         *RtPassword,
+		"${RT_ACCESS_TOKEN}":     *RtAccessToken,
 	}
 }
 

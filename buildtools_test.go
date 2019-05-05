@@ -86,6 +86,10 @@ func TestMavenBuildWithServerID(t *testing.T) {
 }
 
 func TestMavenBuildWithCredentials(t *testing.T) {
+	if *tests.RtUser == "" || *tests.RtPassword == "" {
+		t.SkipNow()
+	}
+
 	initBuildToolsTest(t)
 
 	pomPath := createMavenProject(t)
@@ -128,6 +132,10 @@ func TestGradleBuildWithServerID(t *testing.T) {
 }
 
 func TestGradleBuildWithCredentials(t *testing.T) {
+	if *tests.RtUser == "" || *tests.RtPassword == "" {
+		t.SkipNow()
+	}
+
 	initBuildToolsTest(t)
 
 	buildGradlePath := createGradleProject(t)

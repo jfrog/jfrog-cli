@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
@@ -276,7 +277,20 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 		return err
 	}
 
-	cmd := &LoginCmd{DockerRegistry: imageRegistry, Username: config.ArtifactoryDetails.User, Password: config.ArtifactoryDetails.Password}
+	username := config.ArtifactoryDetails.User
+	password := config.ArtifactoryDetails.Password
+	// If access-token exists, perform login with it.
+	if config.ArtifactoryDetails.AccessToken != "" {
+		log.Debug("Using access-token details in docker-login command.")
+		username, err = auth.ExtractUsernameFromAccessToken(config.ArtifactoryDetails.AccessToken)
+		if err != nil {
+			return err
+		}
+		password = config.ArtifactoryDetails.AccessToken
+	}
+
+	// Perform login.
+	cmd := &LoginCmd{DockerRegistry: imageRegistry, Username: username, Password: password}
 	err = gofrogcmd.RunCmd(cmd)
 
 	if exitCode := cliutils.GetExitCode(err, 0, 0, false); exitCode == cliutils.ExitCodeNoError {

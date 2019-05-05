@@ -48,13 +48,27 @@ func Execute(args []string) error {
 	// Replace url argument with complete url.
 	command.Arguments[uriIndex] = targetUri
 
-	log.Debug(fmt.Sprintf("Executing curl command: '%s -u***:***'", strings.Join(command.Arguments, " ")))
-	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
-	credFlag := fmt.Sprintf("-u%s:%s", artDetails.User, artDetails.Password)
-	command.Arguments = append(command.Arguments, credFlag)
+	cmdWithoutCreds := strings.Join(command.Arguments, " ")
+	// Add credentials to curl command.
+	credentialsMessage, err := command.addCommandCredentials(artDetails)
 
 	// Run curl.
+	log.Debug(fmt.Sprintf("Executing curl command: '%s %s'", cmdWithoutCreds, credentialsMessage))
 	return gofrogcmd.RunCmd(command)
+}
+
+func (curlCmd *CurlCommand) addCommandCredentials(artDetails *config.ArtifactoryDetails) (string, error) {
+	if artDetails.AccessToken != "" {
+		// Add access token header.
+		tokenHeader := fmt.Sprintf("Authorization: Bearer %s", artDetails.AccessToken)
+		curlCmd.Arguments = append(curlCmd.Arguments, "-H", tokenHeader)
+		return "-H \"Authorization: Bearer ***\"", nil
+	}
+
+	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
+	credFlag := fmt.Sprintf("-u%s:%s", artDetails.User, artDetails.Password)
+	curlCmd.Arguments = append(curlCmd.Arguments, credFlag)
+	return "-u***:***" ,nil
 }
 
 func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int, uriValue string, err error) {
