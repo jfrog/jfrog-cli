@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -246,7 +247,13 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 	}
 
 	if artDetails.GetAccessToken() != "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " access token authentication is not supported"))
+		username, err := auth.ExtractUsernameFromAccessToken(artDetails.GetAccessToken())
+		if err != nil {
+			return err
+		}
+		vConfig.Set(contextPrefix+USERNAME, username)
+		vConfig.Set(contextPrefix+PASSWORD, artDetails.GetAccessToken())
+		return nil
 	}
 
 	if artDetails.GetUser() != "" && artDetails.GetPassword() != "" {

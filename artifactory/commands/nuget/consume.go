@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget/solution"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -273,8 +274,18 @@ func getSourceDetails(params *Params) (sourceURL, user, password string, err err
 	}
 	u.Path = path.Join(u.Path, "api/nuget", params.RepoName)
 	sourceURL = u.String()
+
 	user = params.ArtifactoryDetails.User
 	password = params.ArtifactoryDetails.Password
+	// If access-token is defined, extract user from it.
+	if params.ArtifactoryDetails.AccessToken != "" {
+		log.Debug("Using access-token details for nuget authentication.")
+		user, err = auth.ExtractUsernameFromAccessToken(params.ArtifactoryDetails.AccessToken)
+		if err != nil {
+			return
+		}
+		password = params.ArtifactoryDetails.AccessToken
+	}
 	return
 }
 
