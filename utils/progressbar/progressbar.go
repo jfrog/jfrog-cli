@@ -1,7 +1,9 @@
-package log
+package progressbar
 
 import (
+	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils"
+	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -36,7 +38,7 @@ type progressBarUnit struct {
 }
 
 // Initializes a new progress bar
-func (p *progressBarManager) NewBar(total int64, prefix, path string) (barId int) {
+func (p *progressBarManager) New(total int64, prefix, path string) (barId int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
@@ -60,7 +62,7 @@ func (p *progressBarManager) NewBar(total int64, prefix, path string) (barId int
 }
 
 // Initializes a new progress bar, that replaces an existing bar when it is completed
-func (p *progressBarManager) NewBarReplacement(replaceBarId int, prefix, path string) (barId int) {
+func (p *progressBarManager) NewReplacement(replaceBarId int, prefix, path string) (barId int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
@@ -152,7 +154,7 @@ func initProxyReader(unit *progressBarUnit, reader io.Reader) io.ReadCloser {
 	return &proxyReader{unit, rc}
 }
 
-// Wraps an io.Reader for bytes reading
+// Wraps an io.Reader for bytes reading tracking
 type proxyReader struct {
 	unit *progressBarUnit
 	io.ReadCloser
@@ -206,17 +208,17 @@ func (p *progressBarManager) Quit() {
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Creates a log file and sets the Logger to it. Caller responsible to close the file.
 // Returns nil, nil, err if failed.
-func InitProgressBarIfPossible() (log.ProgressBar, *os.File, error) {
+func InitProgressBarIfPossible() (ioUtils.Progress, *os.File, error) {
 	shouldInit, err := shouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, nil, err
 	}
 
-	logFile, err := CreateLogFile()
+	logFile, err := logUtils.CreateLogFile()
 	if err != nil {
 		return nil, nil, err
 	}
-	log.SetLogger(log.NewLogger(GetCliLogLevel(), logFile))
+	log.SetLogger(log.NewLogger(logUtils.GetCliLogLevel(), logFile))
 
 	newProgressBar := &progressBarManager{}
 	newProgressBar.barsWg = new(sync.WaitGroup)
@@ -238,19 +240,18 @@ func InitProgressBarIfPossible() (log.ProgressBar, *os.File, error) {
 // Init progress bar if all required conditions are met:
 // CI == false (or unset), Stderr is a terminal, and terminal width is large enough
 func shouldInitProgressBar() (bool, error) {
-	isCI, err := utils.GetBoolEnvValue("CI", false)
-	if err != nil {
+	ci, err := utils.GetBoolEnvValue("CI", false)
+	if ci || err != nil {
 		return false, err
 	}
 	if !isTerminal() {
 		return false, err
 	}
-	// Get terminal width
-	err = setTerminalWidth()
+	err = setTerminalWidthVar()
 	if err != nil {
 		return false, err
 	}
-	return !isCI && terminalWidth >= minTerminalWidth, nil
+	return terminalWidth >= minTerminalWidth, nil
 }
 
 // Check if Stderr is a terminal
@@ -259,7 +260,7 @@ func isTerminal() bool {
 }
 
 // Get terminal dimensions
-func setTerminalWidth() error {
+func setTerminalWidthVar() error {
 	width, _, err := terminal.GetSize(int(os.Stderr.Fd()))
 	// -5 to avoid edges
 	terminalWidth = width - 5

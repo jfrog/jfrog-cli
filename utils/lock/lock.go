@@ -40,7 +40,7 @@ func (locks Locks) Less(i, j int) bool {
 // Creating a new lock object.
 func (lock *Lock) CreateNewLockFile() error {
 	lock.currentTime = time.Now().UnixNano()
-	folderName, err := config.CreateDirInJfrogHome("lock")
+	folderName, err := CreateLockDir()
 	if err != nil {
 		return err
 	}
@@ -51,6 +51,10 @@ func (lock *Lock) CreateNewLockFile() error {
 		return err
 	}
 	return nil
+}
+
+func CreateLockDir() (string, error) {
+	return config.CreateDirInJfrogHome("lock")
 }
 
 func (lock *Lock) CreateFile(folderName string, pid int) error {

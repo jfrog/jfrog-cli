@@ -2,7 +2,6 @@ package lock
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"math"
 	"os"
@@ -173,7 +172,7 @@ func getLock(pid int, t *testing.T) (Lock, string) {
 		pid:         pid,
 		currentTime: currentTime,
 	}
-	folderName, err := config.CreateDirInJfrogHome("lock")
+	folderName, err := CreateLockDir()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

@@ -7,7 +7,7 @@ import (
 )
 
 func TestPrepareConfigData(t *testing.T) {
-	configJson, err := ioutil.ReadFile("testdata/config.json")
+	configJson, err := ioutil.ReadFile("../testdata/config.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -68,7 +68,7 @@ func TestPrepareConfigDataTypeRestriction(t *testing.T) {
 }
 
 func TestParseDependencies(t *testing.T) {
-	dependenciesJsonList, err := ioutil.ReadFile("testdata/dependenciesList.json")
+	dependenciesJsonList, err := ioutil.ReadFile("../testdata/dependenciesList.json")
 	if err != nil {
 		t.Error(err)
 	}

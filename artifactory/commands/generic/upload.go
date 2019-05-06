@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-cli-go/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -19,7 +19,7 @@ import (
 // Returns the total number of artifacts successfully uploaded.
 func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration) (successCount, failCount int, logFile *os.File, err error) {
 	// Initialize Progress bar, set logger to a log file
-	progressBar, logFile, err := logUtils.InitProgressBarIfPossible()
+	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
 	if err != nil {
 		return 0, 0, logFile, err
 	}

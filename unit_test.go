@@ -12,7 +12,7 @@ import (
 
 const (
 	JfrogTestsHome      = ".jfrogTest"
-	CliIntegrationTests = "github.com/jfrog/jfrog-cli-go/jfrog"
+	CliIntegrationTests = "github.com/jfrog/jfrog-cli-go"
 )
 
 func TestUnitTests(t *testing.T) {
@@ -23,7 +23,7 @@ func TestUnitTests(t *testing.T) {
 	}
 
 	setJfrogHome(homePath)
-	packages := clientTests.GetTestPackages("../...")
+	packages := clientTests.GetTestPackages("./...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
 	clientTests.RunTests(packages, *tests.HideUnitTestLog)
 	cleanUnitTestsJfrogHome(homePath)
