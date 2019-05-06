@@ -172,7 +172,7 @@ func getLock(pid int, t *testing.T) (Lock, string) {
 		pid:         pid,
 		currentTime: currentTime,
 	}
-	folderName, err := lock.createLockDirWithPermissions()
+	folderName, err := CreateLockDir()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

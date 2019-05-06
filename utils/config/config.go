@@ -264,6 +264,16 @@ func GetJfrogHomeDir() (string, error) {
 	return filepath.Join(userHomeDir, ".jfrog"), nil
 }
 
+func CreateDirInJfrogHome(dirName string) (string, error) {
+	homeDir, err := GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+	folderName := filepath.Join(homeDir, dirName)
+	err = fileutils.CreateDirIfNotExist(folderName)
+	return folderName, err
+}
+
 func GetJfrogDependenciesPath() (string, error) {
 	jfrogHome, err := GetJfrogHomeDir()
 	if err != nil {

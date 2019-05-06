@@ -40,7 +40,7 @@ func (locks Locks) Less(i, j int) bool {
 // Creating a new lock object.
 func (lock *Lock) CreateNewLockFile() error {
 	lock.currentTime = time.Now().UnixNano()
-	folderName, err := lock.createLockDirWithPermissions()
+	folderName, err := CreateLockDir()
 	if err != nil {
 		return err
 	}
@@ -51,6 +51,10 @@ func (lock *Lock) CreateNewLockFile() error {
 		return err
 	}
 	return nil
+}
+
+func CreateLockDir() (string, error) {
+	return config.CreateDirInJfrogHome("lock")
 }
 
 func (lock *Lock) CreateFile(folderName string, pid int) error {
@@ -66,28 +70,6 @@ func (lock *Lock) CreateFile(folderName string, pid int) error {
 		return errorutils.CheckError(err)
 	}
 	return nil
-}
-
-func (lock *Lock) createLockDirWithPermissions() (string, error) {
-	homeDir, err := config.GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	// The lock created in the lock folder within JFrog CLI Home Dir
-	folderName := filepath.Join(homeDir, "lock")
-	exists, err := fileutils.IsDirExists(folderName, false)
-	if !exists {
-		err = fileutils.CreateDirIfNotExist(folderName)
-		if err != nil {
-			return "", err
-		}
-
-		err = os.Chmod(folderName, 0777)
-		if err != nil {
-			return "", errorutils.CheckError(err)
-		}
-	}
-	return folderName, nil
 }
 
 // Try to acquire a lock

@@ -56,6 +56,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtclientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -1487,7 +1488,8 @@ func downloadCmd(c *cli.Context) {
 	}
 
 	configuration := createDownloadConfiguration(c)
-	downloaded, failed, err := generic.Download(downloadSpec, configuration)
+	downloaded, failed, logFile, err := generic.Download(downloadSpec, configuration)
+	defer logUtils.CloseLogFile(logFile)
 	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	cliutils.FailNoOp(err, downloaded, failed, isFailNoOp(c))
 }
@@ -1507,7 +1509,8 @@ func uploadCmd(c *cli.Context) {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
 	configuration := createUploadConfiguration(c)
-	uploaded, failed, err := generic.Upload(uploadSpec, configuration)
+	uploaded, failed, logFile, err := generic.Upload(uploadSpec, configuration)
+	defer logUtils.CloseLogFile(logFile)
 	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	cliutils.FailNoOp(err, uploaded, failed, isFailNoOp(c))
 }

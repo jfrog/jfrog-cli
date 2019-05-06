@@ -4,27 +4,37 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"os"
 	"strconv"
 )
 
-func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfiguration) (successCount, failCount int, err error) {
+func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfiguration) (successCount, failCount int, logFile *os.File, err error) {
+	// Initialize Progress bar, set logger to a log file
+	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	if err != nil {
+		return 0, 0, logFile, err
+	}
+	if progressBar != nil {
+		defer progressBar.Quit()
+	}
 
 	// Create Service Manager:
-	servicesManager, err := utils.CreateDownloadServiceManager(configuration.ArtDetails, configuration)
+	servicesManager, err := utils.CreateDownloadServiceManager(configuration.ArtDetails, configuration, progressBar)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, logFile, err
 	}
 
 	// Build Info Collection:
 	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
 	if isCollectBuildInfo && !configuration.DryRun {
 		if err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
-			return 0, 0, err
+			return 0, 0, logFile, err
 		}
 	}
 
@@ -50,10 +60,10 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 
 	// Check for errors.
 	if errorOccurred {
-		return len(filesInfo), totalExpected - len(filesInfo), errors.New("Download finished with errors, please review the logs.")
+		return len(filesInfo), totalExpected - len(filesInfo), logFile, errors.New("Download finished with errors, please review the logs.")
 	}
 	if configuration.DryRun {
-		return totalExpected, 0, err
+		return totalExpected, 0, logFile, err
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 
@@ -66,7 +76,7 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc)
 	}
 
-	return len(filesInfo), totalExpected - len(filesInfo), err
+	return len(filesInfo), totalExpected - len(filesInfo), logFile, err
 }
 
 func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buildinfo.Dependency {

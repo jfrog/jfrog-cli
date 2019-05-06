@@ -8,9 +8,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 )
 
@@ -67,7 +67,7 @@ Environment Variables:
 `
 
 func main() {
-	log.SetLogger(log.NewLogger(cliutils.GetCliLogLevel()))
+	log.SetDefaultLogger()
 	err := execMain()
 	cliutils.ExitOnErr(err)
 }

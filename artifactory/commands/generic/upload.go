@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -16,27 +17,35 @@ import (
 
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration) (successCount, failCount int, err error) {
+func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration) (successCount, failCount int, logFile *os.File, err error) {
+	// Initialize Progress bar, set logger to a log file
+	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	if err != nil {
+		return 0, 0, logFile, err
+	}
+	if progressBar != nil {
+		defer progressBar.Quit()
+	}
 
 	// Create Service Manager:
 	certPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, logFile, err
 	}
 	configuration.MinChecksumDeploySize, err = getMinChecksumDeploySize()
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, logFile, err
 	}
-	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath)
+	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath, progressBar)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, logFile, err
 	}
 
 	// Build Info Collection:
 	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
 	if isCollectBuildInfo && !configuration.DryRun {
 		if err := utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
-			return 0, 0, err
+			return 0, 0, logFile, err
 		}
 		for i := 0; i < len(uploadSpec.Files); i++ {
 			addBuildProps(&uploadSpec.Get(i).Props, configuration.BuildName, configuration.BuildNumber)

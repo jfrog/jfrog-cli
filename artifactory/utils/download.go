@@ -3,10 +3,12 @@ package utils
 import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration,
+	progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
 	certPath, err := GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
@@ -15,7 +17,7 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	servicesConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetDryRun(flags.DryRun).
 		SetCertificatesPath(certPath).
@@ -26,7 +28,7 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.New(&artAuth, serviceConfig)
+	return artifactory.NewWithProgress(&artAuth, servicesConfig, progressBar)
 }
 
 type DownloadConfiguration struct {

@@ -3,10 +3,11 @@ package utils
 import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
 	artAuth, err := artDetails.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
@@ -20,7 +21,7 @@ func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *Up
 		SetLogger(log.Logger).
 		Build()
 
-	return artifactory.New(&artAuth, servicesConfig)
+	return artifactory.NewWithProgress(&artAuth, servicesConfig, progressBar)
 }
 
 type UploadConfiguration struct {
