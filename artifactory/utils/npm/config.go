@@ -46,9 +46,18 @@ func createConfigListCmdConfig(executablePath string, splitFlags []string, pipeW
 	}
 }
 
-type CliConfiguration struct {
+type NpmCommonConfig struct {
 	BuildName   string
 	BuildNumber string
 	NpmArgs     string
 	ArtDetails  *config.ArtifactoryDetails
+}
+
+type NpmInstallConfig struct {
+	*NpmCommonConfig
+	Threads int
+}
+
+type NpmPublishConfig struct {
+	*NpmCommonConfig
 }

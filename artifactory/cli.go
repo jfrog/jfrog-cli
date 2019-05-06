@@ -376,7 +376,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-install",
-			Flags:     getNpmFlags(),
+			Flags:     getNpmInstallFlags(),
 			Aliases:   []string{"npmi"},
 			Usage:     npminstall.Description,
 			HelpName:  common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
@@ -388,7 +388,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-publish",
-			Flags:     getNpmFlags(),
+			Flags:     getNpmCommonFlags(),
 			Aliases:   []string{"npmp"},
 			Usage:     npmpublish.Description,
 			HelpName:  common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
@@ -736,7 +736,7 @@ func getDockerPullFlags() []cli.Flag {
 	return flags
 }
 
-func getNpmFlags() []cli.Flag {
+func getNpmCommonFlags() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
@@ -746,6 +746,15 @@ func getNpmFlags() []cli.Flag {
 	npmFlags = append(npmFlags, getBaseFlags()...)
 	npmFlags = append(npmFlags, getServerIdFlag())
 	return append(npmFlags, getBuildToolFlags()...)
+}
+
+func getNpmInstallFlags() []cli.Flag {
+	npmFlags := getNpmCommonFlags()
+	return append(npmFlags, cli.StringFlag{
+		Name: "threads",
+		Value: "",
+		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
+	})
 }
 
 func getNugetFlags() []cli.Flag {
@@ -1363,7 +1372,7 @@ func npmInstallCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	configuration := createNpmConfiguration(c)
+	configuration := createNpmInstallConfiguration(c)
 	err := npm.Install(c.Args().Get(0), configuration)
 	cliutils.ExitOnErr(err)
 }
@@ -1372,7 +1381,7 @@ func npmPublishCmd(c *cli.Context) {
 	if c.NArg() != 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	configuration := createNpmConfiguration(c)
+	configuration := createNpmPublishConfiguration(c)
 	err := npm.Publish(c.Args().Get(0), configuration)
 	cliutils.ExitOnErr(err)
 }
@@ -2216,14 +2225,25 @@ func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *uti
 	return
 }
 
-func createNpmConfiguration(c *cli.Context) (npmConfiguration *npmutils.CliConfiguration) {
-	npmConfiguration = new(npmutils.CliConfiguration)
+func createNpmInstallConfiguration(c *cli.Context) (npmConfiguration *npmutils.NpmInstallConfig) {
+	npmConfiguration = new(npmutils.NpmInstallConfig)
+	npmConfiguration.Threads =  getThreadsCount(c)
+	npmConfiguration.NpmCommonConfig = createNpmConfiguration(c)
+	return
+}
+
+func createNpmPublishConfiguration(c *cli.Context) (npmConfiguration *npmutils.NpmPublishConfig) {
+	npmConfiguration = new(npmutils.NpmPublishConfig)
+	npmConfiguration.NpmCommonConfig = createNpmConfiguration(c)
+	return
+}
+
+func createNpmConfiguration(c *cli.Context) (npmConfiguration *npmutils.NpmCommonConfig) {
+	npmConfiguration = new(npmutils.NpmCommonConfig)
 	npmConfiguration.BuildName = c.String("build-name")
 	npmConfiguration.BuildNumber = c.String("build-number")
 	validateBuildParams(npmConfiguration.BuildName, npmConfiguration.BuildNumber)
 	npmConfiguration.NpmArgs = c.String("npm-args")
-	if c.String("npm-args") != "" {
-	}
 	npmConfiguration.ArtDetails = createArtifactoryDetailsByFlags(c, true)
 	return
 }
