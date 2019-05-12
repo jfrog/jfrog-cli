@@ -8,12 +8,14 @@ import (
 )
 
 // Push docker image and create build info if needed
-func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails, threads int) error {
-	// Perform login
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
-	err := docker.DockerLogin(imageTag, loginConfig)
-	if err != nil {
-		return err
+func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, skipLogin bool, artDetails *config.ArtifactoryDetails, threads int) error {
+	if !skipLogin {
+		// Perform login
+		loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
+		err := docker.DockerLogin(imageTag, loginConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Perform push
@@ -21,7 +23,7 @@ func PushDockerImage(imageTag, targetRepo, buildName, buildNumber string, artDet
 		imageTag = imageTag + ":latest"
 	}
 	image := docker.New(imageTag)
-	err = image.Push()
+	err := image.Push()
 	if err != nil {
 		return err
 	}

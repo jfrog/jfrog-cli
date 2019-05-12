@@ -681,6 +681,13 @@ func getBuildToolFlags() []cli.Flag {
 	}
 }
 
+func getSkipLoginFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "skip-login",
+		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
+	}
+}
+
 func getServerIdFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "server-id",
@@ -727,6 +734,7 @@ func getDockerPushFlags() []cli.Flag {
 	flags = append(flags, getBuildToolFlags()...)
 	flags = append(flags, getServerFlags()...)
 	flags = append(flags, getThreadsFlag())
+	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
 
@@ -734,6 +742,7 @@ func getDockerPullFlags() []cli.Flag {
 	var flags []cli.Flag
 	flags = append(flags, getBuildToolFlags()...)
 	flags = append(flags, getServerFlags()...)
+	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
 
@@ -1312,10 +1321,11 @@ func dockerPushCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	imageTag := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
+	skipLogin := c.Bool("skip-login")
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
-	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, artDetails, getThreadsCount(c))
+	err := docker.PushDockerImage(imageTag, targetRepo, buildName, buildNumber, skipLogin, artDetails, getThreadsCount(c))
 	cliutils.ExitOnErr(err)
 }
 
@@ -1326,10 +1336,11 @@ func dockerPullCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
+	skipLogin := c.Bool("skip-login")
 	buildName := c.String("build-name")
 	buildNumber := c.String("build-number")
 	validateBuildParams(buildName, buildNumber)
-	err := docker.PullDockerImage(imageTag, sourceRepo, buildName, buildNumber, artDetails)
+	err := docker.PullDockerImage(imageTag, sourceRepo, buildName, buildNumber, skipLogin, artDetails)
 	cliutils.ExitOnErr(err)
 }
 

@@ -8,12 +8,14 @@ import (
 )
 
 // Pull docker image and create build info if needed
-func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails) error {
-	// Perform login
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
-	err := docker.DockerLogin(imageTag, loginConfig)
-	if err != nil {
-		return err
+func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, skipLogin bool, artDetails *config.ArtifactoryDetails) error {
+	if !skipLogin {
+		// Perform login
+		loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
+		err := docker.DockerLogin(imageTag, loginConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Perform pull
@@ -21,7 +23,7 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		imageTag = imageTag + ":latest"
 	}
 	image := docker.New(imageTag)
-	err = image.Pull()
+	err := image.Pull()
 	if err != nil {
 		return err
 	}
