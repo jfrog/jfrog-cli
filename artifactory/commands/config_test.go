@@ -62,7 +62,8 @@ func TestEmpty(t *testing.T) {
 }
 
 func configAndTest(t *testing.T, inputDetails *config.ArtifactoryDetails) {
-	_, err := Config(inputDetails, nil, false, false, "test")
+	configCmd := new(ConfigCommand).SetDetails(inputDetails).SetServerId("test")
+	err := configCmd.Config()
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -92,7 +93,8 @@ func TestGetConfigurationFromUser(t *testing.T) {
 		ServerId:  "test",
 		IsDefault: false}
 
-	err := getConfigurationFromUser(&inputDetails, &inputDetails)
+	configCmd := new(ConfigCommand).SetDetails(&inputDetails).SetDefaultDetails(&inputDetails)
+	err := configCmd.getConfigurationFromUser()
 	if err != nil {
 		t.Error(err)
 	}

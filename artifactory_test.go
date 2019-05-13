@@ -58,6 +58,7 @@ func InitArtifactoryTests() {
 	if !*tests.TestArtifactory {
 		return
 	}
+	os.Setenv(cliutils.ReportUsage, "false")
 	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
 	// Disable progress bar:
 	os.Setenv("CI", "true")
@@ -601,14 +602,18 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 
 	// The server is using self-signed certificates
 	// Without loading the certificates (or skipping verification) we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
-	_, err = generic.Search(fileSpec, artifactoryDetails)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
+	err = searchCmd.Search()
 	if _, ok := err.(*url.Error); !ok {
 		t.Error("Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
 	}
 
 	// Set insecureTls to true and run again. We expect the command to succeed.
 	artifactoryDetails.InsecureTls = true
-	_, err = generic.Search(fileSpec, artifactoryDetails)
+	searchCmd = generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
+	err = searchCmd.Search()
 	if err != nil {
 		t.Error(err)
 	}
@@ -628,7 +633,9 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = generic.Search(fileSpec, artifactoryDetails)
+	searchCmd = generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
+	err = searchCmd.Search()
 	if err != nil {
 		t.Error(err)
 	}
@@ -752,7 +759,9 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = generic.Search(spec, artifactoryDetails)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(spec)
+	err = searchCmd.Search()
 	if err != nil {
 		t.Error(err)
 	}
@@ -776,7 +785,9 @@ func prepareArtifactoryUrlForProxyTest(t *testing.T) string {
 }
 
 func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
-	_, err := generic.Search(spec, artifactoryDetails)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(spec)
+	err := searchCmd.Search()
 	_, isUrlErr := err.(*url.Error)
 	if err == nil || !isUrlErr {
 		t.Error("Expected the request to fails, since the proxy is down.", err)
@@ -3018,8 +3029,10 @@ func prepCopyFiles() error {
 
 func getPathsToDelete(specFile string) []rtutils.ResultItem {
 	deleteSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	artifactsToDelete, _ := generic.GetPathsToDelete(deleteSpec, &generic.DeleteConfiguration{ArtDetails: artifactoryDetails})
-	return artifactsToDelete
+	deleteCommand := generic.NewDeleteCommand()
+	deleteCommand.SetRtDetails(artifactoryDetails).SetSpec(deleteSpec).SetDryRun(false)
+	deleteCommand.GetPathsToDelete()
+	return deleteCommand.DeleteItems()
 }
 
 func execDeleteRepoRest(repoName string) {
@@ -3127,7 +3140,6 @@ func deleteRepos() {
 }
 
 func cleanArtifactory() {
-	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpecFile := tests.GetFilePath(tests.DeleteSpec)
 	fmt.Println(deleteSpecFile)
 	deleteSpecFile, err := tests.ReplaceTemplateVariables(deleteSpecFile, "")
@@ -3137,14 +3149,15 @@ func cleanArtifactory() {
 		os.Exit(1)
 	}
 	deleteSpec, _ := spec.CreateSpecFromFile(deleteSpecFile, nil)
-	deleteFlags.ArtDetails = artifactoryDetails
-	tests.DeleteFiles(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
-func searchInArtifactory(specFile string) (result []generic.SearchResult, err error) {
+func searchInArtifactory(specFile string) ([]generic.SearchResult, error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	result, err = generic.Search(searchSpec, artifactoryDetails)
-	return
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
+	err := searchCmd.Search()
+	return searchCmd.SearchResult(), err
 }
 
 func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf) {
@@ -3160,11 +3173,13 @@ func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
 	searchSpec := spec.NewBuilder().Pattern(pattern).Props(props).Recursive(true).BuildSpec()
-	results, err := generic.Search(searchSpec, artifactoryDetails)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
+	err := searchCmd.Search()
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CompareExpectedVsActuals(expected, results, t)
+	tests.CompareExpectedVsActuals(expected, searchCmd.SearchResult(), t)
 }
 
 func isRepoExist(repoName string) bool {

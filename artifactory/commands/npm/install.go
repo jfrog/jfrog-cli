@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/gofrog/parallel"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
@@ -34,22 +35,30 @@ const npmrcBackupFileName = "jfrog.npmrc.backup"
 const minSupportedArtifactoryVersion = "5.5.2"
 const minSupportedNpmVersion = "5.4.0"
 
-func Install(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
+type NpmInstallCommand struct {
+	NpmCommand
+}
+
+func (nic *NpmInstallCommand) RtDetails() *config.ArtifactoryDetails {
+	return nic.rtDetails
+}
+
+func (nic *NpmInstallCommand) Run() error {
 	log.Info("Running npm Install.")
-	npmi := npmInstall{cliConfig: cliConfiguration}
-	if err = npmi.preparePrerequisites(repo); err != nil {
+	npmi := npmInstall{npmCommandConfig: &nic.NpmCommand}
+	if err := npmi.preparePrerequisites(nic.repo); err != nil {
 		return err
 	}
 
-	if err = npmi.createTempNpmrc(); err != nil {
+	if err := npmi.createTempNpmrc(); err != nil {
 		return npmi.restoreNpmrcAndError(err)
 	}
 
-	if err = npmi.runInstall(); err != nil {
+	if err := npmi.runInstall(); err != nil {
 		return npmi.restoreNpmrcAndError(err)
 	}
 
-	if err = npmi.restoreNpmrc(); err != nil {
+	if err := npmi.restoreNpmrc(); err != nil {
 		return err
 	}
 
@@ -58,20 +67,24 @@ func Install(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
 		return nil
 	}
 
-	if err = npmi.setDependenciesList(); err != nil {
+	if err := npmi.setDependenciesList(); err != nil {
 		return err
 	}
 
-	if err = npmi.collectDependenciesChecksums(); err != nil {
+	if err := npmi.collectDependenciesChecksums(); err != nil {
 		return err
 	}
 
-	if err = npmi.saveDependenciesData(); err != nil {
+	if err := npmi.saveDependenciesData(); err != nil {
 		return err
 	}
 
 	log.Info("npm install finished successfully.")
-	return
+	return nil
+}
+
+func (nic *NpmInstallCommand) CommandName() string {
+	return "rt_npm_install"
 }
 
 func (npmi *npmInstall) preparePrerequisites(repo string) error {
@@ -120,9 +133,9 @@ func (npmi *npmInstall) prepareArtifactoryPrerequisites(repo string) (err error)
 
 func (npmi *npmInstall) prepareBuildInfo() error {
 	var err error
-	if len(npmi.cliConfig.BuildName) > 0 && len(npmi.cliConfig.BuildNumber) > 0 {
+	if len(npmi.npmCommandConfig.buildConfiguration.BuildName) > 0 && len(npmi.npmCommandConfig.buildConfiguration.BuildNumber) > 0 {
 		npmi.collectBuildInfo = true
-		if err = utils.SaveBuildGeneralDetails(npmi.cliConfig.BuildName, npmi.cliConfig.BuildNumber); err != nil {
+		if err = utils.SaveBuildGeneralDetails(npmi.npmCommandConfig.buildConfiguration.BuildName, npmi.npmCommandConfig.buildConfiguration.BuildNumber); err != nil {
 			return err
 		}
 
@@ -194,7 +207,7 @@ func createRestoreErrorPrefix(workingDirectory string) string {
 // If such a file exists we storing a copy of it in npmrcBackupFileName.
 func (npmi *npmInstall) createTempNpmrc() error {
 	log.Debug("Creating project .npmrc file.")
-	data, err := npm.GetConfigList(npmi.cliConfig.NpmArgs, npmi.executablePath)
+	data, err := npm.GetConfigList(npmi.npmCommandConfig.npmArgs, npmi.executablePath)
 	configData, err := npmi.prepareConfigData(data)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -209,7 +222,7 @@ func (npmi *npmInstall) createTempNpmrc() error {
 
 func (npmi *npmInstall) runInstall() error {
 	log.Debug("Running npmi install command.")
-	splitArgs, err := shellwords.Parse(npmi.cliConfig.NpmArgs)
+	splitArgs, err := shellwords.Parse(npmi.npmCommandConfig.npmArgs)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -246,7 +259,7 @@ func (npmi *npmInstall) setDependenciesList() (err error) {
 
 func (npmi *npmInstall) collectDependenciesChecksums() error {
 	log.Info("Collecting dependencies information... This may take a few minuets...")
-	servicesManager, err := utils.CreateServiceManager(npmi.cliConfig.ArtDetails, false)
+	servicesManager, err := utils.CreateServiceManager(npmi.npmCommandConfig.rtDetails, false)
 	if err != nil {
 		return err
 	}
@@ -272,7 +285,7 @@ func (npmi *npmInstall) saveDependenciesData() error {
 		partial.ModuleId = npmi.packageInfo.BuildInfoModuleId()
 	}
 
-	if err := utils.SavePartialBuildInfo(npmi.cliConfig.BuildName, npmi.cliConfig.BuildNumber, populateFunc); err != nil {
+	if err := utils.SavePartialBuildInfo(npmi.npmCommandConfig.buildConfiguration.BuildName, npmi.npmCommandConfig.buildConfiguration.BuildNumber, populateFunc); err != nil {
 		return err
 	}
 
@@ -361,7 +374,7 @@ func (npmi *npmInstall) setTypeRestriction(key string, val interface{}) {
 // Run npm list and parse the returned json
 func (npmi *npmInstall) prepareDependencies(typeRestriction string) error {
 	// Run npm list
-	data, errData, err := npm.RunList(npmi.cliConfig.NpmArgs+" -only="+typeRestriction, npmi.executablePath)
+	data, errData, err := npm.RunList(npmi.npmCommandConfig.npmArgs+" -only="+typeRestriction, npmi.executablePath)
 	if err != nil {
 		log.Warn("npm list command failed with error:", err.Error())
 	}
@@ -478,7 +491,7 @@ func (npmi *npmInstall) restoreNpmrcAndError(err error) error {
 }
 
 func (npmi *npmInstall) setArtifactoryAuth() error {
-	authArtDetails, err := npmi.cliConfig.ArtDetails.CreateArtAuthConfig()
+	authArtDetails, err := npmi.npmCommandConfig.rtDetails.CreateArtAuthConfig()
 	if err != nil {
 		return err
 	}
@@ -610,7 +623,7 @@ type getDependencyInfoFunc func(string) parallel.TaskFunc
 
 type npmInstall struct {
 	executablePath   string
-	cliConfig        *npm.CliConfiguration
+	npmCommandConfig *NpmCommand
 	npmrcFileMode    os.FileMode
 	workingDirectory string
 	registry         string

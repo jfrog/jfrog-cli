@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path"
@@ -60,12 +61,15 @@ func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) 
 		return new(ArtifactoryDetails), nil
 	}
 	if len(serverId) == 0 {
-		return GetDefaultArtifactoryConf(details)
+		details, err := GetDefaultConfiguredArtifactoryConf(details)
+		return details, errorutils.CheckError(err)
 	}
 	return getArtifactoryConfByServerId(serverId, details)
 }
 
-func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
+// Returns the default server configuration or error if not found.
+// Caller should perform the check error if required.
+func GetDefaultConfiguredArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetails, error) {
 	if len(configs) == 0 {
 		details := new(ArtifactoryDetails)
 		details.IsDefault = true
@@ -76,7 +80,22 @@ func GetDefaultArtifactoryConf(configs []*ArtifactoryDetails) (*ArtifactoryDetai
 			return conf, nil
 		}
 	}
-	return nil, errorutils.CheckError(errors.New("Couldn't find default server."))
+	return nil, errors.New("Couldn't find default server.")
+}
+
+// Returns default artifactory conf. Returns nil if default server doesn't exists.
+func GetDefaultArtifactoryConf() (*ArtifactoryDetails, error) {
+	configurations, err := GetAllArtifactoryConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(configurations) == 0 {
+		log.Debug("No servers were configured.")
+		return nil, err
+	}
+
+	return GetDefaultConfiguredArtifactoryConf(configurations)
 }
 
 // Returns the configured server or error if the server id not found

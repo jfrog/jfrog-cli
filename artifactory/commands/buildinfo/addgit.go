@@ -27,23 +27,50 @@ const (
 	MissingConfigurationError = "Configuration file must contain: %s"
 )
 
-func AddGit(config *BuildAddGitConfiguration) error {
+type BuildAddGitConfiguration struct {
+	buildConfiguration *utils.BuildConfiguration
+	dotGitPath         string
+	configFilePath     string
+	issuesConfig       *IssuesConfiguration
+}
+
+func (config *BuildAddGitConfiguration) SetIssuesConfig(issuesConfig *IssuesConfiguration) *BuildAddGitConfiguration {
+	config.issuesConfig = issuesConfig
+	return config
+}
+
+func (config *BuildAddGitConfiguration) SetConfigFilePath(configFilePath string) *BuildAddGitConfiguration {
+	config.configFilePath = configFilePath
+	return config
+}
+
+func (config *BuildAddGitConfiguration) SetDotGitPath(dotGitPath string) *BuildAddGitConfiguration {
+	config.dotGitPath = dotGitPath
+	return config
+}
+
+func (config *BuildAddGitConfiguration) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *BuildAddGitConfiguration {
+	config.buildConfiguration = buildConfiguration
+	return config
+}
+
+func (config *BuildAddGitConfiguration) Run() error {
 	log.Info("Collecting git revision and remote url...")
-	err := utils.SaveBuildGeneralDetails(config.BuildName, config.BuildNumber)
+	err := utils.SaveBuildGeneralDetails(config.buildConfiguration.BuildName, config.buildConfiguration.BuildNumber)
 	if err != nil {
 		return err
 	}
 
 	// Find .git folder if it wasn't provided in the command.
-	if config.DotGitPath == "" {
-		config.DotGitPath, err = fileutils.FindUpstream(".git", fileutils.Dir)
+	if config.dotGitPath == "" {
+		config.dotGitPath, err = fileutils.FindUpstream(".git", fileutils.Dir)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Collect URL and Revision into GitManager.
-	gitManager := git.NewManager(config.DotGitPath)
+	gitManager := git.NewManager(config.dotGitPath)
 	err = gitManager.ReadConfig()
 	if err != nil {
 		return err
@@ -51,7 +78,7 @@ func AddGit(config *BuildAddGitConfiguration) error {
 
 	// Collect issues if required.
 	var issues []buildinfo.AffectedIssue
-	if config.ConfigFilePath != "" {
+	if config.configFilePath != "" {
 		issues, err = config.collectBuildIssues()
 		if err != nil {
 			return err
@@ -65,23 +92,58 @@ func AddGit(config *BuildAddGitConfiguration) error {
 			Revision: gitManager.GetRevision(),
 		}
 
-		if config.ConfigFilePath != "" {
+		if config.configFilePath != "" {
 			partial.Issues = &buildinfo.Issues{
-				Tracker:                &buildinfo.Tracker{Name: config.IssuesConfig.TrackerName, Version: ""},
-				AggregateBuildIssues:   config.IssuesConfig.Aggregate,
-				AggregationBuildStatus: config.IssuesConfig.AggregationStatus,
+				Tracker:                &buildinfo.Tracker{Name: config.issuesConfig.TrackerName, Version: ""},
+				AggregateBuildIssues:   config.issuesConfig.Aggregate,
+				AggregationBuildStatus: config.issuesConfig.AggregationStatus,
 				AffectedIssues:         issues,
 			}
 		}
 	}
-	err = utils.SavePartialBuildInfo(config.BuildName, config.BuildNumber, populateFunc)
+	err = utils.SavePartialBuildInfo(config.buildConfiguration.BuildName, config.buildConfiguration.BuildNumber, populateFunc)
 	if err != nil {
 		return err
 	}
 
 	// Done.
-	log.Info("Collected VCS details for", config.BuildName+"/"+config.BuildNumber+".")
+	log.Info("Collected VCS details for", config.buildConfiguration.BuildName+"/"+config.buildConfiguration.BuildNumber+".")
 	return nil
+}
+
+// Returns the ArtfiactoryDetails.
+// When a config file configured, the information is taken from the config file, if not, returns the default server.
+func (config *BuildAddGitConfiguration) RtDetails() *utilsconfig.ArtifactoryDetails {
+	var details *utilsconfig.ArtifactoryDetails
+	var err error
+	if config.configFilePath != "" {
+		// Get from the conf file the server Id:
+		var vConfig *viper.Viper
+		vConfig, err := utils.ReadConfigFile(config.configFilePath, utils.YAML)
+		if err != nil {
+			log.Debug(err)
+			return nil
+		}
+
+		if !vConfig.IsSet(ConfigIssuesPrefix+"serverID") || vConfig.GetString(ConfigIssuesPrefix+"serverID") == "" {
+			log.Debug(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID"))
+			return nil
+		}
+		serverId := vConfig.GetString(ConfigIssuesPrefix + "serverID")
+		details, err = utilsconfig.GetArtifactorySpecificConfig(serverId)
+	} else {
+		details, err = utilsconfig.GetDefaultArtifactoryConf()
+	}
+
+	if err != nil {
+		log.Debug(err)
+		return nil
+	}
+	return details
+}
+
+func (config *BuildAddGitConfiguration) CommandName() string {
+	return "rt_build_add_git"
 }
 
 func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.AffectedIssue, error) {
@@ -94,7 +156,7 @@ func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.Affect
 	}
 
 	// Initialize issues-configuration.
-	config.IssuesConfig = new(IssuesConfiguration)
+	config.issuesConfig = new(IssuesConfiguration)
 
 	// Create config's IssuesConfigurations from the provided spec file.
 	err = config.createIssuesConfigs()
@@ -109,7 +171,7 @@ func (config *BuildAddGitConfiguration) collectBuildIssues() ([]buildinfo.Affect
 	}
 
 	// Run issues collection.
-	return config.DoCollect(config.IssuesConfig, lastVcsRevision)
+	return config.DoCollect(config.issuesConfig, lastVcsRevision)
 }
 
 func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfiguration, lastVcsRevision string) ([]buildinfo.AffectedIssue, error) {
@@ -148,7 +210,7 @@ func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfigurat
 		return nil, err
 	}
 	defer os.Chdir(wd)
-	err = os.Chdir(config.DotGitPath)
+	err = os.Chdir(config.dotGitPath)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}
@@ -169,21 +231,21 @@ func (config *BuildAddGitConfiguration) DoCollect(issuesConfig *IssuesConfigurat
 
 func (config *BuildAddGitConfiguration) createIssuesConfigs() (err error) {
 	// Read file's data.
-	err = config.IssuesConfig.populateIssuesConfigsFromSpec(config.ConfigFilePath)
+	err = config.issuesConfig.populateIssuesConfigsFromSpec(config.configFilePath)
 	if err != nil {
 		return
 	}
 
 	// Build ArtifactoryDetails from provided serverID.
-	err = config.IssuesConfig.setArtifactoryDetails()
+	err = config.issuesConfig.setArtifactoryDetails()
 	if err != nil {
 		return
 	}
 
 	// Add '/' suffix to URL if required.
-	if config.IssuesConfig.TrackerUrl != "" {
+	if config.issuesConfig.TrackerUrl != "" {
 		// Url should end with '/'
-		config.IssuesConfig.TrackerUrl = clientutils.AddTrailingSlashIfNeeded(config.IssuesConfig.TrackerUrl)
+		config.issuesConfig.TrackerUrl = clientutils.AddTrailingSlashIfNeeded(config.issuesConfig.TrackerUrl)
 	}
 
 	return
@@ -191,7 +253,7 @@ func (config *BuildAddGitConfiguration) createIssuesConfigs() (err error) {
 
 func (config *BuildAddGitConfiguration) getLatestVcsRevision() (string, error) {
 	// Get latest build's build-info from Artifactory
-	buildInfo, err := config.getLatestBuildInfo(config.IssuesConfig)
+	buildInfo, err := config.getLatestBuildInfo(config.issuesConfig)
 	if err != nil {
 		return "", err
 	}
@@ -213,7 +275,7 @@ func (config *BuildAddGitConfiguration) getLatestBuildInfo(issuesConfig *IssuesC
 	}
 
 	// Get latest build-info from Artifactory.
-	buildInfoParams := services.BuildInfoParams{BuildName: config.BuildName, BuildNumber: "LATEST"}
+	buildInfoParams := services.BuildInfoParams{BuildName: config.buildConfiguration.BuildName, BuildNumber: "LATEST"}
 	buildInfo, err := sm.GetBuildInfo(buildInfoParams)
 	if err != nil {
 		return nil, err
@@ -302,14 +364,6 @@ func (ic *IssuesConfiguration) setArtifactoryDetails() error {
 	}
 	ic.ArtDetails = artDetails
 	return nil
-}
-
-type BuildAddGitConfiguration struct {
-	BuildName      string
-	BuildNumber    string
-	DotGitPath     string
-	ConfigFilePath string
-	IssuesConfig   *IssuesConfiguration
 }
 
 type IssuesConfiguration struct {

@@ -7,8 +7,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration,
-	progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
 	certPath, err := GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
@@ -19,7 +18,7 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	}
 	servicesConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
-		SetDryRun(flags.DryRun).
+		SetDryRun(dryRun).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(flags.Threads).
@@ -35,11 +34,7 @@ type DownloadConfiguration struct {
 	Threads         int
 	SplitCount      int
 	MinSplitSize    int64
-	BuildName       string
-	BuildNumber     string
-	DryRun          bool
 	Symlink         bool
 	ValidateSymlink bool
-	ArtDetails      *config.ArtifactoryDetails
 	Retries         int
 }

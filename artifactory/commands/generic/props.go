@@ -1,6 +1,7 @@
 package generic
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -10,32 +11,77 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func SetProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := createPropsServiceManager(threads, artDetails)
-	if err != nil {
-		return 0, 0, err
-	}
+const (
+	SetProperties    CommandName = "rt_set_properties"
+	DeleteProperties CommandName = "rt_delete_properties"
+)
 
-	resultItems := searchItems(spec, servicesManager)
+type CommandName string
 
-	propsParams := GetPropsParams(resultItems, props)
-
-	success, err := servicesManager.SetProps(propsParams)
-	return success, len(resultItems) - success, err
+type PropsCommand struct {
+	props       string
+	commandName CommandName
+	threads     int
+	GenericCommand
 }
 
-func DeleteProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := createPropsServiceManager(threads, artDetails)
+func NewPropsCommand() *PropsCommand {
+	return &PropsCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (pc *PropsCommand) Threads() int {
+	return pc.threads
+}
+
+func (pc *PropsCommand) SetThreads(threads int) *PropsCommand {
+	pc.threads = threads
+	return pc
+}
+
+func (pc *PropsCommand) Props() string {
+	return pc.props
+}
+
+func (pc *PropsCommand) SetProps(props string) *PropsCommand {
+	pc.props = props
+	return pc
+}
+
+func (pc *PropsCommand) SetCommandName(commandName CommandName) *PropsCommand {
+	pc.commandName = commandName
+	return pc
+}
+
+func (pc *PropsCommand) Run() error {
+	servicesManager, err := createPropsServiceManager(pc.threads, pc.RtDetails())
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
 
-	resultItems := searchItems(spec, servicesManager)
+	resultItems := searchItems(pc.Spec(), servicesManager)
 
-	propsParams := GetPropsParams(resultItems, props)
+	propsParams := GetPropsParams(resultItems, pc.props)
+	var success int
+	switch pc.commandName {
+	case SetProperties:
+		{
+			success, err = servicesManager.SetProps(propsParams)
+		}
+	case DeleteProperties:
+		{
+			success, err = servicesManager.DeleteProps(propsParams)
+		}
+	default:
+		return fmt.Errorf("Received unknown command name: %s", pc.commandName)
+	}
+	result := pc.Result()
+	result.SetSuccessCount(success)
+	result.SetFailCount(len(resultItems) - success)
+	return err
+}
 
-	success, err := servicesManager.DeleteProps(propsParams)
-	return success, len(resultItems) - success, err
+func (pc *PropsCommand) CommandName() string {
+	return string(pc.commandName)
 }
 
 func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {

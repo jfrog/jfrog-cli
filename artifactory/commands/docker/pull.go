@@ -7,10 +7,15 @@ import (
 	"strings"
 )
 
+type DockerPullCommand struct {
+	DockerCommand
+}
+
 // Pull docker image and create build info if needed
-func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails) error {
+func (dpc *DockerPullCommand) Run() error {
 	// Perform login
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
+	imageTag := dpc.ImageTag()
+	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: dpc.RtDetails()}
 	err := docker.DockerLogin(imageTag, loginConfig)
 	if err != nil {
 		return err
@@ -26,6 +31,8 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
+	buildName := dpc.BuildConfiguration().BuildName
+	buildNumber := dpc.BuildConfiguration().BuildNumber
 	// Return if no build name and number was provided
 	if buildName == "" || buildNumber == "" {
 		return nil
@@ -35,15 +42,23 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	serviceManager, err := docker.CreateServiceManager(artDetails, 0)
+	serviceManager, err := docker.CreateServiceManager(dpc.RtDetails(), 0)
 	if err != nil {
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, sourceRepo, buildName, buildNumber, serviceManager, docker.Pull)
+	builder := docker.BuildInfoBuilder(image, dpc.Repo(), buildName, buildNumber, serviceManager, docker.Pull)
 	buildInfo, err := builder.Build()
 	if err != nil {
 		return err
 	}
 	return utils.SaveBuildInfo(buildName, buildNumber, buildInfo)
+}
+
+func (dpc *DockerPullCommand) CommandName() string {
+	return "rt_docker_pull"
+}
+
+func (dpc *DockerPullCommand) RtDetails() *config.ArtifactoryDetails {
+	return dpc.rtDetails
 }

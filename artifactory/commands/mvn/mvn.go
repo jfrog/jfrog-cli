@@ -23,7 +23,34 @@ const mavenExtractorDependencyVersion = "2.11.1"
 const ClasswordConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
-func Mvn(goals, configPath string, configuration *utils.BuildConfiguration) error {
+type MvnCommand struct {
+	goals         string
+	configPath    string
+	configuration *utils.BuildConfiguration
+	rtDetails     *config.ArtifactoryDetails
+}
+
+func (mc *MvnCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *MvnCommand {
+	mc.rtDetails = rtDetails
+	return mc
+}
+
+func (mc *MvnCommand) SetConfiguration(configuration *utils.BuildConfiguration) *MvnCommand {
+	mc.configuration = configuration
+	return mc
+}
+
+func (mc *MvnCommand) SetConfigPath(configPath string) *MvnCommand {
+	mc.configPath = configPath
+	return mc
+}
+
+func (mc *MvnCommand) SetGoals(goals string) *MvnCommand {
+	mc.goals = goals
+	return mc
+}
+
+func (mc *MvnCommand) Run() error {
 	log.Info("Running Mvn...")
 	err := validateMavenInstallation()
 	if err != nil {
@@ -36,7 +63,7 @@ func Mvn(goals, configPath string, configuration *utils.BuildConfiguration) erro
 		return err
 	}
 
-	mvnRunConfig, err := createMvnRunConfig(goals, configPath, configuration, dependenciesPath)
+	mvnRunConfig, err := mc.createMvnRunConfig(dependenciesPath)
 	if err != nil {
 		return err
 	}
@@ -47,6 +74,28 @@ func Mvn(goals, configPath string, configuration *utils.BuildConfiguration) erro
 	}
 
 	return nil
+}
+
+// Returns the ArtfiactoryDetails. The information returns from the config file provided.
+func (mc *MvnCommand) RtDetails() *config.ArtifactoryDetails {
+	// Get the rtDetails from the config file.
+	if mc.rtDetails == nil {
+		vConfig, err := utils.ReadConfigFile(mc.configPath, utils.YAML)
+		if err != nil {
+			log.Debug(err)
+			return nil
+		}
+		mc.rtDetails, err = utils.GetRtDetails(vConfig)
+		if err != nil {
+			log.Debug(err)
+			return nil
+		}
+	}
+	return mc.rtDetails
+}
+
+func (mc *MvnCommand) CommandName() string {
+	return "rt_maven"
 }
 
 func validateMavenInstallation() error {
@@ -87,7 +136,7 @@ func createClassworldsConfig(dependenciesPath string) error {
 	return errorutils.CheckError(ioutil.WriteFile(classworldsPath, []byte(utils.ClassworldsConf), 0644))
 }
 
-func createMvnRunConfig(goals, configPath string, configuration *utils.BuildConfiguration, dependenciesPath string) (*mvnRunConfig, error) {
+func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig, error) {
 	var err error
 	var javaExecPath string
 
@@ -118,21 +167,21 @@ func createMvnRunConfig(goals, configPath string, configuration *utils.BuildConf
 	}
 
 	var vConfig *viper.Viper
-	vConfig, err = utils.ReadConfigFile(configPath, utils.YAML)
+	vConfig, err = utils.ReadConfigFile(mc.configPath, utils.YAML)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0 {
-		vConfig.Set(utils.BUILD_NAME, configuration.BuildName)
-		vConfig.Set(utils.BUILD_NUMBER, configuration.BuildNumber)
-		err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber)
+	if len(mc.configuration.BuildName) > 0 && len(mc.configuration.BuildNumber) > 0 {
+		vConfig.Set(utils.BUILD_NAME, mc.configuration.BuildName)
+		vConfig.Set(utils.BUILD_NUMBER, mc.configuration.BuildNumber)
+		err = utils.SaveBuildGeneralDetails(mc.configuration.BuildName, mc.configuration.BuildNumber)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	buildInfoProperties, err := utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.MAVEN)
+	buildInfoProperties, err := utils.CreateBuildInfoPropertiesFile(mc.configuration.BuildName, mc.configuration.BuildNumber, vConfig, utils.MAVEN)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +193,7 @@ func createMvnRunConfig(goals, configPath string, configuration *utils.BuildConf
 		cleassworldsConfig:     filepath.Join(dependenciesPath, ClasswordConfFileName),
 		mavenHome:              mavenHome,
 		workspace:              currentWorkdir,
-		goals:                  goals,
+		goals:                  mc.goals,
 		buildInfoProperties:    buildInfoProperties,
 		generatedBuildInfoPath: vConfig.GetString(utils.GENERATED_BUILD_INFO),
 	}, nil

@@ -23,39 +23,54 @@ import (
 	"strings"
 )
 
-func Publish(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
+type NpmPublishCommand struct {
+	NpmCommand
+	executablePath   string
+	workingDirectory string
+	collectBuildInfo bool
+	packedFilePath   string
+	packageInfo      *npm.PackageInfo
+	publishPath      string
+	tarballProvided  bool
+	artifactData     []specutils.FileInfo
+}
+
+func (npc *NpmPublishCommand) RtDetails() *config.ArtifactoryDetails {
+	return npc.rtDetails
+}
+
+func (npc *NpmPublishCommand) Run() error {
 	log.Info("Running npm Publish")
-	npmp := npmPublish{cliConfiguration: cliConfiguration, repo: repo}
-	if err = npmp.preparePrerequisites(); err != nil {
+	if err := npc.preparePrerequisites(); err != nil {
 		return err
 	}
 
-	if !npmp.tarballProvided {
-		if err = npmp.pack(); err != nil {
+	if !npc.tarballProvided {
+		if err := npc.pack(); err != nil {
 			return err
 		}
 	}
 
-	if err = npmp.deploy(); err != nil {
-		if npmp.tarballProvided {
+	if err := npc.deploy(); err != nil {
+		if npc.tarballProvided {
 			return err
 		}
 		// We should delete the tarball we created
-		return deleteCreatedTarballAndError(npmp.packedFilePath, err)
+		return deleteCreatedTarballAndError(npc.packedFilePath, err)
 	}
 
-	if !npmp.tarballProvided {
-		if err = deleteCreatedTarball(npmp.packedFilePath); err != nil {
+	if !npc.tarballProvided {
+		if err := deleteCreatedTarball(npc.packedFilePath); err != nil {
 			return err
 		}
 	}
 
-	if !npmp.collectBuildInfo {
+	if !npc.collectBuildInfo {
 		log.Info("npm publish finished successfully.")
 		return nil
 	}
 
-	if err = npmp.saveArtifactData(); err != nil {
+	if err := npc.saveArtifactData(); err != nil {
 		return err
 	}
 
@@ -63,7 +78,11 @@ func Publish(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
 	return nil
 }
 
-func (npmp *npmPublish) preparePrerequisites() error {
+func (npc *NpmPublishCommand) CommandName() string {
+	return "rt_npm_publish"
+}
+
+func (npc *NpmPublishCommand) preparePrerequisites() error {
 	log.Debug("Preparing prerequisites.")
 	npmExecPath, err := exec.LookPath("npm")
 	if err != nil {
@@ -74,8 +93,8 @@ func (npmp *npmPublish) preparePrerequisites() error {
 		return errorutils.CheckError(errors.New("Could not find 'npm' executable"))
 	}
 
-	npmp.executablePath = npmExecPath
-	log.Debug("Using npm executable:", npmp.executablePath)
+	npc.executablePath = npmExecPath
+	log.Debug("Using npm executable:", npc.executablePath)
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -86,62 +105,62 @@ func (npmp *npmPublish) preparePrerequisites() error {
 		return errorutils.CheckError(err)
 	}
 
-	npmp.workingDirectory = currentDir
-	log.Debug("Working directory set to:", npmp.workingDirectory)
-	npmp.collectBuildInfo = len(npmp.cliConfiguration.BuildName) > 0 && len(npmp.cliConfiguration.BuildNumber) > 0
-	if err = npmp.setPublishPath(); err != nil {
+	npc.workingDirectory = currentDir
+	log.Debug("Working directory set to:", npc.workingDirectory)
+	npc.collectBuildInfo = len(npc.buildConfiguration.BuildName) > 0 && len(npc.buildConfiguration.BuildNumber) > 0
+	if err = npc.setPublishPath(); err != nil {
 		return err
 	}
 
-	artDetails, err := npmp.cliConfiguration.ArtDetails.CreateArtAuthConfig()
+	artDetails, err := npc.rtDetails.CreateArtAuthConfig()
 	if err != nil {
 		return err
 	}
 
-	if err = utils.CheckIfRepoExists(npmp.repo, artDetails); err != nil {
+	if err = utils.CheckIfRepoExists(npc.repo, artDetails); err != nil {
 		return err
 	}
 
-	return npmp.setPackageInfo()
+	return npc.setPackageInfo()
 }
 
-func (npmp *npmPublish) pack() error {
+func (npc *NpmPublishCommand) pack() error {
 	log.Debug("Creating npm package.")
-	if err := npm.Pack(npmp.cliConfiguration.NpmArgs, npmp.executablePath); err != nil {
+	if err := npm.Pack(npc.npmArgs, npc.executablePath); err != nil {
 		return err
 	}
 
-	npmp.packedFilePath = filepath.Join(npmp.workingDirectory, npmp.packageInfo.GetExpectedPackedFileName())
-	log.Debug("Created npm package at", npmp.packedFilePath)
+	npc.packedFilePath = filepath.Join(npc.workingDirectory, npc.packageInfo.GetExpectedPackedFileName())
+	log.Debug("Created npm package at", npc.packedFilePath)
 	return nil
 }
 
-func (npmp *npmPublish) deploy() (err error) {
+func (npc *NpmPublishCommand) deploy() (err error) {
 	log.Debug("Deploying npm package.")
-	if err = npmp.readPackageInfoFromTarball(); err != nil {
+	if err = npc.readPackageInfoFromTarball(); err != nil {
 		return err
 	}
 
-	target := fmt.Sprintf("%s/%s", npmp.repo, npmp.packageInfo.GetDeployPath())
-	artifactsFileInfo, err := npmp.doDeploy(target, npmp.cliConfiguration.ArtDetails)
+	target := fmt.Sprintf("%s/%s", npc.repo, npc.packageInfo.GetDeployPath())
+	artifactsFileInfo, err := npc.doDeploy(target, npc.rtDetails)
 	if err != nil {
 		return err
 	}
 
-	npmp.artifactData = artifactsFileInfo
+	npc.artifactData = artifactsFileInfo
 	return nil
 }
 
-func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDetails) (artifactsFileInfo []specutils.FileInfo, err error) {
+func (npc *NpmPublishCommand) doDeploy(target string, artDetails *config.ArtifactoryDetails) (artifactsFileInfo []specutils.FileInfo, err error) {
 	servicesManager, err := utils.CreateServiceManager(artDetails, false)
 	if err != nil {
 		return nil, err
 	}
 	up := services.UploadParams{}
-	up.ArtifactoryCommonParams = &specutils.ArtifactoryCommonParams{Pattern: npmp.packedFilePath, Target: target}
-	if npmp.collectBuildInfo {
-		utils.SaveBuildGeneralDetails(npmp.cliConfiguration.BuildName, npmp.cliConfiguration.BuildNumber)
-		props, err := utils.CreateBuildProperties(npmp.cliConfiguration.BuildName, npmp.cliConfiguration.BuildNumber)
+	up.ArtifactoryCommonParams = &specutils.ArtifactoryCommonParams{Pattern: npc.packedFilePath, Target: target}
+	if npc.collectBuildInfo {
+		utils.SaveBuildGeneralDetails(npc.buildConfiguration.BuildName, npc.buildConfiguration.BuildNumber)
+		props, err := utils.CreateBuildProperties(npc.buildConfiguration.BuildName, npc.buildConfiguration.BuildNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -159,28 +178,28 @@ func (npmp *npmPublish) doDeploy(target string, artDetails *config.ArtifactoryDe
 	return artifactsFileInfo, nil
 }
 
-func (npmp *npmPublish) saveArtifactData() error {
+func (npc *NpmPublishCommand) saveArtifactData() error {
 	log.Debug("Saving npm package artifact build info data.")
 	var buildArtifacts []buildinfo.Artifact
-	for _, artifact := range npmp.artifactData {
+	for _, artifact := range npc.artifactData {
 		buildArtifacts = append(buildArtifacts, artifact.ToBuildArtifacts())
 	}
 
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Artifacts = buildArtifacts
-		partial.ModuleId = npmp.packageInfo.BuildInfoModuleId()
+		partial.ModuleId = npc.packageInfo.BuildInfoModuleId()
 	}
-	return utils.SavePartialBuildInfo(npmp.cliConfiguration.BuildName, npmp.cliConfiguration.BuildNumber, populateFunc)
+	return utils.SavePartialBuildInfo(npc.buildConfiguration.BuildName, npc.buildConfiguration.BuildNumber, populateFunc)
 }
 
-func (npmp *npmPublish) setPublishPath() error {
+func (npc *NpmPublishCommand) setPublishPath() error {
 	log.Debug("Reading Package Json.")
-	splitFlags, err := shellwords.Parse(npmp.cliConfiguration.NpmArgs)
+	splitFlags, err := shellwords.Parse(npc.npmArgs)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 
-	npmp.publishPath = npmp.workingDirectory
+	npc.publishPath = npc.workingDirectory
 	if len(splitFlags) > 0 && !strings.HasPrefix(strings.TrimSpace(splitFlags[0]), "-") {
 		path := strings.TrimSpace(splitFlags[0])
 		path = clientutils.ReplaceTildeWithUserHome(path)
@@ -189,34 +208,34 @@ func (npmp *npmPublish) setPublishPath() error {
 		}
 
 		if filepath.IsAbs(path) {
-			npmp.publishPath = path
+			npc.publishPath = path
 		} else {
-			npmp.publishPath = filepath.Join(npmp.workingDirectory, path)
+			npc.publishPath = filepath.Join(npc.workingDirectory, path)
 		}
 	}
 	return nil
 }
 
-func (npmp *npmPublish) setPackageInfo() error {
+func (npc *NpmPublishCommand) setPackageInfo() error {
 	log.Debug("Setting Package Info.")
-	fileInfo, err := os.Stat(npmp.publishPath)
+	fileInfo, err := os.Stat(npc.publishPath)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 
 	if fileInfo.IsDir() {
-		npmp.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npmp.publishPath)
+		npc.packageInfo, err = npm.ReadPackageInfoFromPackageJson(npc.publishPath)
 		return err
 	}
 	log.Debug("The provided path is not a directory, we assume this is a compressed npm package")
-	npmp.tarballProvided = true
-	npmp.packedFilePath = npmp.publishPath
-	return npmp.readPackageInfoFromTarball()
+	npc.tarballProvided = true
+	npc.packedFilePath = npc.publishPath
+	return npc.readPackageInfoFromTarball()
 }
 
-func (npmp *npmPublish) readPackageInfoFromTarball() error {
-	log.Debug("Extracting info from npm package:", npmp.packedFilePath)
-	tarball, err := os.Open(npmp.packedFilePath)
+func (npc *NpmPublishCommand) readPackageInfoFromTarball() error {
+	log.Debug("Extracting info from npm package:", npc.packedFilePath)
+	tarball, err := os.Open(npc.packedFilePath)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -231,7 +250,7 @@ func (npmp *npmPublish) readPackageInfoFromTarball() error {
 		hdr, err := tarReader.Next()
 		if err != nil {
 			if err == io.EOF {
-				return errorutils.CheckError(errors.New("Could not find 'package.json' in the compressed npm package: " + npmp.packedFilePath))
+				return errorutils.CheckError(errors.New("Could not find 'package.json' in the compressed npm package: " + npc.packedFilePath))
 			}
 			return errorutils.CheckError(err)
 		}
@@ -241,7 +260,7 @@ func (npmp *npmPublish) readPackageInfoFromTarball() error {
 				return errorutils.CheckError(err)
 			}
 
-			npmp.packageInfo, err = npm.ReadPackageInfo(packageJson)
+			npc.packageInfo, err = npm.ReadPackageInfo(packageJson)
 			return err
 		}
 	}
@@ -261,17 +280,4 @@ func deleteCreatedTarball(packedFilePath string) error {
 	}
 	log.Debug("Successfully deleted the created npm package:", packedFilePath)
 	return nil
-}
-
-type npmPublish struct {
-	executablePath   string
-	cliConfiguration *npm.CliConfiguration
-	workingDirectory string
-	collectBuildInfo bool
-	packedFilePath   string
-	packageInfo      *npm.PackageInfo
-	publishPath      string
-	tarballProvided  bool
-	artifactData     []specutils.FileInfo
-	repo             string
 }

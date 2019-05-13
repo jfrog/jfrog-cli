@@ -4,7 +4,7 @@ import (
 	"github.com/jfrog/gocmd"
 	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
-	gocmdutils"github.com/jfrog/gocmd/executers/utils"
+	gocmdutils "github.com/jfrog/gocmd/executers/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -18,8 +18,35 @@ import (
 	"strings"
 )
 
-func Execute(targetRepo string, details *config.ArtifactoryDetails) error {
-	serviceManager, err := utils.CreateServiceManager(details, false)
+type GoRecursivePublish struct {
+	GoParamsCommand
+}
+
+type GoParamsCommand struct {
+	targetRepo string
+	rtDetails  *config.ArtifactoryDetails
+}
+
+func (gpc *GoParamsCommand) RtDetails() *config.ArtifactoryDetails {
+	return gpc.rtDetails
+}
+
+func (gpc *GoParamsCommand) TargetRepo() string {
+	return gpc.targetRepo
+}
+
+func (gpc *GoParamsCommand) SetTargetRepo(targetRepo string) *GoParamsCommand {
+	gpc.targetRepo = targetRepo
+	return gpc
+}
+
+func (gpc *GoParamsCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GoParamsCommand {
+	gpc.rtDetails = rtDetails
+	return gpc
+}
+
+func (grp *GoRecursivePublish) Run() error {
+	serviceManager, err := utils.CreateServiceManager(grp.RtDetails(), false)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -58,11 +85,11 @@ func Execute(targetRepo string, details *config.ArtifactoryDetails) error {
 			return err
 		}
 	}
-	err = gocmd.RecursivePublish(targetRepo, goModEditMessage, serviceManager)
+	err = gocmd.RecursivePublish(grp.TargetRepo(), goModEditMessage, serviceManager)
 	if errorutils.CheckError(err) != nil {
 		if !modFileExists {
 			log.Debug("Graph failed, preparing to run go mod tidy on the root project since got the following error:", err.Error())
-			err = gmi.prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMessage, serviceManager)
+			err = gmi.prepareAndRunTidyOnFailedGraph(wd, grp.TargetRepo(), goModEditMessage, serviceManager)
 			if err != nil {
 				return gmi.revert(wd, err)
 			}
@@ -76,6 +103,10 @@ func Execute(targetRepo string, details *config.ArtifactoryDetails) error {
 		return gmi.revert(wd, err)
 	}
 	return gmi.revert(wd, nil)
+}
+
+func (grp *GoRecursivePublish) CommandName() string {
+	return "rt_go_recursive_publish"
 }
 
 type goModInfo struct {

@@ -1,28 +1,61 @@
 package generic
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func PrepareGitLfsClean(configuration *GitLfsCleanConfiguration) ([]clientutils.ResultItem, error) {
-	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
-	if err != nil {
-		return nil, err
-	}
-
-	gitLfsCleanParams := getGitLfsCleanParams(configuration)
-
-	return servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
+type GitLfsCommand struct {
+	GenericCommand
+	configuration *GitLfsCleanConfiguration
 }
 
-func DeleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem, configuration *GitLfsCleanConfiguration) error {
-	log.Info("Deleting", len(deleteItems), "files from", configuration.Repo, "...")
-	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
+func (glc *GitLfsCommand) Configuration() *GitLfsCleanConfiguration {
+	return glc.configuration
+}
+
+func (glc *GitLfsCommand) SetConfiguration(configuration *GitLfsCleanConfiguration) *GitLfsCommand {
+	glc.configuration = configuration
+	return glc
+}
+
+func NewGitLfsCommand() *GitLfsCommand {
+	return &GitLfsCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (glc *GitLfsCommand) Run() error {
+	servicesManager, err := utils.CreateServiceManager(glc.RtDetails(), glc.DryRun())
+	if err != nil {
+		return err
+	}
+
+	gitLfsCleanParams := getGitLfsCleanParams(glc.configuration)
+
+	filesToDelete, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
+
+	if err != nil || len(filesToDelete) < 1 {
+		return err
+	}
+
+	if glc.configuration.Quiet {
+		err = glc.deleteLfsFilesFromArtifactory(filesToDelete)
+		return err
+	}
+	return glc.interactiveDeleteLfsFiles(filesToDelete)
+}
+
+func (glc *GitLfsCommand) CommandName() string {
+	return "git_lfs_clean"
+}
+
+func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem) error {
+	log.Info("Deleting", len(deleteItems), "files from", glc.configuration.Repo, "...")
+	servicesManager, err := utils.CreateServiceManager(glc.rtDetails, glc.DryRun())
 	if err != nil {
 		return err
 	}
@@ -34,12 +67,10 @@ func DeleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem, configu
 }
 
 type GitLfsCleanConfiguration struct {
-	ArtDetails *config.ArtifactoryDetails
-	Quiet      bool
-	DryRun     bool
-	Refs       string
-	Repo       string
-	GitPath    string
+	Quiet   bool
+	Refs    string
+	Repo    string
+	GitPath string
 }
 
 func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanParams services.GitLfsCleanParams) {
@@ -48,4 +79,16 @@ func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanP
 	gitLfsCleanParams.Refs = configuration.Refs
 	gitLfsCleanParams.Repo = configuration.Repo
 	return
+}
+
+func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete []clientutils.ResultItem) error {
+	for _, v := range filesToDelete {
+		fmt.Println("  " + v.Name)
+	}
+	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above files?")
+	if confirmed {
+		err := glc.deleteLfsFilesFromArtifactory(filesToDelete)
+		return err
+	}
+	return nil
 }

@@ -8,14 +8,58 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 )
 
-func ExecuteGo(noRegistry, publishDeps bool, goArg []string, targetRepo, buildName, buildNumber string, details *config.ArtifactoryDetails) error {
+type GoCommand struct {
+	noRegistry         bool
+	publishDeps        bool
+	goArg              []string
+	buildConfiguration *utils.BuildConfiguration
+	GoParamsCommand
+}
+
+func (gc *GoCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *GoCommand {
+	gc.buildConfiguration = buildConfiguration
+	return gc
+}
+
+func (gc *GoCommand) SetNoRegistry(noRegistry bool) *GoCommand {
+	gc.noRegistry = noRegistry
+	return gc
+}
+
+func (gc *GoCommand) SetPublishDeps(publishDeps bool) *GoCommand {
+	gc.publishDeps = publishDeps
+	return gc
+}
+
+func (gc *GoCommand) SetGoArg(goArg []string) *GoCommand {
+	gc.goArg = goArg
+	return gc
+}
+
+func (gc *GoCommand) SetTargetRepo(targetRepo string) *GoCommand {
+	gc.targetRepo = targetRepo
+	return gc
+}
+
+func (gc *GoCommand) SetArtifactoryDetails(details *config.ArtifactoryDetails) *GoCommand {
+	gc.rtDetails = details
+	return gc
+}
+
+func (gc *GoCommand) CommandName() string {
+	return "rt_go"
+}
+
+func (gc *GoCommand) Run() error {
 	err := golang.LogGoVersion()
 	if err != nil {
 		return err
 	}
+	buildName := gc.buildConfiguration.BuildName
+	buildNumber := gc.buildConfiguration.BuildNumber
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
-		err := utils.SaveBuildGeneralDetails(buildName, buildNumber)
+		err = utils.SaveBuildGeneralDetails(buildName, buildNumber)
 		if err != nil {
 			return err
 		}
@@ -26,12 +70,12 @@ func ExecuteGo(noRegistry, publishDeps bool, goArg []string, targetRepo, buildNa
 		return err
 	}
 
-	serviceManager, err := utils.CreateServiceManager(details, false)
+	serviceManager, err := utils.CreateServiceManager(gc.rtDetails, false)
 	if err != nil {
 		return err
 	}
 
-	err = gocmd.RunWithFallbacksAndPublish(goArg, targetRepo, noRegistry, publishDeps, serviceManager)
+	err = gocmd.RunWithFallbacksAndPublish(gc.goArg, gc.targetRepo, gc.noRegistry, gc.publishDeps, serviceManager)
 	if err != nil {
 		return err
 	}

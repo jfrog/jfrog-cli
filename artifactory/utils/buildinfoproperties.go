@@ -155,6 +155,21 @@ func ReadConfigFile(configPath string, configType ConfigType) (*viper.Viper, err
 	return config, nil
 }
 
+// Returns the Artifactory details
+// Checks first for the deployer information if exists and if not, checks for the resolver information.
+func GetRtDetails(vConfig *viper.Viper) (*config.ArtifactoryDetails, error) {
+	if vConfig.IsSet(DEPLOYER_PREFIX + SERVER_ID) {
+		serverId := vConfig.GetString(DEPLOYER_PREFIX + SERVER_ID)
+		return config.GetArtifactorySpecificConfig(serverId)
+	}
+
+	if vConfig.IsSet(RESOLVER_PREFIX + SERVER_ID) {
+		serverId := vConfig.GetString(RESOLVER_PREFIX + SERVER_ID)
+		return config.GetArtifactorySpecificConfig(serverId)
+	}
+	return nil, nil
+}
+
 func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.Viper, buildType BuildType) (string, error) {
 	if config.GetString("type") != buildType.String() {
 		return "", errorutils.CheckError(errors.New("Incompatible build config, expected: " + buildType.String() + " got: " + config.GetString("type")))

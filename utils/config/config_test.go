@@ -144,7 +144,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	serverDetails, err := GetDefaultArtifactoryConf(configV1.Artifactory)
+	serverDetails, err := GetDefaultConfiguredArtifactoryConf(configV1.Artifactory)
 	if err != nil {
 		t.Error(err.Error())
 	}

@@ -3,7 +3,6 @@ package generic
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -14,35 +13,55 @@ type SearchResult struct {
 	Props map[string][]string `json:"props,omitempty"`
 }
 
-func Search(searchSpec *spec.SpecFiles, artDetails *config.ArtifactoryDetails) ([]SearchResult, error) {
+type SearchCommand struct {
+	GenericCommand
+	searchResult []SearchResult
+}
 
+func NewSearchCommand() *SearchCommand {
+	return &SearchCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (sc *SearchCommand) SearchResult() []SearchResult {
+	return sc.searchResult
+}
+
+func (sc *SearchCommand) CommandName() string {
+	return "rt_search"
+}
+
+func (sc *SearchCommand) Run() error {
+	return sc.Search()
+}
+
+func (sc *SearchCommand) Search() error {
 	// Service Manager
-	servicesManager, err := utils.CreateServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(sc.RtDetails(), false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Search Loop
 	log.Info("Searching artifacts...")
 	var resultItems []clientutils.ResultItem
-	for i := 0; i < len(searchSpec.Files); i++ {
+	for i := 0; i < len(sc.Spec().Files); i++ {
 
-		searchParams, err := GetSearchParams(searchSpec.Get(i))
+		searchParams, err := GetSearchParams(sc.Spec().Get(i))
 		if err != nil {
 			log.Error(err)
-			return nil, err
+			return err
 		}
 
 		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		resultItems = append(resultItems, currentResultItems...)
 	}
 
-	result := aqlResultToSearchResult(resultItems)
+	sc.searchResult = aqlResultToSearchResult(resultItems)
 	clientutils.LogSearchResults(len(resultItems))
-	return result, err
+	return err
 }
 
 func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []SearchResult) {

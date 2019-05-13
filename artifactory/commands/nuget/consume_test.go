@@ -4,8 +4,8 @@ import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
 	"os"
@@ -71,14 +71,14 @@ func TestInitNewConfig(t *testing.T) {
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &nuget.Cmd{}
-	params := &Params{ArtifactoryDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	params := &NugetCommand{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Prepare the config file with NuGet authentication
-	err = addNugetAuthenticationToNewConfig(params, configFile)
+	err = params.addNugetAuthenticationToNewConfig(configFile)
 	if err != nil {
 		t.Error(err)
 	}

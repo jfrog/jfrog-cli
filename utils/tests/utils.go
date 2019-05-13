@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -315,13 +316,15 @@ func RenamePath(oldPath, newPath string, t *testing.T) {
 	RemovePath(oldPath, t)
 }
 
-func DeleteFiles(deleteSpec *spec.SpecFiles, flags *generic.DeleteConfiguration) (successCount, failCount int, err error) {
-	pathsToDelete, err := generic.GetPathsToDelete(deleteSpec, flags)
+func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
+	deleteCommand := generic.NewDeleteCommand()
+	deleteCommand.SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
+	err = deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return generic.DeleteFiles(pathsToDelete, flags)
+	return deleteCommand.DeleteFiles()
 }
 
 func GetNonVirtualRepositories() map[string]string {

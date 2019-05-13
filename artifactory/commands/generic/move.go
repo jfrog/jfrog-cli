@@ -3,43 +3,51 @@ package generic
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-// Moves the artifacts using the specified move pattern.
-func Move(moveSpec *spec.SpecFiles, configuration *MoveConfiguration) (successCount, failCount int, err error) {
+type MoveCommand struct {
+	GenericCommand
+}
 
+func NewMoveCommand() *MoveCommand {
+	return &MoveCommand{GenericCommand: *NewGenericCommand()}
+}
+
+// Moves the artifacts using the specified move pattern.
+func (mc *MoveCommand) Run() error {
 	// Create Service Manager:
-	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
+	servicesManager, err := utils.CreateServiceManager(mc.rtDetails, mc.DryRun())
 	if err != nil {
-		return
+		return err
 	}
 
 	// Move Loop:
-	for i := 0; i < len(moveSpec.Files); i++ {
+	for i := 0; i < len(mc.Spec().Files); i++ {
 
-		moveParams, err := getMoveParams(moveSpec.Get(i))
+		moveParams, err := getMoveParams(mc.Spec().Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 
 		partialSuccess, partialFailed, err := servicesManager.Move(moveParams)
-		successCount += partialSuccess
-		failCount += partialFailed
+		success := mc.result.SuccessCount() + partialSuccess
+		mc.result.SetSuccessCount(success)
+		failed := mc.result.FailCount() + partialFailed
+		mc.result.SetFailCount(failed)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 	}
-	return
+	return err
+
 }
 
-type MoveConfiguration struct {
-	DryRun     bool
-	ArtDetails *config.ArtifactoryDetails
+func (mc *MoveCommand) CommandName() string {
+	return "rt_move"
 }
 
 func getMoveParams(f *spec.File) (moveParams services.MoveCopyParams, err error) {

@@ -19,4 +19,7 @@ const (
 
 	// Common
 	Retries = 3
+
+	// Env
+	ReportUsage = "JFROG_CLI_REPORT_USAGE"
 )
