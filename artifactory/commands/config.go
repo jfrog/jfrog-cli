@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
+	"reflect"
 	"sync"
 	"syscall"
 )
@@ -61,10 +62,13 @@ func (cc *ConfigCommand) Run() error {
 }
 
 func (cc *ConfigCommand) RtDetails() *config.ArtifactoryDetails {
-	if cc.details != nil {
+	if cc.details != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.details) {
 		return cc.details
 	}
-	return cc.defaultDetails
+	if cc.defaultDetails != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.defaultDetails) {
+		return cc.defaultDetails
+	}
+	return nil
 }
 
 func (cc *ConfigCommand) CommandName() string {

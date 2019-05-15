@@ -37,9 +37,9 @@ func reportUsage(command Command, channel chan<- bool) {
 		return
 	}
 	if reportUsage {
-		log.Debug("Sending report usage information...")
 		rtDetails := command.RtDetails()
 		if rtDetails != nil {
+			log.Debug("Sending report usage information...")
 			serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 			if err != nil {
 				log.Debug(err)

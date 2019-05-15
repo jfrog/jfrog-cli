@@ -1283,7 +1283,7 @@ func configCmd(c *cli.Context) {
 	}
 	validateConfigFlags(configCommandConfiguration)
 	configCmd := new(commands.ConfigCommand).SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
-	err := commandutils.Exec(configCmd)
+	err := configCmd.Config()
 	cliutils.ExitOnErr(err)
 }
 
