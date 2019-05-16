@@ -76,7 +76,11 @@ func (uc *UploadCommand) upload() error {
 	if err != nil {
 		return err
 	}
-	servicesManager, err := utils.CreateUploadServiceManager(uc.RtDetails(), uc.uploadConfiguration, certPath, uc.DryRun(), progressBar)
+	rtDetails, err := uc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := utils.CreateUploadServiceManager(rtDetails, uc.uploadConfiguration, certPath, uc.DryRun(), progressBar)
 	if err != nil {
 		return err
 	}

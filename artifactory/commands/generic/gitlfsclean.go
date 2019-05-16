@@ -29,7 +29,11 @@ func NewGitLfsCommand() *GitLfsCommand {
 }
 
 func (glc *GitLfsCommand) Run() error {
-	servicesManager, err := utils.CreateServiceManager(glc.RtDetails(), glc.DryRun())
+	rtDetails, err := glc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := utils.CreateServiceManager(rtDetails, glc.DryRun())
 	if err != nil {
 		return err
 	}

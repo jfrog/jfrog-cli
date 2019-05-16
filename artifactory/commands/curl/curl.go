@@ -271,8 +271,8 @@ func (curlCmd *CurlCommand) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func (curlCmd *CurlCommand) RtDetails() *config.ArtifactoryDetails {
-	return curlCmd.rtDetails
+func (curlCmd *CurlCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return curlCmd.rtDetails, nil
 }
 
 func (curlCmd *CurlCommand) CommandName() string {

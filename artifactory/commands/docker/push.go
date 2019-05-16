@@ -4,6 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
 )
 
@@ -24,9 +25,13 @@ func (dpc *DockerPushCommand) SetThreads(threads int) *DockerPushCommand {
 // Push docker image and create build info if needed
 func (dpc *DockerPushCommand) Run() error {
 	// Perform login
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: dpc.RtDetails()}
+	rtDetails, err := dpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
 	imageTag := dpc.ImageTag()
-	err := docker.DockerLogin(imageTag, loginConfig)
+	err = docker.DockerLogin(imageTag, loginConfig)
 	if err != nil {
 		return err
 	}
@@ -50,7 +55,7 @@ func (dpc *DockerPushCommand) Run() error {
 		return err
 	}
 
-	serviceManager, err := docker.CreateServiceManager(dpc.RtDetails(), dpc.threads)
+	serviceManager, err := docker.CreateServiceManager(rtDetails, dpc.threads)
 	if err != nil {
 		return err
 	}
@@ -67,6 +72,6 @@ func (dpc *DockerPushCommand) CommandName() string {
 	return "rt_docker_push"
 }
 
-func (dpc *DockerPushCommand) RtDetails() *config.ArtifactoryDetails {
-	return dpc.rtDetails
+func (dpc *DockerPushCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return dpc.rtDetails, nil
 }

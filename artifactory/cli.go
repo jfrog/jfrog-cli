@@ -1813,7 +1813,9 @@ func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
 	configCmd := new(commands.ConfigCommand).SetDefaultDetails(details).SetInteractive(true).SetEncPassword(encPassword)
 	err = configCmd.Config()
 	cliutils.ExitOnErr(err)
-	return configCmd.RtDetails()
+	rtDetails, err := configCmd.RtDetails()
+	cliutils.ExitOnErr(err)
+	return rtDetails
 }
 
 func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails) {

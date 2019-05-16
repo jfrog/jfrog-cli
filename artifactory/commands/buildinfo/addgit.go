@@ -113,33 +113,22 @@ func (config *BuildAddGitConfiguration) Run() error {
 
 // Returns the ArtfiactoryDetails.
 // When a config file configured, the information is taken from the config file, if not, returns the default server.
-func (config *BuildAddGitConfiguration) RtDetails() *utilsconfig.ArtifactoryDetails {
-	var details *utilsconfig.ArtifactoryDetails
-	var err error
+func (config *BuildAddGitConfiguration) RtDetails() (*utilsconfig.ArtifactoryDetails, error) {
 	if config.configFilePath != "" {
 		// Get from the conf file the server Id:
 		var vConfig *viper.Viper
 		vConfig, err := utils.ReadConfigFile(config.configFilePath, utils.YAML)
 		if err != nil {
-			log.Debug(err)
-			return nil
+			return nil, err
 		}
 
 		if !vConfig.IsSet(ConfigIssuesPrefix+"serverID") || vConfig.GetString(ConfigIssuesPrefix+"serverID") == "" {
-			log.Debug(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID"))
-			return nil
+			return nil, errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID"))
 		}
 		serverId := vConfig.GetString(ConfigIssuesPrefix + "serverID")
-		details, err = utilsconfig.GetArtifactorySpecificConfig(serverId)
-	} else {
-		details, err = utilsconfig.GetDefaultArtifactoryConf()
+		return utilsconfig.GetArtifactorySpecificConfig(serverId)
 	}
-
-	if err != nil {
-		log.Debug(err)
-		return nil
-	}
-	return details
+	return utilsconfig.GetDefaultArtifactoryConf()
 }
 
 func (config *BuildAddGitConfiguration) CommandName() string {

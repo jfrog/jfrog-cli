@@ -35,8 +35,8 @@ func (bpc *BuildPromotionCommand) Run() error {
 	return servicesManager.PromoteBuild(bpc.PromotionParams)
 }
 
-func (bpc *BuildPromotionCommand) RtDetails() *config.ArtifactoryDetails {
-	return bpc.rtDetails
+func (bpc *BuildPromotionCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bpc.rtDetails, nil
 }
 
 func (bpc *BuildPromotionCommand) CommandName() string {

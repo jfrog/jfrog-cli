@@ -39,8 +39,8 @@ func (gc *GenericCommand) SetSpec(spec *spec.SpecFiles) *GenericCommand {
 	return gc
 }
 
-func (gc *GenericCommand) RtDetails() *config.ArtifactoryDetails {
-	return gc.rtDetails
+func (gc *GenericCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return gc.rtDetails, nil
 }
 
 func (gc *GenericCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GenericCommand {

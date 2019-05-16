@@ -39,8 +39,8 @@ type NpmInstallCommand struct {
 	NpmCommand
 }
 
-func (nic *NpmInstallCommand) RtDetails() *config.ArtifactoryDetails {
-	return nic.rtDetails
+func (nic *NpmInstallCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return nic.rtDetails, nil
 }
 
 func (nic *NpmInstallCommand) Run() error {

@@ -35,8 +35,8 @@ type NpmPublishCommand struct {
 	artifactData     []specutils.FileInfo
 }
 
-func (npc *NpmPublishCommand) RtDetails() *config.ArtifactoryDetails {
-	return npc.rtDetails
+func (npc *NpmPublishCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return npc.rtDetails, nil
 }
 
 func (npc *NpmPublishCommand) Run() error {

@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -36,7 +37,11 @@ func (sc *SearchCommand) Run() error {
 
 func (sc *SearchCommand) Search() error {
 	// Service Manager
-	servicesManager, err := utils.CreateServiceManager(sc.RtDetails(), false)
+	rtDetails, err := sc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
 		return err
 	}

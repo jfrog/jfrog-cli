@@ -37,8 +37,8 @@ func (bpc *BuildPublishCommand) CommandName() string {
 	return "rt_build_publish"
 }
 
-func (bpc *BuildPublishCommand) RtDetails() *config.ArtifactoryDetails {
-	return bpc.rtDetails
+func (bpc *BuildPublishCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bpc.rtDetails, nil
 }
 
 func (bpc *BuildPublishCommand) Run() error {

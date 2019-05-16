@@ -104,8 +104,8 @@ func (nc *NugetCommand) Run() error {
 	return utils.SaveBuildInfo(nc.buildConfiguration.BuildName, nc.buildConfiguration.BuildNumber, buildInfo)
 }
 
-func (nc *NugetCommand) RtDetails() *config.ArtifactoryDetails {
-	return nc.rtDetails
+func (nc *NugetCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return nc.rtDetails, nil
 }
 
 func (nc *NugetCommand) CommandName() string {
@@ -315,13 +315,17 @@ func (nc *NugetCommand) getSourceDetails() (sourceURL, user, password string, er
 	user = nc.rtDetails.User
 	password = nc.rtDetails.Password
 	// If access-token is defined, extract user from it.
-	if nc.RtDetails().AccessToken != "" {
+	rtDetails, err := nc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	if rtDetails.AccessToken != "" {
 		log.Debug("Using access-token details for nuget authentication.")
-		user, err = auth.ExtractUsernameFromAccessToken(nc.RtDetails().AccessToken)
+		user, err = auth.ExtractUsernameFromAccessToken(rtDetails.AccessToken)
 		if err != nil {
 			return
 		}
-		password = nc.RtDetails().AccessToken
+		password = rtDetails.AccessToken
 	}
 	return
 }

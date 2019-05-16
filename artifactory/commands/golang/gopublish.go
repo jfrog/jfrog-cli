@@ -60,7 +60,11 @@ func (gpc *GoPublishCommand) Run() error {
 		return err
 	}
 
-	serviceManager, err := utils.CreateServiceManager(gpc.RtDetails(), false)
+	rtDetails, err := gpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
 		return err
 	}

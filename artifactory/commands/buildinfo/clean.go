@@ -20,13 +20,8 @@ func (bcc *BuildCleanCommand) CommandName() string {
 }
 
 // Returns the default Artifactory server
-func (bcc *BuildCleanCommand) RtDetails() *config.ArtifactoryDetails {
-	details, err := config.GetDefaultArtifactoryConf()
-	if err != nil {
-		log.Debug(err)
-		return nil
-	}
-	return details
+func (bcc *BuildCleanCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return config.GetDefaultArtifactoryConf()
 }
 
 func (bcc *BuildCleanCommand) Run() error {

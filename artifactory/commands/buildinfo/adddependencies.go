@@ -36,13 +36,8 @@ func (badc *BuildAddDependenciesCommand) CommandName() string {
 	return "rt_build_add_dependencies"
 }
 
-func (badc *BuildAddDependenciesCommand) RtDetails() *config.ArtifactoryDetails {
-	details, err := config.GetDefaultArtifactoryConf()
-	if err != nil {
-		log.Debug(err)
-		return nil
-	}
-	return details
+func (badc *BuildAddDependenciesCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return config.GetDefaultArtifactoryConf()
 }
 
 func (badc *BuildAddDependenciesCommand) Run() error {

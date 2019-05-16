@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -53,7 +54,11 @@ func (pc *PropsCommand) SetCommandName(commandName CommandName) *PropsCommand {
 }
 
 func (pc *PropsCommand) Run() error {
-	servicesManager, err := createPropsServiceManager(pc.threads, pc.RtDetails())
+	rtDetails, err := pc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := createPropsServiceManager(pc.threads, rtDetails)
 	if err != nil {
 		return err
 	}

@@ -29,8 +29,8 @@ func (bdc *BuildDiscardConfigurationCommand) Run() error {
 	return servicesManager.DiscardBuilds(bdc.DiscardBuildsParams)
 }
 
-func (bdc *BuildDiscardConfigurationCommand) RtDetails() *config.ArtifactoryDetails {
-	return bdc.rtDetails
+func (bdc *BuildDiscardConfigurationCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bdc.rtDetails, nil
 }
 
 func (bdc *BuildDiscardConfigurationCommand) CommandName() string {

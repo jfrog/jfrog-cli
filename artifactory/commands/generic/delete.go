@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 type DeleteCommand struct {
@@ -55,7 +56,11 @@ func (dc *DeleteCommand) Run() error {
 }
 
 func (dc *DeleteCommand) GetPathsToDelete() error {
-	servicesManager, err := utils.CreateServiceManager(dc.RtDetails(), dc.DryRun())
+	rtDetails, err := dc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := utils.CreateServiceManager(rtDetails, dc.DryRun())
 	if err != nil {
 		return err
 	}
@@ -75,7 +80,11 @@ func (dc *DeleteCommand) GetPathsToDelete() error {
 }
 
 func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error) {
-	servicesManager, err := utils.CreateServiceManager(dc.RtDetails(), dc.DryRun())
+	rtDetails, err := dc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return 0, 0, err
+	}
+	servicesManager, err := utils.CreateServiceManager(rtDetails, dc.DryRun())
 	if err != nil {
 		return 0, 0, err
 	}

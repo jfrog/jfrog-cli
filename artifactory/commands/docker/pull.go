@@ -4,6 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
 )
 
@@ -15,8 +16,12 @@ type DockerPullCommand struct {
 func (dpc *DockerPullCommand) Run() error {
 	// Perform login
 	imageTag := dpc.ImageTag()
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: dpc.RtDetails()}
-	err := docker.DockerLogin(imageTag, loginConfig)
+	rtDetails, err := dpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
+	err = docker.DockerLogin(imageTag, loginConfig)
 	if err != nil {
 		return err
 	}
@@ -42,7 +47,7 @@ func (dpc *DockerPullCommand) Run() error {
 		return err
 	}
 
-	serviceManager, err := docker.CreateServiceManager(dpc.RtDetails(), 0)
+	serviceManager, err := docker.CreateServiceManager(rtDetails, 0)
 	if err != nil {
 		return err
 	}
@@ -59,6 +64,6 @@ func (dpc *DockerPullCommand) CommandName() string {
 	return "rt_docker_pull"
 }
 
-func (dpc *DockerPullCommand) RtDetails() *config.ArtifactoryDetails {
-	return dpc.rtDetails
+func (dpc *DockerPullCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return dpc.rtDetails, nil
 }

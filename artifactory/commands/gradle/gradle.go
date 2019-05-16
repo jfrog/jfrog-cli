@@ -33,21 +33,17 @@ type GradleCommand struct {
 }
 
 // Returns the ArtfiactoryDetails. The information returns from the config file provided.
-func (gc *GradleCommand) RtDetails() *config.ArtifactoryDetails {
+func (gc *GradleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	// Get the rtDetails from the config file.
+	var err error
 	if gc.rtDetails == nil {
 		vConfig, err := utils.ReadConfigFile(gc.configPath, utils.YAML)
 		if err != nil {
-			log.Debug(err)
-			return nil
+			return nil, err
 		}
 		gc.rtDetails, err = utils.GetRtDetails(vConfig)
-		if err != nil {
-			log.Debug(err)
-			return nil
-		}
 	}
-	return gc.rtDetails
+	return gc.rtDetails, err
 }
 
 func (gc *GradleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GradleCommand {

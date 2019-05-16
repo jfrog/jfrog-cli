@@ -36,13 +36,8 @@ func (bcec *BuildCollectEnvCommand) Run() error {
 }
 
 // Returns the default configured Artifactory server
-func (bcec *BuildCollectEnvCommand) RtDetails() *config.ArtifactoryDetails {
-	details, err := config.GetDefaultArtifactoryConf()
-	if err != nil {
-		log.Debug(err)
-		return nil
-	}
-	return details
+func (bcec *BuildCollectEnvCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return config.GetDefaultArtifactoryConf()
 }
 
 func (bcec *BuildCollectEnvCommand) CommandName() string {

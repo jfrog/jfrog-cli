@@ -27,8 +27,8 @@ type GoParamsCommand struct {
 	rtDetails  *config.ArtifactoryDetails
 }
 
-func (gpc *GoParamsCommand) RtDetails() *config.ArtifactoryDetails {
-	return gpc.rtDetails
+func (gpc *GoParamsCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return gpc.rtDetails, nil
 }
 
 func (gpc *GoParamsCommand) TargetRepo() string {
@@ -46,7 +46,11 @@ func (gpc *GoParamsCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *
 }
 
 func (grp *GoRecursivePublish) Run() error {
-	serviceManager, err := utils.CreateServiceManager(grp.RtDetails(), false)
+	rtDetails, err := grp.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}

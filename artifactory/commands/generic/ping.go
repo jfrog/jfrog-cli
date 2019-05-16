@@ -14,8 +14,8 @@ func (pc *PingCommand) Response() []byte {
 	return pc.response
 }
 
-func (pc *PingCommand) RtDetails() *config.ArtifactoryDetails {
-	return pc.rtDetails
+func (pc *PingCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return pc.rtDetails, nil
 }
 
 func (pc *PingCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *PingCommand {

@@ -61,14 +61,14 @@ func (cc *ConfigCommand) Run() error {
 	return cc.Config()
 }
 
-func (cc *ConfigCommand) RtDetails() *config.ArtifactoryDetails {
+func (cc *ConfigCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	if cc.details != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.details) {
-		return cc.details
+		return cc.details, nil
 	}
 	if cc.defaultDetails != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.defaultDetails) {
-		return cc.defaultDetails
+		return cc.defaultDetails, nil
 	}
-	return nil
+	return nil, nil
 }
 
 func (cc *ConfigCommand) CommandName() string {

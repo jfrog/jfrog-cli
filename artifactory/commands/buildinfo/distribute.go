@@ -35,8 +35,8 @@ func (bdc *BuildDistributeCommnad) Run() error {
 	return servicesManager.DistributeBuild(bdc.BuildDistributionParams)
 }
 
-func (bdc *BuildDistributeCommnad) RtDetails() *config.ArtifactoryDetails {
-	return bdc.rtDetails
+func (bdc *BuildDistributeCommnad) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bdc.rtDetails, nil
 }
 
 func (bdc *BuildDistributeCommnad) CommandName() string {

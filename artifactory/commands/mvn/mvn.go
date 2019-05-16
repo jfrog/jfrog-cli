@@ -77,21 +77,17 @@ func (mc *MvnCommand) Run() error {
 }
 
 // Returns the ArtfiactoryDetails. The information returns from the config file provided.
-func (mc *MvnCommand) RtDetails() *config.ArtifactoryDetails {
+func (mc *MvnCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	// Get the rtDetails from the config file.
+	var err error
 	if mc.rtDetails == nil {
 		vConfig, err := utils.ReadConfigFile(mc.configPath, utils.YAML)
 		if err != nil {
-			log.Debug(err)
-			return nil
+			return nil, err
 		}
 		mc.rtDetails, err = utils.GetRtDetails(vConfig)
-		if err != nil {
-			log.Debug(err)
-			return nil
-		}
 	}
-	return mc.rtDetails
+	return mc.rtDetails, err
 }
 
 func (mc *MvnCommand) CommandName() string {

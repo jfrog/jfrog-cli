@@ -41,8 +41,8 @@ func (bsc *BuildScanCommand) CommandName() string {
 	return "rt_build_scan"
 }
 
-func (bsc *BuildScanCommand) RtDetails() *config.ArtifactoryDetails {
-	return bsc.rtDetails
+func (bsc *BuildScanCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bsc.rtDetails, nil
 }
 
 func (bsc *BuildScanCommand) Run() error {
