@@ -20,4 +20,8 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 	JFROG_CLI_TEMP_DIR
 		[Default: The operating system's temp directory]
 		Defines the temp directory used by JFrog CLI.
+
+	CI
+		[Default: false]
+		If true, disables progress bar on the supporting commands.
 		`
