@@ -8,41 +8,78 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"strconv"
 )
 
-func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfiguration) (successCount, failCount int, logFile *os.File, err error) {
+type DownloadCommand struct {
+	buildConfiguration *utils.BuildConfiguration
+	GenericCommand
+	configuration *utils.DownloadConfiguration
+	logFile       *os.File
+}
+
+func NewDownloadCommand() *DownloadCommand {
+	return &DownloadCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (dc *DownloadCommand) LogFile() *os.File {
+	return dc.logFile
+}
+
+func (dc *DownloadCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *DownloadCommand {
+	dc.buildConfiguration = buildConfiguration
+	return dc
+}
+
+func (dc *DownloadCommand) Configuration() *utils.DownloadConfiguration {
+	return dc.configuration
+}
+
+func (dc *DownloadCommand) SetConfiguration(configuration *utils.DownloadConfiguration) *DownloadCommand {
+	dc.configuration = configuration
+	return dc
+}
+
+func (dc *DownloadCommand) CommandName() string {
+	return "rt_download"
+}
+
+func (dc *DownloadCommand) Run() error {
+
 	// Initialize Progress bar, set logger to a log file
-	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	var err error
+	var progressBar ioUtils.Progress
+	progressBar, dc.logFile, err = progressbar.InitProgressBarIfPossible()
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
 	if progressBar != nil {
 		defer progressBar.Quit()
 	}
 
 	// Create Service Manager:
-	servicesManager, err := utils.CreateDownloadServiceManager(configuration.ArtDetails, configuration, progressBar)
+	servicesManager, err := utils.CreateDownloadServiceManager(dc.rtDetails, dc.configuration, dc.DryRun(), progressBar)
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
 
 	// Build Info Collection:
-	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
-	if isCollectBuildInfo && !configuration.DryRun {
-		if err = utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
-			return 0, 0, logFile, err
+	isCollectBuildInfo := len(dc.buildConfiguration.BuildName) > 0 && len(dc.buildConfiguration.BuildNumber) > 0
+	if isCollectBuildInfo && !dc.DryRun() {
+		if err = utils.SaveBuildGeneralDetails(dc.buildConfiguration.BuildName, dc.buildConfiguration.BuildNumber); err != nil {
+			return err
 		}
 	}
 
 	var errorOccurred = false
 	var downloadParamsArray []services.DownloadParams
 	// Create DownloadParams for all File-Spec groups.
-	for i := 0; i < len(downloadSpec.Files); i++ {
-		downParams, err := getDownloadParams(downloadSpec.Get(i), configuration)
+	for i := 0; i < len(dc.Spec().Files); i++ {
+		downParams, err := getDownloadParams(dc.Spec().Get(i), dc.configuration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -58,12 +95,16 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 		log.Error(err)
 	}
 
+	dc.result.SetSuccessCount(len(filesInfo))
+	dc.result.SetFailCount(totalExpected - len(filesInfo))
 	// Check for errors.
 	if errorOccurred {
-		return len(filesInfo), totalExpected - len(filesInfo), logFile, errors.New("Download finished with errors, please review the logs.")
+		return errors.New("Download finished with errors, please review the logs.")
 	}
-	if configuration.DryRun {
-		return totalExpected, 0, logFile, err
+	if dc.DryRun() {
+		dc.result.SetSuccessCount(totalExpected)
+		dc.result.SetFailCount(0)
+		return err
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 
@@ -73,10 +114,10 @@ func Download(downloadSpec *spec.SpecFiles, configuration *utils.DownloadConfigu
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Dependencies = buildDependencies
 		}
-		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc)
+		err = utils.SavePartialBuildInfo(dc.buildConfiguration.BuildName, dc.buildConfiguration.BuildNumber, populateFunc)
 	}
 
-	return len(filesInfo), totalExpected - len(filesInfo), logFile, err
+	return err
 }
 
 func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buildinfo.Dependency {

@@ -10,32 +10,32 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func SetProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := createPropsServiceManager(threads, artDetails)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	resultItems := searchItems(spec, servicesManager)
-
-	propsParams := GetPropsParams(resultItems, props)
-
-	success, err := servicesManager.SetProps(propsParams)
-	return success, len(resultItems) - success, err
+type PropsCommand struct {
+	props   string
+	threads int
+	GenericCommand
 }
 
-func DeleteProps(spec *spec.SpecFiles, props string, threads int, artDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
-	servicesManager, err := createPropsServiceManager(threads, artDetails)
-	if err != nil {
-		return 0, 0, err
-	}
+func NewPropsCommand() *PropsCommand {
+	return &PropsCommand{GenericCommand: *NewGenericCommand()}
+}
 
-	resultItems := searchItems(spec, servicesManager)
+func (pc *PropsCommand) Threads() int {
+	return pc.threads
+}
 
-	propsParams := GetPropsParams(resultItems, props)
+func (pc *PropsCommand) SetThreads(threads int) *PropsCommand {
+	pc.threads = threads
+	return pc
+}
 
-	success, err := servicesManager.DeleteProps(propsParams)
-	return success, len(resultItems) - success, err
+func (pc *PropsCommand) Props() string {
+	return pc.props
+}
+
+func (pc *PropsCommand) SetProps(props string) *PropsCommand {
+	pc.props = props
+	return pc
 }
 
 func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {

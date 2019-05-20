@@ -2,7 +2,6 @@ package npm
 
 import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/mattn/go-shellwords"
 	"io"
@@ -44,20 +43,4 @@ func createConfigListCmdConfig(executablePath string, splitFlags []string, pipeW
 		StrWriter:    pipeWriter,
 		ErrWriter:    nil,
 	}
-}
-
-type NpmCommonConfig struct {
-	BuildName   string
-	BuildNumber string
-	NpmArgs     string
-	ArtDetails  *config.ArtifactoryDetails
-}
-
-type NpmInstallConfig struct {
-	*NpmCommonConfig
-	Threads int
-}
-
-type NpmPublishConfig struct {
-	*NpmCommonConfig
 }

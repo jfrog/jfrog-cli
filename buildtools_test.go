@@ -34,7 +34,8 @@ import (
 const DockerTestImage string = "jfrog_cli_test_image"
 
 func InitBuildToolsTests() {
-	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	os.Setenv(cliutils.OfferConfig, "false")
+	os.Setenv(cliutils.ReportUsage, "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	createReposIfNeeded()
@@ -45,7 +46,8 @@ func InitDockerTests() {
 	if !*tests.TestDocker {
 		return
 	}
-	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	os.Setenv(cliutils.ReportUsage, "false")
+	os.Setenv(cliutils.OfferConfig, "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 }
@@ -58,7 +60,7 @@ func CleanBuildToolsTests() {
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
 
-	err := os.Setenv(config.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
+	err := os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -105,7 +107,8 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	buildConfig := &utils.BuildConfiguration{}
-	err := mvn.Mvn("clean install -f"+pomPath, configFilePath, buildConfig)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfig).SetGoals("clean install -f" + pomPath).SetConfigPath(configFilePath)
+	err := mvnCmd.Run()
 	if err != nil {
 		t.Error(err)
 	}
@@ -661,13 +664,15 @@ func buildTestDockerImage(imageName string) string {
 
 func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
-	result, err := generic.Search(specFile, artifactoryDetails)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
+	err := searchCmd.Search()
 	if err != nil {
 		log.Error(err)
 		t.Error(err)
 	}
-	if expectedItemsInArtifactory != len(result) {
-		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(result))
+	if expectedItemsInArtifactory != len(searchCmd.SearchResult()) {
+		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(searchCmd.SearchResult()))
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
@@ -679,10 +684,8 @@ func dockerTestCleanup(imageName, buildName string) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	// Remove image from Artifactory
-	deleteFlags := new(generic.DeleteConfiguration)
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
-	deleteFlags.ArtDetails = artifactoryDetails
-	tests.DeleteFiles(deleteSpec, deleteFlags)
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
 func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
@@ -994,7 +997,8 @@ func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcPr
 
 func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {
 	buildConfig := &utils.BuildConfiguration{}
-	err := gradle.Gradle("clean artifactoryPublish -b "+buildGradlePath, configFilePath, buildConfig)
+	gradleCmd := gradle.NewGradleCommand().SetTasks("clean artifactoryPublish -b " + buildGradlePath).SetConfigPath(configFilePath).SetConfiguration(buildConfig)
+	err := gradleCmd.Run()
 	if err != nil {
 		t.Error(err)
 	}
@@ -1084,7 +1088,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
-		os.Unsetenv(config.JfrogHomeDirEnv)
+		os.Unsetenv(cliutils.JfrogHomeDirEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()
 	}

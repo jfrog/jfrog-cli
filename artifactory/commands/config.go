@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
+	"reflect"
 	"sync"
 	"syscall"
 )
@@ -23,88 +24,144 @@ import (
 // Internal golang locking for the same process.
 var mutux sync.Mutex
 
-func Config(details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails, interactive,
-	shouldEncPassword bool, serverId string) (*config.ArtifactoryDetails, error) {
+type ConfigCommand struct {
+	details        *config.ArtifactoryDetails
+	defaultDetails *config.ArtifactoryDetails
+	interactive    bool
+	encPassword    bool
+	serverId       string
+}
+
+func NewConfigCommand() *ConfigCommand {
+	return &ConfigCommand{}
+}
+
+func (cc *ConfigCommand) SetServerId(serverId string) *ConfigCommand {
+	cc.serverId = serverId
+	return cc
+}
+
+func (cc *ConfigCommand) SetEncPassword(encPassword bool) *ConfigCommand {
+	cc.encPassword = encPassword
+	return cc
+}
+
+func (cc *ConfigCommand) SetInteractive(interactive bool) *ConfigCommand {
+	cc.interactive = interactive
+	return cc
+}
+
+func (cc *ConfigCommand) SetDefaultDetails(defaultDetails *config.ArtifactoryDetails) *ConfigCommand {
+	cc.defaultDetails = defaultDetails
+	return cc
+}
+
+func (cc *ConfigCommand) SetDetails(details *config.ArtifactoryDetails) *ConfigCommand {
+	cc.details = details
+	return cc
+}
+
+func (cc *ConfigCommand) Run() error {
+	return cc.Config()
+}
+
+func (cc *ConfigCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	// If cc.details is not empty, then return it.
+	if cc.details != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.details) {
+		return cc.details, nil
+	}
+	// If cc.defaultDetails is not empty, then return it.
+	if cc.defaultDetails != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.defaultDetails) {
+		return cc.defaultDetails, nil
+	}
+	return nil, nil
+}
+
+func (cc *ConfigCommand) CommandName() string {
+	return "rt_config"
+}
+
+func (cc *ConfigCommand) Config() error {
 	mutux.Lock()
 	lockFile, err := lock.CreateLock()
 	defer mutux.Unlock()
 	defer lockFile.Unlock()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	details, defaultDetails, configurations, err := prepareConfigurationData(serverId, details, defaultDetails, interactive)
+	configurations, err := cc.prepareConfigurationData()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if interactive {
-		err = getConfigurationFromUser(details, defaultDetails)
+	if cc.interactive {
+		err = cc.getConfigurationFromUser()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if len(configurations) == 1 {
-		details.IsDefault = true
+		cc.details.IsDefault = true
 	}
 
-	err = checkSingleAuthMethod(details)
+	err = checkSingleAuthMethod(cc.details)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if shouldEncPassword {
-		details, err = EncryptPassword(details)
+	if cc.encPassword {
+		err = cc.encryptPassword()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 	err = config.SaveArtifactoryConf(configurations)
-	return details, err
+	return err
 }
 
-func prepareConfigurationData(serverId string, details, defaultDetails *config.ArtifactoryDetails, interactive bool) (*config.ArtifactoryDetails, *config.ArtifactoryDetails, []*config.ArtifactoryDetails, error) {
+func (cc *ConfigCommand) prepareConfigurationData() ([]*config.ArtifactoryDetails, error) {
 	// If details is nil, initialize a new one
-	if details == nil {
-		details = new(config.ArtifactoryDetails)
-		if defaultDetails != nil {
-			details.InsecureTls = defaultDetails.InsecureTls
+	if cc.details == nil {
+		cc.details = new(config.ArtifactoryDetails)
+		if cc.defaultDetails != nil {
+			cc.details.InsecureTls = cc.defaultDetails.InsecureTls
 		}
 	}
 
 	// Get configurations list
 	configurations, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
-		return details, defaultDetails, configurations, err
+		return configurations, err
 	}
 
 	// Get default server details
-	if defaultDetails == nil {
-		defaultDetails, err = config.GetDefaultArtifactoryConf(configurations)
+	if cc.defaultDetails == nil {
+		cc.defaultDetails, err = config.GetDefaultConfiguredArtifactoryConf(configurations)
 		if err != nil {
-			return details, defaultDetails, configurations, err
+			return configurations, errorutils.CheckError(err)
 		}
 	}
 
 	// Get server id
-	if interactive && serverId == "" {
-		ioutils.ScanFromConsole("Artifactory server ID", &serverId, defaultDetails.ServerId)
+	if cc.interactive && cc.serverId == "" {
+		ioutils.ScanFromConsole("Artifactory server ID", &cc.serverId, cc.defaultDetails.ServerId)
 	}
-	details.ServerId = resolveServerId(serverId, details, defaultDetails)
+	cc.details.ServerId = cc.resolveServerId()
 
 	// Remove and get the server details from the configurations list
-	tempConfiguration, configurations := config.GetAndRemoveConfiguration(details.ServerId, configurations)
+	tempConfiguration, configurations := config.GetAndRemoveConfiguration(cc.details.ServerId, configurations)
 
 	// Change default server details if the server was exist in the configurations list
 	if tempConfiguration != nil {
-		defaultDetails = tempConfiguration
-		details.IsDefault = tempConfiguration.IsDefault
+		cc.defaultDetails = tempConfiguration
+		cc.details.IsDefault = tempConfiguration.IsDefault
 	}
 
 	// Append the configuration to the configurations list
-	configurations = append(configurations, details)
-	return details, defaultDetails, configurations, err
+	configurations = append(configurations, cc.details)
+	return configurations, err
 }
 
 /// Returning the first non empty value:
@@ -112,38 +169,38 @@ func prepareConfigurationData(serverId string, details, defaultDetails *config.A
 // 2. details.ServerId
 // 3. defaultDetails.ServerId
 // 4. config.DEFAULT_SERVER_ID
-func resolveServerId(serverId string, details *config.ArtifactoryDetails, defaultDetails *config.ArtifactoryDetails) string {
-	if serverId != "" {
-		return serverId
+func (cc *ConfigCommand) resolveServerId() string {
+	if cc.serverId != "" {
+		return cc.serverId
 	}
-	if details.ServerId != "" {
-		return details.ServerId
+	if cc.details.ServerId != "" {
+		return cc.details.ServerId
 	}
-	if defaultDetails.ServerId != "" {
-		return defaultDetails.ServerId
+	if cc.defaultDetails.ServerId != "" {
+		return cc.defaultDetails.ServerId
 	}
 	return config.DefaultServerId
 }
 
-func getConfigurationFromUser(details, defaultDetails *config.ArtifactoryDetails) error {
+func (cc *ConfigCommand) getConfigurationFromUser() error {
 	allowUsingSavedPassword := true
-	if details.Url == "" {
-		ioutils.ScanFromConsole("Artifactory URL", &details.Url, defaultDetails.Url)
+	if cc.details.Url == "" {
+		ioutils.ScanFromConsole("Artifactory URL", &cc.details.Url, cc.defaultDetails.Url)
 		allowUsingSavedPassword = false
 	}
 	// Ssh-Key
-	if fileutils.IsSshUrl(details.Url) {
-		return getSshKeyPath(details)
+	if fileutils.IsSshUrl(cc.details.Url) {
+		return getSshKeyPath(cc.details)
 	}
-	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
+	cc.details.Url = clientutils.AddTrailingSlashIfNeeded(cc.details.Url)
 	// Api-Key/Password/Access-Token
-	if details.ApiKey == "" && details.Password == "" && details.AccessToken == "" {
-		err := readAccessTokenFromConsole(details)
+	if cc.details.ApiKey == "" && cc.details.Password == "" && cc.details.AccessToken == "" {
+		err := readAccessTokenFromConsole(cc.details)
 		if err != nil {
 			return err
 		}
-		if len(details.GetAccessToken()) == 0 {
-			return ioutils.ReadCredentialsFromConsole(details, defaultDetails, allowUsingSavedPassword)
+		if len(cc.details.GetAccessToken()) == 0 {
+			return ioutils.ReadCredentialsFromConsole(cc.details, cc.defaultDetails, allowUsingSavedPassword)
 		}
 	}
 	return nil
@@ -159,7 +216,7 @@ func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
 	fmt.Println()
 	if len(byteToken) > 0 {
 		details.SetAccessToken(string(byteToken))
-		_, err := generic.Ping(details) // Check the access token with Artifactory
+		_, err := new(generic.PingCommand).SetRtDetails(details).Ping()
 		return err
 	}
 	return nil
@@ -323,9 +380,9 @@ func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
 	return config.GetArtifactorySpecificConfig(serverId)
 }
 
-func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDetails, error) {
-	if details.Password == "" {
-		return details, nil
+func (cc *ConfigCommand) encryptPassword() error {
+	if cc.details.Password == "" {
+		return nil
 	}
 
 	// New-line required after the password input:
@@ -333,16 +390,16 @@ func EncryptPassword(details *config.ArtifactoryDetails) (*config.ArtifactoryDet
 
 	log.Info("Encrypting password...")
 
-	artAuth, err := details.CreateArtAuthConfig()
+	artAuth, err := cc.details.CreateArtAuthConfig()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, details.InsecureTls)
+	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, cc.details.InsecureTls)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	details.Password = encPassword
-	return details, err
+	cc.details.Password = encPassword
+	return err
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {

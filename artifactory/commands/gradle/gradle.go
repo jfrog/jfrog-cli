@@ -25,12 +25,42 @@ const usePlugin = "useplugin"
 const useWrapper = "usewrapper"
 const gradleBuildInfoProperties = "BUILDINFO_PROPFILE"
 
-func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) error {
+type GradleCommand struct {
+	tasks         string
+	configPath    string
+	configuration *utils.BuildConfiguration
+	rtDetails     *config.ArtifactoryDetails
+}
+
+func NewGradleCommand() *GradleCommand {
+	return &GradleCommand{}
+}
+
+// Returns the ArtfiactoryDetails. The information returns from the config file provided.
+func (gc *GradleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	// Get the rtDetails from the config file.
+	var err error
+	if gc.rtDetails == nil {
+		vConfig, err := utils.ReadConfigFile(gc.configPath, utils.YAML)
+		if err != nil {
+			return nil, err
+		}
+		gc.rtDetails, err = utils.GetRtDetails(vConfig)
+	}
+	return gc.rtDetails, err
+}
+
+func (gc *GradleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GradleCommand {
+	gc.rtDetails = rtDetails
+	return gc
+}
+
+func (gc *GradleCommand) Run() error {
 	gradleDependenciesDir, gradlePluginFilename, err := downloadGradleDependencies()
 	if err != nil {
 		return err
 	}
-	gradleRunConfig, err := createGradleRunConfig(tasks, configPath, configuration, gradleDependenciesDir, gradlePluginFilename)
+	gradleRunConfig, err := createGradleRunConfig(gc.tasks, gc.configPath, gc.configuration, gradleDependenciesDir, gradlePluginFilename)
 	if err != nil {
 		return err
 	}
@@ -39,6 +69,25 @@ func Gradle(tasks, configPath string, configuration *utils.BuildConfiguration) e
 		return err
 	}
 	return nil
+}
+
+func (gc *GradleCommand) CommandName() string {
+	return "rt_gradle"
+}
+
+func (gc *GradleCommand) SetConfiguration(configuration *utils.BuildConfiguration) *GradleCommand {
+	gc.configuration = configuration
+	return gc
+}
+
+func (gc *GradleCommand) SetConfigPath(configPath string) *GradleCommand {
+	gc.configPath = configPath
+	return gc
+}
+
+func (gc *GradleCommand) SetTasks(tasks string) *GradleCommand {
+	gc.tasks = tasks
+	return gc
 }
 
 func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename string, err error) {

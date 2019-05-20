@@ -2,75 +2,124 @@ package golang
 
 import (
 	"errors"
+	commandutils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 	"os/exec"
 	"strings"
 )
 
-func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, buildNumber string, details *config.ArtifactoryDetails) (succeeded, failed int, err error) {
-	err = validatePrerequisites()
+const minSupportedArtifactoryVersion = "6.2.0"
+
+type GoPublishCommand struct {
+	publishPackage     bool
+	buildConfiguration *utils.BuildConfiguration
+	dependencies       string
+	version            string
+	result             *commandutils.Result
+	GoParamsCommand
+}
+
+func NewGoPublishCommand() *GoPublishCommand {
+	return &GoPublishCommand{result: new(commandutils.Result)}
+}
+
+func (gpc *GoPublishCommand) Result() *commandutils.Result {
+	return gpc.result
+}
+
+func (gpc *GoPublishCommand) SetVersion(version string) *GoPublishCommand {
+	gpc.version = version
+	return gpc
+}
+
+func (gpc *GoPublishCommand) SetDependencies(dependencies string) *GoPublishCommand {
+	gpc.dependencies = dependencies
+	return gpc
+}
+
+func (gpc *GoPublishCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *GoPublishCommand {
+	gpc.buildConfiguration = buildConfiguration
+	return gpc
+}
+
+func (gpc *GoPublishCommand) SetPublishPackage(publishPackage bool) *GoPublishCommand {
+	gpc.publishPackage = publishPackage
+	return gpc
+}
+
+func (gpc *GoPublishCommand) Run() error {
+	err := validatePrerequisites()
 	if err != nil {
-		return
+		return err
 	}
 
 	err = golang.LogGoVersion()
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
 
-	serviceManager, err := utils.CreateServiceManager(details, false)
+	rtDetails, err := gpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
 	artifactoryVersion, err := serviceManager.GetConfig().GetArtDetails().GetVersion()
 	if err != nil {
-		return
+		return err
 	}
 
-	if !isMinSupportedVersion(artifactoryVersion) {
-		return 0, 0, errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
+	version := version.NewVersion(minSupportedArtifactoryVersion)
+	if !version.AtLeast(artifactoryVersion) {
+		return errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
 	}
 
+	buildName := gpc.buildConfiguration.BuildName
+	buildNumber := gpc.buildConfiguration.BuildNumber
 	isCollectBuildInfo := len(buildName) > 0 && len(buildNumber) > 0
 	if isCollectBuildInfo {
 		err = utils.SaveBuildGeneralDetails(buildName, buildNumber)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
-	goProject, err := project.Load(version)
+	goProject, err := project.Load(gpc.version)
 	if err != nil {
-		return
+		return err
 	}
 
 	// Publish the package to Artifactory
-	if publishPackage {
-		err = goProject.PublishPackage(targetRepo, buildName, buildNumber, serviceManager)
+	if gpc.publishPackage {
+		err = goProject.PublishPackage(gpc.TargetRepo(), buildName, buildNumber, serviceManager)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
-	if dependencies != "" {
+	result := gpc.Result()
+	if gpc.dependencies != "" {
 		// Publish the package dependencies to Artifactory
-		depsList := strings.Split(dependencies, ",")
+		depsList := strings.Split(gpc.dependencies, ",")
 		err = goProject.LoadDependencies()
 		if err != nil {
-			return
+			return err
 		}
-		succeeded, failed, err = goProject.PublishDependencies(targetRepo, serviceManager, depsList)
+		succeeded, failed, err := goProject.PublishDependencies(gpc.targetRepo, serviceManager, depsList)
+		result.SetSuccessCount(succeeded)
+		result.SetFailCount(failed)
 		if err != nil {
-			return
+			return err
 		}
 	}
-	if publishPackage {
-		succeeded++
+	if gpc.publishPackage {
+		result.SetSuccessCount(result.SuccessCount() + 1)
 	}
 
 	// Publish the build-info to Artifactory
@@ -82,15 +131,11 @@ func Publish(publishPackage bool, dependencies, targetRepo, version, buildName, 
 		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true))
 	}
 
-	return
+	return err
 }
 
-func isMinSupportedVersion(artifactoryVersion string) bool {
-	minSupportedArtifactoryVersion := "6.2.0"
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
-		return false
-	}
-	return true
+func (gpc *GoPublishCommand) CommandName() string {
+	return "rt_go_publish"
 }
 
 func validatePrerequisites() error {

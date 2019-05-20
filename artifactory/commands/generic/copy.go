@@ -3,43 +3,50 @@ package generic
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-// Copies the artifacts using the specified move pattern.
-func Copy(copySpec *spec.SpecFiles, configuration *CopyConfiguration) (successCount, failCount int, err error) {
+type CopyCommand struct {
+	GenericCommand
+}
 
+func NewCopyCommand() *CopyCommand {
+	return &CopyCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (cc *CopyCommand) CommandName() string {
+	return "rt_copy"
+}
+
+// Copies the artifacts using the specified move pattern.
+func (cc *CopyCommand) Run() error {
 	// Create Service Manager:
-	servicesManager, err := utils.CreateServiceManager(configuration.ArtDetails, configuration.DryRun)
+	servicesManager, err := utils.CreateServiceManager(cc.rtDetails, cc.dryRun)
 	if err != nil {
-		return
+		return err
 	}
 
 	// Copy Loop:
-	for i := 0; i < len(copySpec.Files); i++ {
+	for i := 0; i < len(cc.spec.Files); i++ {
 
-		copyParams, err := getCopyParams(copySpec.Get(i))
+		copyParams, err := getCopyParams(cc.spec.Get(i))
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 
 		partialSuccess, partialFailed, err := servicesManager.Copy(copyParams)
-		successCount += partialSuccess
-		failCount += partialFailed
+		success := cc.result.SuccessCount() + partialSuccess
+		cc.result.SetSuccessCount(success)
+		failed := cc.result.FailCount() + partialFailed
+		cc.result.SetFailCount(failed)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 	}
-	return
-}
-
-type CopyConfiguration struct {
-	DryRun     bool
-	ArtDetails *config.ArtifactoryDetails
+	return err
 }
 
 func getCopyParams(f *spec.File) (copyParams services.MoveCopyParams, err error) {

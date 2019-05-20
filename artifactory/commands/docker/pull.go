@@ -4,14 +4,28 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"strings"
 )
 
+type DockerPullCommand struct {
+	DockerCommand
+}
+
+func NewDockerPullCommand() *DockerPullCommand {
+	return &DockerPullCommand{}
+}
+
 // Pull docker image and create build info if needed
-func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDetails *config.ArtifactoryDetails) error {
+func (dpc *DockerPullCommand) Run() error {
 	// Perform login
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: artDetails}
-	err := docker.DockerLogin(imageTag, loginConfig)
+	imageTag := dpc.ImageTag()
+	rtDetails, err := dpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
+	err = docker.DockerLogin(imageTag, loginConfig)
 	if err != nil {
 		return err
 	}
@@ -26,6 +40,8 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
+	buildName := dpc.BuildConfiguration().BuildName
+	buildNumber := dpc.BuildConfiguration().BuildNumber
 	// Return if no build name and number was provided
 	if buildName == "" || buildNumber == "" {
 		return nil
@@ -35,15 +51,23 @@ func PullDockerImage(imageTag, sourceRepo, buildName, buildNumber string, artDet
 		return err
 	}
 
-	serviceManager, err := docker.CreateServiceManager(artDetails, 0)
+	serviceManager, err := docker.CreateServiceManager(rtDetails, 0)
 	if err != nil {
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, sourceRepo, buildName, buildNumber, serviceManager, docker.Pull)
+	builder := docker.BuildInfoBuilder(image, dpc.Repo(), buildName, buildNumber, serviceManager, docker.Pull)
 	buildInfo, err := builder.Build()
 	if err != nil {
 		return err
 	}
 	return utils.SaveBuildInfo(buildName, buildNumber, buildInfo)
+}
+
+func (dpc *DockerPullCommand) CommandName() string {
+	return "rt_docker_pull"
+}
+
+func (dpc *DockerPullCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return dpc.rtDetails, nil
 }

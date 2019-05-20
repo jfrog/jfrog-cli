@@ -1164,7 +1164,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 	if exists {
 		return nil, nil
 	}
-	val, err := clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err := clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
 	if err != nil {
 		return nil, err
 	}
