@@ -376,7 +376,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-install",
-			Flags:     getNpmFlags(),
+			Flags:     getNpmInstallFlags(),
 			Aliases:   []string{"npmi"},
 			Usage:     npminstall.Description,
 			HelpName:  common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
@@ -388,7 +388,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-publish",
-			Flags:     getNpmFlags(),
+			Flags:     getNpmCommonFlags(),
 			Aliases:   []string{"npmp"},
 			Usage:     npmpublish.Description,
 			HelpName:  common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
@@ -736,7 +736,7 @@ func getDockerPullFlags() []cli.Flag {
 	return flags
 }
 
-func getNpmFlags() []cli.Flag {
+func getNpmCommonFlags() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
@@ -746,6 +746,15 @@ func getNpmFlags() []cli.Flag {
 	npmFlags = append(npmFlags, getBaseFlags()...)
 	npmFlags = append(npmFlags, getServerIdFlag())
 	return append(npmFlags, getBuildToolFlags()...)
+}
+
+func getNpmInstallFlags() []cli.Flag {
+	npmFlags := getNpmCommonFlags()
+	return append(npmFlags, cli.StringFlag{
+		Name:  "threads",
+		Value: "",
+		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
+	})
 }
 
 func getNugetFlags() []cli.Flag {
@@ -1370,7 +1379,7 @@ func npmInstallCmd(c *cli.Context) {
 	buildConfiguration := createBuildToolConfiguration(c)
 	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	npmCmd := new(npm.NpmInstallCommand)
-	npmCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
+	npmCmd.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
 	err := commandutils.Exec(npmCmd)
 	cliutils.ExitOnErr(err)
 }

@@ -38,7 +38,6 @@ func CreateLogFile() (*os.File, error) {
 	pid := os.Getpid()
 
 	fileName := filepath.Join(logDir, "jfrog-cli."+currentTime+"."+strconv.Itoa(pid)+".log")
-	log.Debug("Creating log file: ", fileName)
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
