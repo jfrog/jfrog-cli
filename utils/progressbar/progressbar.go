@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
@@ -240,7 +241,7 @@ func InitProgressBarIfPossible() (ioUtils.Progress, *os.File, error) {
 // Init progress bar if all required conditions are met:
 // CI == false (or unset), Stderr is a terminal, and terminal width is large enough
 func shouldInitProgressBar() (bool, error) {
-	ci, err := utils.GetBoolEnvValue("CI", false)
+	ci, err := utils.GetBoolEnvValue(cliutils.CI, false)
 	if ci || err != nil {
 		return false, err
 	}
