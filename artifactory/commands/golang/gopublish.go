@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+const minSupportedArtifactoryVersion = "6.2.0"
+
 type GoPublishCommand struct {
 	publishPackage     bool
 	buildConfiguration *utils.BuildConfiguration
@@ -73,7 +75,8 @@ func (gpc *GoPublishCommand) Run() error {
 		return err
 	}
 
-	if !isMinSupportedVersion(artifactoryVersion) {
+	version := version.NewVersion(minSupportedArtifactoryVersion)
+	if !version.AtLeast(artifactoryVersion) {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
 	}
 
@@ -133,14 +136,6 @@ func (gpc *GoPublishCommand) Run() error {
 
 func (gpc *GoPublishCommand) CommandName() string {
 	return "rt_go_publish"
-}
-
-func isMinSupportedVersion(artifactoryVersion string) bool {
-	minSupportedArtifactoryVersion := "6.2.0"
-	if version.Compare(artifactoryVersion, minSupportedArtifactoryVersion) < 0 && artifactoryVersion != "development" {
-		return false
-	}
-	return true
 }
 
 func validatePrerequisites() error {
