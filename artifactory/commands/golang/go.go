@@ -16,6 +16,10 @@ type GoCommand struct {
 	GoParamsCommand
 }
 
+func NewGoCommand() *GoCommand {
+	return &GoCommand{}
+}
+
 func (gc *GoCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *GoCommand {
 	gc.buildConfiguration = buildConfiguration
 	return gc

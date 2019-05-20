@@ -21,5 +21,10 @@ const (
 	Retries = 3
 
 	// Env
-	ReportUsage = "JFROG_CLI_REPORT_USAGE"
+	ReportUsage     = "JFROG_CLI_REPORT_USAGE"
+	LogLevel        = "JFROG_CLI_LOG_LEVEL"
+	OfferConfig     = "JFROG_CLI_OFFER_CONFIG"
+	JfrogHomeDirEnv = "JFROG_CLI_HOME_DIR"
+	// Deprecated:
+	JfrogHomeEnv = "JFROG_CLI_HOME"
 )

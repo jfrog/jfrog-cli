@@ -12,6 +12,10 @@ type BuildDistributeCommnad struct {
 	dryRun bool
 }
 
+func NewBuildDistributeCommnad() *BuildDistributeCommnad {
+	return &BuildDistributeCommnad{}
+}
+
 func (bdc *BuildDistributeCommnad) SetRtDetails(rtDetails *config.ArtifactoryDetails) *BuildDistributeCommnad {
 	bdc.rtDetails = rtDetails
 	return bdc

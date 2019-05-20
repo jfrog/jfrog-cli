@@ -13,6 +13,10 @@ type BuildCollectEnvCommand struct {
 	buildConfiguration *utils.BuildConfiguration
 }
 
+func NewBuildCollectEnvCommand() *BuildCollectEnvCommand {
+	return &BuildCollectEnvCommand{}
+}
+
 func (bcec *BuildCollectEnvCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *BuildCollectEnvCommand {
 	bcec.buildConfiguration = buildConfiguration
 	return bcec

@@ -1,28 +1,18 @@
 package generic
 
 import (
-	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-const (
-	SetProperties    CommandName = "rt_set_properties"
-	DeleteProperties CommandName = "rt_delete_properties"
-)
-
-type CommandName string
-
 type PropsCommand struct {
-	props       string
-	commandName CommandName
-	threads     int
+	props   string
+	threads int
 	GenericCommand
 }
 
@@ -46,47 +36,6 @@ func (pc *PropsCommand) Props() string {
 func (pc *PropsCommand) SetProps(props string) *PropsCommand {
 	pc.props = props
 	return pc
-}
-
-func (pc *PropsCommand) SetCommandName(commandName CommandName) *PropsCommand {
-	pc.commandName = commandName
-	return pc
-}
-
-func (pc *PropsCommand) Run() error {
-	rtDetails, err := pc.RtDetails()
-	if errorutils.CheckError(err) != nil {
-		return err
-	}
-	servicesManager, err := createPropsServiceManager(pc.threads, rtDetails)
-	if err != nil {
-		return err
-	}
-
-	resultItems := searchItems(pc.Spec(), servicesManager)
-
-	propsParams := GetPropsParams(resultItems, pc.props)
-	var success int
-	switch pc.commandName {
-	case SetProperties:
-		{
-			success, err = servicesManager.SetProps(propsParams)
-		}
-	case DeleteProperties:
-		{
-			success, err = servicesManager.DeleteProps(propsParams)
-		}
-	default:
-		return fmt.Errorf("Received unknown command name: %s", pc.commandName)
-	}
-	result := pc.Result()
-	result.SetSuccessCount(success)
-	result.SetFailCount(len(resultItems) - success)
-	return err
-}
-
-func (pc *PropsCommand) CommandName() string {
-	return string(pc.commandName)
 }
 
 func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {

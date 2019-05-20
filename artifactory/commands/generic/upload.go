@@ -23,6 +23,10 @@ type UploadCommand struct {
 	logFile             *os.File
 }
 
+func NewUploadCommand() *UploadCommand {
+	return &UploadCommand{GenericCommand: *NewGenericCommand()}
+}
+
 func (uc *UploadCommand) LogFile() *os.File {
 	return uc.logFile
 }
@@ -43,10 +47,6 @@ func (uc *UploadCommand) SetUploadConfiguration(uploadConfiguration *utils.Uploa
 
 func (uc *UploadCommand) CommandName() string {
 	return "rt_upload"
-}
-
-func NewUploadCommand() *UploadCommand {
-	return &UploadCommand{GenericCommand: *NewGenericCommand()}
 }
 
 func (uc *UploadCommand) Run() error {

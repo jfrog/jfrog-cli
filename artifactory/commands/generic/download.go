@@ -22,12 +22,12 @@ type DownloadCommand struct {
 	logFile       *os.File
 }
 
-func (dc *DownloadCommand) LogFile() *os.File {
-	return dc.logFile
-}
-
 func NewDownloadCommand() *DownloadCommand {
 	return &DownloadCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (dc *DownloadCommand) LogFile() *os.File {
+	return dc.logFile
 }
 
 func (dc *DownloadCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *DownloadCommand {

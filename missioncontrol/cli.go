@@ -2,6 +2,7 @@ package missioncontrol
 
 import (
 	"errors"
+	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/missioncontrol/config"
@@ -232,7 +233,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	if exists {
 		return nil, nil
 	}
-	val, err := clientutils.GetBoolEnvValue("JFROG_CLI_OFFER_CONFIG", true)
+	val, err := clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
 	if err != nil {
 		return nil, err
 	}
@@ -240,11 +241,11 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
-	msg := "To avoid this message in the future, set the JFROG_CLI_OFFER_CONFIG environment variable to false.\n" +
-		"The CLI commands require the Mission Control URL and authentication details\n" +
-		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-		"You can also configure these parameters later using the 'config' command.\n" +
-		"Configure now?"
+	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
+		"The CLI commands require the Mission Control URL and authentication details\n"+
+		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
+		"You can also configure these parameters later using the 'config' command.\n"+
+		"Configure now?", cliutils.OfferConfig)
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
 		config.SaveMissionControlConf(new(config.MissionControlDetails))

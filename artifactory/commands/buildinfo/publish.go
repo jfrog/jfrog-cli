@@ -18,6 +18,10 @@ type BuildPublishCommand struct {
 	config             *buildinfo.Configuration
 }
 
+func NewBuildPublishCommand() *BuildPublishCommand {
+	return &BuildPublishCommand{}
+}
+
 func (bpc *BuildPublishCommand) SetConfig(config *buildinfo.Configuration) *BuildPublishCommand {
 	bpc.config = config
 	return bpc

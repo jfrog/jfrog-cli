@@ -9,7 +9,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/git"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -277,7 +277,7 @@ func TestBuildAddGit(t *testing.T) {
 	buildName, buildNumber := "cli-test-build", "13"
 
 	// Populate cli config with 'default' server
-	oldHomeDir := os.Getenv(config.JfrogHomeDirEnv)
+	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
 	createJfrogHomeConfig(t)
 
 	// Create .git folder for this test
@@ -335,7 +335,7 @@ func TestBuildAddGit(t *testing.T) {
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName string) {
 	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	os.Setenv(config.JfrogHomeDirEnv, oldHomeDir)
+	os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
 	cleanArtifactoryTest()
 }
 

@@ -18,6 +18,10 @@ type CurlCommand struct {
 	rtDetails      *config.ArtifactoryDetails
 }
 
+func NewCurlCommand() *CurlCommand {
+	return &CurlCommand{}
+}
+
 func (curlCmd *CurlCommand) SetArguments(arguments []string) *CurlCommand {
 	curlCmd.arguments = arguments
 	return curlCmd

@@ -13,6 +13,10 @@ type DockerPushCommand struct {
 	threads int
 }
 
+func NewDockerPushCommand() *DockerPushCommand {
+	return &DockerPushCommand{}
+}
+
 func (dpc *DockerPushCommand) Threads() int {
 	return dpc.threads
 }

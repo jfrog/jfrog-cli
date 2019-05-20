@@ -1,10 +1,10 @@
-package utils
+package commands
 
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory/reportusage"
+	"github.com/jfrog/jfrog-client-go/artifactory/usage"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -12,7 +12,7 @@ import (
 type Command interface {
 	// Runs the command
 	Run() error
-	// Returns the Artifactory details. The report usage will be send to this Artifactory server.
+	// Returns the Artifactory details. The usage report is sent to this Artifactory server.
 	RtDetails() (*config.ArtifactoryDetails, error)
 	// The command name for the usage report.
 	CommandName() string
@@ -43,22 +43,21 @@ func reportUsage(command Command, channel chan<- bool) {
 			return
 		}
 		if rtDetails != nil {
-			log.Debug("Sending report usage information...")
+			log.Debug("Sending usage info...")
 			serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 			if err != nil {
 				log.Debug(err)
 				return
 			}
 			productId := cliutils.ClientAgent + "/" + cliutils.CliVersion
-			err = reportusage.SendReportUsage(productId, command.CommandName(), serviceManager)
+			err = usage.SendReportUsage(productId, command.CommandName(), serviceManager)
 			if err != nil {
 				log.Debug(err)
 				return
 			}
-			log.Debug("Report usage information finished successfully.")
 		}
 	} else {
-		log.Debug("Sending report usage is disabled.")
+		log.Debug("Usage info is disabled.")
 	}
 }
 

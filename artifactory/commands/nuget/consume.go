@@ -29,6 +29,10 @@ type NugetCommand struct {
 	rtDetails          *config.ArtifactoryDetails
 }
 
+func NewNugetCommand() *NugetCommand {
+	return &NugetCommand{}
+}
+
 func (nc *NugetCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *NugetCommand {
 	nc.rtDetails = rtDetails
 	return nc
@@ -112,7 +116,7 @@ func (nc *NugetCommand) CommandName() string {
 	return "rt_nuget"
 }
 
-const SOURCE_NAME = "JFrogCli"
+const sourceName = "JFrogCli"
 
 func DependencyTreeCmd() error {
 	workspace, err := os.Getwd()
@@ -277,7 +281,7 @@ func addNugetSource(configFileName, sourceUrl, user, password string) error {
 	cmd.Command = append(cmd.Command, sourceCommand)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
 	cmd.CommandFlags = append(cmd.CommandFlags, "Add")
-	cmd.CommandFlags = append(cmd.CommandFlags, "-Name", SOURCE_NAME)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-Name", sourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceUrl)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-password", password)
@@ -295,7 +299,7 @@ func addNugetApiKey(user, password, configFileName string) error {
 
 	cmd.Command = append(cmd.Command, "setapikey")
 	cmd.CommandFlags = append(cmd.CommandFlags, user+":"+password)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", SOURCE_NAME)
+	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
 
 	output, err := gofrogcmd.RunCmdOutput(cmd)

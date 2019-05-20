@@ -12,6 +12,10 @@ type BuildPromotionCommand struct {
 	dryRun    bool
 }
 
+func NewBuildPromotionCommand() *BuildPromotionCommand {
+	return &BuildPromotionCommand{}
+}
+
 func (bpc *BuildPromotionCommand) SetDryRun(dryRun bool) *BuildPromotionCommand {
 	bpc.dryRun = dryRun
 	return bpc

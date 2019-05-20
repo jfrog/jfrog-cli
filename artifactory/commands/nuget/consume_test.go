@@ -101,8 +101,8 @@ func TestInitNewConfig(t *testing.T) {
 	source := "http://some/url/api/nuget"
 
 	for _, packageSource := range nugetConfig.PackageSources {
-		if packageSource.Key != SOURCE_NAME {
-			t.Error("Expected", SOURCE_NAME, ",got", packageSource.Key)
+		if packageSource.Key != sourceName {
+			t.Error("Expected", sourceName, ",got", packageSource.Key)
 		}
 
 		if packageSource.Value != source {

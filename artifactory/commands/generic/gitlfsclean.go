@@ -15,6 +15,10 @@ type GitLfsCommand struct {
 	configuration *GitLfsCleanConfiguration
 }
 
+func NewGitLfsCommand() *GitLfsCommand {
+	return &GitLfsCommand{GenericCommand: *NewGenericCommand()}
+}
+
 func (glc *GitLfsCommand) Configuration() *GitLfsCleanConfiguration {
 	return glc.configuration
 }
@@ -22,10 +26,6 @@ func (glc *GitLfsCommand) Configuration() *GitLfsCleanConfiguration {
 func (glc *GitLfsCommand) SetConfiguration(configuration *GitLfsCleanConfiguration) *GitLfsCommand {
 	glc.configuration = configuration
 	return glc
-}
-
-func NewGitLfsCommand() *GitLfsCommand {
-	return &GitLfsCommand{GenericCommand: *NewGenericCommand()}
 }
 
 func (glc *GitLfsCommand) Run() error {
@@ -54,7 +54,7 @@ func (glc *GitLfsCommand) Run() error {
 }
 
 func (glc *GitLfsCommand) CommandName() string {
-	return "git_lfs_clean"
+	return "rt_git_lfs_clean"
 }
 
 func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem) error {

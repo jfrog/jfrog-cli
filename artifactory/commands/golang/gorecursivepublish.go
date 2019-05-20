@@ -18,8 +18,12 @@ import (
 	"strings"
 )
 
-type GoRecursivePublish struct {
+type GoRecursivePublishCommand struct {
 	GoParamsCommand
+}
+
+func NewGoRecursivePublishCommand() *GoRecursivePublishCommand {
+	return &GoRecursivePublishCommand{}
 }
 
 type GoParamsCommand struct {
@@ -45,7 +49,7 @@ func (gpc *GoParamsCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *
 	return gpc
 }
 
-func (grp *GoRecursivePublish) Run() error {
+func (grp *GoRecursivePublishCommand) Run() error {
 	rtDetails, err := grp.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return err
@@ -109,7 +113,7 @@ func (grp *GoRecursivePublish) Run() error {
 	return gmi.revert(wd, nil)
 }
 
-func (grp *GoRecursivePublish) CommandName() string {
+func (grp *GoRecursivePublishCommand) CommandName() string {
 	return "rt_go_recursive_publish"
 }
 

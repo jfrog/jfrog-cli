@@ -3,8 +3,10 @@ package buildinfo
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -46,7 +48,7 @@ func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 }
 
 func getBuildInfoPartials(baseDir string, t *testing.T, buildName string, buildNumber string) buildinfo.Partials {
-	buildAddGitConfiguration := new(BuildAddGitConfiguration).SetDotGitPath(baseDir).SetBuildConfiguration(&utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
+	buildAddGitConfiguration := new(BuildAddGitCommand).SetDotGitPath(baseDir).SetBuildConfiguration(&utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
 	err := buildAddGitConfiguration.Run()
 	if err != nil {
 		t.Error("Cannot run build add git due to: " + err.Error())
@@ -133,8 +135,8 @@ func TestAddGitDoCollect(t *testing.T) {
 	originalFolder := "git_issues_.git_suffix"
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
 
-	// Create BuildAddGitConfiguration
-	config := BuildAddGitConfiguration{
+	// Create BuildAddGitCommand
+	config := BuildAddGitCommand{
 		issuesConfig: &IssuesConfiguration{
 			LogLimit:          100,
 			Aggregate:         false,
@@ -180,4 +182,72 @@ func TestAddGitDoCollect(t *testing.T) {
 
 	// Clean git path
 	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+}
+
+func TestRtDetailsFromConfigFile(t *testing.T) {
+	expectedUrl := "http://localhost:8081/artifactory/"
+	expectedUser := "admin"
+
+	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	if homeEnv == "" {
+		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
+	}
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+	baseDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	if err != nil {
+		t.Error(err)
+	}
+	configFilePath := filepath.Join("..", "testdata", "buildissues", "issuesconfig_success.yaml")
+	config := BuildAddGitCommand{
+		configFilePath: configFilePath,
+	}
+	details, err := config.RtDetails()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if details.Url != expectedUrl {
+		t.Error(fmt.Sprintf("Expected %s, got %s", expectedUrl, details.Url))
+	}
+	if details.User != expectedUser {
+		t.Error(fmt.Sprintf("Expected %s, got %s", details.User, expectedUser))
+	}
+}
+
+func TestRtDetailsWithoutConfigFile(t *testing.T) {
+	expectedUrl := "http://localhost:8082/artifactory/"
+	expectedUser := "admin2"
+
+	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	if homeEnv == "" {
+		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
+	}
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+
+	baseDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := BuildAddGitCommand{}
+	details, err := config.RtDetails()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if details.Url != expectedUrl {
+		t.Error(fmt.Sprintf("Expected %s, got %s", expectedUrl, details.Url))
+	}
+
+	if details.User != expectedUser {
+		t.Error(fmt.Sprintf("Expected %s, got %s", details.User, expectedUser))
+	}
 }

@@ -12,6 +12,10 @@ type DockerPullCommand struct {
 	DockerCommand
 }
 
+func NewDockerPullCommand() *DockerPullCommand {
+	return &DockerPullCommand{}
+}
+
 // Pull docker image and create build info if needed
 func (dpc *DockerPullCommand) Run() error {
 	// Perform login

@@ -32,6 +32,10 @@ type GradleCommand struct {
 	rtDetails     *config.ArtifactoryDetails
 }
 
+func NewGradleCommand() *GradleCommand {
+	return &GradleCommand{}
+}
+
 // Returns the ArtfiactoryDetails. The information returns from the config file provided.
 func (gc *GradleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	// Get the rtDetails from the config file.

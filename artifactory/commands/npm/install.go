@@ -55,6 +55,10 @@ func (nic *NpmInstallCommand) SetThreads(threads int) *NpmInstallCommand {
 	return nic
 }
 
+func NewNpmInstallCommand() *NpmInstallCommand {
+	return &NpmInstallCommand{}
+}
+
 func (nic *NpmInstallCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	return nic.rtDetails, nil
 }

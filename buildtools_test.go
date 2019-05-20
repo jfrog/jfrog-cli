@@ -34,7 +34,7 @@ import (
 const DockerTestImage string = "jfrog_cli_test_image"
 
 func InitBuildToolsTests() {
-	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	os.Setenv(cliutils.OfferConfig, "false")
 	os.Setenv(cliutils.ReportUsage, "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
@@ -47,7 +47,7 @@ func InitDockerTests() {
 		return
 	}
 	os.Setenv(cliutils.ReportUsage, "false")
-	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	os.Setenv(cliutils.OfferConfig, "false")
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 }
@@ -60,7 +60,7 @@ func CleanBuildToolsTests() {
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(tests.GetTestResourcesPath(), "configtemplate", config.JfrogConfigFile)
 
-	err := os.Setenv(config.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
+	err := os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -107,7 +107,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	buildConfig := &utils.BuildConfiguration{}
-	mvnCmd := new(mvn.MvnCommand).SetConfiguration(buildConfig).SetGoals("clean install -f" + pomPath).SetConfigPath(configFilePath)
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfig).SetGoals("clean install -f" + pomPath).SetConfigPath(configFilePath)
 	err := mvnCmd.Run()
 	if err != nil {
 		t.Error(err)
@@ -997,7 +997,7 @@ func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcPr
 
 func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {
 	buildConfig := &utils.BuildConfiguration{}
-	gradleCmd := new(gradle.GradleCommand).SetTasks("clean artifactoryPublish -b " + buildGradlePath).SetConfigPath(configFilePath).SetConfiguration(buildConfig)
+	gradleCmd := gradle.NewGradleCommand().SetTasks("clean artifactoryPublish -b " + buildGradlePath).SetConfigPath(configFilePath).SetConfiguration(buildConfig)
 	err := gradleCmd.Run()
 	if err != nil {
 		t.Error(err)
@@ -1088,7 +1088,7 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
-		os.Unsetenv(config.JfrogHomeDirEnv)
+		os.Unsetenv(cliutils.JfrogHomeDirEnv)
 		cleanArtifactory()
 		tests.CleanFileSystem()
 	}

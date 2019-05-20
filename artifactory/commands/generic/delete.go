@@ -1,8 +1,10 @@
 package generic
 
 import (
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -45,7 +47,7 @@ func (dc *DeleteCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	if dc.quiet || utils.ConfirmDelete(dc.deleteItems) {
+	if dc.quiet || confirmDelete(dc.deleteItems) {
 		success, failed, err := dc.DeleteFiles()
 		result := dc.Result()
 		result.SetFailCount(failed)
@@ -100,4 +102,14 @@ func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err erro
 		return
 	}
 	return
+}
+
+func confirmDelete(pathsToDelete []clientutils.ResultItem) bool {
+	if len(pathsToDelete) < 1 {
+		return false
+	}
+	for _, v := range pathsToDelete {
+		fmt.Println("  " + v.GetItemRelativePath())
+	}
+	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
 }

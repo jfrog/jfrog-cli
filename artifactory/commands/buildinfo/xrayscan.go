@@ -18,6 +18,10 @@ type BuildScanCommand struct {
 	buildFailed        bool
 }
 
+func NewBuildScanCommand() *BuildScanCommand {
+	return &BuildScanCommand{}
+}
+
 func (bsc *BuildScanCommand) BuildFailed() bool {
 	return bsc.buildFailed
 }

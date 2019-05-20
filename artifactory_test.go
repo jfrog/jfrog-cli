@@ -59,7 +59,7 @@ func InitArtifactoryTests() {
 		return
 	}
 	os.Setenv(cliutils.ReportUsage, "false")
-	os.Setenv("JFROG_CLI_OFFER_CONFIG", "false")
+	os.Setenv(cliutils.OfferConfig, "false")
 	// Disable progress bar:
 	os.Setenv("CI", "true")
 	cred := authenticate()
@@ -580,7 +580,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(tempDirPath)
-	os.Setenv(config.JfrogHomeDirEnv, tempDirPath)
+	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
 
@@ -3005,7 +3005,7 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	os.Unsetenv(config.JfrogHomeDirEnv)
+	os.Unsetenv(cliutils.JfrogHomeDirEnv)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()

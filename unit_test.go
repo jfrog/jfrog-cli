@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTests "github.com/jfrog/jfrog-client-go/utils/tests"
@@ -30,7 +30,7 @@ func TestUnitTests(t *testing.T) {
 }
 
 func setJfrogHome(homePath string) {
-	if err := os.Setenv(config.JfrogHomeDirEnv, homePath); err != nil {
+	if err := os.Setenv(cliutils.JfrogHomeDirEnv, homePath); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
@@ -38,7 +38,7 @@ func setJfrogHome(homePath string) {
 
 func cleanUnitTestsJfrogHome(homePath string) {
 	os.RemoveAll(homePath)
-	if err := os.Unsetenv(config.JfrogHomeDirEnv); err != nil {
+	if err := os.Unsetenv(cliutils.JfrogHomeDirEnv); err != nil {
 		os.Exit(1)
 	}
 }

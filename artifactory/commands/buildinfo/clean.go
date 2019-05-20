@@ -10,6 +10,10 @@ type BuildCleanCommand struct {
 	buildConfiguration *utils.BuildConfiguration
 }
 
+func NewBuildCleanCommand() *BuildCleanCommand {
+	return &BuildCleanCommand{}
+}
+
 func (bcc *BuildCleanCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *BuildCleanCommand {
 	bcc.buildConfiguration = buildConfiguration
 	return bcc

@@ -10,6 +10,10 @@ type PingCommand struct {
 	response  []byte
 }
 
+func NewPingCommand() *PingCommand {
+	return &PingCommand{}
+}
+
 func (pc *PingCommand) Response() []byte {
 	return pc.response
 }

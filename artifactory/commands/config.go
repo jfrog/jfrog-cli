@@ -32,6 +32,10 @@ type ConfigCommand struct {
 	serverId       string
 }
 
+func NewConfigCommand() *ConfigCommand {
+	return &ConfigCommand{}
+}
+
 func (cc *ConfigCommand) SetServerId(serverId string) *ConfigCommand {
 	cc.serverId = serverId
 	return cc
@@ -62,9 +66,11 @@ func (cc *ConfigCommand) Run() error {
 }
 
 func (cc *ConfigCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	// If cc.details is not empty, then return it.
 	if cc.details != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.details) {
 		return cc.details, nil
 	}
+	// If cc.defaultDetails is not empty, then return it.
 	if cc.defaultDetails != nil && !reflect.DeepEqual(config.ArtifactoryDetails{}, *cc.defaultDetails) {
 		return cc.defaultDetails, nil
 	}

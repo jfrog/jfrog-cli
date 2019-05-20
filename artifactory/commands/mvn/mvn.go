@@ -30,6 +30,10 @@ type MvnCommand struct {
 	rtDetails     *config.ArtifactoryDetails
 }
 
+func NewMvnCommand() *MvnCommand {
+	return &MvnCommand{}
+}
+
 func (mc *MvnCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *MvnCommand {
 	mc.rtDetails = rtDetails
 	return mc

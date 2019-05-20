@@ -6,33 +6,37 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
-type BuildDiscardConfigurationCommand struct {
+type BuildDiscardCommand struct {
 	rtDetails *config.ArtifactoryDetails
 	services.DiscardBuildsParams
 }
 
-func (bdc *BuildDiscardConfigurationCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *BuildDiscardConfigurationCommand {
-	bdc.rtDetails = rtDetails
-	return bdc
+func NewBuildDiscardCommand() *BuildDiscardCommand {
+	return &BuildDiscardCommand{}
 }
 
-func (bdc *BuildDiscardConfigurationCommand) SetDiscardBuildsParams(params services.DiscardBuildsParams) *BuildDiscardConfigurationCommand {
-	bdc.DiscardBuildsParams = params
-	return bdc
+func (buildDiscard *BuildDiscardCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *BuildDiscardCommand {
+	buildDiscard.rtDetails = rtDetails
+	return buildDiscard
 }
 
-func (bdc *BuildDiscardConfigurationCommand) Run() error {
-	servicesManager, err := utils.CreateServiceManager(bdc.rtDetails, false)
+func (buildDiscard *BuildDiscardCommand) SetDiscardBuildsParams(params services.DiscardBuildsParams) *BuildDiscardCommand {
+	buildDiscard.DiscardBuildsParams = params
+	return buildDiscard
+}
+
+func (buildDiscard *BuildDiscardCommand) Run() error {
+	servicesManager, err := utils.CreateServiceManager(buildDiscard.rtDetails, false)
 	if err != nil {
 		return err
 	}
-	return servicesManager.DiscardBuilds(bdc.DiscardBuildsParams)
+	return servicesManager.DiscardBuilds(buildDiscard.DiscardBuildsParams)
 }
 
-func (bdc *BuildDiscardConfigurationCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return bdc.rtDetails, nil
+func (buildDiscard *BuildDiscardCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return buildDiscard.rtDetails, nil
 }
 
-func (bdc *BuildDiscardConfigurationCommand) CommandName() string {
+func (buildDiscard *BuildDiscardCommand) CommandName() string {
 	return "rt_build_discard"
 }
