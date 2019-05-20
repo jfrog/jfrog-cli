@@ -271,7 +271,7 @@ func setTerminalWidthVar() error {
 func (p *progressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
 	p.headlineBar = p.container.AddSpinner(1, mpb.SpinnerOnLeft,
-		mpb.SpinnerStyle([]string{"◜", "◠", "◝", "◞", "◡", "◟"}),
+		mpb.SpinnerStyle([]string{"-", "-", "\\", "\\", "|", "|", "/", "/"}),
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(headline),
