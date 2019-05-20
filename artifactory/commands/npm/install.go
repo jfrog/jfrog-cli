@@ -34,7 +34,7 @@ const npmrcBackupFileName = "jfrog.npmrc.backup"
 const minSupportedArtifactoryVersion = "5.5.2"
 const minSupportedNpmVersion = "5.4.0"
 
-func Install(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
+func Install(repo string, cliConfiguration *npm.NpmInstallConfig) (err error) {
 	log.Info("Running npm Install.")
 	npmi := npmInstall{cliConfig: cliConfiguration}
 	if err = npmi.preparePrerequisites(repo); err != nil {
@@ -251,7 +251,7 @@ func (npmi *npmInstall) collectDependenciesChecksums() error {
 		return err
 	}
 
-	producerConsumer := parallel.NewBounedRunner(10, false)
+	producerConsumer := parallel.NewBounedRunner(npmi.cliConfig.Threads, false)
 	errorsQueue := serviceutils.NewErrorsQueue(1)
 	handlerFunc := npmi.createGetDependencyInfoFunc(servicesManager)
 	go func() {
@@ -610,7 +610,7 @@ type getDependencyInfoFunc func(string) parallel.TaskFunc
 
 type npmInstall struct {
 	executablePath   string
-	cliConfig        *npm.CliConfiguration
+	cliConfig        *npm.NpmInstallConfig
 	npmrcFileMode    os.FileMode
 	workingDirectory string
 	registry         string

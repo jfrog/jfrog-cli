@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-func Publish(repo string, cliConfiguration *npm.CliConfiguration) (err error) {
+func Publish(repo string, cliConfiguration *npm.NpmPublishConfig) (err error) {
 	log.Info("Running npm Publish")
 	npmp := npmPublish{cliConfiguration: cliConfiguration, repo: repo}
 	if err = npmp.preparePrerequisites(); err != nil {
@@ -265,7 +265,7 @@ func deleteCreatedTarball(packedFilePath string) error {
 
 type npmPublish struct {
 	executablePath   string
-	cliConfiguration *npm.CliConfiguration
+	cliConfiguration *npm.NpmPublishConfig
 	workingDirectory string
 	collectBuildInfo bool
 	packedFilePath   string
