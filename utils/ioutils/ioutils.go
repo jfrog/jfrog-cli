@@ -70,17 +70,12 @@ func CopyFile(src, dst string, fileMode os.FileMode) error {
 	return errorutils.CheckError(os.Chmod(dst, fileMode))
 }
 
-func FixWinPath(filePath string) string {
-	fixedPath := strings.Replace(filePath, "\\", "\\\\", -1)
-	return fixedPath
+func DoubleWinPathSeparator(filePath string) string {
+	return strings.Replace(filePath, "\\", "\\\\", -1)
 }
 
-func PrepareFilePathForWindows(path string) string {
-	if cliutils.IsWindows() {
-		path = strings.Replace(path, "\\", "\\\\", -1)
-		path = strings.Replace(path, "/", "\\\\", -1)
-	}
-	return path
+func UnixToWinPathSeparator(filePath string) string {
+	return strings.Replace(filePath, "/", "\\\\", -1)
 }
 
 func PrepareFilePathForUnix(path string) string {

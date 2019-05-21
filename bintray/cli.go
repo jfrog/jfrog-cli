@@ -2,6 +2,7 @@ package bintray
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"os"
 	"strconv"
 	"strings"
@@ -786,6 +787,9 @@ func upload(c *cli.Context) {
 	}
 	params := services.NewUploadParams()
 	params.Pattern = c.Args().Get(0)
+	if cliutils.IsWindows() {
+		params.Pattern = ioutils.UnixToWinPathSeparator(params.Pattern)
+	}
 
 	var err error
 	params.Path, err = versions.CreatePath(c.Args().Get(1))

@@ -85,13 +85,13 @@ func TestBintraySimpleUpload(t *testing.T) {
 	//Upload file
 	fileName := "a1.in"
 	path := "some/path/in/bintray/"
-	uploadFilePath := tests.GetPath(fileName, tests.GetTestResourcesPath(), "a")
+	uploadFilePath := tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
 
 	//Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
 		Repo:    tests.BintrayRepo1,
-		Path:    ioutils.PrepareFilePathForWindows(path + fileName),
+		Path:    path + fileName,
 		Package: packageName,
 		Name:    fileName,
 		Version: "1.0",
@@ -113,7 +113,7 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 
 	//Upload file
 	fileName := "a1.in"
-	uploadFilePath := tests.GetPath(fileName, tests.GetTestResourcesPath(), "a")
+	uploadFilePath := tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", uploadFilePath, versionPath)
 
 	//Check file uploaded
@@ -133,8 +133,7 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 func TestBintrayUploadFromHomeDir(t *testing.T) {
 	initBintrayTest(t)
 	filename := "cliTestFile.txt"
-	testFileRel := filepath.Join(fileutils.GetHomeDir(), "cliTestFile.*")
-	testFileRel = ioutils.FixWinPath(testFileRel)
+	testFileRel := filepath.ToSlash(fileutils.GetHomeDir()) + "/cliTestFile.*"
 	testFileAbs := fileutils.GetHomeDir() + fileutils.GetFileSeparator() + filename
 
 	d1 := []byte("test file")
@@ -173,10 +172,10 @@ func TestBintrayUploadOverride(t *testing.T) {
 	createPackageAndVersion(packagePath, versionPath)
 
 	testResourcePath := tests.GetTestResourcesPath()
-	path := tests.GetPath("*", testResourcePath, "a")
+	path := tests.GetFilePathForBintray("*", testResourcePath, "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=true", "--recursive=false", "--publish=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
-	path = tests.GetPath("b1.in", testResourcePath, "a", "b")
+	path = tests.GetFilePathForBintray("b1.in", testResourcePath, "a", "b")
 	bintrayCli.Exec("upload", path, versionPath, "a1.in", "--flat=true", "--recursive=false", "--override=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursiveModified, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 
@@ -187,18 +186,18 @@ func TestBintrayUploadOverride(t *testing.T) {
 func TestBintrayUploads(t *testing.T) {
 	initBintrayTest(t)
 
-	path := tests.GetPath("*", "", "a")
+	path := tests.GetFilePathForBintray("*", "", "a")
 
 	bintrayExpectedUploadNonFlatRecursive := tests.BintrayExpectedUploadNonFlatRecursive
 	bintrayExpectedUploadNonFlatNonRecursive := tests.BintrayExpectedUploadNonFlatNonRecursive
 	for i := range bintrayExpectedUploadNonFlatRecursive {
-		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
+		if strings.HasPrefix(bintrayExpectedUploadNonFlatRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatRecursive[i].Path = bintrayExpectedUploadNonFlatRecursive[i].Path[1:]
 		}
 	}
 
 	for i := range bintrayExpectedUploadNonFlatNonRecursive {
-		if !cliutils.IsWindows() && strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
+		if strings.HasPrefix(bintrayExpectedUploadNonFlatNonRecursive[i].Path, "/") {
 			bintrayExpectedUploadNonFlatNonRecursive[i].Path = bintrayExpectedUploadNonFlatNonRecursive[i].Path[1:]
 		}
 	}
@@ -208,7 +207,7 @@ func TestBintrayUploads(t *testing.T) {
 	testBintrayUpload(t, path, "--flat=false --recursive=true", bintrayExpectedUploadNonFlatRecursive)
 	testBintrayUpload(t, path, "--flat=false --recursive=false", bintrayExpectedUploadNonFlatNonRecursive)
 
-	path = tests.GetPath("(.*)", "", "a")
+	path = tests.GetFilePathForBintray("(.*)", "", "a")
 	testBintrayUpload(t, path, "--flat=true --recursive=true --regexp=true", tests.BintrayExpectedUploadFlatRecursive)
 	testBintrayUpload(t, path, "--flat=true --recursive=false --regexp=true", tests.BintrayExpectedUploadFlatNonRecursive)
 	testBintrayUpload(t, path, "--flat=false --recursive=true --regexp=true", bintrayExpectedUploadNonFlatRecursive)
@@ -224,7 +223,7 @@ func TestBintrayLogs(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	path := ioutils.FixWinPath(tests.GetTestResourcesPath() + "a" + fileutils.GetFileSeparator() + "*")
+	path := tests.GetTestResourcesPath() + "a/*"
 	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true --publish=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("logs", packagePath)
@@ -240,9 +239,9 @@ func TestBintrayFileDownloads(t *testing.T) {
 	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
-	path := tests.GetPath("*", tests.GetTestResourcesPath(), "a")
+	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true")
-	path = tests.GetPath("a1.in", tests.GetTestResourcesPath(), "a")
+	path = tests.GetFilePathForBintray("a1.in", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=false")
 
 	// Define executor for testing with retries
@@ -280,7 +279,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 	}
 
 	// File a/a1.in
-	args = []string{"download-file", repositoryPath + "/" + ioutils.PrepareFilePathForUnix(tests.GetTestResourcesPath()) + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
+	args = []string{"download-file", repositoryPath + "/" + tests.GetTestResourcesPath() + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
 	if err := retryExecutor.Execute(); err != nil {
 		t.Error(err.Error())
 	}
@@ -308,7 +307,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	path := tests.GetPath("*", tests.GetTestResourcesPath(), "a")
+	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true")
 	bintrayCli.Exec("download-ver", versionPath, tests.Out+"/bintray/", "--unpublished=true")
 
@@ -325,6 +324,39 @@ func TestBintrayVersionDownloads(t *testing.T) {
 		filepath.Join(tests.Out, "bintray", "c3.in"),
 	}
 	tests.IsExistLocally(expected, paths, t)
+	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	cleanBintrayTest()
+}
+
+// Tests compatibility to file paths with windows separators.
+func TestBintrayUploadWindowsCompatibility(t *testing.T) {
+	if !cliutils.IsWindows() {
+		return
+	}
+	initBintrayTest(t)
+
+	packageName := "simpleUploadPackage"
+	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
+	versionName := "1.0"
+	versionPath := packagePath + "/" + versionName
+
+	createPackageAndVersion(packagePath, versionPath)
+	//Upload file
+	fileName := "a1.in"
+	path := "some/path/in/bintray/"
+	uploadFilePath := ioutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
+	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
+
+	//Check file uploaded
+	expected := []tests.PackageSearchResultItem{{
+		Repo:    tests.BintrayRepo1,
+		Path:    path + fileName,
+		Package: packageName,
+		Name:    fileName,
+		Version: "1.0",
+		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
+	assertPackageFiles(expected, getPackageFiles(packageName), t)
+
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 	cleanBintrayTest()
 }
@@ -390,7 +422,7 @@ func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.Pac
 	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", ioutils.FixWinPath(tests.GetTestResourcesPath())+relPath, versionPath, flags)
+	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+relPath, versionPath, flags)
 	assertPackageFiles(expected, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 }
@@ -421,10 +453,6 @@ func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
-	}
-
-	for i := range result {
-		result[i].Path = ioutils.PrepareFilePathForWindows(result[i].Path)
 	}
 
 	return result
