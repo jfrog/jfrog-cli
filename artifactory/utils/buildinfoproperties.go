@@ -304,7 +304,7 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 		return err
 	}
 	// If this is a Windows machine there is a need to modify the path for the build info file to match Java syntax with double \\
-	path := ioutils.FixWinPath(tempFile.Name())
+	path := ioutils.DoubleWinPathSeparator(tempFile.Name())
 	config.Set(GENERATED_BUILD_INFO, path)
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/git"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -142,8 +141,8 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	}
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	// Execute tha bad command
-	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", ioutils.PrepareFilePathForWindows("a/*"), "--dry-run=true")
+	// Execute the bad command
+	noCredsCli.Exec("bad", tests.BuildAddDepsBuildName, "1", "a/*", "--dry-run=true")
 	buildDir, err := utils.GetBuildDir(tests.BuildAddDepsBuildName, "1")
 	if err != nil {
 		t.Error(err)
@@ -168,14 +167,23 @@ func TestBuildAddDependencies(t *testing.T) {
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 
 	var badTests = []buildAddDepsBuildInfoTestParams{
-		{description: "'rt bad' simple cli", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*")}, expectedDependencies: allFiles},
-		{description: "'rt bad' single file", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/a1.in")}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' none recursive", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*"), "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
+		{description: "'rt bad' simple cli", commandArgs: []string{"testsdata/a/*"}, expectedDependencies: allFiles},
+		{description: "'rt bad' single file", commandArgs: []string{"testsdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' none recursive", commandArgs: []string{"testsdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
 		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/*"), "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
-		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
-		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePath(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
-		{description: "'rt bad' exclude command line regexp", commandArgs: []string{ioutils.PrepareFilePathForWindows("testsdata/a/a(.*)"), "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testsdata/a/*", "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
+		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
+		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testsdata/a/a(.*)", "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+	}
+
+	// Tests compatibility to file paths with windows separators.
+	if cliutils.IsWindows() {
+		var compatibilityTests = []buildAddDepsBuildInfoTestParams{
+			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testsdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}},
+			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles},
+		}
+		badTests = append(badTests, compatibilityTests...)
 	}
 
 	for i, badTest := range badTests {

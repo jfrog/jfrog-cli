@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/*",
+      "target": "out\\win\\",
+      "flat": "true",
+      "excludePatterns": ["*\\a1.in", "*a3.in"]
+    }
+  ]
+}

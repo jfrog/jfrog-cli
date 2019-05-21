@@ -55,6 +55,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -1509,7 +1510,7 @@ func downloadCmd(c *cli.Context) {
 		validateCommonContext(c)
 		downloadSpec = createDefaultDownloadSpec(c)
 	}
-
+	fixWinPathsForDownloadCmd(downloadSpec, c)
 	configuration := createDownloadConfiguration(c)
 	rtDetails := createArtifactoryDetailsByFlags(c, true)
 	buildConfiguration := createBuildToolConfiguration(c)
@@ -1537,6 +1538,7 @@ func uploadCmd(c *cli.Context) {
 	} else {
 		uploadSpec = createDefaultUploadSpec(c)
 	}
+	fixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration := createUploadConfiguration(c)
 	buildConfiguration := createBuildToolConfiguration(c)
 	uploadCmd := generic.NewUploadCommand()
@@ -1686,6 +1688,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	} else {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
+	fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
 	buildConfiguration := createBuildConfiguration(c)
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
 	err := commands.Exec(buildAddDependenciesCmd)
@@ -2095,8 +2098,6 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles) {
 	downloadSpec, err := spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	cliutils.ExitOnErr(err)
-
-	fixWinDownloadFilesPath(downloadSpec)
 	//Override spec with CLI options
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
@@ -2154,29 +2155,41 @@ func getFileSystemSpec(c *cli.Context, isTargetMandatory bool) *spec.SpecFiles {
 		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
 		overrideFieldsIfSet(fsSpec.Get(i), c)
 	}
-	fixWinUploadFilesPath(fsSpec)
 	err = spec.ValidateSpec(fsSpec.Files, isTargetMandatory, false)
 	cliutils.ExitOnErr(err)
 	return fsSpec
 }
 
-func fixWinUploadFilesPath(uploadSpec *spec.SpecFiles) {
+func fixWinPathsForFileSystemSourcedCmds(uploadSpec *spec.SpecFiles, c *cli.Context) {
 	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Pattern = strings.Replace(file.Pattern, "\\", "\\\\", -1)
+			uploadSpec.Files[i].Pattern = fixWinPathBySource(file.Pattern, c.IsSet("spec"))
 			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
-				uploadSpec.Files[i].ExcludePatterns[j] = strings.Replace(excludePattern, "\\", "\\\\", -1)
+				// If exclude patterns are set, they override the spec value
+				uploadSpec.Files[i].ExcludePatterns[j] = fixWinPathBySource(excludePattern, c.IsSet("spec") && !c.IsSet("exclude-patterns"))
 			}
 		}
 	}
 }
 
-func fixWinDownloadFilesPath(uploadSpec *spec.SpecFiles) {
+func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
 	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
-			uploadSpec.Files[i].Target = strings.Replace(file.Target, "\\", "\\\\", -1)
+			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
 		}
 	}
+}
+
+func fixWinPathBySource(path string, fromSpec bool) string {
+	if strings.Count(path, "/") > 0 {
+		// Assuming forward slashes - not doubling backslash to allow regexp escaping
+		return ioutils.UnixToWinPathSeparator(path)
+	}
+	if fromSpec {
+		// Doubling backslash only for paths from spec files (that aren't forward slashed)
+		return ioutils.DoubleWinPathSeparator(path)
+	}
+	return path
 }
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration) {

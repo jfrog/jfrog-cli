@@ -1,9 +1,0 @@
-{
-  "files": [
-    {
-      "pattern": "testsdata\\a\\*",
-      "target": "${REPO1}/flat_recursive/",
-      "flat": "true"
-    }
-  ]
-}

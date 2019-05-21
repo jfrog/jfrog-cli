@@ -9,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -162,38 +161,21 @@ func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, 
 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
-	fileSeparator := fileutils.GetFileSeparator()
-	return dir + fileSeparator + "testsdata" + fileSeparator
+	return filepath.ToSlash(dir + "/testsdata/")
 }
 
-func GetPath(filename, path string, a ...string) string {
+func GetFilePathForBintray(filename, path string, a ...string) string {
 	for i := 0; i < len(a); i++ {
-		path += a[i] + fileutils.GetFileSeparator()
+		path += a[i] + "/"
 	}
 	if filename != "" {
 		path += filename
 	}
-	return ioutils.FixWinPath(path)
+	return path
 }
 
-func getFileByOs(fileName string) string {
-	var currentOs string
-	fileSeparator := fileutils.GetFileSeparator()
-	if cliutils.IsWindows() {
-		currentOs = "win"
-	} else {
-		currentOs = "unix"
-	}
-	return GetTestResourcesPath() + "specs" + fileSeparator + currentOs + fileSeparator + fileName
-}
-
-func GetFilePath(fileName string) string {
-	filePath := GetTestResourcesPath() + "specs/common" + fileutils.GetFileSeparator() + fileName
-	isExists, _ := fileutils.IsFileExists(filePath, false)
-	if isExists {
-		return filePath
-	}
-	return getFileByOs(fileName)
+func GetFilePathForArtifactory(fileName string) string {
+	return GetTestResourcesPath() + "specs/" + fileName
 }
 
 func GetTestsLogsDir() (string, error) {
@@ -399,7 +381,7 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 }
 
 func CreateSpec(fileName string) (string, error) {
-	searchFilePath := GetFilePath(fileName)
+	searchFilePath := GetFilePathForArtifactory(fileName)
 	searchFilePath, err := ReplaceTemplateVariables(searchFilePath, "")
 	return searchFilePath, err
 }
