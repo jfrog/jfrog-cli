@@ -7,8 +7,8 @@ import (
 const (
 	NugetRemoteRepo                        = "jfrog-cli-tests-nuget-remote-repo"
 	RtServerId                             = "rtTestServerId"
-	BuildAddDepsSpec                       = "simple_bad_spec.json"
-	BuildAddDepsDoubleSpec                 = "double_bad_spec.json"
+	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
+	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
 	BuildAddDepsBuildName                  = "cli-bad-test-build"
 	NpmBuildName                           = "cli-npm-test-build"
 	NugetBuildName                         = "cli-nuget-test-build"
@@ -18,11 +18,11 @@ const (
 	BuildDownloadSpec                      = "build_download_spec.json"
 	BuildDownloadSpecNoPattern             = "build_download_spec_no_pattern.json"
 	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
-	SimpleUploadSpec                       = "simple_upload_spec.json"
+	SimpleUploadSpec                       = "upload_simple_spec.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
-	SplitUploadSpecA                       = "split_upload_spec_a.json"
-	SplitUploadSpecB                       = "split_upload_spec_b.json"
+	SplitUploadSpecA                       = "upload_split_spec_a.json"
+	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	UploadSpec                             = "upload_spec.json"
 	DeleteSpec                             = "delete_spec.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
@@ -63,6 +63,9 @@ const (
 	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
+	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
+	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
+	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -789,5 +792,15 @@ func GetBuildArchiveEntriesDownloadSpec() []string {
 	return []string{
 		Out,
 		filepath.Join(Out, "d.zip"),
+	}
+}
+
+func GetWinCompatibility() []string {
+	return []string{
+		Out,
+		filepath.Join(Out, "win"),
+		filepath.Join(Out, "win", "a2.in"),
+		filepath.Join(Out, "win", "b1.in"),
+		filepath.Join(Out, "win", "b3.in"),
 	}
 }

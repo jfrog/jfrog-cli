@@ -7,14 +7,14 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
 	artAuth, err := artDetails.CreateArtAuthConfig()
 	if err != nil {
 		return nil, err
 	}
 	servicesConfig, err := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
-		SetDryRun(flags.DryRun).
+		SetDryRun(dryRun).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(flags.Threads).
@@ -28,11 +28,7 @@ type UploadConfiguration struct {
 	Deb                   string
 	Threads               int
 	MinChecksumDeploySize int64
-	BuildName             string
-	BuildNumber           string
-	DryRun                bool
 	Symlink               bool
 	ExplodeArchive        bool
-	ArtDetails            *config.ArtifactoryDetails
 	Retries               int
 }

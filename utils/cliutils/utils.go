@@ -20,12 +20,12 @@ var cliTempDir string
 
 func init() {
 	// Initialize error handling.
-	if os.Getenv("JFROG_CLI_ERROR_HANDLING") == string(OnErrorPanic) {
+	if os.Getenv(JFrogCliErrorHandling) == string(OnErrorPanic) {
 		errorutils.CheckError = PanicOnError
 	}
 
 	// Initialize the temp base-dir path of the CLI executions.
-	cliTempDir = os.Getenv("JFROG_CLI_TEMP_DIR")
+	cliTempDir = os.Getenv(JFrogCliTempDir)
 	if cliTempDir == "" {
 		cliTempDir = os.TempDir()
 	}

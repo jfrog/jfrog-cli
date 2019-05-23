@@ -9,7 +9,7 @@ func TestGetFlagValueAndValueIndex(t *testing.T) {
 	tests := getFlagTestCases()
 	command := &CurlCommand{}
 	for _, test := range tests {
-		command.Arguments = test.arguments
+		command.arguments = test.arguments
 		t.Run(test.name, func(t *testing.T) {
 			actualValue, actualIndex, err := command.getFlagValueAndValueIndex(test.flagName, test.flagIndex)
 
@@ -36,7 +36,7 @@ func TestFindFlag(t *testing.T) {
 	tests := getFlagTestCases()
 	command := &CurlCommand{}
 	for _, test := range tests {
-		command.Arguments = test.arguments
+		command.arguments = test.arguments
 		t.Run(test.name, func(t *testing.T) {
 			actualIndex, actualValueIndex, actualValue, err := command.findFlag(test.flagName)
 
@@ -82,7 +82,7 @@ func TestFindNextArg(t *testing.T) {
 	}
 
 	for index, test := range args {
-		command.Arguments = test
+		command.arguments = test
 		actualArgIndex, actualArg := command.findUriValueAndIndex()
 
 		if actualArgIndex != expected[index].int {
@@ -103,7 +103,7 @@ func TestIsCredsFlagExists(t *testing.T) {
 		{"-XGET", "--foo", "bar", "--foo-bar", "-Ttest"},
 	}
 
-	expected := []bool {
+	expected := []bool{
 		true,
 		true,
 		true,
@@ -111,7 +111,7 @@ func TestIsCredsFlagExists(t *testing.T) {
 	}
 
 	for index, test := range args {
-		command.Arguments = test
+		command.arguments = test
 		flagExists := command.isCredentialsFlagExists()
 
 		if flagExists != expected[index] {
@@ -138,16 +138,16 @@ func TestGetAndRemoveServerIdFromCommand(t *testing.T) {
 	}
 
 	for index, test := range args {
-		command.Arguments = test
-		serverIdValue, err := command.getAndRemoveServerIdFromCommand()
+		command.arguments = test
+		serverIdValue, err := command.GetAndRemoveServerIdFromCommand()
 		if err != nil {
 			t.Error(err)
 		}
 		if serverIdValue != expected[index].value {
 			t.Errorf("Expected --server-id value: %s, got: %s.", expected[index].value, serverIdValue)
 		}
-		if !reflect.DeepEqual(command.Arguments, expected[index].command) {
-			t.Errorf("Expected command arguments: %v, got: %v.", expected[index].command, command.Arguments)
+		if !reflect.DeepEqual(command.arguments, expected[index].command) {
+			t.Errorf("Expected command arguments: %v, got: %v.", expected[index].command, command.arguments)
 		}
 	}
 }
@@ -170,7 +170,7 @@ func TestBuildCommandUrl(t *testing.T) {
 	command := &CurlCommand{}
 	urlPrefix := "http://artifactory:8081/artifactory/"
 	for _, test := range tests {
-		command.Arguments = test.arguments
+		command.arguments = test.arguments
 		t.Run(test.name, func(t *testing.T) {
 			uriIndex, uriValue, err := command.buildCommandUrl(urlPrefix)
 

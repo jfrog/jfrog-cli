@@ -3,8 +3,10 @@ package buildinfo
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -46,8 +48,8 @@ func checkFailureAndClean(t *testing.T, buildDir string, oldPath string) {
 }
 
 func getBuildInfoPartials(baseDir string, t *testing.T, buildName string, buildNumber string) buildinfo.Partials {
-	buildAddGitConfiguration := &BuildAddGitConfiguration{BuildName: buildName, BuildNumber: buildNumber, DotGitPath: baseDir}
-	err := AddGit(buildAddGitConfiguration)
+	buildAddGitConfiguration := new(BuildAddGitCommand).SetDotGitPath(baseDir).SetBuildConfiguration(&utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
+	err := buildAddGitConfiguration.Run()
 	if err != nil {
 		t.Error("Cannot run build add git due to: " + err.Error())
 		return nil
@@ -88,15 +90,15 @@ func checkVCSUrl(partials buildinfo.Partials, t *testing.T) {
 func TestPopulateIssuesConfigurations(t *testing.T) {
 	// Test success scenario
 	expectedIssuesConfiguration := &IssuesConfiguration{
-		ServerID: "local",
-		TrackerName: "TESTING",
-		TrackerUrl: "http://TESTING.com",
-		Regexp: `([a-zA-Z]+-[0-9]*)\s-\s(.*)`,
-		KeyGroupIndex: 1,
+		ServerID:          "local",
+		TrackerName:       "TESTING",
+		TrackerUrl:        "http://TESTING.com",
+		Regexp:            `([a-zA-Z]+-[0-9]*)\s-\s(.*)`,
+		KeyGroupIndex:     1,
 		SummaryGroupIndex: 2,
-		Aggregate: true,
+		Aggregate:         true,
 		AggregationStatus: "RELEASE",
-		LogLimit: 100,
+		LogLimit:          100,
 	}
 	ic := new(IssuesConfiguration)
 	// Build config from file
@@ -133,24 +135,23 @@ func TestAddGitDoCollect(t *testing.T) {
 	originalFolder := "git_issues_.git_suffix"
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
 
-	// Create BuildAddGitConfiguration
-	config := BuildAddGitConfiguration{
-		IssuesConfig: &IssuesConfiguration{
-			LogLimit: 100,
-			Aggregate: false,
+	// Create BuildAddGitCommand
+	config := BuildAddGitCommand{
+		issuesConfig: &IssuesConfiguration{
+			LogLimit:          100,
+			Aggregate:         false,
 			SummaryGroupIndex: 2,
-			KeyGroupIndex: 1,
-			Regexp: `(.+-[0-9]+)\s-\s(.+)`,
-			TrackerName: "test",
+			KeyGroupIndex:     1,
+			Regexp:            `(.+-[0-9]+)\s-\s(.+)`,
+			TrackerName:       "test",
 		},
-		BuildNumber: "1",
-		BuildName: "cli-test-build-issues",
-		ConfigFilePath: "",
-		DotGitPath: dotGitPath,
+		buildConfiguration: &utils.BuildConfiguration{BuildNumber: "1", BuildName: "cli-test-build-issues"},
+		configFilePath:     "",
+		dotGitPath:         dotGitPath,
 	}
 
 	// Collect issues
-	issues, err := config.DoCollect(config.IssuesConfig, "")
+	issues, err := config.DoCollect(config.issuesConfig, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -170,7 +171,7 @@ func TestAddGitDoCollect(t *testing.T) {
 	baseDir, dotGitPath = tests.PrepareDotGitDir(t, originalFolder, filepath.Join("..", "testdata"))
 
 	// Collect issues - we pass a revision, so only 2 of the 4 existing issues should be collected
-	issues, err = config.DoCollect(config.IssuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
+	issues, err = config.DoCollect(config.issuesConfig, "6198a6294722fdc75a570aac505784d2ec0d1818")
 	if err != nil {
 		t.Error(err)
 	}
@@ -181,4 +182,72 @@ func TestAddGitDoCollect(t *testing.T) {
 
 	// Clean git path
 	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+}
+
+func TestRtDetailsFromConfigFile(t *testing.T) {
+	expectedUrl := "http://localhost:8081/artifactory/"
+	expectedUser := "admin"
+
+	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	if homeEnv == "" {
+		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
+	}
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+	baseDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	if err != nil {
+		t.Error(err)
+	}
+	configFilePath := filepath.Join("..", "testdata", "buildissues", "issuesconfig_success.yaml")
+	config := BuildAddGitCommand{
+		configFilePath: configFilePath,
+	}
+	details, err := config.RtDetails()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if details.Url != expectedUrl {
+		t.Error(fmt.Sprintf("Expected %s, got %s", expectedUrl, details.Url))
+	}
+	if details.User != expectedUser {
+		t.Error(fmt.Sprintf("Expected %s, got %s", details.User, expectedUser))
+	}
+}
+
+func TestRtDetailsWithoutConfigFile(t *testing.T) {
+	expectedUrl := "http://localhost:8082/artifactory/"
+	expectedUser := "admin2"
+
+	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	if homeEnv == "" {
+		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
+	}
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+
+	baseDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := BuildAddGitCommand{}
+	details, err := config.RtDetails()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if details.Url != expectedUrl {
+		t.Error(fmt.Sprintf("Expected %s, got %s", expectedUrl, details.Url))
+	}
+
+	if details.User != expectedUser {
+		t.Error(fmt.Sprintf("Expected %s, got %s", details.User, expectedUser))
+	}
 }

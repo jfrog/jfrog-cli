@@ -12,63 +12,74 @@ import (
 	"strings"
 )
 
-func Execute(args []string) error {
+type CurlCommand struct {
+	arguments      []string
+	executablePath string
+	rtDetails      *config.ArtifactoryDetails
+}
+
+func NewCurlCommand() *CurlCommand {
+	return &CurlCommand{}
+}
+
+func (curlCmd *CurlCommand) SetArguments(arguments []string) *CurlCommand {
+	curlCmd.arguments = arguments
+	return curlCmd
+}
+
+func (curlCmd *CurlCommand) SetExecutablePath(executablePath string) *CurlCommand {
+	curlCmd.executablePath = executablePath
+	return curlCmd
+}
+
+func (curlCmd *CurlCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CurlCommand {
+	curlCmd.rtDetails = rtDetails
+	return curlCmd
+}
+
+func (curlCmd *CurlCommand) Run() error {
 	// Get curl execution path.
 	execPath, err := exec.LookPath("curl")
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-
-	// Create curl command.
-	command := &CurlCommand{ExecutablePath: execPath, Arguments: args}
-
-	// Get server-id, remove from the command if exists.
-	serverIdValue, err := command.getAndRemoveServerIdFromCommand()
-	if err != nil {
-		return err
-	}
-
-	// Get Artifactory details for this ID.
-	artDetails, err := config.GetArtifactorySpecificConfig(serverIdValue)
-	if err != nil {
-		return err
-	}
+	curlCmd.SetExecutablePath(execPath)
 
 	// If the command already includes credentials flag, return an error.
-	if command.isCredentialsFlagExists() {
+	if curlCmd.isCredentialsFlagExists() {
 		return errorutils.CheckError(errors.New("Curl command must not include credentials flag (-u or --user)."))
 	}
 
 	// Get target url for the curl command.
-	uriIndex, targetUri, err := command.buildCommandUrl(artDetails.Url)
+	uriIndex, targetUri, err := curlCmd.buildCommandUrl(curlCmd.rtDetails.Url)
 	if err != nil {
 		return err
 	}
 
 	// Replace url argument with complete url.
-	command.Arguments[uriIndex] = targetUri
+	curlCmd.arguments[uriIndex] = targetUri
 
-	cmdWithoutCreds := strings.Join(command.Arguments, " ")
+	cmdWithoutCreds := strings.Join(curlCmd.arguments, " ")
 	// Add credentials to curl command.
-	credentialsMessage, err := command.addCommandCredentials(artDetails)
+	credentialsMessage, err := curlCmd.addCommandCredentials()
 
 	// Run curl.
 	log.Debug(fmt.Sprintf("Executing curl command: '%s %s'", cmdWithoutCreds, credentialsMessage))
-	return gofrogcmd.RunCmd(command)
+	return gofrogcmd.RunCmd(curlCmd)
 }
 
-func (curlCmd *CurlCommand) addCommandCredentials(artDetails *config.ArtifactoryDetails) (string, error) {
-	if artDetails.AccessToken != "" {
+func (curlCmd *CurlCommand) addCommandCredentials() (string, error) {
+	if curlCmd.rtDetails.AccessToken != "" {
 		// Add access token header.
-		tokenHeader := fmt.Sprintf("Authorization: Bearer %s", artDetails.AccessToken)
-		curlCmd.Arguments = append(curlCmd.Arguments, "-H", tokenHeader)
+		tokenHeader := fmt.Sprintf("Authorization: Bearer %s", curlCmd.rtDetails.AccessToken)
+		curlCmd.arguments = append(curlCmd.arguments, "-H", tokenHeader)
 		return "-H \"Authorization: Bearer ***\"", nil
 	}
 
 	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
-	credFlag := fmt.Sprintf("-u%s:%s", artDetails.User, artDetails.Password)
-	curlCmd.Arguments = append(curlCmd.Arguments, credFlag)
-	return "-u***:***" ,nil
+	credFlag := fmt.Sprintf("-u%s:%s", curlCmd.rtDetails.User, curlCmd.rtDetails.Password)
+	curlCmd.arguments = append(curlCmd.arguments, credFlag)
+	return "-u***:***", nil
 }
 
 func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int, uriValue string, err error) {
@@ -97,8 +108,17 @@ func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int
 	return
 }
 
+// Returns Artifactory details
+func (curlCmd *CurlCommand) GetArtifactoryDetails() (*config.ArtifactoryDetails, error) {
+	serverIdValue, err := curlCmd.GetAndRemoveServerIdFromCommand()
+	if err != nil {
+		return nil, err
+	}
+	return config.GetArtifactorySpecificConfig(serverIdValue)
+}
+
 // Get --server-id flag value from the command, and remove it.
-func (curlCmd *CurlCommand) getAndRemoveServerIdFromCommand() (string, error) {
+func (curlCmd *CurlCommand) GetAndRemoveServerIdFromCommand() (string, error) {
 	// Get server id.
 	serverIdFlagIndex, serverIdValueIndex, serverIdValue, err := curlCmd.findFlag("--server-id")
 	if err != nil {
@@ -107,7 +127,7 @@ func (curlCmd *CurlCommand) getAndRemoveServerIdFromCommand() (string, error) {
 
 	// Remove --server-id from Command if required.
 	if serverIdFlagIndex != -1 {
-		curlCmd.Arguments = append(curlCmd.Arguments[:serverIdFlagIndex], curlCmd.Arguments[serverIdValueIndex+1:]...)
+		curlCmd.arguments = append(curlCmd.arguments[:serverIdFlagIndex], curlCmd.arguments[serverIdValueIndex+1:]...)
 	}
 
 	return serverIdValue, nil
@@ -119,7 +139,7 @@ func (curlCmd *CurlCommand) getAndRemoveServerIdFromCommand() (string, error) {
 // An argument is any provided candidate which is not a flag or a flag value.
 func (curlCmd *CurlCommand) findUriValueAndIndex() (int, string) {
 	skipThisArg := false
-	for index, arg := range curlCmd.Arguments {
+	for index, arg := range curlCmd.arguments {
 		// Check if shouldn't check current arg.
 		if skipThisArg {
 			skipThisArg = false
@@ -153,8 +173,8 @@ func (curlCmd *CurlCommand) findUriValueAndIndex() (int, string) {
 
 // Return true if the curl command includes credentials flag.
 // The searched flags are not CLI flags.
-func (curlCmd *CurlCommand) isCredentialsFlagExists() (bool) {
-	for _, arg := range curlCmd.Arguments {
+func (curlCmd *CurlCommand) isCredentialsFlagExists() bool {
+	for _, arg := range curlCmd.arguments {
 		if strings.HasPrefix(arg, "-u") || arg == "--user" {
 			return true
 		}
@@ -173,7 +193,7 @@ func (curlCmd *CurlCommand) isCredentialsFlagExists() (bool) {
 func (curlCmd *CurlCommand) findFlag(flagName string) (flagIndex, flagValueIndex int, flagValue string, err error) {
 	flagIndex = -1
 	flagValueIndex = -1
-	for index, arg := range curlCmd.Arguments {
+	for index, arg := range curlCmd.arguments {
 		// Check current argument.
 		if !strings.HasPrefix(arg, flagName) {
 			continue
@@ -204,7 +224,7 @@ func (curlCmd *CurlCommand) findFlag(flagName string) (flagIndex, flagValueIndex
 // Return error if flag is found, but couldn't extract value.
 // If the provided index doesn't contain the searched flag, return flagIndex = -1.
 func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex int) (flagValue string, flagValueIndex int, err error) {
-	indexValue := curlCmd.Arguments[flagIndex]
+	indexValue := curlCmd.arguments[flagIndex]
 
 	// Check if flag is in form '--server-id=myServer'
 	indexValue = strings.TrimPrefix(indexValue, flagName)
@@ -221,12 +241,12 @@ func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex
 	}
 
 	// If reached here, expect the flag value in next argument.
-	if len(curlCmd.Arguments) < flagIndex+2 {
+	if len(curlCmd.arguments) < flagIndex+2 {
 		// Flag value does not exist.
 		return "", -1, errorutils.CheckError(errors.New(fmt.Sprintf("Failed extracting value of provided flag: %s.", flagName)))
 	}
 
-	nextIndexValue := curlCmd.Arguments[flagIndex+1]
+	nextIndexValue := curlCmd.arguments[flagIndex+1]
 	// Don't allow next value to be a flag.
 	if strings.HasPrefix(nextIndexValue, "-") {
 		// Flag value does not exist.
@@ -236,15 +256,10 @@ func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex
 	return nextIndexValue, flagIndex + 1, nil
 }
 
-type CurlCommand struct {
-	Arguments      []string
-	ExecutablePath string
-}
-
 func (curlCmd *CurlCommand) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, curlCmd.ExecutablePath)
-	cmd = append(cmd, curlCmd.Arguments...)
+	cmd = append(cmd, curlCmd.executablePath)
+	cmd = append(cmd, curlCmd.arguments...)
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 
@@ -258,4 +273,12 @@ func (curlCmd *CurlCommand) GetStdWriter() io.WriteCloser {
 
 func (curlCmd *CurlCommand) GetErrWriter() io.WriteCloser {
 	return nil
+}
+
+func (curlCmd *CurlCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return curlCmd.rtDetails, nil
+}
+
+func (curlCmd *CurlCommand) CommandName() string {
+	return "rt_curl"
 }

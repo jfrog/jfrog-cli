@@ -2,10 +2,8 @@
   "files": [
     {
       "pattern": "testsdata\\a\\*",
-      "recursive": "false"
-    },
-    {
-      "pattern": "testsdata\\a\\b\\*",
+      "target": "${REPO1}/compatibility_spec/",
+      "flat": "true",
       "recursive": "false"
     }
   ]

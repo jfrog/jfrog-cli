@@ -14,7 +14,7 @@ func TestPingSuccess(t *testing.T) {
 		fmt.Fprint(w, "OK")
 	}))
 	defer ts.Close()
-	responseBytes, err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
+	responseBytes, err := new(PingCommand).SetRtDetails(&config.ArtifactoryDetails{Url: ts.URL + "/"}).Ping()
 	if err != nil {
 		t.Log(fmt.Sprintf("Error received from Artifactory following ping request: %s", err))
 		t.Fail()
@@ -32,7 +32,7 @@ func TestPingFailed(t *testing.T) {
 		fmt.Fprint(w, `{"error":"error"}`)
 	}))
 	defer ts.Close()
-	_, err := Ping(&config.ArtifactoryDetails{Url: ts.URL + "/"})
+	_, err := new(PingCommand).SetRtDetails(&config.ArtifactoryDetails{Url: ts.URL + "/"}).Ping()
 	if err == nil {
 		t.Log("Expected error from artifactory")
 		t.Fail()

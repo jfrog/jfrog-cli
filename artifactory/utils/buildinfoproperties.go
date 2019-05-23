@@ -155,6 +155,21 @@ func ReadConfigFile(configPath string, configType ConfigType) (*viper.Viper, err
 	return config, nil
 }
 
+// Returns the Artifactory details
+// Checks first for the deployer information if exists and if not, checks for the resolver information.
+func GetRtDetails(vConfig *viper.Viper) (*config.ArtifactoryDetails, error) {
+	if vConfig.IsSet(DEPLOYER_PREFIX + SERVER_ID) {
+		serverId := vConfig.GetString(DEPLOYER_PREFIX + SERVER_ID)
+		return config.GetArtifactorySpecificConfig(serverId)
+	}
+
+	if vConfig.IsSet(RESOLVER_PREFIX + SERVER_ID) {
+		serverId := vConfig.GetString(RESOLVER_PREFIX + SERVER_ID)
+		return config.GetArtifactorySpecificConfig(serverId)
+	}
+	return nil, nil
+}
+
 func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.Viper, buildType BuildType) (string, error) {
 	if config.GetString("type") != buildType.String() {
 		return "", errorutils.CheckError(errors.New("Incompatible build config, expected: " + buildType.String() + " got: " + config.GetString("type")))
@@ -289,7 +304,7 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 		return err
 	}
 	// If this is a Windows machine there is a need to modify the path for the build info file to match Java syntax with double \\
-	path := ioutils.FixWinPath(tempFile.Name())
+	path := ioutils.DoubleWinPathSeparator(tempFile.Name())
 	config.Set(GENERATED_BUILD_INFO, path)
 	return nil
 }

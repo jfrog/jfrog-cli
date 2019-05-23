@@ -11,34 +11,73 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func XrayScan(buildName, buildNumber string, artDetails *config.ArtifactoryDetails, failBuild bool) (buildFailed bool, err error) {
+type BuildScanCommand struct {
+	buildConfiguration *utils.BuildConfiguration
+	failBuild          bool
+	rtDetails          *config.ArtifactoryDetails
+	buildFailed        bool
+}
+
+func NewBuildScanCommand() *BuildScanCommand {
+	return &BuildScanCommand{}
+}
+
+func (bsc *BuildScanCommand) BuildFailed() bool {
+	return bsc.buildFailed
+}
+
+func (bsc *BuildScanCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *BuildScanCommand {
+	bsc.rtDetails = rtDetails
+	return bsc
+}
+
+func (bsc *BuildScanCommand) SetFailBuild(failBuild bool) *BuildScanCommand {
+	bsc.failBuild = failBuild
+	return bsc
+}
+
+func (bsc *BuildScanCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *BuildScanCommand {
+	bsc.buildConfiguration = buildConfiguration
+	return bsc
+}
+
+func (bsc *BuildScanCommand) CommandName() string {
+	return "rt_build_scan"
+}
+
+func (bsc *BuildScanCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return bsc.rtDetails, nil
+}
+
+func (bsc *BuildScanCommand) Run() error {
 	log.Info("Triggered Xray build scan... The scan may take a few minutes.")
-	servicesManager, err := utils.CreateServiceManager(artDetails, false)
+	servicesManager, err := utils.CreateServiceManager(bsc.rtDetails, false)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	xrayScanParams := getXrayScanParams(buildName, buildNumber)
+	xrayScanParams := getXrayScanParams(bsc.buildConfiguration.BuildName, bsc.buildConfiguration.BuildNumber)
 	result, err := servicesManager.XrayScanBuild(xrayScanParams)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	var scanResults scanResult
 	err = json.Unmarshal(result, &scanResults)
 	if errorutils.CheckError(err) != nil {
-		return false, err
+		return err
 	}
 
 	log.Info("Xray scan completed.")
 	log.Output(clientutils.IndentJson(result))
 
 	// Check if should fail build
-	if failBuild && scanResults.Summary.FailBuild {
-		return true, errorutils.CheckError(errors.New(scanResults.Summary.Message))
+	if bsc.failBuild && scanResults.Summary.FailBuild {
+		bsc.buildFailed = true
+		return errorutils.CheckError(errors.New(scanResults.Summary.Message))
 	}
 
-	return false, err
+	return err
 }
 
 // To unmarshal xray scan summary result

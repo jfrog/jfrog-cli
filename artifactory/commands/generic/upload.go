@@ -9,19 +9,59 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"strconv"
 	"strings"
 )
 
+type UploadCommand struct {
+	GenericCommand
+	uploadConfiguration *utils.UploadConfiguration
+	buildConfiguration  *utils.BuildConfiguration
+	logFile             *os.File
+}
+
+func NewUploadCommand() *UploadCommand {
+	return &UploadCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (uc *UploadCommand) LogFile() *os.File {
+	return uc.logFile
+}
+
+func (uc *UploadCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *UploadCommand {
+	uc.buildConfiguration = buildConfiguration
+	return uc
+}
+
+func (uc *UploadCommand) UploadConfiguration() *utils.UploadConfiguration {
+	return uc.uploadConfiguration
+}
+
+func (uc *UploadCommand) SetUploadConfiguration(uploadConfiguration *utils.UploadConfiguration) *UploadCommand {
+	uc.uploadConfiguration = uploadConfiguration
+	return uc
+}
+
+func (uc *UploadCommand) CommandName() string {
+	return "rt_upload"
+}
+
+func (uc *UploadCommand) Run() error {
+	return uc.upload()
+}
+
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
-func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration) (successCount, failCount int, logFile *os.File, err error) {
+func (uc *UploadCommand) upload() error {
 	// Initialize Progress bar, set logger to a log file
-	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	var err error
+	var progressBar ioUtils.Progress
+	progressBar, uc.logFile, err = progressbar.InitProgressBarIfPossible()
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
 	if progressBar != nil {
 		defer progressBar.Quit()
@@ -30,33 +70,37 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration
 	// Create Service Manager:
 	certPath, err := utils.GetJfrogSecurityDir()
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
-	configuration.MinChecksumDeploySize, err = getMinChecksumDeploySize()
+	uc.uploadConfiguration.MinChecksumDeploySize, err = getMinChecksumDeploySize()
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
-	servicesManager, err := utils.CreateUploadServiceManager(configuration.ArtDetails, configuration, certPath, progressBar)
+	rtDetails, err := uc.RtDetails()
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	servicesManager, err := utils.CreateUploadServiceManager(rtDetails, uc.uploadConfiguration, certPath, uc.DryRun(), progressBar)
 	if err != nil {
-		return 0, 0, logFile, err
+		return err
 	}
 
 	// Build Info Collection:
-	isCollectBuildInfo := len(configuration.BuildName) > 0 && len(configuration.BuildNumber) > 0
-	if isCollectBuildInfo && !configuration.DryRun {
-		if err := utils.SaveBuildGeneralDetails(configuration.BuildName, configuration.BuildNumber); err != nil {
-			return 0, 0, logFile, err
+	isCollectBuildInfo := len(uc.buildConfiguration.BuildName) > 0 && len(uc.buildConfiguration.BuildNumber) > 0
+	if isCollectBuildInfo && !uc.DryRun() {
+		if err := utils.SaveBuildGeneralDetails(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber); err != nil {
+			return err
 		}
-		for i := 0; i < len(uploadSpec.Files); i++ {
-			addBuildProps(&uploadSpec.Get(i).Props, configuration.BuildName, configuration.BuildNumber)
+		for i := 0; i < len(uc.Spec().Files); i++ {
+			addBuildProps(&uc.Spec().Get(i).Props, uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber)
 		}
 	}
 
 	var errorOccurred = false
 	var uploadParamsArray []services.UploadParams
 	// Create UploadParams for all File-Spec groups.
-	for i := 0; i < len(uploadSpec.Files); i++ {
-		uploadParams, err := getUploadParams(uploadSpec.Get(i), configuration)
+	for i := 0; i < len(uc.Spec().Files); i++ {
+		uploadParams, err := getUploadParams(uc.Spec().Get(i), uc.uploadConfiguration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -71,24 +115,26 @@ func Upload(uploadSpec *spec.SpecFiles, configuration *utils.UploadConfiguration
 		errorOccurred = true
 		log.Error(err)
 	}
-
+	result := uc.Result()
+	result.SetSuccessCount(successCount)
+	result.SetFailCount(failCount)
 	if errorOccurred {
 		err = errors.New("Upload finished with errors, Please review the logs.")
-		return
+		return err
 	}
 	if failCount > 0 {
-		return
+		return err
 	}
 
 	// Build Info
-	if isCollectBuildInfo && !configuration.DryRun {
+	if isCollectBuildInfo && !uc.DryRun() {
 		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Artifacts = buildArtifacts
 		}
-		err = utils.SavePartialBuildInfo(configuration.BuildName, configuration.BuildNumber, populateFunc)
+		err = utils.SavePartialBuildInfo(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber, populateFunc)
 	}
-	return
+	return err
 }
 
 func convertFileInfoToBuildArtifacts(filesInfo []clientutils.FileInfo) []buildinfo.Artifact {
