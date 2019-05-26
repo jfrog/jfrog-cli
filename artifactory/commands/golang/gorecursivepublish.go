@@ -5,16 +5,17 @@ import (
 	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
 	gocmdutils "github.com/jfrog/gocmd/executers/utils"
+	"github.com/jfrog/gocmd/params"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -47,6 +48,13 @@ func (gpc *GoParamsCommand) SetTargetRepo(targetRepo string) *GoParamsCommand {
 func (gpc *GoParamsCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GoParamsCommand {
 	gpc.rtDetails = rtDetails
 	return gpc
+}
+
+func (gpc *GoParamsCommand) isRtDetailsEmpty() bool {
+	if gpc.rtDetails != nil && reflect.DeepEqual(config.ArtifactoryDetails{}, gpc.rtDetails) {
+		return false
+	}
+	return true
 }
 
 func (grp *GoRecursivePublishCommand) Run() error {
@@ -93,11 +101,16 @@ func (grp *GoRecursivePublishCommand) Run() error {
 			return err
 		}
 	}
-	err = gocmd.RecursivePublish(grp.TargetRepo(), goModEditMessage, serviceManager)
+
+	goInfo := &params.ResolverDeployer{}
+	deployerResolver := &params.Params{}
+	deployerResolver.SetServiceManager(serviceManager).SetRepo(grp.TargetRepo())
+	goInfo.SetDeployer(deployerResolver).SetResolver(deployerResolver)
+	err = gocmd.RecursivePublish(goModEditMessage, goInfo)
 	if errorutils.CheckError(err) != nil {
 		if !modFileExists {
 			log.Debug("Graph failed, preparing to run go mod tidy on the root project since got the following error:", err.Error())
-			err = gmi.prepareAndRunTidyOnFailedGraph(wd, grp.TargetRepo(), goModEditMessage, serviceManager)
+			err = gmi.prepareAndRunTidyOnFailedGraph(wd, goModEditMessage, goInfo)
 			if err != nil {
 				return gmi.revert(wd, err)
 			}
@@ -170,7 +183,7 @@ func (gmi *goModInfo) prepareModFile(wd, goModEditMessage string) error {
 	return nil
 }
 
-func (gmi *goModInfo) prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMessage string, serviceManager *artifactory.ArtifactoryServicesManager) error {
+func (gmi *goModInfo) prepareAndRunTidyOnFailedGraph(wd, goModEditMessage string, goInfo *params.ResolverDeployer) error {
 	// First revert the mod to an empty mod that includes only module name
 	lines := strings.Split(string(gmi.modFileContent), "\n")
 	emptyMod := strings.Join(lines[:3], "\n")
@@ -186,7 +199,7 @@ func (gmi *goModInfo) prepareAndRunTidyOnFailedGraph(wd, targetRepo, goModEditMe
 		return errorutils.CheckError(err)
 	}
 	// Perform collection again after tidy finished successfully.
-	err = gocmd.RecursivePublish(targetRepo, goModEditMessage, serviceManager)
+	err = gocmd.RecursivePublish(goModEditMessage, goInfo)
 	if errorutils.CheckError(err) != nil {
 		return gmi.revert(wd, err)
 	}

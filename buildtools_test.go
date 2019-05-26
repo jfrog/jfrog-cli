@@ -59,8 +59,11 @@ func CleanBuildToolsTests() {
 
 func createJfrogHomeConfig(t *testing.T) {
 	templateConfigPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "configtemplate", config.JfrogConfigFile)
-
-	err := os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(tests.Out, "jfroghome"))
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(wd, tests.Out, "jfroghome"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -237,7 +240,7 @@ func TestGoBuildInfo(t *testing.T) {
 	}
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	project1Path := createGoProject(t, "project1")
+	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
 	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
@@ -308,6 +311,64 @@ func TestGoBuildInfo(t *testing.T) {
 	cleanGoTest(gopath)
 }
 
+func TestGoWithConfig(t *testing.T) {
+	initGoTest(t)
+
+	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	// Populate cli config with 'default' server
+	createJfrogHomeConfig(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	project1Path := createGoProject(t, "project1", true)
+	testsdataTarget := filepath.Join(tests.Out, "testsdata")
+	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
+	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(project1Path)
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Chdir(wd)
+
+	log.Info("Using Go project located at ", project1Path)
+
+	buildName := "go-build"
+
+	// 1. Download dependencies.
+	// 2. Publish build-info.
+	// 3. Validate the total count of dependencies added to the build-info.
+	buildNumber := "1"
+	// Preparing config file.
+	configFileDir := filepath.Join(project1Path, ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), configFileDir)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err = artifactoryGoCli.Exec("go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoCache(t)
+
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 8, 0)
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanGoTest(gopath)
+}
+
 // Testing publishing and resolution capabilities for go projects.
 // Build first project using go without Artifactory ->
 // Publish dependencies to Artifactory ->
@@ -323,8 +384,8 @@ func TestGoPublishResolve(t *testing.T) {
 	}
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	project1Path := createGoProject(t, "project1")
-	project2Path := createGoProject(t, "project2")
+	project1Path := createGoProject(t, "project1", false)
+	project2Path := createGoProject(t, "project2", false)
 	err = os.Chdir(project1Path)
 	if err != nil {
 		t.Error(err)
@@ -368,7 +429,7 @@ func TestGoFallback(t *testing.T) {
 	}
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	projectBuild := createGoProject(t, "projectbuild")
+	projectBuild := createGoProject(t, "projectbuild", false)
 
 	err = os.Chdir(projectBuild)
 	if err != nil {
@@ -415,9 +476,9 @@ func TestGoRecursivePublish(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	project1Path := createGoProject(t, "dependency")
-	projectMissingDependency := createGoProject(t, "projectmissingdependency")
-	projectBuild := createGoProject(t, "projectbuild")
+	project1Path := createGoProject(t, "dependency", false)
+	projectMissingDependency := createGoProject(t, "projectmissingdependency", false)
+	projectBuild := createGoProject(t, "projectbuild", false)
 
 	uploadGoProject(project1Path, t)
 	uploadGoProject(projectMissingDependency, t)
@@ -496,7 +557,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	}
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	project1Path := createGoProject(t, "project1")
+	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
 	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
@@ -586,10 +647,10 @@ func cleanGoCache(t *testing.T) {
 	}
 }
 
-func createGoProject(t *testing.T, projectName string) string {
+func createGoProject(t *testing.T, projectName string, includeDirs bool) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
-	err := fileutils.CopyDir(projectSrc, projectTarget, false)
+	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs)
 	if err != nil {
 		t.Error(err)
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 )
@@ -22,6 +23,25 @@ func GetJfrogSecurityDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(homeDir, "security"), nil
+}
+
+func GetProjectDir(global bool) (string, error) {
+	configDir, err := getConfigDir(global)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return filepath.Join(configDir, "projects"), nil
+}
+
+func getConfigDir(global bool) (string, error) {
+	if !global {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(wd, ".jfrog"), nil
+	}
+	return config.GetJfrogHomeDir()
 }
 
 func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails, insecureTls bool) (string, error) {

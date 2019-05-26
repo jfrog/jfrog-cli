@@ -20,12 +20,14 @@ type BuildType int
 const (
 	MAVEN BuildType = iota
 	GRADLE
+	GO
 	HttpProxy = "HTTP_PROXY"
 )
 
 var BuildTypes = []string{
 	"maven",
 	"gradle",
+	"go",
 }
 
 func (buildType BuildType) String() string {

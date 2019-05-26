@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -110,27 +111,13 @@ func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int
 
 // Returns Artifactory details
 func (curlCmd *CurlCommand) GetArtifactoryDetails() (*config.ArtifactoryDetails, error) {
-	serverIdValue, err := curlCmd.GetAndRemoveServerIdFromCommand()
+	// Get --server-id flag value from the command, and remove it.
+	flagIndex, valueIndex, serverIdValue, err := utils.FindFlag("--server-id", curlCmd.arguments)
 	if err != nil {
 		return nil, err
 	}
+	utils.RemoveFlagFromCommand(&curlCmd.arguments, flagIndex, valueIndex)
 	return config.GetArtifactorySpecificConfig(serverIdValue)
-}
-
-// Get --server-id flag value from the command, and remove it.
-func (curlCmd *CurlCommand) GetAndRemoveServerIdFromCommand() (string, error) {
-	// Get server id.
-	serverIdFlagIndex, serverIdValueIndex, serverIdValue, err := curlCmd.findFlag("--server-id")
-	if err != nil {
-		return "", err
-	}
-
-	// Remove --server-id from Command if required.
-	if serverIdFlagIndex != -1 {
-		curlCmd.arguments = append(curlCmd.arguments[:serverIdFlagIndex], curlCmd.arguments[serverIdValueIndex+1:]...)
-	}
-
-	return serverIdValue, nil
 }
 
 // Find the URL argument in the Curl Command.
@@ -181,79 +168,6 @@ func (curlCmd *CurlCommand) isCredentialsFlagExists() bool {
 	}
 
 	return false
-}
-
-// Find value of required CLI flag in Command.
-// If flag does not exist, returned indexes are -1 and error is nil.
-// Return values:
-// err - error if flag exists but failed to extract its value.
-// flagIndex - index of flagName in Command.
-// flagValueIndex - index in Command in which the value of the flag exists.
-// flagValue - value of flagName.
-func (curlCmd *CurlCommand) findFlag(flagName string) (flagIndex, flagValueIndex int, flagValue string, err error) {
-	flagIndex = -1
-	flagValueIndex = -1
-	for index, arg := range curlCmd.arguments {
-		// Check current argument.
-		if !strings.HasPrefix(arg, flagName) {
-			continue
-		}
-
-		// Get flag value.
-		flagValue, flagValueIndex, err = curlCmd.getFlagValueAndValueIndex(flagName, index)
-		if err != nil {
-			return
-		}
-
-		// If was not the correct flag, continue looking.
-		if flagValueIndex == -1 {
-			continue
-		}
-
-		// Return value.
-		flagIndex = index
-		return
-	}
-
-	// Flag not found.
-	return
-}
-
-// Get the provided flag's value, and the index of the value.
-// Value-index can either be same as flag's index, or the next one.
-// Return error if flag is found, but couldn't extract value.
-// If the provided index doesn't contain the searched flag, return flagIndex = -1.
-func (curlCmd *CurlCommand) getFlagValueAndValueIndex(flagName string, flagIndex int) (flagValue string, flagValueIndex int, err error) {
-	indexValue := curlCmd.arguments[flagIndex]
-
-	// Check if flag is in form '--server-id=myServer'
-	indexValue = strings.TrimPrefix(indexValue, flagName)
-	if strings.HasPrefix(indexValue, "=") {
-		if len(indexValue) > 1 {
-			return indexValue[1:], flagIndex, nil
-		}
-		return "", -1, errorutils.CheckError(errors.New(fmt.Sprintf("Flag %s is provided with empty value.", flagName)))
-	}
-
-	// Check if it is a different flag with same prefix, e.g --server-id-another
-	if len(indexValue) > 0 {
-		return "", -1, nil
-	}
-
-	// If reached here, expect the flag value in next argument.
-	if len(curlCmd.arguments) < flagIndex+2 {
-		// Flag value does not exist.
-		return "", -1, errorutils.CheckError(errors.New(fmt.Sprintf("Failed extracting value of provided flag: %s.", flagName)))
-	}
-
-	nextIndexValue := curlCmd.arguments[flagIndex+1]
-	// Don't allow next value to be a flag.
-	if strings.HasPrefix(nextIndexValue, "-") {
-		// Flag value does not exist.
-		return "", -1, errorutils.CheckError(errors.New(fmt.Sprintf("Failed extracting value of provided flag: %s.", flagName)))
-	}
-
-	return nextIndexValue, flagIndex + 1, nil
 }
 
 func (curlCmd *CurlCommand) GetCmd() *exec.Cmd {

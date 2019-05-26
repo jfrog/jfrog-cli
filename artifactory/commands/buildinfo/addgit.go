@@ -67,9 +67,13 @@ func (config *BuildAddGitCommand) Run() error {
 
 	// Find .git folder if it wasn't provided in the command.
 	if config.dotGitPath == "" {
-		config.dotGitPath, err = fileutils.FindUpstream(".git", fileutils.Dir)
+		var exists bool
+		config.dotGitPath, exists, err = fileutils.FindUpstream(".git", fileutils.Dir)
 		if err != nil {
 			return err
+		}
+		if !exists {
+			return errorutils.CheckError(errors.New("Could not find .git"))
 		}
 	}
 
