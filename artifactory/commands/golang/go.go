@@ -2,22 +2,36 @@ package golang
 
 import (
 	"github.com/jfrog/gocmd"
+	"github.com/jfrog/gocmd/params"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 )
 
+const GoCommandName = "rt_go"
+
 type GoCommand struct {
 	noRegistry         bool
 	publishDeps        bool
 	goArg              []string
 	buildConfiguration *utils.BuildConfiguration
-	GoParamsCommand
+	deployerParams     *GoParamsCommand
+	resolverParams     *GoParamsCommand
 }
 
 func NewGoCommand() *GoCommand {
 	return &GoCommand{}
+}
+
+func (gc *GoCommand) SetResolverParams(resolverParams *GoParamsCommand) *GoCommand {
+	gc.resolverParams = resolverParams
+	return gc
+}
+
+func (gc *GoCommand) SetDeployerParams(deployerParams *GoParamsCommand) *GoCommand {
+	gc.deployerParams = deployerParams
+	return gc
 }
 
 func (gc *GoCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *GoCommand {
@@ -40,18 +54,15 @@ func (gc *GoCommand) SetGoArg(goArg []string) *GoCommand {
 	return gc
 }
 
-func (gc *GoCommand) SetTargetRepo(targetRepo string) *GoCommand {
-	gc.targetRepo = targetRepo
-	return gc
-}
-
-func (gc *GoCommand) SetArtifactoryDetails(details *config.ArtifactoryDetails) *GoCommand {
-	gc.rtDetails = details
-	return gc
+func (gc *GoCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	if gc.deployerParams != nil && !gc.deployerParams.isRtDetailsEmpty() {
+		return gc.deployerParams.RtDetails()
+	}
+	return gc.resolverParams.RtDetails()
 }
 
 func (gc *GoCommand) CommandName() string {
-	return "rt_go"
+	return GoCommandName
 }
 
 func (gc *GoCommand) Run() error {
@@ -74,12 +85,25 @@ func (gc *GoCommand) Run() error {
 		return err
 	}
 
-	serviceManager, err := utils.CreateServiceManager(gc.rtDetails, false)
+	resolverServiceManager, err := utils.CreateServiceManager(gc.resolverParams.rtDetails, false)
 	if err != nil {
 		return err
 	}
+	resolverParams := &params.Params{}
+	resolverParams.SetRepo(gc.resolverParams.TargetRepo()).SetServiceManager(resolverServiceManager)
+	goInfo := &params.ResolverDeployer{}
+	goInfo.SetResolver(resolverParams)
+	if gc.publishDeps {
+		deployerServiceManager, err := utils.CreateServiceManager(gc.deployerParams.rtDetails, false)
+		if err != nil {
+			return err
+		}
+		deployerParams := &params.Params{}
+		deployerParams.SetRepo(gc.deployerParams.TargetRepo()).SetServiceManager(deployerServiceManager)
+		goInfo.SetDeployer(deployerParams)
+	}
 
-	err = gocmd.RunWithFallbacksAndPublish(gc.goArg, gc.targetRepo, gc.noRegistry, gc.publishDeps, serviceManager)
+	err = gocmd.RunWithFallbacksAndPublish(gc.goArg, gc.noRegistry, gc.publishDeps, goInfo)
 	if err != nil {
 		return err
 	}

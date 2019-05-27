@@ -95,6 +95,33 @@ func ReadArtifactoryServer(msg string) (*viper.Viper, error) {
 	return server.GetResults(), nil
 }
 
+func ReadServerId() (*viper.Viper, error) {
+	serversId, defaultServer, err := getServersIdAndDefault()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(serversId) == 0 {
+		return nil, errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
+	}
+
+	server := &prompt.Autocomplete{
+		Msg:     "Set Artifactory server ID (press Tab for options) [${default}]: ",
+		Options: serversId,
+		Label:   utils.SERVER_ID,
+		ErrMsg:  "Server does not exist. Please set a valid server ID.",
+		Default: defaultServer,
+	}
+
+	err = server.Read()
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	vConfig := server.GetResults()
+	vConfig.Set(USE_ARTIFACTORY, "true")
+	return vConfig, nil
+}
+
 func ReadRepo(msg string, repos []string) (string, error) {
 	repo := &prompt.Autocomplete{
 		Msg:     msg,

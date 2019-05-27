@@ -36,6 +36,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/download"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gocommand"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/goconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gopublish"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gorecursivepublish"
 	gradledoc "github.com/jfrog/jfrog-cli-go/docs/artifactory/gradle"
@@ -60,8 +61,11 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -433,15 +437,26 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "go",
-			Flags:     getGoFlags(),
-			Aliases:   []string{"go"},
-			Usage:     gocommand.Description,
-			HelpName:  common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
-			UsageText: gocommand.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:            "go",
+			Flags:           getGoAndBuildToolFlags(),
+			Aliases:         []string{"go"},
+			Usage:           gocommand.Description,
+			HelpName:        common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
+			UsageText:       gocommand.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipGoFlagParsing(),
 			Action: func(c *cli.Context) error {
 				return goCmd(c)
+			},
+		},
+		{
+			Name:      "go-config",
+			Flags:     getGlobalConfigFlag(),
+			Usage:     goconfig.Description,
+			HelpName:  common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) error {
+				return createGoConfigCmd(c)
 			},
 		},
 		{
@@ -480,6 +495,15 @@ func GetCommands() []cli.Command {
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
 			},
+		},
+	}
+}
+
+func getGlobalConfigFlag() []cli.Flag {
+	return []cli.Flag{
+		cli.BoolFlag{
+			Name:  "global",
+			Usage: "[Default: false] Set to true, if you'd like to configuration to be global (for all projects). Specific projects can override the global configuration.` `",
 		},
 	}
 }
@@ -786,6 +810,11 @@ func getGoFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
+	return flags
+}
+
+func getGoAndBuildToolFlags() []cli.Flag {
+	flags := getGoFlags()
 	flags = append(flags, getBuildToolFlags()...)
 	return flags
 }
@@ -1235,6 +1264,21 @@ func validateServerId(serverId string) {
 	}
 }
 
+// Validates the go command. If a config file is found, the only flags that can be used are build-name and build-number. ]
+// Otherwise, throw an error.
+func validateGoNativeCommand(args []string) error {
+	goFlags := getGoFlags()
+	for _, arg := range args {
+		for _, flag := range goFlags {
+			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
+			if strings.Contains(arg, "--"+flag.GetName()) {
+				return errorutils.CheckError(fmt.Errorf("Flag --%s can't be used with config file", flag.GetName()))
+			}
+		}
+	}
+	return nil
+}
+
 func useCmd(c *cli.Context) {
 	var serverId string
 	if len(c.Args()) == 1 {
@@ -1420,7 +1464,43 @@ func goPublishCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 }
 
+func shouldSkipGoFlagParsing() bool {
+	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+
+	if !exists {
+		return false
+	}
+
+	configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
+	exists, err = fileutils.IsFileExists(configFilePath, false)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
 func goCmd(c *cli.Context) error {
+	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// Check for the Go yaml configuration file
+		// If exists, use the config.
+		// If not fall back.
+		configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
+		exists, err = fileutils.IsFileExists(configFilePath, false)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			return goNativeCmd(c, configFilePath)
+		}
+	}
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1437,15 +1517,36 @@ func goCmd(c *cli.Context) error {
 	}
 	targetRepo := c.Args().Get(1)
 	details := createArtifactoryDetailsByFlags(c, true)
+	publishDeps := c.Bool("publish-deps")
 	buildConfiguration := createBuildToolConfiguration(c)
-	goCmd := golang.NewGoCommand().SetArtifactoryDetails(details).SetTargetRepo(targetRepo).SetBuildConfiguration(buildConfiguration).
+	goParams := &golang.GoParamsCommand{}
+	goParams.SetTargetRepo(targetRepo).SetRtDetails(details)
+	goCmd := golang.NewGoCommand().SetBuildConfiguration(buildConfiguration).
 		SetGoArg(goArg).SetNoRegistry(c.Bool("no-registry")).
-		SetPublishDeps(c.Bool("publish-deps"))
+		SetPublishDeps(publishDeps).SetResolverParams(goParams)
+	if publishDeps {
+		goCmd.SetDeployerParams(goParams)
+	}
 	err = commands.Exec(goCmd)
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	return err
+}
+
+func goNativeCmd(c *cli.Context, configFilePath string) error {
+	// Found a config file. Continue as native command.
+	if c.NArg() < 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	args := extractCommand(c)
+	// Validate the command
+	if err := validateGoNativeCommand(args); err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	goNative := golang.NewGoNativeCommand()
+	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
+	return commands.Exec(goNative)
 }
 
 func goRecursivePublishCmd(c *cli.Context) {
@@ -1478,6 +1579,14 @@ func createMvnConfigCmd(c *cli.Context) {
 	}
 	err := mvn.CreateBuildConfig(c.Args().Get(0))
 	cliutils.ExitOnErr(err)
+}
+
+func createGoConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return golang.CreateBuildConfig(global)
 }
 
 func pingCmd(c *cli.Context) {
@@ -1778,7 +1887,7 @@ func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-	curlCommand := curl.NewCurlCommand().SetArguments(extractCurlCommand(c))
+	curlCommand := curl.NewCurlCommand().SetArguments(extractCommand(c))
 	rtDetails, err := curlCommand.GetArtifactoryDetails()
 	if err != nil {
 		return err
@@ -2356,7 +2465,7 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	return buildConfiguration
 }
 
-func extractCurlCommand(c *cli.Context) (command []string) {
+func extractCommand(c *cli.Context) (command []string) {
 	command = make([]string, len(c.Args()))
 	copy(command, c.Args())
 	return command
