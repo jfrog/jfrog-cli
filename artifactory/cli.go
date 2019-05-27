@@ -61,6 +61,7 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
@@ -502,7 +503,7 @@ func getGlobalConfigFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.BoolFlag{
 			Name:  "global",
-			Usage: "[Default: false] Saves the config file to JFROG_CLI_HOME_DIR.` `",
+			Usage: "[Default: false] Set to true, if you'd like to configuration to be global (for all projects). Specific projects can override the global configuration.` `",
 		},
 	}
 }
@@ -1263,17 +1264,19 @@ func validateServerId(serverId string) {
 	}
 }
 
-func validateGoNativeCommand(args []string) string {
+// Validates the go command. If a config file is found, the only flags that can be used are build-name and build-number. ]
+// Otherwise, throw an error.
+func validateGoNativeCommand(args []string) error {
 	goFlags := getGoFlags()
 	for _, arg := range args {
 		for _, flag := range goFlags {
 			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
 			if strings.Contains(arg, "--"+flag.GetName()) {
-				return "--" + flag.GetName()
+				return errorutils.CheckError(fmt.Errorf("Flag --%s can't be used with config file", flag.GetName()))
 			}
 		}
 	}
-	return ""
+	return nil
 }
 
 func useCmd(c *cli.Context) {
@@ -1538,8 +1541,8 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	}
 	args := extractCommand(c)
 	// Validate the command
-	if flagName := validateGoNativeCommand(args); flagName != "" {
-		cliutils.ExitOnErr(fmt.Errorf("Flag %s cann't be used with config file", flagName))
+	if err := validateGoNativeCommand(args); err != nil {
+		cliutils.ExitOnErr(err)
 	}
 	goNative := golang.NewGoNativeCommand()
 	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)

@@ -18,7 +18,7 @@ func RemoveFlagFromCommand(args *[]string, flagIndex, flagValueIndex int) {
 }
 
 // Find value of required CLI flag in Command.
-// If flag does not exist, returned indexes are -1 and error is nil.
+// If flag does not exist, the returned index is -1 and nil is returned as the error.
 // Return values:
 // err - error if flag exists but failed to extract its value.
 // flagIndex - index of flagName in Command.

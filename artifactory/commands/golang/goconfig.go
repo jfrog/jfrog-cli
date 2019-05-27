@@ -61,7 +61,7 @@ func CreateBuildConfig(global bool) error {
 			// If there are no available repos pass empty array.
 			availableRepos = []string{}
 		}
-		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependency deployment (press Tab for options): ", availableRepos)
+		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", availableRepos)
 		if err != nil {
 			return err
 		}

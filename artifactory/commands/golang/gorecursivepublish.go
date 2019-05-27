@@ -103,9 +103,9 @@ func (grp *GoRecursivePublishCommand) Run() error {
 	}
 
 	goInfo := &params.ResolverDeployer{}
-	deployerResolver := &params.Params{}
-	deployerResolver.SetServiceManager(serviceManager).SetRepo(grp.TargetRepo())
-	goInfo.SetDeployer(deployerResolver).SetResolver(deployerResolver)
+	resolverDeployer := &params.Params{}
+	resolverDeployer.SetServiceManager(serviceManager).SetRepo(grp.TargetRepo())
+	goInfo.SetDeployer(resolverDeployer).SetResolver(resolverDeployer)
 	err = gocmd.RecursivePublish(goModEditMessage, goInfo)
 	if errorutils.CheckError(err) != nil {
 		if !modFileExists {
