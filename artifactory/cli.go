@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
@@ -1486,10 +1485,16 @@ func shouldSkipGoFlagParsing() bool {
 	}
 
 	if !exists {
-		return false
+		// If missing in the root project, check in the home dir
+		jfrogRootDir, err = config.GetJfrogHomeDir()
+		if err != nil {
+			cliutils.ExitOnErr(err)
+		}
+	} else {
+		jfrogRootDir = filepath.Join(jfrogRootDir, ".jfrog")
 	}
 
-	configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
+	configFilePath := filepath.Join(jfrogRootDir, "projects", "go.yaml")
 	exists, err = fileutils.IsFileExists(configFilePath, false)
 	if err != nil {
 		cliutils.ExitOnErr(err)
@@ -1516,6 +1521,26 @@ func goCmd(c *cli.Context) error {
 			return goNativeCmd(c, configFilePath)
 		}
 	}
+	// If missing in the root project, check in the home dir
+	jfrogRootDir, err = config.GetJfrogHomeDir()
+	if err != nil {
+		return err
+	}
+	configFilePath := filepath.Join(jfrogRootDir, "projects", "go.yaml")
+	exists, err = fileutils.IsFileExists(configFilePath, false)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return goNativeCmd(c, configFilePath)
+	}
+
+	// If config file not found, use Go legacy command
+	return goLegacyCmd(c)
+}
+
+func goLegacyCmd(c *cli.Context) error {
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1525,7 +1550,6 @@ func goCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-
 	goArg, err := shellwords.Parse(c.Args().Get(0))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
