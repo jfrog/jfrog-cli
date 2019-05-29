@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
@@ -704,6 +705,13 @@ func getBuildToolFlags() []cli.Flag {
 	}
 }
 
+func getSkipLoginFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "skip-login",
+		Usage: "[Default: false] Set to true if you'd like the command to skip performing docker login.` `",
+	}
+}
+
 func getServerIdFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "server-id",
@@ -747,16 +755,20 @@ func getSpecFlags() []cli.Flag {
 
 func getDockerPushFlags() []cli.Flag {
 	var flags []cli.Flag
-	flags = append(flags, getBuildToolFlags()...)
-	flags = append(flags, getServerFlags()...)
+	flags = append(flags, getDockerFlags()...)
 	flags = append(flags, getThreadsFlag())
 	return flags
 }
 
 func getDockerPullFlags() []cli.Flag {
+	return getDockerFlags()
+}
+
+func getDockerFlags() []cli.Flag {
 	var flags []cli.Flag
 	flags = append(flags, getBuildToolFlags()...)
 	flags = append(flags, getServerFlags()...)
+	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
 
@@ -1368,10 +1380,12 @@ func dockerPushCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	imageTag := c.Args().Get(0)
 	targetRepo := c.Args().Get(1)
+	skipLogin := c.Bool("skip-login")
+
 	buildConfiguration := createBuildToolConfiguration(c)
 	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	dockerPushCommand := docker.NewDockerPushCommand()
-	dockerPushCommand.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetRtDetails(artDetails).SetImageTag(imageTag)
+	dockerPushCommand.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetImageTag(imageTag)
 	err := commands.Exec(dockerPushCommand)
 	cliutils.ExitOnErr(err)
 }
@@ -1383,10 +1397,11 @@ func dockerPullCmd(c *cli.Context) {
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
+	skipLogin := c.Bool("skip-login")
 	buildConfiguration := createBuildToolConfiguration(c)
 	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	dockerPullCommand := docker.NewDockerPullCommand()
-	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
+	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 	err := commands.Exec(dockerPullCommand)
 	cliutils.ExitOnErr(err)
 }

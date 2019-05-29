@@ -10,6 +10,7 @@ type DockerCommand struct {
 	repo               string
 	buildConfiguration *utils.BuildConfiguration
 	rtDetails          *config.ArtifactoryDetails
+	skipLogin          bool
 }
 
 func (dc *DockerCommand) ImageTag() string {
@@ -36,6 +37,11 @@ func (dc *DockerCommand) BuildConfiguration() *utils.BuildConfiguration {
 
 func (dc *DockerCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *DockerCommand {
 	dc.buildConfiguration = buildConfiguration
+	return dc
+}
+
+func (dc *DockerCommand) SetSkipLogin(skipLogin bool) *DockerCommand {
+	dc.skipLogin = skipLogin
 	return dc
 }
 
