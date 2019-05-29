@@ -19,22 +19,23 @@ func NewDockerPullCommand() *DockerPullCommand {
 // Pull docker image and create build info if needed
 func (dpc *DockerPullCommand) Run() error {
 	// Perform login
-	imageTag := dpc.ImageTag()
 	rtDetails, err := dpc.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
-	err = docker.DockerLogin(imageTag, loginConfig)
-	if err != nil {
-		return err
+	if !dpc.skipLogin {
+		loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
+		err = docker.DockerLogin(dpc.imageTag, loginConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Perform pull
-	if strings.LastIndex(imageTag, ":") == -1 {
-		imageTag = imageTag + ":latest"
+	if strings.LastIndex(dpc.imageTag, ":") == -1 {
+		dpc.imageTag = dpc.imageTag + ":latest"
 	}
-	image := docker.New(imageTag)
+	image := docker.New(dpc.imageTag)
 	err = image.Pull()
 	if err != nil {
 		return err
