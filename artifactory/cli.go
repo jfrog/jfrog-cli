@@ -1480,6 +1480,12 @@ func goPublishCmd(c *cli.Context) {
 }
 
 func shouldSkipGoFlagParsing() bool {
+	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// There's no need to run the code of this function, if the command is not "jfrog rt go".
+	if len(os.Args) < 3 || os.Args[2] != "go" {
+		return false
+	}
+
 	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
 	if err != nil {
 		cliutils.ExitOnErr(err)
