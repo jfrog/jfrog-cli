@@ -17,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	golangutils "github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -62,10 +63,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -1479,23 +1478,7 @@ func goPublishCmd(c *cli.Context) {
 }
 
 func shouldSkipGoFlagParsing() bool {
-	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
-	if err != nil {
-		cliutils.ExitOnErr(err)
-	}
-
-	if !exists {
-		// If missing in the root project, check in the home dir
-		jfrogRootDir, err = config.GetJfrogHomeDir()
-		if err != nil {
-			cliutils.ExitOnErr(err)
-		}
-	} else {
-		jfrogRootDir = filepath.Join(jfrogRootDir, ".jfrog")
-	}
-
-	configFilePath := filepath.Join(jfrogRootDir, "projects", "go.yaml")
-	exists, err = fileutils.IsFileExists(configFilePath, false)
+	_, exists, err := golangutils.IsGoConfigExists()
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -1503,39 +1486,16 @@ func shouldSkipGoFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
-	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
-	if err != nil {
-		return err
-	}
-	if exists {
-		// Check for the Go yaml configuration file
-		// If exists, use the config.
-		// If not fall back.
-		configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
-		exists, err = fileutils.IsFileExists(configFilePath, false)
-		if err != nil {
-			return err
-		}
-
-		if exists {
-			return goNativeCmd(c, configFilePath)
-		}
-	}
-	// If missing in the root project, check in the home dir
-	jfrogRootDir, err = config.GetJfrogHomeDir()
-	if err != nil {
-		return err
-	}
-	configFilePath := filepath.Join(jfrogRootDir, "projects", "go.yaml")
-	exists, err = fileutils.IsFileExists(configFilePath, false)
+	configFilePath, exists, err := golangutils.IsGoConfigExists()
 	if err != nil {
 		return err
 	}
 
 	if exists {
+		log.Debug("Go config file was found in:", configFilePath)
 		return goNativeCmd(c, configFilePath)
 	}
-
+	log.Debug("Go config file wasn't found.")
 	// If config file not found, use Go legacy command
 	return goLegacyCmd(c)
 }
