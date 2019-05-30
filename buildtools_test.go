@@ -354,7 +354,9 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	project1Path := createGoProject(t, "project1", false)
 	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
 	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(jfrogHomeDir, "projects"))
-
+	if err != nil {
+		t.Error(err)
+	}
 	runGo(t, wd, gopath, project1Path, false)
 }
 
