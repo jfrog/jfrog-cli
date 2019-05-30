@@ -325,9 +325,43 @@ func TestGoWithConfig(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1", true)
+	configFileDir := filepath.Join(project1Path, ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), configFileDir)
+	if err != nil {
+		t.Error(err)
+	}
+	runGo(t, wd, gopath, project1Path, true)
+}
+
+func TestGoWithGlobalConfig(t *testing.T) {
+	initGoTest(t)
+
+	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	// Populate cli config with 'default' server
+	createJfrogHomeConfig(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	project1Path := createGoProject(t, "project1", false)
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(jfrogHomeDir, "projects"))
+
+	runGo(t, wd, gopath, project1Path, false)
+}
+
+func runGo(t *testing.T, wd, gopath, project1Path string, copyDirs bool) {
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	err = fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs)
 	if err != nil {
 		t.Error(err)
 	}
@@ -335,30 +369,19 @@ func TestGoWithConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.Chdir(wd)
-
 	log.Info("Using Go project located at ", project1Path)
-
 	buildName := "go-build"
-
 	// 1. Download dependencies.
 	// 2. Publish build-info.
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
 	// Preparing config file.
-	configFileDir := filepath.Join(project1Path, ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), configFileDir)
-	if err != nil {
-		t.Error(err)
-	}
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err = artifactoryGoCli.Exec("go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
-
 	if err != nil {
 		t.Error(err)
 	}
 	cleanGoCache(t)
-
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 8, 0)
@@ -366,6 +389,7 @@ func TestGoWithConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	cleanGoTest(gopath)
 }
 
