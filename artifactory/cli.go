@@ -65,6 +65,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
+	"os"
 	"strconv"
 	"strings"
 )
