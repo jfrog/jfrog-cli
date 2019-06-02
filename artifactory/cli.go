@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
@@ -18,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	golangutils "github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -63,10 +63,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
-	"path/filepath"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -1486,17 +1485,7 @@ func shouldSkipGoFlagParsing() bool {
 		return false
 	}
 
-	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
-	if err != nil {
-		cliutils.ExitOnErr(err)
-	}
-
-	if !exists {
-		return false
-	}
-
-	configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
-	exists, err = fileutils.IsFileExists(configFilePath, false)
+	_, exists, err := golangutils.IsGoConfigExists()
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -1504,24 +1493,21 @@ func shouldSkipGoFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
-	jfrogRootDir, exists, err := fileutils.FindUpstream(".jfrog", fileutils.Dir)
+	configFilePath, exists, err := golangutils.IsGoConfigExists()
 	if err != nil {
 		return err
 	}
-	if exists {
-		// Check for the Go yaml configuration file
-		// If exists, use the config.
-		// If not fall back.
-		configFilePath := filepath.Join(jfrogRootDir, ".jfrog", "projects", "go.yaml")
-		exists, err = fileutils.IsFileExists(configFilePath, false)
-		if err != nil {
-			return err
-		}
 
-		if exists {
-			return goNativeCmd(c, configFilePath)
-		}
+	if exists {
+		log.Debug("Go config file was found in:", configFilePath)
+		return goNativeCmd(c, configFilePath)
 	}
+	log.Debug("Go config file wasn't found.")
+	// If config file not found, use Go legacy command
+	return goLegacyCmd(c)
+}
+
+func goLegacyCmd(c *cli.Context) error {
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -1531,7 +1517,6 @@ func goCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
-
 	goArg, err := shellwords.Parse(c.Args().Get(0))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
