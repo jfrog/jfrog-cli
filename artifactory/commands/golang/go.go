@@ -132,7 +132,6 @@ func (gc *GoCommand) Run() error {
 
 // Returns true/false if info files should be included in the build info.
 func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServicesManager, resolverServiceManager *artifactory.ArtifactoryServicesManager) (bool, error) {
-	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
 	var artifactoryVersion string
 	var err error
 	if deployerServiceManager != nil {
@@ -143,6 +142,7 @@ func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServi
 	if err != nil {
 		return false, err
 	}
-	includeInfoFiles := version.AtLeast(artifactoryVersion)
+	version := version.NewVersion(artifactoryVersion)
+	includeInfoFiles := version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile)
 	return includeInfoFiles, nil
 }
