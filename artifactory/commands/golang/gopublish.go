@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 	"os/exec"
@@ -75,8 +76,8 @@ func (gpc *GoPublishCommand) Run() error {
 		return err
 	}
 
-	version := version.NewVersion(minSupportedArtifactoryVersion)
-	if !version.AtLeast(artifactoryVersion) {
+	version := version.NewVersion(artifactoryVersion)
+	if !version.AtLeast(minSupportedArtifactoryVersion) {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version 6.2.0 or higher."))
 	}
 
@@ -127,6 +128,10 @@ func (gpc *GoPublishCommand) Run() error {
 		if len(goProject.Dependencies()) == 0 {
 			// No dependencies were published but those dependencies need to be loaded for the build info.
 			goProject.LoadDependencies()
+		}
+		err = goProject.CreateBuildInfoDependencies(version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile))
+		if err != nil {
+			return err
 		}
 		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true))
 	}

@@ -138,8 +138,8 @@ func (nic *NpmInstallCommand) prepareArtifactoryPrerequisites(repo string) (err 
 	}
 
 	nic.npmAuth = npmAuth
-	version := version.NewVersion(minSupportedArtifactoryVersion)
-	if !version.AtLeast(artifactoryVersion) {
+	version := version.NewVersion(artifactoryVersion)
+	if !version.AtLeast(minSupportedArtifactoryVersion) {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 
@@ -327,8 +327,8 @@ func (nic *NpmInstallCommand) validateNpmVersion() error {
 	if err != nil {
 		return err
 	}
-	version := version.NewVersion(minSupportedNpmVersion)
-	if version.Compare(string(npmVersion)) < 0 {
+	version := version.NewVersion(string(npmVersion))
+	if version.Compare(minSupportedNpmVersion) > 0 {
 		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil

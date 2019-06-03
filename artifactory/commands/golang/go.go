@@ -7,6 +7,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 )
 
 const GoCommandName = "rt_go"
@@ -93,8 +96,9 @@ func (gc *GoCommand) Run() error {
 	resolverParams.SetRepo(gc.resolverParams.TargetRepo()).SetServiceManager(resolverServiceManager)
 	goInfo := &params.ResolverDeployer{}
 	goInfo.SetResolver(resolverParams)
+	var deployerServiceManager *artifactory.ArtifactoryServicesManager
 	if gc.publishDeps {
-		deployerServiceManager, err := utils.CreateServiceManager(gc.deployerParams.rtDetails, false)
+		deployerServiceManager, err = utils.CreateServiceManager(gc.deployerParams.rtDetails, false)
 		if err != nil {
 			return err
 		}
@@ -108,7 +112,15 @@ func (gc *GoCommand) Run() error {
 		return err
 	}
 	if isCollectBuildInfo {
+		includeInfoFiles, err := shouldIncludeInfoFiles(deployerServiceManager, resolverServiceManager)
+		if err != nil {
+			return err
+		}
 		err = goProject.LoadDependencies()
+		if err != nil {
+			return err
+		}
+		err = goProject.CreateBuildInfoDependencies(includeInfoFiles)
 		if err != nil {
 			return err
 		}
@@ -116,4 +128,21 @@ func (gc *GoCommand) Run() error {
 	}
 
 	return err
+}
+
+// Returns true/false if info files should be included in the build info.
+func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServicesManager, resolverServiceManager *artifactory.ArtifactoryServicesManager) (bool, error) {
+	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
+	var artifactoryVersion string
+	var err error
+	if deployerServiceManager != nil {
+		artifactoryVersion, err = deployerServiceManager.GetConfig().GetArtDetails().GetVersion()
+	} else {
+		artifactoryVersion, err = resolverServiceManager.GetConfig().GetArtDetails().GetVersion()
+	}
+	if err != nil {
+		return false, err
+	}
+	includeInfoFiles := version.AtLeast(artifactoryVersion)
+	return includeInfoFiles, nil
 }
