@@ -2,10 +2,11 @@ package project
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
-	executersutils"github.com/jfrog/gocmd/executers/utils"
+	executersutils "github.com/jfrog/gocmd/executers/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -15,16 +16,19 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Represent go project
 type Go interface {
 	Dependencies() []executers.Package
+	CreateBuildInfoDependencies(includeInfoFiles bool) error
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
@@ -50,6 +54,18 @@ func Load(version string) (Go, error) {
 // Get the go project dependencies.
 func (project *goProject) Dependencies() []executers.Package {
 	return project.dependencies
+}
+
+// Get the go project dependencies.
+func (project *goProject) CreateBuildInfoDependencies(includeInfoFiles bool) error {
+	for i, dep := range project.dependencies {
+		err := dep.CreateBuildInfoDependencies(includeInfoFiles)
+		if err != nil {
+			return err
+		}
+		project.dependencies[i] = dep
+	}
+	return nil
 }
 
 // Get the project dependencies.
@@ -102,8 +118,55 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 	if err != nil {
 		return err
 	}
+	// Create the info file if Artifactory version is 6.10.0 and above.
+	artifactoryVersion, err := servicesManager.GetConfig().GetArtDetails().GetVersion()
+	if err != nil {
+		return err
+	}
+	version := version.NewVersion(artifactoryVersion)
+	if version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile) {
+		pathToInfo, err := project.createInfoFile()
+		if err != nil {
+			return err
+		}
+		defer os.Remove(pathToInfo)
+		if len(buildName) > 0 && len(buildNumber) > 0 {
+			err = project.addInfoFileToBuildInfo(pathToInfo)
+			if err != nil {
+				return err
+			}
+		}
+		params.InfoPath = pathToInfo
+	}
 
 	return servicesManager.PublishGoProject(params)
+}
+
+// Creates the info file.
+// Returns the path to that file.
+func (project *goProject) createInfoFile() (string, error) {
+	log.Debug("Creating info file", project.projectPath)
+	currentTime := time.Now().Format("2006-01-02T15:04:05Z")
+	goInfoContent := goInfo{Version: project.version, Time: currentTime}
+	content, err := json.Marshal(&goInfoContent)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	file, err := os.Create(project.version + ".info")
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	defer file.Close()
+	_, err = file.Write(content)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	path, err := filepath.Abs(file.Name())
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	log.Debug("Info file was successfully created:", path)
+	return path, nil
 }
 
 func (project *goProject) PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
@@ -226,6 +289,19 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 	return tempFile.Name(), nil
 }
 
+// Add the info file also as an artifact to be part of the build info.
+func (project *goProject) addInfoFileToBuildInfo(infoFilePath string) error {
+	fileDetails, err := fileutils.GetFileDetails(infoFilePath)
+	if err != nil {
+		return err
+	}
+
+	artifact := buildinfo.Artifact{Name: project.version + ".info"}
+	artifact.Checksum = &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}
+	project.artifacts = append(project.artifacts, artifact)
+	return nil
+}
+
 // Parse module name from go.mod content.
 func parseModuleName(modContent string) (string, error) {
 	r, err := regexp.Compile(`module "?([\w\.@:%_\+-.~#?&]+/?.+\w)`)
@@ -254,4 +330,9 @@ func getPathExclusionRegExp() (*regexp.Regexp, error) {
 	}
 
 	return excludePathsRegExp, nil
+}
+
+type goInfo struct {
+	Version string `json:"Version"`
+	Time    string `json:"Time"`
 }

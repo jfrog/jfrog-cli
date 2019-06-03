@@ -17,9 +17,11 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io"
 	"io/ioutil"
 	"os"
@@ -267,7 +269,20 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 8, 0)
+	artifactoryVersion, err := artAuth.GetVersion()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
+	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
+	expectedDependencies := 8
+	expectedArtifacts := 2
+	if version.AtLeast(artifactoryVersion) {
+		expectedDependencies = 12
+		expectedArtifacts = 3
+	}
+	validateBuildInfo(buildInfo, t, expectedDependencies, 0)
 
 	// Now, using a new build number, do the following:
 	// 1. Build the project again.
@@ -284,7 +299,7 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 8, 2)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
 
 	err = os.Chdir(filepath.Join(wd, "testsdata", "go"))
 	if err != nil {
@@ -299,7 +314,6 @@ func TestGoBuildInfo(t *testing.T) {
 		"build.name":   buildName,
 		"build.number": buildNumber,
 		"go.version":   "v1.0.0",
-		"go.name":      "github.com/jfrog/dependency",
 	}
 	validateArtifactsProperties(resultItems, t, propsMap)
 
@@ -386,7 +400,20 @@ func runGo(t *testing.T, wd, gopath, project1Path string, copyDirs bool) {
 	cleanGoCache(t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 8, 0)
+
+	artifactoryVersion, err := artAuth.GetVersion()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
+	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
+	if version.AtLeast(artifactoryVersion) {
+		validateBuildInfo(buildInfo, t, 12, 0)
+	} else {
+		validateBuildInfo(buildInfo, t, 8, 0)
+	}
+
 	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)
