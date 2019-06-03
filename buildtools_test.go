@@ -275,10 +275,10 @@ func TestGoBuildInfo(t *testing.T) {
 	}
 
 	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
-	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
+	version := version.NewVersion(artifactoryVersion)
 	expectedDependencies := 8
 	expectedArtifacts := 2
-	if version.AtLeast(artifactoryVersion) {
+	if version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile) {
 		expectedDependencies = 12
 		expectedArtifacts = 3
 	}
@@ -407,8 +407,8 @@ func runGo(t *testing.T, wd, gopath, project1Path string, copyDirs bool) {
 	}
 
 	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
-	version := version.NewVersion(_go.ArtifactoryMinSupportedVersionForInfoFile)
-	if version.AtLeast(artifactoryVersion) {
+	version := version.NewVersion(artifactoryVersion)
+	if version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile) {
 		validateBuildInfo(buildInfo, t, 12, 0)
 	} else {
 		validateBuildInfo(buildInfo, t, 8, 0)
