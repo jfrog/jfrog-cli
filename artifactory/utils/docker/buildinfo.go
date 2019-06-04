@@ -24,7 +24,7 @@ const ImageNotFoundErrorMessage string = "Could not find docker image in Artifac
 
 // Docker image build info builder
 type Builder interface {
-	Build() (*buildinfo.BuildInfo, error)
+	Build(module string) (*buildinfo.BuildInfo, error)
 }
 
 // Create instance of docker build info builder
@@ -55,7 +55,7 @@ type buildInfoBuilder struct {
 }
 
 // Create build info for docker image
-func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
+func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, error) {
 	var err error
 	builder.imageId, err = builder.image.Id()
 	if err != nil {
@@ -75,7 +75,7 @@ func (builder *buildInfoBuilder) Build() (*buildinfo.BuildInfo, error) {
 		}
 	}
 
-	return builder.createBuildInfo()
+	return builder.createBuildInfo(module)
 }
 
 // Search, validate and create artifacts and dependencies of docker image.
@@ -210,7 +210,7 @@ func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 }
 
 // Create docker build info
-func (builder *buildInfoBuilder) createBuildInfo() (*buildinfo.BuildInfo, error) {
+func (builder *buildInfoBuilder) createBuildInfo(module string) (*buildinfo.BuildInfo, error) {
 	imageProperties := map[string]string{}
 	imageProperties["docker.image.id"] = builder.imageId
 	imageProperties["docker.image.tag"] = builder.image.Tag()
@@ -223,8 +223,11 @@ func (builder *buildInfoBuilder) createBuildInfo() (*buildinfo.BuildInfo, error)
 		imageProperties["docker.image.parent"] = parentId
 	}
 
+	if module == "" {
+		module = builder.image.Name()
+	}
 	buildInfo := &buildinfo.BuildInfo{Modules: []buildinfo.Module{{
-		Id:           builder.image.Name(),
+		Id:           module,
 		Properties:   imageProperties,
 		Artifacts:    builder.artifacts,
 		Dependencies: builder.dependencies,

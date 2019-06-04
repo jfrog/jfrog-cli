@@ -133,7 +133,7 @@ func (gpc *GoPublishCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true))
+		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true, gpc.buildConfiguration.Module))
 	}
 
 	return err

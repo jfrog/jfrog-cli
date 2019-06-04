@@ -16,9 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
-	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
@@ -268,6 +266,7 @@ func TestGoBuildInfo(t *testing.T) {
 	cleanGoCache(t)
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
+	module := "github.com/jfrog/dependency"
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	artifactoryVersion, err := artAuth.GetVersion()
 	if err != nil {
@@ -282,7 +281,7 @@ func TestGoBuildInfo(t *testing.T) {
 		expectedDependencies = 12
 		expectedArtifacts = 3
 	}
-	validateBuildInfo(buildInfo, t, expectedDependencies, 0)
+	validateBuildInfo(buildInfo, t, expectedDependencies, 0, module)
 
 	// Now, using a new build number, do the following:
 	// 1. Build the project again.
@@ -291,15 +290,15 @@ func TestGoBuildInfo(t *testing.T) {
 	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
 	buildNumber = "2"
 
-	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("go", "build", tests.GoLocalRepo, "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 	cleanGoCache(t)
 
-	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2")
+	artifactoryCli.Exec("gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+buildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2", "--module="+ModuleNameJFrogTest)
 	cleanGoCache(t)
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
 
 	err = os.Chdir(filepath.Join(wd, "testsdata", "go"))
 	if err != nil {
@@ -325,82 +324,97 @@ func TestGoBuildInfo(t *testing.T) {
 	cleanGoTest(gopath)
 }
 
-func TestGoWithConfig(t *testing.T) {
+func TestGoConfigWithModuleNameChange(t *testing.T) {
 	initGoTest(t)
-
-	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	buildName := "go-build"
+	buildNumber := "1"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
 	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
-	// Populate cli config with 'default' server
-	createJfrogHomeConfig(t)
+	defer os.RemoveAll(newHomeDir)
+
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	project1Path := createGoProject(t, "project1", true)
-	configFileDir := filepath.Join(project1Path, ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), configFileDir)
+
+	prepareProject("", t, true)
+	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+
+	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)
 	}
-	runGo(t, wd, gopath, project1Path, true)
+
+	cleanGoTest(gopath)
+}
+
+func TestGoConfigWithoutModuleChange(t *testing.T) {
+	initGoTest(t)
+	buildName := "go-build"
+	buildNumber := "1"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.RemoveAll(newHomeDir)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+
+	prepareProject("", t, true)
+	runGo("", buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
+
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	cleanGoTest(gopath)
 }
 
 func TestGoWithGlobalConfig(t *testing.T) {
 	initGoTest(t)
+	buildName := "go-build"
+	buildNumber := "1"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
 
-	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
 	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
-	// Populate cli config with 'default' server
-	createJfrogHomeConfig(t)
+	defer os.RemoveAll(newHomeDir)
+
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
-
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
-	jfrogHomeDir, err := config.GetJfrogHomeDir()
+
+	prepareProject(newHomeDir, t, false)
+	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+
+	err = os.Chdir(wd)
 	if err != nil {
 		t.Error(err)
 	}
-	project1Path := createGoProject(t, "project1", false)
-	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
-	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(jfrogHomeDir, "projects"))
-	if err != nil {
-		t.Error(err)
-	}
-	runGo(t, wd, gopath, project1Path, false)
+
+	cleanGoTest(gopath)
 }
 
-func runGo(t *testing.T, wd, gopath, project1Path string, copyDirs bool) {
-	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs)
-	if err != nil {
-		t.Error(err)
-	}
-	err = os.Chdir(project1Path)
-	if err != nil {
-		t.Error(err)
-	}
-	log.Info("Using Go project located at ", project1Path)
-	buildName := "go-build"
-	// 1. Download dependencies.
-	// 2. Publish build-info.
-	// 3. Validate the total count of dependencies added to the build-info.
-	buildNumber := "1"
-	// Preparing config file.
+func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) {
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err = artifactoryGoCli.Exec("go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
+	err := artifactoryGoCli.Exec(args...)
 	if err != nil {
 		t.Error(err)
 	}
 	cleanGoCache(t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-
+	if module == "" {
+		module = "github.com/jfrog/dependency"
+	}
 	artifactoryVersion, err := artAuth.GetVersion()
 	if err != nil {
 		t.Error(err)
@@ -409,17 +423,46 @@ func runGo(t *testing.T, wd, gopath, project1Path string, copyDirs bool) {
 	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
 	version := version.NewVersion(artifactoryVersion)
 	if version.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile) {
-		validateBuildInfo(buildInfo, t, 12, 0)
+		validateBuildInfo(buildInfo, t, 12, 0, module)
 	} else {
-		validateBuildInfo(buildInfo, t, 8, 0)
+		validateBuildInfo(buildInfo, t, 8, 0, module)
 	}
 
-	err = os.Chdir(wd)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+}
+
+func prepareProject(configDestDir string, t *testing.T, copyDirs bool) {
+	project1Path := createGoProject(t, "project1", copyDirs)
+	testsdataTarget := filepath.Join(tests.Out, "testsdata")
+	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs)
 	if err != nil {
 		t.Error(err)
 	}
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	cleanGoTest(gopath)
+	if configDestDir == "" {
+		configDestDir = filepath.Join(project1Path, ".jfrog")
+	}
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
+	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(project1Path)
+	if err != nil {
+		t.Error(err)
+	}
+	log.Info("Using Go project located at ", project1Path)
+}
+
+func prepareHomeDir(t *testing.T) (string, string) {
+	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	// Populate cli config with 'default' server
+	createJfrogHomeConfig(t)
+	newHomeDir, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	return oldHomeDir, newHomeDir
 }
 
 // Testing publishing and resolution capabilities for go projects.
@@ -718,28 +761,39 @@ func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerPushTest(DockerTestImage, t)
+	runDockerPushTest(DockerTestImage, DockerTestImage+":1", false, t)
+}
+
+func TestDockerPushWithModuleName(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+	runDockerPushTest(DockerTestImage, ModuleNameJFrogTest, true, t)
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	runDockerPushTest(DockerTestImage+"/multiple", t)
+	runDockerPushTest(DockerTestImage+"/multiple", "multiple:1", false, t)
 }
 
 // Run docker push to Artifactory
-func runDockerPushTest(imageName string, t *testing.T) {
+func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) {
 	imageTag := buildTestDockerImage(imageName)
 	buildName := "docker-build"
 	buildNumber := "1"
 
 	// Push docker image using docker client
-	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	if withModule {
+		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber, "--module="+module)
+	} else {
+		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	}
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
-	validateDockerBuild(buildName, buildNumber, imagePath, 7, 5, 7, t)
+	validateDockerBuild(buildName, buildNumber, imagePath, module, 7, 5, 7, t)
 
 	dockerTestCleanup(imageName, buildName)
 }
@@ -763,7 +817,12 @@ func TestDockerPull(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
-	validateDockerBuild(buildName, buildNumber, imagePath, 0, 7, 7, t)
+	validateDockerBuild(buildName, buildNumber, imagePath, imageName+":1", 0, 7, 7, t)
+
+	buildNumber = "2"
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+	validateDockerBuild(buildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
 	dockerTestCleanup(imageName, buildName)
 }
@@ -776,7 +835,7 @@ func buildTestDockerImage(imageName string) string {
 	return imageTag
 }
 
-func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
+func validateDockerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
@@ -790,7 +849,7 @@ func validateDockerBuild(buildName, buildNumber, imagePath string, expectedArtif
 	}
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 }
 
 func dockerTestCleanup(imageName, buildName string) {
@@ -802,9 +861,12 @@ func dockerTestCleanup(imageName, buildName string) {
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
-func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int) {
+func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string) {
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		t.Error("build info was not generated correctly, no modules were created.")
+	}
+	if buildInfo.Modules[0].Id != moduleName {
+		t.Error(fmt.Errorf("Expected module name %s, got %s", moduleName, buildInfo.Modules[0].Id))
 	}
 	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
 		t.Error("Incorrect number of dependencies found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
@@ -814,90 +876,23 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 	}
 }
 
-// This function counts the following:
-// #1 The number of artifacts in the build-info JSON.
-// #2 The number of artifact with the build.name and build.number properties.
-// Validates that #1 == #2
-func validateBuildInfoProperties(buildInfo buildinfo.BuildInfo, t *testing.T) {
-	searchGoSpecFile, err := tests.CreateSpec(tests.SearchGo)
-	if err != nil {
-		t.Error(err)
-	}
-	spec, flags := getSpecAndCommonFlags(searchGoSpecFile)
-	flags.SetArtifactoryDetails(artAuth)
-	var resultItems []rtutils.ResultItem
-	for i := 0; i < len(spec.Files); i++ {
-		searchParams, err := generic.GetSearchParams(spec.Get(i))
-		if err != nil {
-			t.Error(err)
-		}
-
-		currentResultItems, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
-		if err != nil {
-			t.Error("Failed Searching files:", err)
-		}
-		resultItems = append(resultItems, currentResultItems...)
-	}
-
-	if len(buildInfo.Modules[0].Artifacts) != len(resultItems) {
-		t.Error("Incorrect number of artifacts were uploaded, expected:", len(buildInfo.Modules[0].Artifacts), " Found:", len(resultItems))
-	}
-
-	for _, item := range resultItems {
-		properties := item.Properties
-		if len(properties) < 1 {
-			t.Error("Failed setting properties on item:", item.GetItemRelativePath())
-		}
-		propertiesMap := tests.ConvertSliceToMap(properties)
-		value, contains := propertiesMap["build.name"]
-
-		if !contains {
-			t.Error("Failed setting up build.name property on", item.Name)
-		}
-		if value != buildInfo.Name {
-			t.Error("Wrong value for build.name property on", item.Name, "expected", buildInfo.Name, "got", value)
-		}
-
-		value, contains = propertiesMap["build.number"]
-		if !contains {
-			t.Error("Failed setting up build.number property on", item.Name)
-		}
-		if value != buildInfo.Number {
-			t.Error("Wrong value for build.number property on", item.Name, "expected", buildInfo.Number, "got", value)
-		}
-
-		value, contains = propertiesMap["go.name"]
-		if !contains {
-			t.Error("The go.name property is missing on", item.Name)
-		}
-
-		if value == "" {
-			t.Error("The go.name value is empty for", item.Name)
-		}
-
-		value, contains = propertiesMap["go.version"]
-		if !contains {
-			t.Error("The go.version property is missing on", item.Name)
-		}
-
-		if value == "" {
-			t.Error("The go.version value is empty for", item.Name)
-		}
-	}
-}
-
 func TestNugetResolve(t *testing.T) {
 	initNugetTest(t)
 	projects := []struct {
+		name                 string
 		project              string
+		moduleId             string
+		args                 []string
 		expectedDependencies int
 	}{
-		{"packagesconfig", 6},
-		{"reference", 6},
+		{"packagesconfigwithoutmodulechnage", "packagesconfig", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName}, 6},
+		{"packagesconfigwithmodulechnage", "packagesconfig", ModuleNameJFrogTest, []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
+		{"referencewithoutmodulechnage", "reference", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName}, 6},
+		{"referencewithmodulechnage", "reference", ModuleNameJFrogTest, []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
 	}
 	for buildNumber, test := range projects {
 		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), 6)
+			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 		})
 	}
 	cleanBuildToolsTest()
@@ -925,7 +920,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 	return projectTarget
 }
 
-func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expectedDependencies int) {
+func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -934,8 +929,8 @@ func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expected
 	if err != nil {
 		t.Error(err)
 	}
-
-	artifactoryCli.Exec("nuget", "restore", tests.NugetRemoteRepo, "--build-name="+tests.NugetBuildName, "--build-number="+buildNumber)
+	args = append(args, "--build-number="+buildNumber)
+	artifactoryCli.Exec(args...)
 	artifactoryCli.Exec("bp", tests.NugetBuildName, buildNumber)
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NugetBuildName, buildNumber, t, artHttpDetails)
@@ -945,6 +940,10 @@ func testNugetCmd(t *testing.T, projectPath string, buildNumber string, expected
 
 	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
+	}
+
+	if module != buildInfo.Modules[0].Id {
+		t.Error(fmt.Errorf("Expected module name %s, got %s", module, buildInfo.Modules[0].Id))
 	}
 
 	err = os.Chdir(wd)
@@ -967,13 +966,13 @@ func TestNpm(t *testing.T) {
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath := initNpmTest(t)
 	var npmTests = []npmTestParams{
-		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall},
+		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "-only=dev"},
 		{command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
-		{command: "npmp", repo: tests.NpmLocalRepo, wd: npmScopedProjectPath, validationFunc: validateNpmScopedPublish},
+		{command: "npmp", repo: tests.NpmLocalRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
 		{command: "npm-publish", repo: tests.NpmLocalRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 
@@ -986,7 +985,12 @@ func TestNpm(t *testing.T) {
 		if err != nil && !os.IsNotExist(err) {
 			t.Error(err)
 		}
-		artifactoryCli.Exec(npmTest.command, npmTest.repo, "--npm-args="+npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+1))
+		if npmTest.moduleName != "" {
+			artifactoryCli.Exec(npmTest.command, npmTest.repo, "--npm-args="+npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+1), "--module="+npmTest.moduleName)
+		} else {
+			npmTest.moduleName = "jfrog-cli-tests:1.0.0"
+			artifactoryCli.Exec(npmTest.command, npmTest.repo, "--npm-args="+npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+1))
+		}
 		artifactoryCli.Exec("bp", tests.NpmBuildName, strconv.Itoa(i+1))
 		npmTest.buildNumber = strconv.Itoa(i + 1)
 		npmTest.validationFunc(t, npmTest)
@@ -1301,6 +1305,10 @@ func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
 		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have the following artifact: \n%v \nbut has: \n%v",
 			npmTestParams, expectedArtifactName, buildInfo.Modules[0].Artifacts)
 	}
+	if buildInfo.Modules[0].Id != npmTestParams.moduleName {
+		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have the following module name: \n%v \nbut has: \n%v",
+			npmTestParams, npmTestParams.moduleName, buildInfo.Modules[0].Id)
+	}
 	if buildInfo.Modules[0].Artifacts[0].Name != expectedArtifactName {
 		t.Errorf("npm publish test with the arguments: \n%v \nexpected to have the following artifact: \n%v \nbut has: \n%v",
 			npmTestParams, expectedArtifactName, buildInfo.Modules[0].Artifacts[0].Name)
@@ -1313,5 +1321,6 @@ type npmTestParams struct {
 	npmArgs        string
 	wd             string
 	buildNumber    string
+	moduleName     string
 	validationFunc func(*testing.T, npmTestParams)
 }

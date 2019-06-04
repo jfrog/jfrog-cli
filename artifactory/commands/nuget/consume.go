@@ -101,7 +101,7 @@ func (nc *NugetCommand) Run() error {
 	if err = utils.SaveBuildGeneralDetails(nc.buildConfiguration.BuildName, nc.buildConfiguration.BuildNumber); err != nil {
 		return err
 	}
-	buildInfo, err := sol.BuildInfo()
+	buildInfo, err := sol.BuildInfo(nc.buildConfiguration.Module)
 	if err != nil {
 		return err
 	}

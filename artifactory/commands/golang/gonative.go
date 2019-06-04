@@ -74,7 +74,14 @@ func (gnc *GoNativeCommand) Run() error {
 		return err
 	}
 	utils.RemoveFlagFromCommand(&gnc.goArg, flagIndex, valueIndex)
-	gnc.buildConfiguration = &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber}
+
+	flagIndex, valueIndex, module, err := utils.FindFlag("--module", gnc.goArg)
+	if err != nil {
+		return err
+	}
+	utils.RemoveFlagFromCommand(&gnc.goArg, flagIndex, valueIndex)
+
+	gnc.buildConfiguration = &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber, Module: module}
 	return gnc.GoCommand.Run()
 }
 
