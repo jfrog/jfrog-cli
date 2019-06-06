@@ -433,46 +433,37 @@ func downloadFiles(t *testing.T, args ...string) {
 	artifactoryCli.Exec(args...)
 }
 
-// The first argument in the args slice is for upload,
-// The second argument is for download command
-// The third is build number argument.
-func uploadAndDownload(t *testing.T, args ...string) {
-	uploadArgs := strings.Fields(args[0])
-	// Add the build number argument to the upload command
-	uploadArgs = append(uploadArgs, args[2])
-	uploadFiles(t, uploadArgs...)
-
-	downloadArgs := strings.Fields(args[1])
-	// Add the build number argument to the download command
-	downloadArgs = append(downloadArgs, args[2])
-	downloadFiles(t, downloadArgs...)
-}
-
 func TestModuleName(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName := "cli-test-build"
+	type command struct {
+		execFunc func(t *testing.T, args ...string)
+		args     []string
+	}
+
 	tests := []struct {
-		name                 string
+		testName             string
 		buildNumber          string
 		moduleName           string
 		expectedDependencies int
 		expectedArtifacts    int
-		execFunc             func(t *testing.T, args ...string)
-		args                 []string
+		execCommands         []command
 	}{
-		{"uploadWithModuleChange", "9", ModuleNameJFrogTest, 0, 9, uploadFiles, []string{"upload", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}},
-		{"uploadWithoutChange", "10", buildName, 0, 9, uploadFiles, []string{"upload", "--build-name=" + buildName}},
-		{"downloadWithModuleChange", "11", ModuleNameJFrogTest, 9, 0, downloadFiles, []string{"download", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}},
-		{"downloadWithoutModuleChange", "12", buildName, 9, 0, downloadFiles, []string{"download", "--build-name=" + buildName}},
-		{"uploadAndDownloadAggregationWithModuleChange", "13", ModuleNameJFrogTest, 9, 9, uploadAndDownload, []string{"upload --build-name=" + buildName + " --module=" + ModuleNameJFrogTest, "download --build-name=" + buildName + " --module=" + ModuleNameJFrogTest}},
-		{"uploadAndDownloadAggregationWithoutModuleChange", "14", buildName, 9, 9, uploadAndDownload, []string{"upload --build-name=" + buildName, "download --build-name=" + buildName}},
+		{"uploadWithModuleChange", "9", ModuleNameJFrogTest, 0, 9, []command{{uploadFiles, []string{"upload", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}}}},
+		{"uploadWithoutChange", "10", buildName, 0, 9, []command{{uploadFiles, []string{"upload", "--build-name=" + buildName}}}},
+		{"downloadWithModuleChange", "11", ModuleNameJFrogTest, 9, 0, []command{{downloadFiles, []string{"download", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}}}},
+		{"downloadWithoutModuleChange", "12", buildName, 9, 0, []command{{downloadFiles, []string{"download", "--build-name=" + buildName}}}},
+		{"uploadAndDownloadAggregationWithModuleChange", "13", ModuleNameJFrogTest, 9, 9, []command{{uploadFiles, []string{"upload", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}}, {downloadFiles, []string{"download", "--build-name=" + buildName, "--module=" + ModuleNameJFrogTest}}}},
+		{"uploadAndDownloadAggregationWithoutModuleChange", "14", buildName, 9, 9, []command{{uploadFiles, []string{"upload", "--build-name=" + buildName}}, {downloadFiles, []string{"download", "--build-name=" + buildName}}}},
 	}
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			test.args = append(test.args, "--build-number="+test.buildNumber)
-			test.execFunc(t, test.args...)
+		t.Run(test.testName, func(t *testing.T) {
+			for _, exeCommand := range test.execCommands {
+				exeCommand.args = append(exeCommand.args, "--build-number="+test.buildNumber)
+				exeCommand.execFunc(t, exeCommand.args...)
+			}
 			artifactoryCli.Exec("bp", buildName, test.buildNumber)
 			buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, test.buildNumber, t, artHttpDetails)
 			validateBuildInfo(buildInfo, t, test.expectedDependencies, test.expectedArtifacts, test.moduleName)

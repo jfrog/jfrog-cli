@@ -339,7 +339,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
-	prepareProject("", t, true)
+	prepareGoProject("", t, true)
 	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 
 	err = os.Chdir(wd)
@@ -365,7 +365,7 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
-	prepareProject("", t, true)
+	prepareGoProject("", t, true)
 	runGo("", buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
 
 	err = os.Chdir(wd)
@@ -392,7 +392,7 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
-	prepareProject(newHomeDir, t, false)
+	prepareGoProject(newHomeDir, t, false)
 	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 
 	err = os.Chdir(wd)
@@ -431,7 +431,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 }
 
-func prepareProject(configDestDir string, t *testing.T, copyDirs bool) {
+func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
 	project1Path := createGoProject(t, "project1", copyDirs)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
