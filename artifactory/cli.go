@@ -45,6 +45,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/move"
 	mvndoc "github.com/jfrog/jfrog-cli-go/docs/artifactory/mvn"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/mvnconfig"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmci"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npminstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmpublish"
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
@@ -388,6 +389,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				npmInstallCmd(c)
+			},
+		},
+		{
+			Name:      "npm-ci",
+			Flags:     getNpmCiFlags(),
+			Aliases:   []string{"npmci"},
+			Usage:     npmci.Description,
+			HelpName:  common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
+			UsageText: npmci.Arguments,
+			ArgsUsage: common.CreateEnvVars(),
+			Action: func(c *cli.Context) error {
+				return npmCiCmd(c)
 			},
 		},
 		{
@@ -777,12 +790,20 @@ func getNpmCommonFlags() []cli.Flag {
 }
 
 func getNpmInstallFlags() []cli.Flag {
+	return getNpmFlags()
+}
+
+func getNpmFlags() []cli.Flag {
 	npmFlags := getNpmCommonFlags()
 	return append(npmFlags, cli.StringFlag{
 		Name:  "threads",
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	})
+}
+
+func getNpmCiFlags() []cli.Flag {
+	return getNpmFlags()
 }
 
 func getNugetFlags() []cli.Flag {
@@ -1430,6 +1451,16 @@ func npmInstallCmd(c *cli.Context) {
 	npmCmd.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
 	err := commands.Exec(npmCmd)
 	cliutils.ExitOnErr(err)
+}
+
+func npmCiCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildToolConfiguration(c)
+	npmCmd := npm.NewNpmCiCommand()
+	npmCmd.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
+	return commands.Exec(npmCmd)
 }
 
 func npmPublishCmd(c *cli.Context) {
