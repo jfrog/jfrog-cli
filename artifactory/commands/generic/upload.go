@@ -131,6 +131,7 @@ func (uc *UploadCommand) upload() error {
 		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Artifacts = buildArtifacts
+			partial.ModuleId = uc.buildConfiguration.Module
 		}
 		err = utils.SavePartialBuildInfo(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber, populateFunc)
 	}

@@ -31,7 +31,7 @@ type Go interface {
 	CreateBuildInfoDependencies(includeInfoFiles bool) error
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
-	BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo
+	BuildInfo(includeArtifacts bool, module string) *buildinfo.BuildInfo
 	LoadDependencies() error
 }
 
@@ -204,7 +204,7 @@ func (project *goProject) PublishDependencies(targetRepo string, servicesManager
 }
 
 // Get the build info of the go project
-func (project *goProject) BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo {
+func (project *goProject) BuildInfo(includeArtifacts bool, module string) *buildinfo.BuildInfo {
 	buildInfoDependencies := []buildinfo.Dependency{}
 	for _, dep := range project.dependencies {
 		buildInfoDependencies = append(buildInfoDependencies, dep.Dependencies()...)
@@ -213,7 +213,11 @@ func (project *goProject) BuildInfo(includeArtifacts bool) *buildinfo.BuildInfo 
 	if includeArtifacts {
 		artifacts = project.artifacts
 	}
-	return &buildinfo.BuildInfo{Modules: []buildinfo.Module{{Id: project.getId(), Artifacts: artifacts, Dependencies: buildInfoDependencies}}}
+	buildInfoModule := buildinfo.Module{Id: module, Artifacts: artifacts, Dependencies: buildInfoDependencies}
+	if module == "" {
+		buildInfoModule.Id = project.getId()
+	}
+	return &buildinfo.BuildInfo{Modules: []buildinfo.Module{buildInfoModule}}
 }
 
 // Get go project ID in the form of projectName:version

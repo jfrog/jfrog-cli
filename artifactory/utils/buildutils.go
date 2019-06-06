@@ -260,4 +260,5 @@ func (config *BuildInfoConfiguration) IsDryRun() bool {
 type BuildConfiguration struct {
 	BuildName   string
 	BuildNumber string
+	Module      string
 }

@@ -15,7 +15,7 @@ import (
 )
 
 type Solution interface {
-	BuildInfo() (*buildinfo.BuildInfo, error)
+	BuildInfo(module string) (*buildinfo.BuildInfo, error)
 	Marshal() ([]byte, error)
 	GetProjects() []project.Project
 }
@@ -36,7 +36,7 @@ type solution struct {
 	projects []project.Project
 }
 
-func (solution *solution) BuildInfo() (*buildinfo.BuildInfo, error) {
+func (solution *solution) BuildInfo(module string) (*buildinfo.BuildInfo, error) {
 	buildInfo := &buildinfo.BuildInfo{}
 	var modules []buildinfo.Module
 	for _, project := range solution.projects {
@@ -50,8 +50,10 @@ func (solution *solution) BuildInfo() (*buildinfo.BuildInfo, error) {
 		for _, dep := range dependencies {
 			projectDependencies = append(projectDependencies, *dep)
 		}
-
-		module := buildinfo.Module{Id: project.Name(), Dependencies: projectDependencies}
+		if module == "" {
+			module = project.Name()
+		}
+		module := buildinfo.Module{Id: module, Dependencies: projectDependencies}
 		modules = append(modules, module)
 	}
 	buildInfo.Modules = modules

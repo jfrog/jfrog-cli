@@ -302,7 +302,10 @@ func (nic *NpmInstallCommand) saveDependenciesData() error {
 	dependencies, missingDependencies := nic.transformDependencies()
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Dependencies = dependencies
-		partial.ModuleId = nic.packageInfo.BuildInfoModuleId()
+		if nic.buildConfiguration.Module == "" {
+			nic.buildConfiguration.Module = nic.packageInfo.BuildInfoModuleId()
+		}
+		partial.ModuleId = nic.buildConfiguration.Module
 	}
 
 	if err := utils.SavePartialBuildInfo(nic.buildConfiguration.BuildName, nic.buildConfiguration.BuildNumber, populateFunc); err != nil {

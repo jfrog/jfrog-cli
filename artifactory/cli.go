@@ -577,15 +577,8 @@ func getSortLimitFlags() []cli.Flag {
 
 func getUploadFlags() []cli.Flag {
 	uploadFlags := append(getServerFlags(), getSpecFlags()...)
+	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
 	return append(uploadFlags, []cli.Flag{
-		cli.StringFlag{
-			Name:  "build-name",
-			Usage: "[Optional] Build name. Providing this option will record all uploaded artifacts for later build info publication.` `",
-		},
-		cli.StringFlag{
-			Name:  "build-number",
-			Usage: "[Optional] Build number. Providing this option will record all uploaded artifacts for later build info publication.` `",
-		},
 		cli.StringFlag{
 			Name:  "deb",
 			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.` `",
@@ -632,15 +625,8 @@ func getUploadFlags() []cli.Flag {
 func getDownloadFlags() []cli.Flag {
 	downloadFlags := append(getServerFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
+	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
 	return append(downloadFlags, []cli.Flag{
-		cli.StringFlag{
-			Name:  "build-name",
-			Usage: "[Optional] Build name. Providing this option will record all downloaded artifacts for later build info publication.` `",
-		},
-		cli.StringFlag{
-			Name:  "build-number",
-			Usage: "[Optional] Build number. Providing this option will record all downloaded artifacts for later build info publication.` `",
-		},
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] Set to false if you do not wish to include the download of artifacts inside sub-folders in Artifactory.` `",
@@ -704,6 +690,13 @@ func getBuildToolFlags() []cli.Flag {
 	}
 }
 
+func getBuildToolAndModuleFlags() []cli.Flag {
+	return append(getBuildToolFlags(), cli.StringFlag{
+		Name:  "module",
+		Usage: "[Optional] Optional module name for the build-info.` `",
+	})
+}
+
 func getSkipLoginFlag() cli.Flag {
 	return cli.BoolFlag{
 		Name:  "skip-login",
@@ -765,7 +758,7 @@ func getDockerPullFlags() []cli.Flag {
 
 func getDockerFlags() []cli.Flag {
 	var flags []cli.Flag
-	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getBuildToolAndModuleFlags()...)
 	flags = append(flags, getServerFlags()...)
 	flags = append(flags, getSkipLoginFlag())
 	return flags
@@ -780,7 +773,7 @@ func getNpmCommonFlags() []cli.Flag {
 	}
 	npmFlags = append(npmFlags, getBaseFlags()...)
 	npmFlags = append(npmFlags, getServerIdFlag())
-	return append(npmFlags, getBuildToolFlags()...)
+	return append(npmFlags, getBuildToolAndModuleFlags()...)
 }
 
 func getNpmInstallFlags() []cli.Flag {
@@ -805,7 +798,7 @@ func getNugetFlags() []cli.Flag {
 	}
 	nugetFlags = append(nugetFlags, getBaseFlags()...)
 	nugetFlags = append(nugetFlags, getServerIdFlag())
-	return append(nugetFlags, getBuildToolFlags()...)
+	return append(nugetFlags, getBuildToolAndModuleFlags()...)
 }
 
 func getGoFlags() []cli.Flag {
@@ -826,7 +819,7 @@ func getGoFlags() []cli.Flag {
 
 func getGoAndBuildToolFlags() []cli.Flag {
 	flags := getGoFlags()
-	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getBuildToolAndModuleFlags()...)
 	return flags
 }
 
@@ -848,7 +841,7 @@ func getGoPublishFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getServerIdFlag())
-	flags = append(flags, getBuildToolFlags()...)
+	flags = append(flags, getBuildToolAndModuleFlags()...)
 	return flags
 }
 
@@ -1275,7 +1268,7 @@ func validateServerId(serverId string) {
 	}
 }
 
-// Validates the go command. If a config file is found, the only flags that can be used are build-name and build-number. ]
+// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 // Otherwise, throw an error.
 func validateGoNativeCommand(args []string) error {
 	goFlags := getGoFlags()
@@ -1382,7 +1375,6 @@ func dockerPushCmd(c *cli.Context) {
 	skipLogin := c.Bool("skip-login")
 
 	buildConfiguration := createBuildToolConfiguration(c)
-	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	dockerPushCommand := docker.NewDockerPushCommand()
 	dockerPushCommand.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetImageTag(imageTag)
 	err := commands.Exec(dockerPushCommand)
@@ -1398,7 +1390,6 @@ func dockerPullCmd(c *cli.Context) {
 	sourceRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
 	buildConfiguration := createBuildToolConfiguration(c)
-	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	dockerPullCommand := docker.NewDockerPullCommand()
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 	err := commands.Exec(dockerPullCommand)
@@ -1435,7 +1426,6 @@ func npmInstallCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildToolConfiguration(c)
-	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	npmCmd := npm.NewNpmInstallCommand()
 	npmCmd.SetThreads(getThreadsCount(c)).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
 	err := commands.Exec(npmCmd)
@@ -1447,7 +1437,6 @@ func npmPublishCmd(c *cli.Context) {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildToolConfiguration(c)
-	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	npmPublicCmd := npm.NewNpmPublishCommand()
 	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(createArtifactoryDetailsByFlags(c, true))
 	err := commands.Exec(npmPublicCmd)
@@ -1629,7 +1618,6 @@ func downloadCmd(c *cli.Context) {
 	configuration := createDownloadConfiguration(c)
 	rtDetails := createArtifactoryDetailsByFlags(c, true)
 	buildConfiguration := createBuildToolConfiguration(c)
-	validateBuildParams(buildConfiguration.BuildName, buildConfiguration.BuildNumber)
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run"))
 	err := commands.Exec(downloadCommand)
@@ -2309,9 +2297,6 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	buildName := c.String("build-name")
-	buildNumber := c.String("build-number")
-	validateBuildParams(buildName, buildNumber)
 	uploadConfiguration.Symlink = c.Bool("symlinks")
 	uploadConfiguration.Retries = getRetries(c)
 	uploadConfiguration.Threads = getThreadsCount(c)
@@ -2323,7 +2308,8 @@ func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *uti
 	buildConfigConfiguration = new(utils.BuildConfiguration)
 	buildConfigConfiguration.BuildName = c.String("build-name")
 	buildConfigConfiguration.BuildNumber = c.String("build-number")
-	validateBuildParams(buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber)
+	buildConfigConfiguration.Module = c.String("module")
+	validateBuildParams(buildConfigConfiguration)
 	return
 }
 
@@ -2407,9 +2393,9 @@ func validateCommonContext(c *cli.Context) {
 	}
 }
 
-func validateBuildParams(buildName, buildNumber string) {
-	if (buildName == "" && buildNumber != "") || (buildName != "" && buildNumber == "") {
-		cliutils.ExitOnErr(errors.New("The build-name and build-number options cannot be sent separately."))
+func validateBuildParams(buildConfig *utils.BuildConfiguration) {
+	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
+		cliutils.ExitOnErr(errors.New("The build-name, build-number and module options cannot be sent separately."))
 	}
 }
 

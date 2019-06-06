@@ -19,7 +19,7 @@ func TestEmptySolution(t *testing.T) {
 	}
 
 	expected := &buildinfo.BuildInfo{}
-	buildInfo, err := solution.BuildInfo()
+	buildInfo, err := solution.BuildInfo("")
 	if err != nil {
 		t.Error("An error occurred while creating the build info object", err.Error())
 	}

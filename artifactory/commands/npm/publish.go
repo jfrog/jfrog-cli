@@ -191,7 +191,10 @@ func (npc *NpmPublishCommand) saveArtifactData() error {
 
 	populateFunc := func(partial *buildinfo.Partial) {
 		partial.Artifacts = buildArtifacts
-		partial.ModuleId = npc.packageInfo.BuildInfoModuleId()
+		if npc.buildConfiguration.Module == "" {
+			npc.buildConfiguration.Module = npc.packageInfo.BuildInfoModuleId()
+		}
+		partial.ModuleId = npc.buildConfiguration.Module
 	}
 	return utils.SavePartialBuildInfo(npc.buildConfiguration.BuildName, npc.buildConfiguration.BuildNumber, populateFunc)
 }
