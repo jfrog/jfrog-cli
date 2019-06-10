@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func Remove(serviceName string, flags *RemoveFlags) error {

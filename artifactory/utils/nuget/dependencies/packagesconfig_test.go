@@ -2,11 +2,12 @@ package dependencies
 
 import (
 	"encoding/xml"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
-	"path/filepath"
 )
 
 func getAllDependencies(dependencies map[string][]string) map[string]*buildinfo.Dependency {
@@ -184,6 +185,7 @@ func TestExtractDependencies(t *testing.T) {
 }
 
 func TestPackageNotFoundWithoutFailure(t *testing.T) {
+	log.SetDefaultLogger()
 	_, err := extractDependencies(filepath.Join("testdata", "packagesproject", "localcachenotexists"))
 	if err != nil {
 		t.Error(err)

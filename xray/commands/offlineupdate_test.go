@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"testing"
 	"github.com/magiconair/properties/assert"
+	"testing"
 )
 
 func TestCreateXrayFileNameFromUrl(t *testing.T) {
-
 	tests := []struct {
 		url      string
 		fileName string

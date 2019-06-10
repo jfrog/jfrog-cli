@@ -42,7 +42,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/bintray/services/utils"
 	"github.com/jfrog/jfrog-client-go/bintray/services/versions"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 func GetCommands() []cli.Command {
@@ -1029,7 +1028,6 @@ func newBintrayConfig(c *cli.Context) bintray.Config {
 		SetBintrayDetails(btDetails).
 		SetDryRun(c.Bool("dry-run")).
 		SetThreads(getThreadsOptionValue(c)).
-		SetLogger(log.Logger).
 		Build()
 	return btConfig
 }

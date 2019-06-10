@@ -4,7 +4,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *DownloadConfiguration, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
@@ -22,7 +21,6 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(flags.Threads).
-		SetLogger(log.Logger).
 		Build()
 	if err != nil {
 		return nil, err

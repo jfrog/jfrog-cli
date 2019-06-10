@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -12,7 +13,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 const BINTRAY_RECONNECT_HEADER = "X-Bintray-Stream-Reconnect-Id"

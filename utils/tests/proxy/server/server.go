@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
 	"github.com/jfrog/jfrog-client-go/utils"
 	clilog "github.com/jfrog/jfrog-client-go/utils/log"
@@ -13,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)

@@ -3,12 +3,14 @@ package generic
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestPingSuccess(t *testing.T) {
+	log.SetDefaultLogger()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "OK")

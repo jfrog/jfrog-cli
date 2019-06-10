@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/spf13/viper"
 	"os"
@@ -117,6 +118,7 @@ func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]st
 }
 
 func TestGeneratedBuildInfoFile(t *testing.T) {
+	log.SetDefaultLogger()
 	var yamlConfig = map[string]string{
 		RESOLVER_PREFIX + URL: "http://some.url.com",
 		DEPLOYER_PREFIX + URL: "http://some.other.url.com",

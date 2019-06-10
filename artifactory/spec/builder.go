@@ -17,7 +17,7 @@ type builder struct {
 	flat            bool
 	regexp          bool
 	includeDirs     bool
-	archiveEntries	string
+	archiveEntries  string
 }
 
 func NewBuilder() *builder {
@@ -117,7 +117,7 @@ func (b *builder) BuildSpec() *SpecFiles {
 				Flat:            strconv.FormatBool(b.flat),
 				Regexp:          strconv.FormatBool(b.regexp),
 				IncludeDirs:     strconv.FormatBool(b.includeDirs),
-				ArchiveEntries:	 b.archiveEntries,
+				ArchiveEntries:  b.archiveEntries,
 			},
 		},
 	}

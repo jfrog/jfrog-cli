@@ -3,9 +3,9 @@
 package lock
 
 import (
-	"syscall"
-	"os"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"os"
+	"syscall"
 )
 
 // This file will be compiled only on unix systems.

@@ -3,10 +3,12 @@ package commands
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
+	log.SetDefaultLogger()
 	expected := &config.BintrayDetails{
 		ApiUrl:            "https://api.bintray.com/",
 		DownloadServerUrl: "https://dl.bintray.com/",

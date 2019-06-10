@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"os"
@@ -27,6 +28,7 @@ func TestExtractGitUrlWithoutDotGit(t *testing.T) {
 }
 
 func runTest(t *testing.T, originalDir string) {
+	log.SetDefaultLogger()
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, filepath.Join("..", "testdata"))
 	buildDir := getBuildDir(t)
 	checkFailureAndClean(t, buildDir, dotGitPath)
