@@ -381,7 +381,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-install",
-			Flags:     getNpmInstallFlags(),
+			Flags:     getNpmFlags(),
 			Aliases:   []string{"npmi"},
 			Usage:     npminstall.Description,
 			HelpName:  common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
@@ -393,7 +393,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:      "npm-ci",
-			Flags:     getNpmCiFlags(),
+			Flags:     getNpmFlags(),
 			Aliases:   []string{"npmci"},
 			Usage:     npmci.Description,
 			HelpName:  common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
@@ -789,10 +789,6 @@ func getNpmCommonFlags() []cli.Flag {
 	return append(npmFlags, getBuildToolAndModuleFlags()...)
 }
 
-func getNpmInstallFlags() []cli.Flag {
-	return getNpmFlags()
-}
-
 func getNpmFlags() []cli.Flag {
 	npmFlags := getNpmCommonFlags()
 	return append(npmFlags, cli.StringFlag{
@@ -800,10 +796,6 @@ func getNpmFlags() []cli.Flag {
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	})
-}
-
-func getNpmCiFlags() []cli.Flag {
-	return getNpmFlags()
 }
 
 func getNugetFlags() []cli.Flag {
