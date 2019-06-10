@@ -3,6 +3,7 @@ package nuget
 import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -59,7 +60,7 @@ func TestGetFlagValueExists(t *testing.T) {
 }
 
 func TestInitNewConfig(t *testing.T) {
-
+	log.SetDefaultLogger()
 	if !cliutils.IsWindows() {
 		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
 	}
