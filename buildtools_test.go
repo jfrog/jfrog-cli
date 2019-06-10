@@ -964,8 +964,10 @@ func TestNpm(t *testing.T) {
 		t.Error(err)
 	}
 
-	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath := initNpmTest(t)
+	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmTest(t)
 	var npmTests = []npmTestParams{
+		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
+		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
@@ -1096,7 +1098,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	}
 }
 
-func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath string) {
+func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	if err != nil {
 		t.Error(err)
@@ -1109,8 +1111,13 @@ func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcPr
 	if err != nil {
 		t.Error(err)
 	}
+	npmProjectCi, err = filepath.Abs(createNpmProject(t, "npmprojectci"))
+	if err != nil {
+		t.Error(err)
+	}
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
-	return npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath
+	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
+	return
 }
 
 func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T) {

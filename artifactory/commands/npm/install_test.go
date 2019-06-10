@@ -23,7 +23,7 @@ func TestPrepareConfigData(t *testing.T) {
 			"registry = http://goodRegistry",
 			"_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
 
-	npmi := NpmInstallCommand{registry: "http://goodRegistry", npmAuth: "_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
+	npmi := NpmCommandArgs{registry: "http://goodRegistry", npmAuth: "_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
 	actualConfig, err := npmi.prepareConfigData([]byte(configJson))
 	if err != nil {
 		t.Error(err)
@@ -59,7 +59,7 @@ func TestPrepareConfigDataTypeRestriction(t *testing.T) {
 		`{"kuku": true}`:          ""}
 
 	for json, typeRestriction := range typeRestrictions {
-		npmi := NpmInstallCommand{}
+		npmi := NpmCommandArgs{}
 		npmi.prepareConfigData([]byte(json))
 		if npmi.typeRestriction != typeRestriction {
 			t.Errorf("Type restriction was supposed to be %s but set to: %s when using the json:\n%s", typeRestriction, npmi.typeRestriction, json)
@@ -90,7 +90,7 @@ func TestParseDependencies(t *testing.T) {
 		"nub-1.0.0",
 		"shopify-liquid-1.d7.9",
 	}
-	npmi := NpmInstallCommand{}
+	npmi := NpmCommandArgs{}
 	npmi.dependencies = make(map[string]*dependency)
 	err = npmi.parseDependencies([]byte(dependenciesJsonList), "myScope")
 	if err != nil {
