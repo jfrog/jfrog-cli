@@ -7,7 +7,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"net/url"
 	"os"
@@ -94,7 +93,6 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun).
-		SetLogger(log.Logger).
 		Build()
 	if err != nil {
 		return nil, err

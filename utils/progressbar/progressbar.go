@@ -164,10 +164,21 @@ type proxyReader struct {
 // Overrides the Read method of the original io.Reader.
 func (pr *proxyReader) Read(p []byte) (n int, err error) {
 	n, err = pr.ReadCloser.Read(p)
-	if n > 0 {
-		pr.unit.incrChannel <- n
+	if n > 0 && err == nil {
+		pr.incrChannel(n)
 	}
 	return
+}
+
+func (pr *proxyReader) incrChannel(n int) {
+	// When an upload / download error occurs (for example, a bad HTTP error code),
+	// The progress bar's Abort method is invoked and closes the channel.
+	// Therefore, the channel may be already closed at this stage, which leads to a panic.
+	// We therefore need to recover if that happens.
+	defer func() {
+		recover()
+	}()
+	pr.unit.incrChannel <- n
 }
 
 // Aborts a progress bar.
@@ -283,7 +294,7 @@ func (p *progressBarManager) newHeadlineBar(headline string) {
 // Initializes a new progress bar that states the log file path. The bar's text remains after cli is done.
 func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.barsWg.Add(1)
-	prefix := " Logs are printed to: "
+	prefix := " Log path: "
 	p.logFilePathBar = p.container.AddBar(0,
 		mpb.BarClearOnComplete(),
 		mpb.PrependDecorators(

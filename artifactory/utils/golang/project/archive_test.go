@@ -3,6 +3,7 @@ package project
 import (
 	"bytes"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
 	"os"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestArchiveProject(t *testing.T) {
+	log.SetDefaultLogger()
 	if cliutils.IsWindows() {
 		t.Skip("Skipping archive test...")
 	}

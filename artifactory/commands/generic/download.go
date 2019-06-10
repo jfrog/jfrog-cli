@@ -49,7 +49,6 @@ func (dc *DownloadCommand) CommandName() string {
 }
 
 func (dc *DownloadCommand) Run() error {
-
 	// Initialize Progress bar, set logger to a log file
 	var err error
 	var progressBar ioUtils.Progress

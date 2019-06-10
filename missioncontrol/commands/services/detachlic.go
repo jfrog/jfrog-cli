@@ -6,16 +6,16 @@ import (
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func DetachLic(service_name string, flags *DetachLicFlags) error {
 	bucketId := flags.BucketId
 	postContent := utils.LicenseRequestContent{
-		Name:   service_name}
+		Name: service_name}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))

@@ -2,10 +2,12 @@ package spec
 
 import (
 	"bytes"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"testing"
 )
 
 func TestReplaceSpecVars(t *testing.T) {
+	log.SetDefaultLogger()
 	var actual []byte
 	actual = replaceSpecVars([]byte("${foo}aa"), map[string]string{"a": "k", "foo": "bar"})
 	assertVariablesMap([]byte("baraa"), actual, t)

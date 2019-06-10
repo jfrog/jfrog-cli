@@ -3,11 +3,13 @@ package commands
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"strings"
 	"testing"
 )
 
 func TestBasicAuth(t *testing.T) {
+	log.SetDefaultLogger()
 	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
 		User: "admin", Password: "password",
 		ApiKey: "", SshKeyPath: "", AccessToken: "",

@@ -2,9 +2,9 @@ package cliutils
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
-	"errors"
 )
 
 func TestSpecVarsStringToMap(t *testing.T) {

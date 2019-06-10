@@ -6,10 +6,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 )
 
 func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
@@ -44,10 +44,10 @@ func AddService(serviceType, serviceName string, flags *AddServiceFlags) error {
 }
 
 type AddServiceFlags struct {
-	MissionControlDetails      *config.MissionControlDetails
-	Description                string
-	SiteName                   string
-	ServiceDetails *utils.ServiceDetails
+	MissionControlDetails *config.MissionControlDetails
+	Description           string
+	SiteName              string
+	ServiceDetails        *utils.ServiceDetails
 }
 
 type AddServiceRequestContent struct {

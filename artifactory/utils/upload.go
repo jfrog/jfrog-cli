@@ -4,7 +4,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/utils/io"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *UploadConfiguration, certPath string, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
@@ -18,7 +17,6 @@ func CreateUploadServiceManager(artDetails *config.ArtifactoryDetails, flags *Up
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(flags.Threads).
-		SetLogger(log.Logger).
 		Build()
 
 	return artifactory.NewWithProgress(&artAuth, servicesConfig, progressBar)

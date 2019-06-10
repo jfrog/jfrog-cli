@@ -51,7 +51,6 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
-		SetLogger(log.Logger).
 		SetThreads(threads).
 		Build()
 
