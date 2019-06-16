@@ -891,7 +891,7 @@ func TestArtifactoryDeleteProperties(t *testing.T) {
 		properties := item.Properties
 		for _, prop := range properties {
 			if prop.Key == "prop" {
-				t.Error("Property prop were not deleted from artifact", item.Name)
+				t.Error("Property 'prop' was not deleted from artifact", item.Name)
 			}
 		}
 	}
