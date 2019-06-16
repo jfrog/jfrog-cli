@@ -10,12 +10,15 @@ import (
 	"time"
 )
 
+func init() {
+	log.SetDefaultLogger()
+}
+
 /*
 	The lock mechanism prefers earlier lock requests. If two locks requests have same time stamps, it'll take the one with the smaller PID first.
 	Here we test the functionality of a real process with a real PID and a dummy process with MaxInt pid.
 */
 func TestLockSmallerPid(t *testing.T) {
-	log.SetDefaultLogger()
 	// First creating the first lock object with special pid number that doesn't exists.
 	firstLock, _ := getLock(math.MaxInt32, t)
 	// Creating a second lock object with the running PID
@@ -65,7 +68,6 @@ func TestLockSmallerPid(t *testing.T) {
 	Here we test the functionality of a real process with a real PID and a dummy process with -1 pid.
 */
 func TestLockBiggerPid(t *testing.T) {
-	log.SetDefaultLogger()
 	// First creating the first lock object with special pid number that doesn't exists.
 	getLock(-1, t)
 	// Creating a second lock object with the running PID
@@ -103,7 +105,6 @@ func TestLockBiggerPid(t *testing.T) {
 }
 
 func TestUnlock(t *testing.T) {
-	log.SetDefaultLogger()
 	lock := new(Lock)
 	err := lock.CreateNewLockFile()
 	if err != nil {
@@ -132,7 +133,6 @@ func TestUnlock(t *testing.T) {
 }
 
 func TestCreateFile(t *testing.T) {
-	log.SetDefaultLogger()
 	pid := os.Getpid()
 	lock, folderName := getLock(pid, t)
 
