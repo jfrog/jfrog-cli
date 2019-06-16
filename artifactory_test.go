@@ -829,6 +829,9 @@ func TestArtifactorySetProperties(t *testing.T) {
 	artifactoryCli.Exec("upload", "testsdata/a/a1.in", tests.Repo1+"/a.in")
 	artifactoryCli.Exec("sp", tests.Repo1+"/a.*", "prop=val")
 	resultItems := searchItemsInArtifacotry(t)
+	if len(resultItems) == 0 {
+		t.Error("No artifacts were found.")
+	}
 	for _, item := range resultItems {
 		properties := item.Properties
 		if len(properties) < 1 {
@@ -851,6 +854,9 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
 	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
 	resultItems := searchItemsInArtifacotry(t)
+	if len(resultItems) == 0 {
+		t.Error("No artifacts were found.")
+	}
 	for _, item := range resultItems {
 		if item.Name != "a3.in" {
 			continue
@@ -874,15 +880,18 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 func TestArtifactoryDeleteProperties(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
-	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val")
+	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val;key=value")
 	artifactoryCli.Exec("delp", tests.Repo1+"/*", "prop")
 	resultItems := searchItemsInArtifacotry(t)
+	if len(resultItems) == 0 {
+		t.Error("No artifacts were found.")
+	}
 
 	for _, item := range resultItems {
 		properties := item.Properties
 		for _, prop := range properties {
-			if prop.Key != "" {
-				t.Error("Wrong properties")
+			if prop.Key == "prop" {
+				t.Error("Property 'prop' was not deleted from artifact", item.Name)
 			}
 		}
 	}
@@ -896,6 +905,9 @@ func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
 
 	artifactoryCli.Exec("delp", tests.Repo1+"/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
 	resultItems := searchItemsInArtifacotry(t)
+	if len(resultItems) == 0 {
+		t.Error("No artifacts were found.")
+	}
 
 	for _, item := range resultItems {
 		properties := item.Properties
@@ -3298,7 +3310,11 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 }
 
 func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
-	spec, flags := getSpecAndCommonFlags(tests.GetFilePathForArtifactory(tests.Search))
+	fileSpec, err := tests.CreateSpec(tests.Search)
+	if err != nil {
+		t.Error(err)
+	}
+	spec, flags := getSpecAndCommonFlags(fileSpec)
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
