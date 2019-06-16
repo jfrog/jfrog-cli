@@ -19,6 +19,10 @@ const (
 	buildName  = "TestExtractGitUrl"
 )
 
+func init() {
+	log.SetDefaultLogger()
+}
+
 func TestExtractGitUrlWithDotGit(t *testing.T) {
 	runTest(t, withGit)
 }
@@ -28,7 +32,6 @@ func TestExtractGitUrlWithoutDotGit(t *testing.T) {
 }
 
 func runTest(t *testing.T, originalDir string) {
-	log.SetDefaultLogger()
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalDir, filepath.Join("..", "testdata"))
 	buildDir := getBuildDir(t)
 	checkFailureAndClean(t, buildDir, dotGitPath)
