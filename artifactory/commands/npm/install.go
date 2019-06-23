@@ -291,7 +291,7 @@ func (nca *NpmCommandArgs) setDependenciesList() (err error) {
 }
 
 func (nca *NpmCommandArgs) collectDependenciesChecksums() error {
-	log.Info("Collecting dependencies information... This may take a few minuets...")
+	log.Info("Collecting dependencies information... This may take a few minutes...")
 	servicesManager, err := utils.CreateServiceManager(nca.rtDetails, false)
 	if err != nil {
 		return err
