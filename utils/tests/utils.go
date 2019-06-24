@@ -335,6 +335,7 @@ func getRepositoriesNameMap() map[string]string {
 	return map[string]string{
 		"${REPO1}":               Repo1,
 		"${REPO2}":               Repo2,
+		"${REPO_1_AND_2}":        Repo1And2,
 		"${VIRTUAL_REPO}":        VirtualRepo,
 		"${LFS_REPO}":            LfsRepo,
 		"${JCENTER_REMOTE_REPO}": JcenterRemoteRepo,

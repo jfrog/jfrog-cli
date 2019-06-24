@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO_1_AND_2}/",
+      "recursive": "true"
+    },
+    {
+      "pattern": "${LFS_REPO}/",
+      "recursive": "true"
+    }
+  ]
+}

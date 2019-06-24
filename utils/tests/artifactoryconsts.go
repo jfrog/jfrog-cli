@@ -21,10 +21,12 @@ const (
 	SimpleUploadSpec                       = "upload_simple_spec.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
+	DownloadWildcardRepo                   = "download_wildcard_repo.json"
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	UploadSpec                             = "upload_spec.json"
 	DeleteSpec                             = "delete_spec.json"
+	DeleteSpecWildcardRepo                 = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	PrepareCopy                            = "prepare_copy.json"
@@ -70,6 +72,7 @@ const (
 
 var Repo1 = "jfrog-cli-tests-repo1"
 var Repo2 = "jfrog-cli-tests-repo2"
+var Repo1And2 = "jfrog-cli-tests-repo*"
 var VirtualRepo = "jfrog-cli-tests-virtual-repo"
 var JcenterRemoteRepo = "jfrog-cli-tests-jcenter-remote"
 var LfsRepo = "jfrog-cli-tests-lfs-repo"
@@ -454,6 +457,13 @@ func GetMassiveDownload() []string {
 		filepath.Join(Out, "download", "simple", "a1.in"),
 		filepath.Join(Out, "download", "simple_placeholder", "a"),
 		filepath.Join(Out, "download", "simple_placeholder", "a", "a1.in"),
+	}
+}
+
+func GetDownloadWildcardRepo() []string {
+	return []string{
+		Repo1 + "/path/a1.in",
+		Repo2 + "/path/a2.in",
 	}
 }
 
