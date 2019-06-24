@@ -3149,18 +3149,21 @@ func createRepos(repos map[string]string) {
 }
 
 func createRandomReposName() {
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	tests.Repo1 += "-" + timestamp
-	tests.Repo2 += "-" + timestamp
-	tests.VirtualRepo += "-" + timestamp
-	tests.LfsRepo += "-" + timestamp
+	suffix := *tests.RtUser
+	if suffix == "" {
+		suffix = strconv.FormatInt(time.Now().Unix(), 10)
+	}
+	tests.Repo1 += "-" + suffix
+	tests.Repo2 += "-" + suffix
+	tests.VirtualRepo += "-" + suffix
+	tests.LfsRepo += "-" + suffix
 	if *tests.TestBuildTools {
-		tests.JcenterRemoteRepo += "-" + timestamp
-		tests.NpmLocalRepo += "-" + timestamp
-		tests.NpmRemoteRepo += "-" + timestamp
+		tests.JcenterRemoteRepo += "-" + suffix
+		tests.NpmLocalRepo += "-" + suffix
+		tests.NpmRemoteRepo += "-" + suffix
 	}
 	if *tests.TestGo {
-		tests.GoLocalRepo += "-" + timestamp
+		tests.GoLocalRepo += "-" + suffix
 	}
 }
 
