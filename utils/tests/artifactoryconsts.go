@@ -53,6 +53,7 @@ const (
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
+	GradleServerIDUsesPluginConfig         = "gradle_server_id_uses_plugin.yaml"
 	GradleUseramePasswordTemplate          = "gradle_user_pass_template.yaml"
 	DownloadSpecExclude                    = "download_spec_exclude.json"
 	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"

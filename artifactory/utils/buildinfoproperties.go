@@ -139,6 +139,8 @@ var gradleConfigMapping = map[string]string{
 	"artifactory.publish.ivy":                           DEPLOYER_PREFIX + IVY_DESCRIPTOR,
 	"artifactory.publish.ivy.ivyPattern":                DEPLOYER_PREFIX + IVY_PATTERN,
 	"artifactory.publish.ivy.artPattern":                DEPLOYER_PREFIX + ARTIFACT_PATTERN,
+	"buildInfo.build.name":                              BUILD_NAME,
+	"buildInfo.build.number":                            BUILD_NUMBER,
 }
 
 func ReadConfigFile(configPath string, configType ConfigType) (*viper.Viper, error) {
