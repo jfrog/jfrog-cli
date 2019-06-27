@@ -9,33 +9,28 @@ import (
 )
 
 const (
-	bashAutocomplete = `#! /bin/bash
-
-: ${PROG:=$(basename ${BASH_SOURCE})}
-
-_cli_bash_autocomplete() {
+	bashAutocomplete = `#!/bin/bash
+_jfrog() {
     local cur opts base
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
 }
 
-complete -F _cli_bash_autocomplete -o default jfrog
+complete -F _jfrog -o default jfrog
 `
 	zshAutocomplete = `
-_cli_zsh_autocomplete() {
+_jfrog() {
 	local -a opts
 	opts=("${(@f)$(_CLI_ZSH_AUTOCOMPLETE_HACK=1 ${words[@]:0:#words[@]-1} --generate-bash-completion)}")
 	_describe 'values' opts
 	if [[ $compstate[nmatches] -eq 0 && $words[$CURRENT] != -* ]]; then
 		_files
 	fi
-	return
 }
 
-compdef _cli_zsh_autocomplete jfrog`
+compdef _jfrog jfrog`
 )
 
 func GetCommands() []cli.Command {
