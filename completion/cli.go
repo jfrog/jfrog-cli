@@ -43,13 +43,13 @@ func GetCommands() []cli.Command {
 		{
 			Name:     "bash",
 			Usage:    bash.Description,
-			HelpName: common.CreateUsage("completion bash", bash.Description, bash.Usage),
+			HelpName: common.CreateUsage("completion bash", bash.UsageDescription, bash.Usage),
 			Action:   completionBash,
 		},
 		{
 			Name:     "zsh",
 			Usage:    zsh.Description,
-			HelpName: common.CreateUsage("completion zsh", zsh.Description, zsh.Usage),
+			HelpName: common.CreateUsage("completion zsh", zsh.UsageDescription, zsh.Usage),
 			Action:   completionZsh,
 		},
 	}
