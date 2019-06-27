@@ -87,11 +87,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "use",
-			Usage:     use.Description,
-			HelpName:  common.CreateUsage("rt use", use.Description, use.Usage),
-			UsageText: use.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:         "use",
+			Usage:        use.Description,
+			HelpName:     common.CreateUsage("rt use", use.Description, use.Usage),
+			UsageText:    use.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
 				useCmd(c)
 			},
@@ -214,12 +215,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "build-collect-env",
-			Aliases:   []string{"bce"},
-			Usage:     buildcollectenv.Description,
-			HelpName:  common.CreateUsage("rt build-collect-env", buildcollectenv.Description, buildcollectenv.Usage),
-			UsageText: buildcollectenv.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:         "build-collect-env",
+			Aliases:      []string{"bce"},
+			Usage:        buildcollectenv.Description,
+			HelpName:     common.CreateUsage("rt build-collect-env", buildcollectenv.Description, buildcollectenv.Usage),
+			UsageText:    buildcollectenv.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) {
 				buildCollectEnvCmd(c)
 			},
