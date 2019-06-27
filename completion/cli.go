@@ -39,23 +39,17 @@ func GetCommands() []cli.Command {
 			Name:     "bash",
 			Usage:    bash.Description,
 			HelpName: common.CreateUsage("completion bash", bash.UsageDescription, bash.Usage),
-			Action:   completionBash,
+			Action: func(*cli.Context) {
+				fmt.Print(bashAutocomplete)
+			},
 		},
 		{
 			Name:     "zsh",
 			Usage:    zsh.Description,
 			HelpName: common.CreateUsage("completion zsh", zsh.UsageDescription, zsh.Usage),
-			Action:   completionZsh,
+			Action: func(*cli.Context) {
+				fmt.Print(zshAutocomplete)
+			},
 		},
 	}
-}
-
-//noinspection GoUnusedParameter
-func completionBash(*cli.Context) {
-	fmt.Print(bashAutocomplete)
-}
-
-//noinspection GoUnusedParameter
-func completionZsh(*cli.Context) {
-	fmt.Print(zshAutocomplete)
 }
