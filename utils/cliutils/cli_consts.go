@@ -11,6 +11,7 @@ const (
 	CmdBintray        = "bt"
 	CmdMissionControl = "mc"
 	CmdXray           = "xr"
+	CmdCompletion     = "completion"
 
 	// Download
 	DownloadMinSplitKb    = 5120
