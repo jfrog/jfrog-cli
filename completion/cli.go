@@ -36,17 +36,19 @@ compdef _jfrog jfrog`
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:     "bash",
-			Usage:    bash.Description,
-			HelpName: common.CreateUsage("completion bash", bash.UsageDescription, bash.Usage),
+			Name:         "bash",
+			Usage:        bash.Description,
+			HelpName:     common.CreateUsage("completion bash", bash.UsageDescription, bash.Usage),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(*cli.Context) {
 				fmt.Print(bashAutocomplete)
 			},
 		},
 		{
-			Name:     "zsh",
-			Usage:    zsh.Description,
-			HelpName: common.CreateUsage("completion zsh", zsh.UsageDescription, zsh.Usage),
+			Name:         "zsh",
+			Usage:        zsh.Description,
+			HelpName:     common.CreateUsage("completion zsh", zsh.UsageDescription, zsh.Usage),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(*cli.Context) {
 				fmt.Print(zshAutocomplete)
 			},

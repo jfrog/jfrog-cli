@@ -21,8 +21,9 @@ func CreateEnvVars(envVars ...string) string {
 
 func CreateBashCompletionFunc() cli.BashCompleteFunc {
 	return func(ctx *cli.Context) {
-		for _, v := range ctx.FlagNames() {
-			fmt.Println("--" + v + "=")
+		flagNames := append(ctx.FlagNames(), "help")
+		for _, flagName := range flagNames {
+			fmt.Println("--" + flagName)
 		}
 	}
 }
