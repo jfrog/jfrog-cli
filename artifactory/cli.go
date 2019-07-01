@@ -81,7 +81,7 @@ func GetCommands() []cli.Command {
 			HelpName:     common.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
 			UsageText:    configdocs.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete: common.CreateBashCompletionFunc("show", "delete", "clear"),
 			Action: func(c *cli.Context) {
 				configCmd(c)
 			},
@@ -92,7 +92,7 @@ func GetCommands() []cli.Command {
 			HelpName:     common.CreateUsage("rt use", use.Description, use.Usage),
 			UsageText:    use.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete: common.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) {
 				useCmd(c)
 			},

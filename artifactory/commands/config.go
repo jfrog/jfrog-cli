@@ -415,3 +415,15 @@ type ConfigCommandConfiguration struct {
 	Interactive bool
 	EncPassword bool
 }
+
+func GetAllServerIds() []string {
+	var serverIds []string
+	configuration, err := config.GetAllArtifactoryConfigs()
+	if err != nil {
+		return serverIds
+	}
+	for _, serverConfig := range configuration {
+		serverIds = append(serverIds, serverConfig.ServerId)
+	}
+	return serverIds
+}
