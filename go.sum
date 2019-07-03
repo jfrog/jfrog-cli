@@ -16,6 +16,8 @@ github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 h1:q763qf9huN11kDQavWs
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/codegangsta/cli v1.20.0 h1:iX1FXEgwzd5+XN6wk5cVHOGQj6Q3Dcp20lUeS4lHNTw=
 github.com/codegangsta/cli v1.20.0/go.mod h1:/qJNoX69yVSKu5o4jLyXAENLRyk1uhi7zkbQ3slBdOA=
+github.com/dashbhanu/jfrog-client-go v0.4.0 h1:pwzs6c3+YPuvTUVMveZTbmx4OmfIi7J3XbIuqK6C+Ks=
+github.com/dashbhanu/jfrog-client-go v0.4.0/go.mod h1:z0TT7uU1IcpkiEgySOE7UD/0f/Vzg85wEOixa5IQTas=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 h1:eX+pdPPlD279OWgdx7f6KqIRSONuK7egk+jDx7OM3Ac=
@@ -46,6 +48,7 @@ github.com/jfrog/gocmd v0.1.10-0.20190611063106-dee9f4672ff7 h1:nczBi5k1p99DxFa8
 github.com/jfrog/gocmd v0.1.10-0.20190611063106-dee9f4672ff7/go.mod h1:sshFvZq1d45d4BP8VQV1D4yGatFRqY0hO0bmHI2cN+w=
 github.com/jfrog/gofrog v1.0.4 h1:jtMkCBEsGOC/URxeHXGLZNFjOAMfvDn0UhN+0uXo1GA=
 github.com/jfrog/gofrog v1.0.4/go.mod h1:4Caxvc8B2K1A798G1Ne+SsUICRPPre4GpgcFqj+EXJ8=
+github.com/jfrog/jfrog-cli-go v1.22.0 h1:rD88IgDybo9sBDpNE4fjLHz3Ql1vSA559pcCOIlrxK0=
 github.com/jfrog/jfrog-client-go v0.3.2 h1:vtRy7IbRtbMPObpDLTYMb0c91iNEAsZgPod2DMUrbrA=
 github.com/jfrog/jfrog-client-go v0.3.2/go.mod h1:z0TT7uU1IcpkiEgySOE7UD/0f/Vzg85wEOixa5IQTas=
 github.com/jfrog/jfrog-client-go v0.3.3 h1:rh3pLmgbW4cnkVVksuknpK67KD7+HViLgFFA8iBmrlE=

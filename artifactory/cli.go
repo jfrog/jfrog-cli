@@ -51,6 +51,7 @@ import (
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/diagnosis"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -494,6 +495,18 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) {
 				pingCmd(c)
+			},
+		},
+		{
+			Name:		"diagnosis",
+			Flags:		getServerFlags(),
+			Aliases:	[]string{"diag"},
+			Usage:		diagnosis.Description,
+			HelpName:	common.CreateUsage("rt diagnosis",diagnosis.Description,diagnosis.Usage),
+			UsageText:	diagnosis.Arguments,
+			ArgsUsage:	common.CreateEnvVars(),
+			Action:		func(c *cli.Context) {
+				diagCmd(c)
 			},
 		},
 		{
@@ -1622,6 +1635,18 @@ func pingCmd(c *cli.Context) {
 	log.Output(resString)
 }
 
+func diagCmd(c *cli.Context) {
+	artDetails := createArtifactoryDetailsByFlags(c, true)
+	diagCmd := generic.NewDiagCommand()
+	diagCmd.SetRtDetails(artDetails)
+	diagCmd.SetThread(getThreadsCount(c))
+	err := commands.Exec(diagCmd)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
 func downloadCmd(c *cli.Context) {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
@@ -2085,7 +2110,7 @@ func getDeleteSpec(c *cli.Context) (deleteSpec *spec.SpecFiles) {
 	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	cliutils.ExitOnErr(err)
 	return
-}
+}                                                                                                     
 
 func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
