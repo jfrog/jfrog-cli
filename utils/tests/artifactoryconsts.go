@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"path/filepath"
 )
 
@@ -723,6 +724,127 @@ func GetDeleteDisplyedFiles() []string {
 		Repo2 + "/flat_nonrecursive_source/a/b/b1.in",
 		Repo2 + "/flat_nonrecursive_source/a/b/b2.in",
 		Repo2 + "/flat_nonrecursive_source/a/b/b3.in",
+	}
+}
+
+func GetSearchIncludeDirsFiles() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path:  Repo1 + "/",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/a1.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/a2.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/a3.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c",
+			Type:  "folder",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
+			Type:  "file",
+			Props: make(map[string][]string, 0),
+		},
+	}
+}
+
+func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path:  Repo1 + "/data/testsdata/a/a1.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/a2.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/a3.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
+			Props: make(map[string][]string, 0),
+		},
+		{
+			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
+			Props: make(map[string][]string, 0),
+		},
 	}
 }
 

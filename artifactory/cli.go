@@ -952,6 +952,10 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		cli.BoolFlag{
+			Name:  "include-dirs",
+			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.` `",
+		},
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -1766,7 +1770,7 @@ func searchCmd(c *cli.Context) {
 
 	artDetails := createArtifactoryDetailsByFlags(c, true)
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetRtDetails(artDetails).SetSpec(searchSpec)
+	searchCmd.SetIncludeDirs(c.Bool("include-dirs")).SetRtDetails(artDetails).SetSpec(searchSpec)
 	err := commands.Exec(searchCmd)
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(searchCmd.SearchResult())
