@@ -235,7 +235,7 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadWildcardRepo(t *testing.T) {
+func TestArtifactoryDownloadWildcardInRepo(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
 
@@ -1483,7 +1483,7 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 }
 
 func TestArtifactoryDeleteFoldersBySpecWildcard(t *testing.T) {
-	deleteFoldersBySpec(t, tests.DeleteSpecWildcardRepo)
+	deleteFoldersBySpec(t, tests.DeleteSpecWildcardInRepo)
 }
 
 func deleteFoldersBySpec(t *testing.T, specPath string) {

@@ -26,7 +26,7 @@ const (
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	UploadSpec                             = "upload_spec.json"
 	DeleteSpec                             = "delete_spec.json"
-	DeleteSpecWildcardRepo                 = "delete_spec_wildcard.json"
+	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	PrepareCopy                            = "prepare_copy.json"
