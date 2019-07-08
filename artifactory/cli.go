@@ -624,10 +624,7 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
-		cli.BoolFlag{
-			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
-		},
+		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getUploadExcludePatternsFlag(),
 		getFailNoOpFlag(),
@@ -678,10 +675,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
-		cli.BoolFlag{
-			Name:  "include-dirs",
-			Usage: "[Default: false] Set to true if you'd like to also apply the target path pattern for folders and not just for files in Artifactory.` `",
-		},
+		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -952,6 +946,7 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
@@ -994,15 +989,19 @@ func getPropertiesFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		cli.BoolFlag{
-			Name:  "include-dirs",
-			Usage: "[Default: false] When true, the properties will also be set on folders (and not just files) in Artifactory.` `",
-		},
+		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
+}
+
+func getIncludeDirsFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "include-dirs",
+		Usage: "[Default: false] Set to true if you'd like to also apply the source path pattern for directories and not just for files.` `",
+	}
 }
 
 func getArchiveEntriesFlag() cli.Flag {
@@ -2098,6 +2097,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec()
 }

@@ -10,6 +10,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.3
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/spf13/viper v1.2.1
+	github.com/stretchr/testify v1.2.2
 	github.com/vbauerster/mpb/v4 v4.7.0
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0 // indirect

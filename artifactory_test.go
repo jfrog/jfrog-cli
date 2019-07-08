@@ -29,6 +29,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mholt/archiver"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -2974,6 +2975,33 @@ func TestArtifactoryWinBackwardsCompatibility(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySearchIncludeDir(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive", "--flat=false")
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+
+	// Search without IncludeDirs
+	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(false).BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchNotIncludeDirsFiles())
+
+	// Search with IncludeDirs
+	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchIncludeDirsFiles())
+
+	// Cleanup
 	cleanArtifactoryTest()
 }
 

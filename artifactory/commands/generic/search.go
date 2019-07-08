@@ -11,6 +11,7 @@ import (
 
 type SearchResult struct {
 	Path  string              `json:"path,omitempty"`
+	Type  string              `json:"type,omitempty"`
 	Props map[string][]string `json:"props,omitempty"`
 }
 
@@ -73,11 +74,14 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 	result = make([]SearchResult, len(aqlResult))
 	for i, v := range aqlResult {
 		tempResult := new(SearchResult)
+		tempResult.Path = v.Repo + "/"
 		if v.Path != "." {
-			tempResult.Path = v.Repo + "/" + v.Path + "/" + v.Name
-		} else {
-			tempResult.Path = v.Repo + "/" + v.Name
+			tempResult.Path += v.Path + "/"
 		}
+		if v.Name != "." {
+			tempResult.Path += v.Name
+		}
+		tempResult.Type = v.Type
 		tempResult.Props = make(map[string][]string, len(v.Properties))
 		for _, prop := range v.Properties {
 			tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)
@@ -95,5 +99,6 @@ func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err erro
 		return
 	}
 
+	searchParams.IncludeDirs, err = f.IsIncludeDirs(false)
 	return
 }
