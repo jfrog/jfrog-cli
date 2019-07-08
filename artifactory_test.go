@@ -237,6 +237,32 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadWildcardInRepo(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = getSpecialCharFilePath()
+
+	// Upload a file to repo1 and another one to repo2
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/a1.in")
+	artifactoryCli.Exec("upload", filePath, tests.Repo2+"/path/a2.in")
+
+	specFile, err := tests.CreateSpec(tests.DownloadWildcardRepo)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Verify the 2 files exist using `*` in the repository name
+	isExistInArtifactory(tests.GetDownloadWildcardRepo(), specFile, t)
+
+	// Download the 2 files with `*` in the repository name
+	artifactoryCli.Exec("dl", "--spec="+specFile)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.IsExistLocally([]string{path.Join(tests.Out, "a1.in"), path.Join(tests.Out, "a2.in")}, paths, t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
@@ -1455,6 +1481,14 @@ func TestArtifactoryDeleteFolderContent(t *testing.T) {
 }
 
 func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
+	deleteFoldersBySpec(t, tests.DeleteSpec)
+}
+
+func TestArtifactoryDeleteFoldersBySpecWildcard(t *testing.T) {
+	deleteFoldersBySpec(t, tests.DeleteSpecWildcardInRepo)
+}
+
+func deleteFoldersBySpec(t *testing.T, specPath string) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
 	err := prepCopyFiles()
@@ -1462,7 +1496,7 @@ func TestArtifactoryDeleteFoldersBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	deleteSpecPath, err := tests.CreateSpec(tests.DeleteSpec)
+	deleteSpecPath, err := tests.CreateSpec(specPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -3245,6 +3279,7 @@ func createRandomReposName() {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	tests.Repo1 += "-" + timestamp
 	tests.Repo2 += "-" + timestamp
+	tests.Repo1And2 += "-" + timestamp
 	tests.VirtualRepo += "-" + timestamp
 	tests.LfsRepo += "-" + timestamp
 	if *tests.TestBuildTools {

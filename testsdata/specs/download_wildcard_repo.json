@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO_1_AND_2}/path/*",
+      "target": "out/",
+      "flat": "true"
+    }
+  ]
+}
