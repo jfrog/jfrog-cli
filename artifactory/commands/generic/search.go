@@ -18,7 +18,6 @@ type SearchResult struct {
 type SearchCommand struct {
 	GenericCommand
 	searchResult []SearchResult
-	includeDirs  bool
 }
 
 func NewSearchCommand() *SearchCommand {
@@ -31,11 +30,6 @@ func (sc *SearchCommand) SearchResult() []SearchResult {
 
 func (sc *SearchCommand) CommandName() string {
 	return "rt_search"
-}
-
-func (sc *SearchCommand) SetIncludeDirs(includeDirs bool) *SearchCommand {
-	sc.includeDirs = includeDirs
-	return sc
 }
 
 func (sc *SearchCommand) Run() error {
@@ -63,7 +57,6 @@ func (sc *SearchCommand) Search() error {
 			log.Error(err)
 			return err
 		}
-		searchParams.IncludeDirs = sc.includeDirs
 
 		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
@@ -72,12 +65,12 @@ func (sc *SearchCommand) Search() error {
 		resultItems = append(resultItems, currentResultItems...)
 	}
 
-	sc.searchResult = sc.aqlResultToSearchResult(resultItems)
+	sc.searchResult = aqlResultToSearchResult(resultItems)
 	clientutils.LogSearchResults(len(resultItems))
 	return err
 }
 
-func (sc *SearchCommand) aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []SearchResult) {
+func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []SearchResult) {
 	result = make([]SearchResult, len(aqlResult))
 	for i, v := range aqlResult {
 		tempResult := new(SearchResult)
@@ -106,5 +99,6 @@ func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err erro
 		return
 	}
 
+	searchParams.IncludeDirs, err = f.IsIncludeDirs(false)
 	return
 }

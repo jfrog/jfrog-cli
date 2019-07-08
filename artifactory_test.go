@@ -2986,18 +2986,18 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive", "--flat=false")
 
 	// Prepare search command
-	searchSpec := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true).BuildSpec()
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
+	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Search without IncludeDirs
-	err = searchCmd.SetIncludeDirs(false).Search()
-	assert.NoError(t, err)
+	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(false).BuildSpec())
+	assert.NoError(t, searchCmd.Search())
 	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchNotIncludeDirsFiles())
 
 	// Search with IncludeDirs
-	err = searchCmd.SetIncludeDirs(true).Search()
-	assert.NoError(t, err)
+	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
+	assert.NoError(t, searchCmd.Search())
 	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchIncludeDirsFiles())
 
 	// Cleanup
