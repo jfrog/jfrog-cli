@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+	"github.com/codegangsta/cli"
 	"strings"
 )
 
@@ -15,4 +17,16 @@ func CreateEnvVars(envVars ...string) string {
 	}
 	s = append(s, GlobalEnvVars)
 	return strings.Join(s[:], "\n\n")
+}
+
+func CreateBashCompletionFunc(extraCommands ...string) cli.BashCompleteFunc {
+	return func(ctx *cli.Context) {
+		for _, command := range extraCommands {
+			fmt.Println(command)
+		}
+		flagNames := append(ctx.FlagNames(), "help")
+		for _, flagName := range flagNames {
+			fmt.Println("--" + flagName)
+		}
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory"
 	"github.com/jfrog/jfrog-cli-go/bintray"
+	"github.com/jfrog/jfrog-cli-go/completion"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -81,6 +82,7 @@ func execMain() error {
 	app.Usage = "See https://github.com/jfrog/jfrog-cli-go for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
+	app.EnableBashCompletion = true
 	app.Commands = getCommands()
 	cli.CommandHelpTemplate = commandHelpTemplate
 	cli.AppHelpTemplate = appHelpTemplate
@@ -110,6 +112,11 @@ func getCommands() []cli.Command {
 			Name:        cliutils.CmdXray,
 			Usage:       "Xray commands",
 			Subcommands: xray.GetCommands(),
+		},
+		{
+			Name:        cliutils.CmdCompletion,
+			Usage:       "Generate autocomplete scripts",
+			Subcommands: completion.GetCommands(),
 		},
 	}
 }

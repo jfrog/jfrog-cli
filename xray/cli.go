@@ -16,13 +16,14 @@ const DATE_FORMAT = "2006-01-02"
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:      "offline-update",
-			Usage:     offlineupdate.Description,
-			HelpName:  common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
-			ArgsUsage: common.CreateEnvVars(),
-			Flags:     offlineUpdateFlags(),
-			Aliases:   []string{"ou"},
-			Action:    offlineUpdates,
+			Name:         "offline-update",
+			Usage:        offlineupdate.Description,
+			HelpName:     common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			Flags:        offlineUpdateFlags(),
+			Aliases:      []string{"ou"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action:       offlineUpdates,
 		},
 	}
 }
