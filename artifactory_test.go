@@ -37,6 +37,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -3084,7 +3085,6 @@ func execDeleteRepoRest(repoName string) {
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
-		return
 	}
 	resp, body, err := client.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
 	if err != nil {
@@ -3098,40 +3098,105 @@ func execDeleteRepoRest(repoName string) {
 	log.Info("Repository", repoName, "deleted.")
 }
 
+func execListRepoRest() ([]string, error) {
+	var repositoryKeys []string
+
+	// Build http client
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return nil, err
+	}
+
+	// Send get request
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/repositories", true, artHttpDetails)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	}
+
+	// Extract repository keys from the json response
+	var keyError error
+	_, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if err != nil || keyError != nil {
+			return
+		}
+		repoKey, err := jsonparser.GetString(value, "key")
+		if err != nil {
+			keyError = err
+			return
+		}
+		repositoryKeys = append(repositoryKeys, repoKey)
+	})
+	if keyError != nil {
+		return nil, err
+	}
+
+	return repositoryKeys, err
+}
+
 func execCreateRepoRest(repoConfig, repoName string) {
 	content, err := ioutil.ReadFile(repoConfig)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
-		return
 	}
 	rtutils.AddHeader("Content-Type", "application/json", &artHttpDetails.Headers)
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
-		return
 	}
 	resp, body, err := client.SendPut(artifactoryDetails.Url+"api/repositories/"+repoName, content, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
-		return
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 		os.Exit(1)
-		return
 	}
 	log.Info("Repository", repoName, "created.")
 }
 
 func createReposIfNeeded() {
+	cleanUpOldRepositories()
 	createRandomReposName()
 	nonVirtualRepos := tests.GetNonVirtualRepositories()
 	createRepos(nonVirtualRepos)
 	virtualRepos := tests.GetVirtualRepositories()
 	createRepos(virtualRepos)
+}
+
+func cleanUpOldRepositories() {
+	repositoryKeys, err := execListRepoRest()
+	if err != nil {
+		log.Warn("Couldn't retrieve repository list from Artifactory", err)
+		return
+	}
+
+	now := time.Now()
+	repoPattern := regexp.MustCompile(`^jfrog-cli-tests(-\w*)+-(\d*)$`)
+	for _, repoKey := range repositoryKeys {
+		regexGroups := repoPattern.FindStringSubmatch(repoKey)
+		if regexGroups == nil {
+			// Repository is not "jfrog-cli-tests-..."
+			continue
+		}
+
+		repoTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
+		if err != nil {
+			log.Warn("Error while parsing repository timestamp of repository ", repoKey, err)
+			continue
+		}
+
+		repoTime := time.Unix(repoTimestamp, 0)
+		if now.Sub(repoTime).Hours() > 2.0 {
+			log.Info("Deleting old repository", repoKey)
+			execDeleteRepoRest(repoKey)
+		}
+	}
 }
 
 func createRepos(repos map[string]string) {
