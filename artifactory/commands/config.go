@@ -416,7 +416,7 @@ type ConfigCommandConfiguration struct {
 	EncPassword bool
 }
 
-func GetAllServerIds() []string {
+func GetAllArtifactoryServerIds() []string {
 	var serverIds []string
 	configuration, err := config.GetAllArtifactoryConfigs()
 	if err != nil {

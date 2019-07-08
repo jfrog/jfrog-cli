@@ -92,7 +92,7 @@ func GetCommands() []cli.Command {
 			HelpName:     common.CreateUsage("rt use", use.Description, use.Usage),
 			UsageText:    use.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(commands.GetAllServerIds()...),
+			BashComplete: common.CreateBashCompletionFunc(commands.GetAllArtifactoryServerIds()...),
 			Action: func(c *cli.Context) {
 				useCmd(c)
 			},
