@@ -88,9 +88,7 @@ func (sc *SearchCommand) aqlResultToSearchResult(aqlResult []clientutils.ResultI
 		if v.Name != "." {
 			tempResult.Path += v.Name
 		}
-		if sc.includeDirs {
-			tempResult.Type = v.Type
-		}
+		tempResult.Type = v.Type
 		tempResult.Props = make(map[string][]string, len(v.Properties))
 		for _, prop := range v.Properties {
 			tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)

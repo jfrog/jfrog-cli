@@ -811,38 +811,47 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
 			Path:  Repo1 + "/data/testsdata/a/a1.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a2.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a3.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
+			Type:  "file",
 			Props: make(map[string][]string, 0),
 		},
 	}
