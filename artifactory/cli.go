@@ -980,6 +980,10 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		cli.BoolFlag{
+			Name:  "count",
+			Usage: "[Optional] Set to true to display only the total of files or folders found.` `",
+		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getFailNoOpFlag(),
@@ -1804,7 +1808,11 @@ func searchCmd(c *cli.Context) {
 	cliutils.ExitOnErr(err)
 	result, err := json.Marshal(searchCmd.SearchResult())
 	cliutils.FailNoOp(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
-	log.Output(string(clientutils.IndentJson(result)))
+	if c.Bool("count") {
+		log.Output(len(searchCmd.SearchResult()))
+	} else {
+		log.Output(string(clientutils.IndentJson(result)))
+	}
 }
 
 func setPropsCmd(c *cli.Context) {
