@@ -259,7 +259,7 @@ func TestArtifactoryDownloadWildcardInRepo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tests.IsExistLocally([]string{path.Join(tests.Out, "a1.in"), path.Join(tests.Out, "a2.in")}, paths, t)
+	tests.IsExistLocally([]string{filepath.Join(tests.Out, "a1.in"), filepath.Join(tests.Out, "a2.in")}, paths, t)
 	cleanArtifactoryTest()
 }
 
