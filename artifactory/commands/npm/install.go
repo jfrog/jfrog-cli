@@ -610,13 +610,13 @@ func getDetailsUsingBasicAuth(artDetails auth.ArtifactoryDetails) (npmAuth strin
 		return "", "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
-	// Extract Artifactory version from response header.
-	serverValues := strings.Split(resp.Header.Get("Server"), "/")
-	if len(serverValues) != 2 {
-		errorutils.CheckError(errors.New("Cannot parse Artifactory version from the server header."))
+	// Get Artifactory version.
+	rtVersion, err := artDetails.GetVersion()
+	if err != nil {
+		return "", "", err
 	}
 
-	return string(body), strings.TrimSpace(serverValues[1]), err
+	return string(body), rtVersion, nil
 }
 
 func getNpmRepositoryUrl(repo, url string) string {
