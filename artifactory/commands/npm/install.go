@@ -338,8 +338,8 @@ func (nca *NpmCommandArgs) validateNpmVersion() error {
 	if err != nil {
 		return err
 	}
-	version := version.NewVersion(string(npmVersion))
-	if version.Compare(minSupportedNpmVersion) > 0 {
+	rtVersion := version.NewVersion(string(npmVersion))
+	if rtVersion.Compare(minSupportedNpmVersion) > 0 {
 		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil
@@ -576,14 +576,14 @@ func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (npmAuth string, 
 
 func validateArtifactoryVersion(artDetails auth.ArtifactoryDetails) error {
 	// Get Artifactory version.
-	rtVersion, err := artDetails.GetVersion()
+	versionStr, err := artDetails.GetVersion()
 	if err != nil {
 		return err
 	}
 
 	// Validate version.
-	version := version.NewVersion(rtVersion)
-	if !version.AtLeast(minSupportedArtifactoryVersion) {
+	rtVersion := version.NewVersion(versionStr)
+	if !rtVersion.AtLeast(minSupportedArtifactoryVersion) {
 		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
 	}
 
