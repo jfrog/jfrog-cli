@@ -119,3 +119,24 @@ func TestNewAssetsExtractor(t *testing.T) {
 		t.Error("Expected: []string{\"dep1\"} got :", childrenMap["dep2"])
 	}
 }
+
+func TestGetDependencyIdForBuildInfo(t *testing.T) {
+	args := []string{
+		"dep1/1.0.1",
+		"dep2.another.hierarchy/1.0.2",
+		"dep3:with;special?chars@test/1.0.3",
+	}
+
+	expected := []string{
+		"dep1:1.0.1",
+		"dep2.another.hierarchy:1.0.2",
+		"dep3:with;special?chars@test:1.0.3",
+	}
+
+	for index, test := range args {
+		actualId := getDependencyIdForBuildInfo(test)
+		if actualId != expected[index] {
+			t.Errorf("Expected dependency name to be: %s, got: %s.", expected[index], actualId)
+		}
+	}
+}

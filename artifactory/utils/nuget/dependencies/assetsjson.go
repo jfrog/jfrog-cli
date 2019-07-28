@@ -119,7 +119,7 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 		}
 
 		dependencyName := getDependencyName(dependencyId)
-		dependencies[dependencyName] = &buildinfo.Dependency{Id: dependencyId, Checksum: &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}}
+		dependencies[dependencyName] = &buildinfo.Dependency{Id: getDependencyIdForBuildInfo(dependencyId), Checksum: &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}}
 	}
 
 	return dependencies, nil
@@ -140,6 +140,16 @@ func (assets *assets) isPackagePartOfTargetDependencies(nugetPackageName string)
 		}
 	}
 	return false
+}
+
+// Dependencies-id in assets is built in form of: <package-name>/<version>.
+// The Build-info format of dependency id is: <package-name>:<version>.
+func getDependencyIdForBuildInfo(dependencyAssetId string) string {
+	indexOfSlash := strings.Index(dependencyAssetId, "/")
+	if indexOfSlash < 0 {
+		return dependencyAssetId
+	}
+	return dependencyAssetId[0:indexOfSlash] + ":" + dependencyAssetId[indexOfSlash+1:]
 }
 
 func getDependencyName(dependencyId string) string {
