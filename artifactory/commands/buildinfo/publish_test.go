@@ -16,7 +16,7 @@ func TestIncludeAllPattern(t *testing.T) {
 
 	equals := reflect.DeepEqual(envVars, filteredKeys)
 	if !equals {
-		t.Error("expeted:", envVars, "got:", filteredKeys)
+		t.Error("expected:", envVars, "got:", filteredKeys)
 	}
 }
 
@@ -30,7 +30,7 @@ func TestIncludePartial(t *testing.T) {
 	expected := map[string]string{"INClUdEd_VaR": "included_var", "EXCLUDED_pASSwoRd_var": "excluded_var"}
 	equals := reflect.DeepEqual(expected, filteredKeys)
 	if !equals {
-		t.Error("expeted:", expected, "got:", filteredKeys)
+		t.Error("expected:", expected, "got:", filteredKeys)
 	}
 }
 
@@ -44,7 +44,7 @@ func TestIncludePartialIgnoreCase(t *testing.T) {
 	expected := map[string]string{"INClUdEd_VaR": "included_var"}
 	equals := reflect.DeepEqual(expected, filteredKeys)
 	if !equals {
-		t.Error("expeted:", expected, "got:", filteredKeys)
+		t.Error("expected:", expected, "got:", filteredKeys)
 	}
 }
 
@@ -58,6 +58,6 @@ func TestExcludePasswordsPattern(t *testing.T) {
 	expected := map[string]string{"INClUdEd_VaR": "included_var"}
 	equals := reflect.DeepEqual(expected, filteredKeys)
 	if !equals {
-		t.Error("expeted:", expected, "got:", filteredKeys)
+		t.Error("expected:", expected, "got:", filteredKeys)
 	}
 }

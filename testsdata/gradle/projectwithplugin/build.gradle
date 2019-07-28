@@ -17,7 +17,7 @@ task initProject(description: 'Initialize project directory structure.') {
 
         ['java', 'groovy', 'resources'].each {
             // convention.sourceSets contains the directory structure
-            // for our Groovy project. So we use this struture
+            // for our Groovy project. So we use this structure
             // and make a directory for each node.
             sourceSets*."${it}".srcDirs*.each { dir ->
                 def newDir = new File(dir, defaultPackage)
