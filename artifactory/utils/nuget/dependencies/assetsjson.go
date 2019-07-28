@@ -145,11 +145,7 @@ func (assets *assets) isPackagePartOfTargetDependencies(nugetPackageName string)
 // Dependencies-id in assets is built in form of: <package-name>/<version>.
 // The Build-info format of dependency id is: <package-name>:<version>.
 func getDependencyIdForBuildInfo(dependencyAssetId string) string {
-	indexOfSlash := strings.Index(dependencyAssetId, "/")
-	if indexOfSlash < 0 {
-		return dependencyAssetId
-	}
-	return dependencyAssetId[0:indexOfSlash] + ":" + dependencyAssetId[indexOfSlash+1:]
+	return strings.Replace(dependencyAssetId, "/", ":", 1)
 }
 
 func getDependencyName(dependencyId string) string {
