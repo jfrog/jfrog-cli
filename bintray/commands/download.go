@@ -5,7 +5,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/bintray/services"
 )
 
-func DownloadFile(config bintray.Config, params *services.DownloadFileParams) (totalDownloded, totalFailed int, err error) {
+func DownloadFile(config bintray.Config, params *services.DownloadFileParams) (totalDownloaded, totalFailed int, err error) {
 	bt, err := bintray.New(config)
 	if err != nil {
 		return
@@ -13,11 +13,11 @@ func DownloadFile(config bintray.Config, params *services.DownloadFileParams) (t
 	return bt.DownloadFile(params)
 }
 
-func DownloadVersion(config bintray.Config, params *services.DownloadVersionParams) (totalDownloded, totalFailed int, err error) {
+func DownloadVersion(config bintray.Config, params *services.DownloadVersionParams) (totalDownloaded, totalFailed int, err error) {
 	bt, err := bintray.New(config)
 	if err != nil {
 		return
 	}
-	totalDownloded, totalFailed, err = bt.DownloadVersion(params)
+	totalDownloaded, totalFailed, err = bt.DownloadVersion(params)
 	return
 }

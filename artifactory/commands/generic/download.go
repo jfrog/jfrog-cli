@@ -121,7 +121,7 @@ func (dc *DownloadCommand) Run() error {
 }
 
 func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buildinfo.Dependency {
-	buildDependecies := make([]buildinfo.Dependency, len(filesInfo))
+	buildDependencies := make([]buildinfo.Dependency, len(filesInfo))
 	for i, fileInfo := range filesInfo {
 		dependency := buildinfo.Dependency{Checksum: &buildinfo.Checksum{}}
 		dependency.Md5 = fileInfo.Md5
@@ -129,9 +129,9 @@ func convertFileInfoToBuildDependencies(filesInfo []clientutils.FileInfo) []buil
 		// Artifact name in build info as the name in artifactory
 		filename, _ := fileutils.GetFileAndDirFromPath(fileInfo.ArtifactoryPath)
 		dependency.Id = filename
-		buildDependecies[i] = dependency
+		buildDependencies[i] = dependency
 	}
-	return buildDependecies
+	return buildDependencies
 }
 
 func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration) (downParams services.DownloadParams, err error) {

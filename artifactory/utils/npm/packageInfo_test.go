@@ -24,7 +24,7 @@ func TestReadPackageInfoFromPackageJson(t *testing.T) {
 
 			equals := reflect.DeepEqual(test.pi, packInfo)
 			if !equals {
-				t.Error("expeted:", test.pi, "got:", packInfo)
+				t.Error("expected:", test.pi, "got:", packInfo)
 			}
 		})
 	}
@@ -42,7 +42,7 @@ func TestGetDeployPath(t *testing.T) {
 		t.Run(test.expectedPath, func(t *testing.T) {
 			actualPath := test.pi.GetDeployPath()
 			if actualPath != test.expectedPath {
-				t.Error("expeted:", test.expectedPath, "got:", actualPath)
+				t.Error("expected:", test.expectedPath, "got:", actualPath)
 			}
 		})
 	}
@@ -60,7 +60,7 @@ func TestGetExpectedPackedFileName(t *testing.T) {
 		t.Run(test.fileName, func(t *testing.T) {
 			actualFileName := test.pi.GetExpectedPackedFileName()
 			if actualFileName != test.fileName {
-				t.Error("expeted:", test.fileName, "got:", actualFileName)
+				t.Error("expected:", test.fileName, "got:", actualFileName)
 			}
 		})
 	}

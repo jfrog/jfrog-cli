@@ -139,7 +139,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	d1 := []byte("test file")
 	err := ioutil.WriteFile(testFileAbs, d1, 0644)
 	if err != nil {
-		t.Error("Coudln't create file:", err)
+		t.Error("Couldn't create file:", err)
 	}
 
 	packageName := "simpleUploadHomePackage"

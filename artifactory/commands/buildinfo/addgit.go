@@ -119,7 +119,7 @@ func (config *BuildAddGitCommand) Run() error {
 	return nil
 }
 
-// Returns the ArtfiactoryDetails.
+// Returns the ArtifactoryDetails.
 // If a config file exists, the information is taken from it. if not, the default server is returned.
 func (config *BuildAddGitCommand) RtDetails() (*utilsconfig.ArtifactoryDetails, error) {
 	if config.configFilePath != "" {

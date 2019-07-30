@@ -105,9 +105,9 @@ function getArchitecture() {
 }
 
 function getFileName() {
-    var excecutable = "jfrog";
+    var executable = "jfrog";
     if (process.platform.startsWith("win")) {
-        excecutable += ".exe";
+        executable += ".exe";
     }
-    return excecutable;
+    return executable;
 }
