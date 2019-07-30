@@ -13,7 +13,7 @@ import (
 )
 
 // Internal golang locking for the same process.
-var mutux sync.Mutex
+var mutex sync.Mutex
 
 func GetConfig() (*config.MissionControlDetails, error) {
 	return config.ReadMissionControlConf()
@@ -41,9 +41,9 @@ func ClearConfig() {
 }
 
 func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) (conf *config.MissionControlDetails, err error) {
-	mutux.Lock()
+	mutex.Lock()
 	lockFile, err := lock.CreateLock()
-	defer mutux.Unlock()
+	defer mutex.Unlock()
 	defer lockFile.Unlock()
 
 	if err != nil {

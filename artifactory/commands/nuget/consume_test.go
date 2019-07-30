@@ -3,10 +3,10 @@ package nuget
 import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
 	"os"
@@ -92,7 +92,7 @@ func TestInitNewConfig(t *testing.T) {
 	nugetConfig := NugetConfig{}
 	err = xml.Unmarshal(content, &nugetConfig)
 	if err != nil {
-		t.Error("Unmarsheling failed with an error:", err.Error())
+		t.Error("Unmarshalling failed with an error:", err.Error())
 	}
 
 	if len(nugetConfig.PackageSources) != 1 {
