@@ -145,16 +145,11 @@ func (nca *NpmCommandArgs) preparePrerequisites(repo string) error {
 }
 
 func (nca *NpmCommandArgs) prepareArtifactoryPrerequisites(repo string) (err error) {
-	npmAuth, artifactoryVersion, err := getArtifactoryDetails(nca.artDetails)
+	npmAuth, err := getArtifactoryDetails(nca.artDetails)
 	if err != nil {
 		return err
 	}
-
 	nca.npmAuth = npmAuth
-	version := version.NewVersion(artifactoryVersion)
-	if !version.AtLeast(minSupportedArtifactoryVersion) {
-		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
-	}
 
 	if err = utils.CheckIfRepoExists(repo, nca.artDetails); err != nil {
 		return err
@@ -343,8 +338,8 @@ func (nca *NpmCommandArgs) validateNpmVersion() error {
 	if err != nil {
 		return err
 	}
-	version := version.NewVersion(string(npmVersion))
-	if version.Compare(minSupportedNpmVersion) > 0 {
+	rtVersion := version.NewVersion(string(npmVersion))
+	if rtVersion.Compare(minSupportedNpmVersion) > 0 {
 		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
 	}
 	return nil
@@ -565,58 +560,68 @@ func (nca *NpmCommandArgs) setNpmExecutable() error {
 	return nil
 }
 
-func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (npmAuth string, artifactoryVersion string, err error) {
+func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
+	// Check Artifactory version.
+	err = validateArtifactoryVersion(artDetails)
+	if err != nil {
+		return "", err
+	}
+
+	// Get npm tokem from Artifactory.
 	if artDetails.GetAccessToken() == "" {
 		return getDetailsUsingBasicAuth(artDetails)
 	}
-
 	return getDetailsUsingAccessToken(artDetails)
 }
 
-func getDetailsUsingAccessToken(artDetails auth.ArtifactoryDetails) (npmAuth string, artifactoryVersion string, err error) {
+func validateArtifactoryVersion(artDetails auth.ArtifactoryDetails) error {
+	// Get Artifactory version.
+	versionStr, err := artDetails.GetVersion()
+	if err != nil {
+		return err
+	}
+
+	// Validate version.
+	rtVersion := version.NewVersion(versionStr)
+	if !rtVersion.AtLeast(minSupportedArtifactoryVersion) {
+		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+	}
+
+	return nil
+}
+
+func getDetailsUsingAccessToken(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
 	npmAuthString := "_auth = %s\nalways-auth = true"
 	// Build npm token, consists of <username:password> encoded.
 	// Use Artifactory's access-token as username and password to create npm token.
 	username, err := auth.ExtractUsernameFromAccessToken(artDetails.GetAccessToken())
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	encodedNpmToken := base64.StdEncoding.EncodeToString([]byte(username + ":" + artDetails.GetAccessToken()))
 	npmAuth = fmt.Sprintf(npmAuthString, encodedNpmToken)
 
-	// Get Artifactory version.
-	rtVersion, err := artDetails.GetVersion()
-	if err != nil {
-		return "", "", err
-	}
-
-	return npmAuth, rtVersion, err
+	return npmAuth, err
 }
 
-func getDetailsUsingBasicAuth(artDetails auth.ArtifactoryDetails) (npmAuth string, artifactoryVersion string, err error) {
+func getDetailsUsingBasicAuth(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
 	authApiUrl := artDetails.GetUrl() + "api/npm/auth"
 	log.Debug("Sending npm auth request")
 
 	// Get npm token from Artifactory.
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	resp, body, _, err := client.SendGet(authApiUrl, true, artDetails.CreateHttpClientDetails())
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+		return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
 	}
 
-	// Extract Artifactory version from response header.
-	serverValues := strings.Split(resp.Header.Get("Server"), "/")
-	if len(serverValues) != 2 {
-		errorutils.CheckError(errors.New("Cannot parse Artifactory version from the server header."))
-	}
-
-	return string(body), strings.TrimSpace(serverValues[1]), err
+	return string(body), nil
 }
 
 func getNpmRepositoryUrl(repo, url string) string {
