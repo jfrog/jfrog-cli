@@ -711,6 +711,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property will be downloaded"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
@@ -907,6 +908,7 @@ func getMoveFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getPropertiesFlag("Only artifacts with these properties will be moved."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property will be moved"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -935,6 +937,7 @@ func getCopyFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property will be copied"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -962,6 +965,7 @@ func getDeleteFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property will be deleted"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -986,6 +990,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property will be returned"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -995,6 +1000,7 @@ func getSearchFlags() []cli.Flag {
 func getSetPropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
 		getPropertiesFlag("Only artifacts with these properties are affected."),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property are affected"),
 	}
 	return append(flags, getPropertiesFlags()...)
 }
@@ -1006,12 +1012,17 @@ func getPropertiesFlag(description string) cli.Flag {
 	}
 }
 
+func getExcludePropertiesFlag(description string) cli.Flag {
+	return cli.StringFlag{
+		Name:  "exclude-props",
+		Usage: fmt.Sprintf("[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". %s ` `", description),
+	}
+}
+
 func getDeletePropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.` `",
-		},
+		getPropertiesFlag("Only artifacts with these properties are affected"),
+		getExcludePropertiesFlag("Only artifacts without the specified value for the property are affected"),
 	}
 	return append(flags, getPropertiesFlags()...)
 }
@@ -2073,6 +2084,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2104,6 +2116,7 @@ func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2132,6 +2145,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2148,6 +2162,7 @@ func createDefaultPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2248,6 +2263,7 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2471,6 +2487,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")

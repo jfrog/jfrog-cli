@@ -8,6 +8,7 @@ type builder struct {
 	target          string
 	explode         string
 	props           string
+	excludeProps	string
 	sortOrder       string
 	sortBy          []string
 	offset          int
@@ -51,6 +52,11 @@ func (b *builder) Explode(explode string) *builder {
 
 func (b *builder) Props(props string) *builder {
 	b.props = props
+	return b
+}
+
+func (b *builder) ExcludeProps(excludeProps string) *builder {
+	b.excludeProps = excludeProps
 	return b
 }
 
@@ -107,6 +113,7 @@ func (b *builder) BuildSpec() *SpecFiles {
 				ExcludePatterns: b.excludePatterns,
 				Target:          b.target,
 				Props:           b.props,
+				ExcludeProps:	 b.excludeProps,
 				SortOrder:       b.sortOrder,
 				SortBy:          b.sortBy,
 				Offset:          b.offset,
