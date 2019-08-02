@@ -22,15 +22,27 @@ elif $(echo "${OSTYPE}" | grep -q darwin); then
     FILE_NAME="jfrog"
 else
     CLI_OS="linux"
-    if $(uname -m | grep -q 64); then
-        CLI_UNAME="64"
-        URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-linux-amd64/jfrog?bt_package=jfrog-cli-linux-amd64"
-        FILE_NAME="jfrog"
-    else
-        CLI_UNAME="32"
-        URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-linux-386/jfrog?bt_package=jfrog-cli-linux-386"
-        FILE_NAME="jfrog"
-    fi
+    MACHINE_TYPE="$(uname -m)"
+    case $MACHINE_TYPE in
+        i386 | i486 | i586 | i686 | i786 | x86)
+            ARCH="386"
+            ;;
+        amd64 | x86_64 | x64)
+            ARCH="amd64"
+            ;;
+        arm | armv7l)
+            ARCH="arm"
+            ;;
+        aarch64)
+            ARCH="arm64"
+            ;;
+        *)
+            echo "Unknown machine type: $MACHINE_TYPE"
+            exit -1
+            ;;
+    esac
+    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog?bt_package=jfrog-cli-${CLI_OS}-${ARCH}"
+    FILE_NAME="jfrog"
 fi
 
 curl -XGET "$URL" -L -k > $FILE_NAME
