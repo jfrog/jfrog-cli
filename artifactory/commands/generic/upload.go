@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -14,12 +15,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type UploadCommand struct {
 	GenericCommand
 	uploadConfiguration *utils.UploadConfiguration
 	buildConfiguration  *utils.BuildConfiguration
+	syncDeletePath      string
+	quiet               bool
 	logFile             *os.File
 }
 
@@ -29,6 +33,24 @@ func NewUploadCommand() *UploadCommand {
 
 func (uc *UploadCommand) LogFile() *os.File {
 	return uc.logFile
+}
+
+func (uc *UploadCommand) SyncDeletePath() string {
+	return uc.syncDeletePath
+}
+
+func (uc *UploadCommand) SetSyncDeletePath(syncDelete string) *UploadCommand {
+	uc.syncDeletePath = syncDelete
+	return uc
+}
+
+func (uc *UploadCommand) Quiet() bool {
+	return uc.quiet
+}
+
+func (uc *UploadCommand) SetQuiet(quiet bool) *UploadCommand {
+	uc.quiet = quiet
+	return uc
 }
 
 func (uc *UploadCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *UploadCommand {
@@ -56,6 +78,16 @@ func (uc *UploadCommand) Run() error {
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
 func (uc *UploadCommand) upload() error {
+	//in case of sync-delete ger user confirm first and save the operation timestamp.
+	syncDeleteProp := ""
+	if !uc.DryRun() && uc.SyncDeletePath() != "" {
+		if uc.quiet || cliutils.InteractiveConfirm("Sync-delete may delete some artifacts. Are you sure you want to continue?") {
+			timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+			syncDeleteProp = ";syncDelete=" + timestamp
+		} else {
+			return nil
+		}
+	}
 	// Initialize Progress bar, set logger to a log file
 	var err error
 	var progressBar ioUtils.Progress
@@ -100,7 +132,9 @@ func (uc *UploadCommand) upload() error {
 	var uploadParamsArray []services.UploadParams
 	// Create UploadParams for all File-Spec groups.
 	for i := 0; i < len(uc.Spec().Files); i++ {
-		uploadParams, err := getUploadParams(uc.Spec().Get(i), uc.uploadConfiguration)
+		file := uc.Spec().Get(i)
+		file.Props += syncDeleteProp
+		uploadParams, err := getUploadParams(file, uc.uploadConfiguration)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -126,14 +160,23 @@ func (uc *UploadCommand) upload() error {
 		return err
 	}
 
-	// Build Info
-	if isCollectBuildInfo && !uc.DryRun() {
-		buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
-		populateFunc := func(partial *buildinfo.Partial) {
-			partial.Artifacts = buildArtifacts
-			partial.ModuleId = uc.buildConfiguration.Module
+	if !uc.DryRun() {
+		// handle sync-delete
+		if uc.SyncDeletePath() != "" {
+			err = uc.handleSyncDelete(syncDeleteProp)
+			if err != nil {
+				log.Error(err)
+			}
 		}
-		err = utils.SavePartialBuildInfo(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber, populateFunc)
+		// Build Info
+		if isCollectBuildInfo {
+			buildArtifacts := convertFileInfoToBuildArtifacts(filesInfo)
+			populateFunc := func(partial *buildinfo.Partial) {
+				partial.Artifacts = buildArtifacts
+				partial.ModuleId = uc.buildConfiguration.Module
+			}
+			err = utils.SavePartialBuildInfo(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber, populateFunc)
+		}
 	}
 	return err
 }
@@ -208,4 +251,19 @@ func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (up
 	}
 
 	return
+}
+
+func (uc *UploadCommand) handleSyncDelete(syncDeleteProp string) error {
+	var deleteSpec = createDeleteSpecForSync(uc.SyncDeletePath(), syncDeleteProp)
+	deleteCommand := NewDeleteCommand()
+	deleteCommand.SetQuiet(true).SetRtDetails(uc.rtDetails).SetSpec(deleteSpec)
+	err := deleteCommand.Run()
+	return err
+}
+func createDeleteSpecForSync(pattern string, syncDeleteProp string) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(pattern).
+		ExcludeProps(syncDeleteProp).
+		Recursive(true).
+		BuildSpec()
 }

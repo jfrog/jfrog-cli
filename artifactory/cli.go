@@ -658,6 +658,14 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
+		cli.StringFlag{
+			Name:  "sync-delete",
+			Usage: "[Optional] Specific path to sync after upload. This path will eventually contain only the artifacts uploaded during this upload operation.` `",
+		},
+		cli.BoolFlag{
+			Name:  "quiet",
+			Usage: "[Default: false] Set to true to skip the sync-delete confirmation message.` `",
+		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getUploadExcludePatternsFlag(),
@@ -1716,7 +1724,7 @@ func uploadCmd(c *cli.Context) {
 	configuration := createUploadConfiguration(c)
 	buildConfiguration := createBuildToolConfiguration(c)
 	uploadCmd := generic.NewUploadCommand()
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(createArtifactoryDetailsByFlags(c, true)).SetDryRun(c.Bool("dry-run"))
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSyncDeletePath(c.String("sync-delete")).SetQuiet(c.Bool("quiet")).SetSpec(uploadSpec).SetRtDetails(createArtifactoryDetailsByFlags(c, true)).SetDryRun(c.Bool("dry-run"))
 	err := commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
