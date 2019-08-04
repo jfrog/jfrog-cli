@@ -1,8 +1,8 @@
 package dependencies
 
 import (
-	"encoding/json"
 	"fmt"
+	deptree "github.com/jfrog/jfrog-cli-go/artifactory/utils/dependenciestree"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -28,11 +28,6 @@ type Extractor interface {
 	new(projectName, projectRoot string) (Extractor, error)
 }
 
-// Dependency tree
-type Tree interface {
-	MarshalJSON() ([]byte, error)
-}
-
 func CreateCompatibleExtractor(projectName, projectRoot string) (Extractor, error) {
 	extractor, err := getCompatibleExtractor(projectName, projectRoot)
 	if err != nil {
@@ -41,7 +36,7 @@ func CreateCompatibleExtractor(projectName, projectRoot string) (Extractor, erro
 	return extractor, nil
 }
 
-func CreateDependencyTree(extractor Extractor) (root, error) {
+func CreateDependencyTree(extractor Extractor) (deptree.Root, error) {
 	rootDependencies, err := extractor.DirectDependencies()
 	if err != nil {
 		return nil, err
@@ -54,7 +49,7 @@ func CreateDependencyTree(extractor Extractor) (root, error) {
 	if err != nil {
 		return nil, err
 	}
-	return createDependencyTree(rootDependencies, allDependencies, childrenMap), nil
+	return deptree.CreateDependencyTree(rootDependencies, allDependencies, childrenMap), nil
 }
 
 // Find suitable registered dependencies extractor.
@@ -70,56 +65,4 @@ func getCompatibleExtractor(projectName, projectRoot string) (Extractor, error) 
 	}
 	log.Debug(fmt.Sprintf("Unsupported project dependencies for project: %s", projectName))
 	return nil, nil
-}
-
-type root []*tree
-
-type tree struct {
-	Dependency         *buildinfo.Dependency `json:"dependencies,omitempty"`
-	DirectDependencies []*tree
-	id                 string
-}
-
-func (r root) MarshalJSON() ([]byte, error) {
-	type Alias root
-	return json.Marshal(Alias(r))
-}
-
-func (t tree) MarshalJSON() ([]byte, error) {
-	type Alias []*tree
-	return json.Marshal(&struct {
-		*buildinfo.Dependency
-		Alias `json:"dependencies,omitempty"`
-	}{
-		Dependency: t.Dependency,
-		Alias:      t.DirectDependencies,
-	})
-}
-
-// Create dependency tree using the data received from the extractors.
-func createDependencyTree(rootDependencies []string, allDependencies map[string]*buildinfo.Dependency, childrenMap map[string][]string) root {
-	var rootTree root
-	for _, root := range rootDependencies {
-		if _, ok := allDependencies[root]; !ok {
-			//No such root, skip...
-			continue
-		}
-		subTree := &tree{id: root, Dependency: allDependencies[root]}
-		subTree.addChildren(allDependencies, childrenMap)
-		rootTree = append(rootTree, subTree)
-	}
-	return rootTree
-}
-
-// Add children nodes for a dependency
-func (t *tree) addChildren(allDependencies map[string]*buildinfo.Dependency, children map[string][]string) {
-	for _, child := range children[t.id] {
-		if _, ok := allDependencies[child]; !ok {
-			//No such child, skip...
-			continue
-		}
-		childTree := &tree{id: child, Dependency: allDependencies[child]}
-		childTree.addChildren(allDependencies, children)
-		t.DirectDependencies = append(t.DirectDependencies, childTree)
-	}
 }

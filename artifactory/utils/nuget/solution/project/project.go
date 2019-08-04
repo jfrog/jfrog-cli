@@ -2,6 +2,7 @@ package project
 
 import (
 	"encoding/json"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils/dependenciestree"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget/dependencies"
 )
 
@@ -34,7 +35,7 @@ type project struct {
 	name           string
 	rootPath       string
 	csprojPath     string
-	dependencyTree dependencies.Tree
+	dependencyTree dependenciestree.Tree
 	extractor      dependencies.Extractor
 }
 
@@ -48,8 +49,8 @@ func (project *project) Extractor() dependencies.Extractor {
 
 func (project *project) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Name         string            `json:"name,omitempty"`
-		Dependencies dependencies.Tree `json:"dependencies,omitempty"`
+		Name         string                `json:"name,omitempty"`
+		Dependencies dependenciestree.Tree `json:"dependencies,omitempty"`
 	}{
 		Name:         project.name,
 		Dependencies: project.dependencyTree,
