@@ -70,6 +70,7 @@ const (
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
+	UploadWithPropsForSearchSpec           = "upload_with_props_for_search_spec.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -867,6 +868,204 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 	}
 }
 
+func GetSearchPropsStep1() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"2"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep2() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"2"},
+				"b": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"c": {"5"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep3() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"2"},
+				"b": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"c": {"5"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep4() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep5() []generic.SearchResult {
+	return make([]generic.SearchResult, 0)
+}
+
+func GetSearchPropsStep6() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/b/c/c1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+			},
+		},
+	}
+}
+
 func GetMavenDeployedArtifacts() []string {
 	return []string{
 		Repo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
@@ -944,5 +1143,38 @@ func GetWinCompatibility() []string {
 		filepath.Join(Out, "win", "a2.in"),
 		filepath.Join(Out, "win", "b1.in"),
 		filepath.Join(Out, "win", "b3.in"),
+	}
+}
+
+func GetUploadExpectedRepo1SyncDeleteStep1() []string {
+	return []string{
+		Repo1 + "/syncDir/testsdata/a/a3.in",
+		Repo1 + "/syncDir/testsdata/a/a1.in",
+		Repo1 + "/syncDir/testsdata/a/a2.in",
+		Repo1 + "/syncDir/testsdata/a/b/b1.in",
+		Repo1 + "/syncDir/testsdata/a/b/b2.in",
+		Repo1 + "/syncDir/testsdata/a/b/b3.in",
+		Repo1 + "/syncDir/testsdata/a/b/c/c1.in",
+		Repo1 + "/syncDir/testsdata/a/b/c/c2.in",
+		Repo1 + "/syncDir/testsdata/a/b/c/c3.in",
+	}
+}
+
+func GetUploadExpectedRepo1SyncDeleteStep2() []string {
+	return []string{
+		Repo1 + "/syncDir/testsdata/a/a3.in",
+		Repo1 + "/syncDir/testsdata/a/a1.in",
+		Repo1 + "/syncDir/testsdata/a/a2.in",
+		Repo1 + "/syncDir/testsdata/a/b/b1.in",
+		Repo1 + "/syncDir/testsdata/a/b/c/c1.in",
+	}
+}
+
+func GetUploadExpectedRepo1SyncDeleteStep3() []string {
+	return []string{
+		Repo1 + "/syncDir/a.zip",
+		Repo1 + "/syncDir/b.zip",
+		Repo1 + "/syncDir/c.zip",
+		Repo1 + "/syncDir/d.zip",
 	}
 }

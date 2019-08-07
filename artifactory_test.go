@@ -554,6 +554,33 @@ func TestArtifactoryUploadAndExplode(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadAndSyncDelete(t *testing.T) {
+	initArtifactoryTest(t)
+	// Upload all testdata/a/
+	artifactoryCli.Exec("upload", filepath.Join("testsdata", "a", "*"), tests.Repo1+"/syncDir/", "--flat=false")
+	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep1(), searchFilePath, t)
+	// Upload testdata/a/b/*1.in and sync syncDir/testdata/a/b/
+	artifactoryCli.Exec("upload", filepath.Join("testsdata", "a", "b", "*1.in"), tests.Repo1+"/syncDir/", "--sync-delete="+tests.Repo1+"/syncDir/testsdata/a/b/", "--quiet=true", "--flat=false")
+	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep2(), searchFilePath, t)
+	// Upload testdata/archives/* and sync syncDir/
+	artifactoryCli.Exec("upload", filepath.Join("testsdata", "archives", "*"), tests.Repo1+"/syncDir/", "--sync-delete="+tests.Repo1+"/syncDir/", "--quiet=true")
+	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep3(), searchFilePath, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	err := fileutils.CreateDirIfNotExist(tests.Out)
@@ -3034,6 +3061,56 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
 	assert.NoError(t, searchCmd.Search())
 	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchIncludeDirsFiles())
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySearchProps(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsForSearchSpec)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--recursive")
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+
+	// Search artifacts with c=3
+	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep1())
+
+	// Search artifacts without c=3
+	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("c=3").BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep2())
+
+	// Search artifacts without a=1&b=2
+	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("a=1;b=2").BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep3())
+
+	// Search artifacts without a=1&b=2 and with c=3
+	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").ExcludeProps("a=1;b=2").BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep4())
+
+	// Search artifacts without a=1  and with c=5
+	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep5())
+
+	// Search artifacts by pattern "*b*", exclude pattern "*3*", with "b=1" and without "c=3"
+	pattern := tests.Repo1 + "/*b*"
+	excludePatterns := []string{tests.Repo1 + "/*3*"}
+	searchSpecBuilder = spec.NewBuilder().Pattern(pattern).Recursive(true).ExcludePatterns(excludePatterns).Props("b=1").ExcludeProps("c=3")
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep6())
 
 	// Cleanup
 	cleanArtifactoryTest()
