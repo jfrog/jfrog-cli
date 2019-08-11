@@ -22,7 +22,7 @@ type UploadCommand struct {
 	GenericCommand
 	uploadConfiguration *utils.UploadConfiguration
 	buildConfiguration  *utils.BuildConfiguration
-	syncDeletePath      string
+	syncDeletesPath     string
 	quiet               bool
 	logFile             *os.File
 }
@@ -35,12 +35,12 @@ func (uc *UploadCommand) LogFile() *os.File {
 	return uc.logFile
 }
 
-func (uc *UploadCommand) SyncDeletePath() string {
-	return uc.syncDeletePath
+func (uc *UploadCommand) SyncDeletesPath() string {
+	return uc.syncDeletesPath
 }
 
-func (uc *UploadCommand) SetSyncDeletePath(syncDelete string) *UploadCommand {
-	uc.syncDeletePath = syncDelete
+func (uc *UploadCommand) SetSyncDeletesPath(syncDeletes string) *UploadCommand {
+	uc.syncDeletesPath = syncDeletes
 	return uc
 }
 
@@ -78,15 +78,14 @@ func (uc *UploadCommand) Run() error {
 // Uploads the artifacts in the specified local path pattern to the specified target path.
 // Returns the total number of artifacts successfully uploaded.
 func (uc *UploadCommand) upload() error {
-	//in case of sync-delete ger user confirm first and save the operation timestamp.
-	syncDeleteProp := ""
-	if !uc.DryRun() && uc.SyncDeletePath() != "" {
-		if uc.quiet || cliutils.InteractiveConfirm("Sync-delete may delete some artifacts. Are you sure you want to continue?") {
-			timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-			syncDeleteProp = ";syncDelete=" + timestamp
-		} else {
+	// In case of sync-delete get the user to confirm first, and save the operation timestamp.
+	syncDeletesProp := ""
+	if !uc.DryRun() && uc.SyncDeletesPath() != "" {
+		if !uc.quiet && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?") {
 			return nil
 		}
+		timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+		syncDeletesProp = ";syncDeletes=" + timestamp
 	}
 	// Initialize Progress bar, set logger to a log file
 	var err error
@@ -133,7 +132,7 @@ func (uc *UploadCommand) upload() error {
 	// Create UploadParams for all File-Spec groups.
 	for i := 0; i < len(uc.Spec().Files); i++ {
 		file := uc.Spec().Get(i)
-		file.Props += syncDeleteProp
+		file.Props += syncDeletesProp
 		uploadParams, err := getUploadParams(file, uc.uploadConfiguration)
 		if err != nil {
 			errorOccurred = true
@@ -161,11 +160,11 @@ func (uc *UploadCommand) upload() error {
 	}
 
 	if !uc.DryRun() {
-		// handle sync-delete
-		if uc.SyncDeletePath() != "" {
-			err = uc.handleSyncDelete(syncDeleteProp)
+		// Handle sync-deletes
+		if uc.SyncDeletesPath() != "" {
+			err = uc.handleSyncDeletes(syncDeletesProp)
 			if err != nil {
-				log.Error(err)
+				return err
 			}
 		}
 		// Build Info
@@ -253,17 +252,28 @@ func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (up
 	return
 }
 
-func (uc *UploadCommand) handleSyncDelete(syncDeleteProp string) error {
-	var deleteSpec = createDeleteSpecForSync(uc.SyncDeletePath(), syncDeleteProp)
-	deleteCommand := NewDeleteCommand()
-	deleteCommand.SetQuiet(true).SetRtDetails(uc.rtDetails).SetSpec(deleteSpec)
-	err := deleteCommand.Run()
+func (uc *UploadCommand) handleSyncDeletes(syncDeletesProp string) error {
+	servicesManager, err := utils.CreateServiceManager(uc.rtDetails, false)
+	if err != nil {
+		return err
+	}
+	deleteSpec := createDeleteSpecForSync(uc.SyncDeletesPath(), syncDeletesProp)
+	deleteParams, err := getDeleteParams(deleteSpec.Get(0))
+	if err != nil {
+		return err
+	}
+	resultItems, err := servicesManager.GetPathsToDelete(deleteParams)
+	if err != nil {
+		return err
+	}
+	_, err = servicesManager.DeleteFiles(resultItems)
 	return err
 }
-func createDeleteSpecForSync(pattern string, syncDeleteProp string) *spec.SpecFiles {
+
+func createDeleteSpecForSync(deletePattern string, syncDeletesProp string) *spec.SpecFiles {
 	return spec.NewBuilder().
-		Pattern(pattern).
-		ExcludeProps(syncDeleteProp).
+		Pattern(deletePattern).
+		ExcludeProps(syncDeletesProp).
 		Recursive(true).
 		BuildSpec()
 }

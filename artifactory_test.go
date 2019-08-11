@@ -3099,7 +3099,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	assert.NoError(t, searchCmd.Search())
 	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep4())
 
-	// Search artifacts without a=1  and with c=5
+	// Search artifacts without a=1 and with c=5
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
 	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep5())
