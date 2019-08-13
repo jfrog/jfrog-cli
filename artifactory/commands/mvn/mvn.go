@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const mavenExtractorDependencyVersion = "2.11.1"
+const mavenExtractorDependencyVersion = "2.13.10"
 const ClasswordConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
@@ -112,7 +112,7 @@ func downloadDependencies() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dependenciesPath = filepath.Join(dependenciesPath, "maven")
+	dependenciesPath = filepath.Join(dependenciesPath, "maven", mavenExtractorDependencyVersion)
 
 	filename := fmt.Sprintf("build-info-extractor-maven3-%s-uber.jar", mavenExtractorDependencyVersion)
 	filePath := fmt.Sprintf("org/jfrog/buildinfo/build-info-extractor-maven3/%s", mavenExtractorDependencyVersion)

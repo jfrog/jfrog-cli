@@ -3,6 +3,10 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -158,6 +162,34 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 	}
 	if serverDetails.ServerId != "notDefault" {
 		t.Error(errors.New("Failed to get server by name."))
+	}
+}
+
+func TestGetJfrogDependenciesPath(t *testing.T) {
+	// Check default value of dependencies path, should be JFROG_CLI_HOME/dependencies
+	dependenciesPath, err := GetJfrogDependenciesPath()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	jfrogHomeDir, err := GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	expectedDependenciesPath := filepath.Join(jfrogHomeDir, JfrogDependencies)
+	if expectedDependenciesPath != dependenciesPath {
+		t.Error(errors.New(fmt.Sprintf("Dependencies Path should be %s (actual path: %s)", expectedDependenciesPath, dependenciesPath)))
+	}
+	// Check dependencies path when JFROG_DEPENDENCIES_DIR is set, should be JFROG_DEPENDENCIES_DIR/
+	previousDependenciesDirEnv := os.Getenv(cliutils.JFrogCliDependenciesDir)
+	expectedDependenciesPath = "/tmp/my-dependencies/"
+	err = os.Setenv(cliutils.JFrogCliDependenciesDir, expectedDependenciesPath)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer os.Setenv(cliutils.JFrogCliDependenciesDir, previousDependenciesDirEnv)
+	dependenciesPath, err = GetJfrogDependenciesPath()
+	if expectedDependenciesPath != dependenciesPath {
+		t.Error(errors.New(fmt.Sprintf("Dependencies Path should be %s (actual path: %s)", expectedDependenciesPath, dependenciesPath)))
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -291,6 +292,10 @@ func CreateDirInJfrogHome(dirName string) (string, error) {
 }
 
 func GetJfrogDependenciesPath() (string, error) {
+	dependenciesDir := os.Getenv(cliutils.JFrogCliDependenciesDir)
+	if dependenciesDir != "" {
+		return utils.AddTrailingSlashIfNeeded(dependenciesDir), nil
+	}
 	jfrogHome, err := GetJfrogHomeDir()
 	if err != nil {
 		return "", err
