@@ -70,7 +70,7 @@ const (
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
-	UploadWithPropsForSearchSpec           = "upload_with_props_for_search_spec.json"
+	UploadWithPropsSpec                    = "upload_with_props_spec.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -1061,6 +1061,131 @@ func GetSearchPropsStep6() []generic.SearchResult {
 			Type: "file",
 			Props: map[string][]string{
 				"b": {"1"},
+			},
+		},
+	}
+}
+
+func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"2"},
+				"b": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"b": {"1"},
+				"c": {"3"},
+				"D": {"5"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"2"},
+				"c": {"3"},
+				"D": {"5"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+				"D": {"2"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/c/c3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"c": {"3"},
+				"D": {"2"},
+			},
+		},
+	}
+}
+
+func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"2"},
+				"b": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a2.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/b/b3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"2"},
+				"c": {"3"},
+				"D": {"5"},
+			},
+		},
+	}
+}
+
+func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/a1.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"2"},
+				"b": {"3"},
+			},
+		},
+		{
+			Path: Repo1 + "/a/a3.in",
+			Type: "file",
+			Props: map[string][]string{
+				"a": {"1"},
+				"b": {"3"},
+				"c": {"3"},
 			},
 		},
 	}

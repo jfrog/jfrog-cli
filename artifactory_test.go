@@ -1655,6 +1655,47 @@ func TestArtifactoryDeleteBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDeleteByProps(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpec)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	// Set properties to the directories as well (and their content)
+	artifactoryCli.Exec("sp", tests.Repo1+"/a/b", "D=5", "--include-dirs")
+	artifactoryCli.Exec("sp", tests.Repo1+"/a/b/c", "D=2", "--include-dirs")
+	//  Set the property D=5 to c1.in, which is a different value then its directory c/
+	artifactoryCli.Exec("sp", tests.Repo1+"/a/b/c/c1.in", "D=5")
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+
+	// Delete all artifacts with D=5 but without c=3
+	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=D=5", "--exclude-props=c=3")
+	// Search all artifacts in repo1
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep1())
+
+	// Delete all artifacts with c=3 but without a=1
+	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=c=3", "--exclude-props=a=1")
+	// Search all artifacts in repo1
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep2())
+
+	// Delete all artifacts with a=1 but without b=3&c=3
+	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=a=1", "--exclude-props=b=3;c=3")
+	// Search all artifacts in repo1
+	assert.NoError(t, searchCmd.Search())
+	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep3())
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	prepUploadFiles()
@@ -3070,7 +3111,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files
-	specFile, err := tests.CreateSpec(tests.UploadWithPropsForSearchSpec)
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpec)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--recursive")
 
