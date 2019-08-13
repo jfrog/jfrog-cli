@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -177,17 +176,19 @@ func TestGetJfrogDependenciesPath(t *testing.T) {
 		t.Error(err.Error())
 	}
 	expectedDependenciesPath := filepath.Join(jfrogHomeDir, JfrogDependencies)
-	if strings.Compare(expectedDependenciesPath, dependenciesPath) != 0 {
+	if expectedDependenciesPath != dependenciesPath {
 		t.Error(errors.New(fmt.Sprintf("Dependencies Path should be %s (actual path: %s)", expectedDependenciesPath, dependenciesPath)))
 	}
 	// Check dependencies path when JFROG_DEPENDENCIES_DIR is set, should be JFROG_DEPENDENCIES_DIR/
-	err = os.Setenv(cliutils.JFrogCliDependenciesDir, "/tmp/my-dependencies")
+	previousDependenciesDirEnv := os.Getenv(cliutils.JFrogCliDependenciesDir)
+	expectedDependenciesPath = "/tmp/my-dependencies/"
+	err = os.Setenv(cliutils.JFrogCliDependenciesDir, expectedDependenciesPath)
 	if err != nil {
 		t.Error(err.Error())
 	}
-	expectedDependenciesPath = "/tmp/my-dependencies/"
+	defer os.Setenv(cliutils.JFrogCliDependenciesDir, previousDependenciesDirEnv)
 	dependenciesPath, err = GetJfrogDependenciesPath()
-	if strings.Compare(expectedDependenciesPath, dependenciesPath) != 0 {
+	if expectedDependenciesPath != dependenciesPath {
 		t.Error(errors.New(fmt.Sprintf("Dependencies Path should be %s (actual path: %s)", expectedDependenciesPath, dependenciesPath)))
 	}
 }
