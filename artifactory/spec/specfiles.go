@@ -62,6 +62,7 @@ type File struct {
 	Target          string
 	Explode         string
 	Props           string
+	ExcludeProps    string
 	SortOrder       string
 	SortBy          []string
 	Offset          int
@@ -101,6 +102,7 @@ func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.ExcludePatterns = f.ExcludePatterns
 	params.Target = f.Target
 	params.Props = f.Props
+	params.ExcludeProps = f.ExcludeProps
 	params.Build = f.Build
 	params.SortOrder = f.SortOrder
 	params.SortBy = f.SortBy

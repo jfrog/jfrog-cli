@@ -658,6 +658,11 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
+		cli.StringFlag{
+			Name:  "sync-deletes",
+			Usage: "[Optional] Specific path to sync after upload. This path will eventually include only the artifacts uploaded during this upload operation.` `",
+		},
+		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getUploadExcludePatternsFlag(),
@@ -711,6 +716,7 @@ func getDownloadFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties will be downloaded"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
@@ -907,6 +913,7 @@ func getMoveFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getPropertiesFlag("Only artifacts with these properties will be moved."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties will be moved"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -935,6 +942,7 @@ func getCopyFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -950,10 +958,6 @@ func getDeleteFlags() []cli.Flag {
 			Usage: "[Default: true] Set to false if you do not wish to delete artifacts inside sub-folders in Artifactory.` `",
 		},
 		cli.BoolFlag{
-			Name:  "quiet",
-			Usage: "[Default: false] Set to true to skip the delete confirmation message.` `",
-		},
-		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
@@ -961,7 +965,9 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties will be deleted"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -986,6 +992,7 @@ func getSearchFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
 		getFailNoOpFlag(),
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
@@ -995,6 +1002,7 @@ func getSearchFlags() []cli.Flag {
 func getSetPropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
 		getPropertiesFlag("Only artifacts with these properties are affected."),
+		getExcludePropertiesFlag("Only artifacts without the specified properties are affected"),
 	}
 	return append(flags, getPropertiesFlags()...)
 }
@@ -1006,12 +1014,24 @@ func getPropertiesFlag(description string) cli.Flag {
 	}
 }
 
+func getExcludePropertiesFlag(description string) cli.Flag {
+	return cli.StringFlag{
+		Name:  "exclude-props",
+		Usage: fmt.Sprintf("[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". %s ` `", description),
+	}
+}
+
+func getQuiteFlag(description string) cli.Flag {
+	return cli.BoolFlag{
+		Name:  "quiet",
+		Usage: description,
+	}
+}
+
 func getDeletePropertiesFlags() []cli.Flag {
 	flags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "props",
-			Usage: "[Optional] List of properties in the form of \"key1,key2,...\". Only artifacts with these properties are affected.` `",
-		},
+		getPropertiesFlag("Only artifacts with these properties are affected"),
+		getExcludePropertiesFlag("Only artifacts without the specified properties are affected"),
 	}
 	return append(flags, getPropertiesFlags()...)
 }
@@ -1165,13 +1185,10 @@ func getGitLfsCleanFlags() []cli.Flag {
 			Usage: "[Optional] Local Git LFS repository which should be cleaned. If omitted, this is detected from the Git repository.` `",
 		},
 		cli.BoolFlag{
-			Name:  "quiet",
-			Usage: "[Default: false] Set to true to skip the delete confirmation message.` `",
-		},
-		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.` `",
 		},
+		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
 	}...)
 }
 
@@ -1705,7 +1722,7 @@ func uploadCmd(c *cli.Context) {
 	configuration := createUploadConfiguration(c)
 	buildConfiguration := createBuildToolConfiguration(c)
 	uploadCmd := generic.NewUploadCommand()
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(createArtifactoryDetailsByFlags(c, true)).SetDryRun(c.Bool("dry-run"))
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet")).SetSpec(uploadSpec).SetRtDetails(createArtifactoryDetailsByFlags(c, true)).SetDryRun(c.Bool("dry-run"))
 	err := commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
@@ -2073,6 +2090,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2104,6 +2122,7 @@ func createDefaultDeleteSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2132,6 +2151,7 @@ func createDefaultSearchSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2148,6 +2168,7 @@ func createDefaultPropertiesSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2248,6 +2269,7 @@ func createDefaultDownloadSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(strings.TrimPrefix(c.Args().Get(0), "/")).
 		Props(c.String("props")).
+		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
 		Offset(getIntValue("offset", c)).
 		Limit(getIntValue("limit", c)).
@@ -2471,6 +2493,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")

@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "pattern": "testsdata/a/b/c/c1.in",
+      "target": "${REPO1}/a/b/c/c1.in",
+      "props": "b=1"
+    },
+    {
+      "pattern": "testsdata/a/b/c/c2.in",
+      "target": "${REPO1}/a/b/c/c2.in",
+      "props": "c=3"
+    },
+    {
+      "pattern": "testsdata/a/b/c/c3.in",
+      "target": "${REPO1}/a/b/c/c3.in",
+      "props": "c=3"
+    },
+    {
+      "pattern": "testsdata/a/b/b1.in",
+      "target": "${REPO1}/a/b/b1.in",
+      "props": "a=1;c=5"
+    },
+    {
+      "pattern": "testsdata/a/b/b2.in",
+      "target": "${REPO1}/a/b/b2.in",
+      "props": "b=1;c=3"
+    },
+    {
+      "pattern": "testsdata/a/b/b3.in",
+      "target": "${REPO1}/a/b/b3.in",
+      "props": "a=1;b=2;c=3"
+    },
+    {
+      "pattern": "testsdata/a/a1.in",
+      "target": "${REPO1}/a/a1.in",
+      "props": "a=2;b=3"
+    },
+    {
+      "pattern": "testsdata/a/a2.in",
+      "target": "${REPO1}/a/a2.in",
+      "props": "a=1"
+    },
+    {
+      "pattern": "testsdata/a/a3.in",
+      "target": "${REPO1}/a/a3.in",
+      "props": "a=1;b=3;c=3"
+    }
+  ]
+}
