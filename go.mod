@@ -5,7 +5,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gocmd v0.1.9
 	github.com/jfrog/gofrog v1.0.4
-	github.com/jfrog/jfrog-client-go v0.4.0
+	github.com/jfrog/jfrog-client-go v0.5.0
 	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-shellwords v1.0.3
 	github.com/mholt/archiver v2.1.0+incompatible
@@ -16,7 +16,3 @@ require (
 	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )
-
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
-
-replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.9
