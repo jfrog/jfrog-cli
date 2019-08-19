@@ -1,0 +1,99 @@
+[
+    {
+        "package": {
+            "key": "wheel",
+            "package_name": "wheel",
+            "installed_version": "0.33.4"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "setuptools",
+            "package_name": "setuptools",
+            "installed_version": "41.0.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "python-world",
+            "package_name": "python-world",
+            "installed_version": "0.0.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "pyinstaller",
+            "package_name": "PyInstaller",
+            "installed_version": "3.5"
+        },
+        "dependencies": [
+            {
+                "key": "setuptools",
+                "package_name": "setuptools",
+                "installed_version": "41.0.1",
+                "required_version": null
+            },
+            {
+                "key": "macholib",
+                "package_name": "macholib",
+                "installed_version": "1.11",
+                "required_version": ">=1.8"
+            },
+            {
+                "key": "altgraph",
+                "package_name": "altgraph",
+                "installed_version": "0.16.1",
+                "required_version": null
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "pipdeptree",
+            "package_name": "pipdeptree",
+            "installed_version": "0.13.2"
+        },
+        "dependencies": [
+            {
+                "key": "pip",
+                "package_name": "pip",
+                "installed_version": "19.2.1",
+                "required_version": ">=6.0.0"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "pip",
+            "package_name": "pip",
+            "installed_version": "19.2.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "macholib",
+            "package_name": "macholib",
+            "installed_version": "1.11"
+        },
+        "dependencies": [
+            {
+                "key": "altgraph",
+                "package_name": "altgraph",
+                "installed_version": "0.16.1",
+                "required_version": ">=0.15"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "altgraph",
+            "package_name": "altgraph",
+            "installed_version": "0.16.1"
+        },
+        "dependencies": []
+    }
+]

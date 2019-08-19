@@ -9,7 +9,7 @@ import (
 )
 
 // This method runs "npm config list --json" command and returns the json object that contains the current configurations of npm
-// Fore more info see https://docs.npmjs.com/cli/config
+// For more info see https://docs.npmjs.com/cli/config
 func GetConfigList(npmFlags, executablePath string) ([]byte, error) {
 	pipeReader, pipeWriter := io.Pipe()
 	defer pipeReader.Close()
