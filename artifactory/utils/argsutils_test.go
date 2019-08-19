@@ -96,6 +96,26 @@ func TestGetFlagValueAndValueIndex(t *testing.T) {
 	}
 }
 
+func TestFindBooleanFlag(t *testing.T) {
+	tests := []struct {
+		flagName     string
+		command []string
+		expected int
+	}{
+		{"--foo", []string{"-X", "--GET", "--foo/api/build/test1", "--foo", "bar"}, 3},
+		{"--server-id", []string{"-X", "GET", "/api/build/test2", "--server-idea", "foo"}, -1},
+		{"--bar", []string{"-X", "GET", "api/build/test3", "--foo", "bar"}, -1},
+		{"-X", []string{"-X", "GET", "api/build/test3", "--foo", "bar"}, 0},
+	}
+
+	for _, test := range tests {
+		actualValue := FindBooleanFlag(test.flagName, test.command)
+		if actualValue != test.expected {
+			t.Errorf("Expected value: %d, got: %d.", test.expected, actualValue)
+		}
+	}
+}
+
 func getFlagTestCases() []testCase {
 	return []testCase{
 		{"test1", []string{"-X", "GET", "/api/build/test1", "--server-id", "test1", "--foo", "bar"}, "--server-id", 3, "test1", 4, false},

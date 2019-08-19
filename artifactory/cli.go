@@ -15,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	golangutils "github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
@@ -30,6 +31,7 @@ import (
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/curl"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpull"
@@ -541,6 +543,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
+			},
+		},
+		{
+			Name:            "pip-install",
+			Flags:           getPipInstallFlags(),
+			Aliases:         []string{"pipi"},
+			Usage:           pipinstall.Description,
+			HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			UsageText:       pipinstall.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return pipInstallCmd(c)
 			},
 		},
 	}
@@ -1245,6 +1260,12 @@ func getBuildAddGitFlags() []cli.Flag {
 
 func getCurlFlags() []cli.Flag {
 	return []cli.Flag{getServerIdFlag()}
+}
+
+func getPipInstallFlags() []cli.Flag {
+	pipInstallFlags := getBaseFlags()
+	pipInstallFlags = append(pipInstallFlags, getServerIdFlag())
+	return append(pipInstallFlags, getBuildToolAndModuleFlags()...)
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
@@ -1952,6 +1973,23 @@ func curlCmd(c *cli.Context) error {
 	}
 	curlCommand.SetRtDetails(rtDetails)
 	return commands.Exec(curlCommand)
+}
+
+func pipInstallCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+
+	// Create command.
+	pipCmd := pip.NewPipInstallCommand()
+	buildConfiguration := createBuildToolConfiguration(c)
+
+	// Set arg values.
+	pipCmd.SetBuildConfiguration(buildConfiguration).
+		SetRtDetails(createArtifactoryDetailsByFlags(c, true))
+
+
+	return commands.Exec(pipCmd)
 }
 
 func validateBuildInfoArgument(c *cli.Context) {

@@ -53,6 +53,17 @@ func FindFlag(flagName string, args []string) (flagIndex, flagValueIndex int, fl
 	return
 }
 
+// Boolean flag is a flag without value.
+func FindBooleanFlag(flagName string, args []string) int {
+	for index, arg := range args {
+		// Check current argument.
+		if arg == flagName {
+			return index
+		}
+	}
+	return -1
+}
+
 // Get the provided flag's value, and the index of the value.
 // Value-index can either be same as flag's index, or the next one.
 // Return error if flag is found, but couldn't extract value.
