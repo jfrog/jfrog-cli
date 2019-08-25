@@ -12,6 +12,7 @@ type GenericCommand struct {
 	result          *commandsutils.Result
 	dryRun          bool
 	syncDeletesPath string
+	quiet           bool
 }
 
 func NewGenericCommand() *GenericCommand {
@@ -33,6 +34,15 @@ func (gc *GenericCommand) SyncDeletesPath() string {
 
 func (gc *GenericCommand) SetSyncDeletesPath(syncDeletes string) *GenericCommand {
 	gc.syncDeletesPath = syncDeletes
+	return gc
+}
+
+func (gc *GenericCommand) Quiet() bool {
+	return gc.quiet
+}
+
+func (gc *GenericCommand) SetQuiet(quiet bool) *GenericCommand {
+	gc.quiet = quiet
 	return gc
 }
 

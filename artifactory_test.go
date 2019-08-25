@@ -643,7 +643,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	tests.IsExistLocally(tests.GetExpectedSyncDeletesDownloadStep2(), paths, t)
 
 	// Download repo1/syncDir/ to out/ with flat=true and sync out/
-	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--flat=true", "--sync-deletes="+outDirPath)
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--flat=true", "--sync-deletes="+outDirPath, "--quiet=true")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	if err != nil {
 		t.Error(err)
@@ -651,7 +651,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep3(), paths, t)
 
 	// Download all files ended with 2.in from repo1/syncDir/ to out/ and sync out/
-	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/*2.in", outDirPath, "--flat=true", "--sync-deletes="+outDirPath)
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/*2.in", outDirPath, "--flat=true", "--sync-deletes="+outDirPath, "--quiet=true")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	if err != nil {
 		t.Error(err)
@@ -659,7 +659,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
 
 	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
-	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testsdata/*c*in")
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testsdata/*c*in", "--quiet=true")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	if err != nil {
 		t.Error(err)
@@ -683,7 +683,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	isExistInArtifactory(tests.GetSyncExpectedDeletesDownloadStep6(), searchFilePath, t)
 
 	// Download repo1/syncDir/ to out/ and sync out/
-	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator))
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--quiet=true")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	if err != nil {
 		t.Error(err)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/progressbar"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -50,6 +51,9 @@ func (dc *DownloadCommand) CommandName() string {
 }
 
 func (dc *DownloadCommand) Run() error {
+	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some dependencies in your local file system. Are you sure you want to continue?") {
+		return nil
+	}
 	// Initialize Progress bar, set logger to a log file
 	var err error
 	var progressBar ioUtils.Progress
