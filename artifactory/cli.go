@@ -660,7 +660,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "sync-deletes",
-			Usage: "[Optional] Specific path to sync after upload. This path will eventually include only the artifacts uploaded during this upload operation.` `",
+			Usage: "[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `",
 		},
 		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
 		getIncludeDirsFlag(),

@@ -85,7 +85,7 @@ func (uc *UploadCommand) upload() error {
 			return nil
 		}
 		timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-		syncDeletesProp = ";syncDeletes=" + timestamp
+		syncDeletesProp = ";sync.deletes.timestamp=" + timestamp
 	}
 	// Initialize Progress bar, set logger to a log file
 	var err error
