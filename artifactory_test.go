@@ -622,6 +622,76 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload all testdata/a/ to repo1/syncDir/
+	artifactoryCli.Exec("upload", path.Join("testsdata", "a", "*"), tests.Repo1+"/syncDir/", "--flat=false")
+	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep1(), searchFilePath, t)
+
+	// Download  repo1/syncDir/ to out/
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", tests.Out+"/")
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.IsExistLocally(tests.GetExpectedSyncDeletesDownloadStep2(), paths, t)
+
+	// Download repo1/syncDir/ to out/ with flat=true and sync out/
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", tests.Out+"/", "--flat=true", "--sync-deletes="+tests.Out+"/")
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep3(), paths, t)
+
+	// Download all files ended with 2.in from repo1/syncDir/ to out/ and sync out/
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/*2.in", tests.Out+"/", "--flat=true", "--sync-deletes="+tests.Out+"/")
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
+
+	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", tests.Out+"/", "--sync-deletes="+tests.Out+"/syncDir/", "--exclude-patterns=syncDir/testsdata/*c*in")
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.CheckSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
+
+	// Delete all files from repo1/syncDir/
+	artifactoryCli.Exec("delete", tests.Repo1+"/syncDir/", "--quiet=true")
+	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory([]string{}, searchFilePath, t)
+
+	// Upload all testdata/archives/ to repo1/syncDir/
+	artifactoryCli.Exec("upload", path.Join("testsdata", "archives", "*"), tests.Repo1+"/syncDir/", "--flat=false")
+	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetSyncExpectedDeletesDownloadStep6(), searchFilePath, t)
+
+	// Download repo1/syncDir/ to out/ and sync out/
+	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", tests.Out+"/", "--sync-deletes="+tests.Out+"/syncDir/")
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.CheckSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep7(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
 // Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
 func TestArtifactorySelfSignedCert(t *testing.T) {
 	initArtifactoryTest(t)
