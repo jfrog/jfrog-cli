@@ -82,6 +82,17 @@ func removeDirs(dirs ...string) {
 	}
 }
 
+// After syncDeletes we must make sure that there are no actual files we did not expect.
+func CheckSyncedDirContent(expected, actual []string, t *testing.T) {
+	// IsExistLocally - check if all expected are actually exists
+	IsExistLocally(expected, actual, t)
+	// IsExclusivelyExistLocally - check if we expected all the actual
+	err := isExclusivelyExistLocally(expected, actual)
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
 func IsExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
@@ -124,6 +135,21 @@ func compare(expected, actual []string) error {
 			}
 			if i == len(actual)-1 {
 				return errors.New("Missing file : " + v)
+			}
+		}
+	}
+	return nil
+}
+
+// Actual list contains dir and files, so we check prefix (for dirs) or equality (for files)
+func isExclusivelyExistLocally(expected, actual []string) error {
+	for _, v := range actual {
+		for i, r := range expected {
+			if strings.HasPrefix(r, v) || v == r {
+				break
+			}
+			if i == len(actual)-1 {
+				return errors.New("Should not have : " + v)
 			}
 		}
 	}
