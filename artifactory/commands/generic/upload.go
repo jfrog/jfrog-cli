@@ -22,7 +22,6 @@ type UploadCommand struct {
 	GenericCommand
 	uploadConfiguration *utils.UploadConfiguration
 	buildConfiguration  *utils.BuildConfiguration
-	syncDeletesPath     string
 	quiet               bool
 	logFile             *os.File
 }
@@ -33,15 +32,6 @@ func NewUploadCommand() *UploadCommand {
 
 func (uc *UploadCommand) LogFile() *os.File {
 	return uc.logFile
-}
-
-func (uc *UploadCommand) SyncDeletesPath() string {
-	return uc.syncDeletesPath
-}
-
-func (uc *UploadCommand) SetSyncDeletesPath(syncDeletes string) *UploadCommand {
-	uc.syncDeletesPath = syncDeletes
-	return uc
 }
 
 func (uc *UploadCommand) Quiet() bool {
