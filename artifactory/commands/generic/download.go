@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type DownloadCommand struct {
@@ -86,7 +87,6 @@ func (dc *DownloadCommand) Run() error {
 		}
 		downloadParamsArray = append(downloadParamsArray, downParams)
 	}
-
 	// Perform download.
 	filesInfo, totalExpected, err := servicesManager.DownloadFiles(downloadParamsArray...)
 	if err != nil {
@@ -104,6 +104,12 @@ func (dc *DownloadCommand) Run() error {
 		dc.result.SetSuccessCount(totalExpected)
 		dc.result.SetFailCount(0)
 		return err
+	} else if dc.SyncDeletesPath() != "" {
+		walkFn := createSyncDeletesWalkFunction(filesInfo)
+		err = fileutils.Walk(dc.SyncDeletesPath(), walkFn, false)
+		if err != nil {
+			return err
+		}
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
 
@@ -163,4 +169,30 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	}
 
 	return
+}
+
+func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileutils.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		// Go over the downloaded files list
+		for _, file := range downloadedFiles {
+			// If the current path is a prefix of a downloaded file - we won't delete it.
+			if strings.HasPrefix(file.LocalPath, path) {
+				return nil
+			}
+		}
+		// The current path is not a prefix of any downloaded file
+		if info.IsDir() {
+			// If current path is a dir - remove all content and return SkipDir to stop walking this path
+			err = os.RemoveAll(path)
+			if err == nil {
+				return fileutils.SkipDir
+			}
+		} else {
+			err = os.Remove(path)
+		}
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 }
