@@ -36,12 +36,7 @@ func CreateBuildConfig(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		availableRepos, err := prompt.GetRepositories(vConfig, utils.REMOTE, utils.VIRTUAL)
-		if err != nil {
-			// If there are no available repos pass empty array.
-			availableRepos = []string{}
-		}
-		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", availableRepos)
+		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
@@ -56,12 +51,7 @@ func CreateBuildConfig(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		availableRepos, err := prompt.GetRepositories(vConfig, utils.LOCAL, utils.VIRTUAL)
-		if err != nil {
-			// If there are no available repos pass empty array.
-			availableRepos = []string{}
-		}
-		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for artifacts deployment (press Tab for options): ", availableRepos)
+		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for artifacts deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}

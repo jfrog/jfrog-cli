@@ -18,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	golangutils "github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -31,7 +30,6 @@ import (
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/copy"
 	curldocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/curl"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpull"
@@ -53,6 +51,8 @@ import (
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -519,6 +519,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "pip-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"pipc"},
+			Usage:        pipconfig.Description,
+			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createPipConfigCmd(c)
+			},
+		},
+		{
 			Name:         "ping",
 			Flags:        getServerFlags(),
 			Aliases:      []string{"p"},
@@ -546,14 +558,14 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "pip-install",
-			Flags:           getPipInstallFlags(),
-			Aliases:         []string{"pipi"},
-			Usage:           pipinstall.Description,
-			HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
-			UsageText:       pipinstall.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			BashComplete:    common.CreateBashCompletionFunc(),
+			Name:         "pip-install",
+			Flags:        getPipInstallFlags(),
+			Aliases:      []string{"pipi"},
+			Usage:        pipinstall.Description,
+			HelpName:     common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			UsageText:    pipinstall.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
 			},
@@ -1572,7 +1584,7 @@ func shouldSkipGoFlagParsing() bool {
 		return false
 	}
 
-	_, exists, err := golangutils.IsGoConfigExists()
+	_, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -1580,7 +1592,7 @@ func shouldSkipGoFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
-	configFilePath, exists, err := golangutils.IsGoConfigExists()
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
 		return err
 	}
@@ -1612,13 +1624,13 @@ func goLegacyCmd(c *cli.Context) error {
 	details := createArtifactoryDetailsByFlags(c, true)
 	publishDeps := c.Bool("publish-deps")
 	buildConfiguration := createBuildToolConfiguration(c)
-	goParams := &golang.GoParamsCommand{}
-	goParams.SetTargetRepo(targetRepo).SetRtDetails(details)
+	resolverRepo := &utils.RepositoryConfig{}
+	resolverRepo.SetTargetRepo(targetRepo).SetRtDetails(details)
 	goCmd := golang.NewGoCommand().SetBuildConfiguration(buildConfiguration).
 		SetGoArg(goArg).SetNoRegistry(c.Bool("no-registry")).
-		SetPublishDeps(publishDeps).SetResolverParams(goParams)
+		SetPublishDeps(publishDeps).SetResolverParams(resolverRepo)
 	if publishDeps {
-		goCmd.SetDeployerParams(goParams)
+		goCmd.SetDeployerParams(resolverRepo)
 	}
 	err = commands.Exec(goCmd)
 	if err != nil {
@@ -1680,6 +1692,14 @@ func createGoConfigCmd(c *cli.Context) error {
 	}
 	global := c.Bool("global")
 	return golang.CreateBuildConfig(global)
+}
+
+func createPipConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return pip.CreateBuildConfig(global)
 }
 
 func pingCmd(c *cli.Context) {
@@ -2004,7 +2024,6 @@ func pipInstallCmd(c *cli.Context) error {
 	// Set arg values.
 	pipCmd.SetBuildConfiguration(buildConfiguration).
 		SetRtDetails(createArtifactoryDetailsByFlags(c, true))
-
 
 	return commands.Exec(pipCmd)
 }
