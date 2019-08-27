@@ -13,6 +13,9 @@ import (
 
 type DependenciesCache map[string]*buildinfo.Dependency
 
+// Return project's dependencies cache.
+// If cache not exist -> return nil, nil.
+// If error occurred, return error.
 func GetProjectDependenciesCache() (*DependenciesCache, error) {
 	cache := new(DependenciesCache)
 	cacheFilePath, exists, err := getCacheFilePath()
@@ -75,7 +78,7 @@ func (cache DependenciesCache) GetDependency(dependencyName string) *buildinfo.D
 }
 
 func getCacheFilePath() (cacheFilePath string, exists bool, err error) {
-	// Cache file should be in the same path of the pip configuration file
+	// Cache file should be in the same path of the pip configuration file.
 	confFilePath, _, err := utils.GetProjectConfFilePath(utils.Pip)
 	if errorutils.CheckError(err) != nil {
 		return "", false, err

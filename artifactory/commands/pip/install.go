@@ -1,14 +1,12 @@
 package pip
 
 import (
-	"encoding/json"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
+	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/pip/dependencies"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -19,26 +17,23 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
 type PipInstallCommand struct {
-	buildConfiguration   *utils.BuildConfiguration
 	rtDetails            *config.ArtifactoryDetails
 	pipExecutablePath    string
 	pythonExecutablePath string
 	pipIndexUrl          string
 	pypiRepo             string
-
-	buildName           string
-	buildNumber         string
-	moduleName          string
-	collectBuildInfo    bool
-	args                []string
-	projectPath         string
-	buildFile           string
-	dependencyToFileMap map[string]string //Parsed from pip-install logs, maps dependency name to its actual downloaded file from Artifactory.
+	buildName            string
+	buildNumber          string
+	moduleName           string
+	collectBuildInfo     bool
+	args                 []string
+	projectPath          string
+	dependencyToFileMap  map[string]string
+	buildFile            string //Parsed from pip-install logs, maps dependency name to its actual downloaded file from Artifactory.
 }
 
 func NewPipInstallCommand() *PipInstallCommand {
@@ -68,7 +63,7 @@ func (pic *PipInstallCommand) Run() error {
 	// Collect build-info.
 	if err := pic.doCollectBuildInfo(); err != nil {
 		pic.cleanBuildInfoDir()
-		return nil
+		return err
 	}
 
 	return nil
@@ -76,10 +71,10 @@ func (pic *PipInstallCommand) Run() error {
 
 func (pic *PipInstallCommand) executePipInstall() error {
 	// Create pip install command.
-	pipInstallCmd := &pip.PipCmd{
+	pipInstallCmd := &piputils.PipCmd{
 		Executable:  pic.pipExecutablePath,
-		Command:     fmt.Sprintf("install"),
-		CommandArgs: append(pic.args, fmt.Sprintf("-i %s", pic.pipIndexUrl)),
+		Command:     "install",
+		CommandArgs: append(pic.args, "-i", pic.pipIndexUrl),
 		EnvVars:     nil,
 		StrWriter:   nil,
 		ErrWriter:   nil,
@@ -94,67 +89,83 @@ func (pic *PipInstallCommand) executePipInstall() error {
 	return gofrogcmd.RunCmd(pipInstallCmd)
 }
 
-func (pic *PipInstallCommand) executePipInstallWithLogParsing(pipInstallCmd *pip.PipCmd) error {
-	regexp, nameMatchGroup, fileMatchGroup, err := pic.getParsingRegexpForPipInstallCommand()
+// Run pip-install command while parsing the logs for downloaded packages.
+// Supports running pip either in non-verbose and verbose mode.
+// Populates 'dependencyToFileMap' with downloaded package-name and its actual downloaded file (wheel/egg/zip...).
+func (pic *PipInstallCommand) executePipInstallWithLogParsing(pipInstallCmd *piputils.PipCmd) error {
+	// Create regular expressions for log parsing.
+	collectingPackageRegexp, err := clientutils.GetRegExp(`^Collecting\s(\w[\w-\.]+).*`)
+	if err != nil {
+		return err
+	}
+	downloadFileRegexp, err := clientutils.GetRegExp(`^\s\sDownloading\s[^\s]*\/packages\/[^\s]*\/([^\s]*)`)
 	if err != nil {
 		return err
 	}
 
-	dependencies := make(map[string]string)
-	// Read the log line, identify dependency name and its corresponding file from Artifactory.
-	protocolRegExp := gofrogcmd.CmdOutputPattern{
-		RegExp: regexp,
+	downloadedDependencies := make(map[string]string)
+	var packageName string
+	waitingForPackageFilePath := false
+
+	// Extract downloaded package name.
+	dependencyNameParser := gofrogcmd.CmdOutputPattern{
+		RegExp: collectingPackageRegexp,
 		ExecFunc: func(pattern *gofrogcmd.CmdOutputPattern) (string, error) {
-			// Match - extract dependency information.
+			// If this pattern matched a second time before downloaded-file-name was found, prompt a message.
+			if waitingForPackageFilePath {
+				log.Debug(fmt.Sprintf("Could not resolve download path for package: %s, continuing...", packageName))
+			}
 
 			// Check for out of bound results.
-			if len(pattern.MatchedResults)-1 < nameMatchGroup || len(pattern.MatchedResults)-1 < fileMatchGroup {
-				log.Debug(fmt.Sprintf("Failed extracting dependency information from line: %s", pattern.Line))
-				return "", nil
+			if len(pattern.MatchedResults)-1 < 0 {
+				log.Debug(fmt.Sprintf("Failed extracting package name from line: %s", pattern.Line))
+				return pattern.Line, nil
 			}
 
 			// Save dependency information.
-			depName := pattern.MatchedResults[nameMatchGroup]
-			file := pattern.MatchedResults[fileMatchGroup]
-			dependencies[strings.ToLower(depName)] = file
+			waitingForPackageFilePath = true
+			packageName = pattern.MatchedResults[1]
 
-			log.Debug(fmt.Sprintf("Found dependency: %s installed with: %s", pattern.MatchedResults[nameMatchGroup], file))
-			return "", nil
+			return pattern.Line, nil
+		},
+	}
+
+	// Extract downloaded file, stored in Artifactory.
+	dependencyFileParser := gofrogcmd.CmdOutputPattern{
+		RegExp: downloadFileRegexp,
+		ExecFunc: func(pattern *gofrogcmd.CmdOutputPattern) (string, error) {
+			// Check for out of bound results.
+			if len(pattern.MatchedResults)-1 < 0 {
+				log.Debug(fmt.Sprintf("Failed extracting download path from line: %s", pattern.Line))
+				return pattern.Line, nil
+			}
+
+			// If this pattern matched before package-name was found, do not collect this path.
+			if !waitingForPackageFilePath {
+				log.Debug(fmt.Sprintf("Could not resolve package name for download path: %s , continuing...", packageName))
+				return pattern.Line, nil
+			}
+
+			// Save dependency information.
+			filePath := pattern.MatchedResults[1]
+			downloadedDependencies[strings.ToLower(packageName)] = filePath
+			waitingForPackageFilePath = false
+
+			log.Debug(fmt.Sprintf("Found package: %s installed with: %s", packageName, filePath))
+			return pattern.Line, nil
 		},
 	}
 
 	// Execute command.
-	_, _, err = gofrogcmd.RunCmdWithOutputParser(pipInstallCmd, true, &protocolRegExp)
+	_, _, err = gofrogcmd.RunCmdWithOutputParser(pipInstallCmd, true, &dependencyNameParser, &dependencyFileParser)
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
 
 	// Update dependencyToFileMap.
-	pic.dependencyToFileMap = dependencies
+	pic.dependencyToFileMap = downloadedDependencies
 
 	return nil
-}
-
-// Return the regexp to use for parsing pip-install log for dependencies name and file.
-// regexp - The regular expression to run.
-// depNameMatchGroup - Match group for the resolved dependency name.
-// fileMatchGroup - Match group for the downloaded file in Artifactory.
-func (pic *PipInstallCommand) getParsingRegexpForPipInstallCommand() (regexp *regexp.Regexp, depNameMatchGroup, fileMatchGroup int, err error) {
-	// Check if args contain -v or --verbose -> use appropriate regex for these cases.
-	if utils.FindBooleanFlag("-v", pic.args) != -1 || utils.FindBooleanFlag("--verbose", pic.args) != -1 {
-		// Command is in verbose mode.
-		regexp, err = clientutils.GetRegExp(`^\s\sDownloading\sfrom\sURL\s.*\/packages\/.*\/(.*)\#sha256=[A-Fa-f0-9]{64}\s\(from\s.*\/(\w[\w-\.]+)\/\)$`)
-		depNameMatchGroup = 2
-		fileMatchGroup = 1
-		return
-	}
-
-	// Command is non-verbose.
-	// TODO: This regexp isn't good for the non-verbose output, as we have to parse 2 log lines each time (notice the \n in the regexp).
-	regexp, err = clientutils.GetRegExp(`\nCollecting\s(\w[\w-\.]+).*\n\s\sDownloading\s.*\/packages\/.*\/(.*)`)
-	depNameMatchGroup = 1
-	fileMatchGroup = 2
-	return
 }
 
 func (pic *PipInstallCommand) doCollectBuildInfo() error {
@@ -163,30 +174,37 @@ func (pic *PipInstallCommand) doCollectBuildInfo() error {
 	if err != nil {
 		return err
 	}
-	extractor.Extract()
 
-	// TODO: decide module name:
-	// If setup.py: Run python egg_info and parse PKG-INFO for module name.
-	// If requirements, put build-name as module name.
-	pic.moduleName = pic.buildName
+	err = extractor.Extract()
+	if err != nil {
+		return err
+	}
+
+	// If module-name wasn't set by the user, determine it.
+	if pic.moduleName == "" {
+		err := pic.determineModuleName(extractor)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Get project dependencies.
 	allDependencies := extractor.AllDependencies()
 
-	// Populate dependencies checksums.
-	pic.populateDependenciesChecksum(allDependencies)
+	// Populate dependencies information - checksums and file-name.
+	pic.populateDependenciesInfoAndPromptMissingDependencies(allDependencies)
 
-	// Clear cache from unnecessary dependencies.
+	// Update project cache with correct dependencies.
 	dependencies.UpdateDependenciesCache(allDependencies)
 
 	// Save build-info built from allDependencies.
-	pic.saveBuildInfoAndPromptMissingDependencyChecksums(allDependencies)
+	pic.saveBuildInfo(allDependencies)
 
 	return nil
 }
 
 func (pic *PipInstallCommand) createCompatibleExtractor() (dependencies.Extractor, error) {
-	// Check if using requirements file.
+	// Check if using requirements file or setup.py.
 	success, err := pic.calculateRequirementsFilePathFromArgs()
 	if err != nil {
 		return nil, err
@@ -202,7 +220,7 @@ func (pic *PipInstallCommand) createCompatibleExtractor() (dependencies.Extracto
 		return nil, err
 	}
 	if success {
-		// Create setuppy extractor.
+		// Create setup.py extractor.
 		return dependencies.NewSetupExtractor(pic.buildFile, pic.projectPath, pic.pythonExecutablePath), nil
 	}
 
@@ -210,32 +228,21 @@ func (pic *PipInstallCommand) createCompatibleExtractor() (dependencies.Extracto
 	return nil, errorutils.CheckError(errors.New("Could not determine installation file for pip command, the command must contain either '--requirement <file>' or run from the directory containing 'setup.py' file."))
 }
 
-func (pic *PipInstallCommand) saveBuildInfoAndPromptMissingDependencyChecksums(allDependencies map[string]*buildinfo.Dependency) {
+func (pic *PipInstallCommand) saveBuildInfo(allDependencies map[string]*buildinfo.Dependency) {
 	buildInfo := &buildinfo.BuildInfo{}
 	var modules []buildinfo.Module
 	var projectDependencies []buildinfo.Dependency
-	var missingDependenciesText []string
 
 	for _, dep := range allDependencies {
 		projectDependencies = append(projectDependencies, *dep)
-		if dep.Checksum == nil || dep.Checksum.Sha1 == "" || dep.Checksum.Md5 == "" {
-			// Dependency missing checksum.
-			missingDependenciesText = append(missingDependenciesText, dep.Id)
-		}
 	}
 
 	// Save build-info.
 	module := buildinfo.Module{Id: pic.moduleName, Dependencies: projectDependencies}
 	modules = append(modules, module)
-	utils.SaveBuildInfo(pic.buildConfiguration.BuildName, pic.buildConfiguration.BuildNumber, buildInfo)
 
-	// Prompt missing dependencies.
-	if len(missingDependenciesText) > 0 {
-		log.Warn(strings.Join(missingDependenciesText, "\n"))
-		log.Warn("The npm dependencies above could not be found in Artifactory and therefore are not included in the build-info.\n" +
-			"Make sure the dependencies are available in Artifactory for this build.\n" +
-			"Uninstalling packages from the environment will force populating Artifactory with these dependencies.")
-	}
+	buildInfo.Modules = modules
+	utils.SaveBuildInfo(pic.buildName, pic.buildNumber, buildInfo)
 }
 
 // Cannot resolve the project path from args when using setup.py, look for setup.py in current dir.
@@ -261,6 +268,27 @@ func (pic *PipInstallCommand) calculateSetuppyFilePath() (bool, error) {
 	return true, nil
 }
 
+func (pic *PipInstallCommand) determineModuleName(extractor dependencies.Extractor) error {
+	// If module-name was set in command, don't change it.
+	if pic.moduleName != "" {
+		return nil
+	}
+
+	// Get package-name from extractor.
+	moduleName, err := extractor.PackageName()
+	if err != nil {
+		return err
+	}
+
+	// If package-name unknown, set module as build-name.
+	if moduleName == "" {
+		moduleName = pic.buildName
+	}
+
+	pic.moduleName = moduleName
+	return nil
+}
+
 func (pic *PipInstallCommand) calculateRequirementsFilePathFromArgs() (bool, error) {
 	requirementsFilePath, err := pic.getFlagValueFromArgs([]string{"-r", "--requirement"})
 	if err != nil || requirementsFilePath == "" {
@@ -282,7 +310,7 @@ func (pic *PipInstallCommand) calculateRequirementsFilePathFromArgs() (bool, err
 	if err != nil {
 		return false, err
 	}
-	pic.buildFile, pic.projectPath = filepath.Split(absolutePath)
+	pic.projectPath, pic.buildFile = filepath.Split(absolutePath)
 
 	return true, nil
 }
@@ -308,14 +336,14 @@ func (pic *PipInstallCommand) preparePrerequisites() error {
 	log.Debug("Preparing prerequisites.")
 
 	// Set pip executable path.
-	pipExecutable, err := pip.GetExecutablePath("pip")
+	pipExecutable, err := piputils.GetExecutablePath("pip")
 	if err != nil {
 		return err
 	}
 	pic.pipExecutablePath = pipExecutable
 
 	// Set python executable path.
-	pythonExecutable, err := pip.GetExecutablePath("python")
+	pythonExecutable, err := piputils.GetExecutablePath("python")
 	if err != nil {
 		return err
 	}
@@ -396,91 +424,70 @@ func (pic *PipInstallCommand) getArtifactoryUrlWithCredentials() (string, error)
 	if username != "" && password != "" {
 		rtUrl.User = url.UserPassword(username, password)
 	}
-	rtUrl.Path += "api/pypi/" + pic.pypiRepo + "simple"
+	rtUrl.Path += "api/pypi/" + pic.pypiRepo + "/simple"
 
 	return rtUrl.String(), nil
 }
 
-// This methods populates project's dependencies with its checksums.
+// Populate project's dependencies with its checksums and file-names.
 // If the dependency was downloaded in this pip-install execution, checksum will be fetched from Artifactory.
-// if not, check if exist in cache.
-func (pic *PipInstallCommand) populateDependenciesChecksum(dependenciesMap map[string]*buildinfo.Dependency) error {
+// Otherwise, check if exist in cache.
+func (pic *PipInstallCommand) populateDependenciesInfoAndPromptMissingDependencies(dependenciesMap map[string]*buildinfo.Dependency) error {
 	servicesManager, err := utils.CreateServiceManager(pic.rtDetails, false)
 	if err != nil {
 		return err
 	}
 
+	var missingDependenciesText []string
 	dependenciesCache, err := dependencies.GetProjectDependenciesCache()
 	if err != nil {
 		return err
 	}
-	// Iterate dependencies map to update checksums.
+	// Iterate dependencies map to update info.
 	for depName := range dependenciesMap {
 		// Check if this dependency was updated during this pip-install execution.
 		// If updated - fetch checksum from Artifactory, regardless of what was previously stored in cache.
 		depFileName, ok := pic.dependencyToFileMap[depName]
 		if ok {
 			// Fetch from Artifactory.
-			checksum, err := getDependencyChecksumFromArtifactory(servicesManager, pic.pypiRepo, depFileName)
+			checksum, err := piputils.GetDependencyChecksumFromArtifactory(servicesManager, pic.pypiRepo, depFileName)
 			if err != nil {
 				return err
 			}
-			// Update dependency.
-			dependenciesMap[depName].Checksum = checksum
-
-			continue
+			if checksum != nil {
+				// Update dependency.
+				dependenciesMap[depName].Checksum = checksum
+				dependenciesMap[depName].Id = depFileName
+				continue
+			}
+			// Failed receiving data from Artifactory, or missing checksum for file.
 		}
 
-		// Check cache for dependency checksum.
-		checksum := dependenciesCache.GetDependency(depName)
-		if checksum == nil {
-			// Checksum not found in cache.
-			continue
+		// If dependency wasn't downloaded in this run, check cache for dependency checksum.
+		if !ok && dependenciesCache != nil {
+			dep := dependenciesCache.GetDependency(depName)
+			if dep != nil {
+				// Checksum found in cache - update dependency.
+				dependenciesMap[depName].Checksum = dep.Checksum
+				dependenciesMap[depName].Id = dep.Id
+				continue
+			}
 		}
-		// Checksum found in cache - update dependency.
-		dependenciesMap[depName].Checksum = checksum
+
+		// Dependency not found in cache.
+		missingDependenciesText = append(missingDependenciesText, depName)
+		delete(dependenciesMap, depName)
+	}
+
+	// Prompt missing dependencies.
+	if len(missingDependenciesText) > 0 {
+		log.Warn(strings.Join(missingDependenciesText, "\n"))
+		log.Warn("The pypi packages above could not be found in Artifactory and therefore are not included in the build-info.\n" +
+			"Make sure the packages are available in Artifactory for this build.\n" +
+			"Uninstalling packages from the environment will force populating Artifactory with these packages.")
 	}
 
 	return nil
-}
-
-func getDependencyChecksumFromArtifactory(servicesManager *artifactory.ArtifactoryServicesManager, repository, dependencyFile string) (checksum *buildinfo.Checksum, err error) {
-	log.Debug(fmt.Sprintf("Fetching checksums for: %s", dependencyFile))
-	result, err := servicesManager.Aql(createAqlQueryForPypi(repository, dependencyFile))
-	if err != nil {
-		return
-	}
-
-	parsedResult := new(aqlResult)
-	err = json.Unmarshal(result, parsedResult)
-	if err = errorutils.CheckError(err); err != nil {
-		return
-	}
-
-	if len(parsedResult.Results) == 0 {
-		log.Debug(fmt.Sprintf("File: %s could not be found in repository: %s", dependencyFile, repository))
-		return
-	}
-
-	checksum = &buildinfo.Checksum{Sha1: parsedResult.Results[0].Actual_sha1, Md5: parsedResult.Results[0].Actual_md5}
-	log.Debug(fmt.Sprintf("Found checksums for file: %s, sha1: %s, md5:%s", dependencyFile, parsedResult.Results[0].Actual_sha1, parsedResult.Results[0].Actual_md5))
-
-	return
-}
-
-// TODO: Move this function to jfrog-client-go/artifactory/services/utils/aqlquerybuilder.go
-func createAqlQueryForPypi(repo, file string) string {
-	itemsPART :=
-		`items.find({` +
-			`"repo": "%s",` +
-			`"$or": [{` +
-			`"$and":[{` +
-			`"path": {"$match": "*"},` +
-			`"name": {"$match": "%s"}` +
-			`}]` +
-			`}]` +
-			`}).include("actual_md5","actual_sha1")`
-	return fmt.Sprintf(itemsPART, repo, file)
 }
 
 func (pic *PipInstallCommand) CommandName() string {
@@ -498,16 +505,12 @@ func (pic *PipInstallCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails)
 	return pic
 }
 
-func (pic *PipInstallCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *PipInstallCommand {
-	pic.buildConfiguration = buildConfiguration
+func (pic *PipInstallCommand) SetRepo(repo string) *PipInstallCommand {
+	pic.pypiRepo = repo
 	return pic
 }
 
-type aqlResult struct {
-	Results []*results `json:"results,omitempty"`
-}
-
-type results struct {
-	Actual_md5  string `json:"actual_md5,omitempty"`
-	Actual_sha1 string `json:"actual_sha1,omitempty"`
+func (pic *PipInstallCommand) SetArgs(arguments []string) *PipInstallCommand {
+	pic.args = arguments
+	return pic
 }

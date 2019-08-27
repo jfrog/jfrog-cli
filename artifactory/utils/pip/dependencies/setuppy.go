@@ -12,16 +12,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 )
 
 // Dependencies extractor for setup.py
 type setupExtractor struct {
-	allDependencies  map[string]*buildinfo.Dependency
-	childrenMap      map[string][]string
-	rootDependencies []string
-
+	allDependencies      map[string]*buildinfo.Dependency
+	childrenMap          map[string][]string
+	rootDependencies     []string
 	setuppyFilePath      string
 	pythonExecutablePath string
+	Pkg                  string
+	once                 sync.Once
 }
 
 func NewSetupExtractor(fileName, projectRoot, pythonExecutablePath string) Extractor {
@@ -30,17 +33,15 @@ func NewSetupExtractor(fileName, projectRoot, pythonExecutablePath string) Extra
 }
 
 func (extractor *setupExtractor) Extract() error {
-	// Parse setup.py, add to rootDependencies.
-	dependencies, err := extractor.getRootDependencies()
-	if errorutils.CheckError(err) != nil {
-		return err
-	}
-	extractor.rootDependencies = dependencies
-
 	// Get installed packages tree.
 	environmentPackages, err := BuildPipDependencyMap(extractor.pythonExecutablePath, nil)
 	if err != nil {
 		return nil
+	}
+
+	// Populate rootDependencies.
+	if err := extractor.extractRootDependencies(environmentPackages); err != nil {
+		return err
 	}
 
 	// Extract all project dependencies.
@@ -56,44 +57,74 @@ func (extractor *setupExtractor) Extract() error {
 	return nil
 }
 
+func (extractor *setupExtractor) PackageName() (string, error) {
+	var err error
+	extractor.once.Do(func() {
+		extractor.Pkg, err = getProjectName(extractor.pythonExecutablePath, extractor.setuppyFilePath)
+	})
+	return extractor.Pkg, err
+}
+
+func (extractor *setupExtractor) extractRootDependencies(envDeps map[string]pipDependencyPackage) error {
+	// Get package name.
+	pkgName, err := extractor.PackageName()
+	if err != nil {
+		return err
+	}
+
+	// Get installed package from environment-dependencies map.
+	pipDepPkg, ok := envDeps[strings.ToLower(pkgName)]
+	if !ok {
+		// Package not installed.
+		return errorutils.CheckError(errors.New(fmt.Sprintf("Failed receiving root-dependencies for installed package: %s", pkgName)))
+	}
+
+	// Extract package's root-dependencies.
+	extractor.rootDependencies = pipDepPkg.getDependencies()
+
+	return nil
+}
+
 // Get dependencies from setup.py
-func (extractor *setupExtractor) getRootDependencies() ([]string, error) {
+func getProjectName(pythonExecutablePath, setuppyFilePath string) (string, error) {
 	// Create temp-dir.
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	// Execute egg_info command and return requires.txt content.
-	content, err := extractor.getEgginfoRequiresContent(tempDirPath)
+	// Execute egg_info command and return PKG-INFO content.
+	content, err := getEgginfoPkginfoContent(tempDirPath, pythonExecutablePath, setuppyFilePath)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	// Extract dependencies from file content.
-	rootDeps, err := extractor.getRootDependenciesFromFileContent(content)
-	if err != nil {
-		return nil, err
-	}
-
-	// return the root dependencies
-	return rootDeps, nil
+	// Extract project name from file content.
+	return getProjectNameFromFileContent(content)
 }
 
-func (extractor *setupExtractor) getRootDependenciesFromFileContent(content []byte) ([]string, error) {
-	// Parse dependencies.
-	depsRegexp, err := utils.GetRegExp(`(?m)^\w[\w-\.]+`)
+// Get package-name from PKG-INFO file content.
+// If pattern of package-name not found, return an error.
+func getProjectNameFromFileContent(content []byte) (string, error) {
+	// Create package-name regexp.
+	packageNameRegexp, err := utils.GetRegExp(`(?m)^Name\:\s(\w[\w-\.]+)`)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return depsRegexp.FindAllString(string(content), -1), nil
+	// Find first match of packageNameRegexp.
+	match := packageNameRegexp.FindStringSubmatch(string(content))
+	if len(match) < 2 {
+		return "", errorutils.CheckError(errors.New("Failed extracting package name from content."))
+	}
+
+	return match[1], nil
 }
 
 // Run egg-info command on setup.py, the command generates metadata files.
-// Return the content of the 'requires.txt' file.
-func (extractor *setupExtractor) getEgginfoRequiresContent(tempPath string) ([]byte, error) {
+// Return the content of the 'PKG-INFO' file.
+func getEgginfoPkginfoContent(tempPath, pythonExecutablePath, setuppyFilePath string) ([]byte, error) {
 	// Change work-dir to temp, preserve current work-dir when method ends.
 	wd, err := os.Getwd()
 	if errorutils.CheckError(err) != nil {
@@ -106,48 +137,48 @@ func (extractor *setupExtractor) getEgginfoRequiresContent(tempPath string) ([]b
 	}
 
 	// Run python egg_info command.
-	egginfoOutput, err := extractor.executeEgginfoCommandWithOutput()
+	egginfoOutput, err := executeEgginfoCommandWithOutput(pythonExecutablePath, setuppyFilePath)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
 
-	// Parse egg_info execution output to find requires.txt path.
-	requirestxtPath, err := extractor.extractRequirestxtPathFromCommandOutput(egginfoOutput)
+	// Parse egg_info execution output to find PKG-INFO path.
+	pkginfoPath, err := extractPkginfoPathFromCommandOutput(egginfoOutput)
 	if err != nil {
 		return nil, err
 	}
 
-	// Read requires.txt file.
-	requiresFileExists, err := fileutils.IsFileExists(requirestxtPath, false)
-	if !requiresFileExists {
-		return nil, errorutils.CheckError(errors.New(fmt.Sprintf("File 'requires.txt' couldn't be found in its designated location: %s", requirestxtPath)))
+	// Read PKG-INFO file.
+	pkginfoFileExists, err := fileutils.IsFileExists(pkginfoPath, false)
+	if !pkginfoFileExists {
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf("File 'PKG-INFO' couldn't be found in its designated location: %s", pkginfoPath)))
 	}
 
-	return ioutil.ReadFile(requirestxtPath)
+	return ioutil.ReadFile(pkginfoPath)
 }
 
-func (extractor *setupExtractor) extractRequirestxtPathFromCommandOutput(egginfoOutput string) (string, error) {
+func extractPkginfoPathFromCommandOutput(egginfoOutput string) (string, error) {
 	//(?m) means a multiline match, matching line-by-line.
-	requiresRegexp, err := utils.GetRegExp(`(?m)^writing\srequirements\sto\s(\w[\w-\.]+\.egg\-info[\\\/](requires\.txt)$)`)
+	pkginfoRegexp, err := utils.GetRegExp(`(?m)^writing\s(\w[\w-\.]+\.egg\-info[\\\/](PKG-INFO)$)`)
 	if err != nil {
 		return "", err
 	}
 
-	matchedOutputLines := requiresRegexp.FindAllString(egginfoOutput, -1)
+	matchedOutputLines := pkginfoRegexp.FindAllString(egginfoOutput, -1)
 	if len(matchedOutputLines) != 1 {
-		return "", errorutils.CheckError(errors.New("Failed parsing egg_info command, couldn't find requires.txt location."))
+		return "", errorutils.CheckError(errors.New("Failed parsing egg_info command, couldn't find PKG-INFO location."))
 	}
 
 	// Extract path from matched line.
-	matchedResults := requiresRegexp.FindStringSubmatch(matchedOutputLines[0])
+	matchedResults := pkginfoRegexp.FindStringSubmatch(matchedOutputLines[0])
 	return matchedResults[1], nil
 }
 
 // Execute egg_info command for setup.py, return command's output.
-func (extractor *setupExtractor) executeEgginfoCommandWithOutput() (string, error) {
+func executeEgginfoCommandWithOutput(pythonExecutablePath, setuppyFilePath string) (string, error) {
 	pythonEggInfoCmd := &pip.PipCmd{
-		Executable:  extractor.pythonExecutablePath,
-		Command:     extractor.setuppyFilePath,
+		Executable:  pythonExecutablePath,
+		Command:     setuppyFilePath,
 		CommandArgs: []string{"egg_info"},
 		EnvVars:     nil,
 		StrWriter:   nil,

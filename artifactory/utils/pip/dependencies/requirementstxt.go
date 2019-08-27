@@ -15,12 +15,11 @@ import (
 
 // Dependencies extractor for requirements.txt
 type requirementsExtractor struct {
-	allDependencies  map[string]*buildinfo.Dependency
-	childrenMap      map[string][]string
-	rootDependencies []string
-	regExps          []requirementRegExp
-	skipRegexp       *regexp.Regexp
-
+	allDependencies      map[string]*buildinfo.Dependency
+	childrenMap          map[string][]string
+	rootDependencies     []string
+	regExps              []requirementRegExp
+	skipRegexp           *regexp.Regexp
 	requirementsFilePath string
 	pythonExecutablePath string
 }
@@ -92,7 +91,6 @@ func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error
 		// Check if failed parsing line.
 		if depName == "" {
 			// No match found for line, check if previous line ends with unescaped '\' meaning skip this line.
-			// TODO: check that the line doesn't get commented by looking for ' #'.
 			shouldSkip := extractor.shouldSkipNextRequirementsLine(previousLine)
 			if shouldSkip {
 				continue
@@ -104,7 +102,7 @@ func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error
 		}
 
 		// Append dependency.
-		dependencies = append(dependencies, depName)
+		dependencies = append(dependencies, strings.ToLower(depName))
 	}
 
 	// Check for scanner error.
@@ -124,7 +122,7 @@ func (extractor *requirementsExtractor) consumeLine(line string) (string, error)
 			continue
 		}
 
-		// We have a match.
+		// Matched.
 		matchedResults := regexp.regExp.FindStringSubmatch(line)
 		if len(matchedResults) < regexp.matchGroup+1 {
 			// Expecting matchResults size to be at least 'regexp.matchGroup'.
@@ -138,7 +136,7 @@ func (extractor *requirementsExtractor) consumeLine(line string) (string, error)
 	return "", nil
 }
 
-// In the requirements.txt file, line ending with unescaped '/' means that the next line is a continuance.
+// In the requirements.txt file, line ending with unescaped '\' means that the next line is a continuance.
 // Thus should skip the next line when parsing.
 func (extractor *requirementsExtractor) shouldSkipNextRequirementsLine(line string) bool {
 	matched := extractor.skipRegexp.Match([]byte(line))
@@ -150,7 +148,6 @@ func (extractor *requirementsExtractor) shouldSkipNextRequirementsLine(line stri
 }
 
 func (extractor *requirementsExtractor) initializeRegExps() error {
-	// TODO: regexps 2-5 can be replaced by: ^((((git)|(hg)|(svn)|(bzr))\+)|(git:\/\/))\w.*?\w.*\#egg=([\w-]+) - with match-group 9 to catch all.
 	// Order is important! pattern '^\w[\w-\.]+' matches for all regexps, thus must be last.
 	// Go doesn't support Lookaheads in regexps, thus this won't work: '^(?!(git\+)|(git:)|(https?:\/\/)|(hg\+)|(svn\+)|(bzr\+))\w[\w-\.]+'
 	var requirementRegExps = []requirementRegExp{
@@ -172,7 +169,7 @@ func (extractor *requirementsExtractor) initializeRegExps() error {
 	extractor.regExps = append(extractor.regExps, requirementRegExps...)
 
 	// Calculate skip regexp.
-	extractor.skipRegexp, err = utils.GetRegExp(`.*\\$`)
+	extractor.skipRegexp, err = utils.GetRegExp(`.*\s\\$`)
 	if err != nil {
 		return err
 	}
@@ -196,4 +193,8 @@ func (extractor *requirementsExtractor) DirectDependencies() []string {
 
 func (extractor *requirementsExtractor) ChildrenMap() map[string][]string {
 	return extractor.childrenMap
+}
+
+func (extractor *requirementsExtractor) PackageName() (string, error) {
+	return "", nil
 }

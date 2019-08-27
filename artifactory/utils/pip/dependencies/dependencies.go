@@ -14,22 +14,26 @@ import (
 )
 
 func init() {
-	// TODO: Create the pip-dependency-map execution script.
-	pipDependencyMapScriptPath = "/Users/barb/trash/pipdeptree/pipdeptree.py"
+	var err error
+	pipDependencyMapScriptPath, err = pip.GetPipDepTreeScriptPath()
+	if err != nil {
+		panic("Failed initializing dependency-map script.")
+	}
 }
 
 var pipDependencyMapScriptPath string
 
 // The extractor responsible to calculate the project dependencies.
 type Extractor interface {
-	// Get all the dependencies for the project
+	// Get all the dependencies for the project.
 	AllDependencies() map[string]*buildinfo.Dependency
-	// Get all the root dependencies of the project
+	// Get all the root dependencies of the project.
 	DirectDependencies() []string
-	// Dependencies relations map
+	// Dependencies relations map.
 	ChildrenMap() map[string][]string
+	// Decide package name.
+	PackageName() (string, error)
 
-	//New(projectName, projectRoot string) (Extractor, error)
 	Extract() error
 }
 

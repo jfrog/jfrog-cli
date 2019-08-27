@@ -18,6 +18,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -565,6 +566,7 @@ func GetCommands() []cli.Command {
 			HelpName:     common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
 			UsageText:    pipinstall.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
+			SkipFlagParsing: true,
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
@@ -1292,9 +1294,7 @@ func getCurlFlags() []cli.Flag {
 }
 
 func getPipInstallFlags() []cli.Flag {
-	pipInstallFlags := getBaseFlags()
-	pipInstallFlags = append(pipInstallFlags, getServerIdFlag())
-	return append(pipInstallFlags, getBuildToolAndModuleFlags()...)
+	return getBuildToolAndModuleFlags()
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) *config.ArtifactoryDetails {
@@ -2017,13 +2017,20 @@ func pipInstallCmd(c *cli.Context) error {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 	}
 
+	// Get pip configuration.
+	pipConfig, err := piputils.GetPipConfiguration()
+	if err != nil {
+		return err
+	}
+	// Set arg values.
+	rtDetails, err := pipConfig.RtDetails()
+	if err != nil {
+		return err
+	}
+
 	// Create command.
 	pipCmd := pip.NewPipInstallCommand()
-	buildConfiguration := createBuildToolConfiguration(c)
-
-	// Set arg values.
-	pipCmd.SetBuildConfiguration(buildConfiguration).
-		SetRtDetails(createArtifactoryDetailsByFlags(c, true))
+	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
 
 	return commands.Exec(pipCmd)
 }

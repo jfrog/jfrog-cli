@@ -2,7 +2,7 @@ package pipinstall
 
 const Description = "Run pip install."
 
-var Usage = []string{`jfrog rt pipi [command options] <install file>`}
+var Usage = []string{`jfrog rt pipi [command options] <pip arguments>`}
 
 const Arguments string = `	install file
-		The project installation file for pip. Usually 'setup.py' or 'requirements.txt'.`
+		Arguments and options for the pip-install command.`
