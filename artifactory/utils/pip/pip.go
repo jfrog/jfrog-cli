@@ -3,10 +3,16 @@ package pip
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 )
 
 // Get executable path.
@@ -43,6 +49,35 @@ func (pc *PipCmd) GetStdWriter() io.WriteCloser {
 
 func (pc *PipCmd) GetErrWriter() io.WriteCloser {
 	return pc.ErrWriter
+}
+
+func GetPipDepTreeScriptPath() (string, error) {
+	pipDependenciesPath, err := config.GetJfrogDependenciesPath()
+	if err != nil {
+		return "", err
+	}
+	pipDependenciesPath = filepath.Join(pipDependenciesPath, "pip", pipDepTreeVersion)
+
+	return writePipDepTreeScriptIfNeeded(pipDependenciesPath)
+}
+
+func writePipDepTreeScriptIfNeeded(targetPath string) (string, error) {
+	scriptPath := path.Join(targetPath, "pipdeptree.py")
+	exists, err := fileutils.IsFileExists(scriptPath, false)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		err = os.MkdirAll(targetPath, os.ModeDir|os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+		err = ioutil.WriteFile(scriptPath, pipDepTreeContent, os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+	}
+	return scriptPath, nil
 }
 
 type PipCmd struct {
