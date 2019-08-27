@@ -410,6 +410,10 @@ func (pic *PipInstallCommand) populateDependenciesChecksum(dependenciesMap map[s
 		return err
 	}
 
+	dependenciesCache, err := dependencies.GetProjectDependenciesCache()
+	if err != nil {
+		return err
+	}
 	// Iterate dependencies map to update checksums.
 	for depName := range dependenciesMap {
 		// Check if this dependency was updated during this pip-install execution.
@@ -428,10 +432,7 @@ func (pic *PipInstallCommand) populateDependenciesChecksum(dependenciesMap map[s
 		}
 
 		// Check cache for dependency checksum.
-		checksum, err := dependencies.GetDependencyChecksum(depName, depFileName)
-		if err != nil {
-			return err
-		}
+		checksum := dependenciesCache.GetDependency(depName)
 		if checksum == nil {
 			// Checksum not found in cache.
 			continue

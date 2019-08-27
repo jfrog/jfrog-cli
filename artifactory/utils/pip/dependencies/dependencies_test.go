@@ -51,7 +51,6 @@ func TestRunPipDepTreeAndParse(t *testing.T) {
 	newLog.SetOutputWriter(buffer)
 	log.SetLogger(newLog)
 
-
 	pythonPath := "/Users/barb/trash/venv-test2/bin/python"
 	pathVar := os.Getenv("PATH")
 	os.Setenv("PATH", "/Users/barb/trash/venv-test2/bin")
@@ -99,7 +98,7 @@ func TestExtractDependencies(t *testing.T) {
 
 	// GET ROOT DEPS
 
-	rootDeps := []string {"pyinstaller", "pipdeptree", "macholib"}
+	rootDeps := []string{"pyinstaller", "pipdeptree", "macholib"}
 
 	// RUN
 
