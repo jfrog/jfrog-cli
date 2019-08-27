@@ -1,23 +1,15 @@
 package golang
 
 import (
-	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/spf13/viper"
 )
 
 type GoNativeCommand struct {
 	configFilePath string
 	GoCommand
 }
-
-const (
-	resolverPrefix = "resolver"
-	deployerPrefix = "deployer"
-)
 
 func NewGoNativeCommand() *GoNativeCommand {
 	return &GoNativeCommand{GoCommand: *new(GoCommand)}
@@ -42,19 +34,14 @@ func (gnc *GoNativeCommand) Run() error {
 	}
 
 	// Extract resolution params.
-	if !vConfig.IsSet(resolverPrefix) {
-		return errorutils.CheckError(fmt.Errorf("Resolver information is missing"))
-	}
-	log.Debug("Found resolver in the config file")
-	gnc.resolverParams, err = gnc.extractInfo(resolverPrefix, vConfig)
+	gnc.resolverParams, err = utils.GetRepoConfigByPrefix(gnc.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {
 		return err
 	}
 
-	if vConfig.IsSet(deployerPrefix) {
+	if vConfig.IsSet(utils.ProjectConfigDeployerPrefix) {
 		// Extract deployer params.
-		log.Debug("Found deployer information in the config file")
-		gnc.deployerParams, err = gnc.extractInfo(deployerPrefix, vConfig)
+		gnc.deployerParams, err = utils.GetRepoConfigByPrefix(gnc.configFilePath, utils.ProjectConfigDeployerPrefix, vConfig)
 		if err != nil {
 			return err
 		}
@@ -85,30 +72,14 @@ func (gnc *GoNativeCommand) Run() error {
 	return gnc.GoCommand.Run()
 }
 
-func (gnc *GoNativeCommand) extractInfo(prefix string, vConfig *viper.Viper) (*GoParamsCommand, error) {
-	repo := vConfig.GetString(prefix + ".repo")
-	if repo == "" {
-		return nil, fmt.Errorf("Missing repository for %s within %s", prefix, gnc.configFilePath)
-	}
-	serverId := vConfig.GetString(prefix + ".serverID")
-	if serverId == "" {
-		return nil, fmt.Errorf("Missing server ID for %s within %s", prefix, gnc.configFilePath)
-	}
-	rtDetails, err := config.GetArtifactoryConf(serverId)
-	if err != nil {
-		return nil, err
-	}
-	return &GoParamsCommand{targetRepo: repo, rtDetails: rtDetails}, nil
-}
-
 func (gnc *GoNativeCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	// If deployer Artifactory details exists, returs it.
-	if gnc.deployerParams != nil && !gnc.deployerParams.isRtDetailsEmpty() {
+	if gnc.deployerParams != nil && !gnc.deployerParams.IsRtDetailsEmpty() {
 		return gnc.deployerParams.RtDetails()
 	}
 
 	// If resolver Artifactory details exists, returs it.
-	if gnc.resolverParams != nil && !gnc.resolverParams.isRtDetailsEmpty() {
+	if gnc.resolverParams != nil && !gnc.resolverParams.IsRtDetailsEmpty() {
 		return gnc.resolverParams.RtDetails()
 	}
 

@@ -9,52 +9,20 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"strings"
 )
 
 type GoRecursivePublishCommand struct {
-	GoParamsCommand
+	utils.RepositoryConfig
 }
 
 func NewGoRecursivePublishCommand() *GoRecursivePublishCommand {
 	return &GoRecursivePublishCommand{}
-}
-
-type GoParamsCommand struct {
-	targetRepo string
-	rtDetails  *config.ArtifactoryDetails
-}
-
-func (gpc *GoParamsCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return gpc.rtDetails, nil
-}
-
-func (gpc *GoParamsCommand) TargetRepo() string {
-	return gpc.targetRepo
-}
-
-func (gpc *GoParamsCommand) SetTargetRepo(targetRepo string) *GoParamsCommand {
-	gpc.targetRepo = targetRepo
-	return gpc
-}
-
-func (gpc *GoParamsCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GoParamsCommand {
-	gpc.rtDetails = rtDetails
-	return gpc
-}
-
-func (gpc *GoParamsCommand) isRtDetailsEmpty() bool {
-	if gpc.rtDetails != nil && reflect.DeepEqual(config.ArtifactoryDetails{}, gpc.rtDetails) {
-		return false
-	}
-	return true
 }
 
 func (grp *GoRecursivePublishCommand) Run() error {

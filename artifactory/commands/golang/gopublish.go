@@ -21,7 +21,7 @@ type GoPublishCommand struct {
 	dependencies       string
 	version            string
 	result             *commandutils.Result
-	GoParamsCommand
+	utils.RepositoryConfig
 }
 
 func NewGoPublishCommand() *GoPublishCommand {
@@ -112,7 +112,7 @@ func (gpc *GoPublishCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		succeeded, failed, err := goProject.PublishDependencies(gpc.targetRepo, serviceManager, depsList)
+		succeeded, failed, err := goProject.PublishDependencies(gpc.TargetRepo(), serviceManager, depsList)
 		result.SetSuccessCount(succeeded)
 		result.SetFailCount(failed)
 		if err != nil {

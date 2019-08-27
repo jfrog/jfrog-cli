@@ -95,50 +95,54 @@ func ReadArtifactoryServer(msg string) (*viper.Viper, error) {
 	return server.GetResults(), nil
 }
 
-func ReadServerId() (*viper.Viper, error) {
+func ReadServerId() (string, *viper.Viper, error) {
 	serversId, defaultServer, err := getServersIdAndDefault()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	if len(serversId) == 0 {
-		return nil, errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
+		return "", nil, errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
 	}
 
 	server := &prompt.Autocomplete{
 		Msg:     "Set Artifactory server ID (press Tab for options) [${default}]: ",
 		Options: serversId,
-		Label:   utils.SERVER_ID,
+		Label:   utils.ProjectConfigServerId,
 		ErrMsg:  "Server does not exist. Please set a valid server ID.",
 		Default: defaultServer,
 	}
 
 	err = server.Read()
 	if err != nil {
-		return nil, errorutils.CheckError(err)
+		return "", nil, errorutils.CheckError(err)
 	}
 	vConfig := server.GetResults()
-	vConfig.Set(USE_ARTIFACTORY, "true")
-	return vConfig, nil
+	return vConfig.GetString(utils.SERVER_ID), vConfig, nil
 }
 
-func ReadRepo(msg string, repos []string) (string, error) {
+func ReadRepo(msg string, resolveRes *viper.Viper, repoTypes ...utils.RepoType) (string, error) {
+	availableRepos, err := GetRepositories(resolveRes, repoTypes...)
+	if err != nil {
+		// If there are no available repos pass empty array.
+		availableRepos = []string{}
+	}
 	repo := &prompt.Autocomplete{
 		Msg:     msg,
-		Options: repos,
-		Label:   utils.REPO,
+		Options: availableRepos,
+		Label:   utils.ProjectConfigRepo,
 	}
-	if len(repos) > 0 {
+	if len(availableRepos) > 0 {
 		repo.ConfirmationMsg = "No such repository, continue anyway (y/n) [${default}]? "
 		repo.ConfirmationDefault = "n"
 	} else {
 		repo.ErrMsg = "Repository name cannot be empty."
 	}
-	err := repo.Read()
+	err = repo.Read()
 	if err != nil {
 		return "", err
 	}
-	return repo.GetResults().GetString(utils.REPO), nil
+	return repo.GetResults().GetString(utils.ProjectConfigRepo), nil
 }
 
 func getServersIdAndDefault() ([]string, string, error) {

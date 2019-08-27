@@ -27,16 +27,11 @@ func CreateBuildConfig(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		availableRepos, err := prompt.GetRepositories(vConfig, utils.REMOTE, utils.VIRTUAL)
-		if err != nil {
-			// If there are no available repos pass empty array.
-			availableRepos = []string{}
-		}
-		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", availableRepos)
+		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
-		configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set resolution repository for snapshot dependencies (press Tab for options): ", availableRepos)
+		configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set resolution repository for snapshot dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
@@ -51,16 +46,11 @@ func CreateBuildConfig(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		availableRepos, err := prompt.GetRepositories(vConfig, utils.LOCAL, utils.VIRTUAL)
-		if err != nil {
-			// If there are no available repos pass empty array.
-			availableRepos = []string{}
-		}
-		configResult.Deployer.ReleaseRepo, err = prompt.ReadRepo("Set repository for release artifacts deployment (press Tab for options): ", availableRepos)
+		configResult.Deployer.ReleaseRepo, err = prompt.ReadRepo("Set repository for release artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
-		configResult.Deployer.SnapshotRepo, err = prompt.ReadRepo("Set repository for snapshot artifacts deployment (press Tab for options): ", availableRepos)
+		configResult.Deployer.SnapshotRepo, err = prompt.ReadRepo("Set repository for snapshot artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
