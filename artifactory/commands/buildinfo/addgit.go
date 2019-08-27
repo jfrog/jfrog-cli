@@ -181,7 +181,7 @@ func (config *BuildAddGitCommand) DoCollect(issuesConfig *IssuesConfiguration, l
 	// Get log with limit, starting from the latest commit.
 	logCmd := &LogCmd{logLimit: issuesConfig.LogLimit, lastVcsRevision: lastVcsRevision}
 	var foundIssues []buildinfo.AffectedIssue
-	protocolRegExp := gofrogcmd.CmdOutputPattern{
+	logRegExp := gofrogcmd.CmdOutputPattern{
 		RegExp: issueRegexp,
 		ExecFunc: func(pattern *gofrogcmd.CmdOutputPattern) (string, error) {
 			// Reached here - means no error occurred.
@@ -213,7 +213,7 @@ func (config *BuildAddGitCommand) DoCollect(issuesConfig *IssuesConfiguration, l
 	}
 
 	// Run git command.
-	_, exitOk, err := gofrogcmd.RunCmdWithOutputParser(logCmd, false, &protocolRegExp)
+	_, exitOk, err := gofrogcmd.RunCmdWithOutputParser(logCmd, false, &logRegExp)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}

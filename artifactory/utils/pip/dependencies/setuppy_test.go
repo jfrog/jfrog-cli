@@ -2,12 +2,10 @@ package dependencies
 
 import (
 	"bytes"
-	"fmt"
 	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -45,42 +43,20 @@ func TestExecuteEgginfoCommandWithOutput(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Get cmd execution.
-	output, err := extractor.executeEgginfoCommandWithOutput()
+	// Get project name.
+	pkgName, err := extractor.PackageName()
 	if err != nil {
 		log.Info("Error in execution: " + err.Error())
 		t.Error(err)
 	}
 
-	// Get requires.txt path.
-	requirestxtPath, err := extractor.extractRequirestxtPathFromCommandOutput(output)
-	if err != nil {
-		log.Info("Error getting path: " + err.Error())
-		t.Error(err)
-	}
+	log.Info("Project name: " + pkgName)
 
-	// Get content.
-	requiresContent, err := ioutil.ReadFile(requirestxtPath)
+	// Get dep tree
+	extractor.Pkg = "django-rss-plugin"
+	depMap, err := BuildPipDependencyMap("/Users/barb/trash/venv-test2/bin/python", nil)
 	if err != nil {
-		log.Info("Error: " + err.Error())
-		t.Error(err)
+		t.Error("Failed BuildPipDependencyMap!")
 	}
-
-	// Parse content.
-	rootDeps, err := extractor.getRootDependenciesFromFileContent(requiresContent)
-	if err != nil {
-		log.Info("Error: " + err.Error())
-		t.Error(err)
-	}
-
-	// Print results.
-	if err != nil {
-		log.Info("Error: " + err.Error())
-		t.Error(err)
-	}
-	log.Info(fmt.Sprintf("Result:\n%v", rootDeps))
-
-	/*if !reflect.DeepEqual(expectedResult, parseResult) {
-		t.Error("Not equal!!!")
-	}*/
+	extractor.extractRootDependencies(depMap)
 }
