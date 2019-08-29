@@ -10,9 +10,8 @@ import (
 
 const (
 	pipDepTreeVersion             = "1"
-	pipDepTreeContentFilePrefix   = "pipDepTreeContent_v"
+	pipDepTreeContentFileName   = "deptreescript.go"
 	pipDepTreeContentRelativePath = "artifactory/utils/pip"
-	pipDepTreeContentFileName     = pipDepTreeContentFilePrefix + pipDepTreeVersion + ".go"
 )
 
 func main() {

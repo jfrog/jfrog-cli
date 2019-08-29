@@ -55,33 +55,36 @@ func (pc *PipCmd) GetErrWriter() io.WriteCloser {
 }
 
 // Return path to the dependency-tree script, if not exists -> create the file.
-func GetPipDepTreeScriptPath() (string, error) {
+func GetDepTreeScriptPath() (string, error) {
 	pipDependenciesPath, err := config.GetJfrogDependenciesPath()
 	if err != nil {
 		return "", err
 	}
 	pipDependenciesPath = filepath.Join(pipDependenciesPath, "pip", pipDepTreeVersion)
+	depTreeScriptName := "pipdeptree.py"
+	depTreeScriptPath := path.Join(pipDependenciesPath, depTreeScriptName)
+	err = writeScriptIfNeeded(pipDependenciesPath, depTreeScriptName)
 
-	return writePipDepTreeScriptIfNeeded(pipDependenciesPath)
+	return depTreeScriptPath, err
 }
 
-func writePipDepTreeScriptIfNeeded(targetPath string) (string, error) {
-	scriptPath := path.Join(targetPath, "pipdeptree.py")
+func writeScriptIfNeeded(targetDirPath, scriptName string) error {
+	scriptPath := path.Join(targetDirPath, scriptName)
 	exists, err := fileutils.IsFileExists(scriptPath, false)
-	if err != nil {
-		return "", err
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
 	if !exists {
-		err = os.MkdirAll(targetPath, os.ModeDir|os.ModePerm)
-		if err != nil {
-			return "", err
+		err = os.MkdirAll(targetDirPath, os.ModeDir|os.ModePerm)
+		if errorutils.CheckError(err) != nil {
+			return err
 		}
 		err = ioutil.WriteFile(scriptPath, pipDepTreeContent, os.ModePerm)
-		if err != nil {
-			return "", err
+		if errorutils.CheckError(err) != nil {
+			return err
 		}
 	}
-	return scriptPath, nil
+	return nil
 }
 
 type PipCmd struct {
