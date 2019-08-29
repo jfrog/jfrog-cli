@@ -15,7 +15,7 @@ import (
 
 func init() {
 	var err error
-	pipDependencyMapScriptPath, err = pip.GetPipDepTreeScriptPath()
+	pipDependencyMapScriptPath, err = pip.GetDepTreeScriptPath()
 	if err != nil {
 		panic("Failed initializing dependency-map script.")
 	}

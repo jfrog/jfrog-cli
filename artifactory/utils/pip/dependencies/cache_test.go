@@ -2,70 +2,99 @@ package dependencies
 
 import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
 func TestDependenciesCache(t *testing.T) {
-	cache := make(DependenciesCache)
+	// Change test's work directory, rollback after function returns.
+	wd, _ := os.Getwd()
+	tmpTestPath := filepath.Join(os.TempDir(), "cacheTest")
+	err := os.MkdirAll(tmpTestPath, os.ModePerm)
+	if err != nil {
+		t.Error("Failed mkDirAll: " + err.Error())
+	}
+	err = os.Chdir(tmpTestPath)
+	if err != nil {
+		t.Error("Failed Chdir: " + err.Error())
+	}
+	defer func() {
+		os.RemoveAll(tmpTestPath)
+		os.Chdir(wd)
+	}()
+
+	cacheMap := make(map[string]*buildinfo.Dependency)
 	csA := buildinfo.Checksum{Sha1: "sha1A", Md5: "md5A"}
 	depenA := buildinfo.Dependency{
 		Id:       "depenA-1.0-A.zip",
 		Checksum: &csA,
 	}
-	cache["A"] = &depenA
+	cacheMap["A"] = &depenA
 	csC := buildinfo.Checksum{Sha1: "sha1C", Md5: "md5C"}
 	depenC := buildinfo.Dependency{
 		Id:       "depenC-3.4-C.gzip",
 		Checksum: &csC,
 	}
-	cache["C"] = &depenC
-	err := UpdateDependenciesCache(cache)
+	cacheMap["C"] = &depenC
+	err = UpdateDependenciesCache(cacheMap)
 	if err != nil {
-		t.Error("Failed creating dependencies cache!!!")
+		t.Error("Failed creating dependencies cache: " + err.Error())
 	}
-	newCache, err := GetProjectDependenciesCache()
-	if newCache == nil || err != nil {
-		t.Error("Failed reading dependencies cache!!!")
+	cache, err := GetProjectDependenciesCache()
+	if cache == nil {
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		} else {
+			errMsg = "Cache file does not exist."
+		}
+		t.Error("Failed reading dependencies cache: " + errMsg)
 	}
 
-	if !reflect.DeepEqual(*newCache.GetDependency("A"), depenA) {
+	if !reflect.DeepEqual(*cache.GetDependency("A"), depenA) {
 		t.Error("Failed retrieving dependency A!!!")
 	}
-	if newCache.GetDependency("B") != nil {
+	if cache.GetDependency("B") != nil {
 		t.Error("Retrieving non-existing dependency B should return nil!!!")
 	}
-	if !reflect.DeepEqual(*newCache.GetDependency("C"), depenC) {
+	if !reflect.DeepEqual(*cache.GetDependency("C"), depenC) {
 		t.Error("Failed retrieving dependency C!!!")
 	}
-	if newCache.GetDependency("T") != nil {
+	if cache.GetDependency("T") != nil {
 		t.Error("Retrieving non-existing dependency T should return nil checksum!!!")
 	}
 
-	delete(*newCache, "A")
+	delete(cacheMap, "A")
 	csT := buildinfo.Checksum{Sha1: "sha1T", Md5: "md5T"}
 	depenT := buildinfo.Dependency{
 		Id:       "depenT-6.0.68-T.zip",
 		Checksum: &csT,
 	}
-	(*newCache)["T"] = &depenT
-	err = UpdateDependenciesCache(*newCache)
+	cacheMap["T"] = &depenT
+	err = UpdateDependenciesCache(cacheMap)
 	if err != nil {
-		t.Error("Failed creating dependencies cache!!!")
+		t.Error("Failed creating dependencies cache: " + err.Error())
 	}
 
-	lastCache, err := GetProjectDependenciesCache()
-	if lastCache == nil || err != nil {
-		t.Error("Failed reading dependencies cache!!!")
+	cache, err = GetProjectDependenciesCache()
+	if cache == nil {
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		} else {
+			errMsg = "Cache file does not exist."
+		}
+		t.Error("Failed reading dependencies cache: " + errMsg)
 	}
-	if lastCache.GetDependency("A") != nil {
+	if cache.GetDependency("A") != nil {
 		t.Error("Retrieving non-existing dependency T should return nil checksum!!!")
 	}
-	if !reflect.DeepEqual(*lastCache.GetDependency("T"), depenT) {
+	if !reflect.DeepEqual(*cache.GetDependency("T"), depenT) {
 		t.Error("Failed retrieving dependency T!!!")
 	}
-	if !reflect.DeepEqual(*lastCache.GetDependency("C"), depenC) {
+	if !reflect.DeepEqual(*cache.GetDependency("C"), depenC) {
 		t.Error("Failed retrieving dependency C!!!")
 	}
-
 }
