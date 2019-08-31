@@ -11,7 +11,7 @@ import (
 const (
 	pipDepTreeVersion             = "1"
 	pipDepTreeContentFileName   = "deptreescript.go"
-	pipDepTreeContentRelativePath = "artifactory/utils/pip"
+	pipDepTreeContentRelativePath = "artifactory/utils/pip/dependencies"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 	pyFileString := strings.ReplaceAll(string(pyFile), "`", "'")
 	// Create .go file with the script content
 	// Add it the relevant package
-	resourceString := "package pip\n\n"
+	resourceString := "package dependencies\n\n"
 	// Add a const string with the script's version
 	resourceString += "const pipDepTreeVersion = \"" + pipDepTreeVersion + "\"\n\n"
 	// Write the script content a a byte-slice

@@ -520,18 +520,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "pip-config",
-			Flags:        getGlobalConfigFlag(),
-			Aliases:      []string{"pipc"},
-			Usage:        pipconfig.Description,
-			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return createPipConfigCmd(c)
-			},
-		},
-		{
 			Name:         "ping",
 			Flags:        getServerFlags(),
 			Aliases:      []string{"p"},
@@ -556,6 +544,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
+			},
+		},
+		{
+			Name:         "pip-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"pipc"},
+			Usage:        pipconfig.Description,
+			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createPipConfigCmd(c)
 			},
 		},
 		{
@@ -1694,14 +1694,6 @@ func createGoConfigCmd(c *cli.Context) error {
 	return golang.CreateBuildConfig(global)
 }
 
-func createPipConfigCmd(c *cli.Context) error {
-	if c.NArg() != 0 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
-	}
-	global := c.Bool("global")
-	return pip.CreateBuildConfig(global)
-}
-
 func pingCmd(c *cli.Context) {
 	if c.NArg() > 0 {
 		cliutils.PrintHelpAndExitWithError("No arguments should be sent.", c)
@@ -2012,6 +2004,14 @@ func curlCmd(c *cli.Context) error {
 	return commands.Exec(curlCommand)
 }
 
+func createPipConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return pip.CreateBuildConfig(global)
+}
+
 func pipInstallCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
@@ -2020,7 +2020,8 @@ func pipInstallCmd(c *cli.Context) error {
 	// Get pip configuration.
 	pipConfig, err := piputils.GetPipConfiguration()
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n" +
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt pip-install'.", err.Error()))
 	}
 	// Set arg values.
 	rtDetails, err := pipConfig.RtDetails()

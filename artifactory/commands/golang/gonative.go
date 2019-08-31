@@ -50,25 +50,7 @@ func (gnc *GoNativeCommand) Run() error {
 	}
 
 	// Extract build info information from the args.
-	flagIndex, valueIndex, buildName, err := utils.FindFlag("--build-name", gnc.goArg)
-	if err != nil {
-		return err
-	}
-	utils.RemoveFlagFromCommand(&gnc.goArg, flagIndex, valueIndex)
-
-	flagIndex, valueIndex, buildNumber, err := utils.FindFlag("--build-number", gnc.goArg)
-	if err != nil {
-		return err
-	}
-	utils.RemoveFlagFromCommand(&gnc.goArg, flagIndex, valueIndex)
-
-	flagIndex, valueIndex, module, err := utils.FindFlag("--module", gnc.goArg)
-	if err != nil {
-		return err
-	}
-	utils.RemoveFlagFromCommand(&gnc.goArg, flagIndex, valueIndex)
-
-	gnc.buildConfiguration = &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber, Module: module}
+	gnc.goArg, gnc.buildConfiguration, err = utils.ExtractBuildDetailsFromArgs(gnc.goArg)
 	return gnc.GoCommand.Run()
 }
 

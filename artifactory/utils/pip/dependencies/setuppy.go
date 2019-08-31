@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -27,16 +26,16 @@ type setupExtractor struct {
 	once                 sync.Once
 }
 
-func NewSetupExtractor(fileName, projectRoot, pythonExecutablePath string) Extractor {
+func NewSetupExtractor(setuppyFilePath, pythonExecutablePath string) Extractor {
 	// Create new extractor.
-	return &setupExtractor{setuppyFilePath: filepath.Join(projectRoot, fileName), pythonExecutablePath: pythonExecutablePath}
+	return &setupExtractor{setuppyFilePath: setuppyFilePath, pythonExecutablePath: pythonExecutablePath}
 }
 
 func (extractor *setupExtractor) Extract() error {
 	// Get installed packages tree.
-	environmentPackages, err := BuildPipDependencyMap(extractor.pythonExecutablePath, nil)
+	environmentPackages, err := BuildPipDependencyMap(extractor.pythonExecutablePath)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Populate rootDependencies.
@@ -85,17 +84,10 @@ func (extractor *setupExtractor) extractRootDependencies(envDeps map[string]pipD
 	return nil
 }
 
-// Get dependencies from setup.py
+// Get the project-name by running 'egg_info' command on setup.py and extracting it from 'PKG-INFO' file.
 func getProjectName(pythonExecutablePath, setuppyFilePath string) (string, error) {
-	// Create temp-dir.
-	tempDirPath, err := fileutils.CreateTempDir()
-	if err != nil {
-		return "", err
-	}
-	defer fileutils.RemoveTempDir(tempDirPath)
-
 	// Execute egg_info command and return PKG-INFO content.
-	content, err := getEgginfoPkginfoContent(tempDirPath, pythonExecutablePath, setuppyFilePath)
+	content, err := getEgginfoPkginfoContent(pythonExecutablePath, setuppyFilePath)
 	if err != nil {
 		return "", err
 	}
@@ -124,14 +116,21 @@ func getProjectNameFromFileContent(content []byte) (string, error) {
 
 // Run egg-info command on setup.py, the command generates metadata files.
 // Return the content of the 'PKG-INFO' file.
-func getEgginfoPkginfoContent(tempPath, pythonExecutablePath, setuppyFilePath string) ([]byte, error) {
+func getEgginfoPkginfoContent(pythonExecutablePath, setuppyFilePath string) ([]byte, error) {
+	// Create temp-dir.
+	tempDirPath, err := fileutils.CreateTempDir()
+	if err != nil {
+		return nil, err
+	}
+	defer fileutils.RemoveTempDir(tempDirPath)
+
 	// Change work-dir to temp, preserve current work-dir when method ends.
 	wd, err := os.Getwd()
 	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}
 	defer os.Chdir(wd)
-	err = os.Chdir(tempPath)
+	err = os.Chdir(tempDirPath)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}
@@ -157,9 +156,10 @@ func getEgginfoPkginfoContent(tempPath, pythonExecutablePath, setuppyFilePath st
 	return ioutil.ReadFile(pkginfoPath)
 }
 
+// Parse the output of 'python egg_info' command, in order to find the path of generated file 'PKG-INFO'.
 func extractPkginfoPathFromCommandOutput(egginfoOutput string) (string, error) {
-	//(?m) means a multiline match, matching line-by-line.
-	pkginfoRegexp, err := utils.GetRegExp(`(?m)^writing\s(\w[\w-\.]+\.egg\-info[\\\/](PKG-INFO)$)`)
+	// Regexp for extracting 'PKG-INFO' file-path from the 'egg_info' command output.
+	pkginfoRegexp, err := utils.GetRegExp(`(?m)writing\s(\w[\w-\.]+\.egg\-info[\\\/]PKG-INFO)`)
 	if err != nil {
 		return "", err
 	}
@@ -180,9 +180,6 @@ func executeEgginfoCommandWithOutput(pythonExecutablePath, setuppyFilePath strin
 		Executable:  pythonExecutablePath,
 		Command:     setuppyFilePath,
 		CommandArgs: []string{"egg_info"},
-		EnvVars:     nil,
-		StrWriter:   nil,
-		ErrWriter:   nil,
 	}
 	return gofrogcmd.RunCmdOutput(pythonEggInfoCmd)
 }
