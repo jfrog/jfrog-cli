@@ -6,16 +6,21 @@ import (
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io"
 	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
 func init() {
 	var err error
-	pipDependencyMapScriptPath, err = pip.GetDepTreeScriptPath()
+	pipDependencyMapScriptPath, err = GetDepTreeScriptPath()
 	if err != nil {
 		panic("Failed initializing dependency-map script.")
 	}
@@ -39,9 +44,7 @@ type Extractor interface {
 
 // Execute pip-dependency-map script, return dependency map of all installed pip packages in current environment.
 // pythonExecPath - Execution path python.
-// envvars - Environment variables for script execution, used to pass the PATH variable when running inside a virtual environment.
-func BuildPipDependencyMap(pythonExecPath string, envvars map[string]string) (map[string]pipDependencyPackage, error) {
-	// Get python execution path.
+func BuildPipDependencyMap(pythonExecPath string) (map[string]pipDependencyPackage, error) {
 	pipeReader, pipeWriter := io.Pipe()
 	defer pipeReader.Close()
 
@@ -50,9 +53,7 @@ func BuildPipDependencyMap(pythonExecPath string, envvars map[string]string) (ma
 		Executable:  pythonExecPath,
 		Command:     pipDependencyMapScriptPath,
 		CommandArgs: []string{"--json"},
-		EnvVars:     envvars,
 		StrWriter:   pipeWriter,
-		ErrWriter:   nil,
 	}
 	var pythonErr error
 	go func() {
@@ -178,4 +179,37 @@ type dependency struct {
 	Key              string `json:"key,omitempty"`
 	PackageName      string `json:"package_name,omitempty"`
 	InstalledVersion string `json:"installed_version,omitempty"`
+}
+
+// Return path to the dependency-tree script, if not exists -> create the file.
+func GetDepTreeScriptPath() (string, error) {
+	pipDependenciesPath, err := config.GetJfrogDependenciesPath()
+	if err != nil {
+		return "", err
+	}
+	pipDependenciesPath = filepath.Join(pipDependenciesPath, "pip", pipDepTreeVersion)
+	depTreeScriptName := "pipdeptree.py"
+	depTreeScriptPath := path.Join(pipDependenciesPath, depTreeScriptName)
+	err = writeScriptIfNeeded(pipDependenciesPath, depTreeScriptName)
+
+	return depTreeScriptPath, err
+}
+
+func writeScriptIfNeeded(targetDirPath, scriptName string) error {
+	scriptPath := path.Join(targetDirPath, scriptName)
+	exists, err := fileutils.IsFileExists(scriptPath, false)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	if !exists {
+		err = os.MkdirAll(targetDirPath, os.ModeDir|os.ModePerm)
+		if errorutils.CheckError(err) != nil {
+			return err
+		}
+		err = ioutil.WriteFile(scriptPath, pipDepTreeContent, os.ModePerm)
+		if errorutils.CheckError(err) != nil {
+			return err
+		}
+	}
+	return nil
 }

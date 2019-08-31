@@ -100,3 +100,47 @@ func getFlagValueAndValueIndex(flagName string, args []string, flagIndex int) (f
 
 	return nextIndexValue, flagIndex + 1, nil
 }
+
+// Find the first match of any of the provided flags in args.
+// Return same values as FindFlag.
+func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, flagValue string, err error) {
+	// Look for provided flags.
+	for _, flag := range flags {
+		flagIndex, flagValueIndex, flagValue, err = FindFlag(flag, args)
+		if err != nil {
+			return
+		}
+		if flagIndex != -1 {
+			// Found value for flag.
+			return
+		}
+	}
+	return
+}
+
+func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig *BuildConfiguration, err error) {
+	var flagIndex, valueIndex int
+	buildConfig = &BuildConfiguration{}
+	cleanArgs = append([]string(nil), args...)
+
+	// Extract build-info information from the args.
+	flagIndex, valueIndex, buildConfig.BuildName, err = FindFlag("--build-name", cleanArgs)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
+
+	flagIndex, valueIndex, buildConfig.BuildNumber, err = FindFlag("--build-number", cleanArgs)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
+
+	flagIndex, valueIndex, buildConfig.Module, err = FindFlag("--module", cleanArgs)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
+
+	return
+}

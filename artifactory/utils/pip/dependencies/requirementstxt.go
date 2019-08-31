@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -24,8 +23,8 @@ type requirementsExtractor struct {
 	pythonExecutablePath string
 }
 
-func NewRequirementsExtractor(fileName, projectRoot, pythonExecutablePath string) Extractor {
-	newExtractor := &requirementsExtractor{requirementsFilePath: filepath.Join(projectRoot, fileName), pythonExecutablePath: pythonExecutablePath}
+func NewRequirementsExtractor(requirementsFilePath, pythonExecutablePath string) Extractor {
+	newExtractor := &requirementsExtractor{requirementsFilePath: requirementsFilePath, pythonExecutablePath: pythonExecutablePath}
 	// Init regexps.
 	newExtractor.initializeRegExps()
 	return newExtractor
@@ -40,7 +39,7 @@ func (extractor *requirementsExtractor) Extract() error {
 	extractor.rootDependencies = dependencies
 
 	// Get installed packages tree.
-	environmentPackages, err := BuildPipDependencyMap(extractor.pythonExecutablePath, nil)
+	environmentPackages, err := BuildPipDependencyMap(extractor.pythonExecutablePath)
 	if err != nil {
 		return nil
 	}
@@ -71,31 +70,27 @@ func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error
 	defer file.Close()
 
 	// Check line by line for match.
-	var line, previousLine string
+	var line, previousLine, lineToConsume string
+	var shouldContinue bool
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		previousLine = line
 		line = scanner.Text()
 
-		// Check if line is commented out.
-		if strings.HasPrefix(line, "#") {
+		lineToConsume, shouldContinue = prepareLineForConsumption(line, previousLine)
+		if shouldContinue {
+			previousLine = lineToConsume
 			continue
 		}
+		previousLine = ""
 
 		// Check line for pattern matching.
-		depName, err := extractor.consumeLine(line)
+		depName, err := extractor.consumeLine(lineToConsume)
 		if err != nil {
 			return nil, err
 		}
 
 		// Check if failed parsing line.
 		if depName == "" {
-			// No match found for line, check if previous line ends with unescaped '\' meaning skip this line.
-			shouldSkip := extractor.shouldSkipNextRequirementsLine(previousLine)
-			if shouldSkip {
-				continue
-			}
-
 			// No match found.
 			log.Info(fmt.Sprintf("Failed parsing requirement: '%s' in file: '%s'.", line, extractor.requirementsFilePath))
 			continue
@@ -114,6 +109,56 @@ func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error
 	return dependencies, nil
 }
 
+func prepareLineForConsumption(line, previousLine string) (lineToConsume string, shouldContinue bool) {
+	// Remove spaces from start and end of line.
+	trimmedLine := strings.TrimSpace(line)
+
+	// Check if this line continues previous line.
+	if previousLine != "" {
+		// If line starts with '#', ignore it and consume previousLine.
+		if strings.HasPrefix(trimmedLine, "#") {
+			// Consume only previous line.
+			return previousLine, false
+		}
+
+		// Concatenate lines.
+		lineToConsume = concatenateLines(previousLine, line)
+
+		// Check if line ends with '\'.
+		if strings.HasSuffix(line, "\\") {
+			// Don't consume this line, concatenate next line.
+			return lineToConsume, true
+		}
+
+		// Consume this concatenated line.
+		return lineToConsume, false
+	}
+
+	// This is a new line.
+	// If line starts with '#' (comment), continue.
+	if strings.HasPrefix(trimmedLine, "#") {
+		return "", true
+	}
+
+	// If line ends with '\', need to concatenate to next line and consume together.
+	if strings.HasSuffix(line, "\\") {
+		return trimmedLine, true
+	}
+
+	// Consume this line.
+	return trimmedLine, false
+}
+
+func concatenateLines(firstLine, secondLine string) string {
+	// Remove all trailing '\' from firtLine.
+	for strings.HasSuffix(firstLine, "\\") {
+		firstLine = strings.TrimSuffix(firstLine, "\\")
+	}
+
+	// Concatenate lines.
+	return firstLine + secondLine
+}
+
 // Iterate over requirementRegExp until match is found.
 func (extractor *requirementsExtractor) consumeLine(line string) (string, error) {
 	for _, regexp := range extractor.regExps {
@@ -124,7 +169,7 @@ func (extractor *requirementsExtractor) consumeLine(line string) (string, error)
 
 		// Matched.
 		matchedResults := regexp.regExp.FindStringSubmatch(line)
-		if len(matchedResults) < regexp.matchGroup+1 {
+		if len(matchedResults) < regexp.matchGroup + 1 {
 			// Expecting matchResults size to be at least 'regexp.matchGroup'.
 			return "", nil
 		}
