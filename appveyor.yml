@@ -50,7 +50,7 @@ environment:
   matrix:
   - VET:
     TEST_SUIT:
-      go vet github.com\jfrog\jfrog-cli-go
+      go run python\addresources.go && go vet github.com\jfrog\jfrog-cli-go
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS%"
