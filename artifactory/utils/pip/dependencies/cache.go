@@ -13,8 +13,8 @@ import (
 const cacheLatestVersion = 1
 
 type DependenciesCache struct {
-	Version  int                              `json:"version,omitempty"`
-	DepenMap map[string]*buildinfo.Dependency `json:"dependencies,omitempty"`
+	Version int                              `json:"version,omitempty"`
+	DepsMap map[string]*buildinfo.Dependency `json:"dependencies,omitempty"`
 }
 
 // Reads the json cache file of recent used project's dependencies,  and converts it into a map of
@@ -48,7 +48,7 @@ func GetProjectDependenciesCache() (*DependenciesCache, error) {
 // The map contains the dependencies retrieved from Artifactory as well as those read from cache.
 // Writes the updated project's dependencies cache with all current dependencies.
 func UpdateDependenciesCache(updatedMap map[string]*buildinfo.Dependency) error {
-	updatedCache := DependenciesCache{Version: cacheLatestVersion, DepenMap: updatedMap}
+	updatedCache := DependenciesCache{Version: cacheLatestVersion, DepsMap: updatedMap}
 	content, err := json.Marshal(&updatedCache)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -76,7 +76,7 @@ func UpdateDependenciesCache(updatedMap map[string]*buildinfo.Dependency) error 
 // If dependency does not exist, return nil.
 // dependencyName - Name of dependency (lowercase package name).
 func (cache DependenciesCache) GetDependency(dependencyName string) *buildinfo.Dependency {
-	dependency, ok := cache.DepenMap[dependencyName]
+	dependency, ok := cache.DepsMap[dependencyName]
 	if !ok {
 		return nil
 	}

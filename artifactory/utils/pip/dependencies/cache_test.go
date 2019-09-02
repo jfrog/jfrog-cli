@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -42,28 +43,22 @@ func TestDependenciesCache(t *testing.T) {
 	if err != nil {
 		t.Error("Failed creating dependencies cache: " + err.Error())
 	}
-	cache, err := GetProjectDependenciesCache()
-	if cache == nil {
-		var errMsg string
-		if err != nil {
-			errMsg = err.Error()
-		} else {
-			errMsg = "Cache file does not exist."
-		}
-		t.Error("Failed reading dependencies cache: " + errMsg)
+	cache, err := readCacheAndCheckError()
+	if err != nil {
+		t.Error("Failed reading dependencies cache: " + err.Error())
 	}
 
 	if !reflect.DeepEqual(*cache.GetDependency("A"), depenA) {
 		t.Error("Failed retrieving dependency A!!!")
 	}
 	if cache.GetDependency("B") != nil {
-		t.Error("Retrieving non-existing dependency B should return nil!!!")
+		t.Error("Retrieving non-existing dependency B should return nil.")
 	}
 	if !reflect.DeepEqual(*cache.GetDependency("C"), depenC) {
 		t.Error("Failed retrieving dependency C!!!")
 	}
 	if cache.GetDependency("T") != nil {
-		t.Error("Retrieving non-existing dependency T should return nil checksum!!!")
+		t.Error("Retrieving non-existing dependency T should return nil checksum.")
 	}
 
 	delete(cacheMap, "A")
@@ -78,23 +73,28 @@ func TestDependenciesCache(t *testing.T) {
 		t.Error("Failed creating dependencies cache: " + err.Error())
 	}
 
-	cache, err = GetProjectDependenciesCache()
-	if cache == nil {
-		var errMsg string
-		if err != nil {
-			errMsg = err.Error()
-		} else {
-			errMsg = "Cache file does not exist."
-		}
-		t.Error("Failed reading dependencies cache: " + errMsg)
+	cache, err = readCacheAndCheckError()
+	if err != nil {
+		t.Error("Failed reading dependencies cache: " + err.Error())
 	}
 	if cache.GetDependency("A") != nil {
-		t.Error("Retrieving non-existing dependency T should return nil checksum!!!")
+		t.Error("Retrieving non-existing dependency T should return nil checksum.")
 	}
 	if !reflect.DeepEqual(*cache.GetDependency("T"), depenT) {
-		t.Error("Failed retrieving dependency T!!!")
+		t.Error("Failed retrieving dependency T.")
 	}
 	if !reflect.DeepEqual(*cache.GetDependency("C"), depenC) {
-		t.Error("Failed retrieving dependency C!!!")
+		t.Error("Failed retrieving dependency C.")
 	}
+}
+
+func readCacheAndCheckError() (cache *DependenciesCache, err error) {
+	cache, err = GetProjectDependenciesCache()
+	if err != nil {
+		return
+	}
+	if cache == nil {
+		err = errors.New("Cache file does not exist.")
+	}
+	return
 }
