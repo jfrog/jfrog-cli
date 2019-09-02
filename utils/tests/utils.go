@@ -311,9 +311,10 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 
 func GetNonVirtualRepositories() map[string]string {
 	nonVirtualRepos := map[string]string{
-		Repo1:   SpecsTestRepositoryConfig,
-		Repo2:   MoveRepositoryConfig,
-		LfsRepo: GitLfsTestRepositoryConfig,
+		Repo1:      SpecsTestRepositoryConfig,
+		Repo2:      MoveRepositoryConfig,
+		LfsRepo:    GitLfsTestRepositoryConfig,
+		DebianRepo: DebianTestRepositoryConfig,
 	}
 
 	if *TestBuildTools {
@@ -338,6 +339,7 @@ func getRepositoriesNameMap() map[string]string {
 		"${REPO_1_AND_2}":        Repo1And2,
 		"${VIRTUAL_REPO}":        VirtualRepo,
 		"${LFS_REPO}":            LfsRepo,
+		"${DEBIAN_REPO}":         DebianRepo,
 		"${JCENTER_REMOTE_REPO}": JcenterRemoteRepo,
 		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
 		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,

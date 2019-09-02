@@ -11,6 +11,10 @@
     {
       "pattern": "${LFS_REPO}/",
       "recursive": "true"
+    },
+    {
+      "pattern": "${DEBIAN_REPO}/",
+      "recursive": "true"
     }
   ]
 }

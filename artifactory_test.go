@@ -532,14 +532,14 @@ func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
 
 func TestArtifactoryUploadDebian(t *testing.T) {
 	initArtifactoryTest(t)
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	specFile, err := tests.CreateSpec(tests.DebianUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=bionic/main/i386")
-	isExistInArtifactoryByProps(tests.GetUploadDebianExpected(), tests.Repo1+"/*", "deb.distribution=bionic;deb.component=main;deb.architecture=i386", t)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--deb=cosmic/main\\/18.10/amd64")
-	isExistInArtifactoryByProps(tests.GetUploadDebianExpected(), tests.Repo1+"/*", "deb.distribution=cosmic;deb.component=main/18.10;deb.architecture=amd64", t)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--deb=bionic/main/i386")
+	isExistInArtifactoryByProps(tests.GetUploadDebianExpected(), tests.DebianRepo+"/*", "deb.distribution=bionic;deb.component=main;deb.architecture=i386", t)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--deb=cosmic/main\\/18.10/amd64")
+	isExistInArtifactoryByProps(tests.GetUploadDebianExpected(), tests.DebianRepo+"/*", "deb.distribution=cosmic;deb.component=main/18.10;deb.architecture=amd64", t)
 	cleanArtifactoryTest()
 }
 
@@ -3446,6 +3446,7 @@ func createRandomReposName() {
 	tests.Repo1And2 += "-" + timestamp
 	tests.VirtualRepo += "-" + timestamp
 	tests.LfsRepo += "-" + timestamp
+	tests.DebianRepo += "-" + timestamp
 	if *tests.TestBuildTools {
 		tests.JcenterRemoteRepo += "-" + timestamp
 		tests.NpmLocalRepo += "-" + timestamp
@@ -3462,6 +3463,7 @@ func deleteRepos() {
 		tests.Repo1,
 		tests.Repo2,
 		tests.LfsRepo,
+		tests.DebianRepo,
 	}
 
 	if *tests.TestBuildTools {
