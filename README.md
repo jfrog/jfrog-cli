@@ -36,7 +36,7 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 ## Install Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
-Please download `Go 1.11` or above.
+Please download `Go 1.12.7` or above.
 
 ## Download and Build the CLI
 
@@ -46,14 +46,20 @@ If the `GOPATH` variable is unset, it's default value is the go folder under the
 
 Verify that the `GO111MODULE` variable is either unset, or explicitly set to `auto`.
 
-Clone the jfrog-cli-go project by executing the following command:
+Clone the jfrog-cli project by executing the following command:
 ````
-git clone https://github.com/jfrog/jfrog-cli-go/
+git clone https://github.com/jfrog/jfrog-cli
 ````
-Build the project by navigating to the jfrog folder and executing the go build command:
+Build the project by navigating to the jfrog folder and executing the following commands.
+On Unix based systems run:
 ````
-cd jfrog-cli-go/jfrog/
-go build
+cd jfrog-cli
+./build.sh
+````
+On Windows run:
+````
+cd jfrog-cli
+build.bat
 ````
 Once completed, you will find the JFrog CLI executable at your current directory.
 
@@ -61,9 +67,14 @@ Once completed, you will find the JFrog CLI executable at your current directory
 
 ### Artifactory tests
 #### General tests
-To run Artifactory tests execute the following command: 
+To run Artifactory tests execute the following command.
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go
+./test.sh -v github.com/jfrog/jfrog-cli-go
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go
 ````
 Optional flags:
 
@@ -86,20 +97,29 @@ Optional flags:
 * The *gradle* and *npm* executables should be included as part of the *PATH* environment variable.
 * The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
-To run build tools tests execute the following command:
+To run build tools tests execute the following command.
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
 ````
 ##### Limitation
 * Currently, build integration support only http(s) connections to Artifactory using username and password.
 
 #### Docker push test
 
-To run docker push tests execute the following command (fill out the missing parameters as described below):
+To run docker push tests execute the following command (fill out the missing parameters as described below).
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
-
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
+````
 ##### Mandatory Parameters
 | Flag | Description |
 | --- | --- |
@@ -111,23 +131,29 @@ go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=tr
 
 #### Go commands tests
 
-To run go tests:
-* Use Go version 1.11 and above.
-* Run the following command:
-
+To run go tests run the following command.
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
 ````
-
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
+````
 #### NuGet tests
 
 To run NuGet tests:
 * Add NuGet executable to the system search path (PATH environment variable).
 * Create a remote repository named jfrog-cli-tests-nuget-remote-repo
-* Run the following command:
+* Run the following command.
 
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
 ````
 
 ### Bintray tests

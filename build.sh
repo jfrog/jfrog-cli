@@ -7,6 +7,6 @@ if [ $# -eq 0 ]
 	exe_name="$1"
 fi
 
-go run ./python/addresources.go
+./python/addresources.sh
 
 CGO_ENABLED=0 go build -o $exe_name -ldflags '-w -extldflags "-static"' main.go
