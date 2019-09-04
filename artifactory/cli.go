@@ -109,8 +109,8 @@ func GetCommands() []cli.Command {
 			UsageText:    upload.Arguments,
 			ArgsUsage:    common.CreateEnvVars(upload.EnvVar),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) {
-				uploadCmd(c)
+			Action: func(c *cli.Context) error {
+				return uploadCmd(c)
 			},
 		},
 		{
@@ -1405,7 +1405,7 @@ func useCmd(c *cli.Context) error {
 			return err
 		}
 	} else {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	return err
@@ -1413,7 +1413,7 @@ func useCmd(c *cli.Context) error {
 
 func configCmd(c *cli.Context) error {
 	if len(c.Args()) > 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var serverId string
@@ -1481,7 +1481,7 @@ func configCmd(c *cli.Context) error {
 
 func mvnCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration, err := createBuildToolConfiguration(c)
 	if err != nil {
@@ -1494,7 +1494,7 @@ func mvnCmd(c *cli.Context) error {
 
 func gradleCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration, err := createBuildToolConfiguration(c)
 	if err != nil {
@@ -1508,7 +1508,7 @@ func gradleCmd(c *cli.Context) error {
 
 func dockerPushCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1534,7 +1534,7 @@ func dockerPushCmd(c *cli.Context) error {
 
 func dockerPullCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1555,7 +1555,7 @@ func dockerPullCmd(c *cli.Context) error {
 
 func nugetCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	nugetCmd := nuget.NewNugetCommand()
 	buildConfiguration, err := createBuildToolConfiguration(c)
@@ -1577,7 +1577,7 @@ func nugetCmd(c *cli.Context) error {
 
 func nugetDepsTreeCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	return nuget.DependencyTreeCmd()
@@ -1585,7 +1585,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 
 func npmInstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration, err := createBuildToolConfiguration(c)
 	if err != nil {
@@ -1607,7 +1607,7 @@ func npmInstallCmd(c *cli.Context) error {
 
 func npmCiCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration, err := createBuildToolConfiguration(c)
 	if err != nil {
@@ -1628,7 +1628,7 @@ func npmCiCmd(c *cli.Context) error {
 
 func npmPublishCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration, err := createBuildToolConfiguration(c)
 	if err != nil {
@@ -1647,13 +1647,13 @@ func npmPublishCmd(c *cli.Context) error {
 func goPublishCmd(c *cli.Context) error {
 	// When "self" set to true (default), there must be two arguments passed: target repo and the version
 	if c.BoolT("self") && c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	// When "self" set to false, the target repository is mandatory but the version is not.
 	// The version is only needed for publishing the project
 	// But for automation purposes of users, keeping the possibility to pass the version without failing
 	if !c.BoolT("self") && c.NArg() > 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	buildConfiguration, err := createBuildToolConfiguration(c)
@@ -1706,12 +1706,12 @@ func goCmd(c *cli.Context) error {
 func goLegacyCmd(c *cli.Context) error {
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	// When the no-registry is set to true this means that the resolution will not be done via Artifactory.
 	// For automation purposes of users, keeping the possibility to pass the repository although we are not using it.
 	if c.Bool("no-registry") && c.NArg() > 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	goArg, err := shellwords.Parse(c.Args().Get(0))
 	if err != nil {
@@ -1745,7 +1745,7 @@ func goLegacyCmd(c *cli.Context) error {
 func goNativeCmd(c *cli.Context, configFilePath string) error {
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	args := extractCommand(c)
 	// Validate the command
@@ -1759,12 +1759,12 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 
 func goRecursivePublishCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	targetRepo := c.Args().Get(0)
 	if targetRepo == "" {
-		cliutils.PrintHelpAndExitWithError("Missing target repo.", c)
+		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
 	}
 	details, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1778,7 +1778,7 @@ func goRecursivePublishCmd(c *cli.Context) error {
 
 func createGradleConfigCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	return gradle.CreateBuildConfig(c.Args().Get(0))
@@ -1786,14 +1786,14 @@ func createGradleConfigCmd(c *cli.Context) error {
 
 func createMvnConfigCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return mvn.CreateBuildConfig(c.Args().Get(0))
 }
 
 func createGoConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
 	return golang.CreateBuildConfig(global)
@@ -1801,7 +1801,7 @@ func createGoConfigCmd(c *cli.Context) error {
 
 func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1821,10 +1821,10 @@ func pingCmd(c *cli.Context) error {
 
 func downloadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var downloadSpec *spec.SpecFiles
@@ -1867,10 +1867,10 @@ func downloadCmd(c *cli.Context) error {
 
 func uploadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var uploadSpec *spec.SpecFiles
@@ -1912,10 +1912,10 @@ func uploadCmd(c *cli.Context) error {
 
 func moveCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var moveSpec *spec.SpecFiles
@@ -1949,10 +1949,10 @@ func moveCmd(c *cli.Context) error {
 
 func copyCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var copySpec *spec.SpecFiles
@@ -1986,10 +1986,10 @@ func copyCmd(c *cli.Context) error {
 
 func deleteCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var deleteSpec *spec.SpecFiles
@@ -2023,10 +2023,10 @@ func deleteCmd(c *cli.Context) error {
 
 func searchCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("No arguments should be sent when the spec option is used.", c)
+		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var searchSpec *spec.SpecFiles
@@ -2102,7 +2102,10 @@ func deletePropsCmd(c *cli.Context) error {
 }
 
 func buildPublishCmd(c *cli.Context) error {
-	validateBuildInfoArgument(c)
+	err := validateBuildInfoArgument(c)
+	if err != nil {
+		return err
+	}
 	configuration := createBuildInfoConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -2115,10 +2118,10 @@ func buildPublishCmd(c *cli.Context) error {
 
 func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.NArg() > 2 && c.IsSet("spec") {
-		cliutils.PrintHelpAndExitWithError("Only path or spec is allowed, not both.", c)
+		return cliutils.PrintHelpAndReturnError("Only path or spec is allowed, not both.", c)
 	}
 	if !(c.NArg() == 3 || (c.NArg() == 2 && c.IsSet("spec"))) {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var dependenciesSpec *spec.SpecFiles
@@ -2142,7 +2145,10 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
-	validateBuildInfoArgument(c)
+	err := validateBuildInfoArgument(c)
+	if err != nil {
+		return err
+	}
 	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(createBuildConfiguration(c))
 
 	return commands.Exec(buildCollectEnvCmd)
@@ -2150,7 +2156,7 @@ func buildCollectEnvCmd(c *cli.Context) error {
 
 func buildAddGitCmd(c *cli.Context) error {
 	if c.NArg() > 3 || c.NArg() < 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildConfiguration(c)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetBuildConfiguration(buildConfiguration).SetConfigFilePath(c.String("config"))
@@ -2161,7 +2167,10 @@ func buildAddGitCmd(c *cli.Context) error {
 }
 
 func buildScanCmd(c *cli.Context) error {
-	validateBuildInfoArgument(c)
+	err := validateBuildInfoArgument(c)
+	if err != nil {
+		return err
+	}
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
@@ -2174,7 +2183,10 @@ func buildScanCmd(c *cli.Context) error {
 }
 
 func buildCleanCmd(c *cli.Context) error {
-	validateBuildInfoArgument(c)
+	err := validateBuildInfoArgument(c)
+	if err != nil {
+		return err
+	}
 	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(createBuildConfiguration(c))
 
 	return commands.Exec(buildCleanCmd)
@@ -2182,7 +2194,7 @@ func buildCleanCmd(c *cli.Context) error {
 
 func buildPromoteCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildPromoteConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -2196,7 +2208,7 @@ func buildPromoteCmd(c *cli.Context) error {
 
 func buildDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 3 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildDistributionConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -2210,7 +2222,7 @@ func buildDistributeCmd(c *cli.Context) error {
 
 func buildDiscardCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildDiscardConfiguration(c)
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
@@ -2225,7 +2237,7 @@ func buildDiscardCmd(c *cli.Context) error {
 
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	gitLfsCmd := generic.NewGitLfsCommand()
@@ -2240,7 +2252,7 @@ func gitLfsCleanCmd(c *cli.Context) error {
 
 func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	curlCommand := curl.NewCurlCommand().SetArguments(extractCommand(c))
 	rtDetails, err := curlCommand.GetArtifactoryDetails()
@@ -2253,7 +2265,7 @@ func curlCmd(c *cli.Context) error {
 
 func createPipConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
 	return pip.CreateBuildConfig(global)
@@ -2261,7 +2273,7 @@ func createPipConfigCmd(c *cli.Context) error {
 
 func pipInstallCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	// Get pip configuration.
@@ -2283,16 +2295,16 @@ func pipInstallCmd(c *cli.Context) error {
 	return commands.Exec(pipCmd)
 }
 
-func validateBuildInfoArgument(c *cli.Context) {
+func validateBuildInfoArgument(c *cli.Context) error {
 	if c.NArg() == 2 {
 		// Use Build name and number from arguments
-		return
+		return nil
 	}
 	if c.NArg() == 0 && os.Getenv(cliutils.BuildName) != "" && os.Getenv(cliutils.BuildName) != "" {
-		// Use buile name and number from environmet
-		return
+		// Use build name and number from environment
+		return nil
 	}
-	cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 }
 
 func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
@@ -2898,7 +2910,7 @@ func createPropsParams(c *cli.Context) (propertiesSpec *spec.SpecFiles, properti
 
 func validatePropsCommand(c *cli.Context) error {
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	return validateCommonContext(c)

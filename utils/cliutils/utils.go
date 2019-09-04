@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/pkg/errors"
 	"os"
 	"runtime"
 	"strings"
@@ -110,6 +111,12 @@ func PrintHelpAndExitWithError(msg string, context *cli.Context) {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
 	os.Exit(ExitCodeError.Code)
+}
+
+func PrintHelpAndReturnError(msg string, context *cli.Context) error {
+	log.Error(msg + " " + GetDocumentationMessage())
+	cli.ShowCommandHelp(context, context.Command.Name)
+	return errors.New(msg)
 }
 
 func InteractiveConfirm(message string) bool {
