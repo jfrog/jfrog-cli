@@ -1860,9 +1860,8 @@ func downloadCmd(c *cli.Context) error {
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1905,9 +1904,8 @@ func uploadCmd(c *cli.Context) error {
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func moveCmd(c *cli.Context) error {
@@ -1942,9 +1940,8 @@ func moveCmd(c *cli.Context) error {
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1979,9 +1976,8 @@ func copyCmd(c *cli.Context) error {
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deleteCmd(c *cli.Context) error {
@@ -2016,9 +2012,8 @@ func deleteCmd(c *cli.Context) error {
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func searchCmd(c *cli.Context) error {
@@ -2055,7 +2050,10 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	result, err := json.Marshal(searchCmd.SearchResult())
-	cliutils.FailNoOp(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	err = cliutils.FailNoOp(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	if err != nil {
+		return err
+	}
 	if c.Bool("count") {
 		log.Output(len(searchCmd.SearchResult()))
 	} else {
@@ -2078,9 +2076,8 @@ func setPropsCmd(c *cli.Context) error {
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -2096,9 +2093,8 @@ func deletePropsCmd(c *cli.Context) error {
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 
-	return err
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -2140,8 +2136,8 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
-	cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
-	return nil
+
+	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
@@ -2177,9 +2173,8 @@ func buildScanCmd(c *cli.Context) error {
 	}
 	buildScanCmd := buildinfo.NewBuildScanCommand().SetRtDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(createBuildConfiguration(c))
 	err = commands.Exec(buildScanCmd)
-	cliutils.ExitBuildScan(buildScanCmd.BuildFailed(), err)
 
-	return err
+	return cliutils.ExitBuildScan(buildScanCmd.BuildFailed(), err)
 }
 
 func buildCleanCmd(c *cli.Context) error {
