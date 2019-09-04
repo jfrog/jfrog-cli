@@ -5,7 +5,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	"github.com/jfrog/jfrog-cli-go/docs/xray/offlineupdate"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/xray/commands"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
@@ -54,15 +53,15 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags,
 	flags.Version = c.String("version")
 	flags.License = c.String("license-id")
 	if len(flags.License) < 1 {
-		cliutils.ExitOnErr(errors.New("The --license-id option is mandatory."))
+		return nil, errors.New("The --license-id option is mandatory.")
 	}
 	from := c.String("from")
 	to := c.String("to")
 	if len(to) > 0 && len(from) < 1 {
-		cliutils.ExitOnErr(errors.New("The --from option is mandatory, when the --to option is sent."))
+		return nil, errors.New("The --from option is mandatory, when the --to option is sent.")
 	}
 	if len(from) > 0 && len(to) < 1 {
-		cliutils.ExitOnErr(errors.New("The --to option is mandatory, when the --from option is sent."))
+		return nil, errors.New("The --to option is mandatory, when the --from option is sent.")
 	}
 	if len(from) > 0 && len(to) > 0 {
 		flags.From, err = dateToMilliseconds(from)
@@ -86,9 +85,11 @@ func dateToMilliseconds(date string) (dateInMillisecond int64, err error) {
 	return
 }
 
-func offlineUpdates(c *cli.Context) {
+func offlineUpdates(c *cli.Context) error {
 	offlineUpdateFlags, err := getOfflineUpdatesFlag(c)
-	cliutils.ExitOnErr(err)
-	err = commands.OfflineUpdate(offlineUpdateFlags)
-	cliutils.ExitOnErr(err)
+	if err != nil {
+		return err
+	}
+
+	return commands.OfflineUpdate(offlineUpdateFlags)
 }
