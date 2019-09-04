@@ -107,12 +107,6 @@ func PrintSummaryReport(success, failed int, err error) error {
 	return err
 }
 
-func PrintHelpAndExitWithError(msg string, context *cli.Context) {
-	log.Error(msg + " " + GetDocumentationMessage())
-	cli.ShowCommandHelp(context, context.Command.Name)
-	os.Exit(ExitCodeError.Code)
-}
-
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
