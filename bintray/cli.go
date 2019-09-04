@@ -625,7 +625,7 @@ func getGpgSigningFlags() []cli.Flag {
 
 func configure(c *cli.Context) error {
 	if c.NArg() > 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	} else if c.NArg() == 1 {
 		if c.Args().Get(0) == "show" {
 			commands.ShowConfig()
@@ -661,7 +661,7 @@ func configure(c *cli.Context) error {
 
 func showPackage(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	packagePath, err := packages.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -678,7 +678,7 @@ func showPackage(c *cli.Context) error {
 
 func showVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionPath, err := versions.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -695,7 +695,7 @@ func showVersion(c *cli.Context) error {
 
 func createPackage(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	packageParams, err := createPackageParams(c)
 	if err != nil {
@@ -712,7 +712,7 @@ func createPackage(c *cli.Context) error {
 
 func createVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionParams, err := createVersionParams(c)
 	if err != nil {
@@ -729,7 +729,7 @@ func createVersion(c *cli.Context) error {
 
 func updateVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionParams, err := createVersionParams(c)
 	if err != nil {
@@ -746,7 +746,7 @@ func updateVersion(c *cli.Context) error {
 
 func updatePackage(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	packageParams, err := createPackageParams(c)
 	if err != nil {
@@ -763,7 +763,7 @@ func updatePackage(c *cli.Context) error {
 
 func deletePackage(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	packagePath, err := packages.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -785,7 +785,7 @@ func deletePackage(c *cli.Context) error {
 
 func deleteVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionPath, err := versions.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -808,7 +808,7 @@ func deleteVersion(c *cli.Context) error {
 
 func publishVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionPath, err := versions.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -824,7 +824,7 @@ func publishVersion(c *cli.Context) error {
 
 func downloadVersion(c *cli.Context) error {
 	if c.NArg() < 1 || c.NArg() > 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	var err error
 	params := services.NewDownloadVersionParams()
@@ -856,7 +856,7 @@ func downloadVersion(c *cli.Context) error {
 
 func upload(c *cli.Context) error {
 	if c.NArg() < 2 || c.NArg() > 3 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	params := services.NewUploadParams()
 	params.Pattern = c.Args().Get(0)
@@ -905,13 +905,16 @@ func upload(c *cli.Context) error {
 
 func downloadFile(c *cli.Context) error {
 	if c.NArg() < 1 || c.NArg() > 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	var err error
 	params := services.NewDownloadFileParams()
 	params.Flat = c.Bool("flat")
 	params.IncludeUnpublished = c.Bool("unpublished")
-	params.MinSplitSize = getMinSplitFlag(c)
+	params.MinSplitSize, err = getMinSplitFlag(c)
+	if err != nil {
+		return nil
+	}
 	params.SplitCount, err = getSplitCountFlag(c)
 	if err != nil {
 		return err
@@ -936,7 +939,7 @@ func downloadFile(c *cli.Context) error {
 
 func signUrl(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	btConfig, err := newBintrayConfig(c)
@@ -953,7 +956,7 @@ func signUrl(c *cli.Context) error {
 
 func gpgSignFile(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	pathDetails, err := utils.CreatePathDetails(c.Args().Get(0))
 	if err != nil {
@@ -987,7 +990,7 @@ func logs(c *cli.Context) error {
 		}
 		err = commands.DownloadLog(btConfig, versionPath, c.Args().Get(2))
 	} else {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	return err
@@ -999,7 +1002,7 @@ func stream(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	streamDetails := &commands.StreamDetails{
@@ -1014,7 +1017,7 @@ func stream(c *cli.Context) error {
 
 func gpgSignVersion(c *cli.Context) error {
 	if c.NArg() != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionDetails, err := versions.CreatePath(c.Args().Get(0))
 	if err != nil {
@@ -1042,7 +1045,7 @@ func accessKeys(c *cli.Context) error {
 		return err
 	}
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	keyId := c.Args().Get(1)
 
@@ -1071,7 +1074,7 @@ func accessKeys(c *cli.Context) error {
 
 func handleEntitlements(c *cli.Context) error {
 	if c.NArg() == 0 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	btConfig, err := newBintrayConfig(c)
 	if err != nil {
@@ -1087,7 +1090,7 @@ func handleEntitlements(c *cli.Context) error {
 	}
 
 	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	versionPath, err := entitlements.CreateVersionDetails(c.Args().Get(1))
 	if err != nil {
@@ -1406,15 +1409,15 @@ func createBintrayDetails(c *cli.Context, includeConfig bool) (auth.BintrayDetai
 	return btDetails, nil
 }
 
-func getMinSplitFlag(c *cli.Context) int64 {
+func getMinSplitFlag(c *cli.Context) (int64, error) {
 	if c.String("min-split") == "" {
-		return 5120
+		return 5120, nil
 	}
 	minSplit, err := strconv.ParseInt(c.String("min-split"), 10, 64)
 	if err != nil {
-		cliutils.PrintHelpAndExitWithError("The '--min-split' option should have a numeric value.", c)
+		return 0, cliutils.PrintHelpAndReturnError("The '--min-split' option should have a numeric value.", c)
 	}
-	return minSplit
+	return minSplit, nil
 }
 
 func getSplitCountFlag(c *cli.Context) (int, error) {
@@ -1423,7 +1426,7 @@ func getSplitCountFlag(c *cli.Context) (int, error) {
 	}
 	splitCount, err := strconv.Atoi(c.String("split-count"))
 	if err != nil {
-		cliutils.PrintHelpAndExitWithError("The '--split-count' option should have a numeric value.", c)
+		return 0, cliutils.PrintHelpAndReturnError("The '--split-count' option should have a numeric value.", c)
 	}
 	if splitCount > 15 {
 		return 0, errors.New("The '--split-count' option value is limitted to a maximum of 15.")
