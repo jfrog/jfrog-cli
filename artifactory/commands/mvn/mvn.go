@@ -156,6 +156,8 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 		return nil, errorutils.CheckError(err)
 	}
 
+	mavenOpts := os.Getenv("MAVEN_OPTS")
+
 	if len(plexusClassworlds) != 1 {
 		return nil, errorutils.CheckError(errors.New("couldn't find plexus-classworlds-x.x.x.jar in Maven installation path, please check M2_HOME environment variable"))
 	}
@@ -196,6 +198,7 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 		goals:                  mc.goals,
 		buildInfoProperties:    buildInfoProperties,
 		generatedBuildInfoPath: vConfig.GetString(utils.GENERATED_BUILD_INFO),
+		mavenOpts:              mavenOpts,
 	}, nil
 }
 
@@ -208,6 +211,9 @@ func (config *mvnRunConfig) GetCmd() *exec.Cmd {
 	cmd = append(cmd, "-Dm3plugin.lib="+config.pluginDependencies)
 	cmd = append(cmd, "-Dclassworlds.conf="+config.cleassworldsConfig)
 	cmd = append(cmd, "-Dmaven.multiModuleProjectDirectory="+config.workspace)
+	if config.mavenOpts != "" {
+		cmd = append(cmd, strings.Split(config.mavenOpts, " ")...)
+	}
 	cmd = append(cmd, "org.codehaus.plexus.classworlds.launcher.Launcher")
 	cmd = append(cmd, strings.Split(config.goals, " ")...)
 	return exec.Command(cmd[0], cmd[1:]...)
@@ -236,4 +242,5 @@ type mvnRunConfig struct {
 	goals                  string
 	buildInfoProperties    string
 	generatedBuildInfoPath string
+	mavenOpts              string
 }
