@@ -80,6 +80,7 @@ func configAndTest(t *testing.T, inputDetails *config.ArtifactoryDetails) {
 	if err != nil {
 		t.Error(err.Error())
 	}
+	testExportImport(t, inputDetails)
 }
 
 func configStructToString(artConfig *config.ArtifactoryDetails) string {
@@ -103,5 +104,19 @@ func TestGetConfigurationFromUser(t *testing.T) {
 
 	if !strings.HasSuffix(inputDetails.GetUrl(), "/") {
 		t.Error("Expected url to end with /")
+	}
+}
+
+func testExportImport(t *testing.T, inputDetails *config.ArtifactoryDetails) {
+	serverToken, err := config.Export(inputDetails)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	outputDetails, err := config.Import(serverToken)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if configStructToString(inputDetails) != configStructToString(outputDetails) {
+		t.Error("Unexpected configuration was saved to file. Expected: " + configStructToString(inputDetails) + " Got " + configStructToString(outputDetails))
 	}
 }
