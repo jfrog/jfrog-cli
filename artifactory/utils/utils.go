@@ -2,16 +2,18 @@ package utils
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
-	"github.com/jfrog/jfrog-client-go/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 const repoDetailsUrl = "api/repositories/"
@@ -127,4 +129,20 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 		return errorutils.CheckError(errors.New("The repository '" + repository + "' does not exist."))
 	}
 	return nil
+}
+
+// Get build name and number from env, only if both missing
+func GetBuildNameAndNumber(buildName, buildNumber string) (string, string) {
+	if buildName != "" || buildNumber != "" {
+		return buildName, buildNumber
+	}
+	return GetBuildName(buildName), os.Getenv(cliutils.BuildNumber)
+}
+
+// Get build name from env, only if missing
+func GetBuildName(buildName string) string {
+	if buildName != "" {
+		return buildName
+	}
+	return os.Getenv(cliutils.BuildName)
 }

@@ -21,6 +21,12 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		[Default: The operating system's temp directory]
 		Defines the temp directory used by JFrog CLI.
 
+	JFROG_CLI_BUILD_NAME
+		Build name to use in build releated commands. This environment variable will be used in case of absence of --build-name flag and <build name> argument.
+	
+	JFROG_CLI_BUILD_NUMBER
+		Build number to use in build releated commands. This environment variable will be used in case of absence of '--build-number' flag and '<build number>' argument.
+
 	CI
 		[Default: false]
 		If true, disables progress bar on the supporting commands.

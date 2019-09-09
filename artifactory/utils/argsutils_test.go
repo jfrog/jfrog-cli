@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"os"
 	"reflect"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 )
 
 func TestFindAndRemoveFlagFromCommand(t *testing.T) {
@@ -98,8 +101,8 @@ func TestGetFlagValueAndValueIndex(t *testing.T) {
 
 func TestFindBooleanFlag(t *testing.T) {
 	tests := []struct {
-		flagName     string
-		command []string
+		flagName string
+		command  []string
 		expected int
 	}{
 		{"--foo", []string{"-X", "--GET", "--foo/api/build/test1", "--foo", "bar"}, 3},
@@ -118,8 +121,8 @@ func TestFindBooleanFlag(t *testing.T) {
 
 func TestExtractBuildDetailsFromArgs(t *testing.T) {
 	tests := []struct {
-		command []string
-		expectedArgs []string
+		command             []string
+		expectedArgs        []string
 		expectedBuildConfig *BuildConfiguration
 	}{
 		{[]string{"-test", "--build-name", "test1", "--foo", "--build-number", "1", "--module", "module1"}, []string{"-test", "--foo"}, &BuildConfiguration{"test1", "1", "module1"}},
@@ -141,13 +144,45 @@ func TestExtractBuildDetailsFromArgs(t *testing.T) {
 	}
 }
 
+func TestExtractBuildDetailsFromEnv(t *testing.T) {
+	const buildNameEnv = "envBuildName"
+	const buildNumberEnv = "777"
+	tests := []struct {
+		command             []string
+		expectedArgs        []string
+		expectedBuildConfig *BuildConfiguration
+	}{
+		{[]string{"-test", "--build-name", "test1", "--foo", "--build-number", "1", "--module", "module1"}, []string{"-test", "--foo"}, &BuildConfiguration{"test1", "1", "module1"}},
+		{[]string{"foo", "-X", "123", "--bar", "--build-number=3", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"", "3", ""}},
+		{[]string{"foo", "-X", "123", "--bar", "--build-name=test1", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"test1", "", ""}},
+		{[]string{"foo", "-X", "123", "--bar", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{buildNameEnv, buildNumberEnv, ""}},
+	}
+
+	os.Setenv(cliutils.BuildName, buildNameEnv)
+	os.Setenv(cliutils.BuildNumber, buildNumberEnv)
+	defer os.Unsetenv(cliutils.BuildName)
+	defer os.Unsetenv(cliutils.BuildNumber)
+	for _, test := range tests {
+		actualArgs, actualBuildConfig, err := ExtractBuildDetailsFromArgs(test.command)
+		if err != nil {
+			t.Error(err)
+		}
+		if !reflect.DeepEqual(actualArgs, test.expectedArgs) {
+			t.Errorf("Expected value: %v, got: %v.", test.expectedArgs, actualArgs)
+		}
+		if !reflect.DeepEqual(actualBuildConfig, test.expectedBuildConfig) {
+			t.Errorf("Expected value: %v, got: %v.", test.expectedBuildConfig, actualBuildConfig)
+		}
+	}
+}
+
 func TestFindFlagFirstMatch(t *testing.T) {
 	tests := []struct {
-		command []string
-		flags []string
-		expectedFlagIndex int
+		command            []string
+		flags              []string
+		expectedFlagIndex  int
 		expectedValueIndex int
-		expectedValue string
+		expectedValue      string
 	}{
 		{[]string{"-test", "--build-name", "test1", "--foo", "--build-number", "1", "--module", "module1"}, []string{"--build", "--build-name"}, 1, 2, "test1"},
 		{[]string{"--module=module2", "--build-name", "test2", "--foo", "bar", "--build-number=2"}, []string{"--build-name", "--module"}, 1, 2, "test2"},

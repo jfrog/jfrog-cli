@@ -2116,6 +2116,52 @@ func TestArtifactoryDownloadByPatternAndBuildUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryGenericBuildnameAndNumberFromEnv(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	// Upload files with buildName and buildNumber
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	if err != nil {
+		t.Error(err)
+	}
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	if err != nil {
+		t.Error(err)
+	}
+	os.Setenv(cliutils.BuildName, buildName)
+	os.Setenv(cliutils.BuildNumber, buildNumberA)
+	defer os.Unsetenv(cliutils.BuildName)
+	defer os.Unsetenv(cliutils.BuildNumber)
+	artifactoryCli.Exec("upload", "--spec="+specFileA)
+	os.Setenv(cliutils.BuildNumber, "11")
+	artifactoryCli.Exec("upload", "--spec="+specFileB)
+
+	// Publish buildInfo
+	os.Setenv(cliutils.BuildNumber, buildNumberA)
+	artifactoryCli.Exec("build-publish")
+	os.Setenv(cliutils.BuildNumber, buildNumberB)
+	artifactoryCli.Exec("build-publish")
+
+	// Download by build number
+	artifactoryCli.Exec("download", "--spec="+specFile)
+
+	// Validate files are downloaded by build number
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildDownload(), paths)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadByBuildNoPatternUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumberA, buildNumberB := "cli-test-build", "10", "11"

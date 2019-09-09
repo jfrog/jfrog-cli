@@ -559,15 +559,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "pip-install",
-			Flags:        getPipInstallFlags(),
-			Aliases:      []string{"pipi"},
-			Usage:        pipinstall.Description,
-			HelpName:     common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
-			UsageText:    pipinstall.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
+			Name:            "pip-install",
+			Flags:           getPipInstallFlags(),
+			Aliases:         []string{"pipi"},
+			Usage:           pipinstall.Description,
+			HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			UsageText:       pipinstall.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
 			},
@@ -2020,7 +2020,7 @@ func pipInstallCmd(c *cli.Context) error {
 	// Get pip configuration.
 	pipConfig, err := piputils.GetPipConfiguration()
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n" +
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
 			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt pip-install'.", err.Error()))
 	}
 	// Set arg values.
@@ -2037,9 +2037,15 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func validateBuildInfoArgument(c *cli.Context) {
-	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	if c.NArg() == 2 {
+		// Use Build name and number from arguments
+		return
 	}
+	if c.NArg() == 0 && os.Getenv(cliutils.BuildName) != "" && os.Getenv(cliutils.BuildName) != "" {
+		// Use buile name and number from environmet
+		return
+	}
+	cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 }
 
 func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
@@ -2282,8 +2288,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.BuildName = c.Args().Get(0)
-	promotionParamsImpl.BuildNumber = c.Args().Get(1)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	promotionParamsImpl.TargetRepo = c.Args().Get(2)
 	return promotionParamsImpl
 }
@@ -2295,7 +2300,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.MaxDays = c.String("max-days")
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
-	discardParamsImpl.BuildName = c.Args().Get(0)
+	discardParamsImpl.BuildName = utils.GetBuildName(c.Args().Get(0))
 	return discardParamsImpl
 }
 
@@ -2306,8 +2311,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeParamsImpl.BuildName = c.Args().Get(0)
-	distributeParamsImpl.BuildNumber = c.Args().Get(1)
+	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	distributeParamsImpl.TargetRepo = c.Args().Get(2)
 	return distributeParamsImpl
 }
@@ -2458,8 +2462,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 
 func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
-	buildConfigConfiguration.BuildName = c.String("build-name")
-	buildConfigConfiguration.BuildNumber = c.String("build-number")
+	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
 	buildConfigConfiguration.Module = c.String("module")
 	validateBuildParams(buildConfigConfiguration)
 	return
@@ -2605,8 +2608,7 @@ func createPropsCommand(c *cli.Context) *generic.PropsCommand {
 // Returns build configuration struct using the params provided from the console.
 func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration := new(utils.BuildConfiguration)
-	buildConfiguration.BuildName = c.Args().Get(0)
-	buildConfiguration.BuildNumber = c.Args().Get(1)
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	return buildConfiguration
 }
 
