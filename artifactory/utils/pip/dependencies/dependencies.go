@@ -18,16 +18,6 @@ import (
 	"strings"
 )
 
-func init() {
-	var err error
-	pipDependencyMapScriptPath, err = GetDepTreeScriptPath()
-	if err != nil {
-		panic("Failed initializing dependency-map script.")
-	}
-}
-
-var pipDependencyMapScriptPath string
-
 // The extractor responsible to calculate the project dependencies.
 type Extractor interface {
 	// Get all the dependencies for the project.
@@ -47,6 +37,11 @@ type Extractor interface {
 func BuildPipDependencyMap(pythonExecPath string) (map[string]pipDependencyPackage, error) {
 	pipeReader, pipeWriter := io.Pipe()
 	defer pipeReader.Close()
+
+	pipDependencyMapScriptPath, err := GetDepTreeScriptPath()
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
 
 	// Execute the python pip-dependency-map script.
 	pipDependencyMapCmd := &pip.PipCmd{
