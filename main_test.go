@@ -27,7 +27,7 @@ func setupIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		InitArtifactoryTests()
 	}
-	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
+	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
@@ -42,7 +42,7 @@ func tearDownIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget {
+	if *tests.TestBuildTools || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		CleanBuildToolsTests()
 	}
 }

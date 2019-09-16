@@ -68,11 +68,11 @@ func BuildPipDependencyMap(pythonExecPath string) (map[string]pipDependencyPacka
 	}
 
 	// Parse the result.
-	return parsePipDepTreeOutput(data)
+	return parsePipDependencyMapOutput(data)
 }
 
 // Parse pip-dependency-map raw output to dependencies map.
-func parsePipDepTreeOutput(data []byte) (map[string]pipDependencyPackage, error) {
+func parsePipDependencyMapOutput(data []byte) (map[string]pipDependencyPackage, error) {
 	// Parse into array.
 	packages := make([]pipDependencyPackage, 0)
 	if err := json.Unmarshal(data, &packages); err != nil {
@@ -88,8 +88,8 @@ func parsePipDepTreeOutput(data []byte) (map[string]pipDependencyPackage, error)
 	return packagesMap, nil
 }
 
-// Extract all dependencies, based on 'dependencies'.
-// Resolve allDependencies and childrenMap.
+// Extract all dependencies, based on provided root-dependencies 'dependencies'.
+// Return allDependencies and childrenMap.
 func extractDependencies(dependencies []string, environmentPackages map[string]pipDependencyPackage) (allDependencies map[string]*buildinfo.Dependency, childrenMap map[string][]string, err error) {
 	allDependencies = make(map[string]*buildinfo.Dependency)
 	childrenMap = make(map[string][]string)
@@ -162,26 +162,7 @@ func (pipDepTreePkg *pipDependencyPackage) getDependencies() []string {
 	return dependencies
 }
 
-// Structs for parsing the pip-dependency-map result.
-
-type pipDependencyPackage struct {
-	Package      packageType  `json:"package,omitempty"`
-	Dependencies []dependency `json:"dependencies,omitempty"`
-}
-
-type packageType struct {
-	Key              string `json:"key,omitempty"`
-	PackageName      string `json:"package_name,omitempty"`
-	InstalledVersion string `json:"installed_version,omitempty"`
-}
-
-type dependency struct {
-	Key              string `json:"key,omitempty"`
-	PackageName      string `json:"package_name,omitempty"`
-	InstalledVersion string `json:"installed_version,omitempty"`
-}
-
-// Return path to the dependency-tree script, if not exists -> create the file.
+// Return path to the dependency-tree script, if not exists it creates the file.
 func GetDepTreeScriptPath() (string, error) {
 	pipDependenciesPath, err := config.GetJfrogDependenciesPath()
 	if err != nil {
@@ -212,4 +193,23 @@ func writeScriptIfNeeded(targetDirPath, scriptName string) error {
 		}
 	}
 	return nil
+}
+
+// Structs for parsing the pip-dependency-map result.
+
+type pipDependencyPackage struct {
+	Package      packageType  `json:"package,omitempty"`
+	Dependencies []dependency `json:"dependencies,omitempty"`
+}
+
+type packageType struct {
+	Key              string `json:"key,omitempty"`
+	PackageName      string `json:"package_name,omitempty"`
+	InstalledVersion string `json:"installed_version,omitempty"`
+}
+
+type dependency struct {
+	Key              string `json:"key,omitempty"`
+	PackageName      string `json:"package_name,omitempty"`
+	InstalledVersion string `json:"installed_version,omitempty"`
 }

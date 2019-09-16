@@ -3408,6 +3408,10 @@ func createRandomReposName() {
 	if *tests.TestGo {
 		tests.GoLocalRepo += "-" + timestamp
 	}
+	if *tests.TestPip {
+		tests.PypiRemoteRepo += "-" + timestamp
+		tests.PypiVirtualRepo += "-" + timestamp
+	}
 }
 
 func deleteRepos() {

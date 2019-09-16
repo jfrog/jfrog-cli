@@ -1,0 +1,3 @@
+PyYAML>3.11
+macholib
+nltk

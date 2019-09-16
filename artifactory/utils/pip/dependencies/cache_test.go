@@ -1,8 +1,8 @@
 package dependencies
 
 import (
+	"errors"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"reflect"
