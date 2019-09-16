@@ -13,6 +13,7 @@ const (
 	BuildAddDepsBuildName                  = "cli-bad-test-build"
 	NpmBuildName                           = "cli-npm-test-build"
 	NugetBuildName                         = "cli-nuget-test-build"
+	PipBuildName                           = "cli-pip-test-build"
 	Out                                    = "out"
 	Temp                                   = "tmp"
 	DownloadSpec                           = "download_spec.json"
@@ -71,6 +72,8 @@ const (
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
+	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -82,6 +85,8 @@ var LfsRepo = "jfrog-cli-tests-lfs-repo"
 var NpmLocalRepo = "jfrog-cli-tests-npm-local-repo"
 var NpmRemoteRepo = "jfrog-cli-tests-npm-remote-repo"
 var GoLocalRepo = "jfrog-cli-tests-go-local-repo"
+var PypiRemoteRepo = "jfrog-cli-tests-pypi-remote-repo"
+var PypiVirtualRepo = "jfrog-cli-tests-pypi-virtual-repo"
 
 func GetTxtUploadExpectedRepo1() []string {
 	return []string{

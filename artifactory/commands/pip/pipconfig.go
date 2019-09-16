@@ -35,7 +35,7 @@ func CreateBuildConfig(global bool) error {
 	var vConfig *viper.Viper
 	configResult := &PipBuildConfig{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
-	configResult.ConfigType = utils.Go.String()
+	configResult.ConfigType = utils.Pip.String()
 	configResult.Resolver.ServerId, vConfig, err = prompt.ReadServerId()
 	if err != nil {
 		return errorutils.CheckError(err)

@@ -18,7 +18,6 @@ type requirementsExtractor struct {
 	childrenMap          map[string][]string
 	rootDependencies     []string
 	regExps              []requirementRegExp
-	skipRegexp           *regexp.Regexp
 	requirementsFilePath string
 	pythonExecutablePath string
 }
@@ -181,26 +180,15 @@ func (extractor *requirementsExtractor) consumeLine(line string) (string, error)
 	return "", nil
 }
 
-// In the requirements.txt file, line ending with unescaped '\' means that the next line is a continuance.
-// Thus should skip the next line when parsing.
-func (extractor *requirementsExtractor) shouldSkipNextRequirementsLine(line string) bool {
-	matched := extractor.skipRegexp.Match([]byte(line))
-	if matched {
-		// Should skip the next line.
-		return true
-	}
-	return false
-}
-
 func (extractor *requirementsExtractor) initializeRegExps() error {
 	// Order is important! pattern '^\w[\w-\.]+' matches for all regexps, thus must be last.
 	// Go doesn't support Lookaheads in regexps, thus this won't work: '^(?!(git\+)|(git:)|(https?:\/\/)|(hg\+)|(svn\+)|(bzr\+))\w[\w-\.]+'
 	var requirementRegExps = []requirementRegExp{
-		{regExpString: `^((-e\s)?(git\+)|(git:\/\/))\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 5}, // match git+, git://
-		{regExpString: `^((-e\s)?hg\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},               // match hg+
-		{regExpString: `^((-e\s)?svn\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},              // match svn+
-		{regExpString: `^((-e\s)?bzr\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},              // match bzr+
-		{regExpString: `^\w[\w-\.]+`, matchGroup: 0},                                         // match pkg ids not starting with git:, git+, http://, https://, hg+, svn+, bzr+
+		{regExpString: `^((-e\s)?(git\+)|(git:\/\/))\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 5}, // match git packages.
+		{regExpString: `^((-e\s)?hg\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},               // match mercurial packages.
+		{regExpString: `^((-e\s)?svn\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},              // match subversion packages.
+		{regExpString: `^((-e\s)?bzr\+)\w.*?\w.*\#egg=([\w-]+)`, matchGroup: 3},              // match bazaar packages.
+		{regExpString: `^\w[\w-\.]+`, matchGroup: 0},                                         // match package name.
 	}
 
 	var err error
@@ -212,12 +200,6 @@ func (extractor *requirementsExtractor) initializeRegExps() error {
 		}
 	}
 	extractor.regExps = append(extractor.regExps, requirementRegExps...)
-
-	// Calculate skip regexp.
-	extractor.skipRegexp, err = utils.GetRegExp(`.*\s\\$`)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

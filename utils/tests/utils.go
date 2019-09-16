@@ -42,6 +42,8 @@ var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
 var HideUnitTestLog *bool
+var TestPip *bool
+var PipVirtualEnv *string
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -64,6 +66,8 @@ func init() {
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
+	TestPip = flag.Bool("test.pip", false, "Test Pip")
+	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
 }
 
 func CleanFileSystem() {
@@ -322,12 +326,17 @@ func GetNonVirtualRepositories() map[string]string {
 		nonVirtualRepos[NpmRemoteRepo] = NpmRemoteRepositoryConfig
 	}
 
+	if *TestPip {
+		nonVirtualRepos[PypiRemoteRepo] = PypiRemoteRepositoryConfig
+	}
+
 	return nonVirtualRepos
 }
 
 func GetVirtualRepositories() map[string]string {
 	return map[string]string{
-		VirtualRepo: VirtualRepositoryConfig,
+		VirtualRepo:     VirtualRepositoryConfig,
+		PypiVirtualRepo: PypiVirtualRepositoryConfig,
 	}
 }
 
@@ -347,6 +356,8 @@ func getRepositoriesNameMap() map[string]string {
 		"${RT_USERNAME}":         *RtUser,
 		"${RT_PASSWORD}":         *RtPassword,
 		"${RT_ACCESS_TOKEN}":     *RtAccessToken,
+		"${PYPI_REMOTE_REPO}":    PypiRemoteRepo,
+		"${PYPI_VIRTUAL_REPO}":   PypiVirtualRepo,
 	}
 }
 

@@ -1,0 +1,112 @@
+[
+    {
+        "package": {
+            "key": "pkg-1",
+            "package_name": "pkg-1",
+            "installed_version": "0.33.4"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "pkg2",
+            "package_name": "Pkg2",
+            "installed_version": "41.0.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "pkg4",
+            "package_name": "pkg4",
+            "installed_version": "0.0.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "pkg3",
+            "package_name": "pkg3",
+            "installed_version": "3.5"
+        },
+        "dependencies": [
+            {
+                "key": "pkg2",
+                "package_name": "Pkg2",
+                "installed_version": "41.0.1",
+                "required_version": null
+            },
+            {
+                "key": "pkg.dep-5",
+                "package_name": "pkg.DEP-5",
+                "installed_version": "1.11",
+                "required_version": ">=1.8"
+            },
+            {
+                "key": "pkg6",
+                "package_name": "pkg6",
+                "installed_version": "0.16.1",
+                "required_version": null
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "pkg8",
+            "package_name": "pkg8",
+            "installed_version": "0.13.2"
+        },
+        "dependencies": [
+            {
+                "key": "pkg-dep-7",
+                "package_name": "pkg-dep-7",
+                "installed_version": "19.2.1",
+                "required_version": ">=6.0.0"
+            },
+            {
+                "key": "pkg8",
+                "package_name": "pkg8",
+                "installed_version": "0.13.2",
+                "required_version": null
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "pkg-dep-7",
+            "package_name": "pkg-dep-7",
+            "installed_version": "19.2.1"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "pkg.dep-5",
+            "package_name": "pkg.DEP-5",
+            "installed_version": "1.11"
+        },
+        "dependencies": [
+            {
+                "key": "pkg6",
+                "package_name": "pkg6",
+                "installed_version": "0.16.1",
+                "required_version": ">=0.15"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "pkg6",
+            "package_name": "pkg6",
+            "installed_version": "0.16.1"
+        },
+        "dependencies": [
+            {
+                "key": "pkg-dep-7",
+                "package_name": "pkg-dep-7",
+                "installed_version": "19.2.1",
+                "required_version": ">=6.0.0"
+            }
+        ]
+    }
+]

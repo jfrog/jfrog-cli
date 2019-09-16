@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"errors"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
@@ -8,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -38,10 +38,18 @@ func (extractor *setupExtractor) Extract() error {
 		return err
 	}
 
-	// Populate rootDependencies.
-	if err := extractor.extractRootDependencies(environmentPackages); err != nil {
+	// Get package name.
+	pkgName, err := extractor.PackageName()
+	if err != nil {
 		return err
 	}
+
+	// Get rootDependencies.
+	rootDependencies, err := extractRootDependencies(environmentPackages, pkgName)
+	if err != nil {
+		return err
+	}
+	extractor.rootDependencies = rootDependencies
 
 	// Extract all project dependencies.
 	allDeps, childMap, err := extractDependencies(extractor.rootDependencies, environmentPackages)
@@ -64,24 +72,16 @@ func (extractor *setupExtractor) PackageName() (string, error) {
 	return extractor.Pkg, err
 }
 
-func (extractor *setupExtractor) extractRootDependencies(envDeps map[string]pipDependencyPackage) error {
-	// Get package name.
-	pkgName, err := extractor.PackageName()
-	if err != nil {
-		return err
-	}
-
+func extractRootDependencies(envDeps map[string]pipDependencyPackage, pkgName string) ([]string, error) {
 	// Get installed package from environment-dependencies map.
 	pipDepPkg, ok := envDeps[strings.ToLower(pkgName)]
 	if !ok {
 		// Package not installed.
-		return errorutils.CheckError(errors.New(fmt.Sprintf("Failed receiving root-dependencies for installed package: %s", pkgName)))
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf("Failed receiving root-dependencies for installed package: %s", pkgName)))
 	}
 
 	// Extract package's root-dependencies.
-	extractor.rootDependencies = pipDepPkg.getDependencies()
-
-	return nil
+	return pipDepPkg.getDependencies(), nil
 }
 
 // Get the project-name by running 'egg_info' command on setup.py and extracting it from 'PKG-INFO' file.

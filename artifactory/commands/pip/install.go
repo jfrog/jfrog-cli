@@ -2,7 +2,7 @@ package pip
 
 import (
 	"encoding/json"
-	errors2 "errors"
+	"errors"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
@@ -16,7 +16,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/pkg/errors"
 	"net/url"
 	"os"
 	"os/exec"
@@ -30,7 +29,7 @@ type PipInstallCommand struct {
 	args                   []string
 	repository             string
 	shouldCollectBuildInfo bool
-	dependencyToFileMap    map[string]string//Parsed from pip-install logs, maps dependency name to its actual downloaded file from Artifactory.
+	dependencyToFileMap    map[string]string //Parsed from pip-install logs, maps dependency name to its actual downloaded file from Artifactory.
 }
 
 func NewPipInstallCommand() *PipInstallCommand {
@@ -187,8 +186,20 @@ func (pic *PipInstallCommand) collectBuildInfo(pythonExecutablePath string) erro
 	// Get project dependencies.
 	allDependencies := extractor.AllDependencies()
 
+	// Get dependencies cache.
+	dependenciesCache, err := dependencies.GetProjectDependenciesCache()
+	if err != nil {
+		return err
+	}
+
 	// Populate dependencies information - checksums and file-name.
-	pic.addDepsInfo(allDependencies)
+	missingDeps, err := pic.addDepsInfoAndReturnMissingDeps(allDependencies, dependenciesCache)
+	if err != nil {
+		return err
+	}
+
+	// Prompt missing dependencies.
+	promptMissingDependencies(missingDeps)
 
 	// Update project cache with correct dependencies.
 	dependencies.UpdateDependenciesCache(allDependencies)
@@ -322,7 +333,7 @@ func (pic *PipInstallCommand) prepare() (pipExecutablePath, pythonExecutablePath
 	}
 
 	// Set URL for dependencies resolution.
-	pipIndexUrl, err = pic.getArtifactoryUrlWithCredentials()
+	pipIndexUrl, err = getArtifactoryUrlWithCredentials(pic.rtDetails, pic.repository)
 	if err != nil {
 		return
 	}
@@ -350,28 +361,28 @@ func (pic *PipInstallCommand) cleanBuildInfoDir() {
 	}
 }
 
-func (pic *PipInstallCommand) getArtifactoryUrlWithCredentials() (string, error) {
-	rtUrl, err := url.Parse(pic.rtDetails.GetUrl())
+func getArtifactoryUrlWithCredentials(rtDetails *config.ArtifactoryDetails, repository string) (string, error) {
+	rtUrl, err := url.Parse(rtDetails.GetUrl())
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
 
-	username := pic.rtDetails.GetUser()
-	password := pic.rtDetails.GetPassword()
+	username := rtDetails.GetUser()
+	password := rtDetails.GetPassword()
 
 	// Get credentials from access-token if exists.
-	if pic.rtDetails.GetAccessToken() != "" {
-		username, err = auth.ExtractUsernameFromAccessToken(pic.rtDetails.GetAccessToken())
+	if rtDetails.GetAccessToken() != "" {
+		username, err = auth.ExtractUsernameFromAccessToken(rtDetails.GetAccessToken())
 		if err != nil {
 			return "", err
 		}
-		password = pic.rtDetails.GetAccessToken()
+		password = rtDetails.GetAccessToken()
 	}
 
 	if username != "" && password != "" {
 		rtUrl.User = url.UserPassword(username, password)
 	}
-	rtUrl.Path += "api/pypi/" + pic.repository + "/simple"
+	rtUrl.Path += "api/pypi/" + repository + "/simple"
 
 	return rtUrl.String(), nil
 }
@@ -379,17 +390,14 @@ func (pic *PipInstallCommand) getArtifactoryUrlWithCredentials() (string, error)
 // Populate project's dependencies with checksums and file names.
 // If the dependency was downloaded in this pip-install execution, checksum will be fetched from Artifactory.
 // Otherwise, check if exists in cache.
-func (pic *PipInstallCommand) addDepsInfo(dependenciesMap map[string]*buildinfo.Dependency) error {
+// Return dependency-names of all dependencies which its information could not be obtained.
+func (pic *PipInstallCommand) addDepsInfoAndReturnMissingDeps(dependenciesMap map[string]*buildinfo.Dependency, dependenciesCache *dependencies.DependenciesCache) ([]string, error) {
 	servicesManager, err := utils.CreateServiceManager(pic.rtDetails, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var missingDepsText []string
-	dependenciesCache, err := dependencies.GetProjectDependenciesCache()
-	if err != nil {
-		return err
-	}
 	// Iterate dependencies map to update info.
 	for depName := range dependenciesMap {
 		// Check if this dependency was updated during this pip-install execution.
@@ -399,7 +407,7 @@ func (pic *PipInstallCommand) addDepsInfo(dependenciesMap map[string]*buildinfo.
 			// Fetch from Artifactory.
 			checksum, err := getDependencyChecksumFromArtifactory(servicesManager, pic.repository, depFileName)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if checksum != nil {
 				// Update dependency.
@@ -428,15 +436,16 @@ func (pic *PipInstallCommand) addDepsInfo(dependenciesMap map[string]*buildinfo.
 		delete(dependenciesMap, depName)
 	}
 
-	// Prompt missing dependencies.
+	return missingDepsText, nil
+}
+
+func promptMissingDependencies(missingDepsText []string) {
 	if len(missingDepsText) > 0 {
 		log.Warn(strings.Join(missingDepsText, "\n"))
 		log.Warn("The pypi packages above could not be found in Artifactory or were not downloaded in this execution, therefore they are not included in the build-info.\n" +
 			"Make sure the packages are available in Artifactory for this build.\n" +
 			"Reinstalling in clean environment or using '--no-cache-dir' and '--force-reinstall' flags, will force downloading and populating Artifactory with these packages, the next time this command is executed.")
 	}
-
-	return nil
 }
 
 func (pic *PipInstallCommand) CommandName() string {
@@ -473,7 +482,7 @@ func getExecutablePath(executableName string) (string, error) {
 	}
 
 	if executablePath == "" {
-		return "", errorutils.CheckError(errors2.New(fmt.Sprintf("Could not find '%s' executable", executableName)))
+		return "", errorutils.CheckError(errors.New(fmt.Sprintf("Could not find '%s' executable", executableName)))
 	}
 
 	log.Debug(fmt.Sprintf("Found %s executable at: %s", executableName, executablePath))
