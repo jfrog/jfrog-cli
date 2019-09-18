@@ -334,10 +334,15 @@ func GetNonVirtualRepositories() map[string]string {
 }
 
 func GetVirtualRepositories() map[string]string {
-	return map[string]string{
-		VirtualRepo:     VirtualRepositoryConfig,
-		PypiVirtualRepo: PypiVirtualRepositoryConfig,
+	virtualRepos := map[string]string{
+		VirtualRepo: VirtualRepositoryConfig,
 	}
+
+	if *TestPip {
+		virtualRepos[PypiVirtualRepo] = PypiVirtualRepositoryConfig
+	}
+
+	return virtualRepos
 }
 
 func getRepositoriesNameMap() map[string]string {

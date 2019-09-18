@@ -1540,17 +1540,21 @@ func setPathEnvForPipInstall(t *testing.T) string {
 	// Keep original value of 'PATH'.
 	pathValue, exists := os.LookupEnv("PATH")
 	if !exists {
-		t.Errorf("Couldn't find PATH variable, failing pip tests.")
-		t.FailNow()
+		t.Fatal("Couldn't find PATH variable, failing pip tests.")
 	}
 
 	// Append the path.
 	virtualEnvPath := *tests.PipVirtualEnv
 	if virtualEnvPath != "" {
-		err := os.Setenv("PATH", virtualEnvPath+":"+pathValue)
+		var newPathValue string
+		if cliutils.IsWindows() {
+			newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
+		} else {
+			newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)
+		}
+		err := os.Setenv("PATH", newPathValue)
 		if err != nil {
-			t.Error(err)
-			t.FailNow()
+			t.Fatal(err)
 		}
 	}
 
@@ -1568,7 +1572,7 @@ func validateEmptyPipEnv(t *testing.T) {
 		t.FailNow()
 	}
 	if out != "" {
-		t.Error("Provided pip virtual-environment contains installed packages, please provide a clean environment.")
+		t.Error(fmt.Sprintf("Provided pip virtual-environment contains installed packages: %s\n. Please provide a clean environment.", out))
 		t.FailNow()
 	}
 }

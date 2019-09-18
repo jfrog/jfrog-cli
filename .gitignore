@@ -6,3 +6,4 @@ testsdata/go/tmp
 # vim
 *~
 *.swp
+artifactory/utils/pip/dependencies/deptreescript.go
