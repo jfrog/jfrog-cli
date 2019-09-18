@@ -32,6 +32,8 @@ const (
 	JFrogCliDependenciesDir = "JFROG_CLI_DEPENDENCIES_DIR"
 	BuildName               = "JFROG_CLI_BUILD_NAME"
 	BuildNumber             = "JFROG_CLI_BUILD_NUMBER"
+	BuildUrl                = "JFROG_CLI_BUILD_URL"
+	EnvExclude              = "JFROG_CLI_ENV_EXCLUDE"
 	// Deprecated:
 	JfrogHomeEnv = "JFROG_CLI_HOME"
 )

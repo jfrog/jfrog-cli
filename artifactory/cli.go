@@ -2266,15 +2266,15 @@ func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
 
 func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	flags := new(buildinfocmd.Configuration)
-	flags.BuildUrl = c.String("build-url")
+	flags.BuildUrl = utils.GetBuildUrl(c.String("build-url"))
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
-	flags.EnvExclude = c.String("env-exclude")
-	if len(flags.EnvInclude) == 0 {
+	flags.EnvExclude = utils.GetEnvExclude(c.String("env-exclude"))
+	if flags.EnvInclude == "" {
 		flags.EnvInclude = "*"
 	}
 	// Allow to use `env-exclude=""` and get no filters
-	if !c.IsSet("env-exclude") {
+	if flags.EnvExclude == "" {
 		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return flags

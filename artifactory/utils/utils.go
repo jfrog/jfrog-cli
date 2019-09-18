@@ -139,10 +139,22 @@ func GetBuildNameAndNumber(buildName, buildNumber string) (string, string) {
 	return GetBuildName(buildName), os.Getenv(cliutils.BuildNumber)
 }
 
-// Get build name from env, only if missing
 func GetBuildName(buildName string) string {
-	if buildName != "" {
-		return buildName
+	return getOrDefaultEnv(buildName, cliutils.BuildName)
+}
+
+func GetBuildUrl(buildUrl string) string {
+	return getOrDefaultEnv(buildUrl, cliutils.BuildUrl)
+}
+
+func GetEnvExclude(envExclude string) string {
+	return getOrDefaultEnv(envExclude, cliutils.EnvExclude)
+}
+
+// Return argument if not empty or retrieve from environment variable
+func getOrDefaultEnv(arg, envKey string) string {
+	if arg != "" {
+		return arg
 	}
-	return os.Getenv(cliutils.BuildName)
+	return os.Getenv(envKey)
 }
