@@ -215,10 +215,8 @@ func initGoTest(t *testing.T) {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 
-	err := os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		t.Error(err)
-	}
+	os.Setenv("GONOSUMDB", "github.com/jfrog")
+
 	// Move when go will be supported and check Artifactory version.
 	if !isRepoExist(tests.GoLocalRepo) {
 		repoConfig := filepath.FromSlash(tests.GetTestResourcesPath()) + tests.GoLocalRepositoryConfig
@@ -248,11 +246,11 @@ func initNugetTest(t *testing.T) {
 	}
 }
 
-func cleanGoTest(gopath string) {
+func cleanGoTest() {
+	os.Unsetenv("GONOSUMDB")
 	if isRepoExist(tests.GoLocalRepo) {
 		execDeleteRepoRest(tests.GoLocalRepo)
 	}
-	os.Setenv("GOPATH", gopath)
 	cleanBuildToolsTest()
 }
 
@@ -267,8 +265,6 @@ func TestGoBuildInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
@@ -350,7 +346,7 @@ func TestGoBuildInfo(t *testing.T) {
 		t.Error(err)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 func TestGoConfigWithModuleNameChange(t *testing.T) {
@@ -365,8 +361,6 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
 	prepareGoProject("", t, true)
 	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
@@ -376,7 +370,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 		t.Error(err)
 	}
 
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 func TestGoConfigWithoutModuleChange(t *testing.T) {
@@ -391,8 +385,6 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
 	prepareGoProject("", t, true)
 	runGo("", buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber)
@@ -402,7 +394,7 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 		t.Error(err)
 	}
 
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 func TestGoWithGlobalConfig(t *testing.T) {
@@ -418,8 +410,6 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
 	prepareGoProject(newHomeDir, t, false)
 	runGo(ModuleNameJFrogTest, buildName, buildNumber, t, "go", "build", "--build-name="+buildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
@@ -429,7 +419,7 @@ func TestGoWithGlobalConfig(t *testing.T) {
 		t.Error(err)
 	}
 
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) {
@@ -507,8 +497,6 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1", false)
 	project2Path := createGoProject(t, "project2", false)
 	err = os.Chdir(project1Path)
@@ -538,7 +526,7 @@ func TestGoPublishResolve(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 // Testing the fallback mechanism
@@ -552,8 +540,7 @@ func TestGoFallback(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
+
 	projectBuild := createGoProject(t, "projectbuild", false)
 
 	err = os.Chdir(projectBuild)
@@ -575,7 +562,7 @@ func TestGoFallback(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 // Builds a project with a dependency of gofrog that is missing a mod file.
@@ -591,9 +578,6 @@ func TestGoRecursivePublish(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
@@ -669,7 +653,7 @@ func TestGoRecursivePublish(t *testing.T) {
 		t.Error(err)
 	}
 
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 // Publish also the missing dependencies to Artifactory with the publishDeps flag.
@@ -680,8 +664,6 @@ func TestGoWithPublishDeps(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	gopath := os.Getenv("GOPATH")
-	os.Setenv("GOPATH", filepath.Join(wd, tests.Out))
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
@@ -714,7 +696,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 		t.Error(err)
 	}
 
-	cleanGoTest(gopath)
+	cleanGoTest()
 }
 
 func downloadModFile(specName, wd, subDir string, t *testing.T) []byte {

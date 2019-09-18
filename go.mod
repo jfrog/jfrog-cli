@@ -4,7 +4,7 @@ require (
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gocmd v0.1.9
-	github.com/jfrog/gofrog v1.0.4
+	github.com/jfrog/gofrog v1.0.5
 	github.com/jfrog/jfrog-client-go v0.5.0
 	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-shellwords v1.0.3
@@ -18,6 +18,8 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.5.0
+replace github.com/jfrog/jfrog-client-go => /Users/eyalb/dev/jfrog-client-go/src/jfrog/github.com/jfrog-client-go
 
-replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.10-0.20190611063106-dee9f4672ff7
+replace github.com/jfrog/gocmd => /Users/eyalb/dev/gocmd
+
+go 1.13

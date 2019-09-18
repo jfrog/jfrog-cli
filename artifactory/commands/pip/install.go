@@ -156,7 +156,7 @@ func (pic *PipInstallCommand) runPipInstallWithLogParsing(pipInstallCmd *piputil
 	}
 
 	// Execute command.
-	_, _, err = gofrogcmd.RunCmdWithOutputParser(pipInstallCmd, true, &dependencyNameParser, &dependencyFileParser)
+	_, _, _, err = gofrogcmd.RunCmdWithOutputParser(pipInstallCmd, true, &dependencyNameParser, &dependencyFileParser)
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
