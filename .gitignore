@@ -5,3 +5,4 @@ testsdata/go/project1/go.sum
 # vim
 *~
 *.swp
+artifactory/utils/pip/dependencies/deptreescript.go

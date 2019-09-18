@@ -66,7 +66,11 @@ environment:
       "%COMMON_TESTS_ARGS% --test.artifactory=false --test.nuget=true"
   - GO_TESTS:
     TEST_SUIT:
-      "%COMMON_TESTS_ARGS% --test.artifactory=false -test.go=true"
+      "%COMMON_TESTS_ARGS% --test.artifactory=false --test.go=true"
+  - PIP_TESTS:
+    TEST_SUIT:
+      "C:\\Python37-x64\\python -m venv pip-venv &&
+      %COMMON_TESTS_ARGS% --test.artifactory=false --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli-go\\pip-venv\\Scripts"
 
 test_script:
   - "%TEST_SUIT%"

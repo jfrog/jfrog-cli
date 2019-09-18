@@ -76,8 +76,7 @@ On Windows run:
 ````
 test.bat -v github.com/jfrog/jfrog-cli-go
 ````
-Optional flags:
-
+##### Optional flags
 | Flag | Description |
 | --- | --- |
 | `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
@@ -88,7 +87,6 @@ Optional flags:
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 | `-rt.accessToken` | [Optional] Artifactory access token. |
 
-
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
   
@@ -98,6 +96,7 @@ Optional flags:
 * The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
 To run build tools tests execute the following command.
+
 On Unix based systems run:
 ````
 ./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
@@ -106,12 +105,13 @@ On Windows run:
 ````
 test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
 ````
+
 ##### Limitation
 * Currently, build integration support only http(s) connections to Artifactory using username and password.
 
-#### Docker push test
+#### Docker tests
+To run docker tests execute the following command (fill out the missing parameters as described below).
 
-To run docker push tests execute the following command (fill out the missing parameters as described below).
 On Unix based systems run:
 ````
 ./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
@@ -120,7 +120,8 @@ On Windows run:
 ````
 test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
 ````
-##### Mandatory Parameters
+
+##### Mandatory flags
 | Flag | Description |
 | --- | --- |
 | `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
@@ -130,8 +131,8 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=t
 | `-rt.password` | Artifactory password. |
 
 #### Go commands tests
-
 To run go tests run the following command.
+
 On Unix based systems run:
 ````
 ./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
@@ -141,7 +142,6 @@ On Windows run:
 test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
 ````
 #### NuGet tests
-
 To run NuGet tests:
 * Add NuGet executable to the system search path (PATH environment variable).
 * Create a remote repository named jfrog-cli-tests-nuget-remote-repo
@@ -155,6 +155,26 @@ On Windows run:
 ````
 test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
 ````
+
+#### Pip tests
+To run pip tests:
+* Add Python and pip executables to the system search path (PATH environment variable).
+* Pip tests must run inside a clean pip-environment. You can either activate a virtual-environment and execute the tests from within, or provide the path to your virtual-environment using the -rt.pipVirtualEnv flag.
+* Run the following command:
+
+On Unix based systems run:
+````
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.pip=true
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.pip=true
+````
+
+##### Optional flags
+| Flag | Description |
+| --- | --- |
+| `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*) |
 
 ### Bintray tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
