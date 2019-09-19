@@ -279,6 +279,32 @@ func ShowConfig(serverName string) error {
 	return nil
 }
 
+func Import(serverToken string) error {
+	artifactoryDetails, err := config.Import(serverToken)
+	if err != nil {
+		return err
+	}
+	log.Info("Importing server ID", "'"+artifactoryDetails.ServerId+"'")
+	configCommand := &ConfigCommand{
+		details:  artifactoryDetails,
+		serverId: artifactoryDetails.ServerId,
+	}
+	return configCommand.Config()
+}
+
+func Export(serverName string) error {
+	artifactoryDetails, err := config.GetArtifactorySpecificConfig(serverName)
+	if err != nil {
+		return err
+	}
+	serverToken, err := config.Export(artifactoryDetails)
+	if err != nil {
+		return err
+	}
+	log.Output(serverToken)
+	return nil
+}
+
 func printConfigs(configuration []*config.ArtifactoryDetails) {
 	for _, details := range configuration {
 		if details.ServerId != "" {

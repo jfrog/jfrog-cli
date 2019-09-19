@@ -84,7 +84,7 @@ func GetCommands() []cli.Command {
 			HelpName:     common.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
 			UsageText:    configdocs.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc("show", "delete", "clear"),
+			BashComplete: common.CreateBashCompletionFunc("show", "delete", "clear", "import", "export"),
 			Action: func(c *cli.Context) {
 				configCmd(c)
 			},
@@ -559,15 +559,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "pip-install",
-			Flags:        getPipInstallFlags(),
-			Aliases:      []string{"pipi"},
-			Usage:        pipinstall.Description,
-			HelpName:     common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
-			UsageText:    pipinstall.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
+			Name:            "pip-install",
+			Flags:           getPipInstallFlags(),
+			Aliases:         []string{"pipi"},
+			Usage:           pipinstall.Description,
+			HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			UsageText:       pipinstall.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
 			},
@@ -1404,15 +1404,19 @@ func configCmd(c *cli.Context) {
 	var serverId string
 	configCommandConfiguration := createConfigCommandConfiguration(c)
 	if len(c.Args()) == 2 {
+		if c.Args()[0] == "import" {
+			cliutils.ExitOnErr(commands.Import(c.Args()[1]))
+			return
+		}
 		serverId = c.Args()[1]
 		validateServerId(serverId)
+		artDetails, err := config.GetArtifactorySpecificConfig(serverId)
+		cliutils.ExitOnErr(err)
+		if artDetails.IsEmpty() {
+			log.Info("\"" + serverId + "\" configuration could not be found.")
+			return
+		}
 		if c.Args()[0] == "delete" {
-			artDetails, err := config.GetArtifactorySpecificConfig(serverId)
-			cliutils.ExitOnErr(err)
-			if artDetails.IsEmpty() {
-				log.Info("\"" + serverId + "\" configuration could not be found.")
-				return
-			}
 			if !configCommandConfiguration.Interactive {
 				cliutils.ExitOnErr(commands.DeleteConfig(serverId))
 				return
@@ -1424,19 +1428,22 @@ func configCmd(c *cli.Context) {
 			cliutils.ExitOnErr(commands.DeleteConfig(serverId))
 			return
 		}
+		if c.Args()[0] == "export" {
+			cliutils.ExitOnErr(commands.Export(serverId))
+			return
+		}
 	}
 	if len(c.Args()) > 0 {
 		if c.Args()[0] == "show" {
-			err := commands.ShowConfig(serverId)
-			cliutils.ExitOnErr(err)
+			cliutils.ExitOnErr(commands.ShowConfig(serverId))
 			return
-		} else if c.Args()[0] == "clear" {
+		}
+		if c.Args()[0] == "clear" {
 			commands.ClearConfig(configCommandConfiguration.Interactive)
 			return
-		} else {
-			serverId = c.Args()[0]
-			validateServerId(serverId)
 		}
+		serverId = c.Args()[0]
+		validateServerId(serverId)
 	}
 	validateConfigFlags(configCommandConfiguration)
 	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
@@ -2020,7 +2027,7 @@ func pipInstallCmd(c *cli.Context) error {
 	// Get pip configuration.
 	pipConfig, err := piputils.GetPipConfiguration()
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n" +
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
 			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt pip-install'.", err.Error()))
 	}
 	// Set arg values.
