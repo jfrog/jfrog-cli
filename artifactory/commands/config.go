@@ -284,7 +284,7 @@ func Import(serverToken string) error {
 	if err != nil {
 		return err
 	}
-	log.Output("Importing server ID", "'"+artifactoryDetails.ServerId+"'")
+	log.Info("Importing server ID", "'"+artifactoryDetails.ServerId+"'")
 	configCommand := &ConfigCommand{
 		details:  artifactoryDetails,
 		serverId: artifactoryDetails.ServerId,
