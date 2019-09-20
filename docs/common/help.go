@@ -22,17 +22,17 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 		Defines the temp directory used by JFrog CLI.
 
 	JFROG_CLI_BUILD_NAME
-		Build name to use in build related commands. This environment variable will be used in case of omitted --build-name flag and <build name> argument.
+		Build name to be used by commands which expect a build name, unless sent as a command argument or option.
 	
 	JFROG_CLI_BUILD_NUMBER
-		Build number to use in build related commands. This environment variable will be used in case of omitted '--build-number' flag and '<build number>' argument.
+		Build number to be used by commands which expect a build number, unless sent as a command argument or option.
 
 	JFROG_CLI_BUILD_URL
-		Can be used for setting the CI server build URL in the build-info. This environment variable will be used in case of omitted '--build-url' flag.
+		Sets the CI server build URL in the build-info. The "jfrog rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	
 	JFROG_CLI_ENV_EXCLUDE
 		[Default: *password*;*secret*;*key*;*token*] 
-		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable will be used in case of omitted '--env-exclude' flag.
+		List of case insensitive patterns in the form of "value1;value2;...". Environment variables match those patterns will be excluded. This environment variable is used by the "jfrog rt build-publish" command, in case the --env-exclude command option is not sent.
 
 	CI
 		[Default: false]
