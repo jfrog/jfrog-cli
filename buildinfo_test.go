@@ -223,9 +223,35 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
 	buildUrl := "http://example.ci.com"
+	os.Setenv(cliutils.BuildUrl, "http://override-me.ci.com")
+	defer os.Unsetenv(cliutils.BuildUrl)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	body := uploadFilesAndGetBuildInfo(t, buildName, buildNumber, buildUrl)
+
+	// Validate correctness of build url
+	actualBuildUrl, err := jsonparser.GetString(body, "buildInfo", "url")
+	if err != nil {
+		t.Error(err)
+	}
+	if buildUrl != actualBuildUrl {
+		t.Errorf("Build url expected %v, got %v", buildUrl, actualBuildUrl)
+	}
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+// Test publish build info with JFROG_CLI_BUILD_URL env
+func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "11"
+	buildUrl := "http://example-env.ci.com"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	os.Setenv(cliutils.BuildUrl, buildUrl)
+	defer os.Unsetenv(cliutils.BuildUrl)
+	body := uploadFilesAndGetBuildInfo(t, buildName, buildNumber, "")
 
 	// Validate correctness of build url
 	actualBuildUrl, err := jsonparser.GetString(body, "buildInfo", "url")

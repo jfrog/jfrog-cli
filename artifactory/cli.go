@@ -2044,9 +2044,15 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func validateBuildInfoArgument(c *cli.Context) {
-	if c.NArg() != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+	if c.NArg() == 2 {
+		// Use Build name and number from arguments
+		return
 	}
+	if c.NArg() == 0 && os.Getenv(cliutils.BuildName) != "" && os.Getenv(cliutils.BuildName) != "" {
+		// Use buile name and number from environmet
+		return
+	}
+	cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
 }
 
 func offerConfig(c *cli.Context) *config.ArtifactoryDetails {
@@ -2267,15 +2273,15 @@ func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles) {
 
 func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	flags := new(buildinfocmd.Configuration)
-	flags.BuildUrl = c.String("build-url")
+	flags.BuildUrl = utils.GetBuildUrl(c.String("build-url"))
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
-	flags.EnvExclude = c.String("env-exclude")
-	if len(flags.EnvInclude) == 0 {
+	flags.EnvExclude = utils.GetEnvExclude(c.String("env-exclude"))
+	if flags.EnvInclude == "" {
 		flags.EnvInclude = "*"
 	}
 	// Allow to use `env-exclude=""` and get no filters
-	if !c.IsSet("env-exclude") {
+	if flags.EnvExclude == "" {
 		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
 	}
 	return flags
@@ -2289,8 +2295,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.BuildName = c.Args().Get(0)
-	promotionParamsImpl.BuildNumber = c.Args().Get(1)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	promotionParamsImpl.TargetRepo = c.Args().Get(2)
 	return promotionParamsImpl
 }
@@ -2302,7 +2307,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.MaxDays = c.String("max-days")
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
-	discardParamsImpl.BuildName = c.Args().Get(0)
+	discardParamsImpl.BuildName = utils.GetBuildName(c.Args().Get(0))
 	return discardParamsImpl
 }
 
@@ -2313,8 +2318,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeParamsImpl.BuildName = c.Args().Get(0)
-	distributeParamsImpl.BuildNumber = c.Args().Get(1)
+	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	distributeParamsImpl.TargetRepo = c.Args().Get(2)
 	return distributeParamsImpl
 }
@@ -2465,8 +2469,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 
 func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
-	buildConfigConfiguration.BuildName = c.String("build-name")
-	buildConfigConfiguration.BuildNumber = c.String("build-number")
+	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
 	buildConfigConfiguration.Module = c.String("module")
 	validateBuildParams(buildConfigConfiguration)
 	return
@@ -2612,8 +2615,7 @@ func createPropsCommand(c *cli.Context) *generic.PropsCommand {
 // Returns build configuration struct using the params provided from the console.
 func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration := new(utils.BuildConfiguration)
-	buildConfiguration.BuildName = c.Args().Get(0)
-	buildConfiguration.BuildNumber = c.Args().Get(1)
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	return buildConfiguration
 }
 

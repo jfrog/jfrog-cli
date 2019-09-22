@@ -827,6 +827,30 @@ func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) 
 	dockerTestCleanup(imageName, buildName)
 }
 
+func TestDockerPushBuildNameNumberFromEnv(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+
+	imageName := DockerTestImage
+	imageTag := buildTestDockerImage(imageName)
+	buildName := "docker-build"
+	buildNumber := "1"
+	os.Setenv(cliutils.BuildName, buildName)
+	os.Setenv(cliutils.BuildNumber, buildNumber)
+	defer os.Unsetenv(cliutils.BuildName)
+	defer os.Unsetenv(cliutils.BuildNumber)
+
+	// Push docker image using docker client
+	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
+	artifactoryCli.Exec("build-publish")
+
+	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
+	validateDockerBuild(buildName, buildNumber, imagePath, DockerTestImage+":1", 7, 5, 7, t)
+
+	dockerTestCleanup(imageName, buildName)
+}
+
 func TestDockerPull(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
