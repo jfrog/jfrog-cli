@@ -329,7 +329,6 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-
 				return gitLfsCleanCmd(c)
 			},
 		},
@@ -1454,8 +1453,7 @@ func configCmd(c *cli.Context) error {
 			}
 		}
 		if c.Args()[0] == "export" {
-			cliutils.ExitOnErr(commands.Export(serverId))
-			return
+			return commands.Export(serverId)
 		}
 	}
 	if len(c.Args()) > 0 {
@@ -2136,6 +2134,9 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	if err != nil {
+		return err
+	}
 
 	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2311,9 +2312,12 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 
 	var val bool
 	val, err = clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
-	if err != nil || !val {
-		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
+	if err != nil {
 		return nil, err
+	}
+	if !val {
+		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
+		return nil, nil
 	}
 	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
 		"The CLI commands require the Artifactory URL and authentication details\n"+

@@ -43,12 +43,12 @@ var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
 var ExitCodeBuildScan = ExitCode{3}
 
-type CmdCustomError struct {
+type CliError struct {
 	ExitCode
 	ErrorMsg string
 }
 
-func (err CmdCustomError) Error() string {
+func (err CliError) Error() string {
 	return err.ErrorMsg
 }
 
@@ -60,7 +60,7 @@ func PanicOnError(err error) error {
 }
 
 func ExitOnErr(err error) {
-	if err, ok := err.(CmdCustomError); ok {
+	if err, ok := err.(CliError); ok {
 		traceExit(err.ExitCode, err)
 	}
 	if exitCode := GetExitCode(err, 0, 0, false); exitCode != ExitCodeNoError {
@@ -70,7 +70,7 @@ func ExitOnErr(err error) {
 
 func FailNoOp(err error, success, failed int, failNoOp bool) error {
 	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode == ExitCodeFailNoOp {
-		return CmdCustomError{exitCode, "No files were affected."}
+		return CliError{exitCode, "No files were affected."}
 	}
 
 	return nil
@@ -78,7 +78,7 @@ func FailNoOp(err error, success, failed int, failNoOp bool) error {
 
 func ExitBuildScan(failBuild bool, err error) error {
 	if failBuild {
-		return CmdCustomError{ExitCodeBuildScan, "Build Scan Failed"}
+		return CliError{ExitCodeBuildScan, "Build Scan Failed"}
 	}
 
 	return nil
