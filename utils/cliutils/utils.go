@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/pkg/errors"
 	"os"
 	"runtime"
 	"strings"
@@ -42,6 +43,15 @@ var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
 var ExitCodeBuildScan = ExitCode{3}
 
+type CliError struct {
+	ExitCode
+	ErrorMsg string
+}
+
+func (err CliError) Error() string {
+	return err.ErrorMsg
+}
+
 func PanicOnError(err error) error {
 	if err != nil {
 		panic(err)
@@ -50,22 +60,28 @@ func PanicOnError(err error) error {
 }
 
 func ExitOnErr(err error) {
+	if err, ok := err.(CliError); ok {
+		traceExit(err.ExitCode, err)
+	}
 	if exitCode := GetExitCode(err, 0, 0, false); exitCode != ExitCodeNoError {
 		traceExit(exitCode, err)
 	}
 }
 
-func FailNoOp(err error, success, failed int, failNoOp bool) {
-	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode != ExitCodeNoError {
-		traceExit(exitCode, err)
+func FailNoOp(err error, success, failed int, failNoOp bool) error {
+	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode == ExitCodeFailNoOp {
+		return CliError{exitCode, "No files were affected."}
 	}
+
+	return nil
 }
 
-func ExitBuildScan(failBuild bool, err error) {
+func ExitBuildScan(failBuild bool, err error) error {
 	if failBuild {
-		traceExit(ExitCodeBuildScan, err)
+		return CliError{ExitCodeBuildScan, "Build Scan Failed"}
 	}
-	ExitOnErr(err)
+
+	return nil
 }
 
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
@@ -106,10 +122,10 @@ func PrintSummaryReport(success, failed int, err error) error {
 	return err
 }
 
-func PrintHelpAndExitWithError(msg string, context *cli.Context) {
+func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
-	os.Exit(ExitCodeError.Code)
+	return errors.New(msg)
 }
 
 func InteractiveConfirm(message string) bool {

@@ -37,7 +37,9 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"c"},
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action:       configure,
+			Action: func(c *cli.Context) error {
+				return configure(c)
+			},
 		},
 	}
 }
@@ -52,7 +54,9 @@ func getRtiSubCommands() []cli.Command {
 			UsageText:    add.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action:       addService,
+			Action: func(c *cli.Context) error {
+				return addService(c)
+			},
 		},
 		{
 			Name:         "remove",
@@ -63,7 +67,9 @@ func getRtiSubCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			Aliases:      []string{"rm"},
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action:       removeService,
+			Action: func(c *cli.Context) error {
+				return removeService(c)
+			},
 		},
 		{
 			Name:         "attach-lic",
@@ -73,7 +79,9 @@ func getRtiSubCommands() []cli.Command {
 			UsageText:    attachlic.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action:       attachLicense,
+			Action: func(c *cli.Context) error {
+				return attachLicense(c)
+			},
 		},
 		{
 			Name:         "detach-lic",
@@ -83,7 +91,9 @@ func getRtiSubCommands() []cli.Command {
 			UsageText:    detachlic.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action:       detachLicense,
+			Action: func(c *cli.Context) error {
+				return detachLicense(c)
+			},
 		},
 	}
 }
@@ -179,56 +189,64 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getFlags()...)
 }
 
-func addService(c *cli.Context) {
+func addService(c *cli.Context) error {
 	if len(c.Args()) != 2 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	addServiceFlags, err := createAddServiceFlag(c)
-	cliutils.ExitOnErr(err)
+	if err != nil {
+		return err
+	}
 	serviceType := c.Args()[0]
 	serviceName := c.Args()[1]
-	err = services.AddService(serviceType, serviceName, addServiceFlags)
-	cliutils.ExitOnErr(err)
+
+	return services.AddService(serviceType, serviceName, addServiceFlags)
 }
 
-func removeService(c *cli.Context) {
+func removeService(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	serviceName := c.Args()[0]
 	if !c.Bool("quiet") {
 		confirmed := cliutils.InteractiveConfirm("Remove Service,  " + serviceName + "?")
 		if !confirmed {
-			return
+			return nil
 		}
 	}
 	flags, err := createRemoveServiceFlags(c)
-	cliutils.ExitOnErr(err)
-	err = services.Remove(serviceName, flags)
-	cliutils.ExitOnErr(err)
+	if err != nil {
+		return err
+	}
+
+	return services.Remove(serviceName, flags)
 }
 
-func attachLicense(c *cli.Context) {
+func attachLicense(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	flags, err := createAttachLicFlags(c)
-	cliutils.ExitOnErr(err)
-	err = services.AttachLic(c.Args()[0], flags)
-	cliutils.ExitOnErr(err)
+	if err != nil {
+		return err
+	}
+
+	return services.AttachLic(c.Args()[0], flags)
 }
 
-func detachLicense(c *cli.Context) {
+func detachLicense(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	flags, err := createDetachLicFlags(c)
-	cliutils.ExitOnErr(err)
-	err = services.DetachLic(c.Args()[0], flags)
-	cliutils.ExitOnErr(err)
+	if err != nil {
+		return err
+	}
+
+	return services.DetachLic(c.Args()[0], flags)
 }
 
 func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
@@ -264,22 +282,26 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	return commands.Config(nil, details, true)
 }
 
-func configure(c *cli.Context) {
+func configure(c *cli.Context) error {
 	if len(c.Args()) > 1 {
-		cliutils.PrintHelpAndExitWithError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	} else if len(c.Args()) == 1 {
 		if c.Args()[0] == "show" {
 			commands.ShowConfig()
 		} else if c.Args()[0] == "clear" {
 			commands.ClearConfig()
 		} else {
-			cliutils.ExitOnErr(errors.New("Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'."))
+			return errors.New("Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
 		flags, err := createConfigFlags(c)
-		cliutils.ExitOnErr(err)
+		if err != nil {
+			return err
+		}
 		commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
 	}
+
+	return nil
 }
 
 func createDetachLicFlags(c *cli.Context) (flags *services.DetachLicFlags, err error) {
@@ -289,7 +311,7 @@ func createDetachLicFlags(c *cli.Context) (flags *services.DetachLicFlags, err e
 		return
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
-		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
+		return nil, cliutils.PrintHelpAndReturnError("The --bucket-id option is mandatory.", c)
 	}
 	return
 }
@@ -302,10 +324,10 @@ func createAttachLicFlags(c *cli.Context) (flags *services.AttachLicFlags, err e
 	}
 	flags.LicensePath = c.String("license-path")
 	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeparator()) {
-		cliutils.ExitOnErr(errors.New("The --license-path option cannot be a directory"))
+		return nil, errors.New("The --license-path option cannot be a directory")
 	}
 	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
-		cliutils.PrintHelpAndExitWithError("The --bucket-id option is mandatory.", c)
+		return nil, cliutils.PrintHelpAndReturnError("The --bucket-id option is mandatory.", c)
 	}
 	flags.Override = c.Bool("override")
 	flags.Deploy = c.Bool("deploy")
@@ -320,7 +342,7 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 		return
 	}
 	if !flags.Interactive && flags.MissionControlDetails.Url == "" {
-		cliutils.ExitOnErr(errors.New("The --url option is mandatory when the --interactive option is set to false"))
+		return nil, errors.New("The --url option is mandatory when the --interactive option is set to false")
 	}
 	return
 }
@@ -334,13 +356,13 @@ func createAddServiceFlag(c *cli.Context) (flags *services.AddServiceFlags, err 
 	flags.ServiceDetails = new(utils.ServiceDetails)
 
 	if flags.ServiceDetails.Url = c.String("service-url"); flags.ServiceDetails.Url == "" {
-		cliutils.ExitOnErr(errors.New("The --service-url option is mandatory"))
+		return nil, errors.New("The --service-url option is mandatory")
 	}
 	if flags.ServiceDetails.User = c.String("service-user"); flags.ServiceDetails.User == "" {
-		cliutils.ExitOnErr(errors.New("The --service-user option is mandatory"))
+		return nil, errors.New("The --service-user option is mandatory")
 	}
 	if flags.ServiceDetails.Password = c.String("service-password"); flags.ServiceDetails.Password == "" {
-		cliutils.ExitOnErr(errors.New("The --service-password option is mandatory"))
+		return nil, errors.New("The --service-password option is mandatory")
 	}
 	flags.Description = c.String("desc")
 	flags.SiteName = c.String("site-name")

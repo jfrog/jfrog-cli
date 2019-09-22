@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/gocmd/params"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -32,7 +31,7 @@ func (grp *GoRecursivePublishCommand) Run() error {
 	}
 	serviceManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		return err
 	}
 	goModEditMessage := os.Getenv("JFROG_CLI_GO_MOD_EDIT_MSG")
 	if goModEditMessage == "" {
