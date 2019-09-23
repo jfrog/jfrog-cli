@@ -213,7 +213,7 @@ func (config *BuildAddGitCommand) DoCollect(issuesConfig *IssuesConfiguration, l
 	}
 
 	// Run git command.
-	_, exitOk, err := gofrogcmd.RunCmdWithOutputParser(logCmd, false, &logRegExp)
+	_, _, exitOk, err := gofrogcmd.RunCmdWithOutputParser(logCmd, false, &logRegExp)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
 	}

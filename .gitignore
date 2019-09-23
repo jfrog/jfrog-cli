@@ -1,6 +1,7 @@
 .idea
 *.iml
 testsdata/go/project1/go.sum
+testsdata/go/tmp
 
 # vim
 *~

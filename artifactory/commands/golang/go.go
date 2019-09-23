@@ -15,6 +15,7 @@ import (
 const GoCommandName = "rt_go"
 
 type GoCommand struct {
+
 	noRegistry         bool
 	publishDeps        bool
 	goArg              []string
