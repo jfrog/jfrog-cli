@@ -33,8 +33,8 @@ func TestBuildAddDependenciesFromHomeDir(t *testing.T) {
 	fileName := "cliTestFile.txt"
 	testFileRelPath, testFileAbs := createFileInHomeDir(t, fileName)
 
-	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildNumber: "1"}
-	collectDepsAndPublishBuild(test, t)
+	test := buildAddDepsBuildInfoTestParams{description: "'rt bad' from home dir", commandArgs: []string{testFileRelPath, "--recursive=false"}, expectedDependencies: []string{fileName}, buildName: tests.BuildAddDepsBuildName, buildNumber: "1"}
+	collectDepsAndPublishBuild(test, false, t)
 	validateBuildAddDepsBuildInfo(t, test)
 
 	os.Remove(testFileAbs)
@@ -165,9 +165,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
 
-	buildNumbers := []string{}
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
-
 	var badTests = []buildAddDepsBuildInfoTestParams{
 		{description: "'rt bad' simple cli", commandArgs: []string{"testsdata/a/*"}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{"testsdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
@@ -189,14 +187,19 @@ func TestBuildAddDependencies(t *testing.T) {
 	}
 
 	for i, badTest := range badTests {
+		badTest.buildName = tests.BuildAddDepsBuildName
 		badTest.buildNumber = strconv.Itoa(i + 1)
-		buildNumbers = append(buildNumbers, badTest.buildNumber)
-		collectDepsAndPublishBuild(badTest, t)
+
+		collectDepsAndPublishBuild(badTest, true, t)
 		validateBuildAddDepsBuildInfo(t, badTest)
+		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber)
+
+		collectDepsAndPublishBuild(badTest, false, t)
+		validateBuildAddDepsBuildInfo(t, badTest)
+		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber)
 	}
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildAddDepsBuildName, artHttpDetails)
-	clearTempBuildFiles(tests.BuildAddDepsBuildName, buildNumbers)
 }
 
 // Test publish build info without --build-url
@@ -308,6 +311,14 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 }
 
 func TestBuildAddGit(t *testing.T) {
+	testBuildAddGit(t, false)
+}
+
+func TestBuildAddGitEnvBuildNameAndNumber(t *testing.T) {
+	testBuildAddGit(t, true)
+}
+
+func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	initArtifactoryTest(t)
 	gitCollectCliRunner := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	buildName, buildNumber := "cli-test-build", "13"
@@ -325,11 +336,19 @@ func TestBuildAddGit(t *testing.T) {
 	configPath := filepath.Join(pwd, "testsdata", "buildaddgit_config.yaml")
 
 	// Run build-add-git
-	err := gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, baseDir, "--config="+configPath)
+	var err error
+	if useEnvBuildNameAndNumber {
+		os.Setenv(cliutils.BuildName, buildName)
+		os.Setenv(cliutils.BuildNumber, buildNumber)
+		defer os.Unsetenv(cliutils.BuildName)
+		defer os.Unsetenv(cliutils.BuildNumber)
+		err = gitCollectCliRunner.Exec("build-add-git", baseDir, "--config="+configPath)
+	} else {
+		err = gitCollectCliRunner.Exec("build-add-git", buildName, buildNumber, baseDir, "--config="+configPath)
+	}
+	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
 	if err != nil {
-		t.Error(err)
-		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	// Clear previous build if exists and publish build-info
@@ -339,14 +358,10 @@ func TestBuildAddGit(t *testing.T) {
 	// Fetch the published build-info for validation
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	if t.Failed() {
-		// Clean
-		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
 		t.FailNow()
 	}
 	if buildInfo.Vcs == nil {
-		t.Error("Received build-info with empty VCS.")
-		cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
-		t.FailNow()
+		t.Fatal("Received build-info with empty VCS.")
 	}
 
 	// Validate results
@@ -364,8 +379,6 @@ func TestBuildAddGit(t *testing.T) {
 		t.Errorf("Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
 	}
 
-	// Clean
-	cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName)
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName string) {
@@ -499,22 +512,31 @@ func TestModuleName(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 }
 
-func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, t *testing.T) {
+func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Remove old tests data from fs if exists
-	err := utils.RemoveBuildDir(tests.BuildAddDepsBuildName, badTest.buildNumber)
+	err := utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber)
 	if err != nil {
 		t.Error(err)
 	}
 
-	command := []string{"bad", tests.BuildAddDepsBuildName, badTest.buildNumber}
+	command := []string{"bad"}
+	if useEnvBuildNameAndNumber {
+		os.Setenv(cliutils.BuildName, badTest.buildName)
+		os.Setenv(cliutils.BuildNumber, badTest.buildNumber)
+		defer os.Unsetenv(cliutils.BuildName)
+		defer os.Unsetenv(cliutils.BuildNumber)
+	} else {
+		command = append(command, badTest.buildName, badTest.buildNumber)
+	}
+
 	// Execute tha bad command
 	noCredsCli.Exec(append(command, badTest.commandArgs...)...)
-	artifactoryCli.Exec("bp", tests.BuildAddDepsBuildName, badTest.buildNumber)
+	artifactoryCli.Exec("bp", badTest.buildName, badTest.buildNumber)
 }
 
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.BuildAddDepsBuildName, buildInfoTestParams.buildNumber, t, artHttpDetails)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildInfoTestParams.buildName, buildInfoTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		buildInfoString, _ := json.Marshal(buildInfo)
 		// Case no module was not created
@@ -543,13 +565,6 @@ func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDep
 	}
 }
 
-func clearTempBuildFiles(buildName string, buildNumbers []string) {
-	for _, buildNumber := range buildNumbers {
-		utils.RemoveBuildDir(buildName, buildNumber)
-	}
-
-}
-
 func dependenciesToPrintableArray(dependencies []buildinfo.Dependency) []string {
 	ids := []string{}
 	for _, dependency := range dependencies {
@@ -562,6 +577,7 @@ type buildAddDepsBuildInfoTestParams struct {
 	description          string
 	commandArgs          []string
 	expectedDependencies []string
+	buildName            string
 	buildNumber          string
 	validationFunc       func(*testing.T, buildAddDepsBuildInfoTestParams)
 }

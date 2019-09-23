@@ -2096,16 +2096,19 @@ func deletePropsCmd(c *cli.Context) error {
 }
 
 func buildPublishCmd(c *cli.Context) error {
-	err := validateBuildInfoArgument(c)
-	if err != nil {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	configuration := createBuildInfoConfiguration(c)
+	buildInfoConfiguration := createBuildInfoConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetBuildConfiguration(createBuildConfiguration(c)).SetConfig(configuration)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
 
 	return commands.Exec(buildPublishCmd)
 }
@@ -2114,7 +2117,13 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.NArg() > 2 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("Only path or spec is allowed, not both.", c)
 	}
-	if !(c.NArg() == 3 || (c.NArg() == 2 && c.IsSet("spec"))) {
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+		return err
+	}
+	// Odd number of args - Use pattern arg
+	// Even number of args - Use spec flag
+	if c.NArg() > 3 || !(c.NArg()%2 == 1 || (c.NArg()%2 == 0 && c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -2129,7 +2138,6 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
 	fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
-	buildConfiguration := createBuildConfiguration(c)
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
@@ -2142,55 +2150,73 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
-	err := validateBuildInfoArgument(c)
-	if err != nil {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(createBuildConfiguration(c))
+	buildCollectEnvCmd := buildinfo.NewBuildCollectEnvCommand().SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(buildCollectEnvCmd)
 }
 
 func buildAddGitCmd(c *cli.Context) error {
-	if c.NArg() > 3 || c.NArg() < 2 {
+	if c.NArg() > 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+		return err
+	}
+
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetBuildConfiguration(buildConfiguration).SetConfigFilePath(c.String("config"))
 	if c.NArg() == 3 {
 		buildAddGitConfigurationCmd.SetDotGitPath(c.Args().Get(2))
+	} else if c.NArg() == 1 {
+		buildAddGitConfigurationCmd.SetDotGitPath(c.Args().Get(0))
 	}
 	return commands.Exec(buildAddGitConfigurationCmd)
 }
 
 func buildScanCmd(c *cli.Context) error {
-	err := validateBuildInfoArgument(c)
-	if err != nil {
+	if c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
-	buildScanCmd := buildinfo.NewBuildScanCommand().SetRtDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(createBuildConfiguration(c))
+	buildScanCmd := buildinfo.NewBuildScanCommand().SetRtDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
 	return cliutils.ExitBuildScan(buildScanCmd.BuildFailed(), err)
 }
 
 func buildCleanCmd(c *cli.Context) error {
-	err := validateBuildInfoArgument(c)
-	if err != nil {
+	if c.NArg() > 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(createBuildConfiguration(c))
+	buildCleanCmd := buildinfo.NewBuildCleanCommand().SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(buildCleanCmd)
 }
 
 func buildPromoteCmd(c *cli.Context) error {
-	if c.NArg() != 3 {
+	if c.NArg() > 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if err := validateBuildConfiguration(c, createBuildConfiguration(c)); err != nil {
+		return err
 	}
 	configuration := createBuildPromoteConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -2203,8 +2229,11 @@ func buildPromoteCmd(c *cli.Context) error {
 }
 
 func buildDistributeCmd(c *cli.Context) error {
-	if c.NArg() != 3 {
+	if c.NArg() > 3 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if err := validateBuildConfiguration(c, createBuildConfiguration(c)); err != nil {
+		return err
 	}
 	configuration := createBuildDistributionConfiguration(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -2217,10 +2246,13 @@ func buildDistributeCmd(c *cli.Context) error {
 }
 
 func buildDiscardCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createBuildDiscardConfiguration(c)
+	if configuration.BuildName == "" {
+		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
+	}
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -2291,16 +2323,11 @@ func pipInstallCmd(c *cli.Context) error {
 	return commands.Exec(pipCmd)
 }
 
-func validateBuildInfoArgument(c *cli.Context) error {
-	if c.NArg() == 2 {
-		// Use Build name and number from arguments
-		return nil
+func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
+	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
+		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
-	if c.NArg() == 0 && os.Getenv(cliutils.BuildName) != "" && os.Getenv(cliutils.BuildName) != "" {
-		// Use build name and number from environment
-		return nil
-	}
-	return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	return nil
 }
 
 func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
@@ -2706,8 +2733,13 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 }
 
 func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
+	pattern := c.Args().Get(2)
+	if pattern == "" {
+		// Build name and build number from env
+		pattern = c.Args().Get(0)
+	}
 	return spec.NewBuilder().
-		Pattern(c.Args().Get(2)).
+		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Regexp(c.Bool("regexp")).
@@ -2933,7 +2965,12 @@ func createPropsCommand(c *cli.Context) (*generic.PropsCommand, error) {
 // Returns build configuration struct using the params provided from the console.
 func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration := new(utils.BuildConfiguration)
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
+	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
+	if buildNameArg == "" || buildNumberArg == "" {
+		buildNameArg = ""
+		buildNumberArg = ""
+	}
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
 	return buildConfiguration
 }
 

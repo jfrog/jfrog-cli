@@ -136,7 +136,7 @@ func GetBuildNameAndNumber(buildName, buildNumber string) (string, string) {
 	if buildName != "" || buildNumber != "" {
 		return buildName, buildNumber
 	}
-	return GetBuildName(buildName), os.Getenv(cliutils.BuildNumber)
+	return os.Getenv(cliutils.BuildName), os.Getenv(cliutils.BuildNumber)
 }
 
 func GetBuildName(buildName string) string {
