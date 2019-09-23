@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "testsdata/a/a1.in",
+      "target": "${REPO1}/a/a1.in",
+      "props": "a=2;b=3"
+    }
+  ]
+}

@@ -6,6 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
@@ -30,19 +44,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 // JFrog CLI for Artifactory commands
@@ -1670,7 +1671,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := generic.NewSearchCommand()
+	searchCmd := tests.NewSearchCommandNoDate()
 	searchCmd.SetRtDetails(artifactoryDetails)
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 
@@ -1678,19 +1679,19 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=D=5", "--exclude-props=c=3")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep1())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep1())
 
 	// Delete all artifacts with c=3 but without a=1
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=c=3", "--exclude-props=a=1")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep2())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep2())
 
 	// Delete all artifacts with a=1 but without b=3&c=3
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=a=1", "--exclude-props=b=3;c=3")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchResultAfterDeleteByPropsStep3())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep3())
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3136,18 +3137,42 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := generic.NewSearchCommand()
+	searchCmd := tests.NewSearchCommandNoDate()
 	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Search without IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(false).BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchNotIncludeDirsFiles())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchNotIncludeDirsFiles())
 
 	// Search with IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchIncludeDirsFiles())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchIncludeDirsFiles())
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySearchDisplayDate(t *testing.T) {
+	initArtifactoryTest(t)
+
+	specFileA, err := tests.CreateSpec(tests.UploadSingleFileSpec)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive", "--flat=false")
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+
+	//we assume artifactory returns the currect dates
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	result := searchCmd.SearchResult()
+
+	assert.NotEmpty(t, result[0].Created)
+	assert.NotEmpty(t, result[0].Modified)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3163,33 +3188,33 @@ func TestArtifactorySearchProps(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := generic.NewSearchCommand()
+	searchCmd := tests.NewSearchCommandNoDate()
 	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Search artifacts with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep1())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep1())
 
 	// Search artifacts without c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("c=3").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep2())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep2())
 
 	// Search artifacts without a=1&b=2
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("a=1;b=2").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep3())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep3())
 
 	// Search artifacts without a=1&b=2 and with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").ExcludeProps("a=1;b=2").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep4())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep4())
 
 	// Search artifacts without a=1 and with c=5
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep5())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep5())
 
 	// Search artifacts by pattern "*b*", exclude pattern "*3*", with "b=1" and without "c=3"
 	pattern := tests.Repo1 + "/*b*"
@@ -3197,7 +3222,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	searchSpecBuilder = spec.NewBuilder().Pattern(pattern).Recursive(true).ExcludePatterns(excludePatterns).Props("b=1").ExcludeProps("c=3")
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	assert.NoError(t, searchCmd.Search())
-	assert.ElementsMatch(t, searchCmd.SearchResult(), tests.GetSearchPropsStep6())
+	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep6())
 
 	// Cleanup
 	cleanArtifactoryTest()

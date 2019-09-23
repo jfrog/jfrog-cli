@@ -1,6 +1,7 @@
-package generic
+package tests
 
 import (
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -9,37 +10,38 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-type SearchResult struct {
-	Path     string              `json:"path,omitempty"`
-	Type     string              `json:"type,omitempty"`
-	Size     int64               `json:"size,omitempty"`
-	Created  string              `json:"created,omitempty"`
-	Modified string              `json:"modified,omitempty"`
-	Props    map[string][]string `json:"props,omitempty"`
+//Used in tests TestArtifactorySearchIncludeDir & 'TestArtifactorySearchProps'.
+//Inorder to compare hard coded json's struction result(e.g. GetSearchPropsStep)
+//witch cannot contain future 'Created' & 'Modified' dates
+type SearchResultNoDate struct {
+	Path  string              `json:"path,omitempty"`
+	Type  string              `json:"type,omitempty"`
+	Size  int64               `json:"size,omitempty"`
+	Props map[string][]string `json:"props,omitempty"`
 }
 
-type SearchCommand struct {
-	GenericCommand
-	searchResult []SearchResult
+type SearchCommandNoDate struct {
+	generic.GenericCommand
+	searchResultNoDate []SearchResultNoDate
 }
 
-func NewSearchCommand() *SearchCommand {
-	return &SearchCommand{GenericCommand: *NewGenericCommand()}
+func NewSearchCommandNoDate() *SearchCommandNoDate {
+	return &SearchCommandNoDate{GenericCommand: *generic.NewGenericCommand()}
 }
 
-func (sc *SearchCommand) SearchResult() []SearchResult {
-	return sc.searchResult
+func (sc *SearchCommandNoDate) SearchResultNoDate() []SearchResultNoDate {
+	return sc.searchResultNoDate
 }
 
-func (sc *SearchCommand) CommandName() string {
+func (sc *SearchCommandNoDate) CommandNameNoDate() string {
 	return "rt_search"
 }
 
-func (sc *SearchCommand) Run() error {
+func (sc *SearchCommandNoDate) Run() error {
 	return sc.Search()
 }
 
-func (sc *SearchCommand) Search() error {
+func (sc *SearchCommandNoDate) Search() error {
 	// Service Manager
 	rtDetails, err := sc.RtDetails()
 	if errorutils.CheckError(err) != nil {
@@ -68,15 +70,15 @@ func (sc *SearchCommand) Search() error {
 		resultItems = append(resultItems, currentResultItems...)
 	}
 
-	sc.searchResult = aqlResultToSearchResult(resultItems)
+	sc.searchResultNoDate = aqlResultToSearchResult2(resultItems)
 	clientutils.LogSearchResults(len(resultItems))
 	return err
 }
 
-func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []SearchResult) {
-	result = make([]SearchResult, len(aqlResult))
+func aqlResultToSearchResult2(aqlResult []clientutils.ResultItem) (result []SearchResultNoDate) {
+	result = make([]SearchResultNoDate, len(aqlResult))
 	for i, v := range aqlResult {
-		tempResult := new(SearchResult)
+		tempResult := new(SearchResultNoDate)
 		tempResult.Path = v.Repo + "/"
 		if v.Path != "." {
 			tempResult.Path += v.Path + "/"
@@ -86,8 +88,6 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 		}
 		tempResult.Type = v.Type
 		tempResult.Size = v.Size
-		tempResult.Created = v.Created
-		tempResult.Modified = v.Modified
 		tempResult.Props = make(map[string][]string, len(v.Properties))
 		for _, prop := range v.Properties {
 			tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)

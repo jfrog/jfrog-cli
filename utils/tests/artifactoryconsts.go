@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"path/filepath"
 )
 
@@ -71,6 +70,7 @@ const (
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	UploadSingleFileSpec                   = "upload_spec_single_file.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -738,141 +738,166 @@ func GetDeleteDisplyedFiles() []string {
 	}
 }
 
-func GetSearchIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchIncludeDirsFiles() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path:  Repo1 + "/",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
+			Size:  0,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 	}
 }
 
-func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchNotIncludeDirsFiles() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path:  Repo1 + "/data/testsdata/a/a1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/a3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  7,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  9,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 		{
 			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
+			Size:  11,
 		},
 	}
 }
 
-func GetSearchPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep1() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -882,6 +907,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b2.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -890,6 +916,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b3.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -899,6 +926,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c2.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -906,6 +934,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c3.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -913,11 +942,12 @@ func GetSearchPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep2() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -926,6 +956,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a2.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -933,6 +964,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b1.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"a": {"1"},
 				"c": {"5"},
@@ -941,6 +973,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c1.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -948,11 +981,12 @@ func GetSearchPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep3() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -961,6 +995,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a2.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -968,6 +1003,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -977,6 +1013,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b1.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"a": {"1"},
 				"c": {"5"},
@@ -985,6 +1022,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b2.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -993,6 +1031,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c1.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -1000,6 +1039,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c2.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1007,6 +1047,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c3.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1014,11 +1055,12 @@ func GetSearchPropsStep3() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep4() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep4() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1028,6 +1070,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b2.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1036,6 +1079,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c2.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1043,6 +1087,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c3.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 			},
@@ -1050,15 +1095,16 @@ func GetSearchPropsStep4() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep5() []generic.SearchResult {
-	return make([]generic.SearchResult, 0)
+func GetSearchPropsStep5() []SearchResultNoDate {
+	return make([]SearchResultNoDate, 0)
 }
 
-func GetSearchPropsStep6() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep6() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/b/c/c1.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"b": {"1"},
 			},
@@ -1066,11 +1112,12 @@ func GetSearchPropsStep6() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep1() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1079,6 +1126,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a2.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1086,6 +1134,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1095,6 +1144,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b2.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"b": {"1"},
 				"c": {"3"},
@@ -1104,6 +1154,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b3.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -1114,6 +1165,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c2.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 				"D": {"2"},
@@ -1122,6 +1174,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/c/c3.in",
 			Type: "file",
+			Size: 11,
 			Props: map[string][]string{
 				"c": {"3"},
 				"D": {"2"},
@@ -1130,11 +1183,12 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep2() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1143,6 +1197,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a2.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 			},
@@ -1150,6 +1205,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
@@ -1159,6 +1215,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/b/b3.in",
 			Type: "file",
+			Size: 9,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"2"},
@@ -1169,11 +1226,12 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep3() []SearchResultNoDate {
+	return []SearchResultNoDate{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"2"},
 				"b": {"3"},
@@ -1182,6 +1240,7 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
+			Size: 7,
 			Props: map[string][]string{
 				"a": {"1"},
 				"b": {"3"},
