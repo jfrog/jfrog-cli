@@ -24,6 +24,7 @@ const (
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
+	DebianUploadSpec                       = "upload_debian_spec.json"
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	UploadSpec                             = "upload_spec.json"
@@ -48,6 +49,7 @@ const (
 	SpecsTestRepositoryConfig              = "specs_test_repository_config.json"
 	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
+	DebianTestRepositoryConfig             = "debian_test_repository_config.json"
 	JcenterRemoteRepositoryConfig          = "jcenter_remote_repository_config.json"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
 	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
@@ -82,6 +84,7 @@ var Repo1And2 = "jfrog-cli-tests-repo*"
 var VirtualRepo = "jfrog-cli-tests-virtual-repo"
 var JcenterRemoteRepo = "jfrog-cli-tests-jcenter-remote"
 var LfsRepo = "jfrog-cli-tests-lfs-repo"
+var DebianRepo = "jfrog-cli-tests-debian-repo"
 var NpmLocalRepo = "jfrog-cli-tests-npm-local-repo"
 var NpmRemoteRepo = "jfrog-cli-tests-npm-remote-repo"
 var GoLocalRepo = "jfrog-cli-tests-go-local-repo"
@@ -125,9 +128,9 @@ func GetUploadSpecExcludeRepo1() []string {
 
 func GetUploadDebianExpected() []string {
 	return []string{
-		Repo1 + "/data/a1.in",
-		Repo1 + "/data/a2.in",
-		Repo1 + "/data/a3.in",
+		DebianRepo + "/data/a1.in",
+		DebianRepo + "/data/a2.in",
+		DebianRepo + "/data/a3.in",
 	}
 }
 
