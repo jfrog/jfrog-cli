@@ -87,7 +87,7 @@ func CheckSyncedDirContent(expected, actual []string, t *testing.T) {
 	// IsExistLocally - check if all expected are actually exists
 	IsExistLocally(expected, actual, t)
 	// IsExclusivelyExistLocally - check if we expected all the actual
-	err := isExclusivelyExistLocally(expected, actual)
+	err := isExclusivelyExistLocally(expected, actual, t)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -142,14 +142,14 @@ func compare(expected, actual []string) error {
 }
 
 // Actual list contains dir and files, so we check prefix (for dirs) or equality (for files)
-func isExclusivelyExistLocally(expected, actual []string) error {
+func isExclusivelyExistLocally(expected, actual []string, t *testing.T) error {
 	for _, v := range actual {
 		for i, r := range expected {
 			if strings.HasPrefix(r, v) || v == r {
 				break
 			}
 			if i == len(actual)-1 {
-				return errors.New("Should not have : " + v)
+				t.Error("Should not have : " + v)
 			}
 		}
 	}

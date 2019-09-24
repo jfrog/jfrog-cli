@@ -634,7 +634,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	}
 	isExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep1(), searchFilePath, t)
 
-	// Download  repo1/syncDir/ to out/
+	// Download repo1/syncDir/ to out/
 	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", tests.Out+"/")
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	if err != nil {

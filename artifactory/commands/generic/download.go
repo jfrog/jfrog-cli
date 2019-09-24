@@ -51,7 +51,7 @@ func (dc *DownloadCommand) CommandName() string {
 }
 
 func (dc *DownloadCommand) Run() error {
-	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some dependencies in your local file system. Are you sure you want to continue?") {
+	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?") {
 		return nil
 	}
 	// Initialize Progress bar, set logger to a log file
@@ -184,7 +184,8 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 				return nil
 			}
 		}
-		// The current path is not a prefix of any downloaded file
+		// The current path is not a prefix of any downloaded file so it should be deleted
+		log.Info("Deleting: ", path)
 		if info.IsDir() {
 			// If current path is a dir - remove all content and return SkipDir to stop walking this path
 			err = os.RemoveAll(path)
@@ -192,11 +193,10 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 				return fileutils.SkipDir
 			}
 		} else {
+			// Path is a file
 			err = os.Remove(path)
 		}
-		if err != nil {
-			return err
-		}
-		return nil
+
+		return err
 	}
 }
