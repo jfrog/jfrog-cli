@@ -18,8 +18,8 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-// replace github.com/jfrog/jfrog-client-go => /Users/eyalb/dev/jfrog-client-go/src/jfrog/github.com/jfrog-client-go
-
-// replace github.com/jfrog/gocmd => /Users/eyalb/dev/forks/gocmd
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+ 
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd dev
 
 go 1.13
