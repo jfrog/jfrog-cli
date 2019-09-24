@@ -22,8 +22,6 @@ type UploadCommand struct {
 	GenericCommand
 	uploadConfiguration *utils.UploadConfiguration
 	buildConfiguration  *utils.BuildConfiguration
-	syncDeletesPath     string
-	quiet               bool
 	logFile             *os.File
 }
 
@@ -33,24 +31,6 @@ func NewUploadCommand() *UploadCommand {
 
 func (uc *UploadCommand) LogFile() *os.File {
 	return uc.logFile
-}
-
-func (uc *UploadCommand) SyncDeletesPath() string {
-	return uc.syncDeletesPath
-}
-
-func (uc *UploadCommand) SetSyncDeletesPath(syncDeletes string) *UploadCommand {
-	uc.syncDeletesPath = syncDeletes
-	return uc
-}
-
-func (uc *UploadCommand) Quiet() bool {
-	return uc.quiet
-}
-
-func (uc *UploadCommand) SetQuiet(quiet bool) *UploadCommand {
-	uc.quiet = quiet
-	return uc
 }
 
 func (uc *UploadCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *UploadCommand {
@@ -81,7 +61,7 @@ func (uc *UploadCommand) upload() error {
 	// In case of sync-delete get the user to confirm first, and save the operation timestamp.
 	syncDeletesProp := ""
 	if !uc.DryRun() && uc.SyncDeletesPath() != "" {
-		if !uc.quiet && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?") {
+		if !uc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?") {
 			return nil
 		}
 		timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)

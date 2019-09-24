@@ -687,16 +687,13 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
-		cli.StringFlag{
-			Name:  "sync-deletes",
-			Usage: "[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `",
-		},
-		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getUploadExcludePatternsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
+		getSyncDeletesFlag("[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `"),
+		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
 }
 
@@ -750,6 +747,8 @@ func getDownloadFlags() []cli.Flag {
 		getExcludePatternsFlag(),
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
+		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
+		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
 }
 
@@ -1026,6 +1025,13 @@ func getSearchFlags() []cli.Flag {
 		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
+}
+
+func getSyncDeletesFlag(description string) cli.Flag {
+	return cli.StringFlag{
+		Name:  "sync-deletes",
+		Usage: description,
+	}
 }
 
 func getSetPropertiesFlags() []cli.Flag {
@@ -1853,7 +1859,7 @@ func downloadCmd(c *cli.Context) error {
 		return nil
 	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run"))
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet"))
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
@@ -1897,7 +1903,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet")).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run"))
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet"))
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()

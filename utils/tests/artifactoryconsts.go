@@ -397,6 +397,75 @@ func GetVirtualDownloadExpected() []string {
 	}
 }
 
+func GetExpectedSyncDeletesDownloadStep2() []string {
+	localPathPrefix := filepath.Join("syncDir","testsdata","a")
+	return []string{
+		filepath.Join(Out, localPathPrefix, "a1.in"),
+		filepath.Join(Out, localPathPrefix, "a2.in"),
+		filepath.Join(Out, localPathPrefix, "a3.in"),
+		filepath.Join(Out, localPathPrefix, "b/b1.in"),
+		filepath.Join(Out, localPathPrefix, "b/b2.in"),
+		filepath.Join(Out, localPathPrefix, "b/b3.in"),
+		filepath.Join(Out, localPathPrefix, "b/c/c1.in"),
+		filepath.Join(Out, localPathPrefix, "b/c/c2.in"),
+		filepath.Join(Out, localPathPrefix, "b/c/c3.in"),
+	}
+}
+
+func GetExpectedSyncDeletesDownloadStep3() []string {
+	return []string{
+		filepath.Join(Out, "a1.in"),
+		filepath.Join(Out, "a2.in"),
+		filepath.Join(Out, "a3.in"),
+		filepath.Join(Out, "b1.in"),
+		filepath.Join(Out, "b2.in"),
+		filepath.Join(Out, "b3.in"),
+		filepath.Join(Out, "c1.in"),
+		filepath.Join(Out, "c2.in"),
+		filepath.Join(Out, "c3.in"),
+	}
+}
+
+func GetExpectedSyncDeletesDownloadStep4() []string {
+	return []string{
+		filepath.Join(Out, "a2.in"),
+		filepath.Join(Out, "b2.in"),
+		filepath.Join(Out, "c2.in"),
+	}
+}
+
+func GetSyncExpectedDeletesDownloadStep5() []string {
+	localPathPrefix := filepath.Join("syncDir", "testsdata", "a")
+	return []string{
+		filepath.Join(Out, localPathPrefix, "a1.in"),
+		filepath.Join(Out, localPathPrefix, "a2.in"),
+		filepath.Join(Out, localPathPrefix, "a3.in"),
+		filepath.Join(Out, localPathPrefix, "b/b1.in"),
+		filepath.Join(Out, localPathPrefix, "b/b2.in"),
+		filepath.Join(Out, localPathPrefix, "b/b3.in"),
+	}
+}
+
+func GetSyncExpectedDeletesDownloadStep6() []string {
+	localPathPrefix := "/syncDir/testsdata/archives/"
+	return []string{
+		Repo1 + localPathPrefix + "a.zip",
+		Repo1 + localPathPrefix + "b.zip",
+		Repo1 + localPathPrefix + "c.zip",
+		Repo1 + localPathPrefix + "d.zip",
+	}
+}
+
+func GetSyncExpectedDeletesDownloadStep7() []string {
+	localPathPrefix := filepath.Join("syncDir", "testsdata", "archives")
+	return []string{
+		filepath.Join(Out, localPathPrefix, "a.zip"),
+		filepath.Join(Out, localPathPrefix, "b.zip"),
+		filepath.Join(Out, localPathPrefix, "c.zip"),
+		filepath.Join(Out, localPathPrefix, "d.zip"),
+	}
+}
+
 func GetMassiveDownload() []string {
 	return []string{
 		filepath.Join(Out, "a1.in"),

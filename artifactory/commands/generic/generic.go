@@ -7,10 +7,12 @@ import (
 )
 
 type GenericCommand struct {
-	rtDetails *config.ArtifactoryDetails
-	spec      *spec.SpecFiles
-	result    *commandsutils.Result
-	dryRun    bool
+	rtDetails       *config.ArtifactoryDetails
+	spec            *spec.SpecFiles
+	result          *commandsutils.Result
+	dryRun          bool
+	syncDeletesPath string
+	quiet           bool
 }
 
 func NewGenericCommand() *GenericCommand {
@@ -23,6 +25,24 @@ func (gc *GenericCommand) DryRun() bool {
 
 func (gc *GenericCommand) SetDryRun(dryRun bool) *GenericCommand {
 	gc.dryRun = dryRun
+	return gc
+}
+
+func (gc *GenericCommand) SyncDeletesPath() string {
+	return gc.syncDeletesPath
+}
+
+func (gc *GenericCommand) SetSyncDeletesPath(syncDeletes string) *GenericCommand {
+	gc.syncDeletesPath = syncDeletes
+	return gc
+}
+
+func (gc *GenericCommand) Quiet() bool {
+	return gc.quiet
+}
+
+func (gc *GenericCommand) SetQuiet(quiet bool) *GenericCommand {
+	gc.quiet = quiet
 	return gc
 }
 
