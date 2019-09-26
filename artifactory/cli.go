@@ -2199,7 +2199,7 @@ func buildScanCmd(c *cli.Context) error {
 }
 
 func buildCleanCmd(c *cli.Context) error {
-	if c.NArg() > 1 {
+	if c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	buildConfiguration := createBuildConfiguration(c)
