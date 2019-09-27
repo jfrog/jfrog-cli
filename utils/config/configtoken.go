@@ -8,41 +8,47 @@ import (
 const tokenVersion = 1
 
 type configToken struct {
-	Version       int    `json:"version,omitempty"`
-	Url           string `json:"url,omitempty"`
-	User          string `json:"user,omitempty"`
-	Password      string `json:"password,omitempty"`
-	SshKeyPath    string `json:"sshKeyPath,omitempty"`
-	SshPassphrase string `json:"sshPassphrase,omitempty"`
-	AccessToken   string `json:"accessToken,omitempty"`
-	ServerId      string `json:"serverId,omitempty"`
-	ApiKey        string `json:"apiKey,omitempty"`
+	Version                  int    `json:"version,omitempty"`
+	Url                      string `json:"url,omitempty"`
+	User                     string `json:"user,omitempty"`
+	Password                 string `json:"password,omitempty"`
+	SshKeyPath               string `json:"sshKeyPath,omitempty"`
+	SshPassphrase            string `json:"sshPassphrase,omitempty"`
+	AccessToken              string `json:"accessToken,omitempty"`
+	ClientCertificatePath    string `json:"clientCertificatePath,omitempty"`
+	ClientCertificateKeyPath string `json:"clientCertificateKeyPath,omitempty"`
+	ServerId                 string `json:"serverId,omitempty"`
+	ApiKey                   string `json:"apiKey,omitempty"`
 }
 
 func fromArtifactoryDetails(details *ArtifactoryDetails) *configToken {
 	return &configToken{
-		Version:       tokenVersion,
-		Url:           details.Url,
-		User:          details.User,
-		Password:      details.Password,
-		SshKeyPath:    details.SshKeyPath,
-		SshPassphrase: details.SshPassphrase,
-		AccessToken:   details.AccessToken,
-		ServerId:      details.ServerId,
-		ApiKey:        details.ApiKey,
+		Version:                  tokenVersion,
+		Url:                      details.Url,
+		User:                     details.User,
+		Password:                 details.Password,
+		SshKeyPath:               details.SshKeyPath,
+		SshPassphrase:            details.SshPassphrase,
+		AccessToken:              details.AccessToken,
+		ClientCertificatePath:    details.ClientCertificatePath,
+		ClientCertificateKeyPath: details.ClientCertificateKeyPath,
+		ServerId:                 details.ServerId,
+		ApiKey:                   details.ApiKey,
 	}
 }
 
 func toArtifactoryDetails(detailsSerialization *configToken) *ArtifactoryDetails {
 	return &ArtifactoryDetails{
-		Url:           detailsSerialization.Url,
-		User:          detailsSerialization.User,
-		Password:      detailsSerialization.Password,
-		SshKeyPath:    detailsSerialization.SshKeyPath,
-		SshPassphrase: detailsSerialization.SshPassphrase,
-		AccessToken:   detailsSerialization.AccessToken,
-		ServerId:      detailsSerialization.ServerId,
-		ApiKey:        detailsSerialization.ApiKey,
+		Url:                      detailsSerialization.Url,
+		User:                     detailsSerialization.User,
+		Password:                 detailsSerialization.Password,
+		SshKeyPath:               detailsSerialization.SshKeyPath,
+		SshPassphrase:            detailsSerialization.SshPassphrase,
+		AccessToken:              detailsSerialization.AccessToken,
+		ClientCertificatePath:    detailsSerialization.ClientCertificatePath,
+		ClientCertificateKeyPath: detailsSerialization.ClientCertificateKeyPath,
+		ServerId:                 detailsSerialization.ServerId,
+		ApiKey:                   detailsSerialization.ApiKey,
 	}
 }
 

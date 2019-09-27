@@ -611,6 +611,14 @@ func getBaseFlags() []cli.Flag {
 			Name:  "access-token",
 			Usage: "[Optional] Artifactory access token.` `",
 		},
+		cli.StringFlag{
+			Name:  "client-certificate-path",
+			Usage: "[Optional] CLient certificate.` `",
+		},
+		cli.StringFlag{
+			Name:  "client-certificate-key-path",
+			Usage: "[Optional] Client certificate key.` `",
+		},
 		cli.BoolFlag{
 			Name:  "insecure-tls",
 			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
@@ -2394,6 +2402,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
+	details.ClientCertificatePath = c.String("client-certificate-path")
+	details.ClientCertificateKeyPath = c.String("client-certificate-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
 
@@ -2428,6 +2438,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			}
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
+			}
+			if details.ClientCertificatePath == "" {
+				details.ClientCertificatePath = confDetails.ClientCertificatePath
+			}
+			if details.ClientCertificateKeyPath == "" {
+				details.ClientCertificateKeyPath = confDetails.ClientCertificateKeyPath
 			}
 		}
 	}
