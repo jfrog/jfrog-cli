@@ -4,25 +4,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/jfrog/gocmd/cmd"
-	"github.com/jfrog/gocmd/executers"
-	executersutils "github.com/jfrog/gocmd/executers/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
-	cliutils "github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
-	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/jfrog/gocmd/cmd"
+	"github.com/jfrog/gocmd/executers"
+	executersutils "github.com/jfrog/gocmd/executers/utils"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
+	cliutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
+	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 )
 
 // Represent go project
@@ -267,21 +268,19 @@ func (project *goProject) readModFile() error {
 // Returns the path of the temp archived project file.
 func (project *goProject) archiveProject(version, tempDir string) (string, error) {
 	tempFile, err := ioutil.TempFile(tempDir, "project.zip")
+
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
+	defer tempFile.Close()
 	regex, err := getPathExclusionRegExp()
 	if err != nil {
-		tempFile.Close()
 		return "", err
 	}
 	err = archiveProject(tempFile, project.projectPath, project.moduleName, version, regex)
 	if err != nil {
-		tempFile.Close()
 		return "", errorutils.CheckError(err)
 	}
-	tempFile.Close()
-
 	fileDetails, err := fileutils.GetFileDetails(tempFile.Name())
 	if err != nil {
 		return "", err
@@ -324,11 +323,10 @@ func parseModuleName(modContent string) (string, error) {
 }
 
 // Returns a regex that match the following:
-// 1. .git folder.
-// 2. .gitignore file
-// 3. .DS_Store
+// 1. .DS_Store.
+// 2. .git.
 func getPathExclusionRegExp() (*regexp.Regexp, error) {
-	excludePathsRegExp, err := regexp.Compile("(" + filepath.Join("^*", ".git", ".*$") + ")|(" + filepath.Join("^*", ".gitignore") + ")|(" + filepath.Join("^*", ".DS_Store") + ")")
+	excludePathsRegExp, err := regexp.Compile("(" + filepath.Join("^*", ".git", ".*$") + ")|(" + filepath.Join("^*", ".DS_Store") + ")")
 	if err != nil {
 		return nil, err
 	}
