@@ -24,7 +24,6 @@ type requirementsExtractor struct {
 
 func NewRequirementsExtractor(requirementsFilePath, pythonExecutablePath string) Extractor {
 	newExtractor := &requirementsExtractor{requirementsFilePath: requirementsFilePath, pythonExecutablePath: pythonExecutablePath}
-	// Init regexps.
 	newExtractor.initializeRegExps()
 	return newExtractor
 }
@@ -61,7 +60,6 @@ func (extractor *requirementsExtractor) Extract() error {
 func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error) {
 	var dependencies []string
 
-	// Read file.
 	file, err := os.Open(extractor.requirementsFilePath)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
@@ -95,7 +93,6 @@ func (extractor *requirementsExtractor) parseRequirementsFile() ([]string, error
 			continue
 		}
 
-		// Append dependency.
 		dependencies = append(dependencies, strings.ToLower(depName))
 	}
 
