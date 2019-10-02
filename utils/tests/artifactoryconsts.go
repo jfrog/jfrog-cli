@@ -2,6 +2,8 @@ package tests
 
 import (
 	"path/filepath"
+
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 )
 
 const (
@@ -70,7 +72,6 @@ const (
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
-	UploadSingleFileSpec                   = "upload_spec_single_file.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -738,8 +739,8 @@ func GetDeleteDisplyedFiles() []string {
 	}
 }
 
-func GetSearchIncludeDirsFiles() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchIncludeDirsFiles() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path:  Repo1 + "/",
 			Type:  "folder",
@@ -833,8 +834,8 @@ func GetSearchIncludeDirsFiles() []SearchResultNoDate {
 	}
 }
 
-func GetSearchNotIncludeDirsFiles() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path:  Repo1 + "/data/testsdata/a/a1.in",
 			Type:  "file",
@@ -892,8 +893,8 @@ func GetSearchNotIncludeDirsFiles() []SearchResultNoDate {
 	}
 }
 
-func GetSearchPropsStep1() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchPropsStep1() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
@@ -942,8 +943,8 @@ func GetSearchPropsStep1() []SearchResultNoDate {
 	}
 }
 
-func GetSearchPropsStep2() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchPropsStep2() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
@@ -981,8 +982,8 @@ func GetSearchPropsStep2() []SearchResultNoDate {
 	}
 }
 
-func GetSearchPropsStep3() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchPropsStep3() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
@@ -1055,8 +1056,8 @@ func GetSearchPropsStep3() []SearchResultNoDate {
 	}
 }
 
-func GetSearchPropsStep4() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchPropsStep4() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a3.in",
 			Type: "file",
@@ -1095,12 +1096,12 @@ func GetSearchPropsStep4() []SearchResultNoDate {
 	}
 }
 
-func GetSearchPropsStep5() []SearchResultNoDate {
-	return make([]SearchResultNoDate, 0)
+func GetSearchPropsStep5() []generic.SearchResult {
+	return make([]generic.SearchResult, 0)
 }
 
-func GetSearchPropsStep6() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchPropsStep6() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/b/c/c1.in",
 			Type: "file",
@@ -1112,8 +1113,8 @@ func GetSearchPropsStep6() []SearchResultNoDate {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep1() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
@@ -1183,8 +1184,8 @@ func GetSearchResultAfterDeleteByPropsStep1() []SearchResultNoDate {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep2() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",
@@ -1226,8 +1227,8 @@ func GetSearchResultAfterDeleteByPropsStep2() []SearchResultNoDate {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep3() []SearchResultNoDate {
-	return []SearchResultNoDate{
+func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
+	return []generic.SearchResult{
 		{
 			Path: Repo1 + "/a/a1.in",
 			Type: "file",

@@ -1671,7 +1671,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := tests.NewSearchCommandNoDate()
+	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails)
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 
@@ -1679,18 +1679,21 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=D=5", "--exclude-props=c=3")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep1())
 
 	// Delete all artifacts with c=3 but without a=1
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=c=3", "--exclude-props=a=1")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep2())
 
 	// Delete all artifacts with a=1 but without b=3&c=3
 	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--quiet=true", "--props=a=1", "--exclude-props=b=3;c=3")
 	// Search all artifacts in repo1
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep3())
 
 	// Cleanup
@@ -3137,42 +3140,20 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := tests.NewSearchCommandNoDate()
+	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Search without IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(false).BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchNotIncludeDirsFiles())
 
 	// Search with IncludeDirs
 	searchCmd.SetSpec(searchSpecBuilder.IncludeDirs(true).BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchIncludeDirsFiles())
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactorySearchDisplayDate(t *testing.T) {
-	initArtifactoryTest(t)
-
-	specFileA, err := tests.CreateSpec(tests.UploadSingleFileSpec)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive", "--flat=false")
-
-	// Prepare search command
-	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetRtDetails(artifactoryDetails)
-
-	//we assume artifactory returns the currect dates
-	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
-	assert.NoError(t, searchCmd.Search())
-	result := searchCmd.SearchResult()
-
-	assert.NotEmpty(t, result[0].Created)
-	assert.NotEmpty(t, result[0].Modified)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3188,32 +3169,37 @@ func TestArtifactorySearchProps(t *testing.T) {
 
 	// Prepare search command
 	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
-	searchCmd := tests.NewSearchCommandNoDate()
+	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Search artifacts with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep1())
 
 	// Search artifacts without c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("c=3").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep2())
 
 	// Search artifacts without a=1&b=2
 	searchCmd.SetSpec(searchSpecBuilder.Props("").ExcludeProps("a=1;b=2").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep3())
 
 	// Search artifacts without a=1&b=2 and with c=3
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").ExcludeProps("a=1;b=2").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep4())
 
 	// Search artifacts without a=1 and with c=5
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=5").ExcludeProps("a=1").BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep5())
 
 	// Search artifacts by pattern "*b*", exclude pattern "*3*", with "b=1" and without "c=3"
@@ -3222,6 +3208,7 @@ func TestArtifactorySearchProps(t *testing.T) {
 	searchSpecBuilder = spec.NewBuilder().Pattern(pattern).Recursive(true).ExcludePatterns(excludePatterns).Props("b=1").ExcludeProps("c=3")
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	assert.NoError(t, searchCmd.Search())
+	assert.NoError(t, AssertDateInSearchResult(t, searchCmd.SearchResult()))
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchPropsStep6())
 
 	// Cleanup
@@ -3650,4 +3637,19 @@ func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
 		resultItems = append(resultItems, currentResultItems...)
 	}
 	return resultItems
+}
+
+func AssertDateInSearchResult(t *testing.T, searchResult []generic.SearchResult) error {
+	for i, v := range searchResult {
+		if v.Created == "" || v.Modified == "" {
+			message, err := json.Marshal(&v)
+			if err != nil {
+				t.Error("AssertDateInSearchResult, failed to procces search result " + string(i) + ". No 'date' was found for the result: '" + string(message) + "'")
+			} else {
+				t.Error("AssertDateInSearchResult, SearchResult in compact JSON" + string(message))
+			}
+			t.FailNow()
+		}
+	}
+	return nil
 }

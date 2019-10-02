@@ -31,6 +31,14 @@ func (sc *SearchCommand) SearchResult() []SearchResult {
 	return sc.searchResult
 }
 
+func (sc *SearchCommand) SearchResultNoDate() []SearchResult {
+	for i, _ := range sc.SearchResult() {
+		sc.searchResult[i].Created = ""
+		sc.searchResult[i].Modified = ""
+	}
+	return sc.searchResult
+}
+
 func (sc *SearchCommand) CommandName() string {
 	return "rt_search"
 }
