@@ -322,7 +322,7 @@ func parseModuleName(modContent string) (string, error) {
 	return "", errorutils.CheckError(errors.New("Module name missing in go.mod file"))
 }
 
-// Returns a regex that match the following:
+// Returns a regex that matches the following:
 // 1. .DS_Store.
 // 2. .git.
 func getPathExclusionRegExp() (*regexp.Regexp, error) {

@@ -3,14 +3,16 @@ package project
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/denormal/go-gitignore"
+	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 // Archive project files according to the go project standard
@@ -18,12 +20,14 @@ func archiveProject(writer io.Writer, sourcePath, module, version string, exclud
 	zipWriter := zip.NewWriter(writer)
 	defer zipWriter.Close()
 
+	ignore, _ := gitignore.NewFromFile(sourcePath + "/.gitignore")
+
 	return filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info == nil || info.IsDir() || fileutils.IsPathSymlink(path) {
 			return err
 		}
 
-		if excludePathsRegExp.FindString(path) != "" {
+		if excludePathsRegExp.FindString(path) != "" || isExcludePathsByGitignore(path, ignore) {
 			log.Debug(fmt.Sprintf("Excluding path '%s' from zip archive.", path))
 			return nil
 		}
@@ -52,4 +56,17 @@ func getFileName(sourcePath, filePath, moduleName, version string) string {
 	moduleID := fmt.Sprintf("%s@%s", moduleName, version)
 
 	return filepath.Join(moduleID, filename)
+}
+
+func isExcludePathsByGitignore(path string, ignore gitignore.GitIgnore) bool {
+	if ignore == nil {
+		return false
+	}
+
+	match := ignore.Match(path)
+	if match != nil {
+		return match.Ignore()
+	}
+
+	return false
 }
