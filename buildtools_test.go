@@ -8,8 +8,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -1463,8 +1465,7 @@ func cleanPipTest(t *testing.T, outFolder string) {
 	pipFreezeCmd := &PipCmd{Command: "freeze", Options: []string{"--local"}}
 	out, err := gofrogcmd.RunCmdOutput(pipFreezeCmd)
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	// If no packages to uninstall, return.
@@ -1491,8 +1492,7 @@ func cleanPipTest(t *testing.T, outFolder string) {
 	pipUninstallCmd := &PipCmd{Command: "uninstall", Options: []string{"-y", "-r", freezeTarget}}
 	err = gofrogcmd.RunCmd(pipUninstallCmd)
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
 }
 
@@ -1568,12 +1568,10 @@ func validateEmptyPipEnv(t *testing.T) {
 	pipFreezeCmd := &PipCmd{Command: "freeze", Options: []string{"--local"}}
 	out, err := gofrogcmd.RunCmdOutput(pipFreezeCmd)
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
 	if out != "" {
-		t.Error(fmt.Sprintf("Provided pip virtual-environment contains installed packages: %s\n. Please provide a clean environment.", out))
-		t.FailNow()
+		t.Fatalf("Provided pip virtual-environment contains installed packages: %s\n. Please provide a clean environment.", out)
 	}
 }
 
@@ -1600,4 +1598,133 @@ func (pfc *PipCmd) GetErrWriter() io.WriteCloser {
 type PipCmd struct {
 	Command string
 	Options []string
+}
+
+func TestPipDepsTree(t *testing.T) {
+	initPipTest(t)
+
+	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
+	pathValue := setPathEnvForPipInstall(t)
+	if t.Failed() {
+		t.FailNow()
+	}
+	defer os.Setenv("PATH", pathValue)
+
+	// Check pip env is clean.
+	validateEmptyPipEnv(t)
+
+	// Populate cli config with 'default' server.
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.RemoveAll(newHomeDir)
+
+	// Create test cases.
+	allTests := []struct {
+		name                string
+		project             string
+		outputFolder        string
+		moduleId            string
+		args                []string
+		expectedDependencies    int
+		cleanAfterExecution bool
+	}{
+		{"setuppy", "setuppyproject", "setuppy", "jfrog-python-example", []string{".", "--no-cache-dir", "--force-reinstall"}, 3, true},
+		{"setuppy-verbose", "setuppyproject", "setuppy-verbose", "jfrog-python-example", []string{".", "--no-cache-dir", "--force-reinstall", "-v"}, 3, true},
+		{"setuppy-with-module", "setuppyproject", "setuppy-with-module", "setuppy-with-module", []string{".", "--no-cache-dir", "--force-reinstall"}, 3, true},
+		{"requirements", "requirementsproject", "requirements", tests.PipBuildName, []string{"-r", "requirements.txt", "--no-cache-dir", "--force-reinstall"}, 5, true},
+		{"requirements-verbose", "requirementsproject", "requirements-verbose", tests.PipBuildName, []string{"-r", "requirements.txt", "--no-cache-dir", "--force-reinstall", "-v"}, 5, false},
+		{"requirements-use-cache", "requirementsproject", "requirements-verbose", "requirements-verbose-use-cache", []string{"-r", "requirements.txt"}, 5, true},
+	}
+
+	// Run test cases.
+	for _, test := range allTests {
+		t.Run(test.name, func(t *testing.T) {
+			testPipDepsTreeCmd(t, createPipProject(t, test.outputFolder, test.project), test.expectedDependencies, test.args)
+			if test.cleanAfterExecution {
+				// cleanup
+				cleanPipTest(t, test.name)
+			}
+		})
+	}
+	cleanPipTest(t, "cleanup")
+	tests.CleanFileSystem()
+}
+
+func testPipDepsTreeCmd(t *testing.T, projectPath string, expectedElements int, args []string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir(projectPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(wd)
+
+	// Get pip configuration.
+	pipConfig, err := piputils.GetPipConfiguration()
+	if err != nil {
+		t.Fatalf("Error occurred while attempting to read pip-configuration file: %s\n"+
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt pip-deps-tree'.", err.Error())
+	}
+	// Set arg values.
+	rtDetails, err := pipConfig.RtDetails()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create command.
+	pipDepsTreeCmd := pip.NewPipDepTreeCommand()
+	pipDepsTreeCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(args)
+
+	err = pipDepsTreeCmd.Run()
+	if err != nil {
+		t.Fatalf("Failed while executing pip-deps-tree command: %s", err)
+	}
+
+	// Check result elements.
+	treeJsonData, err := pipDepsTreeCmd.DepsTreeRoot.MarshalJSON()
+	if err != nil {
+		t.Fatalf("Failed parsing tree json: %s", err)
+	}
+
+	// Count dependencies.
+	var depsTreeTest []DependenciesTreeTest
+	err = json.Unmarshal(treeJsonData, &depsTreeTest)
+	if err != nil {
+		t.Error(err)
+	}
+	depsCount := countDependencies(depsTreeTest)
+
+	if expectedElements != depsCount {
+		t.Errorf("Incorrect number of dependencies found, expected: %d, found: %d", expectedElements, depsCount)
+	}
+}
+
+type DependenciesTreeTest struct {
+	Id                 string `json:"id,omitempty"`
+	DirectDependencies []DependenciesTreeTest `json:"dependencies,omitempty"`
+}
+
+func countDependencies(allDeps []DependenciesTreeTest) int {
+	depsMap := make(map[string]int)
+	// Iterate over dependencies, resolve and discover more dependencies.
+	index := -1
+	var currentDep string
+	for {
+		index++
+		// Check if should stop.
+		if len(allDeps) < index+1 {
+			break
+		}
+		currentDep = allDeps[index].Id
+		// Check if current dependency already resolved.
+		if _, ok := depsMap[currentDep]; ok {
+			// Already resolved.
+			continue
+		}
+		// Add currentDep dependencies for cound.
+		allDeps = append(allDeps, allDeps[index].DirectDependencies...)
+	}
+	return index
 }

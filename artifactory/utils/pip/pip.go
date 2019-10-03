@@ -1,9 +1,29 @@
 package pip
 
 import (
+	"errors"
+	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"os/exec"
 )
+
+// Get executable path.
+// If run inside a virtual-env, this should return the path for the correct executable.
+func GetExecutablePath(executableName string) (string, error) {
+	executablePath, err := exec.LookPath(executableName)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+
+	if executablePath == "" {
+		return "", errorutils.CheckError(errors.New(fmt.Sprintf("Could not find '%s' executable", executableName)))
+	}
+
+	log.Debug(fmt.Sprintf("Found %s executable at: %s", executableName, executablePath))
+	return executablePath, nil
+}
 
 func (pc *PipCmd) GetCmd() *exec.Cmd {
 	var cmd []string
@@ -33,4 +53,3 @@ type PipCmd struct {
 	StrWriter   io.WriteCloser
 	ErrWriter   io.WriteCloser
 }
-

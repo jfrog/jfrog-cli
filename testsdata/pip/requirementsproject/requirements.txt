@@ -1,3 +1,3 @@
-PyYAML>3.11
-macholib
-nltk
+PyYAML==5.1.2
+macholib==1.11
+nltk==3.4.5

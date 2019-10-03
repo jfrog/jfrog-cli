@@ -38,13 +38,11 @@ func (extractor *setupExtractor) Extract() error {
 		return err
 	}
 
-	// Get package name.
 	pkgName, err := extractor.PackageName()
 	if err != nil {
 		return err
 	}
 
-	// Get rootDependencies.
 	rootDependencies, err := extractRootDependencies(environmentPackages, pkgName)
 	if err != nil {
 		return err
@@ -117,7 +115,6 @@ func getProjectNameFromFileContent(content []byte) (string, error) {
 // Run egg-info command on setup.py, the command generates metadata files.
 // Return the content of the 'PKG-INFO' file.
 func getEgginfoPkginfoContent(pythonExecutablePath, setuppyFilePath string) ([]byte, error) {
-	// Create temp-dir.
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		return nil, err
