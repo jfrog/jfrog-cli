@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
@@ -69,9 +73,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -533,15 +534,14 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "curl",
-			Flags:           getCurlFlags(),
-			Aliases:         []string{"cl"},
-			Usage:           curldocs.Description,
-			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
-			UsageText:       curldocs.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
+			Name:         "curl",
+			Flags:        getCurlFlags(),
+			Aliases:      []string{"cl"},
+			Usage:        curldocs.Description,
+			HelpName:     common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
+			UsageText:    curldocs.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
 			},
@@ -1304,7 +1304,7 @@ func getBuildAddGitFlags() []cli.Flag {
 }
 
 func getCurlFlags() []cli.Flag {
-	return []cli.Flag{getServerIdFlag()}
+	return getServerFlags()
 }
 
 func getPipInstallFlags() []cli.Flag {
@@ -2297,7 +2297,7 @@ func curlCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	curlCommand := curl.NewCurlCommand().SetArguments(extractCommand(c))
-	rtDetails, err := curlCommand.GetArtifactoryDetails()
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}

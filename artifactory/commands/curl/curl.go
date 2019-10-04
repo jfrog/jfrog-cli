@@ -3,14 +3,15 @@ package curl
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os/exec"
+	"strings"
+
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io"
-	"os/exec"
-	"strings"
 )
 
 type CurlCommand struct {
@@ -51,6 +52,11 @@ func (curlCmd *CurlCommand) Run() error {
 		return errorutils.CheckError(errors.New("Curl command must not include credentials flag (-u or --user)."))
 	}
 
+	// If the command already includes certificates flag, return an error.
+	if curlCmd.rtDetails.ClientCertificatePath != "" && curlCmd.isCertificateFlagExists() {
+		return errorutils.CheckError(errors.New("Curl command must not include certificate flag (--cert or --key)."))
+	}
+
 	// Get target url for the curl command.
 	uriIndex, targetUri, err := curlCmd.buildCommandUrl(curlCmd.rtDetails.Url)
 	if err != nil {
@@ -70,17 +76,34 @@ func (curlCmd *CurlCommand) Run() error {
 }
 
 func (curlCmd *CurlCommand) addCommandCredentials() (string, error) {
-	if curlCmd.rtDetails.AccessToken != "" {
+	certificateHelpPrefix := ""
+
+	if curlCmd.rtDetails.ClientCertificatePath != "" {
+		curlCmd.arguments = append(curlCmd.arguments,
+			"--cert", curlCmd.rtDetails.ClientCertificatePath,
+			"--key", curlCmd.rtDetails.ClientCertificateKeyPath)
+		certificateHelpPrefix = "--cert *** --key *** "
+	}
+
+	if curlCmd.rtDetails.ApiKey != "" {
+		// Add access token header.
+		tokenHeader := fmt.Sprintf("X-JFrog-Art-Api: %s", curlCmd.rtDetails.ApiKey)
+		curlCmd.arguments = append(curlCmd.arguments, "-H", tokenHeader)
+
+		return certificateHelpPrefix + "-H \"X-JFrog-Art-Api: ***\"", nil
+	} else if curlCmd.rtDetails.AccessToken != "" {
 		// Add access token header.
 		tokenHeader := fmt.Sprintf("Authorization: Bearer %s", curlCmd.rtDetails.AccessToken)
 		curlCmd.arguments = append(curlCmd.arguments, "-H", tokenHeader)
-		return "-H \"Authorization: Bearer ***\"", nil
+
+		return certificateHelpPrefix + "-H \"Authorization: Bearer ***\"", nil
 	}
 
 	// Add credentials flag to Command. In case of flag duplication, the latter is used by Curl.
 	credFlag := fmt.Sprintf("-u%s:%s", curlCmd.rtDetails.User, curlCmd.rtDetails.Password)
 	curlCmd.arguments = append(curlCmd.arguments, credFlag)
-	return "-u***:***", nil
+
+	return certificateHelpPrefix + "-u***:***", nil
 }
 
 func (curlCmd *CurlCommand) buildCommandUrl(artifactoryUrl string) (uriIndex int, uriValue string, err error) {
@@ -163,6 +186,18 @@ func (curlCmd *CurlCommand) findUriValueAndIndex() (int, string) {
 func (curlCmd *CurlCommand) isCredentialsFlagExists() bool {
 	for _, arg := range curlCmd.arguments {
 		if strings.HasPrefix(arg, "-u") || arg == "--user" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Return true if the curl command includes certificates flag.
+// The searched flags are not CLI flags.
+func (curlCmd *CurlCommand) isCertificateFlagExists() bool {
+	for _, arg := range curlCmd.arguments {
+		if arg == "--cert" || arg == "--key" {
 			return true
 		}
 	}
