@@ -613,11 +613,11 @@ func getBaseFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "client-certificate-path",
-			Usage: "[Optional] CLient certificate.` `",
+			Usage: "[Optional] Client certificate file in PEM format.` `",
 		},
 		cli.StringFlag{
 			Name:  "client-certificate-key-path",
-			Usage: "[Optional] Client certificate key.` `",
+			Usage: "[Optional] Private key file for the client certificate in PEM format.` `",
 		},
 		cli.BoolFlag{
 			Name:  "insecure-tls",
