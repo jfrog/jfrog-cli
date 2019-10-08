@@ -56,6 +56,8 @@ var artifactoryDetails *config.ArtifactoryDetails
 var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
 
+const testTokenUsername = "ARTIFACTORY_CLI_TEST_USER"
+
 func InitArtifactoryTests() {
 	initArtifactoryCli()
 	createReposIfNeeded()
@@ -3132,6 +3134,82 @@ func TestArtifactorySearchProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestCreateToken(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("ct", "--username="+testTokenUsername, "--scope=member-of-groups:readers")
+	// validate that a single token was created
+	testTokenCount := len(getTestTokens().Tokens)
+	if testTokenCount != 1 {
+		t.Error("Expected 1 test token to exist. Found ", testTokenCount, ".")
+	}
+	cleanArtifactoryTest()
+}
+
+func TestRevokeToken(t *testing.T) {
+	initArtifactoryTest(t)
+	// Create a token
+	createTokenCommand := generic.NewCreateTokenCommand()
+	createTokenCommand.SetRtDetails(artifactoryDetails)
+	createTokenCommand.SetParams(services.CreateTokenParams{
+		Scope:    "member-of-groups:readers",
+		Username: testTokenUsername,
+	})
+	createTokenCommand.Run()
+
+	// validate that a single token was created
+	testTokens := getTestTokens().Tokens
+	testTokenCount := len(testTokens)
+	if testTokenCount != 1 {
+		t.Error("Expected 1 test token to exist. Found ", testTokenCount, ".")
+	}
+
+	// Revoke the token
+	artifactoryCli.Exec("revoke-token", "--token-id="+testTokens[0].TokenId)
+
+	// Validate that the token was revoked
+	testTokens = getTestTokens().Tokens
+	testTokenCount = len(testTokens)
+	if testTokenCount != 0 {
+		t.Error("Expected 0 test token to exist. Found ", testTokenCount, ".")
+	}
+	cleanArtifactoryTest()
+}
+
+func TestRefreshToken(t *testing.T) {
+	initArtifactoryTest(t)
+	// Create a token
+	createTokenCommand := generic.NewCreateTokenCommand()
+	createTokenCommand.SetRtDetails(artifactoryDetails)
+	createTokenCommand.SetParams(services.CreateTokenParams{
+		Scope:       "member-of-groups:readers",
+		Username:    testTokenUsername,
+		ExpiresIn:   3600,
+		Refreshable: true,
+	})
+	createTokenCommand.Run()
+	token := createTokenCommand.Results()
+
+	// Whe have to call "get tokens" to get the access token and refresh token
+	// needed for refreshing.
+	initialToken := getTestTokens().Tokens[0]
+
+	// Refresh the token
+	artifactoryCli.Exec("refresh-token", token.RefreshToken, token.AccessToken)
+
+	// Validate there is only one test token
+	testTokens := getTestTokens().Tokens
+	testTokenCount := len(testTokens)
+	if testTokenCount != 1 {
+		t.Error("Expected 1 test token to exist. Found ", testTokenCount, ".")
+	}
+
+	// Validate the token ID changed
+	if testTokens[0].TokenId == initialToken.TokenId {
+		t.Error("Expected refresh token to have a new ID. Token has same ID after refresh attempt.")
+	}
+	cleanArtifactoryTest()
+}
+
 func getAllBuildsByBuildName(client *httpclient.HttpClient, buildName string, t *testing.T, expectedHttpStatusCode int) buildsApiResponseStruct {
 	resp, body, _, _ := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName, true, artHttpDetails)
 	assert.Equal(t, expectedHttpStatusCode, resp.StatusCode, "Failed retrieving build information from artifactory.")
@@ -3392,7 +3470,35 @@ func cleanArtifactory() {
 		os.Exit(1)
 	}
 	deleteSpec, _ := spec.CreateSpecFromFile(deleteSpecFile, nil)
+	revokeTestTokens()
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+}
+
+func getTestTokens() services.GetTokensResponseData {
+	testTokens := services.GetTokensResponseData{}
+	cmd := generic.NewGetTokensCommand()
+	cmd.SetRtDetails(artifactoryDetails)
+	cmd.Run()
+	tokens := cmd.Results()
+	for _, token := range tokens.Tokens {
+		if strings.Contains(token.Subject, testTokenUsername) {
+			testTokens.Tokens = append(testTokens.Tokens, token)
+		}
+	}
+	return testTokens
+}
+
+// Search for tokens with the special test user and revoke them.
+func revokeTestTokens() {
+	testTokens := getTestTokens()
+	for _, token := range testTokens.Tokens {
+		removeCmd := generic.NewRevokeTokenCommand()
+		removeCmd.SetRtDetails(artifactoryDetails)
+		removeCmd.SetParams(services.RevokeTokenParams{
+			TokenId: token.TokenId,
+		})
+		removeCmd.Run()
+	}
 }
 
 func searchInArtifactory(specFile string) ([]generic.SearchResult, error) {

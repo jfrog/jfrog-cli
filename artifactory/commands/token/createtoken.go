@@ -1,0 +1,41 @@
+package token
+
+import (
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
+)
+
+type CreateTokenCommand struct {
+	TokenCommand
+	params services.CreateTokenParams
+	result services.CreateTokenResponseData
+}
+
+func NewCreateTokenCommand() *CreateTokenCommand {
+	return &CreateTokenCommand{TokenCommand: *NewTokenCommand()}
+}
+
+func (ct *CreateTokenCommand) Result() services.CreateTokenResponseData {
+	return ct.result
+}
+
+func (ct *CreateTokenCommand) CommandName() string {
+	return "rt_create_token"
+}
+
+func (ct *CreateTokenCommand) SetParams(params services.CreateTokenParams) {
+	ct.params = params
+}
+
+func (ct *CreateTokenCommand) Run() error {
+	servicesManager, err := utils.CreateServiceManager(ct.rtDetails, false)
+	if err != nil {
+		return err
+	}
+	result, err := servicesManager.CreateToken(ct.params)
+	if err != nil {
+		return err
+	}
+	ct.result = result
+	return err
+}

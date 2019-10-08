@@ -1,0 +1,5 @@
+package createtoken
+
+const Description = "Create access token."
+
+var Usage = []string{"jfrog rt ct [command options]"}

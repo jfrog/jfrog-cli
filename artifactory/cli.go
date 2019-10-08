@@ -20,6 +20,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/token"
 	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
@@ -36,12 +37,14 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildscan"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/copy"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/createtoken"
 	curldocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deleteprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/download"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gettokens"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gitlfsclean"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/goconfig"
@@ -62,6 +65,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/refreshtoken"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/revoketoken"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -603,6 +608,53 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
+			},
+		},
+		{
+			Name:         "get-tokens",
+			Flags:        getCommonFlags(),
+			Aliases:      []string{"gt"},
+			Usage:        gettokens.Description,
+			HelpName:     common.CreateUsage("rt get-tokens", gettokens.Description, gettokens.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return getTokensCmd(c)
+			},
+		},
+		{
+			Name:         "create-token",
+			Flags:        getCreateTokenFlags(),
+			Aliases:      []string{"ct"},
+			Usage:        createtoken.Description,
+			HelpName:     common.CreateUsage("rt create-token", createtoken.Description, createtoken.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createTokenCmd(c)
+			},
+		},
+		{
+			Name:         "revoke-token",
+			Flags:        getRevokeTokenFlags(),
+			Usage:        revoketoken.Description,
+			HelpName:     common.CreateUsage("rt revoke-token", revoketoken.Description, revoketoken.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return revokeTokenCmd(c)
+			},
+		},
+		{
+			Name:         "refresh-token",
+			Flags:        getCreateTokenFlags(),
+			Usage:        refreshtoken.Description,
+			HelpName:     common.CreateUsage("rt refresh-token", refreshtoken.Description, refreshtoken.Usage),
+			UsageText:    refreshtoken.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return refreshTokenCmd(c)
 			},
 		},
 	}
@@ -1474,6 +1526,44 @@ func getCurlFlags() []cli.Flag {
 
 func getPipInstallFlags() []cli.Flag {
 	return getBuildAndModuleFlags()
+}
+
+func getCreateTokenFlags() []cli.Flag {
+	return append(getCommonFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "username",
+			Usage: "[Optional] The user name for which this token is created. If the user does not exist, a transient user is created. Non-admin users can only create tokens for themselves so they must specify their own username. If the user does not exist, the member-of-groups scope token must be provided (e.g. member-of-groups: g1, g2, g3...) ` `",
+		},
+		cli.StringFlag{
+			Name:  "scope",
+			Usage: "[Optional] The scope to assign to the token provided as a space-separated list of scope tokens",
+		},
+		cli.BoolFlag{
+			Name:  "refreshable",
+			Usage: "[Default: false] If true, this token is refreshable and the refresh token can be used to replace it with a new token once it expires.` `",
+		},
+		cli.IntFlag{
+			Name:  "expires-in",
+			Usage: "[Default: 3600] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
+		},
+		cli.StringFlag{
+			Name:  "audience",
+			Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs as obtained from the Get Service ID endpoint.` `",
+		},
+	}...)
+}
+
+func getRevokeTokenFlags() []cli.Flag {
+	return append(getCommonFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "token",
+			Usage: "[Optional] The token to be revoked` `",
+		},
+		cli.StringFlag{
+			Name:  "token-id",
+			Usage: "[Optional] The ID of the token to be revoked` `",
+		},
+	}...)
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
@@ -2486,6 +2576,106 @@ func searchCmd(c *cli.Context) error {
 	}
 
 	return err
+}
+
+func getTokensCmd(c *cli.Context) error {
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	getTokensCmd := token.NewGetTokensCommand()
+	getTokensCmd.SetRtDetails(rtDetails)
+	err = commands.Exec(getTokensCmd)
+	if err != nil {
+		return err
+	}
+	result, err := json.Marshal(getTokensCmd.Result().Tokens)
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(result))
+	return err
+}
+
+func createTokenCmd(c *cli.Context) error {
+	params := buildCreateTokenParams(c)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	createTokenCmd := token.NewCreateTokenCommand()
+	createTokenCmd.SetRtDetails(rtDetails)
+	createTokenCmd.SetParams(params)
+	err = commands.Exec(createTokenCmd)
+	if err != nil {
+		return err
+	}
+	result, err := json.Marshal(createTokenCmd.Result())
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(result))
+	return err
+}
+
+func revokeTokenCmd(c *cli.Context) error {
+	if (!c.IsSet("token") && !c.IsSet("token-id")) ||
+		c.IsSet("token") && c.IsSet("token-id") {
+		return cliutils.PrintHelpAndReturnError("Exactly one of [--token-id] or [--token] must be set.", c)
+	}
+	params := services.NewRevokeTokenParams()
+	params.Token = c.String("token")
+	params.TokenId = c.String("token-id")
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	revokeTokenCmd := token.NewRevokeTokenCommand()
+	revokeTokenCmd.SetRtDetails(rtDetails)
+	revokeTokenCmd.SetParams(params)
+	err = commands.Exec(revokeTokenCmd)
+	if err != nil {
+		return err
+	}
+	log.Output(revokeTokenCmd.Result())
+	return err
+}
+
+func refreshTokenCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	params := services.NewRefreshTokenParams()
+	params.RefreshToken = c.Args().Get(0)
+	params.AccessToken = c.Args().Get(1)
+	params.Token = buildCreateTokenParams(c)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	refreshTokenCmd := token.NewRefreshTokenCommand()
+	refreshTokenCmd.SetRtDetails(rtDetails)
+	refreshTokenCmd.SetParams(params)
+	err = commands.Exec(refreshTokenCmd)
+	if err != nil {
+		return err
+	}
+	result, err := json.Marshal(refreshTokenCmd.Result())
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(result))
+	return err
+}
+
+func buildCreateTokenParams(c *cli.Context) services.CreateTokenParams {
+	params := services.NewCreateTokenParams()
+	params.Username = c.String("username")
+	params.Scope = c.String("scope")
+	params.ExpiresIn = c.Int("expires-in")
+	params.Refreshable = c.Bool("refreshable")
+	params.Audience = c.String("audience")
+	return params
 }
 
 func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
