@@ -20,19 +20,23 @@ func archiveProject(writer io.Writer, sourcePath, module, version string, exclud
 	zipWriter := zip.NewWriter(writer)
 	defer zipWriter.Close()
 
-	ignore, err := gitignore.NewFromFile(sourcePath + "/.gitignore")
-	if (err != nil) {
-		return err
-	}
+	ignore, gitIgnoreErr := gitignore.NewFromFile(sourcePath + "/.gitignore")
+
 	return filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info == nil || info.IsDir() || fileutils.IsPathSymlink(path) {
 			return err
 		}
 
-		if excludePathsRegExp.FindString(path) != "" || isPathIgnoredByGit(path, ignore) {
+		if excludePathsRegExp.FindString(path) != "" {
 			log.Debug(fmt.Sprintf("Excluding path '%s' from zip archive.", path))
 			return nil
 		}
+
+		if gitIgnoreErr == nil && isPathIgnoredByGit(path, ignore) {
+			log.Debug(fmt.Sprintf("Excluding path '%s' from zip archive (caused by gitignore).", path))
+			return nil
+		}
+
 		fileName := getFileName(sourcePath, path, module, version)
 		file, err := os.Open(path)
 		if err != nil {
