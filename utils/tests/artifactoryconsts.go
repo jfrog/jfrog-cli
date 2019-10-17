@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"path/filepath"
+
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 )
 
 const (
@@ -56,6 +57,7 @@ const (
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	CopyItemsSpec                          = "copy_items_spec.json"
+	CopyFileWithParenthesesSpec            = "upload_file_with_parentheses.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
@@ -224,7 +226,41 @@ func GetSimpleUploadExpectedRepo2() []string {
 		Repo2 + "/flat_recursive/c3.in",
 	}
 }
-
+func GetCopyFileNameWithParentheses() []string {
+	return []string{
+		Repo2 + "/testsdata/b/(/(.in",
+		Repo2 + "/testsdata/b/(b/(b.in",
+		Repo2 + "/testsdata/b/)b/)b.in",
+		Repo2 + "/testsdata/b/b(/b(.in",
+		Repo2 + "/testsdata/b/b)/b).in",
+		Repo2 + "/testsdata/b/(b)/(b).in",
+		Repo2 + "/testsdata/b/)b)/)b).in",
+		Repo2 + "/(/b(.in",
+		Repo2 + "/()/(b.in",
+		Repo2 + "/()/testsdata/b/(b)/(b).in",
+		Repo2 + "/(/testsdata/b/(/(.in.zip",
+		Repo2 + "/(/b(.in-up",
+		Repo2 + "/c/(.in.zip",
+	}
+}
+func GetUploadFileNameWithParentheses() []string {
+	return []string{
+		Repo1 + "/(.in",
+		Repo1 + "/(b.in",
+		Repo1 + "/)b.in",
+		Repo1 + "/b(.in",
+		Repo1 + "/b).in",
+		Repo1 + "/(b).in",
+		Repo1 + "/)b).in",
+		Repo1 + "/(new)/testsdata/b/(/(.in",
+		Repo1 + "/(new)/testsdata/b/(b/(b.in",
+		Repo1 + "/(new)/testsdata/b/b(/b(.in",
+		Repo1 + "/new)/testsdata/b/b)/b).in",
+		Repo1 + "/new)/testsdata/b/(b)/(b).in",
+		Repo1 + "/(new/testsdata/b/)b)/)b).in",
+		Repo1 + "/(new/testsdata/b/)b/)b.in",
+	}
+}
 func GetMassiveMoveExpected() []string {
 	return []string{
 		Repo2 + "/3_only_flat_recursive_target/a3.in",
@@ -382,6 +418,26 @@ func GetExtractedDownload() []string {
 		filepath.Join(Out, "concurrent.tar.gz"),
 	}
 }
+func GetFileWithParenthesesDownload() []string {
+	return []string{
+		filepath.Join(Out, "testsdata"),
+		filepath.Join(Out, "testsdata/b"),
+		filepath.Join(Out, "testsdata/b/("),
+		filepath.Join(Out, "testsdata/b/(/(.in"),
+		filepath.Join(Out, "testsdata/b/(b"),
+		filepath.Join(Out, "testsdata/b/(b/(b.in"),
+		filepath.Join(Out, "testsdata/b/(b)"),
+		filepath.Join(Out, "testsdata/b/(b)/(b).in"),
+		filepath.Join(Out, "testsdata/b/)b"),
+		filepath.Join(Out, "testsdata/b/)b/)b.in"),
+		filepath.Join(Out, "testsdata/b/)b)"),
+		filepath.Join(Out, "testsdata/b/)b)/)b).in"),
+		filepath.Join(Out, "testsdata/b/b("),
+		filepath.Join(Out, "testsdata/b/b(/b(.in"),
+		filepath.Join(Out, "testsdata/b/b)"),
+		filepath.Join(Out, "testsdata/b/b)/b).in"),
+	}
+}
 
 func GetVirtualDownloadExpected() []string {
 	return []string{
@@ -398,7 +454,7 @@ func GetVirtualDownloadExpected() []string {
 }
 
 func GetExpectedSyncDeletesDownloadStep2() []string {
-	localPathPrefix := filepath.Join("syncDir","testsdata","a")
+	localPathPrefix := filepath.Join("syncDir", "testsdata", "a")
 	return []string{
 		filepath.Join(Out, localPathPrefix, "a1.in"),
 		filepath.Join(Out, localPathPrefix, "a2.in"),
@@ -698,6 +754,27 @@ func GetMassiveUpload() []string {
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a#1.in",
 		Repo1 + "/spec-copy-test/copy-to-existing/a#1.in",
 		Repo1 + "/spec-copy-test/simple/a1.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/(.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/(b.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/b).in",
+		Repo1 + "/spec-copy-test/copy-to-existing/b(.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/(b).in",
+		Repo1 + "/spec-copy-test/copy-to-existing/)b.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/)b).in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(b.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b(.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(b).in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/)b.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/)b).in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(/(.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(b/(b.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/b)/b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/b(/b(.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
 	}
 }
 
@@ -714,6 +791,13 @@ func GetPropsExpected() []string {
 		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(/(.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(b/(b.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/b)/b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/b(/b(.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
 	}
 }
 
