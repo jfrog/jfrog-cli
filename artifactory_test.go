@@ -327,7 +327,7 @@ func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryCopyFilesNameWithBracket(t *testing.T) {
+func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
 	initArtifactoryTest(t)
 
 	artifactoryCli.Exec("upload", "testsdata/b/*", tests.Repo1, "--flat=false")
@@ -344,6 +344,7 @@ func TestArtifactoryCopyFilesNameWithBracket(t *testing.T) {
 	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(/(*.in)", tests.Repo2+"/c/{1}.zip", "--flat=true")
 	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(/(*.in)", tests.Repo2+"/(/{1}.zip")
 	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/(b*.in)", tests.Repo2+"/(/{1}-up", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/(*).(*)", tests.Repo2+"/(/{2}-{1}", "--flat=true")
 
 	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	if err != nil {
@@ -353,9 +354,10 @@ func TestArtifactoryCopyFilesNameWithBracket(t *testing.T) {
 
 	cleanArtifactoryTest()
 }
-func TestArtifactoryUploadFilesNameWithBracket(t *testing.T) {
+
+func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.CopyFileWithParenthesesSpec)
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesSpec)
 
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
@@ -366,7 +368,8 @@ func TestArtifactoryUploadFilesNameWithBracket(t *testing.T) {
 
 	cleanArtifactoryTest()
 }
-func TestArtifactoryDownloadFilesNameWithBracket(t *testing.T) {
+
+func TestArtifactoryDownloadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t)
 
 	artifactoryCli.Exec("upload", "testsdata/b/*", tests.Repo1, "--flat=false")

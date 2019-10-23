@@ -57,7 +57,7 @@ const (
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	CopyItemsSpec                          = "copy_items_spec.json"
-	CopyFileWithParenthesesSpec            = "upload_file_with_parentheses.json"
+	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
@@ -239,6 +239,7 @@ func GetCopyFileNameWithParentheses() []string {
 		Repo2 + "/()/(b.in",
 		Repo2 + "/()/testsdata/b/(b)/(b).in",
 		Repo2 + "/(/testsdata/b/(/(.in.zip",
+		Repo2 + "/(/in-b(",
 		Repo2 + "/(/b(.in-up",
 		Repo2 + "/c/(.in.zip",
 	}
@@ -418,6 +419,7 @@ func GetExtractedDownload() []string {
 		filepath.Join(Out, "concurrent.tar.gz"),
 	}
 }
+
 func GetFileWithParenthesesDownload() []string {
 	return []string{
 		filepath.Join(Out, "testsdata"),
