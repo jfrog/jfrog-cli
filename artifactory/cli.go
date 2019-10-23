@@ -575,7 +575,6 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-deps-tree",
-			Flags:        getPipInstallFlags(),
 			Aliases:      []string{"pdt"},
 			Usage:        pipinstall.Description,
 			HelpName:     common.CreateUsage("rt pdt", pipdepstree.Description, pipdepstree.Usage),
