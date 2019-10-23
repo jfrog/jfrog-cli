@@ -2,6 +2,10 @@ package cliutils
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -9,9 +13,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
-	"os"
-	"runtime"
-	"strings"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -68,16 +69,25 @@ func ExitOnErr(err error) {
 	}
 }
 
-func FailNoOp(err error, success, failed int, failNoOp bool) error {
-	if exitCode := GetExitCode(err, success, failed, failNoOp); exitCode == ExitCodeFailNoOp {
-		return CliError{exitCode, "No files were affected."}
+func GetCliError(err error, success, failed int, failNoOp bool) error {
+	switch GetExitCode(err, success, failed, failNoOp) {
+	case ExitCodeError:
+		{
+			var errorMessage string
+			if err != nil {
+				errorMessage = err.Error()
+			}
+			return CliError{ExitCodeError, errorMessage}
+		}
+	case ExitCodeFailNoOp:
+		return CliError{ExitCodeFailNoOp, "No errors, but also no files affected (fail-no-op flag)."}
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func ExitBuildScan(failBuild bool, err error) error {
-	if failBuild {
+	if failBuild && err != nil {
 		return CliError{ExitCodeBuildScan, "Build Scan Failed"}
 	}
 
