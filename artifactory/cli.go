@@ -1881,7 +1881,7 @@ func downloadCmd(c *cli.Context) error {
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1925,7 +1925,7 @@ func uploadCmd(c *cli.Context) error {
 	result := uploadCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func moveCmd(c *cli.Context) error {
@@ -1961,7 +1961,7 @@ func moveCmd(c *cli.Context) error {
 	result := moveCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1997,7 +1997,7 @@ func copyCmd(c *cli.Context) error {
 	result := copyCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deleteCmd(c *cli.Context) error {
@@ -2033,7 +2033,7 @@ func deleteCmd(c *cli.Context) error {
 	result := deleteCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func searchCmd(c *cli.Context) error {
@@ -2070,7 +2070,7 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	result, err := json.Marshal(searchCmd.SearchResult())
-	err = cliutils.CheckForErrorResults(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	err = cliutils.GetCliError(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -2097,7 +2097,7 @@ func setPropsCmd(c *cli.Context) error {
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -2114,7 +2114,7 @@ func deletePropsCmd(c *cli.Context) error {
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -2168,7 +2168,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		return err
 	}
 
-	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {

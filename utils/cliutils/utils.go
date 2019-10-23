@@ -69,7 +69,7 @@ func ExitOnErr(err error) {
 	}
 }
 
-func CheckForErrorResults(err error, success, failed int, failNoOp bool) error {
+func GetCliError(err error, success, failed int, failNoOp bool) error {
 	switch GetExitCode(err, success, failed, failNoOp) {
 	case ExitCodeError:
 		{

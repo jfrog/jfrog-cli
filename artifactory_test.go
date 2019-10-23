@@ -298,7 +298,7 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 	isExistInArtifactory(tests.GetSingleFileCopy(), searchPath, t)
 	cleanArtifactoryTest()
 }
-func TestExitCodeFlow(t *testing.T) {
+func TestExitCode(t *testing.T) {
 	initArtifactoryTest(t)
 
 	err := artifactoryCli.Exec("upload", "DummyText", tests.Repo1, "--fail-no-op=true")
