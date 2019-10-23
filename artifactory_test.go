@@ -6,6 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
@@ -30,19 +44,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 // JFrog CLI for Artifactory commands
@@ -297,7 +298,55 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 	isExistInArtifactory(tests.GetSingleFileCopy(), searchPath, t)
 	cleanArtifactoryTest()
 }
+func TestExitCodeFlow(t *testing.T) {
+	initArtifactoryTest(t)
 
+	err := artifactoryCli.Exec("upload", "DummyText", tests.Repo1, "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeError, err)
+	err = artifactoryCli.Exec("upload", path.Join("testsdata", "a", "a1.in"), "tests.Repo1")
+	checkExitCode(t, cliutils.ExitCodeError, err)
+	err = artifactoryCli.Exec("upload", "testsdata/a/(*.dummyExt)", tests.Repo1+"/{1}.in", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("dl", "DummyFolder", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	//upload dummy file inorder to test move & copy
+	artifactoryCli.Exec("upload", path.Join("testsdata", "a", "a1.in"), tests.Repo1)
+	err = artifactoryCli.Exec("move", tests.Repo1, "DummyTargetPath")
+	checkExitCode(t, cliutils.ExitCodeError, err)
+	err = artifactoryCli.Exec("move", "DummyText", tests.Repo1, "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("copy", tests.Repo1, "DummyTargetPath")
+	checkExitCode(t, cliutils.ExitCodeError, err)
+	err = artifactoryCli.Exec("copy", "DummyText", tests.Repo1, "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("delete", "DummyText", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("s", "DummyText", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("sp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
+	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+
+	cleanArtifactoryTest()
+}
+
+func checkExitCode(t *testing.T, expected cliutils.ExitCode, er error) {
+	switch underlyingType := er.(type) {
+	case cliutils.CliError:
+		assert.Equal(t, expected, underlyingType.ExitCode)
+	default:
+		t.Errorf("Exit code expected error code %v, got %v", expected.Code, er)
+	}
+
+}
 func TestArtifactoryDirectoryCopy(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()

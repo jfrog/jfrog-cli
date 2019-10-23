@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
@@ -70,9 +74,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func GetCommands() []cli.Command {
@@ -574,15 +575,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "pip-deps-tree",
-			Flags:        getPipInstallFlags(),
-			Aliases:      []string{"pdt"},
-			Usage:        pipinstall.Description,
-			HelpName:     common.CreateUsage("rt pdt", pipdepstree.Description, pipdepstree.Usage),
-			UsageText:    pipdepstree.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
+			Name:            "pip-deps-tree",
+			Flags:           getPipInstallFlags(),
+			Aliases:         []string{"pdt"},
+			Usage:           pipinstall.Description,
+			HelpName:        common.CreateUsage("rt pdt", pipdepstree.Description, pipdepstree.Usage),
+			UsageText:       pipdepstree.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: true,
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipDepsTreeCmd(c)
 			},
@@ -1880,7 +1881,7 @@ func downloadCmd(c *cli.Context) error {
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func uploadCmd(c *cli.Context) error {
@@ -1924,7 +1925,7 @@ func uploadCmd(c *cli.Context) error {
 	result := uploadCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func moveCmd(c *cli.Context) error {
@@ -1960,7 +1961,7 @@ func moveCmd(c *cli.Context) error {
 	result := moveCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func copyCmd(c *cli.Context) error {
@@ -1996,7 +1997,7 @@ func copyCmd(c *cli.Context) error {
 	result := copyCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deleteCmd(c *cli.Context) error {
@@ -2032,7 +2033,7 @@ func deleteCmd(c *cli.Context) error {
 	result := deleteCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func searchCmd(c *cli.Context) error {
@@ -2069,7 +2070,7 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	result, err := json.Marshal(searchCmd.SearchResult())
-	err = cliutils.FailNoOp(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	err = cliutils.CheckForErrorResults(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
 	if err != nil {
 		return err
 	}
@@ -2096,7 +2097,7 @@ func setPropsCmd(c *cli.Context) error {
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func deletePropsCmd(c *cli.Context) error {
@@ -2113,7 +2114,7 @@ func deletePropsCmd(c *cli.Context) error {
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildPublishCmd(c *cli.Context) error {
@@ -2167,7 +2168,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 		return err
 	}
 
-	return cliutils.FailNoOp(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return cliutils.CheckForErrorResults(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func buildCollectEnvCmd(c *cli.Context) error {
