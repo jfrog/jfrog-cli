@@ -375,6 +375,63 @@ func TestArtifactoryDirectoryCopyUsingWildcard(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
+	initArtifactoryTest(t)
+
+	artifactoryCli.Exec("upload", "testsdata/b/*", tests.Repo1, "--flat=false")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(/(.in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(b/(b.in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/b(.in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b)/b).in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(b)/(b).in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/)b/)b.in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/)b)/)b).in", tests.Repo2)
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(b/(b.in", tests.Repo2+"/()/", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(b)/(b).in", tests.Repo2+"/()/")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/b(.in", tests.Repo2+"/(/", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(/(*.in)", tests.Repo2+"/c/{1}.zip", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/(/(*.in)", tests.Repo2+"/(/{1}.zip")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/(b*.in)", tests.Repo2+"/(/{1}-up", "--flat=true")
+	artifactoryCli.Exec("cp", tests.Repo1+"/testsdata/b/b(/(*).(*)", tests.Repo2+"/(/{2}-{1}", "--flat=true")
+
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetCopyFileNameWithParentheses(), searchPath, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
+	initArtifactoryTest(t)
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesSpec)
+
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadFilesNameWithParenthesis(t *testing.T) {
+	initArtifactoryTest(t)
+
+	artifactoryCli.Exec("upload", "testsdata/b/*", tests.Repo1, "--flat=false")
+	artifactoryCli.Exec("download", path.Join(tests.Repo1), tests.Out+"/")
+
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	if err != nil {
+		t.Error(err)
+	}
+	tests.IsExistLocally(tests.GetFileWithParenthesesDownload(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
