@@ -10,9 +10,12 @@ import (
 )
 
 type SearchResult struct {
-	Path  string              `json:"path,omitempty"`
-	Type  string              `json:"type,omitempty"`
-	Props map[string][]string `json:"props,omitempty"`
+	Path     string              `json:"path,omitempty"`
+	Type     string              `json:"type,omitempty"`
+	Size     int64               `json:"size,omitempty"`
+	Created  string              `json:"created,omitempty"`
+	Modified string              `json:"modified,omitempty"`
+	Props    map[string][]string `json:"props,omitempty"`
 }
 
 type SearchCommand struct {
@@ -25,6 +28,14 @@ func NewSearchCommand() *SearchCommand {
 }
 
 func (sc *SearchCommand) SearchResult() []SearchResult {
+	return sc.searchResult
+}
+
+func (sc *SearchCommand) SearchResultNoDate() []SearchResult {
+	for i, _ := range sc.SearchResult() {
+		sc.searchResult[i].Created = ""
+		sc.searchResult[i].Modified = ""
+	}
 	return sc.searchResult
 }
 
@@ -82,6 +93,9 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 			tempResult.Path += v.Name
 		}
 		tempResult.Type = v.Type
+		tempResult.Size = v.Size
+		tempResult.Created = v.Created
+		tempResult.Modified = v.Modified
 		tempResult.Props = make(map[string][]string, len(v.Properties))
 		for _, prop := range v.Properties {
 			tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)
