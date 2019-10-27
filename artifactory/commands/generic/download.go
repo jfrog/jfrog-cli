@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -177,10 +178,19 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 
 func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileutils.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
+		// Convert path to absolute path
+		path, err = filepath.Abs(path)
+		if err != nil {
+			return err
+		}
 		// Go over the downloaded files list
 		for _, file := range downloadedFiles {
 			// If the current path is a prefix of a downloaded file - we won't delete it.
-			if strings.HasPrefix(file.LocalPath, path) {
+			fileAbsPath, err := filepath.Abs(file.LocalPath)
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(fileAbsPath, path) {
 				return nil
 			}
 		}
