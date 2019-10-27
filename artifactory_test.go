@@ -811,7 +811,7 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 	}
 }
 
-// Check if only the files we were expect exist locally, i.e return an error if there is a local file we didn't expect.
+// Check if only the files we were expect, exist locally, i.e return an error if there is a local file we didn't expect.
 // Since the "actual" list contains paths of both directories and files, for each element in the "actual" list:
 // Check if the path equals to an existing file (for a file) OR
 // if the path is a prefix of some path of an existing file (for a dir).

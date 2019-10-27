@@ -9,6 +9,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -180,14 +181,14 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 	return func(path string, info os.FileInfo, err error) error {
 		// Convert path to absolute path
 		path, err = filepath.Abs(path)
-		if err != nil {
+		if errorutils.CheckError(err) != nil {
 			return err
 		}
 		// Go over the downloaded files list
 		for _, file := range downloadedFiles {
 			// If the current path is a prefix of a downloaded file - we won't delete it.
 			fileAbsPath, err := filepath.Abs(file.LocalPath)
-			if err != nil {
+			if errorutils.CheckError(err) != nil {
 				return err
 			}
 			if strings.HasPrefix(fileAbsPath, path) {
@@ -207,6 +208,6 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 			err = os.Remove(path)
 		}
 
-		return err
+		return errorutils.CheckError(err)
 	}
 }
