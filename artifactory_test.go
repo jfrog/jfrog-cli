@@ -754,7 +754,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep3(), paths, t)
+	checkSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep3(), paths, t)
 
 	// Download all files ended with 2.in from repo1/syncDir/ to out/ and sync out/
 	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/*2.in", outDirPath, "--flat=true", "--sync-deletes="+outDirPath, "--quiet=true")
@@ -762,7 +762,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CheckSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
+	checkSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
 
 	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
 	artifactoryCli.Exec("download", tests.Repo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testsdata/*c*in", "--quiet=true")
@@ -770,7 +770,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CheckSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
+	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
 
 	// Delete all files from repo1/syncDir/
 	artifactoryCli.Exec("delete", tests.Repo1+"/syncDir/", "--quiet=true")
@@ -794,9 +794,39 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CheckSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep7(), paths, t)
+	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep7(), paths, t)
 
 	cleanArtifactoryTest()
+}
+
+// After syncDeletes we must make sure that the content of the synced directory contains the last operation result only.
+// Therefore we verify that there are no other files in the synced directory, other than the list of the expected files.
+func checkSyncedDirContent(expected, actual []string, t *testing.T) {
+	// Check if all expected files are actually exist
+	tests.IsExistLocally(expected, actual, t)
+	// Check if all the existing files were expected
+	err := isExclusivelyExistLocally(expected, actual, t)
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
+// Check if only the files we were expect, exist locally, i.e return an error if there is a local file we didn't expect.
+// Since the "actual" list contains paths of both directories and files, for each element in the "actual" list:
+// Check if the path equals to an existing file (for a file) OR
+// if the path is a prefix of some path of an existing file (for a dir).
+func isExclusivelyExistLocally(expected, actual []string, t *testing.T) error {
+	for _, v := range actual {
+		for i, r := range expected {
+			if strings.HasPrefix(r, v) || v == r {
+				break
+			}
+			if i == len(actual)-1 {
+				return errors.New("Should not have : " + v)
+			}
+		}
+	}
+	return nil
 }
 
 // Test self-signed certificates with Artifactory. For the test, we set up a reverse proxy server.
