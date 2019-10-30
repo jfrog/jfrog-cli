@@ -509,6 +509,10 @@ func getUploadFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to enable overriding existing published files.",
 		},
 		cli.BoolFlag{
+			Name:  "list-download",
+			Usage: "[Default: false] Set to true to add the files to the download list",
+		},
+		cli.BoolFlag{
 			Name:  "explode",
 			Usage: "[Default: false] Set to true to explode archived files after upload.",
 		},
@@ -883,9 +887,14 @@ func upload(c *cli.Context) error {
 	params.Recursive = c.BoolT("recursive")
 	params.Flat = c.BoolT("flat")
 	params.Publish = c.Bool("publish")
+	params.ShowInDownloadList = c.Bool("list-download")
 	params.Override = c.Bool("override")
 	params.Explode = c.Bool("explode")
 	params.UseRegExp = c.Bool("regexp")
+
+	if params.ShowInDownloadList && !params.Publish {
+		return errors.New("the --list-download flag requires the --publish flag")
+	}
 
 	uploadConfig, err := newBintrayConfig(c)
 	if err != nil {

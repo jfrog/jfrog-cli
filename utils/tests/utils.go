@@ -143,7 +143,7 @@ func compare(expected, actual []string) error {
 
 func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
+		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%+v", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

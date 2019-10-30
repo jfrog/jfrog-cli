@@ -45,7 +45,6 @@ github.com/jfrog/gocmd v0.1.12 h1:d9X2idilMkuUSgvYy6S6A+/uKsk+DNSdt5/CQIScx7A=
 github.com/jfrog/gocmd v0.1.12/go.mod h1:SYlgI4BQmgrvV3zpxYia9MHhYe7LQDesCPRvIluJ2Sk=
 github.com/jfrog/gofrog v1.0.5 h1:pEJmKZ9XgvQH2a8WCqAEeUDSXBCKBMN90QzOiOhBTIs=
 github.com/jfrog/gofrog v1.0.5/go.mod h1:4Caxvc8B2K1A798G1Ne+SsUICRPPre4GpgcFqj+EXJ8=
-github.com/jfrog/jfrog-client-go v0.6.2 h1:y9RIwdihquIDhY5M5gbIK+TcIM84sGj88J5GnKvXh1w=
 github.com/jfrog/jfrog-client-go v0.6.2/go.mod h1:ke22JapdZHvrOGQq3e6aBiYQKHrujI6GPsaKh8gY0DI=
 github.com/jfrog/jfrog-client-go v0.7.0 h1:TmJBitxTTiKZCXh7h1LkPyrMDfA1iRCeMwzIGBdXvqo=
 github.com/jfrog/jfrog-client-go v0.7.0/go.mod h1:ke22JapdZHvrOGQq3e6aBiYQKHrujI6GPsaKh8gY0DI=
