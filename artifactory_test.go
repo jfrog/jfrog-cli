@@ -144,6 +144,18 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySimpleUpload(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "testsdata/a/../a/a1.*", tests.Repo1)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
+	if err != nil {
+		t.Error(err)
+	}
+
+	isExistInArtifactory(tests.GetSimpleUploadSpecialCharNoRegexExpectedRepo1(), searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
 // This test is similar to TestArtifactorySimpleUploadSpec but using "--server-id" flag
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
