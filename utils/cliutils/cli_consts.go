@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion           = "1.30.0"
+	CliVersion           = "1.30.1"
 	ClientAgent          = "jfrog-cli-go"
 	OnErrorPanic OnError = "panic"
 

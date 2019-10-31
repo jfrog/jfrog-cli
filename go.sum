@@ -74,6 +74,10 @@ github.com/jfrog/jfrog-client-go v0.5.3 h1:rJIZEDvukqHLfdv7C52v3hVFnt42Q64bU/iAt
 github.com/jfrog/jfrog-client-go v0.5.3/go.mod h1:OGmzXdrDcuwiYNWff7MdoHUkv6DhA4KcJ4lJ6YDGC1g=
 github.com/jfrog/jfrog-client-go v0.5.4 h1:DdV3ZJhqL2V6P+fW2krMplt2VzHWKT0FZBu4ObGKRG0=
 github.com/jfrog/jfrog-client-go v0.5.4/go.mod h1:5UfmaCGF5qyH21J18TxvAlWuLYmQcg4XaWr1vyL9WmA=
+github.com/jfrog/jfrog-client-go v0.5.5-0.20191031144208-bdf539ebe38d h1:ZDQAdK/6txVVSxyuM5G5YSo6pwDDe7Oy2C68ZdVOpQQ=
+github.com/jfrog/jfrog-client-go v0.5.5-0.20191031144208-bdf539ebe38d/go.mod h1:5UfmaCGF5qyH21J18TxvAlWuLYmQcg4XaWr1vyL9WmA=
+github.com/jfrog/jfrog-client-go v0.5.5 h1:dYoajyMXcmc13YpZ/NLye0KL7r+QfpP9l8+WriZNZbE=
+github.com/jfrog/jfrog-client-go v0.5.5/go.mod h1:5UfmaCGF5qyH21J18TxvAlWuLYmQcg4XaWr1vyL9WmA=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
