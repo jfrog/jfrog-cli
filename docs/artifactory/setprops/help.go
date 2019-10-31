@@ -2,7 +2,8 @@ package setprops
 
 const Description = "Set properties on existing files in Artifactory."
 
-var Usage = []string{"jfrog rt sp [command options] <artifacts pattern> <artifact properties>"}
+var Usage = []string{"jfrog rt sp [command options] <artifacts pattern> <artifact properties>",
+	"jfrog rt sp <artifact properties> --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	artifacts pattern
 		Artifacts that match the pattern will be set with the specified properties.

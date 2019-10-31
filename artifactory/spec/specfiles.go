@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-const fileSpecWithBuildNoRepoValidationMessage = "Spec cannot include both 'build' and '%s', if 'pattern' is empty or '*'."
 const fileSpecCannotIncludeBothPropertiesValidationMessage = "Spec cannot include both '%s' and '%s.'"
 
 type SpecFiles struct {
@@ -129,9 +128,6 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		if isTargetMandatory && !isTarget {
 			return errors.New("Spec must include target.")
 		}
-		if !isSearchBasedSpec && !isAql && !isPattern {
-			return errors.New("Spec must include either aql or pattern.")
-		}
 		if isSearchBasedSpec && !isAql && !isPattern && !isBuild {
 			return errors.New("Spec must include either aql, pattern or build.")
 		}
@@ -145,7 +141,7 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
 		}
 		if isSortOrder && !isValidSortOrder {
-			return errors.New("The value of 'sort-order'can only be 'asc' or 'desc'.")
+			return errors.New("The value of 'sort-order' can only be 'asc' or 'desc'.")
 		}
 		if isBuild && isSearchBasedSpec {
 			err := validateFileSpecWithBuild(file, isExcludePattern)
@@ -160,10 +156,6 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 func validateFileSpecWithBuild(file File, isExcludePattern bool) error {
 	isOffset := file.Offset > 0
 	isLimit := file.Limit > 0
-	isArchiveEntries := len(file.ArchiveEntries) > 0
-	isIncludeDirs := len(file.IncludeDirs) > 0
-	isRecursive := len(file.Recursive) > 0
-	isProps := len(file.Props) > 0
 
 	if isOffset {
 		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "offset"))
@@ -171,24 +163,5 @@ func validateFileSpecWithBuild(file File, isExcludePattern bool) error {
 	if isLimit {
 		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "limit"))
 	}
-
-	if file.Pattern == "*" || file.Pattern == "" {
-		if isExcludePattern {
-			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "exclude-patterns"))
-		}
-		if isArchiveEntries {
-			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "archive-entries"))
-		}
-		if isRecursive {
-			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "recursive"))
-		}
-		if isIncludeDirs {
-			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "include-dirs"))
-		}
-		if isProps {
-			return errors.New(fmt.Sprintf(fileSpecWithBuildNoRepoValidationMessage, "props"))
-		}
-	}
-
 	return nil
 }

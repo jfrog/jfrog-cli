@@ -50,6 +50,8 @@ github.com/jfrog/gocmd v0.1.10-0.20190611063106-dee9f4672ff7 h1:nczBi5k1p99DxFa8
 github.com/jfrog/gocmd v0.1.10-0.20190611063106-dee9f4672ff7/go.mod h1:sshFvZq1d45d4BP8VQV1D4yGatFRqY0hO0bmHI2cN+w=
 github.com/jfrog/gocmd v0.1.10 h1:AWEVoyWOFNxdL4aS2Llyd2mGxrUfTDajqhmiFc3wLQ4=
 github.com/jfrog/gocmd v0.1.10/go.mod h1:0VKDABskABnRvn00iB2YuIaxfWE+GborkjiNGHacG2g=
+github.com/jfrog/gocmd v0.1.11-0.20191030131807-95f7136fad5e h1:1xSmfMZ51U5dMflcJabdDVT7K31xBA1CzKNf4REC4ug=
+github.com/jfrog/gocmd v0.1.11-0.20191030131807-95f7136fad5e/go.mod h1:RA2VN0oiFi6Q9AsiyX0ARyQhKRnr8oYlpAGc8QpQbt4=
 github.com/jfrog/gofrog v1.0.4 h1:jtMkCBEsGOC/URxeHXGLZNFjOAMfvDn0UhN+0uXo1GA=
 github.com/jfrog/gofrog v1.0.4/go.mod h1:4Caxvc8B2K1A798G1Ne+SsUICRPPre4GpgcFqj+EXJ8=
 github.com/jfrog/gofrog v1.0.5 h1:pEJmKZ9XgvQH2a8WCqAEeUDSXBCKBMN90QzOiOhBTIs=
@@ -70,6 +72,8 @@ github.com/jfrog/jfrog-client-go v0.5.2 h1:MGy1fonavEShjNGtN40XEx3eqdKvGbC8Cf2HG
 github.com/jfrog/jfrog-client-go v0.5.2/go.mod h1:z0TT7uU1IcpkiEgySOE7UD/0f/Vzg85wEOixa5IQTas=
 github.com/jfrog/jfrog-client-go v0.5.3 h1:rJIZEDvukqHLfdv7C52v3hVFnt42Q64bU/iAtER4ECM=
 github.com/jfrog/jfrog-client-go v0.5.3/go.mod h1:OGmzXdrDcuwiYNWff7MdoHUkv6DhA4KcJ4lJ6YDGC1g=
+github.com/jfrog/jfrog-client-go v0.5.4 h1:DdV3ZJhqL2V6P+fW2krMplt2VzHWKT0FZBu4ObGKRG0=
+github.com/jfrog/jfrog-client-go v0.5.4/go.mod h1:5UfmaCGF5qyH21J18TxvAlWuLYmQcg4XaWr1vyL9WmA=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=

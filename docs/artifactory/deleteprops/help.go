@@ -2,7 +2,8 @@ package deleteprops
 
 const Description = "Delete properties on existing files in Artifactory."
 
-var Usage = []string{"jfrog rt delp [command options] <artifacts pattern> <artifact properties>"}
+var Usage = []string{"jfrog rt delp [command options] <artifacts pattern> <artifact properties>",
+	"jfrog rt delp <artifact properties> --spec=<File Spec path> [command options]"}
 
 const Arguments string = `	artifacts pattern
 		Properties of artifacts that match this pattern will be removed.
