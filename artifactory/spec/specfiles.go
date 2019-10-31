@@ -128,6 +128,9 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		if isTargetMandatory && !isTarget {
 			return errors.New("Spec must include target.")
 		}
+		if !isSearchBasedSpec && !isPattern {
+			return errors.New("Spec must include a pattern.")
+		}
 		if isSearchBasedSpec && !isAql && !isPattern && !isBuild {
 			return errors.New("Spec must include either aql, pattern or build.")
 		}

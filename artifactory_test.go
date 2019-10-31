@@ -1151,7 +1151,7 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 
 func TestArtifactoryDeleteProperties(t *testing.T) {
 	initArtifactoryTest(t)
-	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
+	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/a/")
 	artifactoryCli.Exec("sp", tests.Repo1+"/a/*", "color=yellow;prop=red;status=ok")
 	// Delete the 'color' property.
 	artifactoryCli.Exec("delp", tests.Repo1+"/a/*", "color")
@@ -1160,7 +1160,7 @@ func TestArtifactoryDeleteProperties(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	artifactoryCli.Exec("delp", "spec="+specFile, "status")
+	artifactoryCli.Exec("delp", "status", "--spec="+specFile)
 
 	resultItems := searchItemsInArtifacotry(t)
 	if len(resultItems) == 0 {
