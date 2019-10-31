@@ -182,7 +182,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "set-props",
-			Flags:        getSetPropertiesFlags(),
+			Flags:        getSetOrDeletePropsFlags(),
 			Aliases:      []string{"sp"},
 			Usage:        setprops.Description,
 			HelpName:     common.CreateUsage("rt set-props", setprops.Description, setprops.Usage),
@@ -195,7 +195,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "delete-props",
-			Flags:        getDeletePropertiesFlags(),
+			Flags:        getSetOrDeletePropsFlags(),
 			Aliases:      []string{"delp"},
 			Usage:        deleteprops.Description,
 			HelpName:     common.CreateUsage("rt delete-props", deleteprops.Description, deleteprops.Usage),
@@ -1049,11 +1049,11 @@ func getSyncDeletesFlag(description string) cli.Flag {
 	}
 }
 
-func getSetPropertiesFlags() []cli.Flag {
-	flags := []cli.Flag{
+func getSetOrDeletePropsFlags() []cli.Flag {
+	flags := append(getSpecFlags(), []cli.Flag{
 		getPropertiesFlag("Only artifacts with these properties are affected."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties are affected"),
-	}
+	}...)
 	return append(flags, getPropertiesFlags()...)
 }
 
@@ -1076,14 +1076,6 @@ func getQuiteFlag(description string) cli.Flag {
 		Name:  "quiet",
 		Usage: description,
 	}
-}
-
-func getDeletePropertiesFlags() []cli.Flag {
-	flags := []cli.Flag{
-		getPropertiesFlag("Only artifacts with these properties are affected"),
-		getExcludePropertiesFlag("Only artifacts without the specified properties are affected"),
-	}
-	return append(flags, getPropertiesFlags()...)
 }
 
 func getPropertiesFlags() []cli.Flag {
@@ -1851,12 +1843,12 @@ func downloadCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		downloadSpec, err = getDownloadSpec(c)
 	} else {
-		err = validateCommonContext(c)
-		if err != nil {
-			return err
-		}
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(downloadSpec.Files, c.IsSet("spec"), true)
 	if err != nil {
 		return err
 	}
@@ -1894,15 +1886,16 @@ func uploadCmd(c *cli.Context) error {
 	var uploadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		uploadSpec, err = getFileSystemSpec(c, true)
-		if err != nil {
-			return err
-		}
+		uploadSpec, err = getFileSystemSpec(c)
 	} else {
 		uploadSpec, err = createDefaultUploadSpec(c)
-		if err != nil {
-			return err
-		}
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(uploadSpec.Files, true, false)
+	if err != nil {
+		return err
 	}
 	fixWinPathsForFileSystemSourcedCmds(uploadSpec, c)
 	configuration, err := createUploadConfiguration(c)
@@ -1938,18 +1931,17 @@ func moveCmd(c *cli.Context) error {
 	var moveSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		moveSpec, err = getCopyMoveSpec(c)
+		moveSpec, err = getSearchSpec(c)
 	} else {
-		err = validateCommonContext(c)
-		if err != nil {
-			return err
-		}
 		moveSpec, err = createDefaultCopyMoveSpec(c)
 	}
 	if err != nil {
 		return err
 	}
-
+	err = spec.ValidateSpec(moveSpec.Files, true, true)
+	if err != nil {
+		return err
+	}
 	moveCmd := generic.NewMoveCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1974,14 +1966,14 @@ func copyCmd(c *cli.Context) error {
 	var copySpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		copySpec, err = getCopyMoveSpec(c)
+		copySpec, err = getSearchSpec(c)
 	} else {
-		err = validateCommonContext(c)
-		if err != nil {
-			return err
-		}
 		copySpec, err = createDefaultCopyMoveSpec(c)
 	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(copySpec.Files, true, true)
 	if err != nil {
 		return err
 	}
@@ -2010,14 +2002,14 @@ func deleteCmd(c *cli.Context) error {
 	var deleteSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		deleteSpec, err = getDeleteSpec(c)
+		deleteSpec, err = getSearchSpec(c)
 	} else {
-		err = validateCommonContext(c)
-		if err != nil {
-			return err
-		}
 		deleteSpec, err = createDefaultDeleteSpec(c)
 	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(deleteSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
@@ -2048,16 +2040,15 @@ func searchCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		searchSpec, err = getSearchSpec(c)
 	} else {
-		err = validateCommonContext(c)
-		if err != nil {
-			return err
-		}
 		searchSpec, err = createDefaultSearchSpec(c)
 	}
 	if err != nil {
 		return err
 	}
-
+	err = spec.ValidateSpec(searchSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
@@ -2082,16 +2073,54 @@ func searchCmd(c *cli.Context) error {
 	return err
 }
 
+func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
+	if c.NArg() > 1 && c.IsSet("spec") {
+		return nil, cliutils.PrintHelpAndReturnError("Only the 'artifact properties' argument should be sent when the spec option is used.", c)
+	}
+	if !(c.NArg() == 2 || (c.NArg() == 1 && c.IsSet("spec"))) {
+		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	var propsSpec *spec.SpecFiles
+	var err error
+	var props string
+	if c.IsSet("spec") {
+		props = c.Args()[0]
+		propsSpec, err = getSearchSpec(c)
+	} else {
+		props = c.Args()[1]
+		propsSpec, err = createDefaultCopyMoveSpec(c)
+	}
+	if err != nil {
+		return nil, err
+	}
+	err = spec.ValidateSpec(propsSpec.Files, false, true)
+	if err != nil {
+		return nil, err
+	}
+
+	command := generic.NewPropsCommand()
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return nil, err
+	}
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := command.SetProps(props)
+	cmd.SetThreads(threads).SetSpec(propsSpec).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails)
+	return cmd, nil
+}
+
 func setPropsCmd(c *cli.Context) error {
-	err := validatePropsCommand(c)
+	cmd, err := preparePropsCmd(c)
 	if err != nil {
 		return err
 	}
-	initialCmd, err := createPropsCommand(c)
-	if err != nil {
-		return err
-	}
-	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*initialCmd)
+
+	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
@@ -2100,15 +2129,12 @@ func setPropsCmd(c *cli.Context) error {
 }
 
 func deletePropsCmd(c *cli.Context) error {
-	err := validatePropsCommand(c)
+	cmd, err := preparePropsCmd(c)
 	if err != nil {
 		return err
 	}
-	initialCmd, err := createPropsCommand(c)
-	if err != nil {
-		return err
-	}
-	propsCmd := generic.NewDeletePropsCommand().SetPropsCommand(*initialCmd)
+
+	propsCmd := generic.NewDeletePropsCommand().SetPropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
@@ -2151,7 +2177,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	var dependenciesSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		dependenciesSpec, err = getFileSystemSpec(c, false)
+		dependenciesSpec, err = getFileSystemSpec(c)
 		if err != nil {
 			return err
 		}
@@ -2499,18 +2525,15 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func getCopyMoveSpec(c *cli.Context) (copyMoveSpec *spec.SpecFiles, err error) {
-	copyMoveSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles, err error) {
+	searchSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
-
-	//Override spec with CLI options
-	for i := 0; i < len(copyMoveSpec.Files); i++ {
-		overrideFieldsIfSet(copyMoveSpec.Get(i), c)
+	// Override spec with CLI options
+	for i := 0; i < len(searchSpec.Files); i++ {
+		overrideFieldsIfSet(searchSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(copyMoveSpec.Files, true, true)
-
 	return
 }
 
@@ -2532,21 +2555,6 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
-}
-
-func getDeleteSpec(c *cli.Context) (deleteSpec *spec.SpecFiles, err error) {
-	deleteSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-
-	//Override spec with CLI options
-	for i := 0; i < len(deleteSpec.Files); i++ {
-		overrideFieldsIfSet(deleteSpec.Get(i), c)
-	}
-	err = spec.ValidateSpec(deleteSpec.Files, false, true)
-
-	return
 }
 
 func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
@@ -2589,20 +2597,6 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
-}
-
-func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles, err error) {
-	searchSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return nil, err
-	}
-	//Override spec with CLI options
-	for i := 0; i < len(searchSpec.Files); i++ {
-		overrideFieldsIfSet(searchSpec.Get(i), c)
-	}
-	err = spec.ValidateSpec(searchSpec.Files, false, true)
-
-	return
 }
 
 func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
@@ -2704,13 +2698,11 @@ func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles, err error) {
 	if err != nil {
 		return
 	}
-	//Override spec with CLI options
+	// Override spec with CLI options
 	for i := 0; i < len(downloadSpec.Files); i++ {
 		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
 		overrideFieldsIfSet(downloadSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false, true)
-
 	return
 }
 
@@ -2774,18 +2766,16 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		BuildSpec()
 }
 
-func getFileSystemSpec(c *cli.Context, isTargetMandatory bool) (fsSpec *spec.SpecFiles, err error) {
+func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {
 	fsSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
-	//Override spec with CLI options
+	// Override spec with CLI options
 	for i := 0; i < len(fsSpec.Files); i++ {
 		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
 		overrideFieldsIfSet(fsSpec.Get(i), c)
 	}
-	err = spec.ValidateSpec(fsSpec.Files, isTargetMandatory, false)
-
 	return
 }
 
@@ -2890,30 +2880,6 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func validateCommonContext(c *cli.Context) error {
-	// Validate build
-	if c.IsSet("build") {
-		if c.IsSet("offset") {
-			return errors.New("Cannot use 'offset' together with 'build'")
-		}
-		if c.IsSet("limit") {
-			return errors.New("Cannot use 'limit' together with 'build'")
-		}
-	}
-
-	// Validate sort-order
-	if c.IsSet("sort-order") {
-		if !c.IsSet("sort-by") {
-			return errors.New("Cannot use 'sort-order' without the 'sort-by' option")
-		}
-		if !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
-			return errors.New("The 'sort-order' option can only accept 'asc' or 'desc' as values")
-		}
-	}
-
-	return nil
-}
-
 func validateBuildParams(buildConfig *utils.BuildConfiguration) error {
 	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
 		return errors.New("The build-name, build-number and module options cannot be sent separately.")
@@ -2965,14 +2931,6 @@ func createPropsParams(c *cli.Context) (propertiesSpec *spec.SpecFiles, properti
 	properties = c.Args()[1]
 	artDetails, err = createArtifactoryDetailsByFlags(c, true)
 	return
-}
-
-func validatePropsCommand(c *cli.Context) error {
-	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	return validateCommonContext(c)
 }
 
 // Returns the properties command struct

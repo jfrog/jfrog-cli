@@ -35,9 +35,9 @@ func (setProps *SetPropsCommand) Run() error {
 
 	propsParams := GetPropsParams(resultItems, setProps.props)
 	success, err := servicesManager.SetProps(propsParams)
+
 	result := setProps.Result()
 	result.SetSuccessCount(success)
 	result.SetFailCount(len(resultItems) - success)
 	return err
-
 }

@@ -76,6 +76,7 @@ const (
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	SetDeletePropsSpec                     = "set_delete_props_spec.json"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 )

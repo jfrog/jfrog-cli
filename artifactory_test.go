@@ -298,6 +298,7 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 	isExistInArtifactory(tests.GetSingleFileCopy(), searchPath, t)
 	cleanArtifactoryTest()
 }
+
 func TestExitCode(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -1088,8 +1089,17 @@ func TestXrayScanBuild(t *testing.T) {
 
 func TestArtifactorySetProperties(t *testing.T) {
 	initArtifactoryTest(t)
+	// Upload a file.
 	artifactoryCli.Exec("upload", "testsdata/a/a1.in", tests.Repo1+"/a.in")
-	artifactoryCli.Exec("sp", tests.Repo1+"/a.*", "prop=val")
+	// Set the 'prop=red' property to the file.
+	artifactoryCli.Exec("sp", tests.Repo1+"/a.*", "prop=red")
+	// Now let's change the property value, by searching for the 'prop=red'.
+	specFile, err := tests.CreateSpec(tests.SetDeletePropsSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("sp", "prop=green", "--spec="+specFile)
+
 	resultItems := searchItemsInArtifacotry(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
@@ -1101,9 +1111,9 @@ func TestArtifactorySetProperties(t *testing.T) {
 		}
 		for i, prop := range properties {
 			if i > 0 {
-				t.Error("Expected single property.")
+				t.Error("Expected a single property.")
 			}
-			if prop.Key != "prop" || prop.Value != "val" {
+			if prop.Key != "prop" || prop.Value != "green" {
 				t.Error("Wrong properties")
 			}
 		}
@@ -1141,9 +1151,17 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 
 func TestArtifactoryDeleteProperties(t *testing.T) {
 	initArtifactoryTest(t)
-	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
-	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val;key=value")
-	artifactoryCli.Exec("delp", tests.Repo1+"/*", "prop")
+	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/a/")
+	artifactoryCli.Exec("sp", tests.Repo1+"/a/*", "color=yellow;prop=red;status=ok")
+	// Delete the 'color' property.
+	artifactoryCli.Exec("delp", tests.Repo1+"/a/*", "color")
+	// Delete the 'status' property, by a spec which filters files by 'prop=red'.
+	specFile, err := tests.CreateSpec(tests.SetDeletePropsSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("delp", "status", "--spec="+specFile)
+
 	resultItems := searchItemsInArtifacotry(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
@@ -1152,8 +1170,8 @@ func TestArtifactoryDeleteProperties(t *testing.T) {
 	for _, item := range resultItems {
 		properties := item.Properties
 		for _, prop := range properties {
-			if prop.Key == "prop" {
-				t.Error("Property 'prop' was not deleted from artifact", item.Name)
+			if prop.Key == "color" || prop.Key == "status" {
+				t.Error("Properties 'color' and/or 'status' were not deleted from artifact", item.Name)
 			}
 		}
 	}
