@@ -1848,7 +1848,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, c.IsSet("spec"), true)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
