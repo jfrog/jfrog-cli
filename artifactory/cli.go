@@ -1450,20 +1450,12 @@ func configCmd(c *cli.Context) error {
 			return nil
 		}
 		if c.Args()[0] == "delete" {
-			if !configCommandConfiguration.Interactive {
-				err = commands.DeleteConfig(serverId)
-				if err != nil {
-					return err
+			if configCommandConfiguration.Interactive {
+				if !cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?") {
+					return nil
 				}
 			}
-			var confirmed = cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?")
-			if !confirmed {
-				return nil
-			}
-			err = commands.DeleteConfig(serverId)
-			if err != nil {
-				return err
-			}
+			return commands.DeleteConfig(serverId)
 		}
 		if c.Args()[0] == "export" {
 			return commands.Export(serverId)
