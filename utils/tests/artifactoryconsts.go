@@ -120,6 +120,26 @@ func GetSimpleUploadSpecialCharNoRegexExpectedRepo1() []string {
 	}
 }
 
+func GetSimpleUploadSpecialCharNoRegexExpectedRepo2() []string {
+	return []string{
+		Repo2 + "/a1.in",
+	}
+}
+
+func GetSimpleUploadSpecialCharNoRegexExpected2filesRepo1() []string {
+	return []string{
+		Repo1 + "/a1.in",
+		Repo1 + "/a2.in",
+	}
+}
+
+func GetSimpleUploadSpecialCharNoRegexExpected2filesRepo2() []string {
+	return []string{
+		Repo2 + "/a1.in",
+		Repo2 + "/a2.in",
+	}
+}
+
 func GetUploadSpecExcludeRepo1() []string {
 	return []string{
 		Repo1 + "/a1.in",
