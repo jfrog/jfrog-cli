@@ -3,16 +3,11 @@ package npm
 import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/mattn/go-shellwords"
 )
 
-func Pack(npmFlags, executablePath string) error {
-	splitFlags, err := shellwords.Parse(npmFlags)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
+func Pack(npmFlags []string, executablePath string) error {
 
-	configListCmdConfig := createPackCmdConfig(executablePath, splitFlags)
+	configListCmdConfig := createPackCmdConfig(executablePath, npmFlags)
 	if err := gofrogcmd.RunCmd(configListCmdConfig); err != nil {
 		return errorutils.CheckError(err)
 	}

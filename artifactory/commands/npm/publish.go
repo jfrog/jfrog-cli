@@ -5,6 +5,13 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -14,13 +21,6 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/mattn/go-shellwords"
-	"io"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type NpmPublishCommand struct {
@@ -201,18 +201,11 @@ func (npc *NpmPublishCommand) saveArtifactData() error {
 
 func (npc *NpmPublishCommand) setPublishPath() error {
 	log.Debug("Reading Package Json.")
-	splitFlags, err := shellwords.Parse(npc.npmArgs)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
 
 	npc.publishPath = npc.workingDirectory
-	if len(splitFlags) > 0 && !strings.HasPrefix(strings.TrimSpace(splitFlags[0]), "-") {
-		path := strings.TrimSpace(splitFlags[0])
+	if len(npc.npmArgs) > 0 && !strings.HasPrefix(strings.TrimSpace(npc.npmArgs[0]), "-") {
+		path := strings.TrimSpace(npc.npmArgs[0])
 		path = clientutils.ReplaceTildeWithUserHome(path)
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
 
 		if filepath.IsAbs(path) {
 			npc.publishPath = path

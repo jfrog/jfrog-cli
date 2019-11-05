@@ -1396,12 +1396,9 @@ func validateServerId(serverId string) error {
 	return nil
 }
 
-// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
-// Otherwise, throw an error.
-func validateGoNativeCommand(args []string) error {
-	goFlags := getGoFlags()
+func validateCommand(args []string, notAllowedFlags []cli.Flag) error {
 	for _, arg := range args {
-		for _, flag := range goFlags {
+		for _, flag := range notAllowedFlags {
 			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
 			if strings.Contains(arg, "--"+flag.GetName()) {
 				return errorutils.CheckError(fmt.Errorf("Flag --%s can't be used with config file", flag.GetName()))
@@ -1603,6 +1600,48 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func npmInstallCmd(c *cli.Context) error {
+	configFilePath, err := isProjectConfExist(utils.Npm)
+	if err != nil {
+		return err
+	}
+
+	if configFilePath != "" {
+		// Found a config file. Continue as native command.
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the go command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNpmCommonFlags()); err != nil {
+			return err
+		}
+		npmCmd := npm.NewNpmInstallCommand()
+		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+		return commands.Exec(npmCmd)
+	}
+	// If config file not found, use Go legacy command
+	return npmLegacyInstallCmd(c)
+}
+
+func isProjectConfExist(cmdType utils.ProjectType) (string, error) {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(cmdType)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		log.Debug(string(cmdType)+" config file was found in:", configFilePath)
+		return configFilePath, nil
+	}
+	log.Debug(string(cmdType) + " config file wasn't found.")
+
+	return "", nil
+}
+
+func npmLegacyInstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1610,7 +1649,7 @@ func npmInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return nil
 	}
-	npmCmd := npm.NewNpmInstallCommand()
+	npmCmd := npm.NewNpmLegacyInstallCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
@@ -1619,7 +1658,11 @@ func npmInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmCmd.SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(rtDetails)
+	npmInstallArgs, err := shellwords.Parse(c.String("npm-args"))
+	if err != nil {
+		return err
+	}
+	npmCmd.SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmInstallArgs).SetRtDetails(rtDetails)
 
 	return commands.Exec(npmCmd)
 }
@@ -1658,7 +1701,11 @@ func npmPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(c.String("npm-args")).SetRtDetails(rtDetails)
+	npmPublicArgs, err := shellwords.Parse(c.String("npm-args"))
+	if err != nil {
+		return err
+	}
+	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmPublicArgs).SetRtDetails(rtDetails)
 
 	return commands.Exec(npmPublicCmd)
 }
@@ -1767,8 +1814,9 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	args := extractCommand(c)
-	// Validate the command
-	if err := validateGoNativeCommand(args); err != nil {
+	// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+	// Otherwise, throw an error.
+	if err := validateCommand(args, getGoFlags()); err != nil {
 		return err
 	}
 	goNative := golang.NewGoNativeCommand()
@@ -2843,7 +2891,7 @@ func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *uti
 	buildConfigConfiguration = new(utils.BuildConfiguration)
 	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
 	buildConfigConfiguration.Module = c.String("module")
-	err = validateBuildParams(buildConfigConfiguration)
+	err = utils.ValidateBuildParams(buildConfigConfiguration)
 	return
 }
 
@@ -2911,13 +2959,6 @@ func validateCommonContext(c *cli.Context) error {
 		}
 	}
 
-	return nil
-}
-
-func validateBuildParams(buildConfig *utils.BuildConfiguration) error {
-	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
-		return errors.New("The build-name, build-number and module options cannot be sent separately.")
-	}
 	return nil
 }
 

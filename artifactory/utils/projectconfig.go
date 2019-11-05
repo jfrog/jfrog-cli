@@ -2,13 +2,14 @@ package utils
 
 import (
 	"fmt"
+	"path/filepath"
+	"reflect"
+
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/spf13/viper"
-	"path/filepath"
-	"reflect"
 )
 
 const (
@@ -23,11 +24,13 @@ type ProjectType int
 const (
 	Go ProjectType = iota
 	Pip
+	Npm
 )
 
 var ProjectTypes = []string{
 	"go",
 	"pip",
+	"npm",
 }
 
 func (projectType ProjectType) String() string {
