@@ -3886,12 +3886,8 @@ func AssertDateInSearchResult(t *testing.T, searchResult []generic.SearchResult)
 func TestArtifactoryUploadInflatedPath(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/../a/a1.*", tests.Repo1)
-	searchFilePath, err := tests.CreateSpec(tests.Search)
-	if err != nil {
-		t.Error(err)
-	}
 	artifactoryCli.Exec("upload", "testsdata/./a/a1.*", tests.Repo1)
-	searchFilePath, err = tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
 	if err != nil {
 		t.Error(err)
 	}
@@ -3904,12 +3900,7 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 	}
 	isExistInArtifactory(tests.GetSimpleUploadSpecialCharNoRegexExpected2filesRepo1(), searchFilePath, t)
 	if cliutils.IsWindows() {
-
 		artifactoryCli.Exec("upload", `testsdata\\a\\..\\a\\a1.*`, tests.Repo2)
-		searchFilePath, err := tests.CreateSpec(tests.SearchRepo2)
-		if err != nil {
-			t.Error(err)
-		}
 		artifactoryCli.Exec("upload", `testsdata\\.\\\a\a1.*`, tests.Repo2)
 		searchFilePath, err = tests.CreateSpec(tests.SearchRepo2)
 		if err != nil {
@@ -3923,7 +3914,6 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 			t.Error(err)
 		}
 		isExistInArtifactory(tests.GetSimpleUploadSpecialCharNoRegexExpected2filesRepo2(), searchFilePath, t)
-
 	}
 	cleanArtifactoryTest()
 }
