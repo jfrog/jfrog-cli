@@ -53,15 +53,20 @@ type NpmCommandArgs struct {
 
 type NpmInstallCommand struct {
 	configFilePath string
+	commandName string
 	*NpmCommandArgs
 }
 
 func NewNpmInstallCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install")}
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install"),commandName : "rt_npm_install"}
+}
+
+func NewNpmCiCommand() *NpmInstallCommand {
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("ci"),commandName : "rt_npm_ci"}
 }
 
 func (nic *NpmInstallCommand) CommandName() string {
-	return "rt_npm_install"
+	return nic.commandName
 }
 
 func (nic *NpmInstallCommand) SetConfigFilePath(configFilePath string) *NpmInstallCommand {
@@ -88,7 +93,6 @@ func (nic *NpmInstallCommand) Run() error {
 	if err != nil {
 		return err
 	}
-
 	// Extract resolution params.
 	resolverParams, err := utils.GetRepoConfigByPrefix(nic.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {

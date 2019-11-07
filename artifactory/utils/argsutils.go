@@ -122,19 +122,19 @@ func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, fl
 func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
 	threads = 3
 	// Extract threads information from the args.
-	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", cleanArgs)
+	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", args)
 	if err != nil {
 		return
 	}
-	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
-	if numOfThreads != "-1" {
+	RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	if numOfThreads != "" {
 		threads, err = strconv.Atoi(numOfThreads)
 		if err != nil {
 			return
 		}
 	}
 
-	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(cleanArgs)
+	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
 	return
 }
 

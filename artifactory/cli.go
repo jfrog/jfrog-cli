@@ -51,6 +51,7 @@ import (
 	mvndoc "github.com/jfrog/jfrog-cli-go/docs/artifactory/mvn"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/mvnconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmci"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npminstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmpublish"
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
@@ -409,27 +410,29 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "npm-install",
-			Flags:        getNpmFlags(),
-			Aliases:      []string{"npmi"},
-			Usage:        npminstall.Description,
-			HelpName:     common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
-			UsageText:    npminstall.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "npm-install",
+			Flags:           getNpmFlags(),
+			Aliases:         []string{"npmi"},
+			Usage:           npminstall.Description,
+			HelpName:        common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
+			UsageText:       npminstall.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmInstallCmd(c)
 			},
 		},
 		{
-			Name:         "npm-ci",
-			Flags:        getNpmFlags(),
-			Aliases:      []string{"npmci"},
-			Usage:        npmci.Description,
-			HelpName:     common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
-			UsageText:    npmci.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "npm-ci",
+			Flags:           getNpmFlags(),
+			Aliases:         []string{"npmci"},
+			Usage:           npmci.Description,
+			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
+			UsageText:       npmci.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmCiCmd(c)
 			},
@@ -585,6 +588,17 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipDepsTreeCmd(c)
+			},
+		},
+		{
+			Name:         "npm-config",
+			Flags:        getGlobalConfigFlag(),
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createNpmConfigCmd(c)
 			},
 		},
 	}
@@ -854,7 +868,7 @@ func getDockerFlags() []cli.Flag {
 	return flags
 }
 
-func getNpmCommonFlags() []cli.Flag {
+func getNpmBasicFlages() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
@@ -862,7 +876,11 @@ func getNpmCommonFlags() []cli.Flag {
 		},
 	}
 	npmFlags = append(npmFlags, getBaseFlags()...)
-	npmFlags = append(npmFlags, getServerIdFlag())
+	return append(npmFlags, getServerIdFlag())
+}
+
+func getNpmCommonFlags() []cli.Flag {
+	npmFlags := getNpmBasicFlages()
 	return append(npmFlags, getBuildToolAndModuleFlags()...)
 }
 
@@ -1598,16 +1616,16 @@ func npmInstallCmd(c *cli.Context) error {
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
-		// Validates the go command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
+		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getNpmCommonFlags()); err != nil {
+		if err := validateCommand(args, getNpmBasicFlages()); err != nil {
 			return err
 		}
 		npmCmd := npm.NewNpmInstallCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 		return commands.Exec(npmCmd)
 	}
-	// If config file not found, use Go legacy command
+	// If config file not found, use Npm legacy command
 	return npmLegacyInstallCmd(c)
 }
 
@@ -1652,6 +1670,31 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 }
 
 func npmCiCmd(c *cli.Context) error {
+	configFilePath, err := isProjectConfExist(utils.Npm)
+	if err != nil {
+		return err
+	}
+
+	if configFilePath != "" {
+		// Found a config file. Continue as native command.
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNpmBasicFlages()); err != nil {
+			return err
+		}
+		npmCmd := npm.NewNpmCiCommand()
+		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+		return commands.Exec(npmCmd)
+	}
+	// If config file not found, use Npm legacy command
+	return npmLegacyCiCmd(c)
+}
+
+func npmLegacyCiCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1659,7 +1702,7 @@ func npmCiCmd(c *cli.Context) error {
 	if err != nil {
 		return nil
 	}
-	npmCmd := npm.NewNpmCiCommand()
+	npmCmd := npm.NewNpmLegacyCiCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
@@ -1732,6 +1775,20 @@ func shouldSkipGoFlagParsing() bool {
 	}
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Go)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
+func shouldSkipNpmFlagParsing() bool {
+	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// There's no need to run the code of this function, if the command is not "jfrog rt npm-install || npm".
+	if len(os.Args) < 3 || (os.Args[2] != "npm-install" && os.Args[2] != "npmci") {
+		return false
+	}
+
+	_, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}
@@ -1848,6 +1905,14 @@ func createGoConfigCmd(c *cli.Context) error {
 	}
 	global := c.Bool("global")
 	return golang.CreateBuildConfig(global)
+}
+
+func createNpmConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return npm.CreateBuildConfig(global)
 }
 
 func pingCmd(c *cli.Context) error {
