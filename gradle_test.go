@@ -13,7 +13,7 @@ import (
 const gradleFlagName = "gradle"
 
 func TestGradleBuildWithServerID(t *testing.T) {
-	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
+	initGradleTest(t)
 
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDConfig)
@@ -32,7 +32,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 }
 
 func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
-	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
+	initGradleTest(t)
 
 	buildGradlePath := createGradleProject(t, "projectwithplugin")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
@@ -55,7 +55,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 		t.SkipNow()
 	}
 
-	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
+	initGradleTest(t)
 
 	buildName := "gradle-cli"
 	buildNumber := "1"
@@ -102,4 +102,10 @@ func createGradleProject(t *testing.T, projectName string) string {
 	}
 
 	return buildGradlePath
+}
+func initGradleTest(t *testing.T) {
+	if !*tests.TestGradle {
+		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
+	}
+	createJfrogHomeConfig(t)
 }

@@ -104,13 +104,6 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	return oldHomeDir, newHomeDir
 }
 
-func initBuildToolsTest(t *testing.T, buildToolFlag bool, flagName string) {
-	if !buildToolFlag {
-		t.Skip("Inorder to run add -test." + flagName + "=true option")
-	}
-	createJfrogHomeConfig(t)
-}
-
 func cleanBuildToolsTest() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		os.Unsetenv(cliutils.JfrogHomeDirEnv)

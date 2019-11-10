@@ -29,14 +29,14 @@ type npmTestParams struct {
 const npmFlagName = "npm"
 
 func TestNpm(t *testing.T) {
-	initBuildToolsTest(t, *tests.TestNpm, npmFlagName)
+	initNpmTest(t)
 	npmi := "npm-install"
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
 
-	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmTest(t)
+	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
 	var npmTests = []npmTestParams{
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
@@ -105,7 +105,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	}
 }
 
-func initNpmTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
+func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	if err != nil {
 		t.Error(err)
@@ -269,4 +269,11 @@ func prepareArtifactoryForNpmBuild(t *testing.T, workingDirectory string) {
 	if err := os.RemoveAll(caches); err != nil {
 		t.Error(err)
 	}
+}
+
+func initNpmTest(t *testing.T) {
+	if !*tests.TestNpm {
+		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
+	}
+	createJfrogHomeConfig(t)
 }

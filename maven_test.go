@@ -12,7 +12,7 @@ import (
 const mavenFlagName = "maven"
 
 func TestMavenBuildWithServerID(t *testing.T) {
-	initBuildToolsTest(t, *tests.TestMaven, mavenFlagName)
+	initMavenTest(t)
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenServerIDConfig)
@@ -28,7 +28,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 	if *tests.RtUser == "" || *tests.RtPassword == "" {
 		t.SkipNow()
 	}
-	initBuildToolsTest(t, *tests.TestMaven, mavenFlagName)
+	initMavenTest(t)
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
@@ -62,4 +62,10 @@ func createMavenProject(t *testing.T) string {
 		t.Error(err)
 	}
 	return pomPath
+}
+func initMavenTest(t *testing.T) {
+	if !*tests.TestNpm {
+		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
+	}
+	createJfrogHomeConfig(t)
 }
