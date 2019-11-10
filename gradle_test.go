@@ -10,8 +10,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 )
 
+const gradleFlagName = "gradle"
+
 func TestGradleBuildWithServerID(t *testing.T) {
-	initBuildToolsTest(t)
+	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
 
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDConfig)
@@ -30,7 +32,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 }
 
 func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
-	initBuildToolsTest(t)
+	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
 
 	buildGradlePath := createGradleProject(t, "projectwithplugin")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
@@ -53,7 +55,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 		t.SkipNow()
 	}
 
-	initBuildToolsTest(t)
+	initBuildToolsTest(t, *tests.TestMaven, gradleFlagName)
 
 	buildName := "gradle-cli"
 	buildNumber := "1"

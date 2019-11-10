@@ -517,6 +517,7 @@ func createGoProject(t *testing.T, projectName string, includeDirs bool) string 
 	}
 	return projectTarget
 }
+
 func downloadModFile(specName, wd, subDir string, t *testing.T) []byte {
 	specFile, err := tests.CreateSpec(specName)
 	if err != nil {

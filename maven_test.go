@@ -9,8 +9,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 )
 
+const mavenFlagName = "maven"
+
 func TestMavenBuildWithServerID(t *testing.T) {
-	initBuildToolsTest(t)
+	initBuildToolsTest(t, *tests.TestMaven, mavenFlagName)
 
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenServerIDConfig)
@@ -26,9 +28,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 	if *tests.RtUser == "" || *tests.RtPassword == "" {
 		t.SkipNow()
 	}
-
-	initBuildToolsTest(t)
-
+	initBuildToolsTest(t, *tests.TestMaven, mavenFlagName)
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")

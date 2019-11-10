@@ -26,8 +26,10 @@ type npmTestParams struct {
 	validationFunc func(*testing.T, npmTestParams)
 }
 
+const npmFlagName = "npm"
+
 func TestNpm(t *testing.T) {
-	initBuildToolsTest(t)
+	initBuildToolsTest(t, *tests.TestNpm, npmFlagName)
 	npmi := "npm-install"
 	wd, err := os.Getwd()
 	if err != nil {

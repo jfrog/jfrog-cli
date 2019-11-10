@@ -41,17 +41,17 @@ func (image *buildDockerImage) GetEnv() map[string]string {
 func (image *buildDockerImage) GetStdWriter() io.WriteCloser {
 	return nil
 }
+
 func (image *buildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
+
 func InitDockerTests() {
 	if !*tests.TestDocker {
 		return
 	}
 	os.Setenv(cliutils.ReportUsage, "false")
 	os.Setenv(cliutils.OfferConfig, "false")
-	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 }
 
 func TestDockerPush(t *testing.T) {
