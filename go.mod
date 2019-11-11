@@ -5,7 +5,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/denormal/go-gitignore v0.0.0-20180930084346-ae8ad1d07817
-	github.com/jfrog/gocmd v0.1.10
+	github.com/jfrog/gocmd v0.1.11
 	github.com/jfrog/gofrog v1.0.5
 	github.com/jfrog/jfrog-client-go v0.5.7
 	github.com/magiconair/properties v1.8.0
