@@ -15,16 +15,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils"
 )
 
-func init() {
-	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
-	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
-	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
-		configArtifactoryCli = createConfigJfrogCLI(cred)
-	}
-	log.SetDefaultLogger()
-}
-
 func TestMain(m *testing.M) {
 	setupIntegrationTests()
 	result := m.Run()
@@ -33,19 +23,26 @@ func TestMain(m *testing.M) {
 }
 
 func setupIntegrationTests() {
-	flag.Parse()
+	os.Setenv(cliutils.ReportUsage, "false")
+	os.Setenv(cliutils.OfferConfig, "false")
 
 	if *tests.TestBintray {
 		InitBintrayTests()
 	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+		initArtifactoryCli()
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+		if artifactoryCli == nil {
+			initArtifactoryCli()
+		}
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
-		InitDockerTests()
+		if artifactoryCli == nil {
+			initArtifactoryCli()
+		}
 	}
 }
 
@@ -59,11 +56,11 @@ func tearDownIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		CleanBuildToolsTests()
 	}
+	os.Setenv(cliutils.OfferConfig, "true")
+	os.Setenv(cliutils.ReportUsage, "true")
 }
 
 func InitBuildToolsTests() {
-	os.Setenv(cliutils.OfferConfig, "false")
-	os.Setenv(cliutils.ReportUsage, "false")
 	createReposIfNeeded()
 	cleanBuildToolsTest()
 }
@@ -125,4 +122,15 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 	if expectedArtifacts != len(buildInfo.Modules[0].Artifacts) {
 		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedArtifacts, " Found:", len(buildInfo.Modules[0].Artifacts))
 	}
+}
+
+func initArtifactoryCli() {
+	flag.Parse()
+	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
+	cred := authenticate()
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
+	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
+		configArtifactoryCli = createConfigJfrogCLI(cred)
+	}
+	log.SetDefaultLogger()
 }

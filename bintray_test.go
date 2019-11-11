@@ -2,6 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
@@ -12,14 +21,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 var bintrayConfig *config.BintrayDetails
@@ -27,9 +28,6 @@ var bintrayCli *tests.JfrogCli
 var bintrayOrganization string
 
 func InitBintrayTests() {
-	if !*tests.TestBintray {
-		return
-	}
 	initBintrayCredentials()
 	initBintrayOrg()
 	deleteBintrayRepo()

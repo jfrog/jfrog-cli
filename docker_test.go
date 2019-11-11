@@ -46,14 +46,6 @@ func (image *buildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func InitDockerTests() {
-	if !*tests.TestDocker {
-		return
-	}
-	os.Setenv(cliutils.ReportUsage, "false")
-	os.Setenv(cliutils.OfferConfig, "false")
-}
-
 func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")

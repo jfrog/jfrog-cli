@@ -57,11 +57,6 @@ var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
-	if !*tests.TestArtifactory {
-		return
-	}
-	os.Setenv(cliutils.ReportUsage, "false")
-	os.Setenv(cliutils.OfferConfig, "false")
 	// Disable progress bar:
 	os.Setenv("CI", "true")
 	createReposIfNeeded()

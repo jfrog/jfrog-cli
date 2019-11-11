@@ -63,6 +63,7 @@ func createMavenProject(t *testing.T) string {
 	}
 	return pomPath
 }
+
 func initMavenTest(t *testing.T) {
 	if !*tests.TestNpm {
 		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
