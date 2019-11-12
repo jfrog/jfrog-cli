@@ -68,11 +68,11 @@ Once completed, you will find the JFrog CLI executable at your current directory
 To run tests (unit tests only) execute the following command.
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go [flags]
 ````
 ##### General optional flags
 | Flag | Description |
