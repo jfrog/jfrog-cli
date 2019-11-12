@@ -3912,6 +3912,7 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 }
 
 func TestGetJcenterRemoteDetails(t *testing.T) {
+	initArtifactoryTest(t)
 	createServerConfigAndReturnPassphrase()
 
 	unsetEnvVars := func() {
@@ -3958,6 +3959,7 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 	downloadPath = "1org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
 	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
+	cleanArtifactoryTest()
 }
 
 func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {

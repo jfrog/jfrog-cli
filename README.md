@@ -64,52 +64,93 @@ build.bat
 Once completed, you will find the JFrog CLI executable at your current directory.
 
 # Tests
-
-### Artifactory tests
-#### General tests
-To run Artifactory tests execute the following command.
+### General tests
+To run tests (unit tests only) execute the following command.
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go
+./test.sh -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password="ASSWORD
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go
+test.bat -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
-##### Optional flags
+##### General optional flags
 | Flag | Description |
 | --- | --- |
 | `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
 | `-rt.user` | [Default: admin] Artifactory username. |
 | `-rt.password` | [Default: password] Artifactory password. |
 | `-rt.apikey` | [Optional] Artifactory API key. |
+| `-rt.accessToken` | [Optional] Artifactory access token. |
+
+### Artifactory tests
+To run artifactory tests execute the following command.
+On Unix based systems run:
+````
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+##### Artifactory optional flags
+| Flag | Description |
+| --- | --- |
+| [General-optional-flags](#General-optional-flags) |
 | `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
-| `-rt.accessToken` | [Optional] Artifactory access token. |
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
   Once the tests are completed, the content of these repositories will be deleted.
   
-#### Maven, Gradle and Npm tests
-* The *M2_HOME* environment variable should be set to the local maven installation path.
-* The *gradle* and *npm* executables should be included as part of the *PATH* environment variable.
-* The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
+### Npm tests
+* The *npm* executables should be included as part of the *PATH* environment variable.
 
-To run build tools tests execute the following command.
+To run npm tests execute the following command.
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.npm=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.buildTools=true
+test.bat -v github.com/jfrog/jfrog-cli-go -test.npm=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+
+### Maven tests
+* The *M2_HOME* environment variable should be set to the local maven installation path.
+* The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
+
+To run maven tests execute the following command.
+
+On Unix based systems run:
+````
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.maven=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.maven=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+
+### Gradle tests
+* The *gradle* executables should be included as part of the *PATH* environment variable.
+* The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
+
+To run gradle tests execute the following command.
+
+On Unix based systems run:
+````
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.gradle=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.gradle=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 
 ##### Limitation
 * Currently, build integration support only http(s) connections to Artifactory using username and password.
 
-#### Docker tests
+### Docker tests
 To run docker tests execute the following command (fill out the missing parameters as described below).
 
 On Unix based systems run:
@@ -124,22 +165,20 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=t
 ##### Mandatory flags
 | Flag | Description |
 | --- | --- |
+| [General-optional-flags](#General-optional-flags) |
 | `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
 | `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
-| `-rt.url` | Artifactory URL. |
-| `-rt.user` | Artifactory username. |
-| `-rt.password` | Artifactory password. |
 
-#### Go commands tests
+### Go commands tests
 To run go tests run the following command.
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.go=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.go=true 
+test.bat -v github.com/jfrog/jfrog-cli-go -test.go=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 #### NuGet tests
 To run NuGet tests:
@@ -149,11 +188,11 @@ To run NuGet tests:
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.nuget=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.nuget=true 
+test.bat -v github.com/jfrog/jfrog-cli-go -test.nuget=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 
 #### Pip tests
@@ -164,16 +203,17 @@ To run pip tests:
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.pip=true
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.pip=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.pip=true
+test.bat -v github.com/jfrog/jfrog-cli-go -test.pip=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 
 ##### Optional flags
 | Flag | Description |
 | --- | --- |
+| [General-optional-flags](#General-optional-flags) |
 | `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*) |
 
 ### Bintray tests
