@@ -25,6 +25,8 @@ func TestMain(m *testing.M) {
 func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
 	os.Setenv(cliutils.OfferConfig, "false")
+	flag.Parse()
+	log.SetDefaultLogger()
 
 	if *tests.TestBintray {
 		InitBintrayTests()
@@ -125,12 +127,10 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 }
 
 func initArtifactoryCli() {
-	flag.Parse()
 	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		configArtifactoryCli = createConfigJfrogCLI(cred)
 	}
-	log.SetDefaultLogger()
 }
