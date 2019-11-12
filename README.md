@@ -68,7 +68,7 @@ Once completed, you will find the JFrog CLI executable at your current directory
 To run tests (unit tests only) execute the following command.
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password="ASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 On Windows run:
 ````
@@ -96,7 +96,7 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=true -rt.url=URL -rt
 ##### Artifactory optional flags
 | Flag | Description |
 | --- | --- |
-| [General-optional-flags](#General-optional-flags) |
+| Optional flags | [General optional flags](#General-optional-flags) |
 | `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
 | `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 
@@ -165,7 +165,7 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=t
 ##### Mandatory flags
 | Flag | Description |
 | --- | --- |
-| [General-optional-flags](#General-optional-flags) |
+| Optional flags | [General optional flags](#General-optional-flags) |
 | `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
 | `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
 
@@ -180,7 +180,7 @@ On Windows run:
 ````
 test.bat -v github.com/jfrog/jfrog-cli-go -test.go=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
-#### NuGet tests
+### NuGet tests
 To run NuGet tests:
 * Add NuGet executable to the system search path (PATH environment variable).
 * Create a remote repository named jfrog-cli-tests-nuget-remote-repo
@@ -195,7 +195,7 @@ On Windows run:
 test.bat -v github.com/jfrog/jfrog-cli-go -test.nuget=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
 ````
 
-#### Pip tests
+### Pip tests
 To run pip tests:
 * Add Python and pip executables to the system search path (PATH environment variable).
 * Pip tests must run inside a clean pip-environment. You can either activate a virtual-environment and execute the tests from within, or provide the path to your virtual-environment using the -rt.pipVirtualEnv flag.
@@ -213,7 +213,7 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.pip=true -rt.url=URL -rt.user=US
 ##### Optional flags
 | Flag | Description |
 | --- | --- |
-| [General-optional-flags](#General-optional-flags) |
+| Optional flags | [General optional flags](#General-optional-flags) |
 | `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*) |
 
 ### Bintray tests
