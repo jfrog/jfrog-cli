@@ -64,164 +64,198 @@ build.bat
 Once completed, you will find the JFrog CLI executable at your current directory.
 
 # Tests
-### General tests
-To run tests (unit tests only) execute the following command.
+### Usage
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go [flags]
+./test.sh -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go [flags]
+test.bat -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
 ````
-##### General optional flags
+
+The flags are:
+
 | Flag | Description |
 | --- | --- |
 | `-rt.url` | [Default: http://localhost:8081/artifactory] Artifactory URL. |
-| `-rt.user` | [Default: admin] Artifactory username. |
+| `-rt.user` | [Default: admin] Artifactory username.|
 | `-rt.password` | [Default: password] Artifactory password. |
-| `-rt.apikey` | [Optional] Artifactory API key. |
-| `-rt.accessToken` | [Optional] Artifactory access token. |
+| `-rt.apikey` | Artifactory API key. |
+| `-rt.accessToken` | Artifactory access token. |
 
-### Artifactory tests
+The types are (default false):
+
+| Type | Description |
+| --- | --- |
+| `-test.artifactory` | Artifactory tests |
+| `-test.npm` | Npm tests |
+| `-test.maven` | Maven tests |
+| `-test.gradle` | Gradle tests |
+| `-test.docke` | Docke tests |
+| `-test.go` | Go tests |
+| `-test.pip` | Pip tests |
+| `-test.nuget` | Nuget tests |
+
+* You can run one or more test types by set the value `true` i.e. `-test.artifactory=true -test.npm=true`.
+* Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
+Once the tests are completed, the content of these repositories will be deleted.
+ 
+#### Artifactory tests
+In addition to [general optional flags](#General-optional-flags) you can use the following optional artifactory flags.
+
+| Flag | Description |
+| --- | --- |
+| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port. |
+| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
+
+
+##### Examples
 To run artifactory tests execute the following command.
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=true [flags]
 ````
-##### Artifactory optional flags
-| Flag | Description |
-| --- | --- |
-| Optional flags | [General optional flags](#General-optional-flags) |
-| `-rt.sshKeyPath` | [Optional] Ssh key file path. Should be used only if the Artifactory URL format is ssh://[domain]:port |
-| `-rt.sshPassphrase` | [Optional] Ssh key passphrase. |
 
-* Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
-  Once the tests are completed, the content of these repositories will be deleted.
-  
-### Npm tests
+#### Npm tests
+##### Requirement
 * The *npm* executables should be included as part of the *PATH* environment variable.
 
+##### Limitation
+* Currently, npm integration support only http(s) connections to Artifactory using username and password.
+
+##### Examples
 To run npm tests execute the following command.
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.npm=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.npm=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.npm=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.npm=true [flags]
 ````
 
-### Maven tests
+#### Maven tests
+##### Requirements
 * The *M2_HOME* environment variable should be set to the local maven installation path.
 * The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
-To run maven tests execute the following command.
+##### Limitation
+* Currently, maven integration support only http(s) connections to Artifactory using username and password.
 
+##### Examples
+To run maven tests execute the following command.
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.maven=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.maven=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.maven=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.maven=true [flags]
 ````
 
-### Gradle tests
+#### Gradle tests
+##### Requirements
 * The *gradle* executables should be included as part of the *PATH* environment variable.
 * The *java* executable should be included as part of the *PATH* environment variable. Alternatively, set the *JAVA_HOME* environment variable.
 
+##### Limitation
+* Currently, gradle integration support only http(s) connections to Artifactory using username and password.
+
+##### Examples
 To run gradle tests execute the following command.
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.gradle=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.gradle=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.gradle=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.gradle=true [flags]
 ````
 
-##### Limitation
-* Currently, build integration support only http(s) connections to Artifactory using username and password.
+#### Docker tests
+In addition to [general optional flags](#General-optional-flags) you *must* use the following docker flags.
 
-### Docker tests
+| Flag | Description |
+| --- | --- |
+| `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
+| `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
+
+##### Examples
 To run docker tests execute the following command (fill out the missing parameters as described below).
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO -rt.url=ARTIFACTORY_URL -rt.user=USERNAME -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.docker=true -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
 ````
 
-##### Mandatory flags
-| Flag | Description |
-| --- | --- |
-| Optional flags | [General optional flags](#General-optional-flags) |
-| `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
-| `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
-
-### Go commands tests
+#### Go commands tests
+##### Examples
 To run go tests run the following command.
 
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.go=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.go=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.go=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.go=true [flags]
 ````
-### NuGet tests
-To run NuGet tests:
+
+#### NuGet tests
+##### Requirement
 * Add NuGet executable to the system search path (PATH environment variable).
-* Create a remote repository named jfrog-cli-tests-nuget-remote-repo
+* Create a remote repository named jfrog-cli-tests-nuget-remote-repo.
 * Run the following command.
 
+##### Examples
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.nuget=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.nuget=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.nuget=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.nuget=true [flags]
 ````
 
-### Pip tests
-To run pip tests:
+#### Pip tests
+##### Requirement
 * Add Python and pip executables to the system search path (PATH environment variable).
 * Pip tests must run inside a clean pip-environment. You can either activate a virtual-environment and execute the tests from within, or provide the path to your virtual-environment using the -rt.pipVirtualEnv flag.
 * Run the following command:
 
+In addition to [general optional flags](#General-optional-flags) you can use the following optional pip flags
+
+| Flag | Description |
+| --- | --- |
+| `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*). |
+
+##### Examples
 On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.pip=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.pip=true [flags]
 ````
 On Windows run:
 ````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.pip=true -rt.url=URL -rt.user=USER -rt.password=PASSWORD
+test.bat -v github.com/jfrog/jfrog-cli-go -test.pip=true [flags]
 ````
-
-##### Optional flags
-| Flag | Description |
-| --- | --- |
-| Optional flags | [General optional flags](#General-optional-flags) |
-| `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*) |
 
 ### Bintray tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
 
 To run Bintray tests execute the following command: 
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory=false -test.bintray=true
+go test -v github.com/jfrog/jfrog-cli-go -test.bintray=true
 ````
 Flags:
 
