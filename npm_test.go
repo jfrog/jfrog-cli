@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -138,6 +139,26 @@ func TestNativeNpm(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
+func TestNpmWithGlobalConfig(t *testing.T) {
+	initNpmTest(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	npmProjectPath := initGlobalNpmFilesTest(t)
+	err = os.Chdir(filepath.Dir(npmProjectPath))
+	if err != nil {
+		t.Error(err)
+	}
+	runNpm(t, "npm-install", "--build-name=npmtest", "--build-number=1", "--module="+ModuleNameJFrogTest)
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanBuildToolsTest()
+
+}
+
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
 	if postTestFileInfoErr != nil && !os.IsNotExist(postTestFileInfoErr) {
 		t.Error(postTestFileInfoErr)
@@ -161,7 +182,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	}
 }
 
-func initNpmFilesTest(t *testing.T, legacyMode bool) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
+func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	if err != nil {
 		t.Error(err)
@@ -180,12 +201,31 @@ func initNpmFilesTest(t *testing.T, legacyMode bool) (npmProjectPath, npmScopedP
 	}
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
-	if legacyMode {
+	if nativeMode {
 		err = createNpmConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, t)
 		if err != nil {
 			t.Error(err)
 		}
 	}
+	return
+}
+
+func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	err = createNpmConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, t)
+	if err != nil {
+		t.Error(err)
+	}
+
 	return
 }
 
