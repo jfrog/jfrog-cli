@@ -5,6 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -13,13 +21,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 var RtUrl *string
@@ -38,6 +39,9 @@ var TestArtifactoryProxy *bool
 var TestBuildTools *bool
 var TestDocker *bool
 var TestGo *bool
+var TestNpm *bool
+var TestGradle *bool
+var TestMaven *bool
 var DockerRepoDomain *string
 var DockerTargetRepo *string
 var TestNuget *bool
@@ -53,7 +57,7 @@ func init() {
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
-	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
+	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
@@ -62,6 +66,9 @@ func init() {
 	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
+	TestNpm = flag.Bool("test.npm", false, "Test Npm")
+	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
+	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
@@ -315,18 +322,16 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 
 func GetNonVirtualRepositories() map[string]string {
 	nonVirtualRepos := map[string]string{
-		Repo1:      SpecsTestRepositoryConfig,
-		Repo2:      MoveRepositoryConfig,
-		LfsRepo:    GitLfsTestRepositoryConfig,
-		DebianRepo: DebianTestRepositoryConfig,
+		Repo1:             SpecsTestRepositoryConfig,
+		Repo2:             MoveRepositoryConfig,
+		LfsRepo:           GitLfsTestRepositoryConfig,
+		DebianRepo:        DebianTestRepositoryConfig,
+		JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
 	}
-
-	if *TestBuildTools {
-		nonVirtualRepos[JcenterRemoteRepo] = JcenterRemoteRepositoryConfig
+	if *TestNpm {
 		nonVirtualRepos[NpmLocalRepo] = NpmLocalRepositoryConfig
 		nonVirtualRepos[NpmRemoteRepo] = NpmRemoteRepositoryConfig
 	}
-
 	if *TestPip {
 		nonVirtualRepos[PypiRemoteRepo] = PypiRemoteRepositoryConfig
 	}
