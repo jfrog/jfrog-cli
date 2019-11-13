@@ -18,7 +18,7 @@ func TestValidateGoNativeCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := validateGoNativeCommand(test.args)
+			result := validateCommand(test.args, getGoFlags())
 			if result != nil && !test.expected {
 				t.Errorf("Expected error nil, got the following error %s", result)
 			}
