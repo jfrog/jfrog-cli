@@ -131,13 +131,6 @@ func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) er
 	return nil
 }
 
-func ValidateBuildParams(buildConfig *BuildConfiguration) error {
-	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
-		return errors.New("The build-name, build-number and module options cannot be sent separately.")
-	}
-	return nil
-}
-
 // Get build name and number from env, only if both missing
 func GetBuildNameAndNumber(buildName, buildNumber string) (string, string) {
 	if buildName != "" || buildNumber != "" {

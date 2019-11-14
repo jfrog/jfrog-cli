@@ -4,19 +4,21 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const BuildInfoDetails = "details"
@@ -261,4 +263,11 @@ type BuildConfiguration struct {
 	BuildName   string
 	BuildNumber string
 	Module      string
+}
+
+func ValidateBuildParams(buildConfig *BuildConfiguration) error {
+	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
+		return errors.New("The build-name, build-number and module options cannot be sent separately.")
+	}
+	return nil
 }

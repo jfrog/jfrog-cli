@@ -2985,14 +2985,6 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func validateBuildParams(buildConfig *utils.BuildConfiguration) error {
-	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
-		return errors.New("The build-name, build-number and module options cannot be sent separately.")
-	}
-
-	return nil
-}
-
 func validateCommonContext(c *cli.Context) error {
 	// Validate build
 	if c.IsSet("build") {
