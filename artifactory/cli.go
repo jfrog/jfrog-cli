@@ -451,13 +451,14 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "nuget",
-			Flags:        getNugetFlags(),
-			Usage:        nugetdocs.Description,
-			HelpName:     common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
-			UsageText:    nugetdocs.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "nuget",
+			Flags:           getNugetFlags(),
+			Usage:           nugetdocs.Description,
+			HelpName:        common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
+			UsageText:       nugetdocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNugetFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetCmd(c)
 			},
@@ -894,7 +895,12 @@ func getNpmFlags() []cli.Flag {
 }
 
 func getNugetFlags() []cli.Flag {
-	nugetFlags := []cli.Flag{
+	nugetFlags := getNugetCommonFlags()
+	return append(nugetFlags, getBuildToolAndModuleFlags()...)
+}
+
+func getNugetCommonFlags() []cli.Flag {
+	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
 			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
@@ -904,9 +910,9 @@ func getNugetFlags() []cli.Flag {
 			Usage: "[Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	nugetFlags = append(nugetFlags, getBaseFlags()...)
-	nugetFlags = append(nugetFlags, getServerIdFlag())
-	return append(nugetFlags, getBuildToolAndModuleFlags()...)
+	commonNugetFlags = append(commonNugetFlags, getBaseFlags()...)
+	commonNugetFlags = append(commonNugetFlags, getServerIdFlag())
+	return commonNugetFlags
 }
 
 func getGoFlags() []cli.Flag {
@@ -1572,6 +1578,52 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
+	configFilePath, err := isProjectConfExist(utils.Nuget)
+	if err != nil {
+		return err
+	}
+
+	if configFilePath != "" {
+		// Found a config file.
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
+			return err
+		}
+		nugetCmd := nuget.NewNugetCommand()
+		log.Debug("Preparing to read the config file", configFilePath)
+		vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
+		if err != nil {
+			return err
+		}
+		// Extract resolution params.
+		resolverParams, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
+		if err != nil {
+			return err
+		}
+		rtDetails, err := resolverParams.RtDetails()
+		if err != nil {
+			return err
+		}
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		nugetCmd.SetArgs(strings.Join(filteredNugetArgs, " ")).
+			SetRepoName(resolverParams.TargetRepo()).
+			SetBuildConfiguration(buildConfiguration).
+			SetRtDetails(rtDetails)
+		return commands.Exec(nugetCmd)
+	}
+	// If config file not found, use nuget legacy command
+	return nugetLegacyCmd(c)
+}
+
+func nugetLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1789,6 +1841,18 @@ func shouldSkipNpmFlagParsing() bool {
 	}
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Npm)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
+func shouldSkipNugetFlagParsing() bool {
+	if len(os.Args) < 3 || os.Args[2] != "nuget" {
+		return false
+	}
+
+	_, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
 		cliutils.ExitOnErr(err)
 	}

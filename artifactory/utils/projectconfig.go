@@ -25,12 +25,14 @@ const (
 	Go ProjectType = iota
 	Pip
 	Npm
+	Nuget
 )
 
 var ProjectTypes = []string{
 	"go",
 	"pip",
 	"npm",
+	"nuget",
 }
 
 func (projectType ProjectType) String() string {
