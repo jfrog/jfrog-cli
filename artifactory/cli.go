@@ -23,6 +23,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -1976,7 +1977,7 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return npm.CreateBuildConfig(global)
+	return prompt.CreateBuildConfig(global, utils.Npm)
 }
 
 func pingCmd(c *cli.Context) error {

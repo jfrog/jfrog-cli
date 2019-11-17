@@ -10,15 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"gopkg.in/yaml.v2"
 )
 
 type npmTestParams struct {
@@ -202,7 +199,7 @@ func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedP
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
 	if nativeMode {
-		err = createNpmConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, t)
+		err = testCreateConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, t, utils.Npm)
 		if err != nil {
 			t.Error(err)
 		}
@@ -221,48 +218,12 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = createNpmConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, t)
+	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, t, utils.Npm)
 	if err != nil {
 		t.Error(err)
 	}
 
 	return
-}
-
-func createNpmConfFile(dirs []string, resolver string, t *testing.T) error {
-	var atDirectory string
-	for _, atDir := range dirs {
-		atDirectory = filepath.Dir(atDir)
-		d, err := yaml.Marshal(&npm.NpmBuildConfig{
-			CommonConfig: prompt.CommonConfig{
-				Version:    1,
-				ConfigType: "npm",
-			},
-			Resolver: utils.Repository{
-				Repo:     resolver,
-				ServerId: "default",
-			},
-		})
-		if err != nil {
-			return err
-		}
-		filePath := filepath.Join(atDirectory, ".jfrog", "projects")
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			os.MkdirAll(filePath, 0777)
-		}
-		filePath = filepath.Join(filePath, "npm.yaml")
-		// Create config file to make sure the path is valid
-		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			t.Error("Couldn't create file:", err)
-		}
-		defer f.Close()
-		_, err = f.Write(d)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	return nil
 }
 
 func createNpmProject(t *testing.T, dir string) string {
