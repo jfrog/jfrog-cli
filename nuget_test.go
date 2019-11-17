@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
@@ -46,6 +47,33 @@ func TestNugetResolve(t *testing.T) {
 	for buildNumber, test := range projects {
 		t.Run(test.project, func(t *testing.T) {
 			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+		})
+	}
+	cleanBuildToolsTest()
+}
+
+func TestNativeNugetResolve(t *testing.T) {
+	initNugetTest(t)
+	projects := []struct {
+		name                 string
+		project              string
+		moduleId             string
+		args                 []string
+		expectedDependencies int
+	}{
+		{"packagesconfigwithoutmodulechnage", "packagesconfig", "packagesconfig", []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, 6},
+		{"packagesconfigwithmodulechnage", "packagesconfig", ModuleNameJFrogTest, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
+		{"referencewithoutmodulechnage", "reference", "reference", []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, 6},
+		{"referencewithmodulechnage", "reference", ModuleNameJFrogTest, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
+	}
+	for buildNumber, test := range projects {
+		projectPath := createNugetProject(t, test.project)
+		err := testCreateConfFile([]string{projectPath}, tests.NugetRemoteRepo, t, utils.Nuget)
+		if err != nil {
+			t.Error(err)
+		}
+		t.Run(test.project, func(t *testing.T) {
+			testNugetCmd(t, projectPath, strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 		})
 	}
 	cleanBuildToolsTest()
