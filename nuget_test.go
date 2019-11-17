@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
@@ -28,6 +29,7 @@ func initNugetTest(t *testing.T) {
 		t.Error("Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
 		t.FailNow()
 	}
+	createJfrogHomeConfig(t)
 }
 
 func TestNugetResolve(t *testing.T) {
@@ -46,7 +48,7 @@ func TestNugetResolve(t *testing.T) {
 	}
 	for buildNumber, test := range projects {
 		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args, false)
 		})
 	}
 	cleanBuildToolsTest()
@@ -73,7 +75,7 @@ func TestNativeNugetResolve(t *testing.T) {
 			t.Error(err)
 		}
 		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, projectPath, strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
+			testNugetCmd(t, projectPath, strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args, true)
 		})
 	}
 	cleanBuildToolsTest()
@@ -101,7 +103,23 @@ func createNugetProject(t *testing.T, projectName string) string {
 	return projectTarget
 }
 
-func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
+func TestNuGetWithGlobalConfig(t *testing.T) {
+	initNugetTest(t)
+	projectPath := createNugetProject(t, "globalconfig")
+	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NugetRemoteRepo, t, utils.Nuget)
+	if err != nil {
+		t.Error(err)
+	}
+	testNugetCmd(t, projectPath, "1", "globalconfig", 6, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, true)
+
+	cleanBuildToolsTest()
+}
+
+func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string, native bool) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -111,7 +129,11 @@ func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expecte
 		t.Error(err)
 	}
 	args = append(args, "--build-number="+buildNumber)
-	artifactoryCli.Exec(args...)
+	if native {
+		runNuGet(t, args...)
+	} else {
+		artifactoryCli.Exec(args...)
+	}
 	artifactoryCli.Exec("bp", tests.NugetBuildName, buildNumber)
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NugetBuildName, buildNumber, t, artHttpDetails)
@@ -134,5 +156,12 @@ func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expecte
 
 	// cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NugetBuildName, artHttpDetails)
-	cleanBuildToolsTest()
+}
+
+func runNuGet(t *testing.T, args ...string) {
+	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := artifactoryNuGetCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
 }
