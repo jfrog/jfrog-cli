@@ -264,9 +264,9 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 
 func GetJfrogHomeDir() (string, error) {
 
-	// The JfrogHomeEnv environment variable has been deprecated and replaced with JfrogHomeDirEnv
-	if os.Getenv(cliutils.JfrogHomeDirEnv) != "" {
-		return os.Getenv(cliutils.JfrogHomeDirEnv), nil
+	// The JfrogHomeEnv environment variable has been deprecated and replaced with HomeDir
+	if os.Getenv(cliutils.HomeDir) != "" {
+		return os.Getenv(cliutils.HomeDir), nil
 	} else if os.Getenv(cliutils.JfrogHomeEnv) != "" {
 		return path.Join(os.Getenv(cliutils.JfrogHomeEnv), ".jfrog"), nil
 	}
@@ -292,7 +292,7 @@ func CreateDirInJfrogHome(dirName string) (string, error) {
 }
 
 func GetJfrogDependenciesPath() (string, error) {
-	dependenciesDir := os.Getenv(cliutils.JFrogCliDependenciesDir)
+	dependenciesDir := os.Getenv(cliutils.DependenciesDir)
 	if dependenciesDir != "" {
 		return utils.AddTrailingSlashIfNeeded(dependenciesDir), nil
 	}

@@ -19,19 +19,26 @@ import (
 type OnError string
 
 var cliTempDir string
+var cliUserAgent string
 
 func init() {
 	// Initialize error handling.
-	if os.Getenv(JFrogCliErrorHandling) == string(OnErrorPanic) {
+	if os.Getenv(ErrorHandling) == string(OnErrorPanic) {
 		errorutils.CheckError = PanicOnError
 	}
 
 	// Initialize the temp base-dir path of the CLI executions.
-	cliTempDir = os.Getenv(JFrogCliTempDir)
+	cliTempDir = os.Getenv(TempDir)
 	if cliTempDir == "" {
 		cliTempDir = os.TempDir()
 	}
 	fileutils.SetTempDirBase(cliTempDir)
+
+	// Initialize agent name and version.
+	cliUserAgent = os.Getenv(UserAgent)
+	if cliUserAgent == "" {
+		cliUserAgent = ClientAgent + "/" + CliVersion
+	}
 }
 
 // Exit codes:
@@ -211,6 +218,10 @@ func IsWindows() bool {
 // This path should be persistent, meaning - should not be cleared at the end of a CLI run.
 func GetCliPersistentTempDirPath() string {
 	return cliTempDir
+}
+
+func GetUserAgent() string {
+	return cliUserAgent
 }
 
 type Credentials interface {

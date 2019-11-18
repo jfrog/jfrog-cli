@@ -49,8 +49,7 @@ func reportUsage(command Command, channel chan<- bool) {
 				log.Debug(err)
 				return
 			}
-			productId := cliutils.ClientAgent + "/" + cliutils.CliVersion
-			err = usage.SendReportUsage(productId, command.CommandName(), serviceManager)
+			err = usage.SendReportUsage(cliutils.GetUserAgent(), command.CommandName(), serviceManager)
 			if err != nil {
 				log.Debug(err)
 				return

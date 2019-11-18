@@ -831,7 +831,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(tempDirPath)
-	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
+	os.Setenv(cliutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
 
@@ -3504,7 +3504,7 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	os.Unsetenv(cliutils.JfrogHomeDirEnv)
+	os.Unsetenv(cliutils.HomeDir)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()
