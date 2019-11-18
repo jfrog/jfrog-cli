@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -206,6 +207,17 @@ func CreateBuildConfig(global bool, confType utils.ProjectType) error {
 	if err != nil {
 		return err
 	}
+	vConfig, err = ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
+	if err != nil {
+		return err
+	}
+	if vConfig.GetBool(USE_ARTIFACTORY) {
+		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
+		configResult.Deployer.Repo, err = ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+	}
 	resBytes, err := yaml.Marshal(&configResult)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -214,10 +226,12 @@ func CreateBuildConfig(global bool, confType utils.ProjectType) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
+	log.Info(confType.String() + " build config successfully created.")
 	return nil
 }
 
 type ConfigFile struct {
 	CommonConfig `yaml:"common,inline"`
 	Resolver     utils.Repository `yaml:"resolver,omitempty"`
+	Deployer     utils.Repository `yaml:"deployer,omitempty"`
 }

@@ -439,14 +439,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "npm-publish",
-			Flags:        getNpmCommonFlags(),
-			Aliases:      []string{"npmp"},
-			Usage:        npmpublish.Description,
-			HelpName:     common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
-			UsageText:    npmpublish.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "npm-publish",
+			Flags:           getNpmCommonFlags(),
+			Aliases:         []string{"npmp"},
+			Usage:           npmpublish.Description,
+			HelpName:        common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
+			UsageText:       npmpublish.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmPublishCmd(c)
 			},
@@ -1717,6 +1718,51 @@ func npmLegacyCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
+	configFilePath, err := isProjectConfExist(utils.Npm)
+	if err != nil {
+		return err
+	}
+
+	if configFilePath != "" {
+		// Found a config file. Continue as native command.
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNpmBasicFlages()); err != nil {
+			return err
+		}
+		npmCmd := npm.NewNpmPublishCommand()
+		log.Info("Running npm-publish Install.")
+		// Read config file.
+		log.Debug("Preparing to read the config file", configFilePath)
+		vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
+		if err != nil {
+			return err
+		}
+		// Extract resolution params.
+		deployerParams, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigDeployerPrefix, vConfig)
+		if err != nil {
+			return err
+		}
+		_, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(args)
+		RtDetails, err := deployerParams.RtDetails()
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		npmCmd.SetBuildConfiguration(buildConfiguration).SetRepo(deployerParams.TargetRepo()).SetNpmArgs(filteredNpmArgs).SetRtDetails(RtDetails)
+		return commands.Exec(npmCmd)
+	}
+	// If config file not found, use Npm legacy command
+	return npmLegacyPublishCmd(c)
+}
+
+func npmLegacyPublishCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1785,7 +1831,8 @@ func shouldSkipGoFlagParsing() bool {
 func shouldSkipNpmFlagParsing() bool {
 	// This function is executed by code-congsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt npm-install || npm".
-	if len(os.Args) < 3 || (os.Args[2] != "npm-install" && os.Args[2] != "npmci") {
+	if len(os.Args) < 3 || (os.Args[2] != "npm-install" && os.Args[2] != "npmi" && os.Args[2] != "npm-ci" &&
+		os.Args[2] != "npmci" && os.Args[2] != "npm-publish" && os.Args[2] != "npmp") {
 		return false
 	}
 

@@ -102,7 +102,9 @@ func TestNativeNpm(t *testing.T) {
 		{command: npmi, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
 		{command: npmi, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
 		{command: npmi, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "-only=dev"},
-		{command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
+		{command: "npmi", wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
+		{command: "npmp", wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		{command: "npm-publish", wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 	for i, npmTest := range npmTests {
 		err = os.Chdir(filepath.Dir(npmTest.wd))
@@ -199,7 +201,7 @@ func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedP
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
 	if nativeMode {
-		err = testCreateConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, t, utils.Npm)
+		err = testCreateConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm)
 		if err != nil {
 			t.Error(err)
 		}
@@ -218,7 +220,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, t, utils.Npm)
+	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm)
 	if err != nil {
 		t.Error(err)
 	}

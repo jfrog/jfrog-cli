@@ -138,7 +138,7 @@ func initArtifactoryCli() {
 	}
 }
 
-func testCreateConfFile(dirs []string, resolver string, t *testing.T, confType artifactoryUtils.ProjectType) error {
+func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType) error {
 	var atDirectory string
 	for _, atDir := range dirs {
 		atDirectory = filepath.Dir(atDir)
@@ -149,6 +149,10 @@ func testCreateConfFile(dirs []string, resolver string, t *testing.T, confType a
 			},
 			Resolver: artifactoryUtils.Repository{
 				Repo:     resolver,
+				ServerId: "default",
+			},
+			Deployer: artifactoryUtils.Repository{
+				Repo:     deployer,
 				ServerId: "default",
 			},
 		})
