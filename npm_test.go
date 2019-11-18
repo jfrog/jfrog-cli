@@ -116,13 +116,13 @@ func TestNativeNpm(t *testing.T) {
 			t.Error(err)
 		}
 		if npmTest.moduleName != "" {
-			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+1), "--module="+npmTest.moduleName)
+			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+100), "--module="+npmTest.moduleName)
 		} else {
 			npmTest.moduleName = "jfrog-cli-tests:1.0.0"
-			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+1))
+			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+100))
 		}
-		artifactoryCli.Exec("bp", tests.NpmBuildName, strconv.Itoa(i+1))
-		npmTest.buildNumber = strconv.Itoa(i + 1)
+		artifactoryCli.Exec("bp", tests.NpmBuildName, strconv.Itoa(i+100))
+		npmTest.buildNumber = strconv.Itoa(i + 100)
 		npmTest.validationFunc(t, npmTest)
 
 		// make sure npmrc file was not changed (if existed)
