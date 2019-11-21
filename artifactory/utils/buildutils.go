@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -134,6 +135,16 @@ func SaveBuildGeneralDetails(buildName, buildNumber string) error {
 	}
 	err = ioutil.WriteFile(detailsFilePath, []byte(content.String()), 0600)
 	return errorutils.CheckError(err)
+}
+
+func SaveBuildTimestamp(buildName, buildNumber string, config *viper.Viper) error {
+
+	buildGeneralDetails, err := ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return err
+	}
+	config.Set(BUILD_TIMESTAMP, strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10))
+	return nil
 }
 
 type populatePartialBuildInfo func(partial *buildinfo.Partial)

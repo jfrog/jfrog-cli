@@ -49,6 +49,7 @@ const (
 // For key/value binding
 const BUILD_NAME = "build.name"
 const BUILD_NUMBER = "build.number"
+const BUILD_TIMESTAMP = "build.timestamp"
 const GENERATED_BUILD_INFO = "buildInfo.generated"
 
 const RESOLVER_PREFIX = "resolver."
@@ -113,6 +114,7 @@ var commonConfigMapping = map[string]string{
 	"artifactory.publish.artifacts":                      "",
 	"artifactory.deploy.build.name":                      BUILD_NAME,
 	"artifactory.deploy.build.number":                    BUILD_NUMBER,
+	"artifactory.deploy.build.timestamp":                 BUILD_TIMESTAMP,
 	"buildInfo.generated.build.info":                     GENERATED_BUILD_INFO,
 	"artifactory.proxy.host":                             PROXY + HOST,
 	"artifactory.proxy.port":                             PROXY + PORT,
@@ -198,6 +200,11 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	}
 
 	err = createGeneratedBuildInfoFile(buildName, buildNumber, config)
+	if err != nil {
+		return "", err
+	}
+
+	err = SaveBuildTimestamp(buildName, buildNumber, config)
 	if err != nil {
 		return "", err
 	}
