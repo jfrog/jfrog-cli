@@ -324,7 +324,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	buildName, buildNumber := "cli-test-build", "13"
 
 	// Populate cli config with 'default' server
-	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	oldHomeDir := os.Getenv(cliutils.HomeDir)
 	createJfrogHomeConfig(t)
 
 	// Create .git folder for this test
@@ -384,7 +384,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath, buildName string) {
 	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	os.Setenv(cliutils.HomeDir, oldHomeDir)
 	cleanArtifactoryTest()
 }
 

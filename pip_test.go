@@ -43,7 +43,7 @@ func TestPipInstall(t *testing.T) {
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	// Create test cases.
@@ -265,7 +265,7 @@ func TestPipDepsTree(t *testing.T) {
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	// Create test cases.

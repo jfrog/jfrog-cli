@@ -30,7 +30,7 @@ func TestUnitTests(t *testing.T) {
 }
 
 func setJfrogHome(homePath string) {
-	if err := os.Setenv(cliutils.JfrogHomeDirEnv, homePath); err != nil {
+	if err := os.Setenv(cliutils.HomeDir, homePath); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
@@ -38,7 +38,7 @@ func setJfrogHome(homePath string) {
 
 func cleanUnitTestsJfrogHome(homePath string) {
 	os.RemoveAll(homePath)
-	if err := os.Unsetenv(cliutils.JfrogHomeDirEnv); err != nil {
+	if err := os.Unsetenv(cliutils.HomeDir); err != nil {
 		os.Exit(1)
 	}
 }
