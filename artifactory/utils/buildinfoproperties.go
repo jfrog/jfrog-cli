@@ -2,17 +2,20 @@ package utils
 
 import (
 	"errors"
+	"io/ioutil"
+	"net"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"net"
-	"net/url"
-	"os"
-	"path/filepath"
 )
 
 type BuildType int
@@ -189,7 +192,6 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-
 	err = setServerDetailsToConfig(RESOLVER_PREFIX, config)
 	if err != nil {
 		return "", err
@@ -198,17 +200,18 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	if err != nil {
 		return "", err
 	}
-
+	err = SaveBuildGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return "", err
+	}
+	err = setBuildTimestampToConfig(buildName, buildNumber, config)
+	if err != nil {
+		return "", err
+	}
 	err = createGeneratedBuildInfoFile(buildName, buildNumber, config)
 	if err != nil {
 		return "", err
 	}
-
-	err = SaveBuildTimestamp(buildName, buildNumber, config)
-	if err != nil {
-		return "", err
-	}
-
 	err = setProxyIfDefined(config)
 	if err != nil {
 		return "", err
@@ -297,10 +300,6 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 
 	config.Set(BUILD_NAME, buildName)
 	config.Set(BUILD_NUMBER, buildNumber)
-	err := SaveBuildGeneralDetails(buildName, buildNumber)
-	if err != nil {
-		return err
-	}
 
 	buildPath, err := GetBuildDir(config.GetString(BUILD_NAME), config.GetString(BUILD_NUMBER))
 	if err != nil {
@@ -315,5 +314,14 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 	// If this is a Windows machine there is a need to modify the path for the build info file to match Java syntax with double \\
 	path := ioutils.DoubleWinPathSeparator(tempFile.Name())
 	config.Set(GENERATED_BUILD_INFO, path)
+	return nil
+}
+
+func setBuildTimestampToConfig(buildName, buildNumber string, config *viper.Viper) error {
+	buildGeneralDetails, err := ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return err
+	}
+	config.Set(BUILD_TIMESTAMP, strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10))
 	return nil
 }
