@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -142,7 +143,7 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 	var atDirectory string
 	for _, atDir := range dirs {
 		atDirectory = filepath.Dir(atDir)
-		d, err := yaml.Marshal(&prompt.ConfigFile{
+		d, err := yaml.Marshal(&npm.ConfigFile{
 			CommonConfig: prompt.CommonConfig{
 				Version:    1,
 				ConfigType: confType.String(),

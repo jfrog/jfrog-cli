@@ -2,18 +2,14 @@ package prompt
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 const BUILD_CONF_VERSION = 1
@@ -178,60 +174,4 @@ func GetRepositories(resolveRes *viper.Viper, repoTypes ...utils.RepoType) ([]st
 	}
 
 	return utils.GetRepositories(artAuth, repoTypes...)
-}
-
-func CreateBuildConfig(global bool, confType utils.ProjectType) error {
-	projectDir, err := utils.GetProjectDir(global)
-	if err != nil {
-		return err
-	}
-	err = fileutils.CreateDirIfNotExist(projectDir)
-	if err != nil {
-		return err
-	}
-
-	configFilePath := filepath.Join(projectDir, confType.String()+".yaml")
-	if err := VerifyConfigFile(configFilePath); err != nil {
-		return err
-	}
-
-	var vConfig *viper.Viper
-	configResult := &ConfigFile{}
-	configResult.Version = BUILD_CONF_VERSION
-	configResult.ConfigType = confType.String()
-	configResult.Resolver.ServerId, vConfig, err = ReadServerId()
-	if err != nil {
-		return err
-	}
-	configResult.Resolver.Repo, err = ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-	if err != nil {
-		return err
-	}
-	vConfig, err = ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
-	if err != nil {
-		return err
-	}
-	if vConfig.GetBool(USE_ARTIFACTORY) {
-		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
-		configResult.Deployer.Repo, err = ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
-		if err != nil {
-			return err
-		}
-	}
-	resBytes, err := yaml.Marshal(&configResult)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	err = ioutil.WriteFile(configFilePath, resBytes, 0644)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	log.Info(confType.String() + " build config successfully created.")
-	return nil
-}
-
-type ConfigFile struct {
-	CommonConfig `yaml:"common,inline"`
-	Resolver     utils.Repository `yaml:"resolver,omitempty"`
-	Deployer     utils.Repository `yaml:"deployer,omitempty"`
 }
