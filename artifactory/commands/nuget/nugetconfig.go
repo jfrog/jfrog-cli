@@ -40,17 +40,6 @@ func CreateBuildConfig(global bool, confType utils.ProjectType) error {
 	if err != nil {
 		return err
 	}
-	vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
-	if err != nil {
-		return err
-	}
-	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
-		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
-		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
-		if err != nil {
-			return err
-		}
-	}
 	resBytes, err := yaml.Marshal(&configResult)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -66,5 +55,4 @@ func CreateBuildConfig(global bool, confType utils.ProjectType) error {
 type ConfigFile struct {
 	prompt.CommonConfig `yaml:"common,inline"`
 	Resolver            utils.Repository `yaml:"resolver,omitempty"`
-	Deployer            utils.Repository `yaml:"deployer,omitempty"`
 }
