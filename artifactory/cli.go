@@ -1584,16 +1584,13 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	configFilePath, err := isProjectConfExist(utils.Nuget)
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
 		return err
 	}
 
-	if configFilePath != "" {
+	if exists {
 		// Found a config file.
-		if c.NArg() < 1 {
-			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-		}
 		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
 		if err != nil {
 			return errorutils.CheckError(err)
@@ -1630,10 +1627,11 @@ func nugetCmd(c *cli.Context) error {
 }
 
 func nugetLegacyCmd(c *cli.Context) error {
+	log.Warn(depracatedWarning(utils.Nuget, os.Args[2]))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	nugetCmd := nuget.NewNugetCommand()
+	nugetCmd := nuget.NewLegacyNugetCommand()
 	buildConfiguration, err := createBuildToolConfiguration(c)
 	if err != nil {
 		return nil
