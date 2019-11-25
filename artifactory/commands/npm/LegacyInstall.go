@@ -1,7 +1,5 @@
 package npm
 
-import "github.com/jfrog/jfrog-client-go/utils/log"
-
 type NpmLegacyInstallCommand struct {
 	commandName string
 	*NpmCommandArgs
@@ -16,7 +14,6 @@ func NewNpmLegacyCiCommand() *NpmLegacyInstallCommand {
 }
 
 func (nlic *NpmLegacyInstallCommand) Run() error {
-	log.Info("Running npm legacy " + nlic.CommandName() + ".")
 	return nlic.run()
 }
 

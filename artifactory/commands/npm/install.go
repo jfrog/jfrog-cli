@@ -53,16 +53,16 @@ type NpmCommandArgs struct {
 
 type NpmInstallCommand struct {
 	configFilePath string
-	commandName string
+	commandName    string
 	*NpmCommandArgs
 }
 
 func NewNpmInstallCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install"),commandName : "rt_npm_install"}
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install"), commandName: "rt_npm_install"}
 }
 
 func NewNpmCiCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("ci"),commandName : "rt_npm_ci"}
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("ci"), commandName: "rt_npm_ci"}
 }
 
 func (nic *NpmInstallCommand) CommandName() string {
@@ -103,7 +103,6 @@ func (nic *NpmInstallCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Extract build info information from the args.
 	return nic.run()
 }
 

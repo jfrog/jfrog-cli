@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -23,7 +24,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildclean"
@@ -77,6 +77,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 )
+
+var npmCommands = regexp.MustCompile(`npm-install|npmi|npm-ci|npmci|npm-publish|npmp`)
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
@@ -421,7 +423,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallCmd(c)
+				return npmInstallCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
 			},
 		},
 		{
@@ -435,18 +437,19 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmCiCmd(c)
+				return npmInstallCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
 			},
 		},
 		{
-			Name:         "npm-publish",
-			Flags:        getNpmCommonFlags(),
-			Aliases:      []string{"npmp"},
-			Usage:        npmpublish.Description,
-			HelpName:     common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
-			UsageText:    npmpublish.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "npm-publish",
+			Flags:           getNpmCommonFlags(),
+			Aliases:         []string{"npmp"},
+			Usage:           npmpublish.Description,
+			HelpName:        common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
+			UsageText:       npmpublish.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNpmFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmPublishCmd(c)
 			},
@@ -595,6 +598,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "npm-config",
 			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"npmc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -870,7 +874,8 @@ func getDockerFlags() []cli.Flag {
 	return flags
 }
 
-func getNpmBasicFlages() []cli.Flag {
+//These flags are not valid for native npm command
+func getNpmLegacyFlages() []cli.Flag {
 	npmFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "npm-args",
@@ -882,7 +887,7 @@ func getNpmBasicFlages() []cli.Flag {
 }
 
 func getNpmCommonFlags() []cli.Flag {
-	npmFlags := getNpmBasicFlages()
+	npmFlags := getNpmLegacyFlages()
 	return append(npmFlags, getBuildToolAndModuleFlags()...)
 }
 
@@ -1654,49 +1659,8 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 	return nuget.DependencyTreeCmd()
 }
 
-func npmInstallCmd(c *cli.Context) error {
-	configFilePath, err := isProjectConfExist(utils.Npm)
-	if err != nil {
-		return err
-	}
-
-	if configFilePath != "" {
-		// Found a config file. Continue as native command.
-		if c.NArg() < 1 {
-			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-		}
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
-		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
-		// Otherwise, throw an error.
-		if err := validateCommand(args, getNpmBasicFlages()); err != nil {
-			return err
-		}
-		npmCmd := npm.NewNpmInstallCommand()
-		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
-	}
-	// If config file not found, use Npm legacy command
-	return npmLegacyInstallCmd(c)
-}
-
-func isProjectConfExist(cmdType utils.ProjectType) (string, error) {
-	configFilePath, exists, err := utils.GetProjectConfFilePath(cmdType)
-	if err != nil {
-		return "", err
-	}
-	if exists {
-		log.Debug(string(cmdType)+" config file was found in:", configFilePath)
-		return configFilePath, nil
-	}
-	log.Debug(string(cmdType) + " config file wasn't found.")
-
-	return "", nil
-}
-
 func npmLegacyInstallCmd(c *cli.Context) error {
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1722,13 +1686,13 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	return commands.Exec(npmCmd)
 }
 
-func npmCiCmd(c *cli.Context) error {
-	configFilePath, err := isProjectConfExist(utils.Npm)
+func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		return err
 	}
 
-	if configFilePath != "" {
+	if exists {
 		// Found a config file. Continue as native command.
 		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
 		if err != nil {
@@ -1736,18 +1700,18 @@ func npmCiCmd(c *cli.Context) error {
 		}
 		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getNpmBasicFlages()); err != nil {
+		if err := validateCommand(args, getNpmLegacyFlages()); err != nil {
 			return err
 		}
-		npmCmd := npm.NewNpmCiCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 		return commands.Exec(npmCmd)
 	}
 	// If config file not found, use Npm legacy command
-	return npmLegacyCiCmd(c)
+	return npmLegacyCommand(c)
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1769,6 +1733,31 @@ func npmLegacyCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// Found a config file. Continue as native command.
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNpmLegacyFlages()); err != nil {
+			return err
+		}
+		npmCmd := npm.NewNpmPublishCommand()
+		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+		return commands.Exec(npmCmd)
+	}
+	// If config file not found, use Npm legacy command
+	return npmLegacyPublishCmd(c)
+}
+
+func npmLegacyPublishCmd(c *cli.Context) error {
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1836,8 +1825,8 @@ func shouldSkipGoFlagParsing() bool {
 
 func shouldSkipNpmFlagParsing() bool {
 	// This function is executed by code-congsta, regardless of the CLI command being executed.
-	// There's no need to run the code of this function, if the command is not "jfrog rt npm-install || npm".
-	if len(os.Args) < 3 || (os.Args[2] != "npm-install" && os.Args[2] != "npmci") {
+	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
+	if len(os.Args) < 3 || !npmCommands.MatchString(os.Args[2]) {
 		return false
 	}
 
@@ -1876,6 +1865,7 @@ func goCmd(c *cli.Context) error {
 }
 
 func goLegacyCmd(c *cli.Context) error {
+	log.Warn(depracatedWarning(utils.Go, os.Args[2]))
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1977,7 +1967,7 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return prompt.CreateBuildConfig(global, utils.Npm)
+	return npm.CreateBuildConfig(global, utils.Npm)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -3050,30 +3040,6 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 	}
 }
 
-func validateCommonContext(c *cli.Context) error {
-	// Validate build
-	if c.IsSet("build") {
-		if c.IsSet("offset") {
-			return errors.New("Cannot use 'offset' together with 'build'")
-		}
-		if c.IsSet("limit") {
-			return errors.New("Cannot use 'limit' together with 'build'")
-		}
-	}
-
-	// Validate sort-order
-	if c.IsSet("sort-order") {
-		if !c.IsSet("sort-by") {
-			return errors.New("Cannot use 'sort-order' without the 'sort-by' option")
-		}
-		if !(c.String("sort-order") == "asc" || c.String("sort-order") == "desc") {
-			return errors.New("The 'sort-order' option can only accept 'asc' or 'desc' as values")
-		}
-	}
-
-	return nil
-}
-
 func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
 	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
@@ -3151,4 +3117,14 @@ func extractCommand(c *cli.Context) (command []string) {
 	command = make([]string, len(c.Args()))
 	copy(command, c.Args())
 	return command
+}
+
+func depracatedWarning(projectType utils.ProjectType, command string) string {
+	return `You are using a deprecated syntax of the "` + command + `" command.
+	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
+	To create this configuration, run the following command from the root directory of the project:
+	$ jfrog rt ` + command + `
+	This will create the configuration inside the .jfrog directory under the root directory of the project.
+	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
+	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
