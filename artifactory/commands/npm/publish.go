@@ -5,6 +5,13 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -14,16 +21,9 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/mattn/go-shellwords"
-	"io"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
-type NpmPublishCommand struct {
+type NpmPublishCommandArgs struct {
 	NpmCommand
 	executablePath   string
 	workingDirectory string
@@ -35,15 +35,58 @@ type NpmPublishCommand struct {
 	artifactData     []specutils.FileInfo
 }
 
+type NpmPublishCommand struct {
+	configFilePath string
+	commandName    string
+	*NpmPublishCommandArgs
+}
+
 func NewNpmPublishCommand() *NpmPublishCommand {
-	return &NpmPublishCommand{}
+	return &NpmPublishCommand{NpmPublishCommandArgs: NewNpmPublishCommandArgs(), commandName: "rt_npm_publish"}
+}
+
+func NewNpmPublishCommandArgs() *NpmPublishCommandArgs {
+	return &NpmPublishCommandArgs{}
 }
 
 func (npc *NpmPublishCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	return npc.rtDetails, nil
 }
 
+func (npc *NpmPublishCommand) SetConfigFilePath(configFilePath string) *NpmPublishCommand {
+	npc.configFilePath = configFilePath
+	return npc
+}
+
+func (nic *NpmPublishCommand) SetArgs(args []string) *NpmPublishCommand {
+	nic.NpmPublishCommandArgs.npmArgs = args
+	return nic
+}
+
 func (npc *NpmPublishCommand) Run() error {
+	if npc.configFilePath != "" {
+		// Read config file.
+		log.Debug("Preparing to read the config file", npc.configFilePath)
+		vConfig, err := utils.ReadConfigFile(npc.configFilePath, utils.YAML)
+		if err != nil {
+			return err
+		}
+		// Extract resolution params.
+		deployerParams, err := utils.GetRepoConfigByPrefix(npc.configFilePath, utils.ProjectConfigDeployerPrefix, vConfig)
+		if err != nil {
+			return err
+		}
+		_, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(npc.NpmPublishCommandArgs.npmArgs)
+		RtDetails, err := deployerParams.RtDetails()
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		npc.SetBuildConfiguration(buildConfiguration).SetRepo(deployerParams.TargetRepo()).SetNpmArgs(filteredNpmArgs).SetRtDetails(RtDetails)
+	}
+	return npc.run()
+}
+
+func (npc *NpmPublishCommand) run() error {
 	log.Info("Running npm Publish")
 	if err := npc.preparePrerequisites(); err != nil {
 		return err
@@ -83,7 +126,7 @@ func (npc *NpmPublishCommand) Run() error {
 }
 
 func (npc *NpmPublishCommand) CommandName() string {
-	return "rt_npm_publish"
+	return npc.CommandName()
 }
 
 func (npc *NpmPublishCommand) preparePrerequisites() error {
@@ -201,18 +244,11 @@ func (npc *NpmPublishCommand) saveArtifactData() error {
 
 func (npc *NpmPublishCommand) setPublishPath() error {
 	log.Debug("Reading Package Json.")
-	splitFlags, err := shellwords.Parse(npc.npmArgs)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
 
 	npc.publishPath = npc.workingDirectory
-	if len(splitFlags) > 0 && !strings.HasPrefix(strings.TrimSpace(splitFlags[0]), "-") {
-		path := strings.TrimSpace(splitFlags[0])
+	if len(npc.npmArgs) > 0 && !strings.HasPrefix(strings.TrimSpace(npc.npmArgs[0]), "-") {
+		path := strings.TrimSpace(npc.npmArgs[0])
 		path = clientutils.ReplaceTildeWithUserHome(path)
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
 
 		if filepath.IsAbs(path) {
 			npc.publishPath = path

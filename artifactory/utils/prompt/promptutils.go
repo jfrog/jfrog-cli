@@ -2,13 +2,14 @@ package prompt
 
 import (
 	"errors"
+	"os"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"github.com/spf13/viper"
-	"os"
 )
 
 const BUILD_CONF_VERSION = 1

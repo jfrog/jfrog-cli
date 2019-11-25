@@ -7,12 +7,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"gopkg.in/yaml.v2"
 )
 
 func TestMain(m *testing.M) {
@@ -133,4 +137,44 @@ func initArtifactoryCli() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		configArtifactoryCli = createConfigJfrogCLI(cred)
 	}
+}
+
+func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType) error {
+	var atDirectory string
+	for _, atDir := range dirs {
+		atDirectory = filepath.Dir(atDir)
+		d, err := yaml.Marshal(&npm.ConfigFile{
+			CommonConfig: prompt.CommonConfig{
+				Version:    1,
+				ConfigType: confType.String(),
+			},
+			Resolver: artifactoryUtils.Repository{
+				Repo:     resolver,
+				ServerId: "default",
+			},
+			Deployer: artifactoryUtils.Repository{
+				Repo:     deployer,
+				ServerId: "default",
+			},
+		})
+		if err != nil {
+			return err
+		}
+		filePath := filepath.Join(atDirectory, ".jfrog", "projects")
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			os.MkdirAll(filePath, 0777)
+		}
+		filePath = filepath.Join(filePath, confType.String()+".yaml")
+		// Create config file to make sure the path is valid
+		f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			t.Error("Couldn't create file:", err)
+		}
+		defer f.Close()
+		_, err = f.Write(d)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	return nil
 }

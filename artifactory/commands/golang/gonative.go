@@ -51,6 +51,9 @@ func (gnc *GoNativeCommand) Run() error {
 
 	// Extract build info information from the args.
 	gnc.goArg, gnc.buildConfiguration, err = utils.ExtractBuildDetailsFromArgs(gnc.goArg)
+	if err != nil {
+		return err
+	}
 	return gnc.GoCommand.Run()
 }
 

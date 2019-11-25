@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -262,4 +263,11 @@ type BuildConfiguration struct {
 	BuildName   string
 	BuildNumber string
 	Module      string
+}
+
+func ValidateBuildParams(buildConfig *BuildConfiguration) error {
+	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
+		return errors.New("The build-name, build-number and module options cannot be sent separately.")
+	}
+	return nil
 }

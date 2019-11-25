@@ -5,6 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/buger/jsonparser"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/gofrog/parallel"
@@ -21,13 +28,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
-	"github.com/mattn/go-shellwords"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 const npmrcFileName = ".npmrc"
@@ -52,20 +52,58 @@ type NpmCommandArgs struct {
 }
 
 type NpmInstallCommand struct {
+	configFilePath string
+	commandName    string
 	*NpmCommandArgs
 }
 
 func NewNpmInstallCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install")}
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install"), commandName: "rt_npm_install"}
+}
+
+func NewNpmCiCommand() *NpmInstallCommand {
+	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("ci"), commandName: "rt_npm_ci"}
+}
+
+func (nic *NpmInstallCommand) CommandName() string {
+	return nic.commandName
+}
+
+func (nic *NpmInstallCommand) SetConfigFilePath(configFilePath string) *NpmInstallCommand {
+	nic.configFilePath = configFilePath
+	return nic
+}
+
+func (nic *NpmInstallCommand) SetArgs(args []string) *NpmInstallCommand {
+	nic.NpmCommandArgs.npmArgs = args
+	return nic
+}
+
+func (nic *NpmInstallCommand) SetRepoConfig(conf *utils.RepositoryConfig) *NpmInstallCommand {
+	rtDetails, _ := conf.RtDetails()
+	nic.NpmCommandArgs.SetRepo(conf.TargetRepo()).SetRtDetails(rtDetails)
+	return nic
 }
 
 func (nic *NpmInstallCommand) Run() error {
 	log.Info("Running npm Install.")
+	// Read config file.
+	log.Debug("Preparing to read the config file", nic.configFilePath)
+	vConfig, err := utils.ReadConfigFile(nic.configFilePath, utils.YAML)
+	if err != nil {
+		return err
+	}
+	// Extract resolution params.
+	resolverParams, err := utils.GetRepoConfigByPrefix(nic.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
+	if err != nil {
+		return err
+	}
+	threads, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(nic.npmArgs)
+	nic.SetRepoConfig(resolverParams).SetArgs(filteredNpmArgs).SetThreads(threads).SetBuildConfiguration(buildConfiguration)
+	if err != nil {
+		return err
+	}
 	return nic.run()
-}
-
-func (nic *NpmInstallCommand) CommandName() string {
-	return "rt_npm_install"
 }
 
 func (nca *NpmCommandArgs) SetThreads(threads int) *NpmCommandArgs {
@@ -250,11 +288,7 @@ func (nca *NpmCommandArgs) createTempNpmrc() error {
 
 func (nca *NpmCommandArgs) runInstall() error {
 	log.Debug(fmt.Sprintf("Running npm %s command.", nca.command))
-	splitArgs, err := shellwords.Parse(nca.npmArgs)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	filteredArgs := filterFlags(splitArgs)
+	filteredArgs := filterFlags(nca.npmArgs)
 	installCmdConfig := &npm.NpmConfig{
 		Npm:          nca.executablePath,
 		Command:      append([]string{nca.command}, filteredArgs...),
@@ -406,7 +440,7 @@ func (nca *NpmCommandArgs) setTypeRestriction(key string, val interface{}) {
 // Run npm list and parse the returned json
 func (nca *NpmCommandArgs) prepareDependencies(typeRestriction string) error {
 	// Run npm list
-	data, errData, err := npm.RunList(nca.npmArgs+" -only="+typeRestriction, nca.executablePath)
+	data, errData, err := npm.RunList(strings.Join(append(nca.npmArgs, " -only="+typeRestriction), " "), nca.executablePath)
 	if err != nil {
 		log.Warn("npm list command failed with error:", err.Error())
 	}

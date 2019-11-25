@@ -1,24 +1,20 @@
 package npm
 
 import (
-	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"
+
+	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 // This method runs "npm config list --json" command and returns the json object that contains the current configurations of npm
 // For more info see https://docs.npmjs.com/cli/config
-func GetConfigList(npmFlags, executablePath string) ([]byte, error) {
+func GetConfigList(npmFlags []string, executablePath string) ([]byte, error) {
 	pipeReader, pipeWriter := io.Pipe()
 	defer pipeReader.Close()
-	splitFlags, err := shellwords.Parse(npmFlags)
-	if err != nil {
-		return nil, errorutils.CheckError(err)
-	}
 
-	configListCmdConfig := createConfigListCmdConfig(executablePath, splitFlags, pipeWriter)
+	configListCmdConfig := createConfigListCmdConfig(executablePath, npmFlags, pipeWriter)
 	var npmError error
 	go func() {
 		npmError = gofrogcmd.RunCmd(configListCmdConfig)

@@ -3,8 +3,10 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 // Removes the provided flag and value from the command arguments
@@ -117,6 +119,24 @@ func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, fl
 	}
 	return
 }
+func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
+	threads = 3
+	// Extract threads information from the args.
+	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", args)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	if numOfThreads != "" {
+		threads, err = strconv.Atoi(numOfThreads)
+		if err != nil {
+			return
+		}
+	}
+
+	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
+	return
+}
 
 func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig *BuildConfiguration, err error) {
 	var flagIndex, valueIndex int
@@ -143,6 +163,6 @@ func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig
 		return
 	}
 	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
-
+	err = ValidateBuildParams(buildConfig)
 	return
 }

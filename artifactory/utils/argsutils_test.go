@@ -127,7 +127,7 @@ func TestExtractBuildDetailsFromArgs(t *testing.T) {
 	}{
 		{[]string{"-test", "--build-name", "test1", "--foo", "--build-number", "1", "--module", "module1"}, []string{"-test", "--foo"}, &BuildConfiguration{"test1", "1", "module1"}},
 		{[]string{"--module=module2", "--build-name", "test2", "--foo", "bar", "--build-number=2"}, []string{"--foo", "bar"}, &BuildConfiguration{"test2", "2", "module2"}},
-		{[]string{"foo", "-X", "123", "--bar", "--build-number=3", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"", "3", ""}},
+		{[]string{"foo", "-X", "123", "--build-name", "test3", "--bar", "--build-number=3", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"test3", "3", ""}},
 	}
 
 	for _, test := range tests {
@@ -153,8 +153,8 @@ func TestExtractBuildDetailsFromEnv(t *testing.T) {
 		expectedBuildConfig *BuildConfiguration
 	}{
 		{[]string{"-test", "--build-name", "test1", "--foo", "--build-number", "1", "--module", "module1"}, []string{"-test", "--foo"}, &BuildConfiguration{"test1", "1", "module1"}},
-		{[]string{"foo", "-X", "123", "--bar", "--build-number=3", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"", "3", ""}},
-		{[]string{"foo", "-X", "123", "--bar", "--build-name=test1", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"test1", "", ""}},
+		{[]string{"foo", "-X", "123", "--bar", "--build-name=test3", "--build-number=3", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"test3", "3", ""}},
+		{[]string{"foo", "-X", "123", "--bar", "--build-name=test1", "--build-number=1", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{"test1", "1", ""}},
 		{[]string{"foo", "-X", "123", "--bar", "--foox"}, []string{"foo", "-X", "123", "--bar", "--foox"}, &BuildConfiguration{buildNameEnv, buildNumberEnv, ""}},
 	}
 

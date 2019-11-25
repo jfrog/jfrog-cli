@@ -8,7 +8,7 @@ import (
 type NpmCommand struct {
 	repo               string
 	buildConfiguration *utils.BuildConfiguration
-	npmArgs            string
+	npmArgs            []string
 	rtDetails          *config.ArtifactoryDetails
 }
 
@@ -17,7 +17,7 @@ func (nc *NpmCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *NpmCom
 	return nc
 }
 
-func (nc *NpmCommand) SetNpmArgs(npmArgs string) *NpmCommand {
+func (nc *NpmCommand) SetNpmArgs(npmArgs []string) *NpmCommand {
 	nc.npmArgs = npmArgs
 	return nc
 }

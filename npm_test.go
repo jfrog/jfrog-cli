@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -28,7 +30,7 @@ type npmTestParams struct {
 
 const npmFlagName = "npm"
 
-func TestNpm(t *testing.T) {
+func TestLegacyNpm(t *testing.T) {
 	initNpmTest(t)
 	npmi := "npm-install"
 	wd, err := os.Getwd()
@@ -36,7 +38,7 @@ func TestNpm(t *testing.T) {
 		t.Error(err)
 	}
 
-	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t)
+	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t, false)
 	var npmTests = []npmTestParams{
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, validationFunc: validateNpmInstall},
 		{command: "npmci", repo: tests.NpmRemoteRepo, wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
@@ -82,6 +84,80 @@ func TestNpm(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
+func TestNativeNpm(t *testing.T) {
+	initNpmTest(t)
+	npmi := "npm-install"
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+
+	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t, true)
+	var npmTests = []npmTestParams{
+		{command: "npmci", wd: npmProjectCi, validationFunc: validateNpmInstall},
+		{command: "npmci", wd: npmProjectCi, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{command: npmi, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{command: npmi, wd: npmProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmInstall},
+		{command: npmi, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
+		{command: npmi, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
+		{command: npmi, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
+		{command: npmi, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "-only=dev"},
+		{command: "npmi", wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
+		{command: "npmp", wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		{command: "npm-publish", wd: npmProjectPath, validationFunc: validateNpmPublish},
+	}
+	for i, npmTest := range npmTests {
+		err = os.Chdir(filepath.Dir(npmTest.wd))
+		if err != nil {
+			t.Error(err)
+		}
+		npmrcFileInfo, err := os.Stat(".npmrc")
+		if err != nil && !os.IsNotExist(err) {
+			t.Error(err)
+		}
+		if npmTest.moduleName != "" {
+			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+100), "--module="+npmTest.moduleName)
+		} else {
+			npmTest.moduleName = "jfrog-cli-tests:1.0.0"
+			runNpm(t, npmTest.command, npmTest.npmArgs, "--build-name="+tests.NpmBuildName, "--build-number="+strconv.Itoa(i+100))
+		}
+		artifactoryCli.Exec("bp", tests.NpmBuildName, strconv.Itoa(i+100))
+		npmTest.buildNumber = strconv.Itoa(i + 100)
+		npmTest.validationFunc(t, npmTest)
+
+		// make sure npmrc file was not changed (if existed)
+		postTestFileInfo, postTestFileInfoErr := os.Stat(".npmrc")
+		validateNpmrcFileInfo(t, npmTest, npmrcFileInfo, postTestFileInfo, err, postTestFileInfoErr)
+	}
+
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanBuildToolsTest()
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
+}
+
+func TestNpmWithGlobalConfig(t *testing.T) {
+	initNpmTest(t)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	npmProjectPath := initGlobalNpmFilesTest(t)
+	err = os.Chdir(filepath.Dir(npmProjectPath))
+	if err != nil {
+		t.Error(err)
+	}
+	runNpm(t, "npm-install", "--build-name=npmtest", "--build-number=1", "--module="+ModuleNameJFrogTest)
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Error(err)
+	}
+	cleanBuildToolsTest()
+
+}
+
 func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, postTestNpmrcFileInfo os.FileInfo, err, postTestFileInfoErr error) {
 	if postTestFileInfoErr != nil && !os.IsNotExist(postTestFileInfoErr) {
 		t.Error(postTestFileInfoErr)
@@ -105,7 +181,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	}
 }
 
-func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
+func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi string) {
 	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
 	if err != nil {
 		t.Error(err)
@@ -124,6 +200,31 @@ func initNpmFilesTest(t *testing.T) (npmProjectPath, npmScopedProjectPath, npmNp
 	}
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
+	if nativeMode {
+		err = testCreateConfFile([]string{npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	return
+}
+
+func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
+	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm)
+	if err != nil {
+		t.Error(err)
+	}
+
 	return
 }
 
@@ -276,4 +377,12 @@ func initNpmTest(t *testing.T) {
 		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
 	}
 	createJfrogHomeConfig(t)
+}
+
+func runNpm(t *testing.T, args ...string) {
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := artifactoryGoCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
 }
