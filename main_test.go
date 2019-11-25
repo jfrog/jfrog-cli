@@ -82,7 +82,7 @@ func createJfrogHomeConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(wd, tests.Out, "jfroghome"))
+	err = os.Setenv(cliutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,7 +97,7 @@ func createJfrogHomeConfig(t *testing.T) {
 }
 
 func prepareHomeDir(t *testing.T) (string, string) {
-	oldHomeDir := os.Getenv(cliutils.JfrogHomeDirEnv)
+	oldHomeDir := os.Getenv(cliutils.HomeDir)
 	// Populate cli config with 'default' server
 	createJfrogHomeConfig(t)
 	newHomeDir, err := config.GetJfrogHomeDir()
@@ -109,7 +109,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 
 func cleanBuildToolsTest() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
-		os.Unsetenv(cliutils.JfrogHomeDirEnv)
+		os.Unsetenv(cliutils.HomeDir)
 		cleanArtifactory()
 		tests.CleanFileSystem()
 	}

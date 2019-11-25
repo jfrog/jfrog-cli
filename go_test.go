@@ -119,7 +119,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	buildName := "go-build"
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()
@@ -143,7 +143,7 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	buildName := "go-build"
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()
@@ -168,7 +168,7 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, oldHomeDir)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()

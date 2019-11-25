@@ -2,17 +2,20 @@ package utils
 
 import (
 	"errors"
+	"io/ioutil"
+	"net"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"net"
-	"net/url"
-	"os"
-	"path/filepath"
 )
 
 type BuildType int
@@ -49,6 +52,7 @@ const (
 // For key/value binding
 const BUILD_NAME = "build.name"
 const BUILD_NUMBER = "build.number"
+const BUILD_TIMESTAMP = "build.timestamp"
 const GENERATED_BUILD_INFO = "buildInfo.generated"
 
 const RESOLVER_PREFIX = "resolver."
@@ -113,6 +117,7 @@ var commonConfigMapping = map[string]string{
 	"artifactory.publish.artifacts":                      "",
 	"artifactory.deploy.build.name":                      BUILD_NAME,
 	"artifactory.deploy.build.number":                    BUILD_NUMBER,
+	"artifactory.deploy.build.timestamp":                 BUILD_TIMESTAMP,
 	"buildInfo.generated.build.info":                     GENERATED_BUILD_INFO,
 	"artifactory.proxy.host":                             PROXY + HOST,
 	"artifactory.proxy.port":                             PROXY + PORT,
@@ -187,7 +192,6 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-
 	err = setServerDetailsToConfig(RESOLVER_PREFIX, config)
 	if err != nil {
 		return "", err
@@ -196,12 +200,20 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	if err != nil {
 		return "", err
 	}
-
-	err = createGeneratedBuildInfoFile(buildName, buildNumber, config)
-	if err != nil {
-		return "", err
+	if buildName != "" || buildNumber != "" {
+		err = SaveBuildGeneralDetails(buildName, buildNumber)
+		if err != nil {
+			return "", err
+		}
+		err = setBuildTimestampToConfig(buildName, buildNumber, config)
+		if err != nil {
+			return "", err
+		}
+		err = createGeneratedBuildInfoFile(buildName, buildNumber, config)
+		if err != nil {
+			return "", err
+		}
 	}
-
 	err = setProxyIfDefined(config)
 	if err != nil {
 		return "", err
@@ -284,16 +296,8 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 // Maven or Gradle build.
 // Creating this file only if build name and number is provided.
 func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.Viper) error {
-	if buildName == "" && buildNumber == "" {
-		return nil
-	}
-
 	config.Set(BUILD_NAME, buildName)
 	config.Set(BUILD_NUMBER, buildNumber)
-	err := SaveBuildGeneralDetails(buildName, buildNumber)
-	if err != nil {
-		return err
-	}
 
 	buildPath, err := GetBuildDir(config.GetString(BUILD_NAME), config.GetString(BUILD_NUMBER))
 	if err != nil {
@@ -308,5 +312,14 @@ func createGeneratedBuildInfoFile(buildName, buildNumber string, config *viper.V
 	// If this is a Windows machine there is a need to modify the path for the build info file to match Java syntax with double \\
 	path := ioutils.DoubleWinPathSeparator(tempFile.Name())
 	config.Set(GENERATED_BUILD_INFO, path)
+	return nil
+}
+
+func setBuildTimestampToConfig(buildName, buildNumber string, config *viper.Viper) error {
+	buildGeneralDetails, err := ReadBuildInfoGeneralDetails(buildName, buildNumber)
+	if err != nil {
+		return err
+	}
+	config.Set(BUILD_TIMESTAMP, strconv.FormatInt(buildGeneralDetails.Timestamp.UnixNano()/int64(time.Millisecond), 10))
 	return nil
 }

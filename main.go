@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory"
 	"github.com/jfrog/jfrog-cli-go/bintray"
@@ -75,7 +74,7 @@ func main() {
 
 func execMain() error {
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	utils.SetUserAgent(fmt.Sprintf("%s/%s", cliutils.ClientAgent, cliutils.GetVersion()))
+	utils.SetUserAgent(cliutils.GetUserAgent())
 
 	app := cli.NewApp()
 	app.Name = "jfrog"

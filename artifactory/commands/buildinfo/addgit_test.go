@@ -193,16 +193,16 @@ func TestRtDetailsFromConfigFile(t *testing.T) {
 	expectedUrl := "http://localhost:8081/artifactory/"
 	expectedUser := "admin"
 
-	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	homeEnv := os.Getenv(cliutils.HomeDir)
 	if homeEnv == "" {
 		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
 	}
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+	defer os.Setenv(cliutils.HomeDir, homeEnv)
 	baseDir, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
-	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	err = os.Setenv(cliutils.HomeDir, filepath.Join(baseDir, "..", "testdata"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -227,17 +227,17 @@ func TestRtDetailsWithoutConfigFile(t *testing.T) {
 	expectedUrl := "http://localhost:8082/artifactory/"
 	expectedUser := "admin2"
 
-	homeEnv := os.Getenv(cliutils.JfrogHomeDirEnv)
+	homeEnv := os.Getenv(cliutils.HomeDir)
 	if homeEnv == "" {
 		homeEnv = os.Getenv(cliutils.JfrogHomeEnv)
 	}
-	defer os.Setenv(cliutils.JfrogHomeDirEnv, homeEnv)
+	defer os.Setenv(cliutils.HomeDir, homeEnv)
 
 	baseDir, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
-	err = os.Setenv(cliutils.JfrogHomeDirEnv, filepath.Join(baseDir, "..", "testdata"))
+	err = os.Setenv(cliutils.HomeDir, filepath.Join(baseDir, "..", "testdata"))
 	if err != nil {
 		t.Error(err)
 	}
