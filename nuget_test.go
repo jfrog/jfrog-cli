@@ -70,7 +70,7 @@ func TestNativeNugetResolve(t *testing.T) {
 	}
 	for buildNumber, test := range projects {
 		projectPath := createNugetProject(t, test.project)
-		err := testCreateConfFile([]string{projectPath}, tests.NugetRemoteRepo, t, utils.Nuget)
+		err := testCreateConfFile([]string{projectPath}, tests.NugetRemoteRepo, "", t, utils.Nuget)
 		if err != nil {
 			t.Error(err)
 		}
@@ -105,16 +105,16 @@ func createNugetProject(t *testing.T, projectName string) string {
 
 func TestNuGetWithGlobalConfig(t *testing.T) {
 	initNugetTest(t)
-	projectPath := createNugetProject(t, "globalconfig")
+	projectPath := createNugetProject(t, "packagesconfig")
 	jfrogHomeDir, err := config.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err)
 	}
-	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NugetRemoteRepo, t, utils.Nuget)
+	err = testCreateConfFile([]string{jfrogHomeDir + `\`}, tests.NugetRemoteRepo, "", t, utils.Nuget)
 	if err != nil {
 		t.Error(err)
 	}
-	testNugetCmd(t, projectPath, "1", "globalconfig", 6, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, true)
+	testNugetCmd(t, projectPath, "1", "packagesconfig", 6, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, true)
 
 	cleanBuildToolsTest()
 }

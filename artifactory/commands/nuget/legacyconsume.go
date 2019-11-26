@@ -5,7 +5,7 @@ type NugetLegacyCommand struct {
 }
 
 func NewLegacyNugetCommand() *NugetLegacyCommand {
-	return &NugetLegacyCommand{}
+	return &NugetLegacyCommand{&NugetCommandArgs{}}
 }
 
 func (nlic *NugetLegacyCommand) Run() error {

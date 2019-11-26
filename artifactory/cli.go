@@ -1601,25 +1601,7 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 		nugetCmd := nuget.NewNugetCommand()
-		log.Debug("Preparing to read the config file", configFilePath)
-		vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
-		if err != nil {
-			return err
-		}
-		// Extract resolution params.
-		resolverParams, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
-		if err != nil {
-			return err
-		}
-		rtDetails, err := resolverParams.RtDetails()
-		if err != nil {
-			return err
-		}
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		nugetCmd.SetArgs(strings.Join(filteredNugetArgs, " ")).
-			SetRepoName(resolverParams.TargetRepo()).
-			SetBuildConfiguration(buildConfiguration).
-			SetRtDetails(rtDetails)
+		nugetCmd.SetConfigFilePath(configFilePath).SetArgs(strings.Join(args, " "))
 		return commands.Exec(nugetCmd)
 	}
 	// If config file not found, use nuget legacy command

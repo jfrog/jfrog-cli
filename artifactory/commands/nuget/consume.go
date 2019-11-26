@@ -36,7 +36,7 @@ type NugetCommand struct {
 }
 
 func NewNugetCommand() *NugetCommand {
-	return &NugetCommand{}
+	return &NugetCommand{"", &NugetCommandArgs{}}
 }
 
 func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
@@ -81,18 +81,15 @@ func (nc *NugetCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
 	// Extract resolution params.
-	resolveParams, err := utils.GetRepoConfigByPrefix(nc.configFilePath, utils.ProjectConfigDeployerPrefix, vConfig)
+	resolveParams, err := utils.GetRepoConfigByPrefix(nc.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
 	if err != nil {
 		return err
 	}
 	filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(strings.Split(nc.args, " "))
 	RtDetails, err := resolveParams.RtDetails()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return err
 	}
 	nc.SetArgs(strings.Join(filteredNugetArgs, " ")).
 		SetRepoName(resolveParams.TargetRepo()).
@@ -146,11 +143,11 @@ func (nca *NugetCommandArgs) run() error {
 	return utils.SaveBuildInfo(nca.buildConfiguration.BuildName, nca.buildConfiguration.BuildNumber, buildInfo)
 }
 
-func (nca *NugetCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+func (nca *NugetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
 	return nca.rtDetails, nil
 }
 
-func (nca *NugetCommand) CommandName() string {
+func (nca *NugetCommandArgs) CommandName() string {
 	return "rt_nuget"
 }
 
