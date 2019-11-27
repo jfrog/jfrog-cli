@@ -376,4 +376,4 @@ The tmp dir used by JFrog CLI cam be configured using the new JFROGCLITEMP_DIR e
 - Fixed the expected path for the dlf command.
 
 ## 1.0.0 (Mar 07, 2016)
-- No release notes available for this version yet.
+- Initial release.
