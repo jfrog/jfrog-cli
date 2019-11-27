@@ -126,7 +126,7 @@ func (npc *NpmPublishCommand) run() error {
 }
 
 func (npc *NpmPublishCommand) CommandName() string {
-	return npc.CommandName()
+	return npc.commandName
 }
 
 func (npc *NpmPublishCommand) preparePrerequisites() error {
