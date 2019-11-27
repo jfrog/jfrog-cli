@@ -1608,7 +1608,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1659,7 +1659,7 @@ func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyComma
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1705,7 +1705,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func npmLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2]))
+	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1801,7 +1801,7 @@ func goCmd(c *cli.Context) error {
 }
 
 func goLegacyCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Go, os.Args[2]))
+	log.Warn(depracatedWarning(utils.Go, os.Args[2], "go-config"))
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -3055,11 +3055,11 @@ func extractCommand(c *cli.Context) (command []string) {
 	return command
 }
 
-func depracatedWarning(projectType utils.ProjectType, command string) string {
+func depracatedWarning(projectType utils.ProjectType, command, configCommand string) string {
 	return `You are using a deprecated syntax of the "` + command + `" command.
 	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
 	To create this configuration, run the following command from the root directory of the project:
-	$ jfrog rt ` + command + `
+	$ jfrog rt ` + configCommand + `
 	This will create the configuration inside the .jfrog directory under the root directory of the project.
 	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
