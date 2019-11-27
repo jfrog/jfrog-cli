@@ -56,6 +56,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npminstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmpublish"
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetconfig"
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
@@ -605,6 +606,18 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return createNpmConfigCmd(c)
+			},
+		},
+		{
+			Name:         "nuget-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"nugetc"},
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createNugetConfigCmd(c)
 			},
 		},
 	}
@@ -1609,7 +1622,7 @@ func nugetCmd(c *cli.Context) error {
 }
 
 func nugetLegacyCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Nuget, os.Args[2]))
+	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "nugetc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1640,7 +1653,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1691,7 +1704,7 @@ func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyComma
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1737,7 +1750,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func npmLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1845,7 +1858,7 @@ func goCmd(c *cli.Context) error {
 }
 
 func goLegacyCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Go, os.Args[2], "go-config"))
+	log.Warn(deprecatedWarning(utils.Go, os.Args[2], "go-config"))
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1948,6 +1961,14 @@ func createNpmConfigCmd(c *cli.Context) error {
 	}
 	global := c.Bool("global")
 	return npm.CreateBuildConfig(global, utils.Npm)
+}
+
+func createNugetConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return nuget.CreateBuildConfig(global, utils.Nuget)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -3099,7 +3120,7 @@ func extractCommand(c *cli.Context) (command []string) {
 	return command
 }
 
-func depracatedWarning(projectType utils.ProjectType, command, configCommand string) string {
+func deprecatedWarning(projectType utils.ProjectType, command, configCommand string) string {
 	return `You are using a deprecated syntax of the "` + command + `" command.
 	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
 	To create this configuration, run the following command from the root directory of the project:
