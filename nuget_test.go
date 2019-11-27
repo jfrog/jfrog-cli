@@ -70,7 +70,7 @@ func TestNativeNugetResolve(t *testing.T) {
 	}
 	for buildNumber, test := range projects {
 		projectPath := createNugetProject(t, test.project)
-		err := testCreateConfFile([]string{projectPath}, tests.NugetRemoteRepo, "", t, utils.Nuget)
+		err := testCreateConfFile([]string{projectPath}, tests.NugetRemoteRepo, "", t, utils.Nuget, false)
 		if err != nil {
 			t.Error(err)
 		}
@@ -110,7 +110,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = testCreateConfFile([]string{jfrogHomeDir + `\`}, tests.NugetRemoteRepo, "", t, utils.Nuget)
+	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	if err != nil {
 		t.Error(err)
 	}
