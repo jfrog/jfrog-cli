@@ -65,7 +65,7 @@ func createMavenProject(t *testing.T) string {
 }
 
 func initMavenTest(t *testing.T) {
-	if !*tests.TestNpm {
+	if !*tests.TestMaven {
 		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
 	}
 	createJfrogHomeConfig(t)
