@@ -139,10 +139,9 @@ func initArtifactoryCli() {
 	}
 }
 
-func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType) error {
-	var atDirectory string
+func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+	var filePath string
 	for _, atDir := range dirs {
-		atDirectory = filepath.Dir(atDir)
 		d, err := yaml.Marshal(&npm.ConfigFile{
 			CommonConfig: prompt.CommonConfig{
 				Version:    1,
@@ -160,7 +159,13 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 		if err != nil {
 			return err
 		}
-		filePath := filepath.Join(atDirectory, ".jfrog", "projects")
+		if global {
+			filePath = filepath.Join(atDir, "projects")
+
+		} else {
+			filePath = filepath.Join(atDir, ".jfrog", "projects")
+
+		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			os.MkdirAll(filePath, 0777)
 		}
