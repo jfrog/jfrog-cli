@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -21,8 +20,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
+	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	npmUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils/npm"
 	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
@@ -78,8 +79,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 )
-
-var npmCommands = regexp.MustCompile(`npm-install|npmi|npm-ci|npmci|npm-publish|npmp`)
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
@@ -1603,12 +1602,15 @@ func nugetCmd(c *cli.Context) error {
 	}
 
 	if exists {
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
 		// Found a config file.
 		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
-		// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Validates the nuget command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
 			return err
@@ -1819,7 +1821,7 @@ func shouldSkipGoFlagParsing() bool {
 func shouldSkipNpmFlagParsing() bool {
 	// This function is executed by code-congsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
-	if len(os.Args) < 3 || !npmCommands.MatchString(os.Args[2]) {
+	if len(os.Args) < 3 || !npmUtils.IsNpmCommand(os.Args[2]) {
 		return false
 	}
 
@@ -1952,7 +1954,7 @@ func createGoConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return golang.CreateBuildConfig(global)
+	return commandUtils.CreateBuildConfig(global, true, utils.Go)
 }
 
 func createNpmConfigCmd(c *cli.Context) error {
@@ -1960,7 +1962,7 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return npm.CreateBuildConfig(global, utils.Npm)
+	return commandUtils.CreateBuildConfig(global, true, utils.Npm)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {
@@ -1968,7 +1970,7 @@ func createNugetConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return nuget.CreateBuildConfig(global, utils.Nuget)
+	return commandUtils.CreateBuildConfig(global, false, utils.Nuget)
 }
 
 func pingCmd(c *cli.Context) error {
