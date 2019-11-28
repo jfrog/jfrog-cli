@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func CreateBuildConfig(global, deployer bool, confType utils.ProjectType) error {
+func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType) error {
 	projectDir, err := utils.GetProjectDir(global)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func CreateBuildConfig(global, deployer bool, confType utils.ProjectType) error 
 	if err != nil {
 		return err
 	}
-	if deployer {
+	if allowDeployment {
 		vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
 		if err != nil {
 			return err
