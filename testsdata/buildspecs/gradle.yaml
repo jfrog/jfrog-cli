@@ -1,0 +1,9 @@
+version: 1
+type: gradle
+
+resolver:
+    repo: ${JCENTER_REMOTE_REPO}
+    serverID: default
+deployer:
+    repo: ${REPO1}
+    serverID: default

@@ -16,7 +16,7 @@ func CreateBuildConfig(configFilePath string) error {
 
 	configResult := &MavenBuildConfig{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
-	configResult.ConfigType = utils.MAVEN.String()
+	configResult.ConfigType = utils.Maven.String()
 
 	vConfig, err := prompt.ReadArtifactoryServer("Resolve dependencies from Artifactory (y/n) [${default}]? ")
 	if err != nil {

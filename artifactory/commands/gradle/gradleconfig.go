@@ -18,7 +18,7 @@ func CreateBuildConfig(configFilePath string) error {
 
 	configResult := &GradleBuildConfig{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
-	configResult.ConfigType = utils.GRADLE.String()
+	configResult.ConfigType = utils.Gradle.String()
 
 	vConfig, err := readGradleGlobalConfig()
 	if err != nil {
