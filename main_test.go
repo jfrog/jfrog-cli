@@ -183,3 +183,33 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 	}
 	return nil
 }
+
+func runNewCli(t *testing.T, args ...string) {
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := artifactoryGoCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func changeWD(t *testing.T, newPath string) string {
+	oldHomeDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(newPath)
+	if err != nil {
+		t.Error(err)
+	}
+	return oldHomeDir
+}
+
+func createConfigFile(atDirectory, configFilePath string, t *testing.T) {
+	if _, err := os.Stat(atDirectory); os.IsNotExist(err) {
+		os.MkdirAll(atDirectory, 0777)
+	}
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, atDirectory)
+	if err != nil {
+		t.Error(err)
+	}
+}

@@ -120,7 +120,7 @@ func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildC
 		return nil, err
 	}
 
-	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.GRADLE)
+	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.Gradle)
 	if err != nil {
 		return nil, err
 	}

@@ -18,28 +18,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-type BuildType int
-
 const (
-	MAVEN BuildType = iota
-	GRADLE
 	HttpProxy = "HTTP_PROXY"
 )
 
-var BuildTypes = []string{
-	"maven",
-	"gradle",
-}
-
-func (buildType BuildType) String() string {
-	return BuildTypes[buildType]
-}
-
-type BuildConfigMapping map[BuildType][]*map[string]string
+type BuildConfigMapping map[ProjectType][]*map[string]string
 
 var buildTypeConfigMapping = BuildConfigMapping{
-	MAVEN:  {&commonConfigMapping, &mavenConfigMapping},
-	GRADLE: {&commonConfigMapping, &gradleConfigMapping},
+	Maven:  {&commonConfigMapping, &mavenConfigMapping},
+	Gradle: {&commonConfigMapping, &gradleConfigMapping},
 }
 
 type ConfigType string
@@ -177,9 +164,9 @@ func GetRtDetails(vConfig *viper.Viper) (*config.ArtifactoryDetails, error) {
 	return nil, nil
 }
 
-func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.Viper, buildType BuildType) (string, error) {
-	if config.GetString("type") != buildType.String() {
-		return "", errorutils.CheckError(errors.New("Incompatible build config, expected: " + buildType.String() + " got: " + config.GetString("type")))
+func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.Viper, projectType ProjectType) (string, error) {
+	if config.GetString("type") != projectType.String() {
+		return "", errorutils.CheckError(errors.New("Incompatible build config, expected: " + projectType.String() + " got: " + config.GetString("type")))
 	}
 
 	propertiesPath := filepath.Join(cliutils.GetCliPersistentTempDirPath(), PROPERTIES_TEMP_PATH)
@@ -222,7 +209,7 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 	// Iterate all the required properties keys according to the buildType and create properties file.
 	// If a value is provided by the build config file write it,
 	// otherwise use the default value from defaultPropertiesValues map.
-	for _, partialMapping := range buildTypeConfigMapping[buildType] {
+	for _, partialMapping := range buildTypeConfigMapping[projectType] {
 		for propertyKey, configKey := range *partialMapping {
 			if config.IsSet(configKey) {
 				_, err = propertiesFile.WriteString(propertyKey + "=" + config.GetString(configKey) + "\n")

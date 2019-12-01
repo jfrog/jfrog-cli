@@ -26,6 +26,8 @@ const (
 	Pip
 	Npm
 	Nuget
+	Maven
+	Gradle
 )
 
 var ProjectTypes = []string{
@@ -33,6 +35,8 @@ var ProjectTypes = []string{
 	"pip",
 	"npm",
 	"nuget",
+	"maven",
+	"gradle",
 }
 
 func (projectType ProjectType) String() string {

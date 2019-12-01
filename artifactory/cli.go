@@ -339,18 +339,19 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "mvn",
-			Flags:        getBuildToolFlags(),
-			Usage:        mvndoc.Description,
-			HelpName:     common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
-			UsageText:    mvndoc.Arguments,
-			ArgsUsage:    common.CreateEnvVars(mvndoc.EnvVar),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "mvn",
+			Flags:           getBuildToolFlags(),
+			Usage:           mvndoc.Description,
+			HelpName:        common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
+			UsageText:       mvndoc.Arguments,
+			ArgsUsage:       common.CreateEnvVars(mvndoc.EnvVar),
+			SkipFlagParsing: shouldSkipMavenFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return mvnCmd(c)
 			},
 		},
-		{
+		{ // Incase we receive flags, we go for legacy behaviour, otherwise native.
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
 			Usage:        mvnconfig.Description,
@@ -363,18 +364,19 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "gradle",
-			Flags:        getBuildToolFlags(),
-			Usage:        gradledoc.Description,
-			HelpName:     common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
-			UsageText:    gradledoc.Arguments,
-			ArgsUsage:    common.CreateEnvVars(gradledoc.EnvVar),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "gradle",
+			Flags:           getBuildToolFlags(),
+			Usage:           gradledoc.Description,
+			HelpName:        common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
+			UsageText:       gradledoc.Arguments,
+			ArgsUsage:       common.CreateEnvVars(gradledoc.EnvVar),
+			SkipFlagParsing: shouldSkipGradleFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return gradleCmd(c)
 			},
 		},
-		{
+		{ // Incase we receive flags, we go for legacy behaviour, otherwise native.
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
 			Usage:        gradleconfig.Description,
@@ -894,8 +896,8 @@ func getNpmLegacyFlages() []cli.Flag {
 			Usage: "[Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 		},
 	}
-	npmFlags = append(npmFlags, getBaseFlags()...)
-	return append(npmFlags, getServerIdFlag())
+	npmFlags = append(npmFlags, getBasicBuildToolsFlages()...)
+	return npmFlags
 }
 
 func getNpmCommonFlags() []cli.Flag {
@@ -910,6 +912,11 @@ func getNpmFlags() []cli.Flag {
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	})
+}
+
+func getBasicBuildToolsFlages() []cli.Flag {
+	npmFlags := getBaseFlags()
+	return append(npmFlags, getServerIdFlag())
 }
 
 func getNugetFlags() []cli.Flag {
@@ -928,9 +935,7 @@ func getNugetCommonFlags() []cli.Flag {
 			Usage: "[Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(commonNugetFlags, getBaseFlags()...)
-	commonNugetFlags = append(commonNugetFlags, getServerIdFlag())
-	return commonNugetFlags
+	return append(commonNugetFlags, getBasicBuildToolsFlages()...)
 }
 
 func getGoFlags() []cli.Flag {
@@ -944,8 +949,7 @@ func getGoFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(flags, getBaseFlags()...)
-	flags = append(flags, getServerIdFlag())
+	flags = append(flags, getBasicBuildToolsFlages()...)
 	return flags
 }
 
@@ -956,7 +960,7 @@ func getGoAndBuildToolFlags() []cli.Flag {
 }
 
 func getGoRecursivePublishFlags() []cli.Flag {
-	return append(getBaseFlags(), getServerIdFlag())
+	return getBasicBuildToolsFlages()
 }
 
 func getGoPublishFlags() []cli.Flag {
@@ -971,8 +975,7 @@ func getGoPublishFlags() []cli.Flag {
 			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
 		},
 	}
-	flags = append(flags, getBaseFlags()...)
-	flags = append(flags, getServerIdFlag())
+	flags = append(flags, getBasicBuildToolsFlages()...)
 	flags = append(flags, getBuildToolAndModuleFlags()...)
 	return flags
 }
@@ -1521,7 +1524,8 @@ func configCmd(c *cli.Context) error {
 	return err
 }
 
-func mvnCmd(c *cli.Context) error {
+func mvnLegacyCmd(c *cli.Context) error {
+	log.Warn("Legacy mvn command, please use the latest syntax.")
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1534,7 +1538,60 @@ func mvnCmd(c *cli.Context) error {
 	return commands.Exec(mvnCmd)
 }
 
+func mvnCmd(c *cli.Context) error {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Maven)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// Found a config file. Continue as native command.
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+			return err
+		}
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredNugetArgs, " "))
+		return commands.Exec(mvnCmd)
+	}
+	return mvnLegacyCmd(c)
+}
+
 func gradleCmd(c *cli.Context) error {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Gradle)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// Found a config file. Continue as native command.
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+			return err
+		}
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredNugetArgs, " ")).SetConfigPath(configFilePath)
+
+		return commands.Exec(gradleCmd)
+	}
+	return mvnLegacyCmd(c)
+}
+
+func gradleLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1844,6 +1901,28 @@ func shouldSkipNugetFlagParsing() bool {
 	return exists
 }
 
+func shouldSkipMavenFlagParsing() bool {
+	if len(os.Args) < 3 || os.Args[2] != "mvn" {
+		return false
+	}
+	_, exists, err := utils.GetProjectConfFilePath(utils.Maven)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
+func shouldSkipGradleFlagParsing() bool {
+	if len(os.Args) < 3 || os.Args[2] != "gradle" {
+		return false
+	}
+	_, exists, err := utils.GetProjectConfFilePath(utils.Gradle)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
 func goCmd(c *cli.Context) error {
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
@@ -1935,18 +2014,29 @@ func goRecursivePublishCmd(c *cli.Context) error {
 }
 
 func createGradleConfigCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
+	switch c.NArg() {
+	case 0:
+		global := c.Bool("global")
+		return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
+	case 1:
+		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
+		return gradle.CreateBuildConfig(c.Args().Get(0))
+	default:
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-
-	return gradle.CreateBuildConfig(c.Args().Get(0))
 }
 
 func createMvnConfigCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
+	switch c.NArg() {
+	case 0:
+		global := c.Bool("global")
+		return commandUtils.CreateBuildConfig(global, true, utils.Maven)
+	case 1:
+		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "mavenc"))
+		return mvn.CreateBuildConfig(c.Args().Get(0))
+	default:
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return mvn.CreateBuildConfig(c.Args().Get(0))
 }
 
 func createGoConfigCmd(c *cli.Context) error {

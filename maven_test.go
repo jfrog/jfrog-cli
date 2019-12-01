@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -21,6 +22,27 @@ func TestMavenBuildWithServerID(t *testing.T) {
 		t.Error(err)
 	}
 	runAndValidateMaven(pomPath, configFilePath, t)
+	cleanBuildToolsTest()
+}
+
+func TestNativeMavenBuildWithServerID(t *testing.T) {
+	initMavenTest(t)
+	pomPath := createMavenProject(t)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
+	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
+	runNewCli(t, "mvn", "clean install -f"+pomPath)
+	err := os.Chdir(oldHomeDir)
+	if err != nil {
+		t.Error(err)
+	}
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 	cleanBuildToolsTest()
 }
 
