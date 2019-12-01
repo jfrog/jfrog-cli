@@ -1,6 +1,9 @@
-package golang
+package utils
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -8,11 +11,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"path/filepath"
 )
 
-func CreateBuildConfig(global bool) error {
+func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType) error {
 	projectDir, err := utils.GetProjectDir(global)
 	if err != nil {
 		return err
@@ -22,15 +23,15 @@ func CreateBuildConfig(global bool) error {
 		return err
 	}
 
-	configFilePath := filepath.Join(projectDir, "go.yaml")
+	configFilePath := filepath.Join(projectDir, confType.String()+".yaml")
 	if err := prompt.VerifyConfigFile(configFilePath); err != nil {
 		return err
 	}
 
 	var vConfig *viper.Viper
-	configResult := &GoBuildConfig{}
+	configResult := &ConfigFile{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
-	configResult.ConfigType = utils.Go.String()
+	configResult.ConfigType = confType.String()
 	configResult.Resolver.ServerId, vConfig, err = prompt.ReadServerId()
 	if err != nil {
 		return err
@@ -39,18 +40,20 @@ func CreateBuildConfig(global bool) error {
 	if err != nil {
 		return err
 	}
-
-	vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
-	if err != nil {
-		return err
-	}
-	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
-		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
-		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+	if allowDeployment {
+		vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
 		if err != nil {
 			return err
 		}
+		if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+			configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
+			configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	resBytes, err := yaml.Marshal(&configResult)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -59,13 +62,11 @@ func CreateBuildConfig(global bool) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-
-	log.Info("Go build config successfully created.")
+	log.Info(confType.String() + " build config successfully created.")
 	return nil
-
 }
 
-type GoBuildConfig struct {
+type ConfigFile struct {
 	prompt.CommonConfig `yaml:"common,inline"`
 	Resolver            utils.Repository `yaml:"resolver,omitempty"`
 	Deployer            utils.Repository `yaml:"deployer,omitempty"`

@@ -72,7 +72,7 @@ func TestInitNewConfig(t *testing.T) {
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &nuget.Cmd{}
-	params := &NugetCommand{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	params := &NugetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
