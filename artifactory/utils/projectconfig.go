@@ -44,8 +44,14 @@ func (projectType ProjectType) String() string {
 }
 
 type Repository struct {
-	Repo     string `yaml:"repo,omitempty"`
-	ServerId string `yaml:"serverId,omitempty"`
+	Repo             string `yaml:"repo,omitempty"`
+	ServerId         string `yaml:"serverId,omitempty"`
+	SnapshotRepo     string `yaml:"snapshotRepo,omitempty"`
+	ReleaseRepo      string `yaml:"releaseRepo,omitempty"`
+	DeployMavenDesc  bool   `yaml:"deployMavenDescriptors,omitempty"`
+	DeployIvyDesc    bool   `yaml:"deployIvyDescriptors,omitempty"`
+	IvyPattern       string `yaml:"ivyPattern,omitempty"`
+	ArtifactsPattern string `yaml:"artifactPattern,omitempty"`
 }
 
 type RepositoryConfig struct {
