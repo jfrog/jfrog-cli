@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
+	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -139,11 +139,10 @@ func initArtifactoryCli() {
 	}
 }
 
-func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType) error {
-	var atDirectory string
+func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+	var filePath string
 	for _, atDir := range dirs {
-		atDirectory = filepath.Dir(atDir)
-		d, err := yaml.Marshal(&npm.ConfigFile{
+		d, err := yaml.Marshal(&commandUtils.ConfigFile{
 			CommonConfig: prompt.CommonConfig{
 				Version:    1,
 				ConfigType: confType.String(),
@@ -160,7 +159,13 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 		if err != nil {
 			return err
 		}
-		filePath := filepath.Join(atDirectory, ".jfrog", "projects")
+		if global {
+			filePath = filepath.Join(atDir, "projects")
+
+		} else {
+			filePath = filepath.Join(atDir, ".jfrog", "projects")
+
+		}
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			os.MkdirAll(filePath, 0777)
 		}

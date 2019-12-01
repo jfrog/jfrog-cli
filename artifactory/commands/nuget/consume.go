@@ -2,6 +2,12 @@ package nuget
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"path"
+	"strings"
+
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
@@ -13,14 +19,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path"
-	"strings"
 )
 
-type NugetCommand struct {
+type NugetCommandArgs struct {
 	args               string
 	flags              string
 	repoName           string
@@ -29,42 +30,76 @@ type NugetCommand struct {
 	rtDetails          *config.ArtifactoryDetails
 }
 
+type NugetCommand struct {
+	configFilePath string
+	*NugetCommandArgs
+}
+
 func NewNugetCommand() *NugetCommand {
-	return &NugetCommand{}
+	return &NugetCommand{"", &NugetCommandArgs{}}
 }
 
-func (nc *NugetCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *NugetCommand {
-	nc.rtDetails = rtDetails
+func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
+	nc.configFilePath = configFilePath
 	return nc
 }
 
-func (nc *NugetCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *NugetCommand {
-	nc.buildConfiguration = buildConfiguration
-	return nc
+func (nca *NugetCommandArgs) SetRtDetails(rtDetails *config.ArtifactoryDetails) *NugetCommandArgs {
+	nca.rtDetails = rtDetails
+	return nca
 }
 
-func (nc *NugetCommand) SetSolutionPath(solutionPath string) *NugetCommand {
-	nc.solutionPath = solutionPath
-	return nc
+func (nca *NugetCommandArgs) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *NugetCommandArgs {
+	nca.buildConfiguration = buildConfiguration
+	return nca
 }
 
-func (nc *NugetCommand) SetRepoName(repoName string) *NugetCommand {
-	nc.repoName = repoName
-	return nc
+func (nca *NugetCommandArgs) SetSolutionPath(solutionPath string) *NugetCommandArgs {
+	nca.solutionPath = solutionPath
+	return nca
 }
 
-func (nc *NugetCommand) SetFlags(flags string) *NugetCommand {
-	nc.flags = flags
-	return nc
+func (nca *NugetCommandArgs) SetRepoName(repoName string) *NugetCommandArgs {
+	nca.repoName = repoName
+	return nca
 }
 
-func (nc *NugetCommand) SetArgs(args string) *NugetCommand {
-	nc.args = args
-	return nc
+func (nca *NugetCommandArgs) SetFlags(flags string) *NugetCommandArgs {
+	nca.flags = flags
+	return nca
+}
+
+func (nca *NugetCommandArgs) SetArgs(args string) *NugetCommandArgs {
+	nca.args = args
+	return nca
+}
+
+func (nc *NugetCommand) Run() error {
+	// Read config file.
+	log.Debug("Preparing to read the config file", nc.configFilePath)
+	vConfig, err := utils.ReadConfigFile(nc.configFilePath, utils.YAML)
+	if err != nil {
+		return err
+	}
+	// Extract resolution params.
+	resolveParams, err := utils.GetRepoConfigByPrefix(nc.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
+	if err != nil {
+		return err
+	}
+	filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(strings.Split(nc.args, " "))
+	RtDetails, err := resolveParams.RtDetails()
+	if err != nil {
+		return err
+	}
+	nc.SetArgs(strings.Join(filteredNugetArgs, " ")).
+		SetRepoName(resolveParams.TargetRepo()).
+		SetBuildConfiguration(buildConfiguration).
+		SetRtDetails(RtDetails)
+	return nc.run()
 }
 
 // Exec all consume type nuget commands, install, update, add, restore.
-func (nc *NugetCommand) Run() error {
+func (nca *NugetCommandArgs) run() error {
 	log.Info("Running nuget...")
 	// Use temp dir to save config file, the config will be removed at the end.
 	tempDirPath, err := fileutils.CreateTempDir()
@@ -73,46 +108,46 @@ func (nc *NugetCommand) Run() error {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	nc.solutionPath, err = changeWorkingDir(nc.solutionPath)
+	nca.solutionPath, err = changeWorkingDir(nca.solutionPath)
 	if err != nil {
 		return err
 	}
 
-	err = nc.prepareAndRunCmd(tempDirPath)
+	err = nca.prepareAndRunCmd(tempDirPath)
 	if err != nil {
 		return err
 	}
 
-	isCollectBuildInfo := len(nc.buildConfiguration.BuildName) > 0 && len(nc.buildConfiguration.BuildNumber) > 0
+	isCollectBuildInfo := len(nca.buildConfiguration.BuildName) > 0 && len(nca.buildConfiguration.BuildNumber) > 0
 	if !isCollectBuildInfo {
 		return nil
 	}
 
 	slnFile := ""
-	flags := strings.Split(nc.flags, " ")
+	flags := strings.Split(nca.flags, " ")
 	if len(flags) > 0 && strings.HasSuffix(flags[0], ".sln") {
 		slnFile = flags[0]
 	}
-	sol, err := solution.Load(nc.solutionPath, slnFile)
+	sol, err := solution.Load(nca.solutionPath, slnFile)
 	if err != nil {
 		return err
 	}
 
-	if err = utils.SaveBuildGeneralDetails(nc.buildConfiguration.BuildName, nc.buildConfiguration.BuildNumber); err != nil {
+	if err = utils.SaveBuildGeneralDetails(nca.buildConfiguration.BuildName, nca.buildConfiguration.BuildNumber); err != nil {
 		return err
 	}
-	buildInfo, err := sol.BuildInfo(nc.buildConfiguration.Module)
+	buildInfo, err := sol.BuildInfo(nca.buildConfiguration.Module)
 	if err != nil {
 		return err
 	}
-	return utils.SaveBuildInfo(nc.buildConfiguration.BuildName, nc.buildConfiguration.BuildNumber, buildInfo)
+	return utils.SaveBuildInfo(nca.buildConfiguration.BuildName, nca.buildConfiguration.BuildNumber, buildInfo)
 }
 
-func (nc *NugetCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return nc.rtDetails, nil
+func (nca *NugetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
+	return nca.rtDetails, nil
 }
 
-func (nc *NugetCommand) CommandName() string {
+func (nca *NugetCommandArgs) CommandName() string {
 	return "rt_nuget"
 }
 
@@ -160,8 +195,8 @@ func changeWorkingDir(newWorkingDir string) (string, error) {
 
 // Prepares the nuget configuration file within the temp directory
 // Runs NuGet itself with the arguments and flags provided.
-func (nc *NugetCommand) prepareAndRunCmd(configDirPath string) error {
-	cmd, err := nc.createNugetCmd()
+func (nca *NugetCommandArgs) prepareAndRunCmd(configDirPath string) error {
+	cmd, err := nca.createNugetCmd()
 	if err != nil {
 		return err
 	}
@@ -171,7 +206,7 @@ func (nc *NugetCommand) prepareAndRunCmd(configDirPath string) error {
 		return errorutils.CheckError(err)
 	}
 
-	err = nc.prepareConfigFile(cmd, configDirPath)
+	err = nca.prepareConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
@@ -186,7 +221,7 @@ func (nc *NugetCommand) prepareAndRunCmd(configDirPath string) error {
 // Checks if the user provided input such as -configfile flag or -Source flag.
 // If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
-func (nc *NugetCommand) prepareConfigFile(cmd *nuget.Cmd, configDirPath string) error {
+func (nca *NugetCommandArgs) prepareConfigFile(cmd *nuget.Cmd, configDirPath string) error {
 	currentConfigPath, err := getFlagValueIfExists("-configfile", cmd)
 	if err != nil {
 		return err
@@ -203,7 +238,7 @@ func (nc *NugetCommand) prepareConfigFile(cmd *nuget.Cmd, configDirPath string) 
 		return nil
 	}
 
-	err = nc.initNewConfig(cmd, configDirPath)
+	err = nca.initNewConfig(cmd, configDirPath)
 	return err
 }
 
@@ -223,19 +258,19 @@ func getFlagValueIfExists(cmdFlag string, cmd *nuget.Cmd) (string, error) {
 }
 
 // Initializing a new NuGet config file that NuGet will use into a temp file
-func (nc *NugetCommand) initNewConfig(cmd *nuget.Cmd, configDirPath string) error {
+func (nca *NugetCommandArgs) initNewConfig(cmd *nuget.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
 	configFile, err := writeToTempConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
 
-	return nc.addNugetAuthenticationToNewConfig(configFile)
+	return nca.addNugetAuthenticationToNewConfig(configFile)
 }
 
 // Runs nuget add sources and setapikey commands to authenticate with Artifactory server
-func (nc *NugetCommand) addNugetAuthenticationToNewConfig(configFile *os.File) error {
-	sourceUrl, user, password, err := nc.getSourceDetails()
+func (nca *NugetCommandArgs) addNugetAuthenticationToNewConfig(configFile *os.File) error {
+	sourceUrl, user, password, err := nca.getSourceDetails()
 	if err != nil {
 		return err
 	}
@@ -307,19 +342,19 @@ func addNugetApiKey(user, password, configFileName string) error {
 	return err
 }
 
-func (nc *NugetCommand) getSourceDetails() (sourceURL, user, password string, err error) {
+func (nca *NugetCommandArgs) getSourceDetails() (sourceURL, user, password string, err error) {
 	var u *url.URL
-	u, err = url.Parse(nc.rtDetails.Url)
+	u, err = url.Parse(nca.rtDetails.Url)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	u.Path = path.Join(u.Path, "api/nuget", nc.repoName)
+	u.Path = path.Join(u.Path, "api/nuget", nca.repoName)
 	sourceURL = u.String()
 
-	user = nc.rtDetails.User
-	password = nc.rtDetails.Password
+	user = nca.rtDetails.User
+	password = nca.rtDetails.Password
 	// If access-token is defined, extract user from it.
-	rtDetails, err := nc.RtDetails()
+	rtDetails, err := nca.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
@@ -334,20 +369,20 @@ func (nc *NugetCommand) getSourceDetails() (sourceURL, user, password string, er
 	return
 }
 
-func (nc *NugetCommand) createNugetCmd() (*nuget.Cmd, error) {
+func (nca *NugetCommandArgs) createNugetCmd() (*nuget.Cmd, error) {
 	c, err := nuget.NewNugetCmd()
 	if err != nil {
 		return nil, err
 	}
-	if nc.args != "" {
-		c.Command, err = shellwords.Parse(nc.args)
+	if nca.args != "" {
+		c.Command, err = shellwords.Parse(nca.args)
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
-	if nc.flags != "" {
-		c.CommandFlags, err = shellwords.Parse(nc.flags)
+	if nca.flags != "" {
+		c.CommandFlags, err = shellwords.Parse(nca.flags)
 	}
 
 	return c, errorutils.CheckError(err)
