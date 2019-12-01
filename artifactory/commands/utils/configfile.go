@@ -1,4 +1,4 @@
-package npm
+package utils
 
 import (
 	"io/ioutil"
@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func CreateBuildConfig(global bool, confType utils.ProjectType) error {
+func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType) error {
 	projectDir, err := utils.GetProjectDir(global)
 	if err != nil {
 		return err
@@ -29,28 +29,38 @@ func CreateBuildConfig(global bool, confType utils.ProjectType) error {
 	}
 
 	var vConfig *viper.Viper
+	allowResovle := true
 	configResult := &ConfigFile{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
 	configResult.ConfigType = confType.String()
-	configResult.Resolver.ServerId, vConfig, err = prompt.ReadServerId()
-	if err != nil {
-		return err
+
+	if allowDeployment {
+		vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
+		if err != nil {
+			return err
+		}
+		if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+			configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
+			configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+			if err != nil {
+				return err
+			}
+		}
+		vConfig, err = prompt.ReadArtifactoryServer("Resolve dependencies from Artifactory (y/n) [${default}]? ")
+		if err != nil {
+			return err
+		}
+		allowResovle = vConfig.GetBool(prompt.USE_ARTIFACTORY)
 	}
-	configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-	if err != nil {
-		return err
-	}
-	vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
-	if err != nil {
-		return err
-	}
-	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
-		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
-		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+
+	if allowResovle {
+		configResult.Resolver.ServerId = vConfig.GetString(utils.SERVER_ID)
+		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
 		}
 	}
+
 	resBytes, err := yaml.Marshal(&configResult)
 	if err != nil {
 		return errorutils.CheckError(err)

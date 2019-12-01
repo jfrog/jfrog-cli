@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -21,8 +20,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
+	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	npmUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils/npm"
 	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildaddgit"
@@ -56,6 +57,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npminstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/npmpublish"
 	nugetdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/nuget"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetconfig"
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
@@ -77,8 +79,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mattn/go-shellwords"
 )
-
-var npmCommands = regexp.MustCompile(`npm-install|npmi|npm-ci|npmci|npm-publish|npmp`)
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
@@ -457,13 +457,14 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "nuget",
-			Flags:        getNugetFlags(),
-			Usage:        nugetdocs.Description,
-			HelpName:     common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
-			UsageText:    nugetdocs.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "nuget",
+			Flags:           getNugetFlags(),
+			Usage:           nugetdocs.Description,
+			HelpName:        common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
+			UsageText:       nugetdocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: shouldSkipNugetFlagParsing(),
+			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetCmd(c)
 			},
@@ -606,6 +607,18 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return createNpmConfigCmd(c)
+			},
+		},
+		{
+			Name:         "nuget-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"nugetc"},
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createNugetConfigCmd(c)
 			},
 		},
 	}
@@ -907,7 +920,12 @@ func getBasicBuildToolsFlages() []cli.Flag {
 }
 
 func getNugetFlags() []cli.Flag {
-	nugetFlags := []cli.Flag{
+	nugetFlags := getNugetCommonFlags()
+	return append(nugetFlags, getBuildToolAndModuleFlags()...)
+}
+
+func getNugetCommonFlags() []cli.Flag {
+	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
 			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
@@ -917,8 +935,8 @@ func getNugetFlags() []cli.Flag {
 			Usage: "[Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	nugetFlags = append(nugetFlags, getBasicBuildToolsFlages()...)
-	return append(nugetFlags, getBuildToolAndModuleFlags()...)
+	commonNugetFlags = append(commonNugetFlags, getBasicBuildToolsFlages()...)
+	return append(commonNugetFlags, getBuildToolAndModuleFlags()...)
 }
 
 func getGoFlags() []cli.Flag {
@@ -1636,10 +1654,39 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		if c.NArg() < 1 {
+			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		}
+		// Found a config file.
+		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		// Validates the nuget command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Otherwise, throw an error.
+		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
+			return err
+		}
+		nugetCmd := nuget.NewNugetCommand()
+		nugetCmd.SetConfigFilePath(configFilePath).SetArgs(strings.Join(args, " "))
+		return commands.Exec(nugetCmd)
+	}
+	// If config file not found, use nuget legacy command
+	return nugetLegacyCmd(c)
+}
+
+func nugetLegacyCmd(c *cli.Context) error {
+	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "nugetc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	nugetCmd := nuget.NewNugetCommand()
+	nugetCmd := nuget.NewLegacyNugetCommand()
 	buildConfiguration, err := createBuildToolConfiguration(c)
 	if err != nil {
 		return nil
@@ -1666,7 +1713,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1717,7 +1764,7 @@ func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyComma
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1763,7 +1810,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func npmLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1832,7 +1879,7 @@ func shouldSkipGoFlagParsing() bool {
 func shouldSkipNpmFlagParsing() bool {
 	// This function is executed by code-congsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
-	if len(os.Args) < 3 || !npmCommands.MatchString(os.Args[2]) {
+	if len(os.Args) < 3 || !npmUtils.IsNpmCommand(os.Args[2]) {
 		return false
 	}
 
@@ -1865,6 +1912,18 @@ func shouldSkipGradleFlagParsing() bool {
 	return exists
 }
 
+func shouldSkipNugetFlagParsing() bool {
+	if len(os.Args) < 3 || os.Args[2] != "nuget" {
+		return false
+	}
+
+	_, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	return exists
+}
+
 func goCmd(c *cli.Context) error {
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
@@ -1881,7 +1940,7 @@ func goCmd(c *cli.Context) error {
 }
 
 func goLegacyCmd(c *cli.Context) error {
-	log.Warn(depracatedWarning(utils.Go, os.Args[2], "go-config"))
+	log.Warn(deprecatedWarning(utils.Go, os.Args[2], "go-config"))
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1958,13 +2017,10 @@ func goRecursivePublishCmd(c *cli.Context) error {
 func createGradleConfigCmd(c *cli.Context) error {
 	switch c.NArg() {
 	case 0:
-		dir, err := utils.GetProjectDir(c.Bool("global"))
-		if err != nil {
-			return err
-		}
-		return gradle.CreateBuildConfig(dir)
+		global := c.Bool("global")
+		return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
 	case 1:
-		log.Warn(depracatedWarning(utils.Gradle, os.Args[2], "gradlec"))
+		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
 		return gradle.CreateBuildConfig(c.Args().Get(0))
 	default:
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1974,13 +2030,10 @@ func createGradleConfigCmd(c *cli.Context) error {
 func createMvnConfigCmd(c *cli.Context) error {
 	switch c.NArg() {
 	case 0:
-		dir, err := utils.GetProjectDir(c.Bool("global"))
-		if err != nil {
-			return err
-		}
-		return mvn.CreateBuildConfig(dir)
+		global := c.Bool("global")
+		return commandUtils.CreateBuildConfig(global, true, utils.Maven)
 	case 1:
-		log.Warn(depracatedWarning(utils.Gradle, os.Args[2], "mavenc"))
+		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "mavenc"))
 		return mvn.CreateBuildConfig(c.Args().Get(0))
 	default:
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1992,7 +2045,7 @@ func createGoConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return golang.CreateBuildConfig(global)
+	return commandUtils.CreateBuildConfig(global, true, utils.Go)
 }
 
 func createNpmConfigCmd(c *cli.Context) error {
@@ -2000,7 +2053,15 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	global := c.Bool("global")
-	return npm.CreateBuildConfig(global, utils.Npm)
+	return commandUtils.CreateBuildConfig(global, true, utils.Npm)
+}
+
+func createNugetConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	global := c.Bool("global")
+	return commandUtils.CreateBuildConfig(global, false, utils.Nuget)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -3152,7 +3213,7 @@ func extractCommand(c *cli.Context) (command []string) {
 	return command
 }
 
-func depracatedWarning(projectType utils.ProjectType, command, configCommand string) string {
+func deprecatedWarning(projectType utils.ProjectType, command, configCommand string) string {
 	return `You are using a deprecated syntax of the "` + command + `" command.
 	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
 	To create this configuration, run the following command from the root directory of the project:
