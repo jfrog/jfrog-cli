@@ -59,6 +59,13 @@ func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType)
 		if err != nil {
 			return err
 		}
+		if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+			configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
+			configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	resBytes, err := yaml.Marshal(&configResult)
