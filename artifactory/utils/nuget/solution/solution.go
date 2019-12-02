@@ -50,14 +50,18 @@ func (solution *solution) BuildInfo(module string) (*buildinfo.BuildInfo, error)
 		for _, dep := range dependencies {
 			projectDependencies = append(projectDependencies, *dep)
 		}
-		if module == "" {
-			module = project.Name()
-		}
-		module := buildinfo.Module{Id: module, Dependencies: projectDependencies}
+		module := buildinfo.Module{Id: getModuleId(module, project.Name()), Dependencies: projectDependencies}
 		modules = append(modules, module)
 	}
 	buildInfo.Modules = modules
 	return buildInfo, nil
+}
+
+func getModuleId(byFlag, byProject string) string {
+	if byFlag != "" {
+		return byFlag
+	}
+	return byProject
 }
 
 func (solution *solution) Marshal() ([]byte, error) {
