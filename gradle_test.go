@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/gradle"
@@ -41,6 +42,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
 	buildName := "gradle-cli"
 	buildNumber := "1"
+	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
 	runNewCli(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	err := os.Chdir(oldHomeDir)
 	if err != nil {

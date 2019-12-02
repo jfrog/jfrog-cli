@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/mvn"
@@ -32,6 +33,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
+	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
 	runNewCli(t, "mvn", "clean install -f"+pomPath)
 	err := os.Chdir(oldHomeDir)
 	if err != nil {
