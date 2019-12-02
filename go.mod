@@ -5,6 +5,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/denormal/go-gitignore v0.0.0-20180930084346-ae8ad1d07817
+	github.com/frankban/quicktest v1.7.2 // indirect
 	github.com/jfrog/gocmd v0.1.11
 	github.com/jfrog/gofrog v1.0.5
 	github.com/jfrog/jfrog-client-go v0.5.9
@@ -20,8 +21,8 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.5.9-0.20191121163423-66ce36ba8201
 
-replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.11
 
 go 1.13
