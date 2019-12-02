@@ -151,7 +151,7 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 	}
 
 	mavenHome := os.Getenv("M2_HOME")
-	plexusClassworlds, err := filepath.Glob(filepath.Join(mavenHome, "boot", "plexus-classworlds*"))
+	plexusClassworlds, err := filepath.Glob(filepath.Join(mavenHome, "boot", "plexus-classworlds*.jar"))
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
