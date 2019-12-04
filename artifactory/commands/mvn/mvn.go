@@ -20,7 +20,7 @@ import (
 )
 
 const mavenExtractorDependencyVersion = "2.13.13"
-const ClasswordConfFileName = "classworlds.conf"
+const classworldsConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
 type MvnCommand struct {
@@ -128,7 +128,7 @@ func downloadDependencies() (string, error) {
 }
 
 func createClassworldsConfig(dependenciesPath string) error {
-	classworldsPath := filepath.Join(dependenciesPath, ClasswordConfFileName)
+	classworldsPath := filepath.Join(dependenciesPath, classworldsConfFileName)
 
 	if fileutils.IsPathExists(classworldsPath, false) {
 		return nil
@@ -192,7 +192,7 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 		java:                   javaExecPath,
 		pluginDependencies:     dependenciesPath,
 		plexusClassworlds:      plexusClassworlds[0],
-		cleassworldsConfig:     filepath.Join(dependenciesPath, ClasswordConfFileName),
+		cleassworldsConfig:     filepath.Join(dependenciesPath, classworldsConfFileName),
 		mavenHome:              mavenHome,
 		workspace:              currentWorkdir,
 		goals:                  mc.goals,
