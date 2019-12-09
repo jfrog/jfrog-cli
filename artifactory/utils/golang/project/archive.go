@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -64,7 +63,7 @@ const (
 )
 
 // Archive project files according to the go project standard
-func archiveProject(writer io.Writer, dir, mod, version string, excludePathsRegExp *regexp.Regexp) error {
+func archiveProject(writer io.Writer, dir, mod, version string) error {
 	m := module.Version{Version: version, Path: mod}
 	//ignore, gitIgnoreErr := gitignore.NewFromFile(sourcePath + "/.gitignore") ??
 	var files []File

@@ -275,11 +275,7 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 		return "", errorutils.CheckError(err)
 	}
 	defer tempFile.Close()
-	regex, err := getPathExclusionRegExp()
-	if err != nil {
-		return "", err
-	}
-	err = archiveProject(tempFile, project.projectPath, project.moduleName, version, regex)
+	err = archiveProject(tempFile, project.projectPath, project.moduleName, version)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
@@ -344,18 +340,6 @@ func parseModuleName(modContent string) (string, error) {
 	}
 
 	return "", errorutils.CheckError(errors.New("Module name missing in go.mod file"))
-}
-
-// Returns a regex that matches the following:
-// 1. .DS_Store.
-// 2. .git.
-func getPathExclusionRegExp() (*regexp.Regexp, error) {
-	excludePathsRegExp, err := regexp.Compile("(" + filepath.Join("^*", ".git", ".*$") + ")|(" + filepath.Join("^*", ".DS_Store") + ")")
-	if err != nil {
-		return nil, err
-	}
-
-	return excludePathsRegExp, nil
 }
 
 type goInfo struct {
