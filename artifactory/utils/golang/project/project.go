@@ -1,9 +1,11 @@
 package project
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -280,6 +282,28 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 	err = archiveProject(tempFile, project.projectPath, project.moduleName, version, regex)
 	if err != nil {
 		return "", errorutils.CheckError(err)
+	}
+	// Double-check that the paths within the zip file are well-formed.
+	fi, err := tempFile.Stat()
+	if err != nil {
+		return "", err
+	}
+	z, err := zip.NewReader(tempFile, fi.Size())
+	if err != nil {
+		return "", err
+	}
+	prefix := project.moduleName + "@" + version + "/"
+	for _, f := range z.File {
+		if !strings.HasPrefix(f.Name, prefix) {
+			return "", fmt.Errorf("zip for %s has unexpected file %s", prefix[:len(prefix)-1], f.Name)
+		}
+	}
+	// Sync the file before renaming it
+	if err := tempFile.Sync(); err != nil {
+		return "", err
+	}
+	if err := tempFile.Close(); err != nil {
+		return "", err
 	}
 	fileDetails, err := fileutils.GetFileDetails(tempFile.Name())
 	if err != nil {
