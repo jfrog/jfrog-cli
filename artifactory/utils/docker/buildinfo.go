@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	Pull CommandType = "pull"
-	Push CommandType = "push"
-	ForeignLayerMediaType string = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
-	ImageNotFoundErrorMessage string = "Could not find docker image in Artifactory, expecting image ID: %s"
+	Pull                      CommandType = "pull"
+	Push                      CommandType = "push"
+	ForeignLayerMediaType     string      = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
+	ImageNotFoundErrorMessage string      = "Could not find docker image in Artifactory, expecting image ID: %s"
 )
 
 // Docker image build info builder.
@@ -209,7 +209,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	return nil
 }
 
-func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string, ) (error) {
+func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string) error {
 	// Allow missing layer to be of a foreign type.
 	if layerMediaType == ForeignLayerMediaType {
 		log.Info(fmt.Sprintf("Foreign layer: %s is missing from Artifactory, thus will not be added to the build-info.", layerFileName))
@@ -396,7 +396,7 @@ type manifestConfig struct {
 }
 
 type layer struct {
-	Digest string `json:"digest,omitempty"`
+	Digest    string `json:"digest,omitempty"`
 	MediaType string `json:"mediaType,omitempty"`
 }
 
