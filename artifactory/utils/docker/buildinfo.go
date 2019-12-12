@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -18,16 +19,16 @@ import (
 const (
 	Pull CommandType = "pull"
 	Push CommandType = "push"
+	ForeignLayerMediaType = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
+	ImageNotFoundErrorMessage string = "Could not find docker image in Artifactory, expecting image ID: %s"
 )
 
-const ImageNotFoundErrorMessage string = "Could not find docker image in Artifactory, expecting image ID: %s"
-
-// Docker image build info builder
+// Docker image build info builder.
 type Builder interface {
 	Build(module string) (*buildinfo.BuildInfo, error)
 }
 
-// Create instance of docker build info builder
+// Create instance of docker build info builder.
 func BuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) Builder {
 	builder := &buildInfoBuilder{}
 	builder.image = image
@@ -54,7 +55,7 @@ type buildInfoBuilder struct {
 	commandType  CommandType
 }
 
-// Create build info for docker image
+// Create build info for docker image.
 func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, error) {
 	var err error
 	builder.imageId, err = builder.image.Id()
@@ -67,7 +68,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 		return nil, err
 	}
 
-	// Set build properties only when pushing image
+	// Set build properties only when pushing image.
 	if builder.commandType == Push {
 		_, err = builder.setBuildProperties()
 		if err != nil {
@@ -154,19 +155,23 @@ func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
 }
 
 func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDependency buildinfo.Dependency, imageManifest *manifest, searchResults map[string]utils.ResultItem) error {
-	// Add dependencies
+	// Add dependencies.
 	builder.dependencies = append(builder.dependencies, manifestDependency)
 	builder.dependencies = append(builder.dependencies, configLayerDependency)
 
-	// Add image layers as dependencies
+	// Add image layers as dependencies.
 	for i := 0; i < len(imageManifest.Layers); i++ {
 		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
-			// Check if layer marker exists in Artifactory
+			// Check if layer marker exists in Artifactory.
 			item, layerExists = searchResults[layerFileName+".marker"]
 			if !layerExists {
-				return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " or its marker in Artifactory"))
+				err := builder.handleMissingLayer(imageManifest.Layers[i].MediaType, layerFileName)
+				if err != nil {
+					return err
+				}
+				continue
 			}
 		}
 		builder.dependencies = append(builder.dependencies, item.ToDependency())
@@ -182,14 +187,18 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	builder.layers = append(builder.layers, searchResults["manifest.json"])
 	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
 
-	// Add image layers as artifacts and dependencies
+	// Add image layers as artifacts and dependencies.
 	for i := 0; i < configurationLayer.getNumberLayers(); i++ {
 		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
-			return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " in Artifactory"))
+			err := builder.handleMissingLayer(imageManifest.Layers[i].MediaType, layerFileName)
+			if err != nil {
+				return err
+			}
+			continue
 		}
-		// Decide if the layer is also a dependency
+		// Decide if the layer is also a dependency.
 		if i < configurationLayer.getNumberOfDependentLayers() {
 			builder.dependencies = append(builder.dependencies, item.ToDependency())
 		}
@@ -200,7 +209,17 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	return nil
 }
 
-// Set build properties on docker image layers in Artifactory
+func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string, ) (error) {
+	// Allow missing layer to be of a foreign type.
+	if layerMediaType == ForeignLayerMediaType {
+		log.Info(fmt.Sprintf("Foreign layer: %s is missing from Artifactory, thus will not be added to the build-info.", layerFileName))
+		return nil
+	}
+
+	return errorutils.CheckError(errors.New("Could not find layer: " + layerFileName + " in Artifactory"))
+}
+
+// Set build properties on docker image layers in Artifactory.
 func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 	props, err := buildutils.CreateBuildProperties(builder.buildName, builder.buildNumber)
 	if err != nil {
@@ -258,7 +277,7 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, err
 	}
 
-	// Check that the manifest ID is the right one
+	// Check that the manifest ID is the right one.
 	if imageManifest.Config.Digest != imageId {
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
 	}
@@ -268,7 +287,7 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 	return
 }
 
-// Download and read the config layer from Artifactory
+// Download and read the config layer from Artifactory.
 // Returned values:
 // configurationLayer - pointer to the configuration layer struct, retrieved from Artifactory.
 // artifact - configuration layer as buildinfo.Artifact object.
@@ -296,7 +315,7 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 	return
 }
 
-// Search for image layers in Artifactory
+// Search for image layers in Artifactory.
 func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
@@ -323,7 +342,7 @@ func digestToLayer(digest string) string {
 	return strings.Replace(digest, ":", "__", 1)
 }
 
-// Get the total number of layers from the config
+// Get the total number of layers from the config.
 func (configLayer *configLayer) getNumberLayers() int {
 	layersNum := len(configLayer.History)
 	for i := len(configLayer.History) - 1; i >= 0; i-- {
@@ -334,7 +353,7 @@ func (configLayer *configLayer) getNumberLayers() int {
 	return layersNum
 }
 
-// Get the number of dependencies layers from the config
+// Get the number of dependencies layers from the config.
 func (configLayer *configLayer) getNumberOfDependentLayers() int {
 	layersNum := len(configLayer.History)
 	newImageLayers := true
@@ -378,6 +397,7 @@ type manifestConfig struct {
 
 type layer struct {
 	Digest string `json:"digest,omitempty"`
+	MediaType string `json:"mediaType,omitempty"`
 }
 
 type CommandType string
