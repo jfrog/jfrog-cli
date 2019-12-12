@@ -19,7 +19,7 @@ import (
 const (
 	Pull CommandType = "pull"
 	Push CommandType = "push"
-	ForeignLayerMediaType = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
+	ForeignLayerMediaType string = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
 	ImageNotFoundErrorMessage string = "Could not find docker image in Artifactory, expecting image ID: %s"
 )
 
