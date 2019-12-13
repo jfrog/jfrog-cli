@@ -1,8 +1,5 @@
 package gradleconfig
 
-const Description = "Generate Gradle build configuration."
+const Description = "Generate gradle build configuration."
 
-var Usage = []string{"jfrog gradle-config <config file path>"}
-
-const Arguments string = `	config file path
-		Gradle build configuration file path.`
+var Usage = []string{"jfrog rt gradle-config [command options]"}
