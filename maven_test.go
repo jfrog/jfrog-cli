@@ -34,7 +34,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
 	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
-	runNewCli(t, "mvn", "clean install -f"+pomPath)
+	runCli(t, "mvn", "clean", "install", "-f", pomPath)
 	err := os.Chdir(oldHomeDir)
 	if err != nil {
 		t.Error(err)

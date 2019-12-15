@@ -206,7 +206,7 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 		return "", err
 	}
 
-	// Iterate all the required properties keys according to the buildType and create properties file.
+	// Iterate over all the required properties keys according to the buildType and create properties file.
 	// If a value is provided by the build config file write it,
 	// otherwise use the default value from defaultPropertiesValues map.
 	for _, partialMapping := range buildTypeConfigMapping[projectType] {

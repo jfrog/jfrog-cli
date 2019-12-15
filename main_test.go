@@ -184,16 +184,16 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 	return nil
 }
 
-func runNewCli(t *testing.T, args ...string) {
-	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	err := artifactoryGoCli.Exec(args...)
+func runCli(t *testing.T, args ...string) {
+	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := rtCli.Exec(args...)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func changeWD(t *testing.T, newPath string) string {
-	oldHomeDir, err := os.Getwd()
+	prevDir, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
 	}
@@ -201,14 +201,15 @@ func changeWD(t *testing.T, newPath string) string {
 	if err != nil {
 		t.Error(err)
 	}
-	return oldHomeDir
+	return prevDir
 }
 
-func createConfigFile(atDirectory, configFilePath string, t *testing.T) {
-	if _, err := os.Stat(atDirectory); os.IsNotExist(err) {
-		os.MkdirAll(atDirectory, 0777)
+// Copy config file from `configFilePath` to `inDir`
+func createConfigFile(inDir, configFilePath string, t *testing.T) {
+	if _, err := os.Stat(inDir); os.IsNotExist(err) {
+		os.MkdirAll(inDir, 0777)
 	}
-	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, atDirectory)
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
 	if err != nil {
 		t.Error(err)
 	}

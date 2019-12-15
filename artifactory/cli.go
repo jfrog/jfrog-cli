@@ -351,9 +351,10 @@ func GetCommands() []cli.Command {
 				return mvnCmd(c)
 			},
 		},
-		{ // Incase we receive flags, we go for legacy behaviour, otherwise native.
+		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
+			Flags:        getGlobalConfigFlag(),
 			Usage:        mvnconfig.Description,
 			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
 			UsageText:    mvnconfig.Arguments,
@@ -376,9 +377,10 @@ func GetCommands() []cli.Command {
 				return gradleCmd(c)
 			},
 		},
-		{ // Incase we receive flags, we go for legacy behaviour, otherwise native.
+		{
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
+			Flags:        getGlobalConfigFlag(),
 			Usage:        gradleconfig.Description,
 			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			UsageText:    gradleconfig.Arguments,
@@ -1525,7 +1527,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnLegacyCmd(c *cli.Context) error {
-	log.Warn("Legacy mvn command, please use the latest syntax.")
+	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "mvnc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1588,10 +1590,12 @@ func gradleCmd(c *cli.Context) error {
 
 		return commands.Exec(gradleCmd)
 	}
-	return mvnLegacyCmd(c)
+	return gradleLegacyCmd(c)
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
+	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "gradlec"))
+
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1863,7 +1867,7 @@ func goPublishCmd(c *cli.Context) error {
 
 func shouldSkipGoFlagParsing() bool {
 	// This function is executed by code-congsta, regardless of the CLI command being executed.
-	// There's no need to run the code of this function, if the command is not "jfrog rt go".
+	// There's no need to run the code of this function, if the command is not "jfrog rt go*".
 	if len(os.Args) < 3 || os.Args[2] != "go" {
 		return false
 	}
@@ -1890,6 +1894,8 @@ func shouldSkipNpmFlagParsing() bool {
 }
 
 func shouldSkipNugetFlagParsing() bool {
+	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// There's no need to run the code of this function, if the command is not "jfrog rt nuget*".
 	if len(os.Args) < 3 || os.Args[2] != "nuget" {
 		return false
 	}
@@ -1902,6 +1908,8 @@ func shouldSkipNugetFlagParsing() bool {
 }
 
 func shouldSkipMavenFlagParsing() bool {
+	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// There's no need to run the code of this function, if the command is not "jfrog rt mvn*".
 	if len(os.Args) < 3 || os.Args[2] != "mvn" {
 		return false
 	}
@@ -1913,6 +1921,8 @@ func shouldSkipMavenFlagParsing() bool {
 }
 
 func shouldSkipGradleFlagParsing() bool {
+	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// There's no need to run the code of this function, if the command is not "jfrog rt gradle*".
 	if len(os.Args) < 3 || os.Args[2] != "gradle" {
 		return false
 	}
@@ -2014,29 +2024,19 @@ func goRecursivePublishCmd(c *cli.Context) error {
 }
 
 func createGradleConfigCmd(c *cli.Context) error {
-	switch c.NArg() {
-	case 0:
-		global := c.Bool("global")
-		return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
-	case 1:
-		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
-		return gradle.CreateBuildConfig(c.Args().Get(0))
-	default:
+	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	global := c.Bool("global")
+	return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
 }
 
 func createMvnConfigCmd(c *cli.Context) error {
-	switch c.NArg() {
-	case 0:
-		global := c.Bool("global")
-		return commandUtils.CreateBuildConfig(global, true, utils.Maven)
-	case 1:
-		log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "mavenc"))
-		return mvn.CreateBuildConfig(c.Args().Get(0))
-	default:
+	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	global := c.Bool("global")
+	return commandUtils.CreateBuildConfig(global, true, utils.Maven)
 }
 
 func createGoConfigCmd(c *cli.Context) error {

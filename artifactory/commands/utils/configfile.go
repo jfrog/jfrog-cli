@@ -14,12 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-/*
-	The logic between Deployer/Resolver:
-	Commands that only have Resolver capability, must set the Resolver at the config file,
-	otherwise both of Deployer Resolver are optinal, and as a result the user decide if to set those or not.
-*/
-func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType) error {
+func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType) (err error) {
 	projectDir, err := utils.GetProjectDir(global)
 	if err != nil {
 		return err
@@ -28,78 +23,28 @@ func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType)
 	if err != nil {
 		return err
 	}
-
 	configFilePath := filepath.Join(projectDir, confType.String()+".yaml")
 	if err := prompt.VerifyConfigFile(configFilePath); err != nil {
 		return err
 	}
-
-	var vConfig *viper.Viper
-	allowResovle := true
 	configResult := &ConfigFile{}
 	configResult.Version = prompt.BUILD_CONF_VERSION
 	configResult.ConfigType = confType.String()
-
-	if allowDeployment {
-		vConfig, err = prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
-		if err != nil {
-			return err
-		}
-		if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
-			configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
-			if confType == utils.Maven {
-				configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-				if err != nil {
-					return err
-				}
-				configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set resolution repository for snapshot dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-				if err != nil {
-					return err
-				}
-			} else {
-				configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
-				if err != nil {
-					return err
-				}
-				if confType == utils.Gradle {
-					err = readDescriptors(&configResult.Deployer)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-		vConfig, err = prompt.ReadArtifactoryServer("Resolve dependencies from Artifactory (y/n) [${default}]? ")
-		if err != nil {
-			return err
-		}
-		allowResovle = vConfig.GetBool(prompt.USE_ARTIFACTORY)
-	} else {
-		configResult.Resolver.ServerId, vConfig, err = prompt.ReadServerId()
-		if err != nil {
-			return err
-		}
+	switch confType {
+	case utils.Nuget:
+		err = nugetConfigeFile(configResult)
+	case utils.Npm:
+		err = npmConfigeFile(configResult)
+	case utils.Go:
+		err = goConfigeFile(configResult)
+	case utils.Maven:
+		err = mavenConfigeFile(configResult)
+	case utils.Gradle:
+		err = gradleConfigeFile(configResult)
 	}
-
-	if allowResovle {
-		configResult.Resolver.ServerId = vConfig.GetString(utils.SERVER_ID)
-		if confType == utils.Maven {
-			configResult.Deployer.ReleaseRepo, err = prompt.ReadRepo("Set repository for release artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-			if err != nil {
-				return err
-			}
-			configResult.Deployer.SnapshotRepo, err = prompt.ReadRepo("Set repository for snapshot artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-			if err != nil {
-				return err
-			}
-		} else {
-			configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
-			if err != nil {
-				return err
-			}
-		}
+	if err != nil {
+		return errorutils.CheckError(err)
 	}
-
 	resBytes, err := yaml.Marshal(&configResult)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -112,6 +57,108 @@ func CreateBuildConfig(global, allowDeployment bool, confType utils.ProjectType)
 	return nil
 }
 
+func npmConfigeFile(configResult *ConfigFile) error {
+	err := createResolverRepo(configResult)
+	if err != nil {
+		return err
+	}
+	return createDeployerRepo(configResult)
+}
+
+func mavenConfigeFile(configResult *ConfigFile) error {
+	vConfig, err := setArrtifactoryResolver()
+	if err != nil {
+		return err
+	}
+	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+		configResult.Resolver.SnapshotRepo, err = prompt.ReadRepo("Set resolution repository for snapshot dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+	}
+	vConfig, err = setArrtifactoryDeployer()
+	if err != nil {
+		return err
+	}
+	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Deployer.ReleaseRepo, err = prompt.ReadRepo("Set repository for release artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+		configResult.Deployer.SnapshotRepo, err = prompt.ReadRepo("Set repository for snapshot artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func gradleConfigeFile(configResult *ConfigFile) error {
+	err := createDeployerRepo(configResult)
+	if err != nil {
+		return err
+	}
+	if &configResult.Deployer != nil {
+		err = readDescriptors(&configResult.Deployer)
+		if err != nil {
+			return err
+		}
+	}
+	err = createResolverRepo(configResult)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func nugetConfigeFile(configResult *ConfigFile) error {
+	return createResolverRepo(configResult)
+}
+
+func goConfigeFile(configResult *ConfigFile) error {
+	return npmConfigeFile(configResult)
+}
+
+func createDeployerRepo(configResult *ConfigFile) error {
+	vConfig, err := setArrtifactoryDeployer()
+	if err != nil {
+		return err
+	}
+	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
+		configResult.Deployer.Repo, err = prompt.ReadRepo("Set repository for dependencies deployment (press Tab for options): ", vConfig, utils.LOCAL, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createResolverRepo(configResult *ConfigFile) error {
+	vConfig, err := setArrtifactoryResolver()
+	if err != nil {
+		return err
+	}
+	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Resolver.ServerId = vConfig.GetString(utils.SERVER_ID)
+		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setArrtifactoryResolver() (*viper.Viper, error) {
+	return prompt.ReadArtifactoryServer("Resolve dependencies from Artifactory (y/n) [${default}]? ")
+}
+func setArrtifactoryDeployer() (*viper.Viper, error) {
+	return prompt.ReadArtifactoryServer("Deploy project dependencies to Artifactory (y/n) [${default}]? ")
+}
 func readDescriptors(deployer *utils.Repository) error {
 	descriptors := &promptreader.Array{
 		Prompts: []promptreader.Prompt{
@@ -158,6 +205,6 @@ type ConfigFile struct {
 	prompt.CommonConfig `yaml:"common,inline"`
 	Resolver            utils.Repository `yaml:"resolver,omitempty"`
 	Deployer            utils.Repository `yaml:"deployer,omitempty"`
-	UsePlugin           bool             `yaml:"usePlugin,omitempty"`
+	UsesPlugin          bool             `yaml:"usesPlugin,omitempty"`
 	UseWrapper          bool             `yaml:"useWrapper,omitempty"`
 }
