@@ -18,17 +18,17 @@ func TestCreateDefaultPropertiesFile(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
 	setProxy("", t)
 
-	for index := range BuildTypes {
-		testCreateDefaultPropertiesFile(BuildType(index), t)
+	for index := range ProjectTypes {
+		testCreateDefaultPropertiesFile(ProjectType(index), t)
 	}
 	setProxy(proxyOrg, t)
 }
 
-func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
+func testCreateDefaultPropertiesFile(projectType ProjectType, t *testing.T) {
 	providedConfig := viper.New()
-	providedConfig.Set("type", buildType.String())
+	providedConfig.Set("type", projectType.String())
 
-	propsFile, err := CreateBuildInfoPropertiesFile("", "", providedConfig, buildType)
+	propsFile, err := CreateBuildInfoPropertiesFile("", "", providedConfig, projectType)
 	if err != nil {
 		t.Error(err)
 	}
@@ -40,7 +40,7 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 	}
 
 	expectedConfig := viper.New()
-	for _, partialMapping := range buildTypeConfigMapping[buildType] {
+	for _, partialMapping := range buildTypeConfigMapping[projectType] {
 		for propertyKey := range *partialMapping {
 			if defaultPropertiesValues[propertyKey] != "" {
 				expectedConfig.Set(propertyKey, defaultPropertiesValues[propertyKey])
@@ -48,7 +48,7 @@ func testCreateDefaultPropertiesFile(buildType BuildType, t *testing.T) {
 		}
 	}
 
-	compareViperConfigs(t, actualConfig, expectedConfig, buildType)
+	compareViperConfigs(t, actualConfig, expectedConfig, projectType)
 }
 
 func TestCreateSimplePropertiesFileWithProxy(t *testing.T) {
@@ -86,11 +86,11 @@ func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]st
 	}
 
 	vConfig := viper.New()
-	vConfig.Set("type", MAVEN.String())
+	vConfig.Set("type", Maven.String())
 	for k, v := range yamlConfig {
 		vConfig.Set(k, v)
 	}
-	propsFilePath, err := CreateBuildInfoPropertiesFile("", "", vConfig, MAVEN)
+	propsFilePath, err := CreateBuildInfoPropertiesFile("", "", vConfig, Maven)
 	if err != nil {
 		t.Error(err)
 	}
@@ -102,7 +102,7 @@ func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]st
 	}
 
 	expectedConfig := viper.New()
-	for _, partialMapping := range buildTypeConfigMapping[MAVEN] {
+	for _, partialMapping := range buildTypeConfigMapping[Maven] {
 		for propertyKey := range *partialMapping {
 			if defaultPropertiesValues[propertyKey] != "" {
 				expectedConfig.Set(propertyKey, defaultPropertiesValues[propertyKey])
@@ -114,7 +114,7 @@ func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]st
 		expectedConfig.Set(k, v)
 	}
 
-	compareViperConfigs(t, actualConfig, expectedConfig, MAVEN)
+	compareViperConfigs(t, actualConfig, expectedConfig, Maven)
 }
 
 func TestGeneratedBuildInfoFile(t *testing.T) {
@@ -124,11 +124,11 @@ func TestGeneratedBuildInfoFile(t *testing.T) {
 		DEPLOYER_PREFIX + URL: "http://some.other.url.com",
 	}
 	vConfig := viper.New()
-	vConfig.Set("type", MAVEN.String())
+	vConfig.Set("type", Maven.String())
 	for k, v := range yamlConfig {
 		vConfig.Set(k, v)
 	}
-	propsFilePath, err := CreateBuildInfoPropertiesFile("buildName", "buildNumber", vConfig, MAVEN)
+	propsFilePath, err := CreateBuildInfoPropertiesFile("buildName", "buildNumber", vConfig, Maven)
 	if err != nil {
 		t.Error(err)
 	}
@@ -149,22 +149,22 @@ func TestGeneratedBuildInfoFile(t *testing.T) {
 	defer os.Remove(actualConfig.GetString(generatedBuildInfoKey))
 }
 
-func compareViperConfigs(t *testing.T, actual, expected *viper.Viper, buildType BuildType) {
+func compareViperConfigs(t *testing.T, actual, expected *viper.Viper, projectType ProjectType) {
 	for _, key := range expected.AllKeys() {
 		value := expected.GetString(key)
 		if !actual.IsSet(key) {
-			t.Error("["+buildType.String()+"]: Expected key was not found:", "'"+key+"'")
+			t.Error("["+projectType.String()+"]: Expected key was not found:", "'"+key+"'")
 			continue
 		}
 		if actual.GetString(key) != value {
-			t.Error("["+buildType.String()+"]: Expected:", "('"+key+"','"+value+"'),", "found:", "('"+key+"','"+actual.GetString(key)+"').")
+			t.Error("["+projectType.String()+"]: Expected:", "('"+key+"','"+value+"'),", "found:", "('"+key+"','"+actual.GetString(key)+"').")
 		}
 	}
 
 	for _, key := range actual.AllKeys() {
 		value := actual.GetString(key)
 		if !expected.IsSet(key) {
-			t.Error("["+buildType.String()+"]: Unexpected key, value found:", "('"+key+"','"+value+"')")
+			t.Error("["+projectType.String()+"]: Unexpected key, value found:", "('"+key+"','"+value+"')")
 		}
 	}
 }
@@ -182,7 +182,7 @@ func TestSetProxyIfNeeded(t *testing.T) {
 	expectedConfig := viper.New()
 	expectedConfig.Set(PROXY+HOST, host)
 	expectedConfig.Set(PROXY+PORT, port)
-	compareViperConfigs(t, vConfig, expectedConfig, MAVEN)
+	compareViperConfigs(t, vConfig, expectedConfig, Maven)
 
 	setProxy(proxyOrg, t)
 }

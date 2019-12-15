@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/gradle"
@@ -28,6 +30,34 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 
+	cleanBuildToolsTest()
+}
+
+func TestNativeGradleBuildWithServerID(t *testing.T) {
+	initGradleTest(t)
+	buildGradlePath := createGradleProject(t, "gradleproject")
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleConfig)
+	destPath := filepath.Join(filepath.Dir(buildGradlePath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(buildGradlePath))
+	buildName := "gradle-cli"
+	buildNumber := "1"
+	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
+	runCli(t, "gradle", "clean artifactoryPublish","-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	err := os.Chdir(oldHomeDir)
+	if err != nil {
+		t.Error(err)
+	}
+	// Validate
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	isExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
+	artifactoryCli.Exec("bp", buildName, buildNumber)
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanBuildToolsTest()
 }
 

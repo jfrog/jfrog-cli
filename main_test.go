@@ -183,3 +183,34 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 	}
 	return nil
 }
+
+func runCli(t *testing.T, args ...string) {
+	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := rtCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func changeWD(t *testing.T, newPath string) string {
+	prevDir, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Chdir(newPath)
+	if err != nil {
+		t.Error(err)
+	}
+	return prevDir
+}
+
+// Copy config file from `configFilePath` to `inDir`
+func createConfigFile(inDir, configFilePath string, t *testing.T) {
+	if _, err := os.Stat(inDir); os.IsNotExist(err) {
+		os.MkdirAll(inDir, 0777)
+	}
+	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, inDir)
+	if err != nil {
+		t.Error(err)
+	}
+}
