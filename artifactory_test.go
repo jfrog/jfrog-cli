@@ -3974,3 +3974,44 @@ func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath
 		t.Error("Expected a server to be returned")
 	}
 }
+
+func TestVcsProps(t *testing.T) {
+	initArtifactoryTest(t)
+	oldDotGitPath, newDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/"))
+	oldinnerDotGitPath, newinnerDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/OtherGit"))
+
+	artifactoryCli.Exec("upload", "testsdata/vcs/*", tests.Repo1, "--flat=false", "--build-name=or", "--build-number=2020")
+	resultItems := searchItemsInArtifacotry(t)
+	if len(resultItems) == 0 {
+		t.Error("No artifacts were found.")
+	}
+	for _, item := range resultItems {
+		properties := item.Properties
+		foundUrl, foundRevision := false, false
+		for _, prop := range properties {
+			if item.Name == "a1.in" || item.Name == "a2.in" {
+				// Check that properties were not removed.
+				if prop.Key == "vcs.url" && prop.Value == "refs/heads/master" {
+					foundUrl = true
+				}
+				if prop.Key == "vcs.revision" && prop.Value == "d63c5957ad6819f4c02a817abe757f210d35ff92" {
+					foundRevision = true
+				}
+			}
+			if item.Name == "b1.in" || item.Name == "b2.in" {
+				if prop.Key == "vcs.url" && prop.Value == "refs/heads/InnerGit" {
+					foundUrl = true
+				}
+				if prop.Key == "vcs.revision" && prop.Value == "ad99b6c068283878fde4d49423728f0bdc00544a" {
+					foundRevision = true
+				}
+			}
+		}
+		if !foundUrl || !foundRevision {
+			t.Error("VCS property was not found in artifact" + item.Name + "props")
+		}
+	}
+	tests.RenamePath(newDotGitPath, filepath.FromSlash(oldDotGitPath+"/gitdata"), t)
+	tests.RenamePath(newinnerDotGitPath, filepath.FromSlash((oldinnerDotGitPath + "/gitdata")), t)
+	cleanArtifactoryTest()
+}
