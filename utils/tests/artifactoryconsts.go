@@ -800,6 +800,10 @@ func GetMassiveUpload() []string {
 		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
 		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a2.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b2.in",
 	}
 }
 
@@ -823,6 +827,10 @@ func GetPropsExpected() []string {
 		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
 		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a2.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b2.in",
 	}
 }
 

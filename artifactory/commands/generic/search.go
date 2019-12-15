@@ -35,6 +35,8 @@ func (sc *SearchCommand) SearchResultNoDate() []SearchResult {
 	for i, _ := range sc.SearchResult() {
 		sc.searchResult[i].Created = ""
 		sc.searchResult[i].Modified = ""
+		delete(sc.searchResult[i].Props, "vcs.url")
+		delete(sc.searchResult[i].Props, "vcs.revision")
 	}
 	return sc.searchResult
 }
