@@ -2,10 +2,7 @@ package nuget
 
 const Description = "Run NuGet."
 
-var Usage = []string{`jfrog rt nuget [command options] <nuget args> <source repository name>`}
+var Usage = []string{`jfrog rt nuget <nuget args> [command options]`}
 
 const Arguments string = `	nuget command
-		The nuget command to run. For example, restore.
-
-	source repository name
-		The source NuGet repository. Can be a local, remote or virtual NuGet repository.`
+		The nuget command to run. For example, restore.`

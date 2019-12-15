@@ -357,7 +357,6 @@ func GetCommands() []cli.Command {
 			Flags:        getGlobalConfigFlag(),
 			Usage:        mvnconfig.Description,
 			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
-			UsageText:    mvnconfig.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -383,7 +382,6 @@ func GetCommands() []cli.Command {
 			Flags:        getGlobalConfigFlag(),
 			Usage:        gradleconfig.Description,
 			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
-			UsageText:    gradleconfig.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -422,7 +420,6 @@ func GetCommands() []cli.Command {
 			Aliases:         []string{"npmi"},
 			Usage:           npminstall.Description,
 			HelpName:        common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
-			UsageText:       npminstall.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
@@ -436,7 +433,6 @@ func GetCommands() []cli.Command {
 			Aliases:         []string{"npmci"},
 			Usage:           npmci.Description,
 			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
-			UsageText:       npmci.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
@@ -889,17 +885,37 @@ func getDockerFlags() []cli.Flag {
 	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
+func getDepracatedFlages() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "url",
+			Usage: "[Depracated][Optional] Artifactory URL.` `",
+		},
+		cli.StringFlag{
+			Name:  "user",
+			Usage: "[Depracated][Optional] Artifactory username.` `",
+		},
+		cli.StringFlag{
+			Name:  "password",
+			Usage: "[Depracated][Optional] Artifactory password.` `",
+		},
+		cli.StringFlag{
+			Name:  "apikey",
+			Usage: "[Depracated][Optional] Artifactory API key.` `",
+		},
+		cli.StringFlag{
+			Name:  "access-token",
+			Usage: "[Depracated][Optional] Artifactory access token.` `",
+		},
+	}
+}
 
 //These flags are not valid for native npm command
 func getNpmLegacyFlages() []cli.Flag {
-	npmFlags := []cli.Flag{
-		cli.StringFlag{
-			Name:  "npm-args",
-			Usage: "[Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
-		},
-	}
-	npmFlags = append(npmFlags, getBasicBuildToolsFlages()...)
-	return npmFlags
+	return append(getDepracatedFlages(), cli.StringFlag{
+		Name:  "npm-args",
+		Usage: "[Depracated][Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
+	})
 }
 
 func getNpmCommonFlags() []cli.Flag {
@@ -930,28 +946,29 @@ func getNugetCommonFlags() []cli.Flag {
 	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
+			Usage: "[Depracated][Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
+			Usage: "[Depracated][Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	return append(commonNugetFlags, getBasicBuildToolsFlages()...)
+	commonNugetFlags = append(getDepracatedFlages(), commonNugetFlags...)
+	return commonNugetFlags
 }
 
 func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
+			Usage: "[Depracated][Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "publish-deps",
-			Usage: "[Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
+			Usage: "[Depracated][Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(flags, getBasicBuildToolsFlages()...)
+	flags = append(getDepracatedFlages(), flags...)
 	return flags
 }
 
