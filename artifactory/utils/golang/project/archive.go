@@ -1,5 +1,6 @@
 package project
-
+// The code in this file was copied from https://github.com/golang/go
+// which is under this license https://github.com/golang/go/blob/master/LICENSE
 import (
 	"archive/zip"
 	"bytes"
