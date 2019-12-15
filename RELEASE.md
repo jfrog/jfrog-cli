@@ -1,3 +1,10 @@
+## 1.32.0 (Nov 27, 2019)
+- New syntax for the “rt mvn”, “rt gradle” and “rt nuget” commands.
+- New “vcs.url” and “vcs.revision” properties added when uploading generic files (using”rt upload”) as part of a build.
+- “rt docker-push” and “rt docker-pull” - Support for foreign docker layers.
+- Bug fix - “jfrog rt mvn” - Can’t find plexus-classworlds-x.x.x.jar
+- Bug fix - “jforg rt nuget” - artifacts are added into the wrong module in the build-info.
+
 ## 1.31.2 (Nov 27, 2019)
 - Bug fix - Stack overflow in npm publish
 
