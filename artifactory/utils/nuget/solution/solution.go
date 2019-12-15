@@ -57,11 +57,11 @@ func (solution *solution) BuildInfo(module string) (*buildinfo.BuildInfo, error)
 	return buildInfo, nil
 }
 
-func getModuleId(byFlag, byProject string) string {
-	if byFlag != "" {
-		return byFlag
+func getModuleId(customModuleID, projectName string) string {
+	if customModuleID != "" {
+		return customModuleID
 	}
-	return byProject
+	return projectName
 }
 
 func (solution *solution) Marshal() ([]byte, error) {
