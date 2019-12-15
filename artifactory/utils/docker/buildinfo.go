@@ -212,7 +212,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string) error {
 	// Allow missing layer to be of a foreign type.
 	if layerMediaType == ForeignLayerMediaType {
-		log.Info(fmt.Sprintf("Foreign layer: %s is missing from Artifactory, thus will not be added to the build-info.", layerFileName))
+		log.Info(fmt.Sprintf("Foreign layer: %s is missing in Artifactory and therefore will not be added to the build-info.", layerFileName))
 		return nil
 	}
 
