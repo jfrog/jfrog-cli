@@ -1,9 +1,11 @@
 package project
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -273,13 +275,31 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 		return "", errorutils.CheckError(err)
 	}
 	defer tempFile.Close()
-	regex, err := getPathExclusionRegExp()
+	err = archiveProject(tempFile, project.projectPath, project.moduleName, version)
+	if err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	// Double-check that the paths within the zip file are well-formed.
+	fi, err := tempFile.Stat()
 	if err != nil {
 		return "", err
 	}
-	err = archiveProject(tempFile, project.projectPath, project.moduleName, version, regex)
+	z, err := zip.NewReader(tempFile, fi.Size())
 	if err != nil {
-		return "", errorutils.CheckError(err)
+		return "", err
+	}
+	prefix := project.moduleName + "@" + version + "/"
+	for _, f := range z.File {
+		if !strings.HasPrefix(f.Name, prefix) {
+			return "", fmt.Errorf("zip for %s has unexpected file %s", prefix[:len(prefix)-1], f.Name)
+		}
+	}
+	// Sync the file before renaming it
+	if err := tempFile.Sync(); err != nil {
+		return "", err
+	}
+	if err := tempFile.Close(); err != nil {
+		return "", err
 	}
 	fileDetails, err := fileutils.GetFileDetails(tempFile.Name())
 	if err != nil {
@@ -320,18 +340,6 @@ func parseModuleName(modContent string) (string, error) {
 	}
 
 	return "", errorutils.CheckError(errors.New("Module name missing in go.mod file"))
-}
-
-// Returns a regex that matches the following:
-// 1. .DS_Store.
-// 2. .git.
-func getPathExclusionRegExp() (*regexp.Regexp, error) {
-	excludePathsRegExp, err := regexp.Compile("(" + filepath.Join("^*", ".git", ".*$") + ")|(" + filepath.Join("^*", ".DS_Store") + ")")
-	if err != nil {
-		return nil, err
-	}
-
-	return excludePathsRegExp, nil
 }
 
 type goInfo struct {
