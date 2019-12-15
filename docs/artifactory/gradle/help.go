@@ -2,10 +2,10 @@ package gradle
 
 const Description = "Run Gradle build."
 
-var Usage = []string{`jfrog rt gradle "<tasks and options>" [command options]`, `jfrog rt gradle "<tasks and options> -b path/to/build.gradle" [command options]`}
+var Usage = []string{`jfrog rt gradle "<tasks and options>" [command options]`}
 
 const Arguments string = `	tasks and options
-		Tasks and options to run with gradle command.`
+		Tasks and options to run with gradle command. For example, -b path/to/build.gradle.`
 
 const EnvVar string = `	JFROG_CLI_JCENTER_REMOTE_SERVER
 		Configured Artifactory server ID from which to download the jar needed by the gradle command.

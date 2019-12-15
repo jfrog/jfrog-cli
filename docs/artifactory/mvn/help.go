@@ -2,10 +2,10 @@ package mvn
 
 const Description = "Run Maven build."
 
-var Usage = []string{`jfrog rt mvn "<goals and options>" [command options]`, `jfrog rt mvn "<goals and options> -f path/to/pom.xml" [command options]`}
+var Usage = []string{`jfrog rt mvn "<goals and options>" [command options]`}
 
 const Arguments string = `	goals and options
-		Goals and options to run with mvn command.`
+		Goals and options to run with mvn command. For example  -f path/to/pom.xml`
 
 const EnvVar string = `	JFROG_CLI_JCENTER_REMOTE_SERVER
 		Configured Artifactory server ID from which to download the jar needed by the mvn command.

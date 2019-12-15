@@ -885,41 +885,36 @@ func getDockerFlags() []cli.Flag {
 	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
-func getcommondepracatedFlages() []cli.Flag {
+func getDepracatedFlages() []cli.Flag {
 	return []cli.Flag{
-
+		cli.StringFlag{
+			Name:  "url",
+			Usage: "[Depracated][Optional] Artifactory URL.` `",
+		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[depracated][Optional] Artifactory username.` `",
+			Usage: "[Depracated][Optional] Artifactory username.` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[depracated][Optional] Artifactory password.` `",
+			Usage: "[Depracated][Optional] Artifactory password.` `",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[depracated][Optional] Artifactory API key.` `",
+			Usage: "[Depracated][Optional] Artifactory API key.` `",
 		},
 		cli.StringFlag{
 			Name:  "access-token",
-			Usage: "[depracated][Optional] Artifactory access token.` `",
-		},
-		cli.BoolFlag{
-			Name:  "insecure-tls",
-			Usage: "[depracated][Default: false] Set to true to skip TLS certificates verification.` `",
-		},
-		cli.StringFlag{
-			Name:  "url",
-			Usage: "[depracated][Optional] Artifactory URL.` `",
+			Usage: "[Depracated][Optional] Artifactory access token.` `",
 		},
 	}
 }
 
 //These flags are not valid for native npm command
 func getNpmLegacyFlages() []cli.Flag {
-	return append(getcommondepracatedFlages(), cli.StringFlag{
+	return append(getDepracatedFlages(), cli.StringFlag{
 		Name:  "npm-args",
-		Usage: "[depracated][Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
+		Usage: "[Depracated][Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 	})
 }
 
@@ -951,14 +946,14 @@ func getNugetCommonFlags() []cli.Flag {
 	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[depracated][Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
+			Usage: "[Depracated][Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[depracated][Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
+			Usage: "[Depracated][Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(getcommondepracatedFlages(), commonNugetFlags...)
+	commonNugetFlags = append(getDepracatedFlages(), commonNugetFlags...)
 	return commonNugetFlags
 }
 
@@ -966,14 +961,14 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[depracated][Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
+			Usage: "[Depracated][Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "publish-deps",
-			Usage: "[depracated][Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
+			Usage: "[Depracated][Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(getcommondepracatedFlages(), flags...)
+	flags = append(getDepracatedFlages(), flags...)
 	return flags
 }
 
