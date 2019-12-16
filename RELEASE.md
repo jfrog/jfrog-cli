@@ -1,3 +1,6 @@
+## 1.32.2 (Dec 16, 2019)
+- Fixes to the CLI help.
+
 ## 1.32.1 (Dec 16, 2019)
 - New syntax for the “rt mvn”, “rt gradle” and “rt nuget” commands.
 - New “vcs.url” and “vcs.revision” properties added when uploading generic files (using”rt upload”) as part of a build.
