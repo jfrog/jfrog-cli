@@ -24,17 +24,16 @@ func TestArchiveProject(t *testing.T) {
 	}
 
 	buff := &bytes.Buffer{}
-	regex, err := getPathExclusionRegExp()
 	if err != nil {
 		t.Error(err)
 	}
 	originalFolder := "test_.git_suffix"
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testdata")
-	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "my/module/name", "1.0.0", regex)
+	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "myproject.com/module/name", "v1.0.0")
 	if err != nil {
 		t.Error(err)
 	}
-	expected := map[checksum.Algorithm]string{checksum.MD5: "ce70d45d713edafc0bab1709eb3c8f6c", checksum.SHA1: "d59f12054456491d58c8576f76fe9a5bdebf4e9c"}
+	expected := map[checksum.Algorithm]string{checksum.MD5: "28617d6e74fce3dd2bab21b1bd65009b", checksum.SHA1: "410814fbf21afdfb9c5b550151a51c2e986447fa"}
 	actual, err := checksum.Calc(buff)
 	if err != nil {
 		t.Error(err)
