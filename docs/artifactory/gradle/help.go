@@ -2,7 +2,7 @@ package gradle
 
 const Description = "Run Gradle build."
 
-var Usage = []string{`jfrog rt gradle "<tasks and options>" [command options]`}
+var Usage = []string{`jfrog rt gradle <tasks and options> [command options]`}
 
 const Arguments string = `	tasks and options
 		Tasks and options to run with gradle command. For example, -b path/to/build.gradle.`
