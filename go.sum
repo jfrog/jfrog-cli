@@ -58,6 +58,8 @@ github.com/jfrog/jfrog-client-go v0.5.9 h1:fCcppjCBQo79r3jE77U7Rd/jqiHjnOGNXW6EZ
 github.com/jfrog/jfrog-client-go v0.5.9/go.mod h1:ke22JapdZHvrOGQq3e6aBiYQKHrujI6GPsaKh8gY0DI=
 github.com/jfrog/jfrog-client-go v0.6.0 h1:UPZ5i9YGrM8HLAlo0nMWIcgOk8vcNhhVjJIBH000PYA=
 github.com/jfrog/jfrog-client-go v0.6.0/go.mod h1:ke22JapdZHvrOGQq3e6aBiYQKHrujI6GPsaKh8gY0DI=
+github.com/jfrog/jfrog-client-go v0.6.1 h1:ENFwhFugtlsYD+vJ+pUg3vuzkMSZ3R6COYIwGzKY8QQ=
+github.com/jfrog/jfrog-client-go v0.6.1/go.mod h1:ke22JapdZHvrOGQq3e6aBiYQKHrujI6GPsaKh8gY0DI=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e h1:RgQk53JHp/Cjunrr1WlsXSZpqXn+uREuHvUVcK82CV8=
 github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/klauspost/compress v1.4.1/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
