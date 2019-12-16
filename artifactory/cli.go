@@ -446,7 +446,6 @@ func GetCommands() []cli.Command {
 			Aliases:         []string{"npmp"},
 			Usage:           npmpublish.Description,
 			HelpName:        common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
-			UsageText:       npmpublish.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
@@ -889,47 +888,49 @@ func getDepracatedFlages() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Depracated][Optional] Artifactory URL.` `",
+			Usage: "[Depracated] [Optional] Artifactory URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Depracated][Optional] Artifactory username.` `",
+			Usage: "[Depracated] [Optional] Artifactory username.` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Depracated][Optional] Artifactory password.` `",
+			Usage: "[Depracated] [Optional] Artifactory password.` `",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[Depracated][Optional] Artifactory API key.` `",
+			Usage: "[Depracated] [Optional] Artifactory API key.` `",
 		},
 		cli.StringFlag{
 			Name:  "access-token",
-			Usage: "[Depracated][Optional] Artifactory access token.` `",
+			Usage: "[Depracated] [Optional] Artifactory access token.` `",
 		},
 	}
 }
 
 //These flags are not valid for native npm command
 func getNpmLegacyFlages() []cli.Flag {
-	return append(getDepracatedFlages(), cli.StringFlag{
+	npmFlags := cli.StringFlag{
 		Name:  "npm-args",
-		Usage: "[Depracated][Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
-	})
+		Usage: "[Depracated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
+	}
+	return append(getDepracatedFlages(), npmFlags)
 }
 
 func getNpmCommonFlags() []cli.Flag {
 	npmFlags := getNpmLegacyFlages()
-	return append(npmFlags, getBuildToolAndModuleFlags()...)
+	return append(getBuildToolAndModuleFlags(), npmFlags...)
 }
 
 func getNpmFlags() []cli.Flag {
 	npmFlags := getNpmCommonFlags()
-	return append(npmFlags, cli.StringFlag{
+	flag := cli.StringFlag{
 		Name:  "threads",
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
-	})
+	}
+	return append([]cli.Flag{flag}, npmFlags...)
 }
 
 func getBasicBuildToolsFlages() []cli.Flag {
@@ -939,21 +940,21 @@ func getBasicBuildToolsFlages() []cli.Flag {
 
 func getNugetFlags() []cli.Flag {
 	nugetFlags := getNugetCommonFlags()
-	return append(nugetFlags, getBuildToolAndModuleFlags()...)
+	return append(getBuildToolAndModuleFlags(), nugetFlags...)
 }
 
 func getNugetCommonFlags() []cli.Flag {
 	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Depracated][Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
+			Usage: "[Depracated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Depracated][Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
+			Usage: "[Depracated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(getDepracatedFlages(), commonNugetFlags...)
+	commonNugetFlags = append(commonNugetFlags, getDepracatedFlages()...)
 	return commonNugetFlags
 }
 
@@ -961,20 +962,20 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Depracated][Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
+			Usage: "[Depracated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "publish-deps",
-			Usage: "[Depracated][Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
+			Usage: "[Depracated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(getDepracatedFlages(), flags...)
+	flags = append(flags, getDepracatedFlages()...)
 	return flags
 }
 
 func getGoAndBuildToolFlags() []cli.Flag {
 	flags := getGoFlags()
-	flags = append(flags, getBuildToolAndModuleFlags()...)
+	flags = append(getBuildToolAndModuleFlags(), flags...)
 	return flags
 }
 
