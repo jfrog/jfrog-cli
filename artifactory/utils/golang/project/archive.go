@@ -92,7 +92,7 @@ func archiveProject(writer io.Writer, dir, mod, version string) error {
 			// Skip some subdirectories inside vendor, but maintain bug
 			// golang.org/issue/31562, described in isVendoredPackage.
 			// We would like Create and CreateFromDir to produce the same result
-			// for a set of files, whether expressed as a directory tree or zip. name:"/Users/orgab/go/pkg/mod/cache/download/github.com/!or-!gabay/hello2/@v/v1.0.0.zip.tmp043562578"
+			// for a set of files, whether expressed as a directory tree or zip.
 
 			if isVendoredPackage(slashPath) {
 				return filepath.SkipDir
