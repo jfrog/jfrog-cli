@@ -1612,7 +1612,7 @@ func gradleCmd(c *cli.Context) error {
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "gradlec"))
+	log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
 
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
