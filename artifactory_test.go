@@ -3977,6 +3977,8 @@ func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath
 
 func TestVcsProps(t *testing.T) {
 	initArtifactoryTest(t)
+	cleanVcsTestDir(t)
+
 	oldDotGitPath, newDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/"))
 	oldinnerDotGitPath, newinnerDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/OtherGit"))
 
@@ -3991,7 +3993,7 @@ func TestVcsProps(t *testing.T) {
 		for _, prop := range properties {
 			if item.Name == "a1.in" || item.Name == "a2.in" {
 				// Check that properties were not removed.
-				if prop.Key == "vcs.url" && prop.Value == "refs/heads/master" {
+				if prop.Key == "vcs.url" && prop.Value == "https://github.com/jfrog/jfrog-cli.git" {
 					foundUrl = true
 				}
 				if prop.Key == "vcs.revision" && prop.Value == "d63c5957ad6819f4c02a817abe757f210d35ff92" {
@@ -3999,7 +4001,7 @@ func TestVcsProps(t *testing.T) {
 				}
 			}
 			if item.Name == "b1.in" || item.Name == "b2.in" {
-				if prop.Key == "vcs.url" && prop.Value == "refs/heads/InnerGit" {
+				if prop.Key == "vcs.url" && prop.Value == "https://github.com/Postyy/jfrog-cli.git" {
 					foundUrl = true
 				}
 				if prop.Key == "vcs.revision" && prop.Value == "ad99b6c068283878fde4d49423728f0bdc00544a" {
@@ -4014,4 +4016,38 @@ func TestVcsProps(t *testing.T) {
 	tests.RenamePath(newDotGitPath, filepath.FromSlash(oldDotGitPath+"/gitdata"), t)
 	tests.RenamePath(newinnerDotGitPath, filepath.FromSlash((oldinnerDotGitPath + "/gitdata")), t)
 	cleanArtifactoryTest()
+}
+
+// Rename the ".git" dir to it origin name "gitdata" in vcs testdata dir.
+func cleanVcsTestDir(t *testing.T) {
+	firstDirFromLastTest, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/.git"))
+	if err != nil {
+		t.Error(t)
+	}
+	secondDirFromLastTest, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/OtherGit/.git"))
+	if err != nil {
+		t.Error(t)
+	}
+	found, err := fileutils.IsDirExists(firstDirFromLastTest, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if found {
+		restorPathTo, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/gitdata"))
+		if err != nil {
+			t.Error(t)
+		}
+		tests.RenamePath(firstDirFromLastTest, restorPathTo, t)
+	}
+	found, err = fileutils.IsDirExists(secondDirFromLastTest, false)
+	if err != nil {
+		t.Error(err)
+	}
+	if found {
+		restorPathTo, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/OtherGit/gitdata"))
+		if err != nil {
+			t.Error(t)
+		}
+		tests.RenamePath(secondDirFromLastTest, restorPathTo, t)
+	}
 }

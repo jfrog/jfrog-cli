@@ -70,6 +70,7 @@ func (uc *UploadCommand) upload() error {
 	// Initialize Progress bar, set logger to a log file
 	var err error
 	var progressBar ioUtils.Progress
+	AddVcsProps := false
 	progressBar, uc.logFile, err = progressbar.InitProgressBarIfPossible()
 	if err != nil {
 		return err
@@ -99,6 +100,7 @@ func (uc *UploadCommand) upload() error {
 	// Build Info Collection:
 	isCollectBuildInfo := len(uc.buildConfiguration.BuildName) > 0 && len(uc.buildConfiguration.BuildNumber) > 0
 	if isCollectBuildInfo && !uc.DryRun() {
+		AddVcsProps = true
 		if err := utils.SaveBuildGeneralDetails(uc.buildConfiguration.BuildName, uc.buildConfiguration.BuildNumber); err != nil {
 			return err
 		}
@@ -113,7 +115,7 @@ func (uc *UploadCommand) upload() error {
 	for i := 0; i < len(uc.Spec().Files); i++ {
 		file := uc.Spec().Get(i)
 		file.Props += syncDeletesProp
-		uploadParams, err := getUploadParams(file, uc.uploadConfiguration)
+		uploadParams, err := getUploadParams(file, uc.uploadConfiguration, AddVcsProps)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
@@ -197,12 +199,13 @@ func addBuildProps(props *string, buildName, buildNumber string) error {
 	return nil
 }
 
-func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration) (uploadParams services.UploadParams, err error) {
+func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration, AddVcsProps bool) (uploadParams services.UploadParams, err error) {
 	uploadParams = services.NewUploadParams()
 	uploadParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
 	uploadParams.Deb = configuration.Deb
 	uploadParams.Symlink = configuration.Symlink
 	uploadParams.MinChecksumDeploy = configuration.MinChecksumDeploySize
+	uploadParams.AddVcsProps = AddVcsProps
 
 	uploadParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {
