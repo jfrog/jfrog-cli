@@ -933,7 +933,7 @@ func getNpmFlags() []cli.Flag {
 	return append([]cli.Flag{flag}, npmFlags...)
 }
 
-func getBasicBuildToolsFlages() []cli.Flag {
+func getBasicBuildToolsFlags() []cli.Flag {
 	npmFlags := getBaseFlags()
 	return append(npmFlags, getServerIdFlag())
 }
@@ -980,7 +980,7 @@ func getGoAndBuildToolFlags() []cli.Flag {
 }
 
 func getGoRecursivePublishFlags() []cli.Flag {
-	return getBasicBuildToolsFlages()
+	return getBasicBuildToolsFlags()
 }
 
 func getGoPublishFlags() []cli.Flag {
@@ -995,7 +995,7 @@ func getGoPublishFlags() []cli.Flag {
 			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
 		},
 	}
-	flags = append(flags, getBasicBuildToolsFlages()...)
+	flags = append(flags, getBasicBuildToolsFlags()...)
 	flags = append(flags, getBuildToolAndModuleFlags()...)
 	return flags
 }
@@ -1574,7 +1574,7 @@ func mvnCmd(c *cli.Context) error {
 		}
 		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+		if err := validateCommand(args, getBasicBuildToolsFlags()); err != nil {
 			return err
 		}
 		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
@@ -1600,7 +1600,7 @@ func gradleCmd(c *cli.Context) error {
 		}
 		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+		if err := validateCommand(args, getBasicBuildToolsFlags()); err != nil {
 			return err
 		}
 		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
