@@ -1603,8 +1603,8 @@ func gradleCmd(c *cli.Context) error {
 		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
 			return err
 		}
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredNugetArgs, " ")).SetConfigPath(configFilePath)
+		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath)
 
 		return commands.Exec(gradleCmd)
 	}
