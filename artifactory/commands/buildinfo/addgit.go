@@ -5,7 +5,6 @@ import (
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/git"
 	utilsconfig "github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -78,7 +77,7 @@ func (config *BuildAddGitCommand) Run() error {
 	}
 
 	// Collect URL and Revision into GitManager.
-	gitManager := git.NewManager(config.dotGitPath)
+	gitManager := clientutils.NewGitManager(config.dotGitPath)
 	err = gitManager.ReadConfig()
 	if err != nil {
 		return err

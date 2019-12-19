@@ -290,23 +290,20 @@ func PrepareDotGitDir(t *testing.T, sourceDirPath, targetDirPath string) (string
 
 // Removing the provided path from the filesystem
 func RemovePath(testPath string, t *testing.T) {
-	if _, err := os.Stat(testPath); err == nil {
-		//path exists need to delete.
-		err = os.RemoveAll(testPath)
-		if err != nil {
-			t.Error("Cannot remove path: " + testPath + " due to: " + err.Error())
-		}
+	err := fileutils.RemovePath(testPath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
 	}
 }
 
 // Renaming from old path to new path.
 func RenamePath(oldPath, newPath string, t *testing.T) {
-	err := fileutils.CopyDir(oldPath, newPath, true)
+	err := fileutils.RenamePath(oldPath, newPath)
 	if err != nil {
-		t.Error("Error copying directory: ", oldPath, "to", newPath, err.Error())
+		t.Error(err)
 		t.FailNow()
 	}
-	RemovePath(oldPath, t)
 }
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {

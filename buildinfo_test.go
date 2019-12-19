@@ -7,7 +7,6 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/git"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
@@ -15,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -390,7 +390,7 @@ func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dot
 
 func TestReadGitConfig(t *testing.T) {
 	dotGitPath := getCliDotGitPath(t)
-	gitManager := git.NewManager(dotGitPath)
+	gitManager := clientutils.NewGitManager(dotGitPath)
 	err := gitManager.ReadConfig()
 	if err != nil {
 		t.Error("Failed to read .git config file.")
