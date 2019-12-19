@@ -53,8 +53,18 @@ func (dc *DownloadCommand) CommandName() string {
 }
 
 func (dc *DownloadCommand) Run() error {
-	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?") {
-		return nil
+	if dc.SyncDeletesPath() != "" {
+		absSyncDeletesPath, err := filepath.Abs(dc.SyncDeletesPath())
+		if err != nil {
+			return nil
+		}
+		if _, err = os.Stat(absSyncDeletesPath); os.IsNotExist(err) {
+			return errors.New("Sync-deletes path does not exists.")
+		}
+		if !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
+			"You can avoid this confirmation message by setting --quiet=true.") {
+			return nil
+		}
 	}
 	// Initialize Progress bar, set logger to a log file
 	var err error
