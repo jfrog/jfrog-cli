@@ -71,6 +71,7 @@ func mavenConfigeFile(configResult *ConfigFile) error {
 		return err
 	}
 	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Resolver.ServerId = vConfig.GetString(utils.SERVER_ID)
 		configResult.Resolver.ReleaseRepo, err = prompt.ReadRepo("Set resolution repository for release dependencies (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
@@ -85,6 +86,7 @@ func mavenConfigeFile(configResult *ConfigFile) error {
 		return err
 	}
 	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
+		configResult.Deployer.ServerId = vConfig.GetString(utils.SERVER_ID)
 		configResult.Deployer.ReleaseRepo, err = prompt.ReadRepo("Set repository for release artifacts deployment (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
 		if err != nil {
 			return err
