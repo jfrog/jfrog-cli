@@ -53,7 +53,8 @@ func (dc *DownloadCommand) CommandName() string {
 }
 
 func (dc *DownloadCommand) Run() error {
-	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?") {
+	if dc.SyncDeletesPath() != "" && !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.") {
 		return nil
 	}
 	// Initialize Progress bar, set logger to a log file
@@ -111,10 +112,18 @@ func (dc *DownloadCommand) Run() error {
 		dc.result.SetFailCount(0)
 		return err
 	} else if dc.SyncDeletesPath() != "" {
-		walkFn := createSyncDeletesWalkFunction(filesInfo)
-		err = fileutils.Walk(dc.SyncDeletesPath(), walkFn, false)
+		absSyncDeletesPath, err := filepath.Abs(dc.SyncDeletesPath())
 		if err != nil {
-			return err
+			return errorutils.CheckError(err)
+		}
+		if _, err = os.Stat(absSyncDeletesPath); err == nil {
+			walkFn := createSyncDeletesWalkFunction(filesInfo)
+			err = fileutils.Walk(dc.SyncDeletesPath(), walkFn, false)
+			if err != nil {
+				return errorutils.CheckError(err)
+			}
+		} else if os.IsNotExist(err) {
+			log.Info("Sync-deletes path", absSyncDeletesPath, "does not exists.")
 		}
 	}
 	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
@@ -196,7 +205,7 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 			}
 		}
 		// The current path is not a prefix of any downloaded file so it should be deleted
-		log.Info("Deleting: ", path)
+		log.Info("Deleting:", path)
 		if info.IsDir() {
 			// If current path is a dir - remove all content and return SkipDir to stop walking this path
 			err = os.RemoveAll(path)

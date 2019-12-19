@@ -111,5 +111,6 @@ func confirmDelete(pathsToDelete []clientutils.ResultItem) bool {
 	for _, v := range pathsToDelete {
 		fmt.Println("  " + v.GetItemRelativePath())
 	}
-	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
+	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?\n" +
+		"You can avoid this confirmation message by adding --quiet to the command.")
 }

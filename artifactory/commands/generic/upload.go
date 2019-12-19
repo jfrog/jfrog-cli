@@ -61,7 +61,8 @@ func (uc *UploadCommand) upload() error {
 	// In case of sync-delete get the user to confirm first, and save the operation timestamp.
 	syncDeletesProp := ""
 	if !uc.DryRun() && uc.SyncDeletesPath() != "" {
-		if !uc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?") {
+		if !uc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
+			"You can avoid this confirmation message by adding --quiet to the command.") {
 			return nil
 		}
 		timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)

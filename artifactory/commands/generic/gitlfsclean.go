@@ -89,7 +89,8 @@ func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete []clientutils.
 	for _, v := range filesToDelete {
 		fmt.Println("  " + v.Name)
 	}
-	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above files?")
+	confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete the above files?\n" +
+		"You can avoid this confirmation message by adding --quiet to the command.")
 	if confirmed {
 		err := glc.deleteLfsFilesFromArtifactory(filesToDelete)
 		return err
