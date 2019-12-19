@@ -4019,10 +4019,16 @@ func initVcsTestDir(t *testing.T) string {
 	if err != nil {
 		t.Error(err)
 	}
-	if found, _ := fileutils.IsDirExists(filepath.Join(testsdataTarget, "gitdata"), false); found {
+	if found, err := fileutils.IsDirExists(filepath.Join(testsdataTarget, "gitdata"), false); found {
+		if err != nil {
+			t.Error(err)
+		}
 		tests.RenamePath(filepath.Join(testsdataTarget, "gitdata"), filepath.Join(testsdataTarget, ".git"), t)
 	}
-	if found, _ := fileutils.IsDirExists(filepath.Join(testsdataTarget, "OtherGit", "gitdata"), false); found {
+	if found, err := fileutils.IsDirExists(filepath.Join(testsdataTarget, "OtherGit", "gitdata"), false); found {
+		if err != nil {
+			t.Error(err)
+		}
 		tests.RenamePath(filepath.Join(testsdataTarget, "OtherGit", "gitdata"), filepath.Join(testsdataTarget, "OtherGit", ".git"), t)
 	}
 	path, err := filepath.Abs(tests.Temp)
