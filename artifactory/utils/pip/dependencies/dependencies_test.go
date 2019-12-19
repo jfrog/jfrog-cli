@@ -58,9 +58,9 @@ func TestExtractDependencies(t *testing.T) {
 		expectedAllDependencies map[string]*buildinfo.Dependency
 		expectedChildrenMap     map[string][]string
 	}{
-		{[]string{"pkg-1", "pkg-dep-7"}, map[string]*buildinfo.Dependency{"pkg-1": {"pkg-1:0.33.4", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", nil, nil}}, map[string][]string{"pkg-1": nil, "pkg-dep-7": nil}},
-		{[]string{"pkg3"}, map[string]*buildinfo.Dependency{"pkg2": {"Pkg2:41.0.1", nil, nil}, "pkg.dep-5": {"pkg.DEP-5:1.11", nil, nil}, "pkg6": {"pkg6:0.16.1", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", nil, nil}, "pkg3": {"pkg3:3.5", nil, nil}}, map[string][]string{"pkg3": {"pkg2", "pkg.dep-5", "pkg6"}, "pkg-dep-7": nil, "pkg2": nil, "pkg.dep-5": {"pkg6"}, "pkg6": {"pkg-dep-7"}}},
-		{[]string{"pkg8"}, map[string]*buildinfo.Dependency{"pkg8": {"pkg8:0.13.2", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", nil, nil}}, map[string][]string{"pkg8": {"pkg-dep-7", "pkg8"}, "pkg-dep-7": nil}},
+		{[]string{"pkg-1", "pkg-dep-7"}, map[string]*buildinfo.Dependency{"pkg-1": {"pkg-1:0.33.4", "", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", "", nil, nil}}, map[string][]string{"pkg-1": nil, "pkg-dep-7": nil}},
+		{[]string{"pkg3"}, map[string]*buildinfo.Dependency{"pkg2": {"Pkg2:41.0.1", "", nil, nil}, "pkg.dep-5": {"pkg.DEP-5:1.11", "", nil, nil}, "pkg6": {"pkg6:0.16.1", "", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", "", nil, nil}, "pkg3": {"pkg3:3.5", "", nil, nil}}, map[string][]string{"pkg3": {"pkg2", "pkg.dep-5", "pkg6"}, "pkg-dep-7": nil, "pkg2": nil, "pkg.dep-5": {"pkg6"}, "pkg6": {"pkg-dep-7"}}},
+		{[]string{"pkg8"}, map[string]*buildinfo.Dependency{"pkg8": {"pkg8:0.13.2", "", nil, nil}, "pkg-dep-7": {"pkg-dep-7:19.2.1", "", nil, nil}}, map[string][]string{"pkg8": {"pkg-dep-7", "pkg8"}, "pkg-dep-7": nil}},
 	}
 
 	for _, test := range tests {
