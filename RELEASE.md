@@ -1,3 +1,8 @@
+## 1.32.3 (Dec 19, 2019)
+- Bug fix - vcs.url property value.
+- Fix maven syntax deprecation message.
+- 'jfrog rt mvnc' missing server ID from config file.
+
 ## 1.32.2 (Dec 16, 2019)
 - Fixes to the CLI help.
 
