@@ -884,7 +884,7 @@ func getDockerFlags() []cli.Flag {
 	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
-func getDepracatedFlages() []cli.Flag {
+func getDepracatedFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
@@ -910,16 +910,16 @@ func getDepracatedFlages() []cli.Flag {
 }
 
 //These flags are not valid for native npm command
-func getNpmLegacyFlages() []cli.Flag {
+func getNpmLegacyFlags() []cli.Flag {
 	npmFlags := cli.StringFlag{
 		Name:  "npm-args",
 		Usage: "[Depracated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 	}
-	return append(getDepracatedFlages(), npmFlags)
+	return append(getDepracatedFlags(), npmFlags)
 }
 
 func getNpmCommonFlags() []cli.Flag {
-	npmFlags := getNpmLegacyFlages()
+	npmFlags := getNpmLegacyFlags()
 	return append(getBuildToolAndModuleFlags(), npmFlags...)
 }
 
@@ -933,7 +933,7 @@ func getNpmFlags() []cli.Flag {
 	return append([]cli.Flag{flag}, npmFlags...)
 }
 
-func getBasicBuildToolsFlages() []cli.Flag {
+func getBasicBuildToolsFlags() []cli.Flag {
 	npmFlags := getBaseFlags()
 	return append(npmFlags, getServerIdFlag())
 }
@@ -954,7 +954,7 @@ func getNugetCommonFlags() []cli.Flag {
 			Usage: "[Depracated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(commonNugetFlags, getDepracatedFlages()...)
+	commonNugetFlags = append(commonNugetFlags, getDepracatedFlags()...)
 	return commonNugetFlags
 }
 
@@ -969,7 +969,7 @@ func getGoFlags() []cli.Flag {
 			Usage: "[Depracated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(flags, getDepracatedFlages()...)
+	flags = append(flags, getDepracatedFlags()...)
 	return flags
 }
 
@@ -980,7 +980,7 @@ func getGoAndBuildToolFlags() []cli.Flag {
 }
 
 func getGoRecursivePublishFlags() []cli.Flag {
-	return getBasicBuildToolsFlages()
+	return getBasicBuildToolsFlags()
 }
 
 func getGoPublishFlags() []cli.Flag {
@@ -995,7 +995,7 @@ func getGoPublishFlags() []cli.Flag {
 			Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
 		},
 	}
-	flags = append(flags, getBasicBuildToolsFlages()...)
+	flags = append(flags, getBasicBuildToolsFlags()...)
 	flags = append(flags, getBuildToolAndModuleFlags()...)
 	return flags
 }
@@ -1545,7 +1545,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "mvnc"))
+	log.Warn(deprecatedWarning(utils.Maven, os.Args[2], "mvnc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1574,11 +1574,11 @@ func mvnCmd(c *cli.Context) error {
 		}
 		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+		if err := validateCommand(args, getBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredNugetArgs, " "))
+		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredMavenArgs, " "))
 		return commands.Exec(mvnCmd)
 	}
 	return mvnLegacyCmd(c)
@@ -1600,11 +1600,11 @@ func gradleCmd(c *cli.Context) error {
 		}
 		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getBasicBuildToolsFlages()); err != nil {
+		if err := validateCommand(args, getBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredNugetArgs, " ")).SetConfigPath(configFilePath)
+		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath)
 
 		return commands.Exec(gradleCmd)
 	}
@@ -1612,7 +1612,7 @@ func gradleCmd(c *cli.Context) error {
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "gradlec"))
+	log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
 
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1774,7 +1774,7 @@ func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyComma
 		}
 		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getNpmLegacyFlages()); err != nil {
+		if err := validateCommand(args, getNpmLegacyFlags()); err != nil {
 			return err
 		}
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
@@ -1819,7 +1819,7 @@ func npmPublishCmd(c *cli.Context) error {
 		}
 		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
-		if err := validateCommand(args, getNpmLegacyFlages()); err != nil {
+		if err := validateCommand(args, getNpmLegacyFlags()); err != nil {
 			return err
 		}
 		npmCmd := npm.NewNpmPublishCommand()
