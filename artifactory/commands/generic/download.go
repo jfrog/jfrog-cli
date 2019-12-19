@@ -62,7 +62,7 @@ func (dc *DownloadCommand) Run() error {
 			return errors.New("Sync-deletes path does not exists.")
 		}
 		if !dc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
-			"You can avoid this confirmation message by setting --quiet=true.") {
+			"You can avoid this confirmation message by adding --quiet to the command.") {
 			return nil
 		}
 	}
