@@ -3977,12 +3977,8 @@ func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath
 
 func TestVcsProps(t *testing.T) {
 	initArtifactoryTest(t)
-	cleanVcsTestDir(t)
-
-	oldDotGitPath, newDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/"))
-	oldinnerDotGitPath, newinnerDotGitPath := tests.PrepareDotGitDir(t, filepath.FromSlash("/gitdata"), filepath.FromSlash("/testsdata/vcs/OtherGit"))
-
-	artifactoryCli.Exec("upload", "testsdata/vcs/*", tests.Repo1, "--flat=false", "--build-name=or", "--build-number=2020")
+	testDir := initVcsTestDir(t)
+	artifactoryCli.Exec("upload", filepath.Join(testDir, "*"), tests.Repo1, "--flat=false", "--build-name=or", "--build-number=2020")
 	resultItems := searchItemsInArtifacotry(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
@@ -4013,41 +4009,25 @@ func TestVcsProps(t *testing.T) {
 			t.Error("VCS property was not found in artifact" + item.Name + "props")
 		}
 	}
-	tests.RenamePath(newDotGitPath, filepath.FromSlash(oldDotGitPath+"/gitdata"), t)
-	tests.RenamePath(newinnerDotGitPath, filepath.FromSlash((oldinnerDotGitPath + "/gitdata")), t)
 	cleanArtifactoryTest()
 }
 
-// Rename the ".git" dir to it origin name "gitdata" in vcs testdata dir.
-func cleanVcsTestDir(t *testing.T) {
-	firstDirFromLastTest, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/.git"))
-	if err != nil {
-		t.Error(t)
-	}
-	secondDirFromLastTest, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/OtherGit/.git"))
-	if err != nil {
-		t.Error(t)
-	}
-	found, err := fileutils.IsDirExists(firstDirFromLastTest, false)
+func initVcsTestDir(t *testing.T) string {
+	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "vcs")
+	testsdataTarget := tests.Temp
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
 	if err != nil {
 		t.Error(err)
 	}
-	if found {
-		restorPathTo, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/gitdata"))
-		if err != nil {
-			t.Error(t)
-		}
-		tests.RenamePath(firstDirFromLastTest, restorPathTo, t)
+	if found, _ := fileutils.IsDirExists(filepath.Join(testsdataTarget, "gitdata"), false); found {
+		tests.RenamePath(filepath.Join(testsdataTarget, "gitdata"), filepath.Join(testsdataTarget, ".git"), t)
 	}
-	found, err = fileutils.IsDirExists(secondDirFromLastTest, false)
+	if found, _ := fileutils.IsDirExists(filepath.Join(testsdataTarget, "OtherGit", "gitdata"), false); found {
+		tests.RenamePath(filepath.Join(testsdataTarget, "OtherGit", "gitdata"), filepath.Join(testsdataTarget, "OtherGit", ".git"), t)
+	}
+	path, err := filepath.Abs(tests.Temp)
 	if err != nil {
 		t.Error(err)
 	}
-	if found {
-		restorPathTo, err := filepath.Abs(filepath.FromSlash("testsdata/vcs/OtherGit/gitdata"))
-		if err != nil {
-			t.Error(t)
-		}
-		tests.RenamePath(secondDirFromLastTest, restorPathTo, t)
-	}
+	return path
 }
