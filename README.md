@@ -3,6 +3,15 @@
 |master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
 |dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev)|
 
+# Table of Contents
+- [Overview](#overview)
+- [Download and Installation](#download-and-installation)
+- [Building the Executable](#building-the-executable)
+- [Tests](#tests)
+- [Pull Requests](#pull-requests)
+- [Using JFrog CLI](#using-jfrog-cli)
+- [Release Notes](#release-notes)
+
 # Overview
 JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
