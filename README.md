@@ -11,8 +11,6 @@
 [![Release status](https://img.shields.io/github/v/release/jfrog/jfrog-cli?color=brightgreen)](https://github.com/jfrog/jfrog-cli/releases)
 [![npm version](https://img.shields.io/npm/v/jfrog-cli-go.svg?color=orange)](https://www.npmjs.com/package/jfrog-cli-go)
 [![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=yellow)](https://formulae.brew.sh/formula/jfrog-cli-go)
-[![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jfrog/jfrog-cli/blob/master/CONTRIBUTING.md)
 
 # OS Support
 
@@ -288,7 +286,7 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-# Pull Requests 
+# Pull Requests [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jfrog/jfrog-cli/blob/master/CONTRIBUTING.md) [![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
 We welcome pull requests from the community.
 ## Guidelines
 * Before creating your first pull request, please join our contributors community by signing [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
