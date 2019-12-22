@@ -11,7 +11,7 @@
 [![npm version](https://img.shields.io/npm/v/jfrog-cli-go.svg?color=orange)](https://www.npmjs.com/package/jfrog-cli-go)
 [![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=yellow)](https://formulae.brew.sh/formula/jfrog-cli-go)
 [![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Or-Gabay/jfrog-cli/blob/master/CONTRIBUTING.md)
 
 # Overview
 
