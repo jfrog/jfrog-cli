@@ -1,16 +1,21 @@
 <p align="center">
   <a href="https://jfrog.com/">
-    <img src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" alt="JFrog logo">
+    <img src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" alt="JFrog logo" width="200">
   </a>
 </p>
 
-|Branch|Status|
-|:---:|:---:|
-|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
-|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev)|
+# Status
+
+[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
+[![Release status](https://img.shields.io/github/v/release/jfrog/jfrog-cli?color=brightgreen)](https://github.com/jfrog/jfrog-cli/releases)
+[![npm version](https://img.shields.io/npm/v/jfrog-cli-go.svg?color=orange)](https://www.npmjs.com/package/jfrog-cli-go)
+[![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=yellow)](https://formulae.brew.sh/formula/jfrog-cli-go)
+[![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 # Overview
-JFrog CLI is a compact and smart client that provides a simple interface that automates access to *Artifactory*, *Bintray* and *Mission Control* through their respective REST APIs.
+
+JFrog CLI is a compact and smart client that provides a simple interface that automates access to [Artifactory](https://jfrog.com/artifactory/), [Bintray](https://bintray.com/) and [Mission Control](https://jfrog.com/mission-control/) through their respective REST APIs.
 By using the JFrog CLI, you can greatly simplify your automation scripts making them more readable and easier to maintain.
 Several features of the JFrog CLI makes your scripts more efficient and reliable:
 
@@ -273,7 +278,7 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-# Pull Requests
+# Pull Requests 
 We welcome pull requests from the community.
 ## Guidelines
 * Before creating your first pull request, please join our contributors community by signing [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
