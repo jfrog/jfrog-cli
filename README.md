@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://jfrog.com/">
+    <img src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" alt="JFrog logo" width="200" height="72">
+  </a>
+</p>
+
 |Branch|Status|
 |:---:|:---:|
 |master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
