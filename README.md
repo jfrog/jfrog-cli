@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://jfrog.com/">
-    <img src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" alt="JFrog logo" width="200" height="72">
+    <img src="https://github.com/jfrog/jfrog-cli-go/blob/master/npm/assets/jfrog.jpg?raw=true" alt="JFrog logo">
   </a>
 </p>
 
