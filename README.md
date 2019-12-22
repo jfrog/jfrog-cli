@@ -13,6 +13,9 @@
 [![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=yellow)](https://formulae.brew.sh/formula/jfrog-cli-go)
 [![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jfrog/jfrog-cli/blob/master/CONTRIBUTING.md)
+
+# OS Support
+
 [![Linux-386](https://img.shields.io/bintray/v/jfrog/jfrog-cli-go/jfrog-cli-linux-386?color=orange&label=linux-386&logo=Linux)](https://bintray.com/jfrog/jfrog-cli-go/jfrog-cli-linux-386/_latestVersion)
 [![Linux-amd64](https://img.shields.io/bintray/v/jfrog/jfrog-cli-go/jfrog-cli-linux-amd64?color=orange&label=linux-amd64&logo=Linux) ](https://bintray.com/jfrog/jfrog-cli-go/jfrog-cli-linux-amd64/_latestVersion)
 [![Linux-arm](https://img.shields.io/bintray/v/jfrog/jfrog-cli-go/jfrog-cli-linux-arm?color=orange&label=linux-arm&logo=Linux) ](https://bintray.com/jfrog/jfrog-cli-go/jfrog-cli-linux-arm/_latestVersion)
