@@ -139,7 +139,7 @@ func initArtifactoryCli() {
 	}
 }
 
-func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
 	var filePath string
 	for _, atDir := range dirs {
 		d, err := yaml.Marshal(&commandUtils.ConfigFile{
