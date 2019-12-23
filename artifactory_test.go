@@ -3985,6 +3985,7 @@ func TestVcsProps(t *testing.T) {
 	}
 	for _, item := range resultItems {
 		properties := item.Properties
+		searchForDuplicatedVcsProps(properties, t)
 		foundUrl, foundRevision := false, false
 		for _, prop := range properties {
 			if item.Name == "a1.in" || item.Name == "a2.in" {
@@ -4036,4 +4037,21 @@ func initVcsTestDir(t *testing.T) string {
 		t.Error(err)
 	}
 	return path
+}
+func searchForDuplicatedVcsProps(props []rtutils.Property, t *testing.T) {
+	foundUrl, foundRevision := false, false
+	for _, prop := range props {
+		if prop.Key == "vcs.url" {
+			if foundUrl {
+				t.Error("Found duplicate VCS property(url) in artifact")
+			}
+			foundUrl = true
+		}
+		if prop.Key == "vcs.revision" {
+			if foundRevision {
+				t.Error("Found duplicate VCS property(revision) in artifact")
+			}
+			foundUrl = true
+		}
+	}
 }
