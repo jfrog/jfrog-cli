@@ -237,6 +237,25 @@ func (cli *JfrogCli) Exec(args ...string) error {
 	log.Info("[Command]", strings.Join(output, " "))
 	return cli.main()
 }
+func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
+	spaceSplit := " "
+	os.Args = strings.Split(cli.prefix, spaceSplit)
+	output := strings.Split(cli.prefix, spaceSplit)
+	for _, v := range args {
+		if v == "" {
+			continue
+		}
+		os.Args = append(os.Args, v)
+		output = append(output, v)
+	}
+	if cli.credentials != "" {
+		args := strings.Split(cli.credentials, spaceSplit)
+		os.Args = append(os.Args, args...)
+	}
+
+	log.Info("[Command]", strings.Join(output, " "))
+	return cli.main()
+}
 
 func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
 	return &JfrogCli{cli.main, cli.prefix, suffix}

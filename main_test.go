@@ -19,6 +19,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Credentials for legacy build tools tests.
+var buildtoolsCreds string
+
 func TestMain(m *testing.M) {
 	setupIntegrationTests()
 	result := m.Run()
@@ -42,6 +45,7 @@ func setupIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		if artifactoryCli == nil {
 			initArtifactoryCli()
+			buildtoolsCreds = authenticate()
 		}
 		InitBuildToolsTests()
 	}
@@ -187,6 +191,13 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 func runCli(t *testing.T, args ...string) {
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err := rtCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
+}
+func runCliWithLegacyBuildtoolsCmd(t *testing.T, args ...string) {
+	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := rtCli.LegacyBuildToolExec(args...)
 	if err != nil {
 		t.Error(err)
 	}

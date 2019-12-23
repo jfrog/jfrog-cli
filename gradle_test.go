@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 )
@@ -25,7 +23,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	}
 	buildName := "gradle-cli"
 	buildNumber := "1"
-	runAndValidateGradle(buildGradlePath, configFilePath, t, &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
+	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
@@ -43,7 +41,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	buildName := "gradle-cli"
 	buildNumber := "1"
 	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
-	runCli(t, "gradle", "clean artifactoryPublish","-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
+	runCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	err := os.Chdir(oldHomeDir)
 	if err != nil {
 		t.Error(err)
@@ -72,7 +70,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	}
 	buildName := "gradle-cli"
 	buildNumber := "1"
-	runAndValidateGradle(buildGradlePath, configFilePath, t, &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
+	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
@@ -96,26 +94,22 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 		t.Error(err)
 	}
 
-	runAndValidateGradle(buildGradlePath, configFilePath, t, &utils.BuildConfiguration{BuildName: buildName, BuildNumber: buildNumber})
+	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanBuildToolsTest()
 }
 
-func runAndValidateGradle(buildGradlePath, configFilePath string, t *testing.T, buildConfig *utils.BuildConfiguration) {
-	gradleCmd := gradle.NewGradleCommand().SetTasks("clean artifactoryPublish -b " + buildGradlePath).SetConfigPath(configFilePath).SetConfiguration(buildConfig)
-	err := gradleCmd.Run()
-	if err != nil {
-		t.Error(err)
-	}
+func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber string, t *testing.T) {
+	runCliWithLegacyBuildtoolsCmd(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, configFilePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
-	isExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildConfig.BuildName+";build.number="+buildConfig.BuildNumber, t)
+	isExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {
