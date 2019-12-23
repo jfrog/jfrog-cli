@@ -4051,7 +4051,7 @@ func searchForDuplicatedVcsProps(props []rtutils.Property, t *testing.T) {
 			if foundRevision {
 				t.Error("Found duplicate VCS property(revision) in artifact")
 			}
-			foundUrl = true
+			foundRevision = true
 		}
 	}
 }
