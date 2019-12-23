@@ -1,3 +1,6 @@
+## 1.32.4 (Dec 23, 2019)
+- Update jfrog-client-go version to v0.6.3
+
 ## 1.32.3 (Dec 19, 2019)
 - Bug fix - vcs.url property value.
 - Fix maven syntax deprecation message.
