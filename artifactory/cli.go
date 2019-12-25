@@ -522,7 +522,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "ping",
-			Flags:        getServerFlags(),
+			Flags:        getServerWithClientCertificatesFlags(),
 			Aliases:      []string{"p"},
 			Usage:        ping.Description,
 			HelpName:     common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -534,14 +534,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "curl",
-			Flags:        getCurlFlags(),
-			Aliases:      []string{"cl"},
-			Usage:        curldocs.Description,
-			HelpName:     common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
-			UsageText:    curldocs.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
+			Name:            "curl",
+			Flags:           getCurlFlags(),
+			Aliases:         []string{"cl"},
+			Usage:           curldocs.Description,
+			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
+			UsageText:       curldocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			BashComplete:    common.CreateBashCompletionFunc(),
+			SkipFlagParsing: true,
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
 			},
@@ -611,6 +612,14 @@ func getBaseFlags() []cli.Flag {
 			Name:  "access-token",
 			Usage: "[Optional] Artifactory access token.` `",
 		},
+		cli.BoolFlag{
+			Name:  "insecure-tls",
+			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
+		})
+}
+
+func getClientCertificatesFlags() []cli.Flag {
+	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "client-certificate-path",
 			Usage: "[Optional] Client certificate file in PEM format.` `",
@@ -619,10 +628,7 @@ func getBaseFlags() []cli.Flag {
 			Name:  "client-certificate-key-path",
 			Usage: "[Optional] Private key file for the client certificate in PEM format.` `",
 		},
-		cli.BoolFlag{
-			Name:  "insecure-tls",
-			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
-		})
+	}
 }
 
 func getCommonFlags() []cli.Flag {
@@ -636,6 +642,10 @@ func getCommonFlags() []cli.Flag {
 
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), getServerIdFlag())
+}
+
+func getServerWithClientCertificatesFlags() []cli.Flag {
+	return append(getServerFlags(), getClientCertificatesFlags()...)
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -660,7 +670,7 @@ func getSortLimitFlags() []cli.Flag {
 }
 
 func getUploadFlags() []cli.Flag {
-	uploadFlags := append(getServerFlags(), getSpecFlags()...)
+	uploadFlags := append(getServerWithClientCertificatesFlags(), getSpecFlags()...)
 	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
@@ -706,7 +716,7 @@ func getUploadFlags() []cli.Flag {
 }
 
 func getDownloadFlags() []cli.Flag {
-	downloadFlags := append(getServerFlags(), getSortLimitFlags()...)
+	downloadFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
 	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
 	return append(downloadFlags, []cli.Flag{
@@ -929,7 +939,7 @@ func getGoPublishFlags() []cli.Flag {
 }
 
 func getMoveFlags() []cli.Flag {
-	moveFlags := append(getServerFlags(), getSortLimitFlags()...)
+	moveFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	moveFlags = append(moveFlags, getSpecFlags()...)
 	return append(moveFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -958,7 +968,7 @@ func getMoveFlags() []cli.Flag {
 }
 
 func getCopyFlags() []cli.Flag {
-	copyFlags := append(getServerFlags(), getSortLimitFlags()...)
+	copyFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	copyFlags = append(copyFlags, getSpecFlags()...)
 	return append(copyFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -986,7 +996,7 @@ func getCopyFlags() []cli.Flag {
 }
 
 func getDeleteFlags() []cli.Flag {
-	deleteFlags := append(getServerFlags(), getSortLimitFlags()...)
+	deleteFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	deleteFlags = append(deleteFlags, getSpecFlags()...)
 	return append(deleteFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1011,7 +1021,7 @@ func getDeleteFlags() []cli.Flag {
 }
 
 func getSearchFlags() []cli.Flag {
-	searchFlags := append(getServerFlags(), getSortLimitFlags()...)
+	searchFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	searchFlags = append(searchFlags, getSpecFlags()...)
 	return append(searchFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1080,7 +1090,7 @@ func getDeletePropertiesFlags() []cli.Flag {
 }
 
 func getPropertiesFlags() []cli.Flag {
-	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
+	propsFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
 	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1304,7 +1314,7 @@ func getBuildAddGitFlags() []cli.Flag {
 }
 
 func getCurlFlags() []cli.Flag {
-	return getServerFlags()
+	return []cli.Flag{getServerIdFlag()}
 }
 
 func getPipInstallFlags() []cli.Flag {
@@ -2297,7 +2307,7 @@ func curlCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	curlCommand := curl.NewCurlCommand().SetArguments(extractCommand(c))
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := curlCommand.GetArtifactoryDetails()
 	if err != nil {
 		return err
 	}

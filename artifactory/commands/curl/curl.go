@@ -85,13 +85,7 @@ func (curlCmd *CurlCommand) addCommandCredentials() (string, error) {
 		certificateHelpPrefix = "--cert *** --key *** "
 	}
 
-	if curlCmd.rtDetails.ApiKey != "" {
-		// Add access token header.
-		tokenHeader := fmt.Sprintf("X-JFrog-Art-Api: %s", curlCmd.rtDetails.ApiKey)
-		curlCmd.arguments = append(curlCmd.arguments, "-H", tokenHeader)
-
-		return certificateHelpPrefix + "-H \"X-JFrog-Art-Api: ***\"", nil
-	} else if curlCmd.rtDetails.AccessToken != "" {
+	if curlCmd.rtDetails.AccessToken != "" {
 		// Add access token header.
 		tokenHeader := fmt.Sprintf("Authorization: Bearer %s", curlCmd.rtDetails.AccessToken)
 		curlCmd.arguments = append(curlCmd.arguments, "-H", tokenHeader)
