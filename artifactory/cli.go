@@ -621,11 +621,11 @@ func getBaseFlags() []cli.Flag {
 func getClientCertificatesFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "client-certificate-path",
+			Name:  "client-cert-path",
 			Usage: "[Optional] Client certificate file in PEM format.` `",
 		},
 		cli.StringFlag{
-			Name:  "client-certificate-key-path",
+			Name:  "client-cert-key-path",
 			Usage: "[Optional] Private key file for the client certificate in PEM format.` `",
 		},
 	}
@@ -2412,8 +2412,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
-	details.ClientCertificatePath = c.String("client-certificate-path")
-	details.ClientCertificateKeyPath = c.String("client-certificate-key-path")
+	details.ClientCertificatePath = c.String("client-cert-path")
+	details.ClientCertificateKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
 
