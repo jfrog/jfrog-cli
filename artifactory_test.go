@@ -3985,23 +3985,34 @@ func TestVcsProps(t *testing.T) {
 	}
 	for _, item := range resultItems {
 		properties := item.Properties
-		searchForDuplicatedVcsProps(properties, t)
 		foundUrl, foundRevision := false, false
 		for _, prop := range properties {
 			if item.Name == "a1.in" || item.Name == "a2.in" {
 				// Check that properties were not removed.
 				if prop.Key == "vcs.url" && prop.Value == "https://github.com/jfrog/jfrog-cli.git" {
+					if foundUrl {
+						t.Error("Found duplicate VCS property(url) in artifact")
+					}
 					foundUrl = true
 				}
 				if prop.Key == "vcs.revision" && prop.Value == "d63c5957ad6819f4c02a817abe757f210d35ff92" {
+					if foundRevision {
+						t.Error("Found duplicate VCS property(revision) in artifact")
+					}
 					foundRevision = true
 				}
 			}
 			if item.Name == "b1.in" || item.Name == "b2.in" {
 				if prop.Key == "vcs.url" && prop.Value == "https://github.com/Postyy/jfrog-cli.git" {
+					if foundUrl {
+						t.Error("Found duplicate VCS property(url) in artifact")
+					}
 					foundUrl = true
 				}
 				if prop.Key == "vcs.revision" && prop.Value == "ad99b6c068283878fde4d49423728f0bdc00544a" {
+					if foundRevision {
+						t.Error("Found duplicate VCS property(revision) in artifact")
+					}
 					foundRevision = true
 				}
 			}
@@ -4037,21 +4048,4 @@ func initVcsTestDir(t *testing.T) string {
 		t.Error(err)
 	}
 	return path
-}
-func searchForDuplicatedVcsProps(props []rtutils.Property, t *testing.T) {
-	foundUrl, foundRevision := false, false
-	for _, prop := range props {
-		if prop.Key == "vcs.url" {
-			if foundUrl {
-				t.Error("Found duplicate VCS property(url) in artifact")
-			}
-			foundUrl = true
-		}
-		if prop.Key == "vcs.revision" {
-			if foundRevision {
-				t.Error("Found duplicate VCS property(revision) in artifact")
-			}
-			foundRevision = true
-		}
-	}
 }
