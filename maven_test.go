@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 )
 
@@ -65,12 +63,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 }
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	buildConfig := &utils.BuildConfiguration{}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfig).SetGoals("clean install -f" + pomPath).SetConfigPath(configFilePath)
-	err := mvnCmd.Run()
-	if err != nil {
-		t.Error(err)
-	}
+	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath, configFilePath)
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		t.Error(err)

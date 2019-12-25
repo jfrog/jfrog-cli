@@ -191,6 +191,13 @@ func runCli(t *testing.T, args ...string) {
 		t.Error(err)
 	}
 }
+func runCliWithLegacyBuildtoolsCmd(t *testing.T, args ...string) {
+	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := rtCli.LegacyBuildToolExec(args...)
+	if err != nil {
+		t.Error(err)
+	}
+}
 
 func changeWD(t *testing.T, newPath string) string {
 	prevDir, err := os.Getwd()
