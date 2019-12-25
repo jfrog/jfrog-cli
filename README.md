@@ -8,9 +8,9 @@
 
 [![Build status](https://img.shields.io/appveyor/ci/jfrog-ecosystem/jfrog-cli-go/master?label=build%40master&logo=appveyor)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
 [![Build status](https://img.shields.io/appveyor/ci/jfrog-ecosystem/jfrog-cli-go/dev?label=build%40dev&logo=appveyor)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev)
-[![Release status](https://img.shields.io/github/v/release/jfrog/jfrog-cli?color=brightgreen)](https://github.com/jfrog/jfrog-cli/releases)
-[![npm version](https://img.shields.io/npm/v/jfrog-cli-go.svg?color=orange)](https://www.npmjs.com/package/jfrog-cli-go)
-[![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=yellow)](https://formulae.brew.sh/formula/jfrog-cli-go)
+[![Release status](https://img.shields.io/github/v/release/jfrog/jfrog-cli?color=blue)](https://github.com/jfrog/jfrog-cli/releases)
+[![npm version](https://img.shields.io/npm/v/jfrog-cli-go.svg?color=blue)](https://www.npmjs.com/package/jfrog-cli-go)
+[![brew version](https://img.shields.io/homebrew/v/jfrog-cli-go?color=blue)](https://formulae.brew.sh/formula/jfrog-cli-go)
 
 # OS Support
 
