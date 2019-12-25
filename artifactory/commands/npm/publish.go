@@ -77,7 +77,7 @@ func (npc *NpmPublishCommand) Run() error {
 		}
 		_, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(npc.NpmPublishCommandArgs.npmArgs)
 		if err != nil {
-			return errorutils.CheckError(err)
+			return err
 		}
 		rtDetails, err := deployerParams.RtDetails()
 		if err != nil {
