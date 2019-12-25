@@ -237,6 +237,7 @@ func (cli *JfrogCli) Exec(args ...string) error {
 	log.Info("[Command]", strings.Join(output, " "))
 	return cli.main()
 }
+
 func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)

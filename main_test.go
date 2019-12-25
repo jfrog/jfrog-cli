@@ -19,9 +19,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Credentials for legacy build tools tests.
-var buildtoolsCreds string
-
 func TestMain(m *testing.M) {
 	setupIntegrationTests()
 	result := m.Run()
@@ -45,7 +42,6 @@ func setupIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		if artifactoryCli == nil {
 			initArtifactoryCli()
-			buildtoolsCreds = authenticate()
 		}
 		InitBuildToolsTests()
 	}
