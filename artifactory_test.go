@@ -6,6 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
@@ -30,19 +44,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 // JFrog CLI for Artifactory commands
@@ -704,13 +705,13 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
-	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url)
+	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, false)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	defer os.Remove(certificate.KEY_FILE)
 	defer os.Remove(certificate.CERT_FILE)
 	// Let's wait for the reverse proxy to start up.
-	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https")
+	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -763,6 +764,63 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	}
 
 	artifactoryDetails.Url = artAuth.GetUrl()
+	cleanArtifactoryTest()
+}
+
+// Test client certificates with Artifactory. For the test, we set up a reverse proxy server.
+func TestArtifactoryClientCert(t *testing.T) {
+	initArtifactoryTest(t)
+	tempDirPath, err := ioutil.TempDir("", "jfrog.cli.test.")
+	err = errorutils.CheckError(err)
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.RemoveAll(tempDirPath)
+	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
+	os.Setenv(tests.HttpsProxyEnvVar, "1024")
+	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, true)
+
+	// The two certificate files are created by the reverse proxy on startup in the current directory.
+	defer os.Remove(certificate.KEY_FILE)
+	defer os.Remove(certificate.CERT_FILE)
+	// Let's wait for the reverse proxy to start up.
+	err = checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", true)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fileSpec := spec.NewBuilder().Pattern(tests.Repo1 + "/*.zip").Recursive(true).BuildSpec()
+	if err != nil {
+		t.Error(err)
+	}
+	parsedUrl, err := url.Parse(artifactoryDetails.Url)
+	artifactoryDetails.Url = "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
+	artifactoryDetails.InsecureTls = true
+
+	// The server is requiring client certificates
+	// Without loading a valid client certificate, we expect all actions to fail due to error: "tls: bad certificate"
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
+	err = searchCmd.Search()
+	if _, ok := err.(*url.Error); !ok {
+		t.Error("Expected a connection failure, since client did not provide a client certificate. Connection however is successful", err)
+	}
+
+	// Inject client certificates, we expect the search to succeed
+	artifactoryDetails.ClientCertificatePath = certificate.CERT_FILE
+	artifactoryDetails.ClientCertificateKeyPath = certificate.KEY_FILE
+
+	searchCmd = generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
+	err = searchCmd.Search()
+	if err != nil {
+		t.Error(err)
+	}
+
+	artifactoryDetails.Url = artAuth.GetUrl()
+	artifactoryDetails.InsecureTls = false
+	artifactoryDetails.ClientCertificatePath = ""
+	artifactoryDetails.ClientCertificateKeyPath = ""
 	cleanArtifactoryTest()
 }
 
@@ -877,7 +935,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 		port = cliproxy.GetProxyHttpPort()
 	}
 	// Let's wait for the reverse proxy to start up.
-	err := checkIfServerIsUp(port, "http")
+	err := checkIfServerIsUp(port, "http", false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -916,9 +974,33 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	}
 }
 
-func checkIfServerIsUp(port, proxyScheme string) error {
+func checkIfServerIsUp(port, proxyScheme string, useClientCertificates bool) error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	if useClientCertificates {
+		for attempt := 0; attempt < 10; attempt++ {
+			if _, err := os.Stat(certificate.CERT_FILE); os.IsNotExist(err) {
+				log.Info("Waiting for certificate to appear...")
+				time.Sleep(time.Second)
+				continue
+			}
+
+			if _, err := os.Stat(certificate.KEY_FILE); os.IsNotExist(err) {
+				log.Info("Waiting for key to appear...")
+				time.Sleep(time.Second)
+				continue
+			}
+
+			break
+		}
+
+		cert, err := tls.LoadX509KeyPair(certificate.CERT_FILE, certificate.KEY_FILE)
+		if err != nil {
+			return fmt.Errorf("Failed loading client certificate")
+		}
+		tr.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
 	client := &http.Client{Transport: tr}
 
