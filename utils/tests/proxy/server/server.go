@@ -182,7 +182,7 @@ func GetProxyHttpsPort() string {
 	return port
 }
 
-func startHttpsReverseProxy(proxyTarget string, requestClientCertificates bool) {
+func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) {
 	handler, err := getReverseProxyHandler(proxyTarget)
 	if err != nil {
 		panic(err)
@@ -190,7 +190,7 @@ func startHttpsReverseProxy(proxyTarget string, requestClientCertificates bool) 
 	// Starts a new Go routine
 	httpsMux, absPathCert, absPathKey := prepareHTTPSHandling(handler)
 
-	if requestClientCertificates {
+	if requestClientCerts {
 		server := &http.Server{
 			Addr:    ":" + GetProxyHttpsPort(),
 			Handler: httpsMux,
@@ -208,12 +208,12 @@ func startHttpsReverseProxy(proxyTarget string, requestClientCertificates bool) 
 	}
 }
 
-func StartLocalReverseHttpProxy(artifactoryUrl string, requestClientCertificates bool) {
+func StartLocalReverseHttpProxy(artifactoryUrl string, requestClientCerts bool) {
 	if artifactoryUrl == "" {
 		artifactoryUrl = "http://localhost:8081/artifactory/"
 	}
 	artifactoryUrl = utils.AddTrailingSlashIfNeeded(artifactoryUrl)
-	startHttpsReverseProxy(artifactoryUrl, requestClientCertificates)
+	startHttpsReverseProxy(artifactoryUrl, requestClientCerts)
 }
 
 func StartHttpProxy() {

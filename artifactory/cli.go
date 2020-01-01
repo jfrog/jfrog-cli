@@ -522,7 +522,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "ping",
-			Flags:        getServerWithClientCertificatesFlags(),
+			Flags:        getServerWithClientCertsFlags(),
 			Aliases:      []string{"p"},
 			Usage:        ping.Description,
 			HelpName:     common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -618,7 +618,7 @@ func getBaseFlags() []cli.Flag {
 		})
 }
 
-func getClientCertificatesFlags() []cli.Flag {
+func getClientCertsFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "client-cert-path",
@@ -644,8 +644,8 @@ func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), getServerIdFlag())
 }
 
-func getServerWithClientCertificatesFlags() []cli.Flag {
-	return append(getServerFlags(), getClientCertificatesFlags()...)
+func getServerWithClientCertsFlags() []cli.Flag {
+	return append(getServerFlags(), getClientCertsFlags()...)
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -670,7 +670,7 @@ func getSortLimitFlags() []cli.Flag {
 }
 
 func getUploadFlags() []cli.Flag {
-	uploadFlags := append(getServerWithClientCertificatesFlags(), getSpecFlags()...)
+	uploadFlags := append(getServerWithClientCertsFlags(), getSpecFlags()...)
 	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
@@ -716,7 +716,7 @@ func getUploadFlags() []cli.Flag {
 }
 
 func getDownloadFlags() []cli.Flag {
-	downloadFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	downloadFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
 	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
 	return append(downloadFlags, []cli.Flag{
@@ -939,7 +939,7 @@ func getGoPublishFlags() []cli.Flag {
 }
 
 func getMoveFlags() []cli.Flag {
-	moveFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	moveFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	moveFlags = append(moveFlags, getSpecFlags()...)
 	return append(moveFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -968,7 +968,7 @@ func getMoveFlags() []cli.Flag {
 }
 
 func getCopyFlags() []cli.Flag {
-	copyFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	copyFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	copyFlags = append(copyFlags, getSpecFlags()...)
 	return append(copyFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -996,7 +996,7 @@ func getCopyFlags() []cli.Flag {
 }
 
 func getDeleteFlags() []cli.Flag {
-	deleteFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	deleteFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	deleteFlags = append(deleteFlags, getSpecFlags()...)
 	return append(deleteFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1021,7 +1021,7 @@ func getDeleteFlags() []cli.Flag {
 }
 
 func getSearchFlags() []cli.Flag {
-	searchFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	searchFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	searchFlags = append(searchFlags, getSpecFlags()...)
 	return append(searchFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1090,7 +1090,7 @@ func getDeletePropertiesFlags() []cli.Flag {
 }
 
 func getPropertiesFlags() []cli.Flag {
-	propsFlags := append(getServerWithClientCertificatesFlags(), getSortLimitFlags()...)
+	propsFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -2412,8 +2412,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
-	details.ClientCertificatePath = c.String("client-cert-path")
-	details.ClientCertificateKeyPath = c.String("client-cert-key-path")
+	details.ClientCertPath = c.String("client-cert-path")
+	details.ClientCertKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
 
@@ -2449,11 +2449,11 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
 			}
-			if details.ClientCertificatePath == "" {
-				details.ClientCertificatePath = confDetails.ClientCertificatePath
+			if details.ClientCertPath == "" {
+				details.ClientCertPath = confDetails.ClientCertPath
 			}
-			if details.ClientCertificateKeyPath == "" {
-				details.ClientCertificateKeyPath = confDetails.ClientCertificateKeyPath
+			if details.ClientCertKeyPath == "" {
+				details.ClientCertKeyPath = confDetails.ClientCertKeyPath
 			}
 		}
 	}

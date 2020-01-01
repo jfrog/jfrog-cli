@@ -807,8 +807,8 @@ func TestArtifactoryClientCert(t *testing.T) {
 	}
 
 	// Inject client certificates, we expect the search to succeed
-	artifactoryDetails.ClientCertificatePath = certificate.CERT_FILE
-	artifactoryDetails.ClientCertificateKeyPath = certificate.KEY_FILE
+	artifactoryDetails.ClientCertPath = certificate.CERT_FILE
+	artifactoryDetails.ClientCertKeyPath = certificate.KEY_FILE
 
 	searchCmd = generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
@@ -819,8 +819,8 @@ func TestArtifactoryClientCert(t *testing.T) {
 
 	artifactoryDetails.Url = artAuth.GetUrl()
 	artifactoryDetails.InsecureTls = false
-	artifactoryDetails.ClientCertificatePath = ""
-	artifactoryDetails.ClientCertificateKeyPath = ""
+	artifactoryDetails.ClientCertPath = ""
+	artifactoryDetails.ClientCertKeyPath = ""
 	cleanArtifactoryTest()
 }
 
@@ -974,12 +974,12 @@ func checkForErrDueToMissingProxy(spec *spec.SpecFiles, t *testing.T) {
 	}
 }
 
-func checkIfServerIsUp(port, proxyScheme string, useClientCertificates bool) error {
+func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	if useClientCertificates {
+	if useClientCerts {
 		for attempt := 0; attempt < 10; attempt++ {
 			if _, err := os.Stat(certificate.CERT_FILE); os.IsNotExist(err) {
 				log.Info("Waiting for certificate to appear...")

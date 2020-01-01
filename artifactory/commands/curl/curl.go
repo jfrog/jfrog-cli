@@ -53,7 +53,7 @@ func (curlCmd *CurlCommand) Run() error {
 	}
 
 	// If the command already includes certificates flag, return an error.
-	if curlCmd.rtDetails.ClientCertificatePath != "" && curlCmd.isCertificateFlagExists() {
+	if curlCmd.rtDetails.ClientCertPath != "" && curlCmd.isCertificateFlagExists() {
 		return errorutils.CheckError(errors.New("Curl command must not include certificate flag (--cert or --key)."))
 	}
 
@@ -78,10 +78,10 @@ func (curlCmd *CurlCommand) Run() error {
 func (curlCmd *CurlCommand) addCommandCredentials() (string, error) {
 	certificateHelpPrefix := ""
 
-	if curlCmd.rtDetails.ClientCertificatePath != "" {
+	if curlCmd.rtDetails.ClientCertPath != "" {
 		curlCmd.arguments = append(curlCmd.arguments,
-			"--cert", curlCmd.rtDetails.ClientCertificatePath,
-			"--key", curlCmd.rtDetails.ClientCertificateKeyPath)
+			"--cert", curlCmd.rtDetails.ClientCertPath,
+			"--key", curlCmd.rtDetails.ClientCertKeyPath)
 		certificateHelpPrefix = "--cert *** --key *** "
 	}
 

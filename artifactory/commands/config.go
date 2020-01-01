@@ -195,14 +195,14 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 		return getSshKeyPath(cc.details)
 	} else {
 		answer := "no"
-		if cc.defaultDetails.ClientCertificatePath != "" {
+		if cc.defaultDetails.ClientCertPath != "" {
 			answer = "yes"
 		}
 		ioutils.ScanFromConsole("Is the Artifactory HTTP proxy configured to accept a client certificate?", &answer, answer)
 
 		if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
-			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertificatePath, cc.defaultDetails.ClientCertificatePath)
-			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertificateKeyPath, cc.defaultDetails.ClientCertificateKeyPath)
+			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
+			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertKeyPath, cc.defaultDetails.ClientCertKeyPath)
 		}
 	}
 	cc.details.Url = clientutils.AddTrailingSlashIfNeeded(cc.details.Url)
@@ -341,11 +341,11 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 		if details.SshKeyPath != "" {
 			log.Output("SSH key file path: " + details.SshKeyPath)
 		}
-		if details.ClientCertificatePath != "" {
-			log.Output("Client certificate file path: " + details.ClientCertificatePath)
+		if details.ClientCertPath != "" {
+			log.Output("Client certificate file path: " + details.ClientCertPath)
 		}
-		if details.ClientCertificateKeyPath != "" {
-			log.Output("Client certificate key path: " + details.ClientCertificateKeyPath)
+		if details.ClientCertKeyPath != "" {
+			log.Output("Client certificate key path: " + details.ClientCertKeyPath)
 		}
 		log.Output("Default: ", details.IsDefault)
 		log.Output()

@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
@@ -12,10 +17,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -338,19 +339,19 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 }
 
 type ArtifactoryDetails struct {
-	Url                      string            `json:"url,omitempty"`
-	SshUrl                   string            `json:"-"`
-	User                     string            `json:"user,omitempty"`
-	Password                 string            `json:"password,omitempty"`
-	SshKeyPath               string            `json:"sshKeyPath,omitempty"`
-	SshPassphrase            string            `json:"SshPassphrase,omitempty"`
-	SshAuthHeaders           map[string]string `json:"SshAuthHeaders,omitempty"`
-	AccessToken              string            `json:"accessToken,omitempty"`
-	ClientCertificatePath    string            `json:"clientCertificatePath,omitempty"`
-	ClientCertificateKeyPath string            `json:"clientCertificateKeyPath,omitempty"`
-	ServerId                 string            `json:"serverId,omitempty"`
-	IsDefault                bool              `json:"isDefault,omitempty"`
-	InsecureTls              bool              `json:"-"`
+	Url               string            `json:"url,omitempty"`
+	SshUrl            string            `json:"-"`
+	User              string            `json:"user,omitempty"`
+	Password          string            `json:"password,omitempty"`
+	SshKeyPath        string            `json:"sshKeyPath,omitempty"`
+	SshPassphrase     string            `json:"SshPassphrase,omitempty"`
+	SshAuthHeaders    map[string]string `json:"SshAuthHeaders,omitempty"`
+	AccessToken       string            `json:"accessToken,omitempty"`
+	ClientCertPath    string            `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath string            `json:"clientCertKeyPath,omitempty"`
+	ServerId          string            `json:"serverId,omitempty"`
+	IsDefault         bool              `json:"isDefault,omitempty"`
+	InsecureTls       bool              `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }
@@ -389,12 +390,12 @@ func (artifactoryDetails *ArtifactoryDetails) SetAccessToken(accessToken string)
 	artifactoryDetails.AccessToken = accessToken
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SetClientCertificatePath(certificatePath string) {
-	artifactoryDetails.ClientCertificatePath = certificatePath
+func (artifactoryDetails *ArtifactoryDetails) SetClientCertPath(certificatePath string) {
+	artifactoryDetails.ClientCertPath = certificatePath
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SetClientCertificateKeyPath(certificatePath string) {
-	artifactoryDetails.ClientCertificateKeyPath = certificatePath
+func (artifactoryDetails *ArtifactoryDetails) SetClientCertKeyPath(certificatePath string) {
+	artifactoryDetails.ClientCertKeyPath = certificatePath
 }
 
 func (artifactoryDetails *ArtifactoryDetails) GetApiKey() string {
@@ -417,12 +418,12 @@ func (artifactoryDetails *ArtifactoryDetails) GetAccessToken() string {
 	return artifactoryDetails.AccessToken
 }
 
-func (artifactoryDetails *ArtifactoryDetails) GetClientCertificatePath() string {
-	return artifactoryDetails.ClientCertificatePath
+func (artifactoryDetails *ArtifactoryDetails) GetClientCertPath() string {
+	return artifactoryDetails.ClientCertPath
 }
 
-func (artifactoryDetails *ArtifactoryDetails) GetClientCertificateKeyPath() string {
-	return artifactoryDetails.ClientCertificateKeyPath
+func (artifactoryDetails *ArtifactoryDetails) GetClientCertKeyPath() string {
+	return artifactoryDetails.ClientCertKeyPath
 }
 
 func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
@@ -438,8 +439,8 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.Artifa
 	artAuth.SetUser(artifactoryDetails.User)
 	artAuth.SetPassword(artifactoryDetails.Password)
 	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
-	artAuth.SetClientCertificatePath(artifactoryDetails.ClientCertificatePath)
-	artAuth.SetClientCertificateKeyPath(artifactoryDetails.ClientCertificateKeyPath)
+	artAuth.SetClientCertPath(artifactoryDetails.ClientCertPath)
+	artAuth.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
 	artAuth.SetSshKeyPath(artifactoryDetails.SshKeyPath)
 	artAuth.SetSshPassphrase(artifactoryDetails.SshPassphrase)
 	if artAuth.IsSshAuthentication() && !artAuth.IsSshAuthHeaderSet() {
