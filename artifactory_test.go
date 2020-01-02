@@ -777,7 +777,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDirPath)
 	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
-	os.Setenv(tests.HttpsProxyEnvVar, "1024")
+	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, true)
 
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
