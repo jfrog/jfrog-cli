@@ -904,7 +904,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 		t.Error(err)
 	}
 	defer os.RemoveAll(tempDirPath)
-	os.Setenv(cliutils.JfrogHomeDirEnv, tempDirPath)
+	os.Setenv(cliutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, true)
 
