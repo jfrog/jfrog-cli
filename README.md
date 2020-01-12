@@ -8,7 +8,7 @@
 - [Download and Installation](#download-and-installation)
 - [Building the Executable](#building-the-executable)
 - [Tests](#tests)
-- [Pull Requests](#pull-requests)
+- [Code Contributions](#code-contributions)
 - [Using JFrog CLI](#using-jfrog-cli)
 - [Release Notes](#release-notes)
 
@@ -276,9 +276,9 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-# Pull Requests
-We welcome pull requests from the community.
-## Guidelines
+# Code Contributions
+We welcome code contributions through pull requests from the community.
+## Pull Requests Guidelines
 * Before creating your first pull request, please join our contributors community by signing [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
 * If the existing tests do not already cover your changes, please add tests..
 * Pull requests should be created on the *dev* branch.
