@@ -1,3 +1,5 @@
+# This Dockerfile sets up a container, which is used to sign the Windows binary of JFrog CLI.
+
 FROM ubuntu:16.04
 RUN apt-get -y update \
   && apt-get install -y curl \

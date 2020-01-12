@@ -23,7 +23,7 @@ node("cli-build") {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/eyalbe4/jfrog-cli.git'
+            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
@@ -51,6 +51,7 @@ node("cli-build") {
         }
 
         stage('Download tools cert') {
+            // Download the certificate file and key file, used for signing the JFrog CLI binary.
             sh """#!/bin/bash
                builder/jfrog rt dl installation-files/certificates/jfrog/ --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
                 """
@@ -113,11 +114,11 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
                 sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}sign/${fileName}.unsigned"
                 // Copy all the certificate files into the 'sign' directory.
                 sh "cp * ${jfrogCliRepoDir}sign/"
-                // Build and run the docker container, which signs the jfrog executable.
+                // Build and run the docker container, which signs the JFrog CLI binary.
                 sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}sign/"
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
                 sh "docker run -v ${jfrogCliRepoDir}sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
-                // Move the jfrog executable from the 'sign' directory back into its original location.
+                // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
                 sh "mv ${jfrogCliRepoDir}sign/$fileName $jfrogCliRepoDir"
             }
         }
