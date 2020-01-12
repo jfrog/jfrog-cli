@@ -259,7 +259,7 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 	vConfig.Set(contextPrefix+URL, artDetails.GetUrl())
 
 	if artDetails.GetApiKey() != "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " API key authentication is not supported"))
+		return errorutils.CheckError(errors.New("Server ID " + serverId + " must contain user with API key authentication"))
 	}
 
 	if artDetails.GetAccessToken() != "" {
