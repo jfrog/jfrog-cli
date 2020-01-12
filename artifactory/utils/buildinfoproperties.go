@@ -254,12 +254,12 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 		return err
 	}
 	if artDetails.GetUrl() == "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " URL is required"))
+		return errorutils.CheckError(errors.New("Server ID " + serverId + ": URL is required."))
 	}
 	vConfig.Set(contextPrefix+URL, artDetails.GetUrl())
 
 	if artDetails.GetApiKey() != "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " API key authentication is not supported"))
+		return errorutils.CheckError(errors.New("Server ID " + serverId + ": Configuring an API key without a username is not supported."))
 	}
 
 	if artDetails.GetAccessToken() != "" {
