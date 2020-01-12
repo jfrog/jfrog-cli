@@ -1,4 +1,4 @@
-package services
+package commands
 
 import (
 	"encoding/json"
@@ -12,21 +12,20 @@ import (
 	"net/http"
 )
 
-func DetachLic(service_name string, flags *DetachLicFlags) error {
-	bucketId := flags.BucketId
-	postContent := utils.LicenseRequestContent{
-		Name: service_name}
+func ReleaseLicense(bucketId, jpdId string, mcDetails *config.MissionControlDetails) error {
+	postContent := ReleaseLicenseRequestContent{
+		Name: jpdId}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
 		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
 	}
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/detach_lic/buckets/" + bucketId
-	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
+	missionControlUrl := mcDetails.Url + "api/v1/buckets/" + bucketId + "/release"
+	httpClientDetails := utils.GetMissionControlHttpClientDetails(mcDetails)
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return err
 	}
-	resp, body, err := client.SendDelete(missionControlUrl, requestContent, httpClientDetails)
+	resp, body, err := client.SendPost(missionControlUrl, requestContent, httpClientDetails)
 	if err != nil {
 		return err
 	}
@@ -37,8 +36,6 @@ func DetachLic(service_name string, flags *DetachLicFlags) error {
 	return nil
 }
 
-type DetachLicFlags struct {
-	MissionControlDetails *config.MissionControlDetails
-	Interactive           bool
-	BucketId              string
+type ReleaseLicenseRequestContent struct {
+	Name string `json:"name,omitempty"`
 }
