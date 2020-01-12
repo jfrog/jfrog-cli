@@ -1,4 +1,4 @@
-node("cli-build") {
+node {
     cleanWs()
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
