@@ -3,6 +3,12 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"reflect"
+	"strings"
+	"sync"
+	"syscall"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -15,10 +21,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"golang.org/x/crypto/ssh/terminal"
-	"io/ioutil"
-	"reflect"
-	"sync"
-	"syscall"
 )
 
 // Internal golang locking for the same process.
@@ -191,6 +193,17 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 	// Ssh-Key
 	if fileutils.IsSshUrl(cc.details.Url) {
 		return getSshKeyPath(cc.details)
+	} else {
+		answer := "no"
+		if cc.defaultDetails.ClientCertPath != "" {
+			answer = "yes"
+		}
+		ioutils.ScanFromConsole("Is the Artifactory HTTP proxy configured to accept a client certificate?", &answer, answer)
+
+		if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
+			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
+			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertKeyPath, cc.defaultDetails.ClientCertKeyPath)
+		}
 	}
 	cc.details.Url = clientutils.AddTrailingSlashIfNeeded(cc.details.Url)
 	// Api-Key/Password/Access-Token
@@ -327,6 +340,12 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 		}
 		if details.SshKeyPath != "" {
 			log.Output("SSH key file path: " + details.SshKeyPath)
+		}
+		if details.ClientCertPath != "" {
+			log.Output("Client certificate file path: " + details.ClientCertPath)
+		}
+		if details.ClientCertKeyPath != "" {
+			log.Output("Client certificate key path: " + details.ClientCertKeyPath)
 		}
 		log.Output("Default: ", details.IsDefault)
 		log.Output()

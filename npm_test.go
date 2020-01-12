@@ -201,7 +201,7 @@ func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedP
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
 	if nativeMode {
-		err = testCreateConfFile([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
+		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
 			filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, false)
 		if err != nil {
 			t.Error(err)
@@ -221,7 +221,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = testCreateConfFile([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, true)
+	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, true)
 	if err != nil {
 		t.Error(err)
 	}

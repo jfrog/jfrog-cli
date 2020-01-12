@@ -130,6 +130,7 @@ func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, 
 	if numOfThreads != "" {
 		threads, err = strconv.Atoi(numOfThreads)
 		if err != nil {
+			err = errorutils.CheckError(err)
 			return
 		}
 	}

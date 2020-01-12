@@ -139,7 +139,7 @@ func initArtifactoryCli() {
 	}
 }
 
-func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
+func createConfigFileForTest(dirs []string, resolver, deployer string, t *testing.T, confType artifactoryUtils.ProjectType, global bool) error {
 	var filePath string
 	for _, atDir := range dirs {
 		d, err := yaml.Marshal(&commandUtils.ConfigFile{
@@ -187,6 +187,13 @@ func testCreateConfFile(dirs []string, resolver, deployer string, t *testing.T, 
 func runCli(t *testing.T, args ...string) {
 	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err := rtCli.Exec(args...)
+	if err != nil {
+		t.Error(err)
+	}
+}
+func runCliWithLegacyBuildtoolsCmd(t *testing.T, args ...string) {
+	rtCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err := rtCli.LegacyBuildToolExec(args...)
 	if err != nil {
 		t.Error(err)
 	}

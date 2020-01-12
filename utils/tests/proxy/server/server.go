@@ -2,10 +2,6 @@ package server
 
 import (
 	"crypto/tls"
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
-	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/utils"
-	clilog "github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"log"
 	"net"
@@ -14,6 +10,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/jfrog/jfrog-cli-go/utils/tests"
+	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/utils"
+	clilog "github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)
@@ -181,25 +182,38 @@ func GetProxyHttpsPort() string {
 	return port
 }
 
-func startHttpsReverseProxy(proxyTarget string) {
+func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) {
 	handler, err := getReverseProxyHandler(proxyTarget)
 	if err != nil {
 		panic(err)
 	}
 	// Starts a new Go routine
 	httpsMux, absPathCert, absPathKey := prepareHTTPSHandling(handler)
-	err = http.ListenAndServeTLS(":"+GetProxyHttpsPort(), absPathCert, absPathKey, httpsMux)
-	if err != nil {
-		panic(err)
+
+	if requestClientCerts {
+		server := &http.Server{
+			Addr:    ":" + GetProxyHttpsPort(),
+			Handler: httpsMux,
+			TLSConfig: &tls.Config{
+				ClientAuth: tls.RequireAnyClientCert,
+			},
+		}
+
+		server.ListenAndServeTLS(absPathCert, absPathKey)
+	} else {
+		err = http.ListenAndServeTLS(":"+GetProxyHttpsPort(), absPathCert, absPathKey, httpsMux)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
-func StartLocalReverseHttpProxy(artifactoryUrl string) {
+func StartLocalReverseHttpProxy(artifactoryUrl string, requestClientCerts bool) {
 	if artifactoryUrl == "" {
 		artifactoryUrl = "http://localhost:8081/artifactory/"
 	}
 	artifactoryUrl = utils.AddTrailingSlashIfNeeded(artifactoryUrl)
-	startHttpsReverseProxy(artifactoryUrl)
+	startHttpsReverseProxy(artifactoryUrl, requestClientCerts)
 }
 
 func StartHttpProxy() {

@@ -339,6 +339,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "mvn-config",
+			Aliases:      []string{"mvnc"},
+			Flags:        getGlobalConfigFlag(),
+			Usage:        mvnconfig.Description,
+			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createMvnConfigCmd(c)
+			},
+		},
+		{
 			Name:            "mvn",
 			Flags:           getBuildToolFlags(),
 			Usage:           mvndoc.Description,
@@ -352,15 +364,15 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "mvn-config",
-			Aliases:      []string{"mvnc"},
+			Name:         "gradle-config",
+			Aliases:      []string{"gradlec"},
 			Flags:        getGlobalConfigFlag(),
-			Usage:        mvnconfig.Description,
-			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
+			Usage:        gradleconfig.Description,
+			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return createMvnConfigCmd(c)
+				return createGradleConfigCmd(c)
 			},
 		},
 		{
@@ -374,18 +386,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return gradleCmd(c)
-			},
-		},
-		{
-			Name:         "gradle-config",
-			Aliases:      []string{"gradlec"},
-			Flags:        getGlobalConfigFlag(),
-			Usage:        gradleconfig.Description,
-			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return createGradleConfigCmd(c)
 			},
 		},
 		{
@@ -412,6 +412,18 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return dockerPullCmd(c)
+			},
+		},
+		{
+			Name:         "npm-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"npmc"},
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createNpmConfigCmd(c)
 			},
 		},
 		{
@@ -454,6 +466,18 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "nuget-config",
+			Flags:        getGlobalConfigFlag(),
+			Aliases:      []string{"nugetc"},
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createNugetConfigCmd(c)
+			},
+		},
+		{
 			Name:            "nuget",
 			Flags:           getNugetFlags(),
 			Usage:           nugetdocs.Description,
@@ -475,6 +499,17 @@ func GetCommands() []cli.Command {
 			ArgsUsage: common.CreateEnvVars(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
+			},
+		},
+		{
+			Name:         "go-config",
+			Flags:        getGlobalConfigFlag(),
+			Usage:        goconfig.Description,
+			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createGoConfigCmd(c)
 			},
 		},
 		{
@@ -505,17 +540,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "go-config",
-			Flags:        getGlobalConfigFlag(),
-			Usage:        goconfig.Description,
-			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return createGoConfigCmd(c)
-			},
-		},
-		{
 			Name:         "go-recursive-publish",
 			Flags:        getGoRecursivePublishFlags(),
 			Aliases:      []string{"grp"},
@@ -530,7 +554,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "ping",
-			Flags:        getServerFlags(),
+			Flags:        getServerWithClientCertsFlags(),
 			Aliases:      []string{"p"},
 			Usage:        ping.Description,
 			HelpName:     common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -549,8 +573,8 @@ func GetCommands() []cli.Command {
 			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
 			UsageText:       curldocs.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
 			BashComplete:    common.CreateBashCompletionFunc(),
+			SkipFlagParsing: true,
 			Action: func(c *cli.Context) error {
 				return curlCmd(c)
 			},
@@ -592,30 +616,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipDepsTreeCmd(c)
-			},
-		},
-		{
-			Name:         "npm-config",
-			Flags:        getGlobalConfigFlag(),
-			Aliases:      []string{"npmc"},
-			Usage:        goconfig.Description,
-			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return createNpmConfigCmd(c)
-			},
-		},
-		{
-			Name:         "nuget-config",
-			Flags:        getGlobalConfigFlag(),
-			Aliases:      []string{"nugetc"},
-			Usage:        goconfig.Description,
-			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return createNugetConfigCmd(c)
 			},
 		},
 	}
@@ -663,6 +663,19 @@ func getBaseFlags() []cli.Flag {
 		})
 }
 
+func getClientCertsFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "client-cert-path",
+			Usage: "[Optional] Client certificate file in PEM format.` `",
+		},
+		cli.StringFlag{
+			Name:  "client-cert-key-path",
+			Usage: "[Optional] Private key file for the client certificate in PEM format.` `",
+		},
+	}
+}
+
 func getCommonFlags() []cli.Flag {
 	flags := append(getBaseFlags(),
 		cli.StringFlag{
@@ -674,6 +687,10 @@ func getCommonFlags() []cli.Flag {
 
 func getServerFlags() []cli.Flag {
 	return append(getCommonFlags(), getServerIdFlag())
+}
+
+func getServerWithClientCertsFlags() []cli.Flag {
+	return append(getServerFlags(), getClientCertsFlags()...)
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -698,7 +715,7 @@ func getSortLimitFlags() []cli.Flag {
 }
 
 func getUploadFlags() []cli.Flag {
-	uploadFlags := append(getServerFlags(), getSpecFlags()...)
+	uploadFlags := append(getServerWithClientCertsFlags(), getSpecFlags()...)
 	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
@@ -744,7 +761,7 @@ func getUploadFlags() []cli.Flag {
 }
 
 func getDownloadFlags() []cli.Flag {
-	downloadFlags := append(getServerFlags(), getSortLimitFlags()...)
+	downloadFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
 	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
 	return append(downloadFlags, []cli.Flag{
@@ -909,7 +926,7 @@ func getDepracatedFlags() []cli.Flag {
 	}
 }
 
-//These flags are not valid for native npm command
+//This flag are not valid for native npm commands.
 func getNpmLegacyFlags() []cli.Flag {
 	npmFlags := cli.StringFlag{
 		Name:  "npm-args",
@@ -1001,7 +1018,7 @@ func getGoPublishFlags() []cli.Flag {
 }
 
 func getMoveFlags() []cli.Flag {
-	moveFlags := append(getServerFlags(), getSortLimitFlags()...)
+	moveFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	moveFlags = append(moveFlags, getSpecFlags()...)
 	return append(moveFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1030,7 +1047,7 @@ func getMoveFlags() []cli.Flag {
 }
 
 func getCopyFlags() []cli.Flag {
-	copyFlags := append(getServerFlags(), getSortLimitFlags()...)
+	copyFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	copyFlags = append(copyFlags, getSpecFlags()...)
 	return append(copyFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1058,7 +1075,7 @@ func getCopyFlags() []cli.Flag {
 }
 
 func getDeleteFlags() []cli.Flag {
-	deleteFlags := append(getServerFlags(), getSortLimitFlags()...)
+	deleteFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	deleteFlags = append(deleteFlags, getSpecFlags()...)
 	return append(deleteFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1083,7 +1100,7 @@ func getDeleteFlags() []cli.Flag {
 }
 
 func getSearchFlags() []cli.Flag {
-	searchFlags := append(getServerFlags(), getSortLimitFlags()...)
+	searchFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	searchFlags = append(searchFlags, getSpecFlags()...)
 	return append(searchFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -1144,7 +1161,7 @@ func getQuiteFlag(description string) cli.Flag {
 }
 
 func getPropertiesFlags() []cli.Flag {
-	propsFlags := append(getServerFlags(), getSortLimitFlags()...)
+	propsFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1884,7 +1901,7 @@ func goPublishCmd(c *cli.Context) error {
 }
 
 func shouldSkipGoFlagParsing() bool {
-	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt go*".
 	if len(os.Args) < 3 || os.Args[2] != "go" {
 		return false
@@ -1898,7 +1915,7 @@ func shouldSkipGoFlagParsing() bool {
 }
 
 func shouldSkipNpmFlagParsing() bool {
-	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt npm*".
 	if len(os.Args) < 3 || !npmUtils.IsNpmCommand(os.Args[2]) {
 		return false
@@ -1912,7 +1929,7 @@ func shouldSkipNpmFlagParsing() bool {
 }
 
 func shouldSkipNugetFlagParsing() bool {
-	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt nuget*".
 	if len(os.Args) < 3 || os.Args[2] != "nuget" {
 		return false
@@ -1926,7 +1943,7 @@ func shouldSkipNugetFlagParsing() bool {
 }
 
 func shouldSkipMavenFlagParsing() bool {
-	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt mvn*".
 	if len(os.Args) < 3 || os.Args[2] != "mvn" {
 		return false
@@ -1939,7 +1956,7 @@ func shouldSkipMavenFlagParsing() bool {
 }
 
 func shouldSkipGradleFlagParsing() bool {
-	// This function is executed by code-congsta, regardless of the CLI command being executed.
+	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt gradle*".
 	if len(os.Args) < 3 || os.Args[2] != "gradle" {
 		return false
@@ -2713,6 +2730,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.SshKeyPath = c.String("ssh-key-path")
 	details.SshPassphrase = c.String("ssh-passphrase")
 	details.AccessToken = c.String("access-token")
+	details.ClientCertPath = c.String("client-cert-path")
+	details.ClientCertKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
 
@@ -2747,6 +2766,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			}
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
+			}
+			if details.ClientCertPath == "" {
+				details.ClientCertPath = confDetails.ClientCertPath
+			}
+			if details.ClientCertKeyPath == "" {
+				details.ClientCertKeyPath = confDetails.ClientCertKeyPath
 			}
 		}
 	}

@@ -59,6 +59,8 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails
 	client, err := httpclient.ClientBuilder().
 		SetCertificatesPath(securityDir).
 		SetInsecureTls(insecureTls).
+		SetClientCertPath(artifactoryAuth.GetClientCertPath()).
+		SetClientCertKeyPath(artifactoryAuth.GetClientCertKeyPath()).
 		Build()
 	if err != nil {
 		return "", err

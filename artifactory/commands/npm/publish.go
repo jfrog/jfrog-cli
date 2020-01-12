@@ -71,17 +71,19 @@ func (npc *NpmPublishCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		// Extract resolution params.
 		deployerParams, err := utils.GetRepoConfigByPrefix(npc.configFilePath, utils.ProjectConfigDeployerPrefix, vConfig)
 		if err != nil {
 			return err
 		}
 		_, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(npc.NpmPublishCommandArgs.npmArgs)
-		RtDetails, err := deployerParams.RtDetails()
+		if err != nil {
+			return err
+		}
+		rtDetails, err := deployerParams.RtDetails()
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
-		npc.SetBuildConfiguration(buildConfiguration).SetRepo(deployerParams.TargetRepo()).SetNpmArgs(filteredNpmArgs).SetRtDetails(RtDetails)
+		npc.SetBuildConfiguration(buildConfiguration).SetRepo(deployerParams.TargetRepo()).SetNpmArgs(filteredNpmArgs).SetRtDetails(rtDetails)
 	}
 	return npc.run()
 }
