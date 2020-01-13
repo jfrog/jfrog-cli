@@ -58,6 +58,8 @@ const MAVEN_DESCRIPTOR = "deployMavenDescriptors"
 const IVY_DESCRIPTOR = "deployIvyDescriptors"
 const IVY_PATTERN = "ivyPattern"
 const ARTIFACT_PATTERN = "artifactPattern"
+const USE_GRADLE_PLUGIN = "usePlugin"
+const USE_GRADLE_WRAPPER = "useWrapper"
 
 // For path and temp files
 const PROPERTIES_TEMP_PREFIX = "buildInfoProperties"

@@ -110,6 +110,10 @@ func gradleConfigeFile(configResult *ConfigFile) error {
 			return err
 		}
 	}
+	err = readGradleGlobalConfig(configResult)
+	if err != nil {
+		return err
+	}
 	err = createResolverRepo(configResult)
 	if err != nil {
 		return err
@@ -123,6 +127,31 @@ func nugetConfigeFile(configResult *ConfigFile) error {
 
 func goConfigeFile(configResult *ConfigFile) error {
 	return npmConfigeFile(configResult)
+}
+
+func readGradleGlobalConfig(configResult *ConfigFile) error {
+	globalOptions := &promptreader.Array{
+		Prompts: []promptreader.Prompt{
+			&promptreader.YesNo{
+				Msg:     "Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ",
+				Default: "n",
+				Label:   utils.USE_GRADLE_PLUGIN,
+			},
+			&promptreader.YesNo{
+				Msg:     "Use Gradle wrapper (y/n) [${default}]? ",
+				Default: "n",
+				Label:   utils.USE_GRADLE_WRAPPER,
+			},
+		},
+	}
+	err := globalOptions.Read()
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	vConfig := globalOptions.GetResults()
+	configResult.UsePlugin = vConfig.GetBool(utils.USE_GRADLE_PLUGIN)
+	configResult.UseWrapper = vConfig.GetBool(utils.USE_GRADLE_WRAPPER)
+	return nil
 }
 
 func createDeployerRepo(configResult *ConfigFile) error {
@@ -207,6 +236,6 @@ type ConfigFile struct {
 	prompt.CommonConfig `yaml:"common,inline"`
 	Resolver            utils.Repository `yaml:"resolver,omitempty"`
 	Deployer            utils.Repository `yaml:"deployer,omitempty"`
-	UsesPlugin          bool             `yaml:"usesPlugin,omitempty"`
+	UsePlugin           bool             `yaml:"usePlugin,omitempty"`
 	UseWrapper          bool             `yaml:"useWrapper,omitempty"`
 }
