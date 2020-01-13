@@ -22,6 +22,7 @@ const (
 	BuildDownloadSpecNoPattern             = "build_download_spec_no_pattern.json"
 	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
 	SimpleUploadSpec                       = "upload_simple_spec.json"
+	SimpleWildcardUploadSpec               = "upload_simple_wildcard_spec.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
@@ -113,6 +114,12 @@ func GetSimpleUploadExpectedRepo1() []string {
 		Repo1 + "/flat_recursive/c2.in",
 		Repo1 + "/flat_recursive/c1.in",
 		Repo1 + "/flat_recursive/c3.in",
+	}
+}
+
+func GetSimpleWildcardUploadExpectedRepo1() []string {
+	return []string{
+		Repo1 + "/upload_simple_wildcard/github.com/github.in",
 	}
 }
 
@@ -732,6 +739,8 @@ func GetMassiveUpload() []string {
 		Repo1 + "/spec-copy-test/copy-to-existing/c1.in",
 		Repo1 + "/spec-copy-test/copy-to-existing/c2.in",
 		Repo1 + "/spec-copy-test/copy-to-existing/c3.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/github.in",
+		Repo1 + "/spec-copy-test/copy-to-existing/bitbucket.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a1.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a2.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a3.in",
@@ -741,6 +750,8 @@ func GetMassiveUpload() []string {
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c1.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c2.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c3.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/github.in",
+		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/bitbucket.in",
 		Repo1 + "/spec-copy-test/flat_nonrecursive/a1.in",
 		Repo1 + "/spec-copy-test/flat_nonrecursive/a2.in",
 		Repo1 + "/spec-copy-test/flat_nonrecursive/a3.in",
@@ -776,6 +787,8 @@ func GetMassiveUpload() []string {
 		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/github.com/github.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/bitbucket.com/bitbucket.in",
 		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a#1.in",
 		Repo1 + "/spec-copy-test/copy-to-existing/a#1.in",
 		Repo1 + "/spec-copy-test/simple/a1.in",
@@ -831,6 +844,8 @@ func GetPropsExpected() []string {
 		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a2.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b1.in",
 		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b2.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/github.com/github.in",
+		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/bitbucket.com/bitbucket.in",
 	}
 }
 
