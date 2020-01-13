@@ -289,9 +289,13 @@ func AddDepsInfoAndReturnMissingDeps(dependenciesMap map[string]*buildinfo.Depen
 
 			continue
 		}
-
+		fileType := ""
 		// Update dependency info.
 		dependenciesMap[depName].Id = depFileName
+		if i := strings.LastIndex(depFileName, "."); i != -1 {
+			fileType = depFileName[i+1:]
+		}
+		dependenciesMap[depName].Type = fileType
 		dependenciesMap[depName].Checksum = depChecksum
 	}
 
