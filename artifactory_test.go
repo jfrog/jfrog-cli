@@ -136,6 +136,27 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.SimpleWildcardUploadSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true)
+	if err != nil {
+		t.Error(err)
+	}
+	// Upload
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.Search)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetSimpleWildcardUploadExpectedRepo1(), searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
 // This test is similar to TestArtifactorySimpleUploadSpec but using "--server-id" flag
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
