@@ -77,7 +77,7 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 		}
 		if conf.AccessToken == "" {
 			print("Access token: ")
-			byteToken, err := terminal.ReadPassword(syscall.Stdin)
+			byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				return nil, errorutils.CheckError(err)
 			}
