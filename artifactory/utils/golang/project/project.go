@@ -260,7 +260,7 @@ func (project *goProject) readModFile() error {
 	project.modContent = content
 
 	// Add mod file as artifact
-	artifact := buildinfo.Artifact{Name: project.version + ".mod"}
+	artifact := buildinfo.Artifact{Name: project.version + ".mod", Type: "mod"}
 	artifact.Checksum = &buildinfo.Checksum{Sha1: checksums[checksum.SHA1], Md5: checksums[checksum.MD5]}
 	project.artifacts = append(project.artifacts, artifact)
 	return nil
@@ -306,7 +306,7 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 		return "", err
 	}
 
-	artifact := buildinfo.Artifact{Name: version + ".zip"}
+	artifact := buildinfo.Artifact{Name: version + ".zip", Type: "zip"}
 	artifact.Checksum = &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}
 	project.artifacts = append(project.artifacts, artifact)
 	return tempFile.Name(), nil
@@ -319,7 +319,7 @@ func (project *goProject) addInfoFileToBuildInfo(infoFilePath string) error {
 		return err
 	}
 
-	artifact := buildinfo.Artifact{Name: project.version + ".info"}
+	artifact := buildinfo.Artifact{Name: project.version + ".info", Type: "info"}
 	artifact.Checksum = &buildinfo.Checksum{Sha1: fileDetails.Checksum.Sha1, Md5: fileDetails.Checksum.Md5}
 	project.artifacts = append(project.artifacts, artifact)
 	return nil
