@@ -11,14 +11,14 @@ import (
 	"net/http"
 )
 
-func AddJpd(flags *AddJpdFlags) error {
+func JpdAdd(flags *JpdAddFlags) error {
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/jpds"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return err
 	}
-	resp, body, err := client.SendPost(missionControlUrl, flags.JpdSpec, httpClientDetails)
+	resp, body, err := client.SendPost(missionControlUrl, flags.JpdConfig, httpClientDetails)
 	if err != nil {
 		return err
 	}
@@ -31,22 +31,7 @@ func AddJpd(flags *AddJpdFlags) error {
 	return nil
 }
 
-type AddJpdFlags struct {
+type JpdAddFlags struct {
 	MissionControlDetails *config.MissionControlDetails
-	JpdSpec               []byte
-}
-
-type AddJpdRequestContent struct {
-	Name     string       `json:"name,omitempty"`
-	Url      string       `json:"url,omitempty"`
-	Location *JpdLocation `json:"location,omitempty"`
-	Token    string       `json:"token,omitempty"`
-	Tags     []string     `json:"tags,omitempty"`
-}
-
-type JpdLocation struct {
-	CityName    string  `json:"city_name,omitempty"`
-	CountryCode string  `json:"country_code,omitempty"`
-	Latitude    float64 `json:"latitude,omitempty"`
-	Longitude   float64 `json:"longitude,omitempty"`
+	JpdConfig             []byte
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -13,14 +12,14 @@ import (
 	"net/http"
 )
 
-func DeployLicense(bucketId, jpdId string, flags *DeployLicenseFlags) error {
-	postContent := DeployLicenseRequestContent{
+func LicenseDeploy(bucketId, jpdId string, flags *LicenseDeployFlags) error {
+	postContent := LicenseDeployRequestContent{
 		JpdId:        jpdId,
 		LicenseCount: flags.LicenseCount,
 	}
 	requestContent, err := json.Marshal(postContent)
 	if err != nil {
-		return errorutils.CheckError(errors.New("Failed to marshal json. " + cliutils.GetDocumentationMessage()))
+		return errorutils.CheckError(errors.New("Failed to marshal json: " + err.Error()))
 	}
 	missionControlUrl := flags.MissionControlDetails.Url + "api/v1/buckets/" + bucketId + "/deploy"
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
@@ -44,12 +43,12 @@ const (
 	DefaultLicenseCount = 1
 )
 
-type DeployLicenseRequestContent struct {
+type LicenseDeployRequestContent struct {
 	JpdId        string `json:"jpd_id,omitempty"`
 	LicenseCount int    `json:"license_count,omitempty"`
 }
 
-type DeployLicenseFlags struct {
+type LicenseDeployFlags struct {
 	MissionControlDetails *config.MissionControlDetails
 	LicenseCount          int
 }

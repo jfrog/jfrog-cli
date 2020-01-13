@@ -9,7 +9,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func DeleteJpd(jpdId string, mcDetails *config.MissionControlDetails) error {
+func JpdDelete(jpdId string, mcDetails *config.MissionControlDetails) error {
 	missionControlUrl := mcDetails.Url + "api/v1/jpds/" + jpdId
 	httpClientDetails := utils.GetMissionControlHttpClientDetails(mcDetails)
 	client, err := httpclient.ClientBuilder().Build()
@@ -25,9 +25,4 @@ func DeleteJpd(jpdId string, mcDetails *config.MissionControlDetails) error {
 	}
 	log.Debug("Mission Control response: " + resp.Status)
 	return nil
-}
-
-type DeleteJpdFlags struct {
-	MissionControlDetails *config.MissionControlDetails
-	Interactive           bool
 }

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/acquirelicense"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/addjpd"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/missioncontrol/config"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/deletejpd"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/deploylicense"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/releaselicense"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/jpdadd"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/jpddelete"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licenseacquire"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licensedeploy"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licenserelease"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -35,68 +35,68 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "acquire-license",
+			Name:         "license-acquire",
 			Flags:        getMcAuthenticationFlags(),
-			Usage:        acquirelicense.Description,
-			HelpName:     common.CreateUsage("mc acquire-license", acquirelicense.Description, acquirelicense.Usage),
-			UsageText:    acquirelicense.Arguments,
+			Usage:        licenseacquire.Description,
+			HelpName:     common.CreateUsage("mc license-acquire", licenseacquire.Description, licenseacquire.Usage),
+			UsageText:    licenseacquire.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"al"},
+			Aliases:      []string{"la"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return acquireLicense(c)
+				return licenseAcquire(c)
 			},
 		},
 		{
-			Name:         "deploy-license",
-			Flags:        getDeployLicenseFlags(),
-			Usage:        deploylicense.Description,
-			HelpName:     common.CreateUsage("mc deploy-license", deploylicense.Description, deploylicense.Usage),
-			UsageText:    deploylicense.Arguments,
+			Name:         "license-deploy",
+			Flags:        getLicenseDeployFlags(),
+			Usage:        licensedeploy.Description,
+			HelpName:     common.CreateUsage("mc license-deploy", licensedeploy.Description, licensedeploy.Usage),
+			UsageText:    licensedeploy.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"dl"},
+			Aliases:      []string{"ld"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return deployLicense(c)
+				return licenseDeploy(c)
 			},
 		},
 		{
-			Name:         "release-license",
+			Name:         "license-release",
 			Flags:        getMcAuthenticationFlags(),
-			Usage:        releaselicense.Description,
-			HelpName:     common.CreateUsage("mc release-license", releaselicense.Description, releaselicense.Usage),
-			UsageText:    releaselicense.Arguments,
+			Usage:        licenserelease.Description,
+			HelpName:     common.CreateUsage("mc license-release", licenserelease.Description, licenserelease.Usage),
+			UsageText:    licenserelease.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"rl"},
+			Aliases:      []string{"lr"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return releaseLicense(c)
+				return licenseRelease(c)
 			},
 		},
 		{
-			Name:         "add-jpd",
+			Name:         "jpd-add",
 			Flags:        getMcAuthenticationFlags(),
-			Usage:        addjpd.Description,
-			HelpName:     common.CreateUsage("mc add-jpd", addjpd.Description, addjpd.Usage),
-			UsageText:    addjpd.Arguments,
+			Usage:        jpdadd.Description,
+			HelpName:     common.CreateUsage("mc jpd-add", jpdadd.Description, jpdadd.Usage),
+			UsageText:    jpdadd.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"aj"},
+			Aliases:      []string{"ja"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return addJpd(c)
+				return jpdAdd(c)
 			},
 		},
 		{
-			Name:         "delete-jpd",
+			Name:         "jpd-delete",
 			Flags:        getMcAuthenticationFlags(),
-			Usage:        deletejpd.Description,
-			HelpName:     common.CreateUsage("mc delete-jpd", deletejpd.Description, deletejpd.Usage),
-			UsageText:    deletejpd.Arguments,
+			Usage:        jpddelete.Description,
+			HelpName:     common.CreateUsage("mc jpd-delete", jpddelete.Description, jpddelete.Usage),
+			UsageText:    jpddelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"dj"},
+			Aliases:      []string{"jd"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return deleteJpd(c)
+				return jpdDelete(c)
 			},
 		},
 	}
@@ -115,7 +115,7 @@ func getMcAuthenticationFlags() []cli.Flag {
 	}
 }
 
-func getDeployLicenseFlags() []cli.Flag {
+func getLicenseDeployFlags() []cli.Flag {
 	return append(getMcAuthenticationFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "license-count",
@@ -135,18 +135,18 @@ func getConfigFlags() []cli.Flag {
 	return append(flags, getMcAuthenticationFlags()...)
 }
 
-func addJpd(c *cli.Context) error {
+func jpdAdd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	addJpdFlags, err := createAddJpdFlags(c)
+	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
 		return err
 	}
-	return commands.AddJpd(addJpdFlags)
+	return commands.JpdAdd(jpdAddFlags)
 }
 
-func deleteJpd(c *cli.Context) error {
+func jpdDelete(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -154,10 +154,10 @@ func deleteJpd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return commands.DeleteJpd(c.Args()[0], mcDetails)
+	return commands.JpdDelete(c.Args()[0], mcDetails)
 }
 
-func acquireLicense(c *cli.Context) error {
+func licenseAcquire(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -167,22 +167,22 @@ func acquireLicense(c *cli.Context) error {
 		return err
 	}
 
-	return commands.AcquireLicense(c.Args()[0], c.Args()[1], mcDetails)
+	return commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
 }
 
-func deployLicense(c *cli.Context) error {
+func licenseDeploy(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	flags, err := createDeployLicenseFlags(c)
+	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
 		return err
 	}
-	return commands.DeployLicense(c.Args()[0], c.Args()[1], flags)
+	return commands.LicenseDeploy(c.Args()[0], c.Args()[1], flags)
 }
 
-func releaseLicense(c *cli.Context) error {
+func licenseRelease(c *cli.Context) error {
 	size := len(c.Args())
 	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -191,7 +191,7 @@ func releaseLicense(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return commands.ReleaseLicense(c.Args()[0], c.Args()[1], mcDetails)
+	return commands.LicenseRelease(c.Args()[0], c.Args()[1], mcDetails)
 }
 
 func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
@@ -246,8 +246,8 @@ func configure(c *cli.Context) error {
 	return err
 }
 
-func createDeployLicenseFlags(c *cli.Context) (flags *commands.DeployLicenseFlags, err error) {
-	flags = new(commands.DeployLicenseFlags)
+func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlags, err error) {
+	flags = new(commands.LicenseDeployFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
@@ -278,13 +278,13 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 	return
 }
 
-func createAddJpdFlags(c *cli.Context) (flags *commands.AddJpdFlags, err error) {
-	flags = new(commands.AddJpdFlags)
+func createJpdAddFlags(c *cli.Context) (flags *commands.JpdAddFlags, err error) {
+	flags = new(commands.JpdAddFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
 	}
-	flags.JpdSpec, err = fileutils.ReadFile(c.Args()[0])
+	flags.JpdConfig, err = fileutils.ReadFile(c.Args()[0])
 	if errorutils.CheckError(err) != nil {
 		return
 	}
