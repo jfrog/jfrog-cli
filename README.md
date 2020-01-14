@@ -32,15 +32,15 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 # Download and Installation
 
 You can download the executable directly using the [JFrog CLI Download Page](https://www.jfrog.com/getcli/), or install it with npm, homebrew or docker.
-## NPM [![version](https://img.shields.io/npm/v/jfrog-cli-go.svg?label=%20&style=plastic)](https://www.npmjs.com/package/jfrog-cli-go)
+## NPM [![version](https://img.shields.io/npm/v/jfrog-cli-go.svg?label=%20&)](https://www.npmjs.com/package/jfrog-cli-go)
 ````
 npm install jfrog-cli-go
 ````
-## Homebrew [![](https://img.shields.io/homebrew/v/jfrog-cli-go?label=%20&style=plastic)](https://formulae.brew.sh/formula/jfrog-cli-go)
+## Homebrew [![](https://img.shields.io/homebrew/v/jfrog-cli-go?label=%20)](https://formulae.brew.sh/formula/jfrog-cli-go)
 ````
 brew install jfrog-cli-go
 ````
-## Docker [![](https://img.shields.io/bintray/v/jfrog/reg2/jfrog:jfrog-cli-go?label=%20&style=plastic)](https://bintray.com/beta/#/jfrog/reg2/jfrog:jfrog-cli-go)
+## Docker [![](https://img.shields.io/bintray/v/jfrog/reg2/jfrog:jfrog-cli-go?label=%20)](https://bintray.com/beta/#/jfrog/reg2/jfrog:jfrog-cli-go)
 ````
 docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
 ````
