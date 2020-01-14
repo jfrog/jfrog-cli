@@ -283,7 +283,7 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-# Pull Requests [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jfrog/jfrog-cli/blob/master/CONTRIBUTING.md) [![GitHub license](https://img.shields.io/github/license/jfrog/jfrog-cli)](https://github.com/jfrog/jfrog-cli/blob/master/LICENSE) 
+# Pull Requests [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jfrog/jfrog-cli/blob/master/CONTRIBUTING.md)
 We welcome pull requests from the community.
 ## Guidelines
 * Before creating your first pull request, please join our contributors community by signing [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
