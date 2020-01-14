@@ -1,7 +1,7 @@
 <p align="center">
-  <a href="https://jfrog.com/">
-    <img src="logo.png" alt="CLI logo" width="200">
-  </a>
+    <img src="logo.png" alt="CLI logo" width="100">
+<h3 align="center">Jfrog CLI</h3>
+  
 </p>
 
 # Status
