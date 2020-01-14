@@ -1,33 +1,26 @@
 package missioncontrol
 
 import (
-	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/missioncontrol/config"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/services/add"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/services/attachlic"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/services/detachlic"
-	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/services/remove"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/jpdadd"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/jpddelete"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licenseacquire"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licensedeploy"
+	"github.com/jfrog/jfrog-cli-go/docs/missioncontrol/licenserelease"
 	"github.com/jfrog/jfrog-cli-go/missioncontrol/commands"
-	"github.com/jfrog/jfrog-cli-go/missioncontrol/commands/services"
-	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"strings"
+	"strconv"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
-		{
-			Name:        "services",
-			Aliases:     []string{"s"},
-			Usage:       "Services",
-			Subcommands: getRtiSubCommands(),
-		},
 		{
 			Name:         "config",
 			Flags:        getConfigFlags(),
@@ -41,140 +34,93 @@ func GetCommands() []cli.Command {
 				return configure(c)
 			},
 		},
+		{
+			Name:         "license-acquire",
+			Flags:        getMcAuthenticationFlags(),
+			Usage:        licenseacquire.Description,
+			HelpName:     common.CreateUsage("mc license-acquire", licenseacquire.Description, licenseacquire.Usage),
+			UsageText:    licenseacquire.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			Aliases:      []string{"la"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return licenseAcquire(c)
+			},
+		},
+		{
+			Name:         "license-deploy",
+			Flags:        getLicenseDeployFlags(),
+			Usage:        licensedeploy.Description,
+			HelpName:     common.CreateUsage("mc license-deploy", licensedeploy.Description, licensedeploy.Usage),
+			UsageText:    licensedeploy.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			Aliases:      []string{"ld"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return licenseDeploy(c)
+			},
+		},
+		{
+			Name:         "license-release",
+			Flags:        getMcAuthenticationFlags(),
+			Usage:        licenserelease.Description,
+			HelpName:     common.CreateUsage("mc license-release", licenserelease.Description, licenserelease.Usage),
+			UsageText:    licenserelease.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			Aliases:      []string{"lr"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return licenseRelease(c)
+			},
+		},
+		{
+			Name:         "jpd-add",
+			Flags:        getMcAuthenticationFlags(),
+			Usage:        jpdadd.Description,
+			HelpName:     common.CreateUsage("mc jpd-add", jpdadd.Description, jpdadd.Usage),
+			UsageText:    jpdadd.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			Aliases:      []string{"ja"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return jpdAdd(c)
+			},
+		},
+		{
+			Name:         "jpd-delete",
+			Flags:        getMcAuthenticationFlags(),
+			Usage:        jpddelete.Description,
+			HelpName:     common.CreateUsage("mc jpd-delete", jpddelete.Description, jpddelete.Usage),
+			UsageText:    jpddelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			Aliases:      []string{"jd"},
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return jpdDelete(c)
+			},
+		},
 	}
 }
 
-func getRtiSubCommands() []cli.Command {
-	return []cli.Command{
-		{
-			Name:         "add",
-			Flags:        getAddServiceFlags(),
-			Usage:        add.Description,
-			HelpName:     common.CreateUsage("mc services add", add.Description, add.Usage),
-			UsageText:    add.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return addService(c)
-			},
-		},
-		{
-			Name:         "remove",
-			Flags:        getRemoveServiceFlags(),
-			Usage:        remove.Description,
-			HelpName:     common.CreateUsage("mc services remove", remove.Description, remove.Usage),
-			UsageText:    remove.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"rm"},
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return removeService(c)
-			},
-		},
-		{
-			Name:         "attach-lic",
-			Flags:        getAttachLicenseFlags(),
-			Usage:        attachlic.Description,
-			HelpName:     common.CreateUsage("mc services attach-lic", attachlic.Description, attachlic.Usage),
-			UsageText:    attachlic.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return attachLicense(c)
-			},
-		},
-		{
-			Name:         "detach-lic",
-			Flags:        getDetachLicenseFlags(),
-			Usage:        detachlic.Description,
-			HelpName:     common.CreateUsage("mc services detach-lic", detachlic.Description, detachlic.Usage),
-			UsageText:    detachlic.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return detachLicense(c)
-			},
-		},
-	}
-}
-
-func getFlags() []cli.Flag {
+func getMcAuthenticationFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Optional] Mission Control URL` `",
+			Usage: "[Optional] Mission Control URL.` `",
 		},
 		cli.StringFlag{
-			Name:  "user",
-			Usage: "[Optional] Mission Control username` `",
-		},
-		cli.StringFlag{
-			Name:  "password",
-			Usage: "[Optional] Mission Control password` `",
+			Name:  "access-token",
+			Usage: "[Optional] Mission Control Admin token.` `",
 		},
 	}
 }
 
-func getRemoveServiceFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
-		cli.BoolFlag{
-			Name:  "quiet",
-			Usage: "[Default: false] Set to true to skip the delete confirmation message.",
-		},
-	}...)
-}
-
-func getAddServiceFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
+func getLicenseDeployFlags() []cli.Flag {
+	return append(getMcAuthenticationFlags(), []cli.Flag{
 		cli.StringFlag{
-			Name:  "service-url",
-			Usage: "[Mandatory] Service URL.` `",
-		},
-		cli.StringFlag{
-			Name:  "service-user",
-			Usage: "[Mandatory] Service username.` `",
-		},
-		cli.StringFlag{
-			Name:  "service-password",
-			Usage: "[Mandatory] Service password.` `",
-		},
-		cli.StringFlag{
-			Name:  "desc",
-			Usage: "[Optional] Service description.` `",
-		},
-		cli.StringFlag{
-			Name:  "site-name",
-			Usage: "[Optional] Service site name, e.g. US.` `",
-		},
-	}...)
-}
-
-func getAttachLicenseFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
-		cli.StringFlag{
-			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID` `",
-		},
-		cli.StringFlag{
-			Name:  "license-path",
-			Usage: "[Optional] Full path to the license file` `",
-		},
-		cli.BoolFlag{
-			Name:  "override",
-			Usage: "[Default: false] Set to true to override licence file.` `",
-		},
-		cli.BoolFlag{
-			Name:  "deploy",
-			Usage: "[Default: false] Set to true to deploy licence to service.` `",
-		},
-	}...)
-}
-
-func getDetachLicenseFlags() []cli.Flag {
-	return append(getFlags(), []cli.Flag{
-		cli.StringFlag{
-			Name:  "bucket-id",
-			Usage: "[Mandatory] license bucket ID` `",
+			Name:  "license-count",
+			Value: "",
+			Usage: "[Default: " + strconv.Itoa(commands.DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
 		},
 	}...)
 }
@@ -183,86 +129,82 @@ func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "interactive",
-			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.",
+			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the other command options become optional.",
 		},
 	}
-	return append(flags, getFlags()...)
+	return append(flags, getMcAuthenticationFlags()...)
 }
 
-func addService(c *cli.Context) error {
-	if len(c.Args()) != 2 {
+func jpdAdd(c *cli.Context) error {
+	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	addServiceFlags, err := createAddServiceFlag(c)
+	jpdAddFlags, err := createJpdAddFlags(c)
 	if err != nil {
 		return err
 	}
-	serviceType := c.Args()[0]
-	serviceName := c.Args()[1]
-
-	return services.AddService(serviceType, serviceName, addServiceFlags)
+	return commands.JpdAdd(jpdAddFlags)
 }
 
-func removeService(c *cli.Context) error {
+func jpdDelete(c *cli.Context) error {
+	if len(c.Args()) != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	mcDetails, err := createMissionControlDetails(c, true)
+	if err != nil {
+		return err
+	}
+	return commands.JpdDelete(c.Args()[0], mcDetails)
+}
+
+func licenseAcquire(c *cli.Context) error {
 	size := len(c.Args())
-	if size != 1 {
+	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	serviceName := c.Args()[0]
-	if !c.Bool("quiet") {
-		confirmed := cliutils.InteractiveConfirm("Remove Service,  " + serviceName + "?")
-		if !confirmed {
-			return nil
-		}
-	}
-	flags, err := createRemoveServiceFlags(c)
+	mcDetails, err := createMissionControlDetails(c, true)
 	if err != nil {
 		return err
 	}
 
-	return services.Remove(serviceName, flags)
+	return commands.LicenseAcquire(c.Args()[0], c.Args()[1], mcDetails)
 }
 
-func attachLicense(c *cli.Context) error {
+func licenseDeploy(c *cli.Context) error {
 	size := len(c.Args())
-	if size != 1 {
+	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	flags, err := createAttachLicFlags(c)
+	flags, err := createLicenseDeployFlags(c)
 	if err != nil {
 		return err
 	}
-
-	return services.AttachLic(c.Args()[0], flags)
+	return commands.LicenseDeploy(c.Args()[0], c.Args()[1], flags)
 }
 
-func detachLicense(c *cli.Context) error {
+func licenseRelease(c *cli.Context) error {
 	size := len(c.Args())
-	if size != 1 {
+	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	flags, err := createDetachLicFlags(c)
+	mcDetails, err := createMissionControlDetails(c, true)
 	if err != nil {
 		return err
 	}
-
-	return services.DetachLic(c.Args()[0], flags)
+	return commands.LicenseRelease(c.Args()[0], c.Args()[1], mcDetails)
 }
 
 func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 	exists, err := config.IsMissionControlConfExists()
-	if err != nil {
+	if err != nil || exists {
 		return nil, err
-	}
-	if exists {
-		return nil, nil
 	}
 	val, err := clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
 	if err != nil {
 		return nil, err
 	}
 	if !val {
-		config.SaveMissionControlConf(new(config.MissionControlDetails))
+		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
 	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
@@ -272,7 +214,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 		"Configure now?", cliutils.OfferConfig)
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
-		config.SaveMissionControlConf(new(config.MissionControlDetails))
+		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
 	}
 	details, err := createMissionControlDetails(c, false)
@@ -285,52 +227,41 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 func configure(c *cli.Context) error {
 	if len(c.Args()) > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	} else if len(c.Args()) == 1 {
-		if c.Args()[0] == "show" {
-			commands.ShowConfig()
-		} else if c.Args()[0] == "clear" {
-			commands.ClearConfig()
-		} else {
-			return errors.New("Unknown argument '" + c.Args()[0] + "'. Available arguments are 'show' and 'clear'.")
+	}
+	if len(c.Args()) == 1 {
+		switch c.Args()[0] {
+		case "show":
+			return commands.ShowConfig()
+		case "clear":
+			return commands.ClearConfig()
+		default:
+			return cliutils.PrintHelpAndReturnError("Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.", c)
 		}
-	} else {
-		flags, err := createConfigFlags(c)
+	}
+	flags, err := createConfigFlags(c)
+	if err != nil {
+		return err
+	}
+	_, err = commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
+	return err
+}
+
+func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlags, err error) {
+	flags = new(commands.LicenseDeployFlags)
+	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
+	if err != nil {
+		return
+	}
+	flags.LicenseCount = commands.DefaultLicenseCount
+	if c.String("license-count") != "" {
+		flags.LicenseCount, err = strconv.Atoi(c.String("license-count"))
 		if err != nil {
-			return err
+			return nil, cliutils.PrintHelpAndReturnError("The '--license-count' option must have a numeric value. ", c)
 		}
-		commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
+		if flags.LicenseCount < 1 {
+			return nil, cliutils.PrintHelpAndReturnError("The --license-count option must be at least "+strconv.Itoa(commands.DefaultLicenseCount), c)
+		}
 	}
-
-	return nil
-}
-
-func createDetachLicFlags(c *cli.Context) (flags *services.DetachLicFlags, err error) {
-	flags = new(services.DetachLicFlags)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
-	if err != nil {
-		return
-	}
-	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
-		return nil, cliutils.PrintHelpAndReturnError("The --bucket-id option is mandatory.", c)
-	}
-	return
-}
-
-func createAttachLicFlags(c *cli.Context) (flags *services.AttachLicFlags, err error) {
-	flags = new(services.AttachLicFlags)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
-	if err != nil {
-		return
-	}
-	flags.LicensePath = c.String("license-path")
-	if strings.HasSuffix(flags.LicensePath, fileutils.GetFileSeparator()) {
-		return nil, errors.New("The --license-path option cannot be a directory")
-	}
-	if flags.BucketId = c.String("bucket-id"); flags.BucketId == "" {
-		return nil, cliutils.PrintHelpAndReturnError("The --bucket-id option is mandatory.", c)
-	}
-	flags.Override = c.Bool("override")
-	flags.Deploy = c.Bool("deploy")
 	return
 }
 
@@ -341,43 +272,22 @@ func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) 
 	if err != nil {
 		return
 	}
-	if !flags.Interactive && flags.MissionControlDetails.Url == "" {
-		return nil, errors.New("The --url option is mandatory when the --interactive option is set to false")
+	if !flags.Interactive && (flags.MissionControlDetails.Url == "" || flags.MissionControlDetails.AccessToken == "") {
+		return nil, cliutils.PrintHelpAndReturnError("the --url and --access-token options are mandatory when the --interactive option is set to false", c)
 	}
 	return
 }
 
-func createAddServiceFlag(c *cli.Context) (flags *services.AddServiceFlags, err error) {
-	flags = new(services.AddServiceFlags)
+func createJpdAddFlags(c *cli.Context) (flags *commands.JpdAddFlags, err error) {
+	flags = new(commands.JpdAddFlags)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
 	if err != nil {
 		return
 	}
-	flags.ServiceDetails = new(utils.ServiceDetails)
-
-	if flags.ServiceDetails.Url = c.String("service-url"); flags.ServiceDetails.Url == "" {
-		return nil, errors.New("The --service-url option is mandatory")
-	}
-	if flags.ServiceDetails.User = c.String("service-user"); flags.ServiceDetails.User == "" {
-		return nil, errors.New("The --service-user option is mandatory")
-	}
-	if flags.ServiceDetails.Password = c.String("service-password"); flags.ServiceDetails.Password == "" {
-		return nil, errors.New("The --service-password option is mandatory")
-	}
-	flags.Description = c.String("desc")
-	flags.SiteName = c.String("site-name")
-	return
-}
-
-func createRemoveServiceFlags(c *cli.Context) (flags *services.RemoveFlags, err error) {
-	details, err := createMissionControlDetails(c, true)
-	if err != nil {
+	flags.JpdConfig, err = fileutils.ReadFile(c.Args()[0])
+	if errorutils.CheckError(err) != nil {
 		return
 	}
-	flags = &services.RemoveFlags{
-		MissionControlDetails: details,
-		Interactive:           c.BoolT("interactive")}
-
 	return
 }
 
@@ -393,11 +303,10 @@ func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.Mi
 	}
 	details := new(config.MissionControlDetails)
 	details.Url = c.String("url")
-	details.User = c.String("user")
-	details.Password = c.String("password")
+	details.AccessToken = c.String("access-token")
 
 	if includeConfig {
-		if details.Url == "" || details.User == "" || details.Password == "" {
+		if details.Url == "" || details.AccessToken == "" {
 			confDetails, err := commands.GetConfig()
 			if err != nil {
 				return nil, err
@@ -405,11 +314,8 @@ func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.Mi
 			if details.Url == "" {
 				details.Url = confDetails.Url
 			}
-			if details.User == "" {
-				details.SetUser(confDetails.User)
-			}
-			if details.Password == "" {
-				details.SetPassword(confDetails.Password)
+			if details.AccessToken == "" {
+				details.SetAccessToken(confDetails.AccessToken)
 			}
 		}
 	}

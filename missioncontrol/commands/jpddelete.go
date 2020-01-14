@@ -1,4 +1,4 @@
-package services
+package commands
 
 import (
 	"errors"
@@ -9,9 +9,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-func Remove(serviceName string, flags *RemoveFlags) error {
-	missionControlUrl := flags.MissionControlDetails.Url + "api/v3/services/" + serviceName
-	httpClientDetails := utils.GetMissionControlHttpClientDetails(flags.MissionControlDetails)
+func JpdDelete(jpdId string, mcDetails *config.MissionControlDetails) error {
+	missionControlUrl := mcDetails.Url + "api/v1/jpds/" + jpdId
+	httpClientDetails := utils.GetMissionControlHttpClientDetails(mcDetails)
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return err
@@ -25,9 +25,4 @@ func Remove(serviceName string, flags *RemoveFlags) error {
 	}
 	log.Debug("Mission Control response: " + resp.Status)
 	return nil
-}
-
-type RemoveFlags struct {
-	MissionControlDetails *config.MissionControlDetails
-	Interactive           bool
 }

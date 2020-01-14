@@ -2,14 +2,17 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/lock"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"golang.org/x/crypto/ssh/terminal"
 	"net/url"
 	"sync"
+	"syscall"
 )
 
 // Internal golang locking for the same process.
@@ -27,17 +30,14 @@ func ShowConfig() error {
 	if details.Url != "" {
 		log.Output("Url: " + details.Url)
 	}
-	if details.User != "" {
-		log.Output("User: " + details.User)
-	}
-	if details.Password != "" {
-		log.Output("Password: ***")
+	if details.AccessToken != "" {
+		log.Output("AccessToken: ***")
 	}
 	return nil
 }
 
-func ClearConfig() {
-	config.SaveMissionControlConf(new(config.MissionControlDetails))
+func ClearConfig() error {
+	return config.SaveMissionControlConf(new(config.MissionControlDetails))
 }
 
 func Config(details, defaultDetails *config.MissionControlDetails, interactive bool) (conf *config.MissionControlDetails, err error) {
@@ -49,8 +49,6 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 	if err != nil {
 		return nil, err
 	}
-
-	allowUsingSavedPassword := true
 	conf = details
 	if conf == nil {
 		conf = new(config.MissionControlDetails)
@@ -76,12 +74,20 @@ func Config(details, defaultDetails *config.MissionControlDetails, interactive b
 					return
 				}
 			}
-			allowUsingSavedPassword = false
 		}
-		ioutils.ReadCredentialsFromConsole(conf, defaultDetails, allowUsingSavedPassword)
+		if conf.AccessToken == "" {
+			print("Access token: ")
+			byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+			if err != nil {
+				return nil, errorutils.CheckError(err)
+			}
+			// New-line required after the access token input:
+			fmt.Println()
+			conf.SetAccessToken(string(byteToken))
+		}
 	}
 	conf.Url = utils.AddTrailingSlashIfNeeded(conf.Url)
-	config.SaveMissionControlConf(conf)
+	err = config.SaveMissionControlConf(conf)
 	return
 }
 

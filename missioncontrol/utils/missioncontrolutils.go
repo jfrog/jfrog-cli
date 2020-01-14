@@ -8,9 +8,8 @@ import (
 
 func GetMissionControlHttpClientDetails(missionControlDetails *config.MissionControlDetails) httputils.HttpClientDetails {
 	return httputils.HttpClientDetails{
-		User:     missionControlDetails.User,
-		Password: missionControlDetails.Password,
-		Headers:  map[string]string{"Content-Type": "application/json"}}
+		AccessToken: missionControlDetails.AccessToken,
+		Headers:     map[string]string{"Content-Type": "application/json"}}
 }
 
 func ReadMissionControlHttpMessage(resp []byte) string {
@@ -42,18 +41,4 @@ type HttpResponse struct {
 	Message string
 	Type    string
 	Details []string
-}
-
-type LicenseRequestContent struct {
-	Name             string `json:"service_name,omitempty"`
-	NumberOfLicenses int    `json:"number_of_licenses,omitempty"`
-	Deploy           bool   `json:"deploy,omitempty"`
-}
-
-type ServiceDetails struct {
-	Type     string `json:"type,omitempty"`
-	Url      string `json:"url,omitempty"`
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
-	Name     string `json:"service_name,omitempty"`
 }
