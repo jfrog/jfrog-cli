@@ -128,7 +128,7 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -149,7 +149,7 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	}
 	// Upload
 	artifactoryCli.Exec("upload", "--spec="+specFile)
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -165,7 +165,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
 	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
 
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -179,7 +179,7 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	filePath := getSpecialCharFilePath()
 
 	artifactoryCli.Exec("upload", filePath, tests.Repo1)
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -666,7 +666,7 @@ func TestArtifactoryUploadDebian(t *testing.T) {
 func TestArtifactoryUploadAndExplode(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", filepath.Join("testsdata", "archives", "a.zip"), tests.Repo1, "--explode=true")
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1378,7 +1378,7 @@ func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
 	artifactoryCli.Exec("upload", "testsdata/a/a*", tests.Repo1, "--exclusions=*a2*;*a3.in")
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1391,7 +1391,7 @@ func TestArtifactoryUploadExcludeByCli1Regex(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
 	artifactoryCli.Exec("upload", "testsdata/a/a(.*)", tests.Repo1, "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true")
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1424,7 +1424,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	artifactoryCli.Exec("upload", filepath.ToSlash(absDirPath)+"/*", tests.Repo1, "--exclusions=*cliTestFile1*")
 
 	// Check files exists in artifactory
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1460,7 +1460,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	artifactoryCli.Exec("upload", filepath.ToSlash(absDirPath)+"(.*)", tests.Repo1, "--exclusions=(.*c)liTestFile1.*", "--regexp=true")
 
 	// Check files exists in artifactory
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1482,7 +1482,7 @@ func TestArtifactoryUploadExcludeBySpecWildcard(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Validate files are moved by build number
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1504,7 +1504,7 @@ func TestArtifactoryUploadExcludeBySpecRegex(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Validate files are moved by build number
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2152,11 +2152,11 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 
 func TestArtifactoryMassiveUploadSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.UploadSpec)
+	specFile, err := tests.CreateSpec(tests.MassiveUploadSpec)
 	if err != nil {
 		t.Error(err)
 	}
-	resultSpecFile, err := tests.CreateSpec(tests.Search)
+	resultSpecFile, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -4216,7 +4216,7 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 }
 
 func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
-	fileSpec, err := tests.CreateSpec(tests.Search)
+	fileSpec, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -4259,14 +4259,14 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/../a/a1.*", tests.Repo1)
 	artifactoryCli.Exec("upload", "testsdata/./a/a1.*", tests.Repo1)
-	searchFilePath, err := tests.CreateSpec(tests.Search)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}
 	isExistInArtifactory(tests.GetSimpleUploadSpecialCharNoRegexExpectedRepo1(), searchFilePath, t)
 
 	artifactoryCli.Exec("upload", "testsdata/./a/../a/././././a2.*", tests.Repo1)
-	searchFilePath, err = tests.CreateSpec(tests.Search)
+	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
 	}

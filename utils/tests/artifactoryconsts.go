@@ -29,13 +29,13 @@ const (
 	DebianUploadSpec                       = "upload_debian_spec.json"
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
-	UploadSpec                             = "upload_spec.json"
+	MassiveUploadSpec                      = "massive_upload_spec.json"
 	DeleteSpec                             = "delete_spec.json"
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	PrepareCopy                            = "prepare_copy.json"
-	Search                                 = "search.json"
+	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchGo                               = "search_go.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
 	DownloadModOfDependencyGo              = "downloadmodofdependency_go.json"
@@ -246,19 +246,6 @@ func GetExplodeUploadExpectedRepo1() []string {
 	}
 }
 
-func GetSimpleUploadExpectedRepo2() []string {
-	return []string{
-		Repo2 + "/flat_recursive/a3.in",
-		Repo2 + "/flat_recursive/a1.in",
-		Repo2 + "/flat_recursive/a2.in",
-		Repo2 + "/flat_recursive/b2.in",
-		Repo2 + "/flat_recursive/b3.in",
-		Repo2 + "/flat_recursive/b1.in",
-		Repo2 + "/flat_recursive/c2.in",
-		Repo2 + "/flat_recursive/c1.in",
-		Repo2 + "/flat_recursive/c3.in",
-	}
-}
 func GetCopyFileNameWithParentheses() []string {
 	return []string{
 		Repo2 + "/testsdata/b/(/(.in",
@@ -725,6 +712,16 @@ func GetBuildExcludeDownloadBySpec() []string {
 		filepath.Join(Out, "download", "aql_by_artifacts", "data", "b3.in"),
 		filepath.Join(Out, "download", "aql_by_artifacts", "data", "c1.in"),
 		filepath.Join(Out, "download", "aql_by_artifacts", "data", "c3.in"),
+	}
+}
+
+func GetCleanBuild() []string {
+	return []string{
+		filepath.Join(Out, "clean-build"),
+		filepath.Join(Out, "clean-build", "data"),
+		filepath.Join(Out, "clean-build", "data", "b1.in"),
+		filepath.Join(Out, "clean-build", "data", "b2.in"),
+		filepath.Join(Out, "clean-build", "data", "b3.in"),
 	}
 }
 

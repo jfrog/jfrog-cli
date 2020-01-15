@@ -15,6 +15,7 @@ import (
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -273,40 +274,36 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	initArtifactoryTest(t)
 	buildName, buildNumber := "cli-test-build", "11"
-	buildNameNotToPromote := "cli-test-build-not-to-promote"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameNotToPromote, artHttpDetails)
 
-	//upload files with buildName and buildNumber
-	specFile, err := tests.CreateSpec(tests.UploadSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildNameNotToPromote, "--build-number="+buildNumber)
-
-	//cleanup buildInfo
-	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
-
-	//upload files with buildName and buildNumber
-	specFile, err = tests.CreateSpec(tests.SimpleUploadSpec)
+	// Upload files with buildName and buildNumber
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
 
-	//publish buildInfo
+	// Cleanup buildInfo with the same buildName and buildNumber
+	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
+
+	// Upload different files with the same buildName and buildNumber
+	specFile, err = tests.CreateSpec(tests.SplitUploadSpecB)
+	if err != nil {
+		t.Error(err)
+	}
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
+
+	// Publish buildInfo
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
-	//promote buildInfo
-	artifactoryCli.Exec("build-promote", buildName, buildNumber, tests.Repo2)
+	// Download by build and verify that only artifacts uploaded after clean are downloaded
+	outputDir := filepath.Join(tests.Out, "clean-build")
+	artifactoryCli.Exec("download", tests.Repo1, outputDir+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumber)
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(outputDir, false)
+	tests.IsExistLocally(tests.GetCleanBuild(), paths, t)
 
-	//validate files are uploaded with the build info name and number
-	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo2(), tests.Repo2+"/*", props, t)
-
-	//cleanup
+	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildNameNotToPromote, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
