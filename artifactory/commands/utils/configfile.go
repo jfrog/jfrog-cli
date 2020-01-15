@@ -176,7 +176,7 @@ func createResolverRepo(configResult *ConfigFile) error {
 	}
 	if vConfig.GetBool(prompt.USE_ARTIFACTORY) {
 		configResult.Resolver.ServerId = vConfig.GetString(utils.SERVER_ID)
-		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL)
+		configResult.Resolver.Repo, err = prompt.ReadRepo("Set repository for dependencies resolution (press Tab for options): ", vConfig, utils.REMOTE, utils.VIRTUAL, utils.LOCAL)
 		if err != nil {
 			return err
 		}
