@@ -1338,7 +1338,7 @@ func getConfigFlags() []cli.Flag {
 		},
 		cli.BoolTFlag{
 			Name:  "enc-password",
-			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.` `",
+			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
