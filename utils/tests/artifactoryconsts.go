@@ -29,13 +29,15 @@ const (
 	DebianUploadSpec                       = "upload_debian_spec.json"
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
-	MassiveUploadSpec                      = "massive_upload_spec.json"
+	UploadMultipleFileSpecs                = "upload_multiple_file_specs.json"
+	UploadSimplePlaceholders               = "upload_simple_placeholders.json"
 	DeleteSpec                             = "delete_spec.json"
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	PrepareCopy                            = "prepare_copy.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchSimplePlaceholders               = "search_simple_placeholders.json"
 	SearchGo                               = "search_go.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
 	DownloadModOfDependencyGo              = "downloadmodofdependency_go.json"
@@ -725,127 +727,18 @@ func GetCleanBuild() []string {
 	}
 }
 
-func GetMassiveUpload() []string {
+func GetMultipleFileSpecs() []string {
 	return []string{
-		Repo1 + "/spec-copy-test/3_only_flat_recursive/a3.in",
-		Repo1 + "/spec-copy-test/3_only_flat_recursive/b3.in",
-		Repo1 + "/spec-copy-test/3_only_flat_recursive/c3.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/a1.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/a2.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/a3.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/b1.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/b2.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/b3.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/c1.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/c2.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/c3.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/github.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/bitbucket.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a1.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a2.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a3.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b1.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b2.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b3.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c1.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c2.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/c3.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/github.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/bitbucket.in",
-		Repo1 + "/spec-copy-test/flat_nonrecursive/a1.in",
-		Repo1 + "/spec-copy-test/flat_nonrecursive/a2.in",
-		Repo1 + "/spec-copy-test/flat_nonrecursive/a3.in",
-		Repo1 + "/spec-copy-test/flat_recursive/a1.in",
-		Repo1 + "/spec-copy-test/flat_recursive/a2.in",
-		Repo1 + "/spec-copy-test/flat_recursive/a3.in",
-		Repo1 + "/spec-copy-test/flat_recursive/b1.in",
-		Repo1 + "/spec-copy-test/flat_recursive/b2.in",
-		Repo1 + "/spec-copy-test/flat_recursive/b3.in",
-		Repo1 + "/spec-copy-test/flat_recursive/c1.in",
-		Repo1 + "/spec-copy-test/flat_recursive/c2.in",
-		Repo1 + "/spec-copy-test/flat_recursive/c3.in",
-		Repo1 + "/spec-copy-test/nonflat_nonrecursive/testsdata/a/a1.in",
-		Repo1 + "/spec-copy-test/nonflat_nonrecursive/testsdata/a/a2.in",
-		Repo1 + "/spec-copy-test/nonflat_nonrecursive/testsdata/a/a3.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/a1.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/a2.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/a3.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/b1.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/b2.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/b3.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/c/c1.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/c/c2.in",
-		Repo1 + "/spec-copy-test/nonflat_recursive/testsdata/a/b/c/c3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/github.com/github.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/bitbucket.com/bitbucket.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/a#1.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/a#1.in",
-		Repo1 + "/spec-copy-test/simple/a1.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/(.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/(b.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/b).in",
-		Repo1 + "/spec-copy-test/copy-to-existing/b(.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/(b).in",
-		Repo1 + "/spec-copy-test/copy-to-existing/)b.in",
-		Repo1 + "/spec-copy-test/copy-to-existing/)b).in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(b.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b(.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/(b).in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/)b.in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/)b).in",
-		Repo1 + "/spec-copy-test/defaults_recursive_nonflat/b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(/(.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(b/(b.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/b)/b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/b(/b(.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b2.in",
+		Repo1 + "/multiple/a1.out",
+		Repo1 + "/multiple/properties/testsdata/a/b/b2.in",
 	}
 }
 
-func GetPropsExpected() []string {
+func GetSimplePlaceholders() []string {
 	return []string{
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/a3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/b3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a/b/c/c3.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/a$+~&^a#/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/c#/a#1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(/(.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(b/(b.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/b)/b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/b(/b(.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/(b)/(b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/)b/)b.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/b/)b)/)b).in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/a2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b1.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/vcs/OtherGit/b2.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/github.com/github.in",
-		Repo1 + "/spec-copy-test/properties/testsdata/cache/download/bitbucket.com/bitbucket.in",
+		Repo1 + "/simple_placeholders/a-in.out",
+		Repo1 + "/simple_placeholders/b/b-in.out",
+		Repo1 + "/simple_placeholders/b/c/c-in.out",
 	}
 }
 

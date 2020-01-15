@@ -1194,7 +1194,7 @@ func TestArtifactorySetProperties(t *testing.T) {
 	}
 	artifactoryCli.Exec("sp", "prop=green", "--spec="+specFile)
 
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -1219,7 +1219,7 @@ func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
 	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -1284,7 +1284,7 @@ func TestArtifactoryDeleteProperties(t *testing.T) {
 	}
 	artifactoryCli.Exec("delp", "status", "--spec="+specFile)
 
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -1306,7 +1306,7 @@ func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
 	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val")
 
 	artifactoryCli.Exec("delp", tests.Repo1+"/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -2150,20 +2150,38 @@ func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryMassiveUploadSpec(t *testing.T) {
+func TestArtifactoryMultipleFileSpecsUpload(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.MassiveUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadMultipleFileSpecs)
 	if err != nil {
 		t.Error(err)
 	}
-	resultSpecFile, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	resultSpecFile, err := tests.CreateSpec(tests.SearchAllRepo1)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
-	isExistInArtifactory(tests.GetMassiveUpload(), resultSpecFile, t)
-	isExistInArtifactoryByProps(tests.GetPropsExpected(), tests.Repo1+"/*/properties/*.in", "searchMe=true", t)
+	isExistInArtifactory(tests.GetMultipleFileSpecs(), resultSpecFile, t)
+	isExistInArtifactoryByProps([]string{tests.Repo1 + "/multiple/properties/testsdata/a/b/b2.in"}, tests.Repo1+"/*/properties/*.in", "searchMe=true", t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySimplePlaceHolders(t *testing.T) {
+	initArtifactoryTest(t)
+	specFile, err := tests.CreateSpec(tests.UploadSimplePlaceholders)
+	if err != nil {
+		t.Error(err)
+	}
+
+	resultSpecFile, err := tests.CreateSpec(tests.SearchSimplePlaceholders)
+	if err != nil {
+		t.Error(err)
+	}
+
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+
+	isExistInArtifactory(tests.GetSimplePlaceholders(), resultSpecFile, t)
 	cleanArtifactoryTest()
 }
 
@@ -4215,7 +4233,7 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 	cleanArtifactoryTest()
 }
 
-func searchItemsInArtifacotry(t *testing.T) []rtutils.ResultItem {
+func searchItemsInArtifactory(t *testing.T) []rtutils.ResultItem {
 	fileSpec, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	if err != nil {
 		t.Error(err)
@@ -4358,7 +4376,7 @@ func TestVcsProps(t *testing.T) {
 	initArtifactoryTest(t)
 	testDir := initVcsTestDir(t)
 	artifactoryCli.Exec("upload", filepath.Join(testDir, "*"), tests.Repo1, "--flat=false", "--build-name=or", "--build-number=2020")
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
