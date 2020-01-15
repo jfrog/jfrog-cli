@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const mavenExtractorDependencyVersion = "2.13.13"
+const mavenExtractorDependencyVersion = "2.15.0"
 const classworldsConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
