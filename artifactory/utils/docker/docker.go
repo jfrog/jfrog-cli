@@ -345,7 +345,7 @@ func (versionCmd *versionCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func IsVersionSupported() error {
+func ValidateVersion() error {
 	cmd := &versionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	if err != nil {

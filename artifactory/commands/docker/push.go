@@ -29,14 +29,14 @@ func (dpc *DockerPushCommand) SetThreads(threads int) *DockerPushCommand {
 
 // Push docker image and create build info if needed
 func (dpc *DockerPushCommand) Run() error {
-	// Perform login
-	rtDetails, err := dpc.RtDetails()
-	if errorutils.CheckError(err) != nil {
+	err := docker.ValidateVersion()
+	if err != nil {
 		return err
 	}
 
-	err = docker.IsVersionSupported()
-	if err != nil {
+	// Perform login
+	rtDetails, err := dpc.RtDetails()
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 
