@@ -27,16 +27,16 @@ func TestGenrateScripts(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check bash completion script
-	file, err := os.Open(bashPath)
+	bashFile, err := os.Open(bashPath)
+	defer bashFile.Close()
 	assert.NoError(t, err)
-	b, err := ioutil.ReadAll(file)
-	file.Close()
+	b, err := ioutil.ReadAll(bashFile)
 	assert.Equal(t, bash.BashAutocomplete, string(b))
 
 	// Check zsh completion script
-	file, err = os.Open(zshPath)
+	zshFile, err := os.Open(zshPath)
+	defer zshFile.Close()
 	assert.NoError(t, err)
-	b, err = ioutil.ReadAll(file)
-	file.Close()
+	b, err = ioutil.ReadAll(zshFile)
 	assert.Equal(t, zsh.ZshAutocomplete, string(b))
 }
