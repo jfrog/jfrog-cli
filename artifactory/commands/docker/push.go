@@ -1,11 +1,12 @@
 package docker
 
 import (
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"strings"
 )
 
 type DockerPushCommand struct {
@@ -28,11 +29,17 @@ func (dpc *DockerPushCommand) SetThreads(threads int) *DockerPushCommand {
 
 // Push docker image and create build info if needed
 func (dpc *DockerPushCommand) Run() error {
+	err := docker.ValidateVersion()
+	if err != nil {
+		return err
+	}
+
 	// Perform login
 	rtDetails, err := dpc.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
+
 	if !dpc.skipLogin {
 		loginConfig := &docker.DockerLoginConfig{ArtifactoryDetails: rtDetails}
 		err = docker.DockerLogin(dpc.imageTag, loginConfig)

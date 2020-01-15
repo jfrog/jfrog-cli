@@ -39,7 +39,7 @@ func IsMissionControlConfExists() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return conf.MissionControl != nil, nil
+	return conf.MissionControl != nil && *conf.MissionControl != MissionControlDetails{}, nil
 }
 
 func IsBintrayConfExists() (bool, error) {
@@ -365,9 +365,8 @@ type BintrayDetails struct {
 }
 
 type MissionControlDetails struct {
-	Url      string `json:"url,omitempty"`
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
+	Url         string `json:"url,omitempty"`
+	AccessToken string `json:"accessToken,omitempty"`
 }
 
 func (artifactoryDetails *ArtifactoryDetails) IsEmpty() bool {
@@ -452,18 +451,10 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.Artifa
 	return artAuth, nil
 }
 
-func (missionControlDetails *MissionControlDetails) SetUser(username string) {
-	missionControlDetails.User = username
+func (missionControlDetails *MissionControlDetails) GetAccessToken() string {
+	return missionControlDetails.AccessToken
 }
 
-func (missionControlDetails *MissionControlDetails) SetPassword(password string) {
-	missionControlDetails.Password = password
-}
-
-func (missionControlDetails *MissionControlDetails) GetUser() string {
-	return missionControlDetails.User
-}
-
-func (missionControlDetails *MissionControlDetails) GetPassword() string {
-	return missionControlDetails.Password
+func (missionControlDetails *MissionControlDetails) SetAccessToken(accessToken string) {
+	missionControlDetails.AccessToken = accessToken
 }

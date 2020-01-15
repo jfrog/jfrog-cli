@@ -1,4 +1,6 @@
-package shells
+package bash
+
+//go:generate go run ../generate_scripts.go
 
 import (
 	"fmt"
@@ -8,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-const bashAutocomplete = `#!/bin/bash
+const BashAutocomplete = `#!/bin/bash
 _jfrog() {
     local cur opts base
     COMPREPLY=()
@@ -27,7 +29,7 @@ func WriteBashCompletionScript() {
 		return
 	}
 	completionPath := filepath.Join(homeDir, "jfrog_bash_completion")
-	if err = ioutil.WriteFile(completionPath, []byte(bashAutocomplete), 0600); err != nil {
+	if err = ioutil.WriteFile(completionPath, []byte(BashAutocomplete), 0600); err != nil {
 		log.Error(err)
 		return
 	}

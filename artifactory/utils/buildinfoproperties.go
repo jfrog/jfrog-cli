@@ -58,6 +58,8 @@ const MAVEN_DESCRIPTOR = "deployMavenDescriptors"
 const IVY_DESCRIPTOR = "deployIvyDescriptors"
 const IVY_PATTERN = "ivyPattern"
 const ARTIFACT_PATTERN = "artifactPattern"
+const USE_GRADLE_PLUGIN = "usePlugin"
+const USE_GRADLE_WRAPPER = "useWrapper"
 
 // For path and temp files
 const PROPERTIES_TEMP_PREFIX = "buildInfoProperties"
@@ -254,12 +256,12 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 		return err
 	}
 	if artDetails.GetUrl() == "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " URL is required"))
+		return errorutils.CheckError(errors.New("Server ID " + serverId + ": URL is required."))
 	}
 	vConfig.Set(contextPrefix+URL, artDetails.GetUrl())
 
 	if artDetails.GetApiKey() != "" {
-		return errorutils.CheckError(errors.New("Server ID " + serverId + " API key authentication is not supported"))
+		return errorutils.CheckError(errors.New("Server ID " + serverId + ": Configuring an API key without a username is not supported."))
 	}
 
 	if artDetails.GetAccessToken() != "" {

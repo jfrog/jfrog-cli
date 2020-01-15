@@ -3,6 +3,12 @@ package docker
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os/exec"
+	"path"
+	"regexp"
+	"strings"
+
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
@@ -11,11 +17,13 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io"
-	"os/exec"
-	"path"
-	"strings"
+	"github.com/jfrog/jfrog-client-go/utils/version"
 )
+
+// Search for version format pattern e.g. 1.2.3
+var versionRegex = regexp.MustCompile(`(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)`)
+
+const MinSupportedVersion string = "17.07.0"
 
 // Docker login error message
 const DockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
@@ -313,4 +321,44 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 
 	// Login succeeded
 	return nil
+}
+
+// Version command
+type versionCmd struct{}
+
+func (versionCmd *versionCmd) GetCmd() *exec.Cmd {
+	if cliutils.IsWindows() {
+		return exec.Command("cmd", "/C", "echo", "docker --version")
+	}
+	return exec.Command("sh", "-c", "docker --version")
+}
+
+func (versionCmd *versionCmd) GetEnv() map[string]string {
+	return map[string]string{}
+}
+
+func (versionCmd *versionCmd) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (versionCmd *versionCmd) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+func ValidateVersion() error {
+	cmd := &versionCmd{}
+	content, err := gofrogcmd.RunCmdOutput(cmd)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	if !checkDockerMinVersion(strings.Trim(content, "\n")) {
+		return errorutils.CheckError(errors.New("This operation requires Docker version " + MinSupportedVersion + " or higher."))
+	}
+	return nil
+}
+
+func checkDockerMinVersion(dockerOutput string) bool {
+	versionStr := versionRegex.Find([]byte(dockerOutput))
+	currentVersion := version.NewVersion(string(versionStr))
+	return currentVersion.AtLeast(MinSupportedVersion)
 }

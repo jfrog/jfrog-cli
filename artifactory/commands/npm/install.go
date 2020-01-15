@@ -540,8 +540,12 @@ func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifact
 func (nca *NpmCommandArgs) transformDependencies() (dependencies []buildinfo.Dependency, missingDependencies []dependency) {
 	for _, dependency := range nca.dependencies {
 		if dependency.artifactName != "" {
+			fileType := ""
+			if i := strings.LastIndex(dependency.artifactName, "."); i != -1 {
+				fileType = dependency.artifactName[i+1:]
+			}
 			dependencies = append(dependencies,
-				buildinfo.Dependency{Id: dependency.artifactName, Scopes: dependency.scopes, Checksum: dependency.checksum})
+				buildinfo.Dependency{Id: dependency.artifactName, Type: fileType, Scopes: dependency.scopes, Checksum: dependency.checksum})
 		} else {
 			missingDependencies = append(missingDependencies, *dependency)
 		}
