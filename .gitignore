@@ -1,9 +1,23 @@
+# IDEs
 .idea
+.vscode
 *.iml
+
+# Test files
 testsdata/go/project1/go.sum
 testsdata/go/tmp
+tmp
+out
 
-# vim
+# Pipdeptree
+artifactory/utils/pip/dependencies/deptreescript.go
+
+# JFrog executable
+jfrog
+
+# Vim
 *~
 *.swp
-artifactory/utils/pip/dependencies/deptreescript.go
+
+# IOS
+*.DS_Store
