@@ -49,7 +49,8 @@ type ExitCode struct {
 var ExitCodeNoError = ExitCode{0}
 var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
-var ExitCodeBuildScan = ExitCode{3}
+var ExitCodeBuildScanNotConfigured = ExitCode{3}
+var ExitCodeBuildScanWithAlerts = ExitCode{4}
 
 type CliError struct {
 	ExitCode
@@ -93,14 +94,20 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 	}
 }
 
-func ExitBuildScan(failBuild bool, err error) error {
-	if failBuild && err != nil {
-		return CliError{ExitCodeBuildScan, "Build Scan Failed"}
+func ExitBuildScanNotConfigured(failBuild bool, err string) error {
+	if failBuild && len(err) > 0 {
+		return CliError{ExitCodeBuildScanNotConfigured, err}
 	}
 
 	return nil
 }
 
+func ExitBuildScanWithAlerts(failBuild bool, err string) error {
+	if failBuild && len(err) > 0 {
+		return CliError{ExitCodeBuildScanWithAlerts, err}
+	}
+	return nil
+}
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
 	// Error occurred - Return 1
 	if err != nil || failed > 0 {

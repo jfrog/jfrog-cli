@@ -2529,8 +2529,7 @@ func buildScanCmd(c *cli.Context) error {
 	}
 	buildScanCmd := buildinfo.NewBuildScanCommand().SetRtDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
-
-	return cliutils.ExitBuildScan(buildScanCmd.BuildFailed(), err)
+	return err
 }
 
 func buildCleanCmd(c *cli.Context) error {

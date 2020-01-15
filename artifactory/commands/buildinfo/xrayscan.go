@@ -2,8 +2,8 @@ package buildinfo
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -74,7 +74,10 @@ func (bsc *BuildScanCommand) Run() error {
 	// Check if should fail build
 	if bsc.failBuild && scanResults.Summary.FailBuild {
 		bsc.buildFailed = true
-		return errorutils.CheckError(errors.New(scanResults.Summary.Message))
+		if scanResults.Summary.TotalAlerts >= 1 {
+			return cliutils.ExitBuildScanWithAlerts(bsc.failBuild, scanResults.Summary.Message)
+		}
+		return cliutils.ExitBuildScanNotConfigured(bsc.failBuild, scanResults.Summary.Message)
 	}
 
 	return err
