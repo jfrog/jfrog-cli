@@ -690,6 +690,15 @@ func GetSimplePlaceholders() []string {
 	}
 }
 
+func GetDeleteNoSpec() []string {
+	return []string{
+		Repo1 + "/test_resources/a1.in",
+		Repo1 + "/test_resources/a2.in",
+		Repo1 + "/test_resources/a3.in",
+	}
+}
+
+// todo delete me
 func GetDelete1() []string {
 	return []string{
 		Repo2 + "/3_only_flat_recursive_target/a3.in",

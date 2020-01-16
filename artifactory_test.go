@@ -1792,25 +1792,20 @@ func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 	}
 }
 
-func TestArtifactoryDelete(t *testing.T) {
+func TestArtifactoryDeleteNoSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	preUploadAllTestData()
-	err := prepCopyFiles()
-	if err != nil {
-		t.Error(err)
-	}
-	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("copy", "--spec="+specFile)
-	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/*", "--quiet=true")
+	preUploadTestResources()
 
-	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchTargetInRepo2)
+	// Verify exists before deleting
+	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GetDelete1(), searchMoveDeleteSpec, t)
+	isExistInArtifactory(tests.GetRepo1TestResourcesExpected(), searchSpec, t)
+
+	artifactoryCli.Exec("delete", tests.Repo1+"/test_resources/b/*", "--quiet=true")
+
+	isExistInArtifactory(tests.GetDeleteNoSpec(), searchSpec, t)
 	cleanArtifactoryTest()
 }
 
