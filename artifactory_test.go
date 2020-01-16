@@ -1811,38 +1811,18 @@ func TestArtifactoryDeleteNoSpec(t *testing.T) {
 
 func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	initArtifactoryTest(t)
-	preUploadAllTestData()
-	err := prepCopyFiles()
+	preUploadTestResources()
+
+	// Verify exists before deleting
+	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
 	if err != nil {
 		t.Error(err)
 	}
+	isExistInArtifactory(tests.GetRepo1TestResourcesExpected(), searchSpec, t)
 
-	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("copy", "--spec="+specFile)
+	artifactoryCli.Exec("delete", tests.Repo1+"/test_resources/*/c", "--quiet=true")
 
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
-		t.Error(err)
-	}
-	resp, _, _, _ := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
-	if resp.StatusCode != http.StatusOK {
-		t.Error("Missing folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
-	}
-
-	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/*/b", "--quiet=true")
-	resp, _, _, _ = client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/", true, artHttpDetails)
-	if resp.StatusCode != http.StatusNotFound {
-		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
-	}
-
-	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchTargetInRepo2)
-	if err != nil {
-		t.Error(err)
-	}
-	isExistInArtifactory(tests.GetDelete1(), searchMoveDeleteSpec, t)
+	isExistInArtifactory(tests.GetDeleteFolderWithWildcard(), searchSpec, t)
 	cleanArtifactoryTest()
 }
 
@@ -2077,7 +2057,7 @@ func TestArtifactoryDisplayedPathToDelete(t *testing.T) {
 		displayedPaths = append(displayedPaths, generic.SearchResult{Path: v.GetItemRelativePath()})
 	}
 
-	tests.CompareExpectedVsActual(tests.GetDeleteDisplyedFiles(), displayedPaths, t)
+	tests.CompareExpectedVsActual(tests.GetDeleteDisplayedFiles(), displayedPaths, t)
 	cleanArtifactoryTest()
 }
 
