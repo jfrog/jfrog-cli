@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestGenrateScripts(t *testing.T) {
+func TestGenerateScripts(t *testing.T) {
 	bashPath := filepath.Join("bash", "jfrog")
 	zshPath := filepath.Join("zsh", "jfrog")
 

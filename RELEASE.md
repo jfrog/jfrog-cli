@@ -1,3 +1,14 @@
+## 1.33.0 (Jan 15, 2020)
+- Replace Mission Control commands to support Mission Control 4.0.0 API.
+- Support Artifactory authentication with client certificates.
+- Sign JFrog CLI's Windows binary.
+- Upgrade maben and gradle extractor versions.
+- Validate the minimum supported version of the docker client.
+- Bug fix - Build tools config commands do not fetch local repositories.
+- Bug fix - Config created by "jfrog rt gradlec" is invalid.
+- Bug fix - Do not remove all parenthesis from path on Artifactory upload.  
+- Bug fix - Wrong command name in mvnc help. 
+
 ## 1.32.4 (Dec 23, 2019)
 - Update jfrog-client-go version to v0.6.3
 
