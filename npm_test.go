@@ -318,14 +318,14 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(),
+	verifyExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
-	isExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(),
+	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(),
 		tests.NpmLocalRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)

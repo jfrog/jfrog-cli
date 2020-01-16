@@ -34,7 +34,6 @@ const (
 	DeleteSpec                             = "delete_spec.json"
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
-	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
 	CopyMoveSimpleSpec                     = "copy_move_simple.json"
 	PrepareCopy                            = "prepare_copy.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"

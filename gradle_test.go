@@ -51,8 +51,8 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
-	isExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
+	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
@@ -108,8 +108,8 @@ func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumbe
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
-	isExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
+	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

@@ -434,7 +434,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 
 	//validate files are uploaded with the build info name and number
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
-	isExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo1(), tests.Repo1+"/*", props, t)
+	verifyExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo1(), tests.Repo1+"/*", props, t)
 
 	//download build info
 	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)

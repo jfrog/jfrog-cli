@@ -42,7 +42,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 	cleanBuildToolsTest()
 }
 
@@ -69,7 +69,7 @@ func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func createMavenProject(t *testing.T) string {
