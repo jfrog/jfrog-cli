@@ -27,12 +27,13 @@ class BuildInfoPluginListener extends BuildAdapter {
             }
         }
 
-        // Set the "archives" configuration to all Artifactory tasks.
+        // Set the "mavenJava" and "ivyJava" publications or
+        // "archives" configuration to all Artifactory tasks.
         for (Project p : root.getAllprojects()) {
             Task t = p.getTasks().findByName(ArtifactoryTask.ARTIFACTORY_PUBLISH_TASK_NAME)
             if (t != null) {
-                ArtifactoryTask task = (ArtifactoryTask)t
-                task.setAddArchivesConfigToTask(true)
+                ArtifactoryTask task = (ArtifactoryTask) t
+                task.setCiServerBuild()
             }
         }
     }
