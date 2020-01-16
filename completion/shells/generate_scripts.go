@@ -32,7 +32,7 @@ func writeScript(script string) {
 	scriptFile, err := os.Create("jfrog")
 	cliutils.ExitOnErr(err)
 	defer scriptFile.Close()
-	err = scriptFile.Chmod(os.ModePerm)
+	err = os.Chmod("jfrog", os.ModePerm)
 	cliutils.ExitOnErr(err)
 	_, err = scriptFile.WriteString(script)
 	cliutils.ExitOnErr(err)
