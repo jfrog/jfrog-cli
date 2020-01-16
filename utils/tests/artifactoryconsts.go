@@ -35,6 +35,7 @@ const (
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DeleteComplexSpec                      = "delete_complex_spec.json"
 	MoveCopyDeleteSpec                     = "move_copy_delete_spec.json"
+	CopyMoveSimpleSpec                     = "copy_move_simple.json"
 	PrepareCopy                            = "prepare_copy.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
@@ -44,7 +45,8 @@ const (
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchTxt                              = "search_txt.json"
-	SearchMoveDeleteRepoSpec               = "search_move_delete_repo_spec.json"
+	SearchTargetInRepo2                    = "search_target_in_repo2.json"
+	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
 	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
@@ -67,7 +69,7 @@ const (
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
 	GradleConfig                           = "gradle.yaml"
 	GradleServerIDUsesPluginConfig         = "gradle_server_id_uses_plugin.yaml"
-	GradleUseramePasswordTemplate          = "gradle_user_pass_template.yaml"
+	GradleUsernamePasswordTemplate         = "gradle_user_pass_template.yaml"
 	DownloadSpecExclude                    = "download_spec_exclude.json"
 	DownloadSpecExclusions                 = "download_spec_exclusions.json"
 	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
@@ -284,86 +286,32 @@ func GetUploadFileNameWithParentheses() []string {
 		Repo1 + "/(new/testsdata/b/)b/)b.in",
 	}
 }
-func GetMassiveMoveExpected() []string {
+
+func GetMoveCopySpecExpected() []string {
 	return []string{
-		Repo2 + "/3_only_flat_recursive_target/a3.in",
-		Repo2 + "/3_only_flat_recursive_target/b3.in",
-		Repo2 + "/3_only_flat_recursive_target/c3.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/a1.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/a2.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/a3.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/b1.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/b2.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/b3.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/c/c1.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/c/c2.in",
-		Repo2 + "/defaults_recursive_nonflat_target/defaults_recursive_nonflat_source/a/b/c/c3.in",
-		Repo2 + "/flat_nonrecursive_target/a1.in",
-		Repo2 + "/flat_nonrecursive_target/a2.in",
-		Repo2 + "/flat_nonrecursive_target/a3.in",
-		Repo2 + "/flat_recursive_target/a1.in",
-		Repo2 + "/flat_recursive_target/a2.in",
-		Repo2 + "/flat_recursive_target/a3.in",
-		Repo2 + "/flat_recursive_target/b1.in",
-		Repo2 + "/flat_recursive_target/b2.in",
-		Repo2 + "/flat_recursive_target/b3.in",
-		Repo2 + "/flat_recursive_target/c1.in",
-		Repo2 + "/flat_recursive_target/c2.in",
-		Repo2 + "/flat_recursive_target/c3.in",
-		Repo2 + "/no_target/a/a1.in",
-		Repo2 + "/no_target/a/a2.in",
-		Repo2 + "/no_target/a/a3.in",
-		Repo2 + "/no_target/a/b/b1.in",
-		Repo2 + "/no_target/a/b/b2.in",
-		Repo2 + "/no_target/a/b/b3.in",
-		Repo2 + "/no_target/a/b/c/c1.in",
-		Repo2 + "/no_target/a/b/c/c2.in",
-		Repo2 + "/no_target/a/b/c/c3.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/a1.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/a2.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/a3.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/a1.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/a2.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/a3.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/b1.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/b2.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/b3.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/c/c1.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/c/c2.in",
-		Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/c/c3.in",
-		Repo2 + "/pattern_placeholder_target/a/a1.in",
-		Repo2 + "/pattern_placeholder_target/a/a2.in",
-		Repo2 + "/pattern_placeholder_target/a/a3.in",
-		Repo2 + "/pattern_placeholder_target/a/b/b1.in",
-		Repo2 + "/pattern_placeholder_target/a/b/b2.in",
-		Repo2 + "/pattern_placeholder_target/a/b/b3.in",
-		Repo2 + "/pattern_placeholder_target/a/b/c/c1.in",
-		Repo2 + "/pattern_placeholder_target/a/b/c/c2.in",
-		Repo2 + "/pattern_placeholder_target/a/b/c/c3.in",
-		Repo2 + "/properties_target/properties_source/a/a1.in",
-		Repo2 + "/properties_target/properties_source/a/a2.in",
-		Repo2 + "/properties_target/properties_source/a/a3.in",
-		Repo2 + "/properties_target/properties_source/a/b/b1.in",
-		Repo2 + "/properties_target/properties_source/a/b/b2.in",
-		Repo2 + "/properties_target/properties_source/a/b/b3.in",
-		Repo2 + "/properties_target/properties_source/a/b/c/c1.in",
-		Repo2 + "/properties_target/properties_source/a/b/c/c2.in",
-		Repo2 + "/properties_target/properties_source/a/b/c/c3.in",
-		Repo2 + "/rename_target/RENAMED.in",
-		Repo2 + "/simple_placeholder_target/a/a1.in",
-		Repo2 + "/simple_target/a1.in",
-		Repo2 + "/flat_nonrecursive_target/b/b1.in",
-		Repo2 + "/flat_nonrecursive_target/b/b2.in",
-		Repo2 + "/flat_nonrecursive_target/b/b3.in",
-		Repo2 + "/flat_nonrecursive_target/b/c/c1.in",
-		Repo2 + "/flat_nonrecursive_target/b/c/c2.in",
-		Repo2 + "/flat_nonrecursive_target/b/c/c3.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/b1.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/b2.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/b3.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/c/c1.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/c/c2.in",
-		Repo2 + "/nonflat_nonrecursive_target/nonflat_nonrecursive_source/a/b/c/c3.in",
+		Repo2 + "/copy_move_target/a1.in",
+		Repo2 + "/copy_move_target/a2.in",
+		Repo2 + "/copy_move_target/a3.in",
+		Repo2 + "/copy_move_target/b/b1.in",
+		Repo2 + "/copy_move_target/b/b2.in",
+		Repo2 + "/copy_move_target/b/b3.in",
+		Repo2 + "/copy_move_target/b/c/c1.in",
+		Repo2 + "/copy_move_target/b/c/c2.in",
+		Repo2 + "/copy_move_target/b/c/c3.in",
+	}
+}
+
+func GetRepo1TestResourcesExpected() []string {
+	return []string{
+		Repo1 + "/test_resources/a1.in",
+		Repo1 + "/test_resources/a2.in",
+		Repo1 + "/test_resources/a3.in",
+		Repo1 + "/test_resources/b/b1.in",
+		Repo1 + "/test_resources/b/b2.in",
+		Repo1 + "/test_resources/b/b3.in",
+		Repo1 + "/test_resources/b/c/c1.in",
+		Repo1 + "/test_resources/b/c/c2.in",
+		Repo1 + "/test_resources/b/c/c3.in",
 	}
 }
 

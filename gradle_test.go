@@ -88,7 +88,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 	buildName := "gradle-cli"
 	buildNumber := "1"
 	buildGradlePath := createGradleProject(t, "gradleproject")
-	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleUseramePasswordTemplate)
+	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
 	if err != nil {
 		t.Error(err)

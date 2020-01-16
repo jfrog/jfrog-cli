@@ -141,9 +141,17 @@ func compare(expected, actual []string) error {
 	return nil
 }
 
-func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, t *testing.T) {
+func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
+	var paths []string
+	for _, result := range searchResults {
+		paths = append(paths, result.Path)
+	}
+	return paths
+}
+
+func CompareExpectedVsActual(expected []string, actual []generic.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
+		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), getPathsFromSearchResults(actual)))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

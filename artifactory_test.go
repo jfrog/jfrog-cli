@@ -1529,23 +1529,39 @@ func TestArtifactoryUploadWithRegexEscaping(t *testing.T) {
 }
 
 func TestArtifactoryCopySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	prepUploadFiles()
-	err := prepCopyFiles()
-	if err != nil {
-		t.Error(err)
-	}
-	specFile, err := tests.CreateSpec(tests.MoveCopyDeleteSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("copy", "--spec="+specFile)
+	testMoveCopySpec("copy", t)
+}
 
-	searchMoveDeleteSpecPath, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
+func TestArtifactoryMoveSpec(t *testing.T) {
+	testMoveCopySpec("move", t)
+}
+
+func testMoveCopySpec(command string, t *testing.T) {
+	initArtifactoryTest(t)
+	preUploadTestResources()
+	specFile, err := tests.CreateSpec(tests.CopyMoveSimpleSpec)
 	if err != nil {
 		t.Error(err)
 	}
-	isExistInArtifactory(tests.GetMassiveMoveExpected(), searchMoveDeleteSpecPath, t)
+	artifactoryCli.Exec(command, "--spec="+specFile)
+
+	// Verify files exist in target location successfully
+	searchMovedCopiedSpec, err := tests.CreateSpec(tests.SearchTargetInRepo2)
+	if err != nil {
+		t.Error(err)
+	}
+	isExistInArtifactory(tests.GetMoveCopySpecExpected(), searchMovedCopiedSpec, t)
+
+	searchOriginalSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
+	if err != nil {
+		t.Error(err)
+	}
+	var expected []string
+	// Verify original files still exist if used copy
+	if command == "copy" {
+		expected = tests.GetRepo1TestResourcesExpected()
+	}
+	isExistInArtifactory(expected, searchOriginalSpec, t)
 	cleanArtifactoryTest()
 }
 
@@ -1778,7 +1794,7 @@ func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 
 func TestArtifactoryDelete(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	err := prepCopyFiles()
 	if err != nil {
 		t.Error(err)
@@ -1790,7 +1806,7 @@ func TestArtifactoryDelete(t *testing.T) {
 	artifactoryCli.Exec("copy", "--spec="+specFile)
 	artifactoryCli.Exec("delete", tests.Repo2+"/nonflat_recursive_target/nonflat_recursive_source/a/b/*", "--quiet=true")
 
-	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
+	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchTargetInRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1800,7 +1816,7 @@ func TestArtifactoryDelete(t *testing.T) {
 
 func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	err := prepCopyFiles()
 	if err != nil {
 		t.Error(err)
@@ -1827,7 +1843,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 		t.Error("Couldn't delete folder in artifactory : " + tests.Repo2 + "/nonflat_recursive_target/nonflat_recursive_source/a/b/")
 	}
 
-	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchMoveDeleteRepoSpec)
+	searchMoveDeleteSpec, err := tests.CreateSpec(tests.SearchTargetInRepo2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1837,7 +1853,7 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 
 func TestArtifactoryDeleteFolder(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
@@ -1853,7 +1869,7 @@ func TestArtifactoryDeleteFolder(t *testing.T) {
 
 func TestArtifactoryDeleteFolderContent(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
 
 	client, err := httpclient.ClientBuilder().Build()
@@ -1889,7 +1905,7 @@ func TestArtifactoryDeleteFoldersBySpecWildcard(t *testing.T) {
 
 func deleteFoldersBySpec(t *testing.T, specPath string) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	err := prepCopyFiles()
 	if err != nil {
 		t.Error(err)
@@ -2050,7 +2066,7 @@ func TestArtifactoryDeleteExclusionsBySpec(t *testing.T) {
 
 func TestArtifactoryDisplayedPathToDelete(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	err := prepCopyFiles()
 	if err != nil {
 		t.Error(err)
@@ -2066,13 +2082,13 @@ func TestArtifactoryDisplayedPathToDelete(t *testing.T) {
 		displayedPaths = append(displayedPaths, generic.SearchResult{Path: v.GetItemRelativePath()})
 	}
 
-	tests.CompareExpectedVsActuals(tests.GetDeleteDisplyedFiles(), displayedPaths, t)
+	tests.CompareExpectedVsActual(tests.GetDeleteDisplyedFiles(), displayedPaths, t)
 	cleanArtifactoryTest()
 }
 
 func TestArtifactoryDeleteBySpec(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	err := prepCopyFiles()
 	if err != nil {
 		t.Error(err)
@@ -2138,7 +2154,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 
 func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	prepUploadFiles()
+	preUploadAllTestData()
 	specFile, err := tests.CreateSpec(tests.DownloadSpec)
 	if err != nil {
 		t.Error(err)
@@ -3907,9 +3923,16 @@ func cleanArtifactoryTest() {
 	tests.CleanFileSystem()
 }
 
-func prepUploadFiles() {
+func preUploadAllTestData() {
 	uploadPath := tests.GetTestResourcesPath() + "(.*)"
 	targetPath := tests.Repo1 + "/downloadTestResources/{1}"
+	flags := "--threads=10 --regexp=true --props=searchMe=true --flat=false"
+	artifactoryCli.Exec("upload", uploadPath, targetPath, flags)
+}
+
+func preUploadTestResources() {
+	uploadPath := tests.GetTestResourcesPath() + "a/(.*)"
+	targetPath := tests.Repo1 + "/test_resources/{1}"
 	flags := "--threads=10 --regexp=true --props=searchMe=true --flat=false"
 	artifactoryCli.Exec("upload", uploadPath, targetPath, flags)
 }
@@ -4136,7 +4159,7 @@ func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf
 
 func isExistInArtifactory(expected []string, specFile string, t *testing.T) {
 	results, _ := searchInArtifactory(specFile)
-	tests.CompareExpectedVsActuals(expected, results, t)
+	tests.CompareExpectedVsActual(expected, results, t)
 }
 
 func isExistInArtifactoryByProps(expected []string, pattern, props string, t *testing.T) {
@@ -4147,7 +4170,7 @@ func isExistInArtifactoryByProps(expected []string, pattern, props string, t *te
 	if err != nil {
 		t.Error(err)
 	}
-	tests.CompareExpectedVsActuals(expected, searchCmd.SearchResult(), t)
+	tests.CompareExpectedVsActual(expected, searchCmd.SearchResult(), t)
 }
 
 func isRepoExist(repoName string) bool {
