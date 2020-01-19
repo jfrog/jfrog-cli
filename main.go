@@ -17,9 +17,9 @@ import (
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
 Arguments:
 {{.UsageText}}
-{{end}}{{if .Flags}}
+{{end}}{{if .VisibleFlags}}
 Options:
-	{{range .Flags}}{{.}}
+	{{range .VisibleFlags}}{{.}}
 	{{end}}{{end}}{{if .ArgsUsage}}
 Environment Variables:
 {{.ArgsUsage}}{{end}}
@@ -30,7 +30,7 @@ const appHelpTemplate string = `NAME:
    {{.Name}} - {{.Usage}}
 
 USAGE:
-   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .Flags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
+   {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} [arguments...]{{end}}
    {{if .Version}}
 VERSION:
    {{.Version}}
@@ -40,9 +40,9 @@ AUTHOR(S):
    {{end}}{{if .Commands}}
 COMMANDS:
    {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-   {{end}}{{end}}{{if .Flags}}
+   {{end}}{{end}}{{if .VisibleFlags}}
 GLOBAL OPTIONS:
-   {{range .Flags}}{{.}}
+   {{range .VisibleFlags}}{{.}}
    {{end}}
 Environment Variables:
 ` + common.GlobalEnvVars + `{{end}}
@@ -53,13 +53,13 @@ const subcommandHelpTemplate = `NAME:
    {{.HelpName}} - {{.Usage}}
 
 USAGE:
-   {{.HelpName}} command{{if .Flags}} [command options]{{end}}[arguments...]
+   {{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}}[arguments...]
 
 COMMANDS:
    {{range .Commands}}{{join .Names ", "}}{{ "\t" }}{{.Usage}}
-   {{end}}{{if .Flags}}
+   {{end}}{{if .VisibleFlags}}
 OPTIONS:
-   {{range .Flags}}{{.}}
+   {{range .VisibleFlags}}{{.}}
    {{end}}
 Environment Variables:
 ` + common.GlobalEnvVars + `{{end}}

@@ -717,6 +717,7 @@ func getSortLimitFlags() []cli.Flag {
 func getUploadFlags() []cli.Flag {
 	uploadFlags := append(getServerWithClientCertsFlags(), getSpecFlags()...)
 	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
+	uploadFlags = append(uploadFlags, getUploadExclusionsFlags()...)
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "deb",
@@ -752,7 +753,6 @@ func getUploadFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
-		getUploadExcludePatternsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `"),
@@ -764,6 +764,7 @@ func getDownloadFlags() []cli.Flag {
 	downloadFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
 	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
+	downloadFlags = append(downloadFlags, getExclusionsFlags()...)
 	return append(downloadFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -807,7 +808,6 @@ func getDownloadFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be downloaded"),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
@@ -856,17 +856,31 @@ func getFailNoOpFlag() cli.Flag {
 	}
 }
 
-func getExcludePatternsFlag() cli.Flag {
-	return cli.StringFlag{
-		Name:  "exclude-patterns",
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards. Unlike the Source path, it must not include the repository name at the beginning of the path.` `",
+func getExclusionsFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   "exclude-patterns",
+			Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards. Unlike the Source path, it must not include the repository name at the beginning of the path.` `",
+			Hidden: true,
+		},
+		cli.StringFlag{
+			Name:  "exclusions",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
+		},
 	}
 }
 
-func getUploadExcludePatternsFlag() cli.Flag {
-	return cli.StringFlag{
-		Name:  "exclude-patterns",
-		Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+func getUploadExclusionsFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:  "exclude-patterns",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+			Hidden: true,
+		},
+		cli.StringFlag{
+			Name:  "exclusions",
+			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+		},
 	}
 }
 
@@ -1020,6 +1034,7 @@ func getGoPublishFlags() []cli.Flag {
 func getMoveFlags() []cli.Flag {
 	moveFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	moveFlags = append(moveFlags, getSpecFlags()...)
+	moveFlags = append(moveFlags, getExclusionsFlags()...)
 	return append(moveFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1040,7 +1055,6 @@ func getMoveFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be moved."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be moved"),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
 
@@ -1049,6 +1063,7 @@ func getMoveFlags() []cli.Flag {
 func getCopyFlags() []cli.Flag {
 	copyFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	copyFlags = append(copyFlags, getSpecFlags()...)
+	copyFlags = append(copyFlags, getExclusionsFlags()...)
 	return append(copyFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1069,7 +1084,6 @@ func getCopyFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
 }
@@ -1077,6 +1091,7 @@ func getCopyFlags() []cli.Flag {
 func getDeleteFlags() []cli.Flag {
 	deleteFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	deleteFlags = append(deleteFlags, getSpecFlags()...)
+	deleteFlags = append(deleteFlags, getExclusionsFlags()...)
 	return append(deleteFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1094,7 +1109,6 @@ func getDeleteFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be deleted"),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
 }
@@ -1102,6 +1116,7 @@ func getDeleteFlags() []cli.Flag {
 func getSearchFlags() []cli.Flag {
 	searchFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	searchFlags = append(searchFlags, getSpecFlags()...)
+	searchFlags = append(searchFlags, getExclusionsFlags()...)
 	return append(searchFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1119,7 +1134,6 @@ func getSearchFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
 }
@@ -1162,6 +1176,7 @@ func getQuiteFlag(description string) cli.Flag {
 
 func getPropertiesFlags() []cli.Flag {
 	propsFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
+	propsFlags = append(propsFlags, getExclusionsFlags()...)
 	return append(propsFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -1173,7 +1188,6 @@ func getPropertiesFlags() []cli.Flag {
 		},
 		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
-		getExcludePatternsFlag(),
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
@@ -1223,7 +1237,8 @@ func getBuildPublishFlags() []cli.Flag {
 }
 
 func getBuildAddDependenciesFlags() []cli.Flag {
-	return append(getSpecFlags(), []cli.Flag{
+	buildAddDependenciesFlags := append(getSpecFlags(), getUploadExclusionsFlags()...)
+	return append(buildAddDependenciesFlags, []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "recursive",
 			Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
@@ -1236,7 +1251,6 @@ func getBuildAddDependenciesFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
 		},
-		getUploadExcludePatternsFlag(),
 	}...)
 }
 
@@ -2814,6 +2828,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.Bool("flat")).
 		IncludeDirs(true).
 		Target(c.Args().Get(1)).
@@ -2849,6 +2864,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
 }
@@ -2869,6 +2885,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
@@ -2890,6 +2907,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
 		BuildSpec(), nil
@@ -2981,6 +2999,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.Bool("flat")).
 		Explode(c.String("explode")).
 		IncludeDirs(c.Bool("include-dirs")).
@@ -3040,6 +3059,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		SortBy(cliutils.GetStringsArrFlagValue(c, "sort-by")).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Flat(c.BoolT("flat")).
 		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
@@ -3058,6 +3078,7 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		BuildSpec()
 }
@@ -3079,6 +3100,10 @@ func fixWinPathsForFileSystemSourcedCmds(uploadSpec *spec.SpecFiles, c *cli.Cont
 	if cliutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = fixWinPathBySource(file.Pattern, c.IsSet("spec"))
+			for j, exclusion := range uploadSpec.Files[i].Exclusions {
+				// If exclusions are set, they override the spec value
+				uploadSpec.Files[i].Exclusions[j] = fixWinPathBySource(exclusion, c.IsSet("spec") && !c.IsSet("exclusions"))
+			}
 			for j, excludePattern := range uploadSpec.Files[i].ExcludePatterns {
 				// If exclude patterns are set, they override the spec value
 				uploadSpec.Files[i].ExcludePatterns[j] = fixWinPathBySource(excludePattern, c.IsSet("spec") && !c.IsSet("exclude-patterns"))
@@ -3178,6 +3203,7 @@ func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
 
 func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
+	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
 	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
 	overrideIntIfSet(&spec.Offset, c, "offset")
 	overrideIntIfSet(&spec.Limit, c, "limit")

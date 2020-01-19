@@ -1,0 +1,8 @@
+{
+    "files": [
+      {
+        "pattern": "${REPO1}/data/",
+        "exclusions": ["${REPO1}/*b1.in", "${REPO1}/*b2.in", "${REPO1}/*b3.in", "${REPO1}/*c1.in"]
+      }
+    ]
+  }
