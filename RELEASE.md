@@ -1,3 +1,6 @@
+## 1.33.1 (Jan 16, 2020)
+- Bug fix - Gradle builds are failing.
+
 ## 1.33.0 (Jan 15, 2020)
 - Replace Mission Control commands to support Mission Control 4.0.0 API.
 - Support Artifactory authentication with client certificates.
