@@ -1328,6 +1328,7 @@ func getConfigFlags() []cli.Flag {
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
+	flags = append(flags, getClientCertsFlags()...)
 	return append(flags,
 		getSshKeyPathFlag()...)
 }
