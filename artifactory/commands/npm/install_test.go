@@ -23,7 +23,7 @@ func TestPrepareConfigData(t *testing.T) {
 			"registry = http://goodRegistry",
 			"_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
 
-	npmi := NpmCommandArgs{registry: "http://goodRegistry", npmAuth: "_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
+	npmi := NpmCommandArgs{registry: "http://goodRegistry", jsonOutput: true, npmAuth: "_auth = YWRtaW46QVBCN1ZkZFMzN3NCakJiaHRGZThVb0JlZzFl"}
 	actualConfig, err := npmi.prepareConfigData([]byte(configJson))
 	if err != nil {
 		t.Error(err)

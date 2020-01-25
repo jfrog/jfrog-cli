@@ -119,7 +119,7 @@ func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, fl
 	}
 	return
 }
-func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
+func ExtractNpmOptionsFromArgs(args []string) (threads int, jsonOutput bool, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
 	threads = 3
 	// Extract threads information from the args.
 	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", args)
@@ -134,6 +134,15 @@ func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, 
 			return
 		}
 	}
+
+	// Since we use --json flag for retrieving the npm config for writing the temp .npmrc, json=true is written the config list.
+	// We don't want to force the json output for all users, so we check whether the json output was explicitly required.
+	flagIndex = FindBooleanFlag("--json", args)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	jsonOutput = flagIndex != -1
 
 	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
 	return
