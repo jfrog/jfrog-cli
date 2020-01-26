@@ -93,14 +93,6 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 	}
 }
 
-func ExitBuildScan(failBuild bool, err error) error {
-	if failBuild && err != nil {
-		return CliError{ExitCodeBuildScan, "Build Scan Failed"}
-	}
-
-	return nil
-}
-
 func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
 	// Error occurred - Return 1
 	if err != nil || failed > 0 {
