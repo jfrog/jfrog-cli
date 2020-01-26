@@ -1538,7 +1538,7 @@ func TestArtifactoryMoveSpec(t *testing.T) {
 
 func testMoveCopySpec(command string, t *testing.T) {
 	initArtifactoryTest(t)
-	preUploadTestResources()
+	preUploadBasicTestResources()
 	specFile, err := tests.CreateSpec(tests.CopyMoveSimpleSpec)
 	if err != nil {
 		t.Error(err)
@@ -1796,8 +1796,20 @@ func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 }
 
 func TestArtifactoryDeleteNoSpec(t *testing.T) {
+	testArtifactorySimpleDelete(t, "")
+}
+
+func TestArtifactoryDeleteBySpec(t *testing.T) {
+	deleteSpecPath, err := tests.CreateSpec(tests.DeleteSimpleSpec)
+	if err != nil {
+		t.Error(err)
+	}
+	testArtifactorySimpleDelete(t, deleteSpecPath)
+}
+
+func testArtifactorySimpleDelete(t *testing.T, deleteSpecPath string) {
 	initArtifactoryTest(t)
-	preUploadTestResources()
+	preUploadBasicTestResources()
 
 	// Verify exists before deleting
 	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
@@ -1806,15 +1818,19 @@ func TestArtifactoryDeleteNoSpec(t *testing.T) {
 	}
 	verifyExistInArtifactory(tests.GetRepo1TestResourcesExpected(), searchSpec, t)
 
-	artifactoryCli.Exec("delete", tests.Repo1+"/test_resources/b/*", "--quiet=true")
+	if deleteSpecPath != "" {
+		artifactoryCli.Exec("delete", "--spec="+deleteSpecPath, "--quiet=true")
+	} else {
+		artifactoryCli.Exec("delete", tests.Repo1+"/test_resources/b/*", "--quiet=true")
+	}
 
-	verifyExistInArtifactory(tests.GetDeleteNoSpec(), searchSpec, t)
+	verifyExistInArtifactory(tests.GetSimpleDelete(), searchSpec, t)
 	cleanArtifactoryTest()
 }
 
 func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	initArtifactoryTest(t)
-	preUploadTestResources()
+	preUploadBasicTestResources()
 
 	// Verify exists before deleting
 	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
@@ -1829,61 +1845,66 @@ func TestArtifactoryDeleteFolderWithWildcard(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDeleteFolder(t *testing.T) {
+func TestArtifactoryDeleteFolderCompletelyNoSpec(t *testing.T) {
+	testArtifactoryDeleteFoldersNoSpec(t, false)
+}
+
+func TestArtifactoryDeleteFolderContentNoSpec(t *testing.T) {
+	testArtifactoryDeleteFoldersNoSpec(t, true)
+}
+
+func testArtifactoryDeleteFoldersNoSpec(t *testing.T, contentOnly bool) {
 	initArtifactoryTest(t)
-	preUploadAllTestData()
-	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources", "--quiet=true")
+	preUploadBasicTestResources()
+
+	// Verify exists before deleting
+	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
+	if err != nil {
+		t.Error(err)
+	}
+	verifyExistInArtifactory(tests.GetRepo1TestResourcesExpected(), searchSpec, t)
+
+	// Delete folder
+	deletePath := tests.Repo1 + "/test_resources"
+	// End with separator if content only
+	if contentOnly {
+		deletePath += "/"
+	}
+	artifactoryCli.Exec("delete", deletePath, "--quiet=true")
+
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		t.Error(err)
 	}
-	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != http.StatusNotFound {
-		t.Error("Couldn't delete path: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
+
+	// Verify folder exists only if content only
+	var expectedStatusCode int
+	if contentOnly {
+		expectedStatusCode = http.StatusOK
+	} else {
+		expectedStatusCode = http.StatusNotFound
+	}
+	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/test_resources", true, artHttpDetails)
+	if err != nil || resp.StatusCode != expectedStatusCode {
+		t.Error("test_resources shouldn't be deleted: " + tests.Repo1 + "/test_resources/ " + string(body))
 	}
 
+	// Verify no content exists
+	verifyDoesntExistInArtifactory(searchSpec, t)
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDeleteFolderContent(t *testing.T) {
+func TestArtifactoryDeleteFoldersBySpecAllRepo(t *testing.T) {
+	testArtifactoryDeleteFoldersBySpec(t, tests.DeleteSpec)
+}
+
+func TestArtifactoryDeleteFoldersBySpecWildcardInRepo(t *testing.T) {
+	testArtifactoryDeleteFoldersBySpec(t, tests.DeleteSpecWildcardInRepo)
+}
+
+func testArtifactoryDeleteFoldersBySpec(t *testing.T, specPath string) {
 	initArtifactoryTest(t)
-	preUploadAllTestData()
-	artifactoryCli.Exec("delete", tests.Repo1+"/downloadTestResources/", "--quiet=true")
-
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
-		t.Error(err)
-	}
-	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/storage/"+tests.Repo1+"/downloadTestResources", true, artHttpDetails)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		t.Error("downloadTestResources shouldnn't be deleted: " + tests.Repo1 + "/downloadTestResources/ " + string(body))
-	}
-	folderContent, _, _, err := jsonparser.Get(body, "children")
-	if err != nil {
-		t.Error("Couldn't parse body:", string(body))
-	}
-	var folderChildren []struct{}
-	err = json.Unmarshal(folderContent, &folderChildren)
-	if err != nil {
-		t.Error("Couldn't parse body:", string(body))
-	}
-	if len(folderChildren) != 0 {
-		t.Error("downloadTestResources content wasn't deleted")
-	}
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryCompletelyDeleteFoldersBySpec(t *testing.T) {
-	deleteFoldersBySpec(t, tests.DeleteSpec)
-}
-
-func TestArtifactoryCompletelyDeleteFoldersBySpecWildcardInRepo(t *testing.T) {
-	deleteFoldersBySpec(t, tests.DeleteSpecWildcardInRepo)
-}
-
-func deleteFoldersBySpec(t *testing.T, specPath string) {
-	initArtifactoryTest(t)
-	preUploadTestResources()
+	preUploadBasicTestResources()
 
 	// Verify exists before deleting
 	searchSpec, err := tests.CreateSpec(tests.SearchRepo1TestResources)
@@ -1898,7 +1919,11 @@ func deleteFoldersBySpec(t *testing.T, specPath string) {
 	}
 	artifactoryCli.Exec("delete", "--spec="+deleteSpecPath, "--quiet=true")
 
-	verifyDoesntExistInArtifactory(searchSpec, t)
+	completeSearchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	if err != nil {
+		t.Error(err)
+	}
+	verifyDoesntExistInArtifactory(completeSearchSpec, t)
 	cleanArtifactoryTest()
 }
 
@@ -2032,50 +2057,6 @@ func TestArtifactoryDeleteExclusionsBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDisplayedPathToDelete(t *testing.T) {
-	initArtifactoryTest(t)
-	preUploadAllTestData()
-	err := prepCopyFiles()
-	if err != nil {
-		t.Error(err)
-	}
-
-	specFile, err := tests.CreateSpec(tests.DeleteComplexSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactsToDelete := getPathsToDelete(specFile)
-	var displayedPaths []generic.SearchResult
-	for _, v := range artifactsToDelete {
-		displayedPaths = append(displayedPaths, generic.SearchResult{Path: v.GetItemRelativePath()})
-	}
-
-	tests.CompareExpectedVsActual(tests.GetDeleteDisplayedFiles(), displayedPaths, t)
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDeleteBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	preUploadAllTestData()
-	err := prepCopyFiles()
-	if err != nil {
-		t.Error(err)
-	}
-
-	specFile, err := tests.CreateSpec(tests.DeleteComplexSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("delete", "--spec="+specFile, "--quiet=true")
-
-	artifactsToDelete := getPathsToDelete(specFile)
-	if len(artifactsToDelete) != 0 {
-		t.Error("Couldn't delete paths")
-	}
-
-	cleanArtifactoryTest()
-}
-
 func TestArtifactoryDeleteByProps(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -2117,20 +2098,6 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	assert.ElementsMatch(t, searchCmd.SearchResultNoDate(), tests.GetSearchResultAfterDeleteByPropsStep3())
 
 	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryMassiveDownloadSpec(t *testing.T) {
-	initArtifactoryTest(t)
-	preUploadAllTestData()
-	specFile, err := tests.CreateSpec(tests.DownloadSpec)
-	if err != nil {
-		t.Error(err)
-	}
-	artifactoryCli.Exec("download", "--spec="+specFile)
-
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.IsExistLocally(tests.GetMassiveDownload(), paths, t)
 	cleanArtifactoryTest()
 }
 
@@ -3644,12 +3611,12 @@ func TestSummaryReport(t *testing.T) {
 	artifactoryCli.Exec("set-props", path.Join(tests.Repo1, "*.in"), "prop=val")
 	verifySummary(t, buffer, 9, 0, previousLog)
 
-	specFile, err = tests.CreateSpec(tests.DownloadSpec)
+	specFile, err = tests.CreateSpec(tests.DownloadAllRepo1TestResources)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("download", "--spec="+specFile)
-	verifySummary(t, buffer, 10, 0, previousLog)
+	verifySummary(t, buffer, 9, 0, previousLog)
 
 	// Restore previous logger
 	log.SetLogger(previousLog)
@@ -3891,35 +3858,11 @@ func cleanArtifactoryTest() {
 	tests.CleanFileSystem()
 }
 
-func preUploadAllTestData() {
-	uploadPath := tests.GetTestResourcesPath() + "(.*)"
-	targetPath := tests.Repo1 + "/downloadTestResources/{1}"
-	flags := "--threads=10 --regexp=true --props=searchMe=true --flat=false"
-	artifactoryCli.Exec("upload", uploadPath, targetPath, flags)
-}
-
-func preUploadTestResources() {
+func preUploadBasicTestResources() {
 	uploadPath := tests.GetTestResourcesPath() + "a/(.*)"
 	targetPath := tests.Repo1 + "/test_resources/{1}"
 	flags := "--threads=10 --regexp=true --props=searchMe=true --flat=false"
 	artifactoryCli.Exec("upload", uploadPath, targetPath, flags)
-}
-
-func prepCopyFiles() error {
-	specFile, err := tests.CreateSpec(tests.PrepareCopy)
-	if err != nil {
-		return err
-	}
-	artifactoryCli.Exec("copy", "--spec="+specFile)
-	return nil
-}
-
-func getPathsToDelete(specFile string) []rtutils.ResultItem {
-	deleteSpec, _ := spec.CreateSpecFromFile(specFile, nil)
-	deleteCommand := generic.NewDeleteCommand()
-	deleteCommand.SetRtDetails(artifactoryDetails).SetSpec(deleteSpec).SetDryRun(false)
-	deleteCommand.GetPathsToDelete()
-	return deleteCommand.DeleteItems()
 }
 
 func execDeleteRepoRest(repoName string) {

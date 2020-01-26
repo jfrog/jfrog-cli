@@ -461,7 +461,7 @@ func uploadFiles(t *testing.T, args ...string) {
 
 func downloadFiles(t *testing.T, args ...string) {
 	// Download files with buildName and buildNumber
-	specFile, err := tests.CreateSpec(tests.DownloadSpec)
+	specFile, err := tests.CreateSpec(tests.DownloadAllRepo1TestResources)
 	if err != nil {
 		t.Error(err)
 	}

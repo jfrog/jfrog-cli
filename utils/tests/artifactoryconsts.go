@@ -17,7 +17,7 @@ const (
 	PipBuildName                           = "cli-pip-test-build"
 	Out                                    = "out"
 	Temp                                   = "tmp"
-	DownloadSpec                           = "download_spec.json"
+	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
 	BuildDownloadSpecNoPattern             = "build_download_spec_no_pattern.json"
 	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
@@ -33,9 +33,8 @@ const (
 	UploadSimplePlaceholders               = "upload_simple_placeholders.json"
 	DeleteSpec                             = "delete_spec.json"
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
-	DeleteComplexSpec                      = "delete_complex_spec.json"
+	DeleteSimpleSpec                       = "delete_simple_spec.json"
 	CopyMoveSimpleSpec                     = "copy_move_simple.json"
-	PrepareCopy                            = "prepare_copy.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
 	SearchGo                               = "search_go.json"
@@ -111,15 +110,15 @@ func GetTxtUploadExpectedRepo1() []string {
 
 func GetSimpleUploadExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/flat_recursive/a3.in",
-		Repo1 + "/flat_recursive/a1.in",
-		Repo1 + "/flat_recursive/a2.in",
-		Repo1 + "/flat_recursive/b2.in",
-		Repo1 + "/flat_recursive/b3.in",
-		Repo1 + "/flat_recursive/b1.in",
-		Repo1 + "/flat_recursive/c2.in",
-		Repo1 + "/flat_recursive/c1.in",
-		Repo1 + "/flat_recursive/c3.in",
+		Repo1 + "/test_resources/a3.in",
+		Repo1 + "/test_resources/a1.in",
+		Repo1 + "/test_resources/a2.in",
+		Repo1 + "/test_resources/b2.in",
+		Repo1 + "/test_resources/b3.in",
+		Repo1 + "/test_resources/b1.in",
+		Repo1 + "/test_resources/c2.in",
+		Repo1 + "/test_resources/c1.in",
+		Repo1 + "/test_resources/c3.in",
 	}
 }
 
@@ -493,80 +492,6 @@ func GetSyncExpectedDeletesDownloadStep7() []string {
 	}
 }
 
-func GetMassiveDownload() []string {
-	return []string{
-		filepath.Join(Out, "a1.in"),
-		filepath.Join(Out, "a2.in"),
-		filepath.Join(Out, "a3.in"),
-		filepath.Join(Out, "download"),
-		filepath.Join(Out, "download", "3_only_flat_recursive", "a3.in"),
-		filepath.Join(Out, "download", "3_only_flat_recursive", "b3.in"),
-		filepath.Join(Out, "download", "3_only_flat_recursive", "c3.in"),
-		filepath.Join(Out, "download", "aql", "downloadTestResources", "a"),
-		filepath.Join(Out, "download", "aql", "downloadTestResources", "a", "a1.in"),
-		filepath.Join(Out, "download", "aql_flat", "a1.in"),
-		filepath.Join(Out, "download", "aql_flat", "a2.in"),
-		filepath.Join(Out, "download", "aql_flat", "a3.in"),
-		filepath.Join(Out, "download", "aql_flat", "b1.in"),
-		filepath.Join(Out, "download", "aql_flat", "b2.in"),
-		filepath.Join(Out, "download", "aql_flat", "b3.in"),
-		filepath.Join(Out, "download", "aql_flat", "c1.in"),
-		filepath.Join(Out, "download", "aql_flat", "c2.in"),
-		filepath.Join(Out, "download", "aql_flat", "c3.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a1.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a2.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "a3.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b1.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b2.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "b3.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c1.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c2.in"),
-		filepath.Join(Out, "download", "defaults_recursive_nonflat", "downloadTestResources", "a", "b", "c", "c3.in"),
-		filepath.Join(Out, "download", "flat_nonrecursive", "a1.in"),
-		filepath.Join(Out, "download", "flat_nonrecursive", "a2.in"),
-		filepath.Join(Out, "download", "flat_nonrecursive", "a3.in"),
-		filepath.Join(Out, "download", "flat_recursive", "a1.in"),
-		filepath.Join(Out, "download", "flat_recursive", "a2.in"),
-		filepath.Join(Out, "download", "flat_recursive", "a3.in"),
-		filepath.Join(Out, "download", "flat_recursive", "b1.in"),
-		filepath.Join(Out, "download", "flat_recursive", "b2.in"),
-		filepath.Join(Out, "download", "flat_recursive", "b3.in"),
-		filepath.Join(Out, "download", "flat_recursive", "c1.in"),
-		filepath.Join(Out, "download", "flat_recursive", "c2.in"),
-		filepath.Join(Out, "download", "flat_recursive", "c3.in"),
-		filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a1.in"),
-		filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a2.in"),
-		filepath.Join(Out, "download", "nonflat_nonrecursive", "downloadTestResources", "a", "a3.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a1.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a2.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "a3.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b1.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b2.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "b3.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c1.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c2.in"),
-		filepath.Join(Out, "download", "nonflat_recursive", "downloadTestResources", "a", "b", "c", "c3.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a1.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a2.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "a3.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b1.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b2.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "b3.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c1.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c2.in"),
-		filepath.Join(Out, "download", "properties", "downloadTestResources", "a", "b", "c", "c3.in"),
-		filepath.Join(Out, "download", "rename", "a1.out"),
-		filepath.Join(Out, "download", "simple", "a1.in"),
-		filepath.Join(Out, "download", "simple_placeholder", "a"),
-		filepath.Join(Out, "download", "simple_placeholder", "a", "a1.in"),
-	}
-}
-
 func GetDownloadWildcardRepo() []string {
 	return []string{
 		Repo1 + "/path/a1.in",
@@ -689,7 +614,7 @@ func GetSimplePlaceholders() []string {
 	}
 }
 
-func GetDeleteNoSpec() []string {
+func GetSimpleDelete() []string {
 	return []string{
 		Repo1 + "/test_resources/a1.in",
 		Repo1 + "/test_resources/a2.in",
