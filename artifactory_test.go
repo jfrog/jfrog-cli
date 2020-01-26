@@ -2246,19 +2246,18 @@ func TestArtifactoryDownloadNotIncludeDirs(t *testing.T) {
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := "empty" + fileutils.GetFileSeparator() + "folder"
-	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
+	canonicalPath := tests.GetTestResourcesPath() + path.Join("an", "empty", "folder")
 	err := os.MkdirAll(canonicalPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
 	// 'c' folder is defined as bottom chain directory therefore should be uploaded when using flat=true even though 'c' is not empty
-	artifactoryCli.Exec("upload", tests.GetTestResourcesPath()+"(*)/*", tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("upload", tests.GetTestResourcesPath()+"(a*)/*", tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	// Download without include-dirs
 	artifactoryCli.Exec("download", tests.Repo1, tests.Out+"/", "--recursive=true", "--flat=true")
 	if fileutils.IsPathExists(tests.Out+"/c", false) {
-		t.Error("'c' folder shouldn't be exist.")
+		t.Error("'c' folder shouldn't exist.")
 	}
 	artifactoryCli.Exec("download", tests.Repo1, tests.Out+"/", "--include-dirs=true", "--recursive=true", "--flat=true")
 	// Inner folder with files in it
@@ -2271,15 +2270,15 @@ func TestArtifactoryDownloadFlatTrue(t *testing.T) {
 	}
 	// Folder on root with files
 	if !fileutils.IsPathExists(tests.Out+"/a$+~&^a#", false) {
-		t.Error("'a$+~&^a#' folder should be exist.")
+		t.Error("'a$+~&^a#' folder should exist.")
 	}
 	// None bottom directory - shouldn't exist.
 	if fileutils.IsPathExists(tests.Out+"/a", false) {
-		t.Error("'a' folder shouldn't be exist.")
+		t.Error("'a' folder shouldn't exist.")
 	}
 	// None bottom directory - shouldn't exist.
 	if fileutils.IsPathExists(tests.Out+"/b", false) {
-		t.Error("'b' folder shouldn't be exist.")
+		t.Error("'b' folder shouldn't exist.")
 	}
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2326,15 +2325,15 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPattern(t *test
 // Test the definition of bottom chain directories - Directories which do not include other directories that match the pattern
 func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlaceHolders(t *testing.T) {
 	initArtifactoryTest(t)
-	relativePath := "/a/b/c/d"
-	fullPath := tests.GetTestResourcesPath() + relativePath
+	relativePath := "/b/c/d"
+	fullPath := tests.GetTestResourcesPath() + "a/" + relativePath
 	err := os.MkdirAll(fullPath, 0777)
 	if err != nil {
 		t.Error(err.Error())
 	}
 	// We created a empty child folder to 'c' therefore 'c' is not longer a bottom chain and new 'd' inner directory is indeed bottom chain directory.
 	// 'd' should uploaded and 'c' shouldn't
-	artifactoryCli.Exec("upload", tests.GetTestResourcesPath()+"(*)/*", tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
+	artifactoryCli.Exec("upload", tests.GetTestResourcesPath()+"a/(*)/*", tests.Repo1+"/{1}/", "--include-dirs=true", "--flat=true")
 	err = os.RemoveAll(fullPath)
 	if err != nil {
 		t.Error(err.Error())

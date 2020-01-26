@@ -633,27 +633,6 @@ func GetDeleteFolderWithWildcard() []string {
 	}
 }
 
-func GetDeleteDisplayedFiles() []string {
-	return []string{
-		Repo2 + "/3_only_flat_recursive_source/a/b/",
-		Repo2 + "/3_only_flat_recursive_source/a/a1.in",
-		Repo2 + "/3_only_flat_recursive_source/a/a2.in",
-		Repo2 + "/3_only_flat_recursive_source/a/a3.in",
-		Repo2 + "/flat_recursive_source/a/b/c/",
-		Repo2 + "/flat_recursive_source/a/b/b1.in",
-		Repo2 + "/flat_recursive_source/a/b/b2.in",
-		Repo2 + "/flat_recursive_source/a/b/b3.in",
-		Repo2 + "/defaults_recursive_nonflat_source/a/a1.in",
-		Repo2 + "/defaults_recursive_nonflat_source/a/a2.in",
-		Repo2 + "/defaults_recursive_nonflat_source/a/a3.in",
-		Repo2 + "/defaults_recursive_nonflat_source/a/b/",
-		Repo2 + "/flat_nonrecursive_source/a/b/c/",
-		Repo2 + "/flat_nonrecursive_source/a/b/b1.in",
-		Repo2 + "/flat_nonrecursive_source/a/b/b2.in",
-		Repo2 + "/flat_nonrecursive_source/a/b/b3.in",
-	}
-}
-
 func GetSearchIncludeDirsFiles() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
