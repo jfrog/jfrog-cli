@@ -3748,7 +3748,7 @@ func cleanUpOldRepositories() {
 		}
 
 		repoTime := time.Unix(repoTimestamp, 0)
-		if now.Sub(repoTime).Hours() > 2.0 {
+		if now.Sub(repoTime).Hours() > 24.0 {
 			log.Info("Deleting old repository", repoKey)
 			execDeleteRepoRest(repoKey)
 		}
