@@ -55,15 +55,30 @@ func FindFlag(flagName string, args []string) (flagIndex, flagValueIndex int, fl
 	return
 }
 
-// Boolean flag is a flag without value.
-func FindBooleanFlag(flagName string, args []string) int {
-	for index, arg := range args {
-		// Check current argument.
-		if arg == flagName {
-			return index
+// Boolean flag can be provided in one of the following:
+// 1. --flag=value, where value can be true/false
+// 2. --flag, here the value is true
+// Return values:
+// flagIndex - index of flagName in args.
+// flagValue - value of flagName.
+// err - error if flag exists but failed to extract its value.
+// If flag does't exists flagIndex = -1 with false value and nil error.
+func FindBooleanFlag(flagName string, args []string) (flagIndex int, flagValue bool, err error) {
+	var arg string
+	for flagIndex, arg = range args {
+		if strings.HasPrefix(arg, flagName) {
+			value := strings.TrimPrefix(arg, flagName)
+			if len(value) == 0 {
+				flagValue = true
+			} else if strings.HasPrefix(value, "=") {
+				flagValue, err = strconv.ParseBool(value[1:])
+			} else {
+				continue
+			}
+			return
 		}
 	}
-	return -1
+	return -1, false, nil
 }
 
 // Get the provided flag's value, and the index of the value.
