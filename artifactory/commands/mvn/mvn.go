@@ -26,6 +26,7 @@ const MavenHome = "M2_HOME"
 type MvnCommand struct {
 	goals         string
 	configPath    string
+	insecureTls   bool
 	configuration *utils.BuildConfiguration
 	rtDetails     *config.ArtifactoryDetails
 	threads       int
@@ -57,6 +58,11 @@ func (mc *MvnCommand) SetGoals(goals string) *MvnCommand {
 
 func (mc *MvnCommand) SetThreads(threads int) *MvnCommand {
 	mc.threads = threads
+	return mc
+}
+
+func (mc *MvnCommand) SetInsecureTls(insecureTls bool) *MvnCommand {
+	mc.insecureTls = insecureTls
 	return mc
 }
 
@@ -188,6 +194,7 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 			return nil, err
 		}
 	}
+	vConfig.Set(utils.INSECURE_TLS, mc.insecureTls)
 
 	if mc.threads > 0 {
 		vConfig.Set(utils.FORK_COUNT, mc.threads)
