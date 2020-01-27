@@ -819,7 +819,7 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 	// Check if all expected files are actually exist
 	tests.IsExistLocally(expected, actual, t)
 	// Check if all the existing files were expected
-	err := isExclusivelyExistLocally(expected, actual, t)
+	err := isExclusivelyExistLocally(expected, actual)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -829,7 +829,7 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 // Since the "actual" list contains paths of both directories and files, for each element in the "actual" list:
 // Check if the path equals to an existing file (for a file) OR
 // if the path is a prefix of some path of an existing file (for a dir).
-func isExclusivelyExistLocally(expected, actual []string, t *testing.T) error {
+func isExclusivelyExistLocally(expected, actual []string) error {
 	for _, v := range actual {
 		for i, r := range expected {
 			if strings.HasPrefix(r, v) || v == r {
@@ -1007,7 +1007,7 @@ func getExternalIP() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("are you connected to the network?")
+	return "", errors.New("check connection to the network")
 }
 
 // Due the fact that go read the HTTP_PROXY and the HTTPS_PROXY
@@ -1147,7 +1147,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 
 		cert, err := tls.LoadX509KeyPair(certificate.CERT_FILE, certificate.KEY_FILE)
 		if err != nil {
-			return fmt.Errorf("Failed loading client certificate")
+			return fmt.Errorf("failed loading client certificate")
 		}
 		tr.TLSClientConfig.Certificates = []tls.Certificate{cert}
 	}
@@ -1168,7 +1168,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 
 		return nil
 	}
-	return fmt.Errorf("Failed while waiting for the proxy server to be accessible.")
+	return fmt.Errorf("failed while waiting for the proxy server to be accessible")
 }
 
 func TestXrayScanBuild(t *testing.T) {
@@ -1784,11 +1784,11 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 	exists := fileutils.IsPathSymlink(localLinkPath)
 	if !exists {
-		t.Error(errors.New("Faild to download symlinks from artifactory"))
+		t.Error(errors.New("failed to download symlinks from artifactory"))
 	}
 	symlinks, err := filepath.EvalSymlinks(localLinkPath)
 	if err != nil {
-		t.Error(errors.New("Can't eval symlinks"))
+		t.Error(errors.New("can't eval symlinks"))
 	}
 	if symlinks != localFilePath {
 		t.Error(errors.New("Symlinks wasn't created as expected. expected:" + localFilePath + " actual: " + symlinks))
@@ -3130,11 +3130,11 @@ func TestArtifactorySortWithSymlink(t *testing.T) {
 func validateSortLimitWithSymLink(localLinkPath, localFilePath string, t *testing.T) {
 	exists := fileutils.IsPathSymlink(localLinkPath)
 	if !exists {
-		t.Error(errors.New("Faild to download symlinks from artifactory with Sort/Limit flag"))
+		t.Error(errors.New("failed to download symlinks from artifactory with Sort/Limit flag"))
 	}
 	symlinks, err := filepath.EvalSymlinks(localLinkPath)
 	if err != nil {
-		t.Error(errors.New("Can't eval symlinks with Sort/Limit flag"))
+		t.Error(errors.New("can't eval symlinks with Sort/Limit flag"))
 	}
 	if symlinks != localFilePath {
 		t.Error(errors.New("Symlinks wasn't created as expected with Sort/Limit flag. expected:" + localFilePath + " actual: " + symlinks))
