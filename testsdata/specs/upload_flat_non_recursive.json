@@ -3,7 +3,8 @@
     {	
       "pattern": "testsdata/a/*",	
       "target": "${REPO1}/test_resources/",
-      "flat": "true"	
+      "flat": "true",
+      "recursive": "false"
     }	
   ]	
 } 

@@ -123,7 +123,7 @@ func getSshCredentials() string {
 
 func TestArtifactorySimpleUploadSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	if err != nil {
 		t.Error(err)
 	}
@@ -139,7 +139,7 @@ func TestArtifactorySimpleUploadSpec(t *testing.T) {
 func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	// Init tmp dir
-	specFile, err := tests.CreateSpec(tests.SimpleWildcardUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadTempWildcard)
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,7 +162,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
 	passphrase := createServerConfigAndReturnPassphrase()
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
 
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
@@ -3591,31 +3591,31 @@ func TestSummaryReport(t *testing.T) {
 	newLog.SetOutputWriter(buffer)
 	log.SetLogger(newLog)
 
-	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("upload", "--spec="+specFile)
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	artifactoryCli.Exec("move", path.Join(tests.Repo1, "*.in"), tests.Repo2+"/")
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	artifactoryCli.Exec("copy", path.Join(tests.Repo2, "*.in"), tests.Repo1+"/")
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	artifactoryCli.Exec("delete", path.Join(tests.Repo2, "*.in"), "--quiet=true")
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	artifactoryCli.Exec("set-props", path.Join(tests.Repo1, "*.in"), "prop=val")
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	specFile, err = tests.CreateSpec(tests.DownloadAllRepo1TestResources)
 	if err != nil {
 		t.Error(err)
 	}
 	artifactoryCli.Exec("download", "--spec="+specFile)
-	verifySummary(t, buffer, 9, 0, previousLog)
+	verifySummary(t, buffer, 3, 0, previousLog)
 
 	// Restore previous logger
 	log.SetLogger(previousLog)
@@ -3631,23 +3631,23 @@ func TestArtifactoryBuildDiscard(t *testing.T) {
 	}
 
 	// Upload files with buildName and buildNumber
-	buildName := "discard-builds-test"
-	for i := 1; i <= 10; i++ {
-		artifactoryCli.Exec("upload", "testsdata/a/(*)", tests.Repo1+"/data/{1}", "--build-name="+buildName, "--build-number="+strconv.Itoa(i))
+	buildName := "jfrog-cli-discard-builds-test"
+	for i := 1; i <= 5; i++ {
+		artifactoryCli.Exec("upload", "testsdata/a/a1.in", tests.Repo1+"/data/", "--build-name="+buildName, "--build-number="+strconv.Itoa(i))
 		artifactoryCli.Exec("build-publish", buildName, strconv.Itoa(i))
 	}
 
 	// Test discard by max-builds
-	artifactoryCli.Exec("build-discard", buildName, "--max-builds=8")
+	artifactoryCli.Exec("build-discard", buildName, "--max-builds=3")
 	jsonResponse := getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
-	if len(jsonResponse.Builds) != 8 {
+	if len(jsonResponse.Builds) != 3 {
 		t.Error("Incorrect operation of build-discard by max-builds.")
 	}
 
 	// Test discard with exclusion
-	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1", "--exclude-builds=2,3,4,5,6,7,8,9,10")
+	artifactoryCli.Exec("build-discard", buildName, "--max-days=-1", "--exclude-builds=3,5")
 	jsonResponse = getAllBuildsByBuildName(client, buildName, t, http.StatusOK)
-	if len(jsonResponse.Builds) != 8 {
+	if len(jsonResponse.Builds) != 2 {
 		t.Error("Incorrect operation of build-discard with exclusion.")
 	}
 

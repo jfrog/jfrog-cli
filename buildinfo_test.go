@@ -451,7 +451,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 
 func uploadFiles(t *testing.T, args ...string) {
 	// Upload files with buildName and buildNumber
-	specFile, err := tests.CreateSpec(tests.SimpleUploadSpec)
+	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	if err != nil {
 		t.Error(err)
 	}
