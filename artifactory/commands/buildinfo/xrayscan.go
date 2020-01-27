@@ -2,7 +2,6 @@ package buildinfo
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -15,15 +14,10 @@ type BuildScanCommand struct {
 	buildConfiguration *utils.BuildConfiguration
 	failBuild          bool
 	rtDetails          *config.ArtifactoryDetails
-	buildFailed        bool
 }
 
 func NewBuildScanCommand() *BuildScanCommand {
 	return &BuildScanCommand{}
-}
-
-func (bsc *BuildScanCommand) BuildFailed() bool {
-	return bsc.buildFailed
 }
 
 func (bsc *BuildScanCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *BuildScanCommand {
@@ -73,8 +67,10 @@ func (bsc *BuildScanCommand) Run() error {
 
 	// Check if should fail build
 	if bsc.failBuild && scanResults.Summary.FailBuild {
-		bsc.buildFailed = true
-		return errorutils.CheckError(errors.New(scanResults.Summary.Message))
+		// We're specifically returning the 'buildScanError' and not a regular error
+		// to indicate that Xray indeed scanned the build, and the failure is not due to
+		// networking connectivity or other issues.
+		return errorutils.CheckError(utils.GetBuildScanError())
 	}
 
 	return err
