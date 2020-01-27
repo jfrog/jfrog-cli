@@ -2530,13 +2530,13 @@ func buildScanCmd(c *cli.Context) error {
 	buildScanCmd := buildinfo.NewBuildScanCommand().SetRtDetails(rtDetails).SetFailBuild(c.BoolT("fail")).SetBuildConfiguration(buildConfiguration)
 	err = commands.Exec(buildScanCmd)
 
-	return exitBuildScan(err)
+	return checkBuildScanError(err)
 }
 
-func exitBuildScan(err error) error {
-	// If the build was found vulnerable, exit with ExitCodeBuildScan.
+func checkBuildScanError(err error) error {
+	// If the build was found vulnerable, exit with ExitCodeVulnerableBuild.
 	if err == utils.GetBuildScanError() {
-		return cliutils.CliError{ExitCode: cliutils.ExitCodeBuildScan, ErrorMsg: err.Error()}
+		return cliutils.CliError{ExitCode: cliutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
 	}
 	// If the scan operation failed, for example due to HTTP timeout, exit with ExitCodeError.
 	if err != nil {

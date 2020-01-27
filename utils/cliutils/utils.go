@@ -49,7 +49,7 @@ type ExitCode struct {
 var ExitCodeNoError = ExitCode{0}
 var ExitCodeError = ExitCode{1}
 var ExitCodeFailNoOp = ExitCode{2}
-var ExitCodeBuildScan = ExitCode{3}
+var ExitCodeVulnerableBuild = ExitCode{3}
 
 type CliError struct {
 	ExitCode
