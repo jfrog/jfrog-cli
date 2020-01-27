@@ -57,7 +57,9 @@ func replaceSpecVars(content []byte, specVars map[string]string) []byte {
 type File struct {
 	Aql             utils.Aql
 	Pattern         string
+	// Deprecated, use Exclusions instead
 	ExcludePatterns []string
+	Exclusions      []string
 	Target          string
 	Explode         string
 	Props           string
@@ -99,6 +101,7 @@ func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.Aql = f.Aql
 	params.Pattern = f.Pattern
 	params.ExcludePatterns = f.ExcludePatterns
+	params.Exclusions = f.Exclusions
 	params.Target = f.Target
 	params.Props = f.Props
 	params.ExcludeProps = f.ExcludeProps
@@ -115,10 +118,13 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 	if len(files) == 0 {
 		return errors.New("Spec must include at least one file group")
 	}
+	excludePatternsUsed := false
 	for _, file := range files {
 		isAql := len(file.Aql.ItemsFind) > 0
 		isPattern := len(file.Pattern) > 0
-		isExcludePattern := len(file.ExcludePatterns) > 0 && len(file.ExcludePatterns[0]) > 0
+		isExcludePatterns := len(file.ExcludePatterns) > 0 && len(file.ExcludePatterns[0]) > 0
+		excludePatternsUsed = excludePatternsUsed || isExcludePatterns
+		isExclusions := len(file.Exclusions) > 0 && len(file.Exclusions[0]) > 0
 		isTarget := len(file.Target) > 0
 		isSortOrder := len(file.SortOrder) > 0
 		isSortBy := len(file.SortBy) > 0
@@ -137,8 +143,14 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		if isAql && isPattern {
 			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "pattern"))
 		}
-		if isAql && isExcludePattern {
+		if isAql && isExcludePatterns {
 			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "exclude-patterns"))
+		}
+		if isAql && isExclusions {
+			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "exclusions"))
+		}
+		if isExclusions && isExcludePatterns {
+			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "exclusions", "exclude-patterns"))
 		}
 		if !isSortBy && isSortOrder {
 			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
@@ -147,16 +159,18 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 			return errors.New("The value of 'sort-order' can only be 'asc' or 'desc'.")
 		}
 		if isBuild && isSearchBasedSpec {
-			err := validateFileSpecWithBuild(file, isExcludePattern)
-			if err != nil {
+			if err := validateFileSpecWithBuild(file); err != nil {
 				return err
 			}
 		}
 	}
+	if excludePatternsUsed {
+		showDeprecationOnExcludePatterns()
+	}
 	return nil
 }
 
-func validateFileSpecWithBuild(file File, isExcludePattern bool) error {
+func validateFileSpecWithBuild(file File) error {
 	isOffset := file.Offset > 0
 	isLimit := file.Limit > 0
 
@@ -167,4 +181,13 @@ func validateFileSpecWithBuild(file File, isExcludePattern bool) error {
 		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "limit"))
 	}
 	return nil
+}
+
+func showDeprecationOnExcludePatterns() {
+	log.Warn(`exclude-patterns is deprecated. Please use exclusions instead.
+	Unlike exclude-patterns, the exclusions take into account the repository.
+	For example: 
+	exclude-patterns = 'a.zip' 
+	can be translated to
+	exclusions = 'repo-name/a.zip' or '*/a.zip'`)
 }
