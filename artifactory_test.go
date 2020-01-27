@@ -4313,7 +4313,7 @@ func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath
 func TestVcsProps(t *testing.T) {
 	initArtifactoryTest(t)
 	testDir := initVcsTestDir(t)
-	artifactoryCli.Exec("upload", filepath.Join(testDir, "*"), tests.Repo1, "--flat=false", "--build-name=or", "--build-number=2020")
+	artifactoryCli.Exec("upload", filepath.Join(testDir, "*"), tests.Repo1, "--flat=false", "--build-name=jfrog-cli-test-vcs-props", "--build-number=2020")
 	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
@@ -4338,7 +4338,7 @@ func TestVcsProps(t *testing.T) {
 				}
 			}
 			if item.Name == "b1.in" || item.Name == "b2.in" {
-				if prop.Key == "vcs.url" && prop.Value == "https://github.com/Postyy/jfrog-cli.git" {
+				if prop.Key == "vcs.url" && prop.Value == "https://github.com/jfrog/jfrog-client-go.git" {
 					if foundUrl {
 						t.Error("Found duplicate VCS property(url) in artifact")
 					}
@@ -4353,7 +4353,7 @@ func TestVcsProps(t *testing.T) {
 			}
 		}
 		if !foundUrl || !foundRevision {
-			t.Error("VCS property was not found in artifact" + item.Name + "props")
+			t.Error("VCS property was not found on artifact: " + item.Name)
 		}
 	}
 	cleanArtifactoryTest()

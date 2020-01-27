@@ -721,7 +721,7 @@ func getUploadFlags() []cli.Flag {
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "deb",
-			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.` `",
+			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the value for distribution, component or architecture includes a slash, the slash should be escaped with a back-slash.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
