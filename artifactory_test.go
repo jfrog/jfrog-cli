@@ -1067,6 +1067,7 @@ func TestArtifactoryHttpsProxyEnvironmentVariableDelegator(t *testing.T) {
 }
 
 func testArtifactoryProxy(t *testing.T, isHttps bool) {
+	// Value is set to 'true' via testArgs @TestArtifactoryProxy
 	if !*tests.TestArtifactoryProxy {
 		t.SkipNow()
 	}
@@ -3666,10 +3667,10 @@ func TestArtifactoryBuildDiscard(t *testing.T) {
 // Tests compatibility to file paths with windows separators.
 // Verifies the upload and download commands work as expected for inputs of both arguments and spec files.
 func TestArtifactoryWinBackwardsCompatibility(t *testing.T) {
-	if !cliutils.IsWindows() {
-		return
-	}
 	initArtifactoryTest(t)
+	if !cliutils.IsWindows() {
+		t.Skip("Not running on Windows, skipping...")
+	}
 	uploadSpecFile, err := tests.CreateSpec(tests.WinSimpleUploadSpec)
 	if err != nil {
 		t.Error(err)

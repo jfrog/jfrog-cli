@@ -328,10 +328,10 @@ func TestBintrayVersionDownloads(t *testing.T) {
 
 // Tests compatibility to file paths with windows separators.
 func TestBintrayUploadWindowsCompatibility(t *testing.T) {
-	if !cliutils.IsWindows() {
-		return
-	}
 	initBintrayTest(t)
+	if !cliutils.IsWindows() {
+		t.Skip("Not running on Windows, skipping...")
+	}
 
 	packageName := "simpleUploadPackage"
 	packagePath := bintrayOrganization + "/" + tests.BintrayRepo1 + "/" + packageName
