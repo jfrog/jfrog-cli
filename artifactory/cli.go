@@ -1576,6 +1576,10 @@ func mvnLegacyCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Maven)
 	if err != nil {
 		return err
@@ -1602,6 +1606,10 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Gradle)
 	if err != nil {
 		return err
@@ -1692,6 +1700,10 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
 		return err
@@ -1778,6 +1790,10 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 }
 
 func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		return err
@@ -1824,6 +1840,10 @@ func npmLegacyCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
 		return err
@@ -1900,6 +1920,19 @@ func goPublishCmd(c *cli.Context) error {
 	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 }
 
+// This function checks whether the command received --help as a single option.
+// If it did, the command's help is shown and true is returned.
+func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
+	if len(c.Args()) != 1 {
+		return false, nil
+	}
+	if c.Args()[0] == "--help" {
+		err := cli.ShowCommandHelp(c, c.Command.Name)
+		return true, err
+	}
+	return false, nil
+}
+
 func shouldSkipGoFlagParsing() bool {
 	// This function is executed by code-gangsta, regardless of the CLI command being executed.
 	// There's no need to run the code of this function, if the command is not "jfrog rt go*".
@@ -1969,6 +2002,10 @@ func shouldSkipGradleFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
 		return err
@@ -2643,6 +2680,10 @@ func pipDepsTreeCmd(c *cli.Context) error {
 }
 
 func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
