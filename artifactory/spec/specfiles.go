@@ -57,7 +57,8 @@ func replaceSpecVars(content []byte, specVars map[string]string) []byte {
 type File struct {
 	Aql             utils.Aql
 	Pattern         string
-	ExcludePatterns []string // Deprecated, use Exclusions instead
+	// Deprecated, use Exclusions instead
+	ExcludePatterns []string
 	Exclusions      []string
 	Target          string
 	Explode         string

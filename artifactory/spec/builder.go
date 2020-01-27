@@ -4,7 +4,8 @@ import "strconv"
 
 type builder struct {
 	pattern         string
-	excludePatterns []string // Deprecated, use Exclusions instead
+	// Deprecated, use Exclusions instead
+	excludePatterns []string
 	exclusions      []string
 	target          string
 	explode         string
@@ -116,7 +117,8 @@ func (b *builder) BuildSpec() *SpecFiles {
 		Files: []File{
 			{
 				Pattern:         b.pattern,
-				ExcludePatterns: b.excludePatterns, // Deprecated, use Exclusions instead
+				// Deprecated, use Exclusions instead
+				ExcludePatterns: b.excludePatterns,
 				Exclusions:      b.exclusions,
 				Target:          b.target,
 				Props:           b.props,
