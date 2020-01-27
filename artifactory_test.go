@@ -1248,7 +1248,7 @@ func TestArtifactorySetPropertiesExclusionsByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
 	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val", "--exclusions=*/*a1.in;*/*a2.in")
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -1332,7 +1332,7 @@ func TestArtifactoryDeletePropertiesWithExclusions(t *testing.T) {
 	artifactoryCli.Exec("sp", tests.Repo1+"/*", "prop=val")
 
 	artifactoryCli.Exec("delp", tests.Repo1+"/*", "prop", "--exclusions=*/*a1.in;*/*a2.in")
-	resultItems := searchItemsInArtifacotry(t)
+	resultItems := searchItemsInArtifactory(t)
 	if len(resultItems) == 0 {
 		t.Error("No artifacts were found.")
 	}
@@ -2018,7 +2018,7 @@ func TestArtifactoryDeleteExcludeBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
+	verifyExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2052,7 +2052,7 @@ func TestArtifactoryDeleteExclusionsBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
+	verifyExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3478,7 +3478,7 @@ func TestArtifactoryMoveExcludeBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
+	verifyExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -3512,7 +3512,7 @@ func TestArtifactoryMoveExclusionsBySpec(t *testing.T) {
 		t.Error(err)
 	}
 
-	isExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
+	verifyExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
