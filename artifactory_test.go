@@ -1341,7 +1341,7 @@ func testMoveCopySpec(command string, t *testing.T) {
 // validate the symlink content checksum
 func TestValidateValidSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	// Path to local file
@@ -1376,7 +1376,7 @@ func TestValidateValidSymlink(t *testing.T) {
 // validate the symlink content checksum.
 func TestValidateBrokenSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 
@@ -1409,7 +1409,7 @@ func TestValidateBrokenSymlink(t *testing.T) {
 // This test should not upload any files.
 func TestExcludeBrokenSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 
@@ -1429,7 +1429,7 @@ func TestExcludeBrokenSymlink(t *testing.T) {
 // validate the symlink content checksum.
 func TestSymlinkWildcardPathHandling(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localFile := filepath.Join(tests.GetTestResourcesPath()+"a/", "a1.in")
@@ -1450,7 +1450,7 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 // Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localFile := filepath.Join(tests.GetTestResourcesPath(), "a")
@@ -1470,7 +1470,7 @@ func TestSymlinkToDirHandling(t *testing.T) {
 // Download the symlink which was uploaded.
 func TestSymlinkToDirWildcardHandling(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localFile := filepath.Join(tests.GetTestResourcesPath(), "a")
@@ -1492,7 +1492,7 @@ func TestSymlinkToDirWildcardHandling(t *testing.T) {
 // The test create circular links and the test suppose to prune the circular searching.
 func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localDirPath := filepath.Join(tests.GetTestResourcesPath(), "a")
@@ -1528,17 +1528,18 @@ func validateSymLink(localLinkPath, localFilePath string, t *testing.T) {
 }
 
 func TestArtifactoryDeleteNoSpec(t *testing.T) {
+	initArtifactoryTest(t)
 	testArtifactorySimpleDelete(t, "")
 }
 
 func TestArtifactoryDeleteBySpec(t *testing.T) {
+	initArtifactoryTest(t)
 	deleteSpecPath, err := tests.CreateSpec(tests.DeleteSimpleSpec)
 	assert.NoError(t, err)
 	testArtifactorySimpleDelete(t, deleteSpecPath)
 }
 
 func testArtifactorySimpleDelete(t *testing.T, deleteSpecPath string) {
-	initArtifactoryTest(t)
 	preUploadBasicTestResources()
 
 	// Verify exists before deleting
@@ -2540,7 +2541,7 @@ func TestArtifactoryDownloadExclusionsBySpecOverride(t *testing.T) {
 // validate the symlink content checksum.
 func TestArtifactoryLimitWithSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localFile := filepath.Join(tests.GetTestResourcesPath()+"a", "a1.in")
@@ -2561,7 +2562,7 @@ func TestArtifactoryLimitWithSymlink(t *testing.T) {
 // validate the symlink content checksum.
 func TestArtifactorySortWithSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
-		return
+		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
 	localFile := filepath.Join(tests.GetTestResourcesPath()+"a", "a1.in")
