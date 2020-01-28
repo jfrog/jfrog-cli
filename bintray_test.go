@@ -290,7 +290,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 		filepath.Join(tests.Out, "bintray", "a", "fullpatha1.in"),
 	}
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
-	tests.IsExistLocally(expected, paths, t)
+	tests.VerifyExistLocally(expected, paths, t)
 
 	// Cleanup
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
@@ -321,7 +321,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 		filepath.Join(tests.Out, "bintray", "c2.in"),
 		filepath.Join(tests.Out, "bintray", "c3.in"),
 	}
-	tests.IsExistLocally(expected, paths, t)
+	tests.VerifyExistLocally(expected, paths, t)
 	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
 	cleanBintrayTest()
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -93,14 +94,12 @@ func removeDirs(dirs ...string) {
 	}
 }
 
-func IsExistLocally(expected, actual []string, t *testing.T) {
+func VerifyExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
 	err := compare(expected, actual)
-	if err != nil {
-		t.Error(err.Error())
-	}
+	assert.NoError(t, err)
 }
 
 func ValidateListsIdentical(expected, actual []string) error {
