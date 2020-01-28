@@ -245,8 +245,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
-	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules but has: \n%v",
-		npmTestParams, buildInfo.Modules[0])
+	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules")
 
 	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
 	assert.NoError(t, err)
