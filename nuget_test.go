@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,10 +26,7 @@ func initNugetTest(t *testing.T) {
 	}
 
 	// This is due to Artifactory bug, we cant create remote repository with REST API.
-	if !isRepoExist(tests.NugetRemoteRepo) {
-		t.Error("Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
-		t.FailNow()
-	}
+	require.True(t, isRepoExist(tests.NugetRemoteRepo), "Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
 	createJfrogHomeConfig(t)
 }
 
@@ -71,9 +69,7 @@ func TestNativeNugetResolve(t *testing.T) {
 	for buildNumber, test := range projects {
 		projectPath := createNugetProject(t, test.project)
 		err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, utils.Nuget, false)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 		t.Run(test.project, func(t *testing.T) {
 			testNugetCmd(t, projectPath, strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args, true)
 		})
@@ -85,20 +81,14 @@ func createNugetProject(t *testing.T, projectName string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "nuget", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
 	err := fileutils.CreateDirIfNotExist(projectTarget)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	files, err := fileutils.ListFiles(projectSrc, false)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	for _, v := range files {
 		err = fileutils.CopyFile(projectTarget, v)
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 	}
 	return projectTarget
 }
@@ -107,13 +97,9 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	initNugetTest(t)
 	projectPath := createNugetProject(t, "packagesconfig")
 	jfrogHomeDir, err := config.GetJfrogHomeDir()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	testNugetCmd(t, projectPath, "1", "packagesconfig", 6, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, true)
 
 	cleanBuildToolsTest()
@@ -121,13 +107,9 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 
 func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string, native bool) {
 	wd, err := os.Getwd()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	err = os.Chdir(projectPath)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	args = append(args, "--build-number="+buildNumber)
 	if native {
 		runNuGet(t, args...)
@@ -137,22 +119,10 @@ func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expecte
 	artifactoryCli.Exec("bp", tests.NugetBuildName, buildNumber)
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NugetBuildName, buildNumber, t, artHttpDetails)
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		t.Error("Nuget build info was not generated correctly, no modules were created.")
-	}
-
-	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
-		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
-	}
-
-	if module != buildInfo.Modules[0].Id {
-		t.Error(fmt.Errorf("Expected module name %s, got %s", module, buildInfo.Modules[0].Id))
-	}
-
-	err = os.Chdir(wd)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NotEmpty(t, buildInfo.Modules, "Nuget build info was not generated correctly, no modules were created.")
+	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
+	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
+	assert.NoError(t, os.Chdir(wd))
 
 	// cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NugetBuildName, artHttpDetails)
@@ -161,7 +131,5 @@ func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expecte
 func runNuGet(t *testing.T, args ...string) {
 	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err := artifactoryNuGetCli.Exec(args...)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 }

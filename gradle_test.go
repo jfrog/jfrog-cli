@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,9 +19,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDConfig)
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	buildName := "gradle-cli"
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
@@ -43,14 +42,10 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	buildGradlePath = strings.Replace(buildGradlePath, `\`, "/", -1) // Windows compatibility.
 	runCli(t, "gradle", "clean artifactoryPublish", "-b"+buildGradlePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	err := os.Chdir(oldHomeDir)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
@@ -65,9 +60,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	buildGradlePath := createGradleProject(t, "projectwithplugin")
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleServerIDUsesPluginConfig)
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	buildName := "gradle-cli"
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
@@ -90,9 +83,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 	buildGradlePath := createGradleProject(t, "gradleproject")
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.GradleUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
@@ -104,9 +95,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber string, t *testing.T) {
 	runCliWithLegacyBuildtoolsCmd(t, "gradle", "clean artifactoryPublish -b "+buildGradlePath, configFilePath, "--build-name="+buildName, "--build-number="+buildNumber)
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
@@ -115,15 +104,11 @@ func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumbe
 func createGradleProject(t *testing.T, projectName string) string {
 	srcBuildFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "build.gradle")
 	buildGradlePath, err := tests.ReplaceTemplateVariables(srcBuildFile, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	srcSettingsFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "gradle", projectName, "settings.gradle")
 	_, err = tests.ReplaceTemplateVariables(srcSettingsFile, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	return buildGradlePath
 }
