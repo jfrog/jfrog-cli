@@ -1086,7 +1086,8 @@ func TestArtifactorySetPropertiesExclusionsByCli(t *testing.T) {
 		assert.GreaterOrEqual(t, len(properties), 1, "Failed setting properties on item:", item.GetItemRelativePath())
 		for i, prop := range properties {
 			assert.Zero(t, i, "Expected single property.")
-			assert.True(t, prop.Key != "prop" || prop.Value != "val", "Wrong properties")
+			assert.Equal(t, "prop", prop.Key, "Wrong property key")
+			assert.Equal(t, "val", prop.Value, "Wrong property value")
 		}
 	}
 	cleanArtifactoryTest()
