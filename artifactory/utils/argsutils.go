@@ -55,14 +55,14 @@ func FindFlag(flagName string, args []string) (flagIndex, flagValueIndex int, fl
 	return
 }
 
-// Boolean flag can be provided in one of the following:
+// Boolean flag can be provided in one of the following forms:
 // 1. --flag=value, where value can be true/false
 // 2. --flag, here the value is true
 // Return values:
 // flagIndex - index of flagName in args.
 // flagValue - value of flagName.
-// err - error if flag exists but failed to extract its value.
-// If flag does't exists flagIndex = -1 with false value and nil error.
+// err - error if flag exists, but we failed to extract its value.
+// If flag does not exist flagIndex = -1 with false value and nil error.
 func FindBooleanFlag(flagName string, args []string) (flagIndex int, flagValue bool, err error) {
 	var arg string
 	for flagIndex, arg = range args {
@@ -150,13 +150,14 @@ func ExtractNpmOptionsFromArgs(args []string) (threads int, jsonOutput bool, cle
 		}
 	}
 
-	// Since we use --json flag for retrieving the npm config for writing the temp .npmrc, json=true is written the config list.
+	// Since we use --json flag for retrieving the npm config for writing the temp .npmrc, json=true is written to the config list.
 	// We don't want to force the json output for all users, so we check whether the json output was explicitly required.
 	flagIndex, jsonOutput, err = FindBooleanFlag("--json", args)
 	if err != nil {
 		return
 	}
-	RemoveFlagFromCommand(&args, flagIndex, valueIndex)
+	// Since boolean flag might appear as --flag or --flag=value, the value index is the same as the flag index.
+	RemoveFlagFromCommand(&args, flagIndex, flagIndex)
 
 	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
 	return
