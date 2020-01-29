@@ -265,9 +265,12 @@ type BuildConfiguration struct {
 	Module      string
 }
 
-func ValidateBuildParams(buildConfig *BuildConfiguration) error {
-	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") || (buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "") {
-		return errors.New("The build-name, build-number and module options cannot be sent separately.")
+func ValidateBuildAndModuleParams(buildConfig *BuildConfiguration) error {
+	if (buildConfig.BuildName == "" && buildConfig.BuildNumber != "") || (buildConfig.BuildName != "" && buildConfig.BuildNumber == "") {
+		return errors.New("the build-name, build-number options cannot be provided separately")
+	}
+	if buildConfig.Module != "" && buildConfig.BuildName == "" && buildConfig.BuildNumber == "" {
+		return errors.New("the build-name and build-number options are mandatory when the module option is provided")
 	}
 	return nil
 }
