@@ -1,6 +1,11 @@
 package docker
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	gofrogcmd "github.com/jfrog/gofrog/io"
+)
 
 func TestGetImagePath(t *testing.T) {
 	var imageTags = []struct {
@@ -88,4 +93,13 @@ func TestCheckDockerMinVersion(t *testing.T) {
 	if got != want {
 		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
 	}
+}
+
+func TestDockerVersionScript(t *testing.T) {
+	cmd := &versionCmd{}
+	content, err := gofrogcmd.RunCmdOutput(cmd)
+	if err != nil || strings.Index(content, "Docker version") == -1 {
+		t.Error("Could not get docker version")
+	}
+
 }
