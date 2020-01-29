@@ -244,8 +244,8 @@ func GetCommands() []cli.Command {
 			UsageText:    buildadddependencies.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) {
-				buildAddDependenciesCmd(c)
+			Action: func(c *cli.Context) error {
+				return buildAddDependenciesCmd(c)
 			},
 		},
 		{
@@ -1429,7 +1429,7 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(cliutils.DownloadMaxSplitCount) + ".")
 		}
 		if splitCount < 0 {
-			err = errors.New("The '--split-count' option cannot have a negative value.")
+			err = errors.New("the '--split-count' option cannot have a negative value")
 		}
 	}
 	return
@@ -1441,7 +1441,7 @@ func getThreadsCount(c *cli.Context) (threads int, err error) {
 	if c.String("threads") != "" {
 		threads, err = strconv.Atoi(c.String("threads"))
 		if err != nil || threads < 1 {
-			err = errors.New("The '--threads' option should have a numeric positive value.")
+			err = errors.New("the '--threads' option should have a numeric positive value")
 			return 0, err
 		}
 	}
@@ -2163,7 +2163,7 @@ func pingCmd(c *cli.Context) error {
 	pingCmd := generic.NewPingCommand()
 	pingCmd.SetRtDetails(artDetails)
 	err = commands.Exec(pingCmd)
-	resString := string(clientutils.IndentJson(pingCmd.Response()))
+	resString := clientutils.IndentJson(pingCmd.Response())
 	if err != nil {
 		return errors.New(err.Error() + "\n" + resString)
 	}
@@ -2409,7 +2409,7 @@ func searchCmd(c *cli.Context) error {
 	if c.Bool("count") {
 		log.Output(len(searchCmd.SearchResult()))
 	} else {
-		log.Output(string(clientutils.IndentJson(result)))
+		log.Output(clientutils.IndentJson(result))
 	}
 
 	return err
@@ -2863,7 +2863,7 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 	deb = c.String("deb")
 	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
 	if deb != "" && slashesCount != 2 {
-		return "", errors.New("The --deb option should be in the form of distribution/component/architecture")
+		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
 	}
 	return deb, nil
 }
