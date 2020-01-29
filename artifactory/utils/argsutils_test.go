@@ -101,20 +101,30 @@ func TestGetFlagValueAndValueIndex(t *testing.T) {
 
 func TestFindBooleanFlag(t *testing.T) {
 	tests := []struct {
-		flagName string
-		command  []string
-		expected int
+		flagName      string
+		command       []string
+		expectedIndex int
+		expectedValue bool
+		shouldFail    bool
 	}{
-		{"--foo", []string{"-X", "--GET", "--foo/api/build/test1", "--foo", "bar"}, 3},
-		{"--server-id", []string{"-X", "GET", "/api/build/test2", "--server-idea", "foo"}, -1},
-		{"--bar", []string{"-X", "GET", "api/build/test3", "--foo", "bar"}, -1},
-		{"-X", []string{"-X", "GET", "api/build/test3", "--foo", "bar"}, 0},
+		{"--foo", []string{"-X", "--GET", "--foo/api/build/test1", "--foo", "bar"}, 3, true, false},
+		{"--server-id", []string{"-X", "GET", "/api/build/test2", "--server-idea", "foo"}, -1, false, false},
+		{"--bar", []string{"-X", "GET", "api/build/test3", "--foo", "bar"}, -1, false, false},
+		{"-X", []string{"-X=true", "GET", "api/build/test3", "--foo", "bar"}, 0, true, false},
+		{"--json", []string{"-X=true", "GET", "api/build/test3", "--foo", "--json=false"}, 4, false, false},
+		{"--dry-run", []string{"-X=falsee", "GET", "api/build/test3", "--dry-run=falsee", "--json"}, 3, false, true},
 	}
 
-	for _, test := range tests {
-		actualValue := FindBooleanFlag(test.flagName, test.command)
-		if actualValue != test.expected {
-			t.Errorf("Expected value: %d, got: %d.", test.expected, actualValue)
+	for testIndex, test := range tests {
+		actualIndex, actualValue, err := FindBooleanFlag(test.flagName, test.command)
+		if test.shouldFail && err == nil {
+			t.Errorf("Test #%d: Should fail to parse the boolean value, but ended with nil error.", testIndex)
+		}
+		if actualIndex != test.expectedIndex {
+			t.Errorf("Test #%d: Expected index value: %d, got: %d.", testIndex, test.expectedIndex, actualIndex)
+		}
+		if actualValue != test.expectedValue {
+			t.Errorf("Test #%d: Expected value: %t, got: %t.", testIndex, test.expectedValue, actualValue)
 		}
 	}
 }

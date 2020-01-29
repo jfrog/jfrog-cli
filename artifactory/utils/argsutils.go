@@ -55,15 +55,30 @@ func FindFlag(flagName string, args []string) (flagIndex, flagValueIndex int, fl
 	return
 }
 
-// Boolean flag is a flag without value.
-func FindBooleanFlag(flagName string, args []string) int {
-	for index, arg := range args {
-		// Check current argument.
-		if arg == flagName {
-			return index
+// Boolean flag can be provided in one of the following forms:
+// 1. --flag=value, where value can be true/false
+// 2. --flag, here the value is true
+// Return values:
+// flagIndex - index of flagName in args.
+// flagValue - value of flagName.
+// err - error if flag exists, but we failed to extract its value.
+// If flag does not exist flagIndex = -1 with false value and nil error.
+func FindBooleanFlag(flagName string, args []string) (flagIndex int, flagValue bool, err error) {
+	var arg string
+	for flagIndex, arg = range args {
+		if strings.HasPrefix(arg, flagName) {
+			value := strings.TrimPrefix(arg, flagName)
+			if len(value) == 0 {
+				flagValue = true
+			} else if strings.HasPrefix(value, "=") {
+				flagValue, err = strconv.ParseBool(value[1:])
+			} else {
+				continue
+			}
+			return
 		}
 	}
-	return -1
+	return -1, false, nil
 }
 
 // Get the provided flag's value, and the index of the value.
@@ -119,7 +134,7 @@ func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, fl
 	}
 	return
 }
-func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
+func ExtractNpmOptionsFromArgs(args []string) (threads int, jsonOutput bool, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
 	threads = 3
 	// Extract threads information from the args.
 	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", args)
@@ -134,6 +149,15 @@ func ExtractNpmOptionsFromArgs(args []string) (threads int, cleanArgs []string, 
 			return
 		}
 	}
+
+	// Since we use --json flag for retrieving the npm config for writing the temp .npmrc, json=true is written to the config list.
+	// We don't want to force the json output for all users, so we check whether the json output was explicitly required.
+	flagIndex, jsonOutput, err = FindBooleanFlag("--json", args)
+	if err != nil {
+		return
+	}
+	// Since boolean flag might appear as --flag or --flag=value, the value index is the same as the flag index.
+	RemoveFlagFromCommand(&args, flagIndex, flagIndex)
 
 	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
 	return
