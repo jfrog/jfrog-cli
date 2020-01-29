@@ -819,11 +819,11 @@ func getBuildFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Providing this option will collect and record build info for this build name. If you provide a build number this flag is mandatory.` `",
+			Usage: "[Optional] Providing this option will collect and record build info for this build name. Build number option is mandatory when this option is provided.` `",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name this flag is mandatory.` `",
+			Usage: "[Optional] Providing this option will collect and record build info for this build number. Build name option is mandatory when this option is provided.` `",
 		},
 	}
 }
@@ -831,7 +831,7 @@ func getBuildFlags() []cli.Flag {
 func getBuildAndModuleFlags() []cli.Flag {
 	return append(getBuildFlags(), cli.StringFlag{
 		Name:  "module",
-		Usage: "[Optional] Optional module name for the build-info.` `",
+		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
 	})
 }
 
@@ -915,27 +915,27 @@ func getDockerFlags() []cli.Flag {
 	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
-func getDepracatedFlags() []cli.Flag {
+func getDeprecatedFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Depracated] [Optional] Artifactory URL.` `",
+			Usage: "[Deprecated] [Optional] Artifactory URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Depracated] [Optional] Artifactory username.` `",
+			Usage: "[Deprecated] [Optional] Artifactory username.` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Depracated] [Optional] Artifactory password.` `",
+			Usage: "[Deprecated] [Optional] Artifactory password.` `",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[Depracated] [Optional] Artifactory API key.` `",
+			Usage: "[Deprecated] [Optional] Artifactory API key.` `",
 		},
 		cli.StringFlag{
 			Name:  "access-token",
-			Usage: "[Depracated] [Optional] Artifactory access token.` `",
+			Usage: "[Deprecated] [Optional] Artifactory access token.` `",
 		},
 	}
 }
@@ -944,9 +944,9 @@ func getDepracatedFlags() []cli.Flag {
 func getNpmLegacyFlags() []cli.Flag {
 	npmFlags := cli.StringFlag{
 		Name:  "npm-args",
-		Usage: "[Depracated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
+		Usage: "[Deprecated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 	}
-	return append(getDepracatedFlags(), npmFlags)
+	return append(getDeprecatedFlags(), npmFlags)
 }
 
 func getNpmCommonFlags() []cli.Flag {
@@ -978,14 +978,14 @@ func getNugetCommonFlags() []cli.Flag {
 	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Depracated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
+			Usage: "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Depracated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
+			Usage: "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(commonNugetFlags, getDepracatedFlags()...)
+	commonNugetFlags = append(commonNugetFlags, getDeprecatedFlags()...)
 	return commonNugetFlags
 }
 
@@ -993,14 +993,14 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Depracated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
+			Usage: "[Deprecated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "publish-deps",
-			Usage: "[Depracated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
+			Usage: "[Deprecated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(flags, getDepracatedFlags()...)
+	flags = append(flags, getDeprecatedFlags()...)
 	return flags
 }
 
