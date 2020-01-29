@@ -99,7 +99,6 @@ func TestDockerVersionScript(t *testing.T) {
 	cmd := &versionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	if err != nil || strings.Index(content, "Docker version") == -1 {
-		t.Error("Could not get docker version")
+		t.Errorf("Could not get docker version, error: %s", err.Error())
 	}
-
 }
