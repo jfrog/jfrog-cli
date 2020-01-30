@@ -119,6 +119,7 @@ func (cc *ConfigCommand) Config() error {
 			return err
 		}
 	}
+
 	err = config.SaveArtifactoryConf(configurations)
 	return err
 }
@@ -193,19 +194,9 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 	// Ssh-Key
 	if fileutils.IsSshUrl(cc.details.Url) {
 		return getSshKeyPath(cc.details)
-	} else {
-		answer := "no"
-		if cc.defaultDetails.ClientCertPath != "" {
-			answer = "yes"
-		}
-		ioutils.ScanFromConsole("Is the Artifactory HTTP proxy configured to accept a client certificate?", &answer, answer)
-
-		if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
-			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
-			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertKeyPath, cc.defaultDetails.ClientCertKeyPath)
-		}
 	}
 	cc.details.Url = clientutils.AddTrailingSlashIfNeeded(cc.details.Url)
+
 	// Api-Key/Password/Access-Token
 	if cc.details.ApiKey == "" && cc.details.Password == "" && cc.details.AccessToken == "" {
 		err := readAccessTokenFromConsole(cc.details)
@@ -213,10 +204,36 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 			return err
 		}
 		if len(cc.details.GetAccessToken()) == 0 {
-			return ioutils.ReadCredentialsFromConsole(cc.details, cc.defaultDetails, allowUsingSavedPassword)
+			err = ioutils.ReadCredentialsFromConsole(cc.details, cc.defaultDetails, allowUsingSavedPassword)
+			if err != nil {
+				return err
+			}
+		}
+		// New-line required after the password input:
+		fmt.Println()
+	}
+
+	cc.readClientCertInfoFromConsole()
+	return nil
+}
+
+func (cc *ConfigCommand) readClientCertInfoFromConsole() {
+	answer := "no"
+	// If the user provided one or both of the client cert flags, assume that client cert
+	// configuration is needed. No need to ask whether to configure it.
+	if !(cc.details.ClientCertPath != "" || cc.details.ClientCertKeyPath != "") {
+		ioutils.ScanFromConsole("Is the Artifactory reverse proxy configured to accept a client certificate?", &answer, answer)
+	} else {
+		answer = "yes"
+	}
+	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
+		if cc.details.ClientCertPath == "" {
+			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
+		}
+		if cc.details.ClientCertKeyPath == "" {
+			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertKeyPath, cc.defaultDetails.ClientCertKeyPath)
 		}
 	}
-	return nil
 }
 
 func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
@@ -429,9 +446,6 @@ func (cc *ConfigCommand) encryptPassword() error {
 	if cc.details.Password == "" {
 		return nil
 	}
-
-	// New-line required after the password input:
-	fmt.Println()
 
 	log.Info("Encrypting password...")
 
