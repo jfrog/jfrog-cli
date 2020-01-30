@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/test_resources/b/*",
+      "recursive": "false"
+    }
+  ]
+}

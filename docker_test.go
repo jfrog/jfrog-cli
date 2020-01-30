@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"os/exec"
@@ -14,7 +15,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const DockerTestImage string = "jfrog_cli_test_image"
@@ -152,14 +152,8 @@ func validateDockerBuild(buildName, buildNumber, imagePath, module string, expec
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
-	err := searchCmd.Search()
-	if err != nil {
-		log.Error(err)
-		t.Error(err)
-	}
-	if expectedItemsInArtifactory != len(searchCmd.SearchResult()) {
-		t.Error("Docker build info was not pushed correctly, expected:", expectedArtifacts, " Found:", len(searchCmd.SearchResult()))
-	}
+	assert.NoError(t, searchCmd.Search())
+	assert.Len(t, searchCmd.SearchResult(), expectedItemsInArtifactory, "Docker build info was not pushed correctly")
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
