@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,9 +18,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenServerIDConfig)
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
 }
@@ -34,15 +33,11 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
 	runCli(t, "mvn", "clean", "install", "-f", pomPath)
 	err := os.Chdir(oldHomeDir)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	// Validate
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	if err != nil {
-		t.Error(err)
-	}
-	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 	cleanBuildToolsTest()
 }
 
@@ -54,9 +49,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	runAndValidateMaven(pomPath, configFilePath, t)
 	cleanBuildToolsTest()
@@ -65,19 +58,15 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath, configFilePath)
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
-	isExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
+	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 }
 
 func createMavenProject(t *testing.T) string {
 	srcPomFile := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "mavenproject", "pom.xml")
 	pomPath, err := tests.ReplaceTemplateVariables(srcPomFile, "")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	return pomPath
 }
 

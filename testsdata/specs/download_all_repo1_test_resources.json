@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/test_resources/*",
+      "target": "out/download/resources/",
+      "flat": "true"
+    }
+  ]
+}
