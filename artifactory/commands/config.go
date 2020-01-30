@@ -113,6 +113,13 @@ func (cc *ConfigCommand) Config() error {
 		return err
 	}
 
+	if cc.encPassword {
+		err = cc.encryptPassword()
+		if err != nil {
+			return err
+		}
+	}
+
 	err = config.SaveArtifactoryConf(configurations)
 	return err
 }
@@ -207,14 +214,6 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 	}
 
 	cc.readClientCertInfoFromConsole()
-
-	if cc.encPassword {
-		err := cc.encryptPassword()
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
