@@ -153,6 +153,7 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	passphrase := createServerConfigAndReturnPassphrase()
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
+	assert.NoError(t, err)
 	artifactoryCommandExecutor.Exec("upload", "--spec="+specFile, "--server-id="+tests.RtServerId, passphrase)
 
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
@@ -382,9 +383,11 @@ func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
 
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
 	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesSpec)
 
+	specFile, err := tests.CreateSpec(tests.UploadFileWithParenthesesSpec)
+	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", "--spec="+specFile)
+
 	searchPath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadFileNameWithParentheses(), searchPath, t)
