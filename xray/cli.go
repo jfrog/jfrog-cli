@@ -45,6 +45,10 @@ func offlineUpdateFlags() []cli.Flag {
 			Name:  "version",
 			Usage: "[Optional] Xray API version.` `",
 		},
+		cli.StringFlag{
+			Name:  "target",
+			Usage: "[Optional] Path for downloaded update files.` `",
+		},
 	}
 }
 
@@ -52,6 +56,7 @@ func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags,
 	flags = new(commands.OfflineUpdatesFlags)
 	flags.Version = c.String("version")
 	flags.License = c.String("license-id")
+	flags.Target = c.String("target")
 	if len(flags.License) < 1 {
 		return nil, errors.New("The --license-id option is mandatory.")
 	}
