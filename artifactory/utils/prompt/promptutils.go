@@ -34,23 +34,20 @@ func (server *ServerConfig) Set(config *viper.Viper) error {
 	return nil
 }
 
-func VerifyConfigFile(configFilePath string) error {
+func VerifyConfigFile(configFilePath string, interactive bool) error {
 	exists, err := fileutils.IsFileExists(configFilePath, false)
 	if err != nil {
 		return err
 	}
 	if exists {
-		yesNoPrompt := &prompt.YesNo{
-			Msg:     "Configuration file already exists at " + configFilePath + ". Override it (y/n) [${default}]? ",
-			Default: "n",
-			Label:   "override",
+		if !interactive {
+			return nil
 		}
-		err = yesNoPrompt.Read()
+		override, err := AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
 		if err != nil {
 			return err
 		}
-
-		if !yesNoPrompt.Result.GetBool("override") {
+		if !override {
 			return errorutils.CheckError(errors.New("Operation canceled."))
 		}
 		return nil
@@ -66,64 +63,30 @@ func VerifyConfigFile(configFilePath string) error {
 	return errorutils.CheckError(os.Remove(configFilePath))
 }
 
-func ReadArtifactoryServer(msg string) (*viper.Viper, error) {
-	serversId, defaultServer, err := getServersIdAndDefault()
+// Get Artifactory serverId from the user. If useArtifactoryQuestion is not empty, ask first whether to use artifactory.
+func ReadArtifactoryServer(useArtifactoryQuestion string) (string, error) {
+	// Get all Artifactory servers
+	serversIds, defaultServer, err := getServersIdAndDefault()
 	if err != nil {
-		return nil, err
+		return "", err
+	}
+	if len(serversIds) == 0 {
+		return "", errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
 	}
 
-	if len(serversId) == 0 {
-		return nil, errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
+	// Ask whether to use artifactory
+	if useArtifactoryQuestion != "" {
+		useArtifactory, err := AskYesNo(useArtifactoryQuestion, "y", USE_ARTIFACTORY)
+		if err != nil || !useArtifactory {
+			return "", err
+		}
 	}
 
-	server := &prompt.YesNo{
-		Msg:     msg,
-		Default: "y",
-		Label:   USE_ARTIFACTORY,
-		Yes: &prompt.Autocomplete{
-			Msg:     "Set Artifactory server ID (press Tab for options) [${default}]: ",
-			ErrMsg:  "Server does not exist. Please set a valid server ID.",
-			Options: serversId,
-			Default: defaultServer,
-			Label:   utils.SERVER_ID,
-		},
-	}
-
-	err = server.Read()
-	if err != nil {
-		return nil, errorutils.CheckError(err)
-	}
-	return server.GetResults(), nil
+	return AskAutocomplete("Set Artifactory server ID (press Tab for options) [${default}]: ", "Server does not exist. Please set a valid server ID.", serversIds, defaultServer, utils.SERVER_ID)
 }
 
-func ReadServerId() (string, *viper.Viper, error) {
-	serversId, defaultServer, err := getServersIdAndDefault()
-	if err != nil {
-		return "", nil, err
-	}
-
-	if len(serversId) == 0 {
-		return "", nil, errorutils.CheckError(errors.New("Artifactory server configuration is missing, use 'jfrog rt c' command to set server details."))
-	}
-
-	server := &prompt.Autocomplete{
-		Msg:     "Set Artifactory server ID (press Tab for options) [${default}]: ",
-		Options: serversId,
-		Label:   utils.ProjectConfigServerId,
-		ErrMsg:  "Server does not exist. Please set a valid server ID.",
-		Default: defaultServer,
-	}
-
-	err = server.Read()
-	if err != nil {
-		return "", nil, errorutils.CheckError(err)
-	}
-	vConfig := server.GetResults()
-	return vConfig.GetString(utils.SERVER_ID), vConfig, nil
-}
-
-func ReadRepo(msg string, resolveRes *viper.Viper, repoTypes ...utils.RepoType) (string, error) {
-	availableRepos, err := GetRepositories(resolveRes, repoTypes...)
+func ReadRepo(msg string, serverId string, repoTypes ...utils.RepoType) (string, error) {
+	availableRepos, err := GetRepositories(serverId, repoTypes...)
 	if err != nil {
 		// If there are no available repos pass empty array.
 		availableRepos = []string{}
@@ -162,8 +125,8 @@ func getServersIdAndDefault() ([]string, string, error) {
 	return serversId, defaultVal, nil
 }
 
-func GetRepositories(resolveRes *viper.Viper, repoTypes ...utils.RepoType) ([]string, error) {
-	artDetails, err := config.GetArtifactoryConf(resolveRes.GetString(utils.SERVER_ID))
+func GetRepositories(serverId string, repoTypes ...utils.RepoType) ([]string, error) {
+	artDetails, err := config.GetArtifactoryConf(serverId)
 	if err != nil {
 		return nil, err
 	}
@@ -174,4 +137,42 @@ func GetRepositories(resolveRes *viper.Viper, repoTypes ...utils.RepoType) ([]st
 	}
 
 	return utils.GetRepositories(artAuth, repoTypes...)
+}
+
+func AskYesNo(message string, defaultStr string, label string) (bool, error) {
+	question := &prompt.YesNo{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return false, errorutils.CheckError(err)
+	}
+	return question.Result.GetBool(label), nil
+}
+
+func AskString(message string, defaultStr string, label string) (string, error) {
+	question := &prompt.Simple{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return question.Result.GetString(label), nil
+}
+
+func AskAutocomplete(msg string, errMsg string, options []string, defaultStr string, label string) (string, error) {
+	question := &prompt.Autocomplete{
+		Msg:     msg,
+		ErrMsg:  errMsg,
+		Options: options,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return question.Result.GetString(label), nil
 }
