@@ -31,6 +31,11 @@ func NewConfigFile(confType utils.ProjectType, c *cli.Context) *ConfigFile {
 		},
 	}
 	configFile.fillConfigFromFlags(c)
+	if confType == utils.Maven {
+		configFile.fillMavenConfigFromFlags(c)
+	} else if confType == utils.Gradle {
+		configFile.fillGradleConfigFromFlags(c)
+	}
 	return configFile
 }
 
@@ -133,7 +138,6 @@ func (configFile *ConfigFile) configNuget() error {
 }
 
 func (configFile *ConfigFile) configMaven(c *cli.Context) error {
-	configFile.fillMavenConfigFromFlags(c)
 	// Set resolution repositories
 	if configFile.ResolveFromArtifactory == nil || *configFile.ResolveFromArtifactory {
 		if err := configFile.setResolverId(); err != nil {
@@ -164,7 +168,6 @@ func (configFile *ConfigFile) configMaven(c *cli.Context) error {
 }
 
 func (configFile *ConfigFile) configGradle(c *cli.Context) error {
-	configFile.fillGradleConfigFromFlags(c)
 	if err := configFile.setDeployerResolver(); err != nil {
 		return err
 	}

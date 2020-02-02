@@ -100,63 +100,17 @@ func TestMavenConfigFile(t *testing.T) {
 	// Create build config
 	context := createContext("resolutionServerId=relServer", "resolutionReleaseRepo=release-repo", "resolutionSnapshotRepo=snapshot-repo",
 		"deploymentServerId=depServer", "deploymentReleaseRepo=release-repo-local", "deploymentSnapshotRepo=snapshot-repo-local")
-	err := CreateBuildConfig(context, utils.Go)
+	err := CreateBuildConfig(context, utils.Maven)
 	assert.NoError(t, err)
 
 	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
+	config := checkCommonAndGetConfiguration(t, utils.Maven.String(), tempDirPath)
 	assert.Equal(t, "relServer", config.GetString("resolver.serverId"))
 	assert.Equal(t, "snapshot-repo", config.GetString("resolver.snapshotRepo"))
 	assert.Equal(t, "release-repo", config.GetString("resolver.releaseRepo"))
 	assert.Equal(t, "depServer", config.GetString("deployer.serverId"))
 	assert.Equal(t, "snapshot-repo-local", config.GetString("deployer.snapshotRepo"))
 	assert.Equal(t, "release-repo-local", config.GetString("deployer.releaseRepo"))
-}
-
-func TestMavenConfigFileNoResolve(t *testing.T) {
-	// Set JFROG_CLI_HOME_DIR environment variable
-	tempDirPath := createTempEnv(t)
-	defer os.RemoveAll(tempDirPath)
-
-	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionReleaseRepo=release-repo", "resolutionSnapshotRepo=snapshot-repo",
-		"deploymentServerId=depServer", "deploymentReleaseRepo=release-repo-local", "deploymentSnapshotRepo=snapshot-repo-local")
-	err := context.Set("resolveFromArtifactory", "false")
-	assert.NoError(t, err)
-	err = CreateBuildConfig(context, utils.Go)
-	assert.NoError(t, err)
-
-	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
-	assert.Equal(t, "", config.GetString("resolver.serverId"))
-	assert.Equal(t, "", config.GetString("resolver.snapshotRepo"))
-	assert.Equal(t, "", config.GetString("resolver.releaseRepo"))
-	assert.Equal(t, "depServer", config.GetString("deployer.serverId"))
-	assert.Equal(t, "snapshot-repo-local", config.GetString("deployer.snapshotRepo"))
-	assert.Equal(t, "release-repo-local", config.GetString("deployer.releaseRepo"))
-}
-
-func TestMavenConfigFileNoDeploy(t *testing.T) {
-	// Set JFROG_CLI_HOME_DIR environment variable
-	tempDirPath := createTempEnv(t)
-	defer os.RemoveAll(tempDirPath)
-
-	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionReleaseRepo=release-repo", "resolutionSnapshotRepo=snapshot-repo",
-		"deploymentServerId=depServer", "deploymentReleaseRepo=release-repo-local", "deploymentSnapshotRepo=snapshot-repo-local")
-	err := context.Set("deployToArtifactory", "false")
-	assert.NoError(t, err)
-	err = CreateBuildConfig(context, utils.Go)
-	assert.NoError(t, err)
-
-	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
-	assert.Equal(t, "relServer", config.GetString("resolver.serverId"))
-	assert.Equal(t, "snapshot-repo", config.GetString("resolver.snapshotRepo"))
-	assert.Equal(t, "release-repo", config.GetString("resolver.releaseRepo"))
-	assert.Equal(t, "", config.GetString("deployer.serverId"))
-	assert.Equal(t, "", config.GetString("deployer.snapshotRepo"))
-	assert.Equal(t, "", config.GetString("deployer.releaseRepo"))
 }
 
 func TestGradleConfigFile(t *testing.T) {
@@ -166,67 +120,15 @@ func TestGradleConfigFile(t *testing.T) {
 
 	// Create build config
 	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local", "ivyPattern=[ivy]/[pattern]", "artifactPattern=[artifact]/[pattern]")
-	err := CreateBuildConfig(context, utils.Go)
+	err := CreateBuildConfig(context, utils.Gradle)
 	assert.NoError(t, err)
 
 	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
+	config := checkCommonAndGetConfiguration(t, utils.Gradle.String(), tempDirPath)
 	assert.Equal(t, "relServer", config.GetString("resolver.serverId"))
 	assert.Equal(t, "repo", config.GetString("resolver.repo"))
 	assert.Equal(t, "depServer", config.GetString("deployer.serverId"))
 	assert.Equal(t, "repo-local", config.GetString("deployer.repo"))
-	assert.Equal(t, true, config.GetBool("deployer.deployMavenDescriptors"))
-	assert.Equal(t, true, config.GetBool("deployer.deployIvyDescriptors"))
-	assert.Equal(t, "[ivy]/[pattern]", config.GetString("deployer.ivyPattern"))
-	assert.Equal(t, "[artifact]/[pattern]", config.GetString("deployer.artifactPattern"))
-	assert.Equal(t, true, config.GetBool("usePlugin"))
-	assert.Equal(t, true, config.GetBool("useWrapper"))
-}
-
-func TestGradleConfigFileNoResolve(t *testing.T) {
-	// Set JFROG_CLI_HOME_DIR environment variable
-	tempDirPath := createTempEnv(t)
-	defer os.RemoveAll(tempDirPath)
-
-	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local", "ivyPattern=[ivy]/[pattern]", "artifactPattern=[artifact]/[pattern]")
-	err := context.Set("resolveFromArtifactory", "false")
-	assert.NoError(t, err)
-	err = CreateBuildConfig(context, utils.Go)
-	assert.NoError(t, err)
-
-	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
-	assert.Equal(t, "", config.GetString("resolver.serverId"))
-	assert.Equal(t, "", config.GetString("resolver.repo"))
-	assert.Equal(t, "depServer", config.GetString("deployer.serverId"))
-	assert.Equal(t, "repo-local", config.GetString("deployer.repo"))
-	assert.Equal(t, true, config.GetBool("deployer.deployMavenDescriptors"))
-	assert.Equal(t, true, config.GetBool("deployer.deployIvyDescriptors"))
-	assert.Equal(t, "[ivy]/[pattern]", config.GetString("deployer.ivyPattern"))
-	assert.Equal(t, "[artifact]/[pattern]", config.GetString("deployer.artifactPattern"))
-	assert.Equal(t, true, config.GetBool("usePlugin"))
-	assert.Equal(t, true, config.GetBool("useWrapper"))
-}
-
-func TestGradleConfigFileNoDeploy(t *testing.T) {
-	// Set JFROG_CLI_HOME_DIR environment variable
-	tempDirPath := createTempEnv(t)
-	defer os.RemoveAll(tempDirPath)
-
-	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local", "ivyPattern=[ivy]/[pattern]", "artifactPattern=[artifact]/[pattern]")
-	err := context.Set("deployToArtifactory", "false")
-	assert.NoError(t, err)
-	err = CreateBuildConfig(context, utils.Go)
-	assert.NoError(t, err)
-
-	// Check configuration
-	config := checkCommonAndGetConfiguration(t, utils.Go.String(), tempDirPath)
-	assert.Equal(t, "relServer", config.GetString("resolver.serverId"))
-	assert.Equal(t, "repo", config.GetString("resolver.repo"))
-	assert.Equal(t, "", config.GetString("deployer.serverId"))
-	assert.Equal(t, "", config.GetString("deployer.repo"))
 	assert.Equal(t, true, config.GetBool("deployer.deployMavenDescriptors"))
 	assert.Equal(t, true, config.GetBool("deployer.deployIvyDescriptors"))
 	assert.Equal(t, "[ivy]/[pattern]", config.GetString("deployer.ivyPattern"))
