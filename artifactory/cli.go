@@ -61,7 +61,6 @@ import (
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
@@ -603,19 +602,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
-			},
-		},
-		{
-			Name:            "pip-deps-tree",
-			Aliases:         []string{"pdt"},
-			Usage:           pipinstall.Description,
-			HelpName:        common.CreateUsage("rt pdt", pipdepstree.Description, pipdepstree.Usage),
-			UsageText:       pipdepstree.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return pipDepsTreeCmd(c)
 			},
 		},
 	}
@@ -2699,14 +2685,6 @@ func createPipConfigCmd(c *cli.Context) error {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	return runPipCmd(c, "pip-install", pip.NewPipInstallCommand())
-}
-
-func pipDepsTreeCmd(c *cli.Context) error {
-	return runPipCmd(c, "pip-deps-tree", pip.NewPipDepTreeCommand())
-}
-
-func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -2719,7 +2697,7 @@ func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) e
 	pipConfig, err := piputils.GetPipConfiguration()
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), cmdName))
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
 	}
 
 	// Set arg values.
@@ -2729,6 +2707,7 @@ func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) e
 	}
 
 	// Run command.
+	pipCmd := pip.NewPipInstallCommand()
 	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
 	return commands.Exec(pipCmd)
 }
