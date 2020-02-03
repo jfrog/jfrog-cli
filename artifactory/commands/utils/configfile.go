@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -74,7 +75,7 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 	}
 	configFilePath := filepath.Join(projectDir, confType.String()+".yaml")
 	configFile := NewConfigFile(confType, c)
-	if err := prompt.VerifyConfigFile(configFilePath, configFile.Interactive); err != nil {
+	if err := configFile.VerifyConfigFile(configFilePath); err != nil {
 		return err
 	}
 	if configFile.Interactive {
@@ -95,6 +96,9 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
+	}
+	if err = configFile.validateConfig(); err != nil {
+		return err
 	}
 	resBytes, err := yaml.Marshal(&configFile)
 	if err != nil {
@@ -150,6 +154,36 @@ func (configFile *ConfigFile) populateGradleConfigFromFlags(c *cli.Context) {
 	configFile.UsePlugin = c.Bool(UsesPlugin)
 	configFile.UseWrapper = c.Bool(UseWrapper)
 	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, DeployMavenDesc, DeployIvyDesc, IvyDescPattern, IvyArtifactsPattern, UsesPlugin, UseWrapper)
+}
+
+// Verify config file not exists or prompt to override it
+func (configFile *ConfigFile) VerifyConfigFile(configFilePath string) error {
+	exists, err := fileutils.IsFileExists(configFilePath, false)
+	if err != nil {
+		return err
+	}
+	if exists {
+		if !configFile.Interactive {
+			return nil
+		}
+		override, err := prompt.AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
+		if err != nil {
+			return err
+		}
+		if !override {
+			return errorutils.CheckError(errors.New("Operation canceled."))
+		}
+		return nil
+	}
+
+	// Create config file to make sure the path is valid
+	f, err := os.OpenFile(configFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if errorutils.CheckError(err) != nil {
+		return err
+	}
+	f.Close()
+	// The file will be written at the end of successful configuration command.
+	return errorutils.CheckError(os.Remove(configFilePath))
 }
 
 func (configFile *ConfigFile) configGo() error {
@@ -273,31 +307,57 @@ func (configFile *ConfigFile) setRepo(repo *string, message string, serverId str
 
 func (configFile *ConfigFile) setMavenIvyDescriptors(c *cli.Context) error {
 	var err error
-	if !c.IsSet("deployMavenDescriptors") {
-		configFile.Deployer.DeployMavenDesc, err = prompt.AskYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
-		if err != nil {
-			return err
-		}
+	configFile.Deployer.DeployMavenDesc, err = prompt.AskYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
+	if err != nil {
+		return err
 	}
 
-	if !c.IsSet("deployIvyDescriptors") {
-		configFile.Deployer.DeployIvyDesc, err = prompt.AskYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
-		if err != nil {
-			return err
-		}
+	configFile.Deployer.DeployIvyDesc, err = prompt.AskYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
+	if err != nil {
+		return err
 	}
 
 	if configFile.Deployer.DeployIvyDesc {
-		if !c.IsSet("ivyPattern") {
-			configFile.Deployer.IvyPattern, err = prompt.AskString("Set Ivy pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
-			if err != nil {
-				return err
-			}
+		configFile.Deployer.IvyPattern, err = prompt.AskString("Set Ivy pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
+		if err != nil {
+			return err
 		}
-
-		if !c.IsSet("artifactPattern") {
-			configFile.Deployer.ArtifactsPattern, err = prompt.AskString("Set Ivy artifact pattern [${default}]:", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", utils.ARTIFACT_PATTERN)
-		}
+		configFile.Deployer.ArtifactsPattern, err = prompt.AskString("Set Ivy artifact pattern [${default}]:", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", utils.ARTIFACT_PATTERN)
 	}
 	return err
+}
+
+// Check correctness of spec file configuration
+func (configFile *ConfigFile) validateConfig() error {
+	resolver := configFile.Resolver
+	releaseRepo := resolver.ReleaseRepo
+	snapshotRepo := resolver.SnapshotRepo
+	if resolver.ServerId != "" {
+		if resolver.Repo == "" && releaseRepo == "" && snapshotRepo == "" {
+			return errorutils.CheckError(errors.New("Resolution repository/ies must be set."))
+		}
+		if (releaseRepo == "" && snapshotRepo != "") || (releaseRepo != "" && snapshotRepo == "") {
+			return errorutils.CheckError(errors.New("Resolution snapshot and release repositories must be set."))
+		}
+	} else {
+		if resolver.Repo != "" || releaseRepo != "" || snapshotRepo != "" {
+			return errorutils.CheckError(errors.New("Resolver server ID must be set."))
+		}
+	}
+	deployer := configFile.Deployer
+	releaseRepo = deployer.ReleaseRepo
+	snapshotRepo = deployer.SnapshotRepo
+	if deployer.ServerId != "" {
+		if deployer.Repo == "" && releaseRepo == "" && snapshotRepo == "" {
+			return errorutils.CheckError(errors.New("Deployment repository/ies must be set."))
+		}
+		if (releaseRepo == "" && snapshotRepo != "") || (releaseRepo != "" && snapshotRepo == "") {
+			return errorutils.CheckError(errors.New("Deployment snapshot and release repositories must be set."))
+		}
+	} else {
+		if deployer.Repo != "" || releaseRepo != "" || snapshotRepo != "" {
+			return errorutils.CheckError(errors.New("Deployer server ID must be set."))
+		}
+	}
+	return nil
 }

@@ -2,14 +2,11 @@ package prompt
 
 import (
 	"errors"
-	"os"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/prompt"
-	"github.com/spf13/viper"
 )
 
 const BUILD_CONF_VERSION = 1
@@ -25,42 +22,6 @@ type ServerConfig struct {
 	User     string `yaml:"username,omitempty"`
 	Password string `yaml:"password,omitempty"`
 	Url      string `yaml:"url,omitempty"`
-}
-
-func (server *ServerConfig) Set(config *viper.Viper) error {
-	if config.GetBool(USE_ARTIFACTORY) {
-		server.ServerId = config.GetString(utils.SERVER_ID)
-	}
-	return nil
-}
-
-func VerifyConfigFile(configFilePath string, interactive bool) error {
-	exists, err := fileutils.IsFileExists(configFilePath, false)
-	if err != nil {
-		return err
-	}
-	if exists {
-		if !interactive {
-			return nil
-		}
-		override, err := AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
-		if err != nil {
-			return err
-		}
-		if !override {
-			return errorutils.CheckError(errors.New("Operation canceled."))
-		}
-		return nil
-	}
-
-	// Create config file to make sure the path is valid
-	f, err := os.OpenFile(configFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if errorutils.CheckError(err) != nil {
-		return err
-	}
-	f.Close()
-	// The file will be written at the end of successful configuration command.
-	return errorutils.CheckError(os.Remove(configFilePath))
 }
 
 // Get Artifactory serverId from the user. If useArtifactoryQuestion is not empty, ask first whether to use artifactory.
