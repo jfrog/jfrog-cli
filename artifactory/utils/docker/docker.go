@@ -328,7 +328,7 @@ type versionCmd struct{}
 
 func (versionCmd *versionCmd) GetCmd() *exec.Cmd {
 	if cliutils.IsWindows() {
-		return exec.Command("cmd", "/C", "echo", "docker --version")
+		return exec.Command("cmd", "/C", "echo", "%DOCKER_PASS%|", "docker", "--version")
 	}
 	return exec.Command("sh", "-c", "docker --version")
 }

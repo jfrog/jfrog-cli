@@ -35,7 +35,7 @@ func createConfigListCmdConfig(executablePath string, splitFlags []string, pipeW
 	return &NpmConfig{
 		Npm:          executablePath,
 		Command:      []string{"c", "ls"},
-		CommandFlags: append(splitFlags, "-json=true"),
+		CommandFlags: append(splitFlags, "--json"),
 		StrWriter:    pipeWriter,
 		ErrWriter:    nil,
 	}

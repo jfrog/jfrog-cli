@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -38,6 +39,7 @@ const minSupportedNpmVersion = "5.4.0"
 type NpmCommandArgs struct {
 	command          string
 	threads          int
+	jsonOutput       bool
 	executablePath   string
 	npmrcFileMode    os.FileMode
 	workingDirectory string
@@ -98,8 +100,8 @@ func (nic *NpmInstallCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	threads, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(nic.npmArgs)
-	nic.SetRepoConfig(resolverParams).SetArgs(filteredNpmArgs).SetThreads(threads).SetBuildConfiguration(buildConfiguration)
+	threads, jsonOutput, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(nic.npmArgs)
+	nic.SetRepoConfig(resolverParams).SetArgs(filteredNpmArgs).SetThreads(threads).SetJsonOutput(jsonOutput).SetBuildConfiguration(buildConfiguration)
 	if err != nil {
 		return err
 	}
@@ -108,6 +110,11 @@ func (nic *NpmInstallCommand) Run() error {
 
 func (nca *NpmCommandArgs) SetThreads(threads int) *NpmCommandArgs {
 	nca.threads = threads
+	return nca
+}
+
+func (nca *NpmCommandArgs) SetJsonOutput(jsonOutput bool) *NpmCommandArgs {
+	nca.jsonOutput = jsonOutput
 	return nca
 }
 
@@ -269,8 +276,8 @@ func createRestoreErrorPrefix(workingDirectory string) string {
 		filepath.Join(workingDirectory, npmrcFileName))
 }
 
-// In order to make sure the install downloads the artifacts from Artifactory we creating in the project .npmrc file.
-// If such a file exists we storing a copy of it in npmrcBackupFileName.
+// In order to make sure the install downloads the artifacts from Artifactory we create a .npmrc file in the project dir.
+// If such a file exists we back it up as npmrcBackupFileName.
 func (nca *NpmCommandArgs) createTempNpmrc() error {
 	log.Debug("Creating project .npmrc file.")
 	data, err := npm.GetConfigList(nca.npmArgs, nca.executablePath)
@@ -419,6 +426,7 @@ func (nca *NpmCommandArgs) prepareConfigData(data []byte) ([]byte, error) {
 		}
 		nca.setTypeRestriction(i, collectedConfig[i])
 	}
+	filteredConf = append(filteredConf, "json = ", strconv.FormatBool(nca.jsonOutput), "\n")
 	filteredConf = append(filteredConf, "registry = ", nca.registry, "\n")
 	filteredConf = append(filteredConf, nca.npmAuth)
 	return []byte(strings.Join(filteredConf, "")), nil
@@ -680,11 +688,13 @@ func scopeAlreadyExists(scope string, existingScopes []string) bool {
 }
 
 // Valid configs keys are not related to registry (registry = xyz) or scoped registry (@scope = xyz)) and have data in their value
+// We want to avoid writing "json=true" because we ran the the configuration list command with "--json". We will add it explicitly if necessary.
 func isValidKeyVal(key string, val interface{}) bool {
 	return !strings.HasPrefix(key, "//") &&
 		!strings.HasPrefix(key, "@") &&
 		key != "registry" &&
 		key != "metrics-registry" &&
+		key != "json" &&
 		val != nil &&
 		val != ""
 }

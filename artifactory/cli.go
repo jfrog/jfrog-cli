@@ -244,8 +244,8 @@ func GetCommands() []cli.Command {
 			UsageText:    buildadddependencies.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) {
-				buildAddDependenciesCmd(c)
+			Action: func(c *cli.Context) error {
+				return buildAddDependenciesCmd(c)
 			},
 		},
 		{
@@ -352,7 +352,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "mvn",
-			Flags:           getBuildToolFlags(),
+			Flags:           getBuildFlags(),
 			Usage:           mvndoc.Description,
 			HelpName:        common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText:       mvndoc.Arguments,
@@ -377,7 +377,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "gradle",
-			Flags:           getBuildToolFlags(),
+			Flags:           getBuildFlags(),
 			Usage:           gradledoc.Description,
 			HelpName:        common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText:       gradledoc.Arguments,
@@ -799,12 +799,12 @@ func getSortLimitFlags() []cli.Flag {
 
 func getUploadFlags() []cli.Flag {
 	uploadFlags := append(getServerWithClientCertsFlags(), getSpecFlags()...)
-	uploadFlags = append(uploadFlags, getBuildToolAndModuleFlags()...)
+	uploadFlags = append(uploadFlags, getBuildAndModuleFlags()...)
 	uploadFlags = append(uploadFlags, getUploadExclusionsFlags()...)
 	return append(uploadFlags, []cli.Flag{
 		cli.StringFlag{
 			Name:  "deb",
-			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the the value for distribution, component or architecture include a slash, the slash should be escaped with a back-slash.` `",
+			Usage: "[Optional] Used for Debian packages in the form of distribution/component/architecture. If the value for distribution, component or architecture includes a slash, the slash should be escaped with a back-slash.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "recursive",
@@ -846,7 +846,7 @@ func getUploadFlags() []cli.Flag {
 func getDownloadFlags() []cli.Flag {
 	downloadFlags := append(getServerWithClientCertsFlags(), getSortLimitFlags()...)
 	downloadFlags = append(downloadFlags, getSpecFlags()...)
-	downloadFlags = append(downloadFlags, getBuildToolAndModuleFlags()...)
+	downloadFlags = append(downloadFlags, getBuildAndModuleFlags()...)
 	downloadFlags = append(downloadFlags, getExclusionsFlags()...)
 	return append(downloadFlags, []cli.Flag{
 		cli.BoolTFlag{
@@ -898,23 +898,23 @@ func getDownloadFlags() []cli.Flag {
 	}...)
 }
 
-func getBuildToolFlags() []cli.Flag {
+func getBuildFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "build-name",
-			Usage: "[Optional] Providing this option will collect and record build info for this build name.` `",
+			Usage: "[Optional] Providing this option will collect and record build info for this build name. Build number option is mandatory when this option is provided.` `",
 		},
 		cli.StringFlag{
 			Name:  "build-number",
-			Usage: "[Optional] Providing this option will collect and record build info for this build number. If you provide a build name (using the --build-name option) and do not provide a build number, a build number will be automatically generated.` `",
+			Usage: "[Optional] Providing this option will collect and record build info for this build number. Build name option is mandatory when this option is provided.` `",
 		},
 	}
 }
 
-func getBuildToolAndModuleFlags() []cli.Flag {
-	return append(getBuildToolFlags(), cli.StringFlag{
+func getBuildAndModuleFlags() []cli.Flag {
+	return append(getBuildFlags(), cli.StringFlag{
 		Name:  "module",
-		Usage: "[Optional] Optional module name for the build-info.` `",
+		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
 	})
 }
 
@@ -993,32 +993,32 @@ func getDockerPullFlags() []cli.Flag {
 
 func getDockerFlags() []cli.Flag {
 	var flags []cli.Flag
-	flags = append(flags, getBuildToolAndModuleFlags()...)
+	flags = append(flags, getBuildAndModuleFlags()...)
 	flags = append(flags, getServerFlags()...)
 	flags = append(flags, getSkipLoginFlag())
 	return flags
 }
-func getDepracatedFlags() []cli.Flag {
+func getDeprecatedFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
-			Usage: "[Depracated] [Optional] Artifactory URL.` `",
+			Usage: "[Deprecated] [Optional] Artifactory URL.` `",
 		},
 		cli.StringFlag{
 			Name:  "user",
-			Usage: "[Depracated] [Optional] Artifactory username.` `",
+			Usage: "[Deprecated] [Optional] Artifactory username.` `",
 		},
 		cli.StringFlag{
 			Name:  "password",
-			Usage: "[Depracated] [Optional] Artifactory password.` `",
+			Usage: "[Deprecated] [Optional] Artifactory password.` `",
 		},
 		cli.StringFlag{
 			Name:  "apikey",
-			Usage: "[Depracated] [Optional] Artifactory API key.` `",
+			Usage: "[Deprecated] [Optional] Artifactory API key.` `",
 		},
 		cli.StringFlag{
 			Name:  "access-token",
-			Usage: "[Depracated] [Optional] Artifactory access token.` `",
+			Usage: "[Deprecated] [Optional] Artifactory access token.` `",
 		},
 	}
 }
@@ -1027,14 +1027,14 @@ func getDepracatedFlags() []cli.Flag {
 func getNpmLegacyFlags() []cli.Flag {
 	npmFlags := cli.StringFlag{
 		Name:  "npm-args",
-		Usage: "[Depracated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
+		Usage: "[Deprecated] [Optional] A list of npm arguments and options in the form of \"--arg1=value1 --arg2=value2\"` `",
 	}
-	return append(getDepracatedFlags(), npmFlags)
+	return append(getDeprecatedFlags(), npmFlags)
 }
 
 func getNpmCommonFlags() []cli.Flag {
 	npmFlags := getNpmLegacyFlags()
-	return append(getBuildToolAndModuleFlags(), npmFlags...)
+	return append(getBuildAndModuleFlags(), npmFlags...)
 }
 
 func getNpmFlags() []cli.Flag {
@@ -1054,21 +1054,21 @@ func getBasicBuildToolsFlags() []cli.Flag {
 
 func getNugetFlags() []cli.Flag {
 	nugetFlags := getNugetCommonFlags()
-	return append(getBuildToolAndModuleFlags(), nugetFlags...)
+	return append(getBuildAndModuleFlags(), nugetFlags...)
 }
 
 func getNugetCommonFlags() []cli.Flag {
 	commonNugetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "nuget-args",
-			Usage: "[Depracated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
+			Usage: "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		},
 		cli.StringFlag{
 			Name:  "solution-root",
-			Usage: "[Depracated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
+			Usage: "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		},
 	}
-	commonNugetFlags = append(commonNugetFlags, getDepracatedFlags()...)
+	commonNugetFlags = append(commonNugetFlags, getDeprecatedFlags()...)
 	return commonNugetFlags
 }
 
@@ -1076,20 +1076,20 @@ func getGoFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "no-registry",
-			Usage: "[Depracated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
+			Usage: "[Deprecated] [Default: false] Set to true if you don't want to use Artifactory as your proxy` `",
 		},
 		cli.BoolFlag{
 			Name:  "publish-deps",
-			Usage: "[Depracated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
+			Usage: "[Deprecated] [Default: false] Set to true if you wish to publish missing dependencies to Artifactory` `",
 		},
 	}
-	flags = append(flags, getDepracatedFlags()...)
+	flags = append(flags, getDeprecatedFlags()...)
 	return flags
 }
 
 func getGoAndBuildToolFlags() []cli.Flag {
 	flags := getGoFlags()
-	flags = append(getBuildToolAndModuleFlags(), flags...)
+	flags = append(getBuildAndModuleFlags(), flags...)
 	return flags
 }
 
@@ -1110,7 +1110,7 @@ func getGoPublishFlags() []cli.Flag {
 		},
 	}
 	flags = append(flags, getBasicBuildToolsFlags()...)
-	flags = append(flags, getBuildToolAndModuleFlags()...)
+	flags = append(flags, getBuildAndModuleFlags()...)
 	return flags
 }
 
@@ -1421,10 +1421,11 @@ func getConfigFlags() []cli.Flag {
 		},
 		cli.BoolTFlag{
 			Name:  "enc-password",
-			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifatory's encryption API.` `",
+			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
+	flags = append(flags, getClientCertsFlags()...)
 	return append(flags,
 		getSshKeyPathFlag()...)
 }
@@ -1486,13 +1487,16 @@ func getCurlFlags() []cli.Flag {
 }
 
 func getPipInstallFlags() []cli.Flag {
-	return getBuildToolAndModuleFlags()
+	return getBuildAndModuleFlags()
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
 	artDetails, err := createArtifactoryDetails(c, includeConfig)
-	if err != nil || artDetails.Url == "" {
-		return nil, errors.New("The --url option is mandatory")
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.Url == "" {
+		return nil, errors.New("the --url option is mandatory")
 	}
 	return artDetails, nil
 }
@@ -1509,7 +1513,7 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 			err = errors.New("The '--split-count' option value is limited to a maximum of " + strconv.Itoa(cliutils.DownloadMaxSplitCount) + ".")
 		}
 		if splitCount < 0 {
-			err = errors.New("The '--split-count' option cannot have a negative value.")
+			err = errors.New("the '--split-count' option cannot have a negative value")
 		}
 	}
 	return
@@ -1521,7 +1525,7 @@ func getThreadsCount(c *cli.Context) (threads int, err error) {
 	if c.String("threads") != "" {
 		threads, err = strconv.Atoi(c.String("threads"))
 		if err != nil || threads < 1 {
-			err = errors.New("The '--threads' option should have a numeric positive value.")
+			err = errors.New("the '--threads' option should have a numeric positive value")
 			return 0, err
 		}
 	}
@@ -1563,7 +1567,6 @@ func validateServerId(serverId string) error {
 			return errors.New(fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
 		}
 	}
-
 	return nil
 }
 
@@ -1572,7 +1575,7 @@ func validateCommand(args []string, notAllowedFlags []cli.Flag) error {
 		for _, flag := range notAllowedFlags {
 			// Cli flags are in the format of --key, therefore, the -- need to be added to the name
 			if strings.Contains(arg, "--"+flag.GetName()) {
-				return errorutils.CheckError(fmt.Errorf("Flag --%s can't be used with config file", flag.GetName()))
+				return errorutils.CheckError(fmt.Errorf("flag --%s can't be used with config file", flag.GetName()))
 			}
 		}
 	}
@@ -1646,16 +1649,17 @@ func configCmd(c *cli.Context) error {
 			return nil
 		}
 		serverId = c.Args()[0]
-		validateServerId(serverId)
+		err = validateServerId(serverId)
+		if err != nil {
+			return err
+		}
 	}
 	err = validateConfigFlags(configCommandConfiguration)
 	if err != nil {
 		return err
 	}
 	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
-	err = configCmd.Config()
-
-	return err
+	return configCmd.Config()
 }
 
 func mvnLegacyCmd(c *cli.Context) error {
@@ -1663,9 +1667,9 @@ func mvnLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	configuration, err := createBuildToolConfiguration(c)
+	configuration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals(c.Args().Get(0))
 
@@ -1739,9 +1743,9 @@ func gradleLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	configuration, err := createBuildToolConfiguration(c)
+	configuration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	gradleCmd := gradle.NewGradleCommand()
 	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1))
@@ -1761,9 +1765,9 @@ func dockerPushCmd(c *cli.Context) error {
 	targetRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
 
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	dockerPushCommand := docker.NewDockerPushCommand()
 	threads, err := getThreadsCount(c)
@@ -1786,9 +1790,9 @@ func dockerPullCmd(c *cli.Context) error {
 	imageTag := c.Args().Get(0)
 	sourceRepo := c.Args().Get(1)
 	skipLogin := c.Bool("skip-login")
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	dockerPullCommand := docker.NewDockerPullCommand()
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
@@ -1834,9 +1838,9 @@ func nugetLegacyCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	nugetCmd := nuget.NewLegacyNugetCommand()
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
@@ -1864,9 +1868,9 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	npmCmd := npm.NewNpmLegacyInstallCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -1919,9 +1923,9 @@ func npmLegacyCiCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	npmCmd := npm.NewNpmLegacyCiCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -1969,9 +1973,9 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	npmPublicCmd := npm.NewNpmPublishCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -1999,9 +2003,9 @@ func goPublishCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
@@ -2138,9 +2142,9 @@ func goLegacyCmd(c *cli.Context) error {
 		return err
 	}
 	publishDeps := c.Bool("publish-deps")
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	resolverRepo := &utils.RepositoryConfig{}
 	resolverRepo.SetTargetRepo(targetRepo).SetRtDetails(details)
@@ -2240,12 +2244,12 @@ func pingCmd(c *cli.Context) error {
 	}
 	artDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
-		return nil
+		return err
 	}
 	pingCmd := generic.NewPingCommand()
 	pingCmd.SetRtDetails(artDetails)
 	err = commands.Exec(pingCmd)
-	resString := string(clientutils.IndentJson(pingCmd.Response()))
+	resString := clientutils.IndentJson(pingCmd.Response())
 	if err != nil {
 		return errors.New(err.Error() + "\n" + resString)
 	}
@@ -2265,7 +2269,7 @@ func downloadCmd(c *cli.Context) error {
 	var downloadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		downloadSpec, err = getDownloadSpec(c)
+		downloadSpec, err = getSpec(c, true)
 	} else {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
@@ -2283,11 +2287,11 @@ func downloadCmd(c *cli.Context) error {
 	}
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
-		return nil
+		return err
 	}
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet"))
@@ -2326,9 +2330,9 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildConfiguration, err := createBuildToolConfiguration(c)
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
-		return nil
+		return err
 	}
 	uploadCmd := generic.NewUploadCommand()
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
@@ -2355,7 +2359,7 @@ func moveCmd(c *cli.Context) error {
 	var moveSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		moveSpec, err = getSearchSpec(c)
+		moveSpec, err = getSpec(c, false)
 	} else {
 		moveSpec, err = createDefaultCopyMoveSpec(c)
 	}
@@ -2390,7 +2394,7 @@ func copyCmd(c *cli.Context) error {
 	var copySpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		copySpec, err = getSearchSpec(c)
+		copySpec, err = getSpec(c, false)
 	} else {
 		copySpec, err = createDefaultCopyMoveSpec(c)
 	}
@@ -2426,7 +2430,7 @@ func deleteCmd(c *cli.Context) error {
 	var deleteSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		deleteSpec, err = getSearchSpec(c)
+		deleteSpec, err = getSpec(c, false)
 	} else {
 		deleteSpec, err = createDefaultDeleteSpec(c)
 	}
@@ -2462,7 +2466,7 @@ func searchCmd(c *cli.Context) error {
 	var searchSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		searchSpec, err = getSearchSpec(c)
+		searchSpec, err = getSpec(c, false)
 	} else {
 		searchSpec, err = createDefaultSearchSpec(c)
 	}
@@ -2491,7 +2495,7 @@ func searchCmd(c *cli.Context) error {
 	if c.Bool("count") {
 		log.Output(len(searchCmd.SearchResult()))
 	} else {
-		log.Output(string(clientutils.IndentJson(result)))
+		log.Output(clientutils.IndentJson(result))
 	}
 
 	return err
@@ -2510,10 +2514,10 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	var props string
 	if c.IsSet("spec") {
 		props = c.Args()[0]
-		propsSpec, err = getSearchSpec(c)
+		propsSpec, err = getSpec(c, false)
 	} else {
 		props = c.Args()[1]
-		propsSpec, err = createDefaultCopyMoveSpec(c)
+		propsSpec, err = createDefaultPropertiesSpec(c)
 	}
 	if err != nil {
 		return nil, err
@@ -2558,7 +2562,7 @@ func deletePropsCmd(c *cli.Context) error {
 		return err
 	}
 
-	propsCmd := generic.NewDeletePropsCommand().SetPropsCommand(*cmd)
+	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
@@ -2937,7 +2941,7 @@ func getDebFlag(c *cli.Context) (deb string, err error) {
 	deb = c.String("deb")
 	slashesCount := strings.Count(deb, "/") - strings.Count(deb, "\\/")
 	if deb != "" && slashesCount != 2 {
-		return "", errors.New("The --deb option should be in the form of distribution/component/architecture")
+		return "", errors.New("the --deb option should be in the form of distribution/component/architecture")
 	}
 	return deb, nil
 }
@@ -2966,14 +2970,17 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func getSearchSpec(c *cli.Context) (searchSpec *spec.SpecFiles, err error) {
-	searchSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+func getSpec(c *cli.Context, isDownload bool) (specFiles *spec.SpecFiles, err error) {
+	specFiles, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
 	// Override spec with CLI options
-	for i := 0; i < len(searchSpec.Files); i++ {
-		overrideFieldsIfSet(searchSpec.Get(i), c)
+	for i := 0; i < len(specFiles.Files); i++ {
+		if isDownload {
+			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+		}
+		overrideFieldsIfSet(specFiles.Get(i), c)
 	}
 	return
 }
@@ -3138,19 +3145,6 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func getDownloadSpec(c *cli.Context) (downloadSpec *spec.SpecFiles, err error) {
-	downloadSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return
-	}
-	// Override spec with CLI options
-	for i := 0; i < len(downloadSpec.Files); i++ {
-		downloadSpec.Get(i).Pattern = strings.TrimPrefix(downloadSpec.Get(i).Pattern, "/")
-		overrideFieldsIfSet(downloadSpec.Get(i), c)
-	}
-	return
-}
-
 func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
 	downloadConfiguration = new(utils.DownloadConfiguration)
 	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
@@ -3280,11 +3274,11 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 	return
 }
 
-func createBuildToolConfiguration(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
+func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
 	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
 	buildConfigConfiguration.Module = c.String("module")
-	err = utils.ValidateBuildParams(buildConfigConfiguration)
+	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
 	return
 }
 
@@ -3301,9 +3295,8 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
-		return errors.New("The --url option is mandatory when the --interactive option is set to false")
+		return errors.New("the --url option is mandatory when the --interactive option is set to false")
 	}
-
 	return nil
 }
 
@@ -3366,31 +3359,6 @@ func isFailNoOp(context *cli.Context) bool {
 		return false
 	}
 	return context.Bool("fail-no-op")
-}
-
-func createPropsParams(c *cli.Context) (propertiesSpec *spec.SpecFiles, properties string, artDetails *config.ArtifactoryDetails, err error) {
-	propertiesSpec, err = createDefaultPropertiesSpec(c)
-	if err != nil {
-		return nil, "", nil, err
-	}
-	properties = c.Args()[1]
-	artDetails, err = createArtifactoryDetailsByFlags(c, true)
-	return
-}
-
-// Returns the properties command struct
-func createPropsCommand(c *cli.Context) (*generic.PropsCommand, error) {
-	propertiesSpec, properties, artDetails, err := createPropsParams(c)
-	if err != nil {
-		return nil, err
-	}
-	propsCmd := generic.NewPropsCommand()
-	threads, err := getThreadsCount(c)
-	if err != nil {
-		return nil, err
-	}
-	propsCmd.SetProps(properties).SetThreads(threads).SetSpec(propertiesSpec).SetRtDetails(artDetails)
-	return propsCmd, nil
 }
 
 // Returns build configuration struct using the params provided from the console.

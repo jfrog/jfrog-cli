@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io"
 	"os"
 	"os/exec"
@@ -81,20 +83,16 @@ func TestPipInstall(t *testing.T) {
 
 func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module string, expectedDependencies int, args []string) {
 	wd, err := os.Getwd()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	err = os.Chdir(projectPath)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	defer os.Chdir(wd)
 
 	args = append(args, "--build-number="+buildNumber)
 
 	err = artifactoryCli.Exec(args...)
 	if err != nil {
-		t.Errorf("Failed executing pip-install command: %s", err.Error())
+		assert.Failf(t, "Failed executing pip-install command: %s", err.Error())
 		cleanPipTest(t, outputFolder)
 		return
 	}
@@ -102,17 +100,9 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 	artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber)
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.PipBuildName, buildNumber, t, artHttpDetails)
-	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
-		t.Error("Pip build info was not generated correctly, no modules were created.")
-	}
-
-	if expectedDependencies != len(buildInfo.Modules[0].Dependencies) {
-		t.Error("Incorrect number of artifacts found in the build-info, expected:", expectedDependencies, " Found:", len(buildInfo.Modules[0].Dependencies))
-	}
-
-	if module != buildInfo.Modules[0].Id {
-		t.Error(fmt.Errorf("Expected module name %s, got %s", module, buildInfo.Modules[0].Id))
-	}
+	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
+	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
+	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
 }
 
 func cleanPipTest(t *testing.T, outFolder string) {
@@ -130,18 +120,12 @@ func cleanPipTest(t *testing.T, outFolder string) {
 
 	// Save freeze output to file.
 	freezeTarget, err := fileutils.CreateFilePath(tests.Temp, outFolder+"-freeze.txt")
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	file, err := os.Create(freezeTarget)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	defer file.Close()
 	_, err = file.Write([]byte(out))
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	// Delete freezed packages.
 	pipUninstallCmd := &PipCmd{Command: "uninstall", Options: []string{"-y", "-r", freezeTarget}}
@@ -155,15 +139,11 @@ func createPipProject(t *testing.T, outFolder, projectName string) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", projectName)
 	projectTarget := filepath.Join(tests.Out, outFolder+"-"+projectName)
 	err := fileutils.CreateDirIfNotExist(projectTarget)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	// Copy pip-installation file.
 	err = fileutils.CopyDir(projectSrc, projectTarget, true)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 
 	// Copy pip-config file.
 	configSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "pip", "pip.yaml")
@@ -177,18 +157,8 @@ func initPipTest(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
 	}
-
-	if !isRepoExist(tests.PypiRemoteRepo) {
-		t.Error("Pypi test remote repository doesn't exist.")
-	}
-
-	if !isRepoExist(tests.PypiVirtualRepo) {
-		t.Error("Pypi test virtual repository doesn't exist.")
-	}
-
-	if t.Failed() {
-		t.FailNow()
-	}
+	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
+	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }
 
 func setPathEnvForPipInstall(t *testing.T) string {
@@ -341,14 +311,9 @@ func testPipDepsTreeCmd(t *testing.T, projectPath string, expectedElements int, 
 	// Count dependencies.
 	var depsTreeTest []DependenciesTreeTest
 	err = json.Unmarshal(treeJsonData, &depsTreeTest)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	depsCount := countDependencies(depsTreeTest)
-
-	if expectedElements != depsCount {
-		t.Errorf("Incorrect number of dependencies found, expected: %d, found: %d", expectedElements, depsCount)
-	}
+	assert.Equal(t, expectedElements, depsCount, "Incorrect number of dependencies found")
 }
 
 type DependenciesTreeTest struct {
