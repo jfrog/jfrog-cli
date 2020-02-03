@@ -2,7 +2,9 @@ package utils
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
@@ -13,14 +15,36 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	// Common flags
+	Global             = "global"
+	ResolutionServerId = "server-id-resolve"
+	DeploymentServerId = "server-id-deploy"
+	ResolutionRepo     = "repo-resolve"
+	DeploymentRepo     = "repo-deploy"
+
+	// Maven flags
+	ResolutionReleasesRepo  = "repo-resolve-releases"
+	ResolutionSnapshotsRepo = "repo-resolve-snapshots"
+	DeploymentReleasesRepo  = "repo-deploy-releases"
+	DeploymentSnapshotsRepo = "repo-deploy-snapshots"
+
+	// Gradle flags
+	UsesPlugin          = "uses-plugin"
+	UseWrapper          = "use-wrapper"
+	DeployMavenDesc     = "deploy-maven-desc"
+	DeployIvyDesc       = "deploy-ivy-desc"
+	IvyDescPattern      = "ivy-desc-pattern"
+	IvyArtifactsPattern = "ivy-artifacts-pattern"
+)
+
 type ConfigFile struct {
-	prompt.CommonConfig    `yaml:"common,inline"`
-	ResolveFromArtifactory *bool            `yaml:"-"`
-	DeployToArtifactory    *bool            `yaml:"-"`
-	Resolver               utils.Repository `yaml:"resolver,omitempty"`
-	Deployer               utils.Repository `yaml:"deployer,omitempty"`
-	UsePlugin              bool             `yaml:"usePlugin,omitempty"`
-	UseWrapper             bool             `yaml:"useWrapper,omitempty"`
+	prompt.CommonConfig `yaml:"common,inline"`
+	Interactive         bool             `yaml:"-"`
+	Resolver            utils.Repository `yaml:"resolver,omitempty"`
+	Deployer            utils.Repository `yaml:"deployer,omitempty"`
+	UsePlugin           bool             `yaml:"usePlugin,omitempty"`
+	UseWrapper          bool             `yaml:"useWrapper,omitempty"`
 }
 
 func NewConfigFile(confType utils.ProjectType, c *cli.Context) *ConfigFile {
@@ -30,11 +54,11 @@ func NewConfigFile(confType utils.ProjectType, c *cli.Context) *ConfigFile {
 			ConfigType: confType.String(),
 		},
 	}
-	configFile.fillConfigFromFlags(c)
+	configFile.populateConfigFromFlags(c)
 	if confType == utils.Maven {
-		configFile.fillMavenConfigFromFlags(c)
+		configFile.populateMavenConfigFromFlags(c)
 	} else if confType == utils.Gradle {
-		configFile.fillGradleConfigFromFlags(c)
+		configFile.populateGradleConfigFromFlags(c)
 	}
 	return configFile
 }
@@ -49,12 +73,11 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 		return err
 	}
 	configFilePath := filepath.Join(projectDir, confType.String()+".yaml")
-	interactive := !c.IsSet("interactive") || c.BoolT("interactive")
-	if err := prompt.VerifyConfigFile(configFilePath, interactive); err != nil {
+	configFile := NewConfigFile(confType, c)
+	if err := prompt.VerifyConfigFile(configFilePath, configFile.Interactive); err != nil {
 		return err
 	}
-	configFile := NewConfigFile(confType, c)
-	if interactive {
+	if configFile.Interactive {
 		switch confType {
 		case utils.Go:
 			err = configFile.configGo()
@@ -84,41 +107,49 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 	return nil
 }
 
-// Fill configuration from cli flags
-func (configFile *ConfigFile) fillConfigFromFlags(c *cli.Context) {
-	// If resolveFromArtifactory isn't set, leave it nil
-	if c.IsSet("resolveFromArtifactory") {
-		configFile.ResolveFromArtifactory = new(bool)
-		*configFile.ResolveFromArtifactory = c.BoolT("resolveFromArtifactory")
+func isInteractive(c *cli.Context) bool {
+	if strings.ToLower(os.Getenv("CI")) == "true" {
+		return false
 	}
-	configFile.Resolver.ServerId = c.String("resolutionServerId")
-	configFile.Resolver.Repo = c.String("resolutionRepo")
+	return !isAnyFlagSet(c, ResolutionServerId, ResolutionRepo, DeploymentServerId, DeploymentRepo)
+}
 
-	// If deployToArtifactory isn't set, leave it nil
-	if c.IsSet("deployToArtifactory") {
-		configFile.DeployToArtifactory = new(bool)
-		*configFile.DeployToArtifactory = c.BoolT("deployToArtifactory")
+func isAnyFlagSet(c *cli.Context, flagNames ...string) bool {
+	for _, flagName := range flagNames {
+		if c.IsSet(flagName) {
+			return true
+		}
 	}
-	configFile.Deployer.ServerId = c.String("deploymentServerId")
-	configFile.Deployer.Repo = c.String("deploymentRepo")
+	return false
+}
+
+// Fill configuration from cli flags
+func (configFile *ConfigFile) populateConfigFromFlags(c *cli.Context) {
+	configFile.Resolver.ServerId = c.String(ResolutionServerId)
+	configFile.Resolver.Repo = c.String(ResolutionRepo)
+	configFile.Deployer.ServerId = c.String(DeploymentServerId)
+	configFile.Deployer.Repo = c.String(DeploymentRepo)
+	configFile.Interactive = isInteractive(c)
 }
 
 // Fill Maven related configuration from cli flags
-func (configFile *ConfigFile) fillMavenConfigFromFlags(c *cli.Context) {
-	configFile.Resolver.SnapshotRepo = c.String("resolutionSnapshotRepo")
-	configFile.Resolver.ReleaseRepo = c.String("resolutionReleaseRepo")
-	configFile.Deployer.SnapshotRepo = c.String("deploymentSnapshotRepo")
-	configFile.Deployer.ReleaseRepo = c.String("deploymentReleaseRepo")
+func (configFile *ConfigFile) populateMavenConfigFromFlags(c *cli.Context) {
+	configFile.Resolver.SnapshotRepo = c.String(ResolutionSnapshotsRepo)
+	configFile.Resolver.ReleaseRepo = c.String(ResolutionReleasesRepo)
+	configFile.Deployer.SnapshotRepo = c.String(DeploymentSnapshotsRepo)
+	configFile.Deployer.ReleaseRepo = c.String(DeploymentReleasesRepo)
+	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, ResolutionSnapshotsRepo, ResolutionReleasesRepo, DeploymentSnapshotsRepo, DeploymentReleasesRepo)
 }
 
 // Fill Gradle related configuration from cli flags
-func (configFile *ConfigFile) fillGradleConfigFromFlags(c *cli.Context) {
-	configFile.Deployer.DeployMavenDesc = c.BoolT("deployMavenDescriptors")
-	configFile.Deployer.DeployIvyDesc = c.BoolT("deployIvyDescriptors")
-	configFile.Deployer.IvyPattern = c.String("ivyPattern")
-	configFile.Deployer.ArtifactsPattern = c.String("artifactPattern")
-	configFile.UsePlugin = c.Bool("usePlugin")
-	configFile.UseWrapper = c.Bool("useWrapper")
+func (configFile *ConfigFile) populateGradleConfigFromFlags(c *cli.Context) {
+	configFile.Deployer.DeployMavenDesc = c.BoolT(DeployMavenDesc)
+	configFile.Deployer.DeployIvyDesc = c.BoolT(DeployIvyDesc)
+	configFile.Deployer.IvyPattern = c.String(IvyDescPattern)
+	configFile.Deployer.ArtifactsPattern = c.String(IvyArtifactsPattern)
+	configFile.UsePlugin = c.Bool(UsesPlugin)
+	configFile.UseWrapper = c.Bool(UseWrapper)
+	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, DeployMavenDesc, DeployIvyDesc, IvyDescPattern, IvyArtifactsPattern, UsesPlugin, UseWrapper)
 }
 
 func (configFile *ConfigFile) configGo() error {
@@ -139,30 +170,26 @@ func (configFile *ConfigFile) configNuget() error {
 
 func (configFile *ConfigFile) configMaven(c *cli.Context) error {
 	// Set resolution repositories
-	if configFile.ResolveFromArtifactory == nil || *configFile.ResolveFromArtifactory {
-		if err := configFile.setResolverId(); err != nil {
+	if err := configFile.setResolverId(); err != nil {
+		return err
+	}
+	if configFile.Resolver.ServerId != "" {
+		if err := configFile.setRepo(&configFile.Resolver.ReleaseRepo, "Set resolution repository for release dependencies", configFile.Resolver.ServerId, utils.REMOTE); err != nil {
 			return err
 		}
-		if configFile.Resolver.ServerId != "" {
-			if err := configFile.setRepo(&configFile.Resolver.ReleaseRepo, "Set resolution repository for release dependencies", configFile.Resolver.ServerId); err != nil {
-				return err
-			}
-			if err := configFile.setRepo(&configFile.Resolver.SnapshotRepo, "Set resolution repository for snapshot dependencies", configFile.Resolver.ServerId); err != nil {
-				return err
-			}
+		if err := configFile.setRepo(&configFile.Resolver.SnapshotRepo, "Set resolution repository for snapshot dependencies", configFile.Resolver.ServerId, utils.REMOTE); err != nil {
+			return err
 		}
 	}
 	// Set deployment repositories
-	if configFile.DeployToArtifactory == nil || *configFile.DeployToArtifactory {
-		if err := configFile.setDeployerId(); err != nil {
+	if err := configFile.setDeployerId(); err != nil {
+		return err
+	}
+	if configFile.Deployer.ServerId != "" {
+		if err := configFile.setRepo(&configFile.Deployer.ReleaseRepo, "Set repository for release artifacts deployment", configFile.Deployer.ServerId, utils.LOCAL); err != nil {
 			return err
 		}
-		if configFile.Deployer.ServerId != "" {
-			if err := configFile.setRepo(&configFile.Deployer.ReleaseRepo, "Set repository for release artifacts deployment", configFile.Deployer.ServerId); err != nil {
-				return err
-			}
-			return configFile.setRepo(&configFile.Deployer.SnapshotRepo, "Set repository for snapshot artifacts deployment", configFile.Deployer.ServerId)
-		}
+		return configFile.setRepo(&configFile.Deployer.SnapshotRepo, "Set repository for snapshot artifacts deployment", configFile.Deployer.ServerId, utils.LOCAL)
 	}
 	return nil
 }
@@ -181,24 +208,15 @@ func (configFile *ConfigFile) configGradle(c *cli.Context) error {
 
 func (configFile *ConfigFile) readGradleGlobalConfig(c *cli.Context) error {
 	var err error
-	if !c.IsSet("usePlugin") {
-		configFile.UsePlugin, err = prompt.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
-		if err != nil {
-			return err
-		}
+	configFile.UsePlugin, err = prompt.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
+	if err != nil {
+		return err
 	}
-	if !c.IsSet("useWrapper") {
-		configFile.UseWrapper, err = prompt.AskYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
-	}
+	configFile.UseWrapper, err = prompt.AskYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
 	return err
 }
 
 func (configFile *ConfigFile) setDeployer() error {
-	// Check if the user explicitly set deployToArtifactory=false
-	if configFile.DeployToArtifactory != nil && !*configFile.DeployToArtifactory {
-		return nil
-	}
-
 	// Set deployer id
 	if err := configFile.setDeployerId(); err != nil {
 		return err
@@ -206,17 +224,12 @@ func (configFile *ConfigFile) setDeployer() error {
 
 	// Set deployment repository
 	if configFile.Deployer.ServerId != "" {
-		return configFile.setRepo(&configFile.Deployer.Repo, "Set repository for artifacts deployment", configFile.Deployer.ServerId)
+		return configFile.setRepo(&configFile.Deployer.Repo, "Set repository for artifacts deployment", configFile.Deployer.ServerId, utils.LOCAL)
 	}
 	return nil
 }
 
 func (configFile *ConfigFile) setResolver() error {
-	// Check if the user explicitly set resolveFromArtifactory=false
-	if configFile.ResolveFromArtifactory != nil && !*configFile.ResolveFromArtifactory {
-		return nil
-	}
-
 	// Set resolver id
 	if err := configFile.setResolverId(); err != nil {
 		return err
@@ -224,7 +237,7 @@ func (configFile *ConfigFile) setResolver() error {
 
 	// Set resolution repository
 	if configFile.Resolver.ServerId != "" {
-		return configFile.setRepo(&configFile.Resolver.Repo, "Set repository for dependencies resolution", configFile.Resolver.ServerId)
+		return configFile.setRepo(&configFile.Resolver.Repo, "Set repository for dependencies resolution", configFile.Resolver.ServerId, utils.REMOTE)
 	}
 	return nil
 }
@@ -237,32 +250,23 @@ func (configFile *ConfigFile) setDeployerResolver() error {
 }
 
 func (configFile *ConfigFile) setResolverId() error {
-	return configFile.setServerId(&configFile.Resolver.ServerId, configFile.ResolveFromArtifactory, "Resolve dependencies from Artifactory")
+	return configFile.setServerId(&configFile.Resolver.ServerId, "Resolve dependencies from Artifactory")
 }
 
 func (configFile *ConfigFile) setDeployerId() error {
-	return configFile.setServerId(&configFile.Deployer.ServerId, configFile.DeployToArtifactory, "Deploy project artifacts to Artifactory")
+	return configFile.setServerId(&configFile.Deployer.ServerId, "Deploy project artifacts to Artifactory")
 }
 
-func (configFile *ConfigFile) setServerId(serverId *string, useArtifactory *bool, useArtifactoryQuestion string) error {
-	if *serverId != "" {
-		return nil
-	}
+func (configFile *ConfigFile) setServerId(serverId *string, useArtifactoryQuestion string) error {
 	var err error
-	if useArtifactory == nil {
-		// Ask whether to use artifactory and ask for the serverId
-		*serverId, err = prompt.ReadArtifactoryServer(useArtifactoryQuestion + " (y/n) [${default}]? ")
-	} else if *useArtifactory {
-		// Ask for the serverId only
-		*serverId, err = prompt.ReadArtifactoryServer("")
-	}
+	*serverId, err = prompt.ReadArtifactoryServer(useArtifactoryQuestion + " (y/n) [${default}]? ")
 	return err
 }
 
-func (configFile *ConfigFile) setRepo(repo *string, message string, serverId string) error {
+func (configFile *ConfigFile) setRepo(repo *string, message string, serverId string, repoType utils.RepoType) error {
 	var err error
 	if *repo == "" {
-		*repo, err = prompt.ReadRepo(message+" (press Tab for options): ", serverId, utils.REMOTE, utils.VIRTUAL)
+		*repo, err = prompt.ReadRepo(message+" (press Tab for options): ", serverId, repoType, utils.VIRTUAL)
 	}
 	return err
 }

@@ -28,7 +28,7 @@ func TestGoConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo", DeploymentServerId+"=depServer", DeploymentRepo+"=repo-local")
 	err := CreateBuildConfig(context, utils.Go)
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func TestPipConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo", DeploymentServerId+"=depServer", DeploymentRepo+"=repo-local")
 	err := CreateBuildConfig(context, utils.Pip)
 	assert.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestNpmConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo", DeploymentServerId+"=depServer", DeploymentRepo+"=repo-local")
 	err := CreateBuildConfig(context, utils.Npm)
 	assert.NoError(t, err)
 
@@ -82,7 +82,7 @@ func TestNugetConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo")
 	err := CreateBuildConfig(context, utils.Nuget)
 	assert.NoError(t, err)
 
@@ -98,8 +98,8 @@ func TestMavenConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionReleaseRepo=release-repo", "resolutionSnapshotRepo=snapshot-repo",
-		"deploymentServerId=depServer", "deploymentReleaseRepo=release-repo-local", "deploymentSnapshotRepo=snapshot-repo-local")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionReleasesRepo+"=release-repo", ResolutionSnapshotsRepo+"=snapshot-repo",
+		DeploymentServerId+"=depServer", DeploymentReleasesRepo+"=release-repo-local", DeploymentSnapshotsRepo+"=snapshot-repo-local")
 	err := CreateBuildConfig(context, utils.Maven)
 	assert.NoError(t, err)
 
@@ -119,7 +119,8 @@ func TestGradleConfigFile(t *testing.T) {
 	defer os.RemoveAll(tempDirPath)
 
 	// Create build config
-	context := createContext("resolutionServerId=relServer", "resolutionRepo=repo", "deploymentServerId=depServer", "deploymentRepo=repo-local", "ivyPattern=[ivy]/[pattern]", "artifactPattern=[artifact]/[pattern]")
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo", DeploymentServerId+"=depServer", DeploymentRepo+"=repo-local",
+		IvyDescPattern+"=[ivy]/[pattern]", IvyArtifactsPattern+"=[artifact]/[pattern]")
 	err := CreateBuildConfig(context, utils.Gradle)
 	assert.NoError(t, err)
 
@@ -149,10 +150,8 @@ func createTempEnv(t *testing.T) string {
 // Create new Codegangsta context with all required flags.
 func createContext(stringFlags ...string) *cli.Context {
 	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
-	flagSet.Bool("interactive", false, "")
-	flags := setBoolFlags(flagSet, "global", "resolveFromArtifactory", "deployToArtifactory", "usePlugin", "useWrapper", "deployMavenDescriptors", "deployIvyDescriptors")
+	flags := setBoolFlags(flagSet, Global, UsesPlugin, UseWrapper, DeployMavenDesc, DeployIvyDesc)
 	flags = append(flags, setStringFlags(flagSet, stringFlags...)...)
-	flags = append(flags, "--interactive=false")
 	flagSet.Parse(flags)
 	return cli.NewContext(nil, flagSet, nil)
 }

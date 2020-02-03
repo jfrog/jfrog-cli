@@ -624,28 +624,16 @@ func GetCommands() []cli.Command {
 func getBaseBuildToolsConfigFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.BoolFlag{
-			Name:  "global",
+			Name:  commandUtils.Global,
 			Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
 		},
-		cli.BoolTFlag{
-			Name:  "interactive",
-			Usage: "[Default: true] Set to false if you do not want the config command to be interactive.` `",
-		},
-		cli.BoolTFlag{
-			Name:  "resolveFromArtifactory",
-			Usage: "[Default: true] Set to false if you do not wish to resolve dependencies from Artifactory.` `",
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionServerId,
+			Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
 		},
 		cli.StringFlag{
-			Name:  "resolutionServerId",
-			Usage: "[Optional] Artifactory server ID for resolution.` `",
-		},
-		cli.BoolTFlag{
-			Name:  "deployToArtifactory",
-			Usage: "[Default: true] Set to false if you do not wish to deploy artifacts to Artifactory.` `",
-		},
-		cli.StringFlag{
-			Name:  "deploymentServerId",
-			Usage: "[Optional] Artifactory server ID for deployment.` `",
+			Name:  commandUtils.DeploymentServerId,
+			Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
 		},
 	}
 }
@@ -653,12 +641,12 @@ func getBaseBuildToolsConfigFlags() []cli.Flag {
 func getCommonBuildToolsConfigFlags() []cli.Flag {
 	return append(getBaseBuildToolsConfigFlags(),
 		cli.StringFlag{
-			Name:  "resolutionRepo",
-			Usage: "[Optional] Resolution repository.` `",
+			Name:  commandUtils.ResolutionRepo,
+			Usage: "[Optional] Repository for dependencies resolution.` `",
 		},
 		cli.StringFlag{
-			Name:  "deploymentRepo",
-			Usage: "[Optional] Deployment repository.` `",
+			Name:  commandUtils.DeploymentRepo,
+			Usage: "[Optional] Repository for artifacts deployment.` `",
 		},
 	)
 }
@@ -666,20 +654,20 @@ func getCommonBuildToolsConfigFlags() []cli.Flag {
 func getMavenConfigFlags() []cli.Flag {
 	return append(getBaseBuildToolsConfigFlags(),
 		cli.StringFlag{
-			Name:  "resolutionReleaseRepo",
-			Usage: "[Optional] Resolution release repository.` `",
+			Name:  commandUtils.ResolutionReleasesRepo,
+			Usage: "[Optional] Resolution repository for release dependencies.` `",
 		},
 		cli.StringFlag{
-			Name:  "resolutionSnapshotRepo",
-			Usage: "[Optional] Resolution snapshot repository.` `",
+			Name:  commandUtils.ResolutionSnapshotsRepo,
+			Usage: "[Optional] Resolution repository for snapshot dependencies.` `",
 		},
 		cli.StringFlag{
-			Name:  "deploymentReleaseRepo",
-			Usage: "[Optional] Deployment release repository.` `",
+			Name:  commandUtils.DeploymentReleasesRepo,
+			Usage: "[Optional] Deployment repository for release artifacts.` `",
 		},
 		cli.StringFlag{
-			Name:  "deploymentSnapshotRepo",
-			Usage: "[Optional] Deployment snapshot repository.` `",
+			Name:  commandUtils.DeploymentSnapshotsRepo,
+			Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
 		},
 	)
 }
@@ -687,27 +675,27 @@ func getMavenConfigFlags() []cli.Flag {
 func getGradleConfigFlags() []cli.Flag {
 	return append(getCommonBuildToolsConfigFlags(),
 		cli.BoolFlag{
-			Name:  "usePlugin",
-			Usage: "[Default: false] Set to true if Gradle Artifactory Plugin already applied in the build script.` `",
+			Name:  commandUtils.UsesPlugin,
+			Usage: "[Default: false] Set to true if Gradle Artifactory Plugin is already applied in the build script.` `",
 		},
 		cli.BoolFlag{
-			Name:  "useWrapper",
+			Name:  commandUtils.UseWrapper,
 			Usage: "[Default: false] Set to true if you'd like to use Gradle wrapper.` `",
 		},
 		cli.BoolTFlag{
-			Name:  "deployMavenDescriptors",
+			Name:  commandUtils.DeployMavenDesc,
 			Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
 		},
 		cli.BoolTFlag{
-			Name:  "deployIvyDescriptors",
+			Name:  commandUtils.DeployIvyDesc,
 			Usage: "[Default: true] Set to false if you do not wish to deploy Ivy descriptors.` `",
 		},
 		cli.StringFlag{
-			Name:  "ivyPattern",
+			Name:  commandUtils.IvyDescPattern,
 			Usage: "[Default: '[organization]/[module]/ivy-[revision].xml' Set the deployed Ivy descriptor pattern.` `",
 		},
 		cli.StringFlag{
-			Name:  "artifactPattern",
+			Name:  commandUtils.IvyArtifactsPattern,
 			Usage: "[Default: '[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]' Set the deployed Ivy artifacts pattern.` `",
 		},
 	)
