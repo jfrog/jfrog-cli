@@ -43,7 +43,7 @@ func getProjectNameFromFileContent(content []byte) (string, error) {
 
 // Run egg-info command on setup.py, the command generates metadata files.
 // Return the content of the 'PKG-INFO' file.
-func getEgginfoPkginfoContent(pythonExecutablePath, setuppyFilePath string) ([]byte, error) {
+func getEgginfoPkginfoContent(setuppyFilePath, pythonExecutablePath string) ([]byte, error) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		return nil, err
