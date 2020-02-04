@@ -677,11 +677,11 @@ func getGradleConfigFlags() []cli.Flag {
 	return append(getCommonBuildToolsConfigFlags(),
 		cli.BoolFlag{
 			Name:  commandUtils.UsesPlugin,
-			Usage: "[Default: false] Set to true if Gradle Artifactory Plugin is already applied in the build script.` `",
+			Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 		},
 		cli.BoolFlag{
 			Name:  commandUtils.UseWrapper,
-			Usage: "[Default: false] Set to true if you'd like to use Gradle wrapper.` `",
+			Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
 		},
 		cli.BoolTFlag{
 			Name:  commandUtils.DeployMavenDesc,

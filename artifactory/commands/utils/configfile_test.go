@@ -137,6 +137,90 @@ func TestGradleConfigFile(t *testing.T) {
 	assert.Equal(t, true, config.GetBool("useWrapper"))
 }
 
+func TestGradleConfigFileDefaultPatterns(t *testing.T) {
+	// Set JFROG_CLI_HOME_DIR environment variable
+	tempDirPath := createTempEnv(t)
+	defer os.RemoveAll(tempDirPath)
+
+	// Create build config
+	context := createContext(ResolutionServerId+"=relServer", ResolutionRepo+"=repo", DeploymentServerId+"=depServer", DeploymentRepo+"=repo-local")
+	err := CreateBuildConfig(context, utils.Gradle)
+	assert.NoError(t, err)
+
+	// Check configuration
+	config := checkCommonAndGetConfiguration(t, utils.Gradle.String(), tempDirPath)
+	assert.Equal(t, "relServer", config.GetString("resolver.serverId"))
+	assert.Equal(t, "repo", config.GetString("resolver.repo"))
+	assert.Equal(t, "depServer", config.GetString("deployer.serverId"))
+	assert.Equal(t, "repo-local", config.GetString("deployer.repo"))
+	assert.Equal(t, true, config.GetBool("deployer.deployMavenDescriptors"))
+	assert.Equal(t, true, config.GetBool("deployer.deployIvyDescriptors"))
+	assert.Equal(t, "[organization]/[module]/ivy-[revision].xml", config.GetString("deployer.ivyPattern"))
+	assert.Equal(t, "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", config.GetString("deployer.artifactPattern"))
+	assert.Equal(t, true, config.GetBool("usePlugin"))
+	assert.Equal(t, true, config.GetBool("useWrapper"))
+}
+
+func TestValidateConfigResolver(t *testing.T) {
+	// Create and check empty config
+	configFile := NewConfigFile(utils.Go, createContext())
+	err := configFile.validateConfig()
+	assert.NoError(t, err)
+
+	// Check scenarios of serverId and repo
+	configFile.Resolver.ServerId = "serverId"
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Resolution repository/ies must be set.")
+	configFile.Resolver.Repo = "repo"
+	err = configFile.validateConfig()
+	assert.NoError(t, err)
+	configFile.Resolver.ServerId = ""
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Resolver server ID must be set.")
+
+	// Check scenarios of serverId and release/snapshot repositories
+	configFile.Resolver.ServerId = "serverId"
+	configFile.Resolver.SnapshotRepo = "snapshotRepo"
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Resolution snapshot and release repositories must be set.")
+	configFile.Resolver.ReleaseRepo = "releaseRepo"
+	err = configFile.validateConfig()
+	assert.NoError(t, err)
+	configFile.Resolver.ServerId = ""
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Resolver server ID must be set.")
+}
+
+func TestValidateConfigDeployer(t *testing.T) {
+	// Create and check empty config
+	configFile := NewConfigFile(utils.Go, createContext())
+	err := configFile.validateConfig()
+	assert.NoError(t, err)
+
+	// Check scenarios of serverId and repo
+	configFile.Deployer.ServerId = "serverId"
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Deployment repository/ies must be set.")
+	configFile.Deployer.Repo = "repo"
+	err = configFile.validateConfig()
+	assert.NoError(t, err)
+	configFile.Deployer.ServerId = ""
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Deployer server ID must be set.")
+
+	// Check scenarios of serverId and release/snapshot repositories
+	configFile.Deployer.ServerId = "serverId"
+	configFile.Deployer.ReleaseRepo = "releaseRepo"
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Deployment snapshot and release repositories must be set.")
+	configFile.Deployer.SnapshotRepo = "snapshotRepo"
+	err = configFile.validateConfig()
+	assert.NoError(t, err)
+	configFile.Deployer.ServerId = ""
+	err = configFile.validateConfig()
+	assert.EqualError(t, err, "Deployer server ID must be set.")
+}
+
 // Set JFROG_CLI_HOME_DIR environment variable to be a new temp directory
 func createTempEnv(t *testing.T) string {
 	tmpDir, err := ioutil.TempDir("", "configfile_test")

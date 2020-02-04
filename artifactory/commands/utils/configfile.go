@@ -129,7 +129,7 @@ func isAnyFlagSet(c *cli.Context, flagNames ...string) bool {
 	return false
 }
 
-// Fill configuration from cli flags
+// Populate configuration from cli flags
 func (configFile *ConfigFile) populateConfigFromFlags(c *cli.Context) {
 	configFile.Resolver.ServerId = c.String(ResolutionServerId)
 	configFile.Resolver.Repo = c.String(ResolutionRepo)
@@ -138,7 +138,7 @@ func (configFile *ConfigFile) populateConfigFromFlags(c *cli.Context) {
 	configFile.Interactive = isInteractive(c)
 }
 
-// Fill Maven related configuration from cli flags
+// Populate Maven related configuration from cli flags
 func (configFile *ConfigFile) populateMavenConfigFromFlags(c *cli.Context) {
 	configFile.Resolver.SnapshotRepo = c.String(ResolutionSnapshotsRepo)
 	configFile.Resolver.ReleaseRepo = c.String(ResolutionReleasesRepo)
@@ -147,18 +147,18 @@ func (configFile *ConfigFile) populateMavenConfigFromFlags(c *cli.Context) {
 	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, ResolutionSnapshotsRepo, ResolutionReleasesRepo, DeploymentSnapshotsRepo, DeploymentReleasesRepo)
 }
 
-// Fill Gradle related configuration from cli flags
+// Populate Gradle related configuration from cli flags
 func (configFile *ConfigFile) populateGradleConfigFromFlags(c *cli.Context) {
 	configFile.Deployer.DeployMavenDesc = c.BoolT(DeployMavenDesc)
 	configFile.Deployer.DeployIvyDesc = c.BoolT(DeployIvyDesc)
-	configFile.Deployer.IvyPattern = c.String(IvyDescPattern)
-	configFile.Deployer.ArtifactsPattern = c.String(IvyArtifactsPattern)
+	configFile.Deployer.IvyPattern = defaultIfNotSet(c, IvyDescPattern, "[organization]/[module]/ivy-[revision].xml")
+	configFile.Deployer.ArtifactsPattern = defaultIfNotSet(c, IvyArtifactsPattern, "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")	
 	configFile.UsePlugin = c.Bool(UsesPlugin)
 	configFile.UseWrapper = c.Bool(UseWrapper)
 	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, DeployMavenDesc, DeployIvyDesc, IvyDescPattern, IvyArtifactsPattern, UsesPlugin, UseWrapper)
 }
 
-// Verify config file not exists or prompt to override it
+// Verify config file doesn't exist or prompt to override it
 func (configFile *ConfigFile) VerifyConfigFile(configFilePath string) error {
 	exists, err := fileutils.IsFileExists(configFilePath, false)
 	if err != nil {
@@ -319,7 +319,7 @@ func (configFile *ConfigFile) setMavenIvyDescriptors(c *cli.Context) error {
 	}
 
 	if configFile.Deployer.DeployIvyDesc {
-		configFile.Deployer.IvyPattern, err = askString("Set Ivy pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
+		configFile.Deployer.IvyPattern, err = askString("Set Ivy descriptor pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
 		if err != nil {
 			return err
 		}
@@ -474,4 +474,11 @@ func askAutocomplete(msg string, errMsg string, options []string, defaultStr str
 		return "", errorutils.CheckError(err)
 	}
 	return question.Result.GetString(label), nil
+}
+
+func defaultIfNotSet(c *cli.Context, flagName string, defaultValue string) string {
+	if c.IsSet(flagName) {
+		return c.String(flagName)
+	}
+	return defaultValue
 }
