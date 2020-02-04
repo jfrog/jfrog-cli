@@ -85,11 +85,12 @@ func (mc *MvnCommand) Run() error {
 	}
 
 	defer os.Remove(mvnRunConfig.buildInfoProperties)
-	if err := gofrogcmd.RunCmd(mvnRunConfig); err != nil {
-		return err
+	err = gofrogcmd.RunCmd(mvnRunConfig)
+	if _, ok := err.(*exec.ExitError); ok {
+		err = errors.New(err.Error())
 	}
 
-	return nil
+	return err
 }
 
 // Returns the ArtfiactoryDetails. The information returns from the config file provided.
