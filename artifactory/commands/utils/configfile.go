@@ -19,11 +19,6 @@ import (
 
 const BUILD_CONF_VERSION = 1
 
-type CommonConfig struct {
-	Version    int    `yaml:"version,omitempty"`
-	ConfigType string `yaml:"type,omitempty"`
-}
-
 const (
 	// Common flags
 	Global             = "global"
