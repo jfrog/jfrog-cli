@@ -416,7 +416,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "npm-config",
-			Flags:        getBaseBuildToolsConfigFlags(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"npmc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
@@ -497,13 +497,14 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
 			UsageText: nugettree.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
 			},
 		},
 		{
 			Name:         "go-config",
-			Flags:        getBaseBuildToolsConfigFlags(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -581,7 +582,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        getBaseBuildToolsConfigFlags(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
