@@ -10,7 +10,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/spf13/viper"
@@ -180,7 +179,7 @@ func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
 func checkCommonAndGetConfiguration(t *testing.T, projectType string, tempDirPath string) *viper.Viper {
 	config, err := utils.ReadConfigFile(filepath.Join(tempDirPath, "projects", projectType+".yaml"), utils.YAML)
 	assert.NoError(t, err)
-	assert.Equal(t, prompt.BUILD_CONF_VERSION, config.GetInt("version"))
+	assert.Equal(t, BUILD_CONF_VERSION, config.GetInt("version"))
 	assert.Equal(t, projectType, config.GetString("type"))
 	return config
 }

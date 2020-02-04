@@ -9,12 +9,20 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"gopkg.in/yaml.v2"
 )
+
+const BUILD_CONF_VERSION = 1
+
+type CommonConfig struct {
+	Version    int    `yaml:"version,omitempty"`
+	ConfigType string `yaml:"type,omitempty"`
+}
 
 const (
 	// Common flags
@@ -40,20 +48,19 @@ const (
 )
 
 type ConfigFile struct {
-	prompt.CommonConfig `yaml:"common,inline"`
-	Interactive         bool             `yaml:"-"`
-	Resolver            utils.Repository `yaml:"resolver,omitempty"`
-	Deployer            utils.Repository `yaml:"deployer,omitempty"`
-	UsePlugin           bool             `yaml:"usePlugin,omitempty"`
-	UseWrapper          bool             `yaml:"useWrapper,omitempty"`
+	Interactive bool             `yaml:"-"`
+	Version     int              `yaml:"version,omitempty"`
+	ConfigType  string           `yaml:"type,omitempty"`
+	Resolver    utils.Repository `yaml:"resolver,omitempty"`
+	Deployer    utils.Repository `yaml:"deployer,omitempty"`
+	UsePlugin   bool             `yaml:"usePlugin,omitempty"`
+	UseWrapper  bool             `yaml:"useWrapper,omitempty"`
 }
 
 func NewConfigFile(confType utils.ProjectType, c *cli.Context) *ConfigFile {
 	configFile := &ConfigFile{
-		CommonConfig: prompt.CommonConfig{
-			Version:    prompt.BUILD_CONF_VERSION,
-			ConfigType: confType.String(),
-		},
+		Version:    BUILD_CONF_VERSION,
+		ConfigType: confType.String(),
 	}
 	configFile.populateConfigFromFlags(c)
 	if confType == utils.Maven {
@@ -65,7 +72,7 @@ func NewConfigFile(confType utils.ProjectType, c *cli.Context) *ConfigFile {
 }
 
 func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
-	global := c.Bool("global")
+	global := c.Bool(Global)
 	projectDir, err := utils.GetProjectDir(global)
 	if err != nil {
 		return err
@@ -166,7 +173,7 @@ func (configFile *ConfigFile) VerifyConfigFile(configFilePath string) error {
 		if !configFile.Interactive {
 			return nil
 		}
-		override, err := prompt.AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
+		override, err := askYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
 		if err != nil {
 			return err
 		}
@@ -242,11 +249,11 @@ func (configFile *ConfigFile) configGradle(c *cli.Context) error {
 
 func (configFile *ConfigFile) readGradleGlobalConfig(c *cli.Context) error {
 	var err error
-	configFile.UsePlugin, err = prompt.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
+	configFile.UsePlugin, err = askYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
 	if err != nil {
 		return err
 	}
-	configFile.UseWrapper, err = prompt.AskYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
+	configFile.UseWrapper, err = askYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
 	return err
 }
 
@@ -268,7 +275,6 @@ func (configFile *ConfigFile) setResolver() error {
 	if err := configFile.setResolverId(); err != nil {
 		return err
 	}
-
 	// Set resolution repository
 	if configFile.Resolver.ServerId != "" {
 		return configFile.setRepo(&configFile.Resolver.Repo, "Set repository for dependencies resolution", configFile.Resolver.ServerId, utils.REMOTE)
@@ -293,36 +299,36 @@ func (configFile *ConfigFile) setDeployerId() error {
 
 func (configFile *ConfigFile) setServerId(serverId *string, useArtifactoryQuestion string) error {
 	var err error
-	*serverId, err = prompt.ReadArtifactoryServer(useArtifactoryQuestion + " (y/n) [${default}]? ")
+	*serverId, err = readArtifactoryServer(useArtifactoryQuestion + " (y/n) [${default}]? ")
 	return err
 }
 
 func (configFile *ConfigFile) setRepo(repo *string, message string, serverId string, repoType utils.RepoType) error {
 	var err error
 	if *repo == "" {
-		*repo, err = prompt.ReadRepo(message+" (press Tab for options): ", serverId, repoType, utils.VIRTUAL)
+		*repo, err = readRepo(message+" (press Tab for options): ", serverId, repoType, utils.VIRTUAL)
 	}
 	return err
 }
 
 func (configFile *ConfigFile) setMavenIvyDescriptors(c *cli.Context) error {
 	var err error
-	configFile.Deployer.DeployMavenDesc, err = prompt.AskYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
+	configFile.Deployer.DeployMavenDesc, err = askYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
 	if err != nil {
 		return err
 	}
 
-	configFile.Deployer.DeployIvyDesc, err = prompt.AskYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
+	configFile.Deployer.DeployIvyDesc, err = askYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
 	if err != nil {
 		return err
 	}
 
 	if configFile.Deployer.DeployIvyDesc {
-		configFile.Deployer.IvyPattern, err = prompt.AskString("Set Ivy pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
+		configFile.Deployer.IvyPattern, err = askString("Set Ivy pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
 		if err != nil {
 			return err
 		}
-		configFile.Deployer.ArtifactsPattern, err = prompt.AskString("Set Ivy artifact pattern [${default}]:", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", utils.ARTIFACT_PATTERN)
+		configFile.Deployer.ArtifactsPattern, err = askString("Set Ivy artifact pattern [${default}]:", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", utils.ARTIFACT_PATTERN)
 	}
 	return err
 }
@@ -360,4 +366,117 @@ func (configFile *ConfigFile) validateConfig() error {
 		}
 	}
 	return nil
+}
+
+// Get Artifactory serverId from the user. If useArtifactoryQuestion is not empty, ask first whether to use artifactory.
+func readArtifactoryServer(useArtifactoryQuestion string) (string, error) {
+	// Get all Artifactory servers
+	serversIds, defaultServer, err := getServersIdAndDefault()
+	if err != nil {
+		return "", err
+	}
+	if len(serversIds) == 0 {
+		return "", errorutils.CheckError(errors.New("No Artifactory servers configured. Use the 'jfrog rt c' command to set the Artifactory server details."))
+	}
+
+	// Ask whether to use artifactory
+	if useArtifactoryQuestion != "" {
+		useArtifactory, err := askYesNo(useArtifactoryQuestion, "y", "useArtifactory")
+		if err != nil || !useArtifactory {
+			return "", err
+		}
+	}
+
+	return askAutocomplete("Set Artifactory server ID (press Tab for options) [${default}]: ", "Server does not exist. Please set a valid server ID.", serversIds, defaultServer, utils.SERVER_ID)
+}
+
+func readRepo(msg string, serverId string, repoTypes ...utils.RepoType) (string, error) {
+	availableRepos, err := getRepositories(serverId, repoTypes...)
+	if err != nil {
+		// If there are no available repos pass empty array.
+		availableRepos = []string{}
+	}
+	repo := &prompt.Autocomplete{
+		Msg:     msg,
+		Options: availableRepos,
+		Label:   utils.ProjectConfigRepo,
+	}
+	if len(availableRepos) > 0 {
+		repo.ConfirmationMsg = "No such repository, continue anyway (y/n) [${default}]? "
+		repo.ConfirmationDefault = "n"
+	} else {
+		repo.ErrMsg = "Repository name cannot be empty."
+	}
+	if err = repo.Read(); err != nil {
+		return "", err
+	}
+	return repo.GetResults().GetString(utils.ProjectConfigRepo), nil
+}
+
+func getServersIdAndDefault() ([]string, string, error) {
+	allConfigs, err := config.GetAllArtifactoryConfigs()
+	if err != nil {
+		return nil, "", err
+	}
+	var defaultVal string
+	var serversId []string
+	for _, v := range allConfigs {
+		if v.IsDefault {
+			defaultVal = v.ServerId
+		}
+		serversId = append(serversId, v.ServerId)
+	}
+	return serversId, defaultVal, nil
+}
+
+func getRepositories(serverId string, repoTypes ...utils.RepoType) ([]string, error) {
+	artDetails, err := config.GetArtifactoryConf(serverId)
+	if err != nil {
+		return nil, err
+	}
+
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.GetRepositories(artAuth, repoTypes...)
+}
+
+func askYesNo(message string, defaultStr string, label string) (bool, error) {
+	question := &prompt.YesNo{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return false, errorutils.CheckError(err)
+	}
+	return question.Result.GetBool(label), nil
+}
+
+func askString(message string, defaultStr string, label string) (string, error) {
+	question := &prompt.Simple{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return question.Result.GetString(label), nil
+}
+
+func askAutocomplete(msg string, errMsg string, options []string, defaultStr string, label string) (string, error) {
+	question := &prompt.Autocomplete{
+		Msg:     msg,
+		ErrMsg:  errMsg,
+		Options: options,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return "", errorutils.CheckError(err)
+	}
+	return question.Result.GetString(label), nil
 }
