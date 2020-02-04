@@ -341,7 +341,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getMavenConfigFlags(),
 			Usage:        mvnconfig.Description,
 			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -366,7 +366,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getGradleConfigFlags(),
 			Usage:        gradleconfig.Description,
 			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -416,7 +416,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "npm-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"npmc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
@@ -467,7 +467,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"nugetc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
@@ -497,13 +497,14 @@ func GetCommands() []cli.Command {
 			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
 			UsageText: nugettree.Arguments,
 			ArgsUsage: common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
 			},
 		},
 		{
 			Name:         "go-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -581,7 +582,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
@@ -621,13 +622,84 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func getGlobalConfigFlag() []cli.Flag {
+func getBaseBuildToolsConfigFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.BoolFlag{
-			Name:  "global",
-			Usage: "[Default: false] Set to true, if you'd like to configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+			Name:  commandUtils.Global,
+			Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionServerId,
+			Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentServerId,
+			Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
 		},
 	}
+}
+
+func getCommonBuildToolsConfigFlags() []cli.Flag {
+	return append(getBaseBuildToolsConfigFlags(),
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionRepo,
+			Usage: "[Optional] Repository for dependencies resolution.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentRepo,
+			Usage: "[Optional] Repository for artifacts deployment.` `",
+		},
+	)
+}
+
+func getMavenConfigFlags() []cli.Flag {
+	return append(getBaseBuildToolsConfigFlags(),
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionReleasesRepo,
+			Usage: "[Optional] Resolution repository for release dependencies.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionSnapshotsRepo,
+			Usage: "[Optional] Resolution repository for snapshot dependencies.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentReleasesRepo,
+			Usage: "[Optional] Deployment repository for release artifacts.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentSnapshotsRepo,
+			Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
+		},
+	)
+}
+
+func getGradleConfigFlags() []cli.Flag {
+	return append(getCommonBuildToolsConfigFlags(),
+		cli.BoolFlag{
+			Name:  commandUtils.UsesPlugin,
+			Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
+		},
+		cli.BoolFlag{
+			Name:  commandUtils.UseWrapper,
+			Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
+		},
+		cli.BoolTFlag{
+			Name:  commandUtils.DeployMavenDesc,
+			Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
+		},
+		cli.BoolTFlag{
+			Name:  commandUtils.DeployIvyDesc,
+			Usage: "[Default: true] Set to false if you do not wish to deploy Ivy descriptors.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.IvyDescPattern,
+			Usage: "[Default: '[organization]/[module]/ivy-[revision].xml' Set the deployed Ivy descriptor pattern.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.IvyArtifactsPattern,
+			Usage: "[Default: '[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]' Set the deployed Ivy artifacts pattern.` `",
+		},
+	)
 }
 
 func getUrlFlag() []cli.Flag {
@@ -873,8 +945,8 @@ func getExclusionsFlags() []cli.Flag {
 func getUploadExclusionsFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "exclude-patterns",
-			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+			Name:   "exclude-patterns",
+			Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
 			Hidden: true,
 		},
 		cli.StringFlag{
@@ -2117,40 +2189,42 @@ func createGradleConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
+	return commandUtils.CreateBuildConfig(c, utils.Gradle)
 }
 
 func createMvnConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Maven)
+	return commandUtils.CreateBuildConfig(c, utils.Maven)
 }
 
 func createGoConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Go)
+	return commandUtils.CreateBuildConfig(c, utils.Go)
 }
 
 func createNpmConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Npm)
+	return commandUtils.CreateBuildConfig(c, utils.Npm)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, false, utils.Nuget)
+	return commandUtils.CreateBuildConfig(c, utils.Nuget)
+}
+
+func createPipConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Pip)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -2691,14 +2765,6 @@ func curlCmd(c *cli.Context) error {
 	}
 	curlCommand.SetRtDetails(rtDetails)
 	return commands.Exec(curlCommand)
-}
-
-func createPipConfigCmd(c *cli.Context) error {
-	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	global := c.Bool("global")
-	return pip.CreateBuildConfig(global)
 }
 
 func pipInstallCmd(c *cli.Context) error {
