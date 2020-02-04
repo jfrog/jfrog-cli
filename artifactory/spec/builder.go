@@ -16,6 +16,7 @@ type builder struct {
 	offset          int
 	limit           int
 	build           string
+	bundle          string
 	recursive       bool
 	flat            bool
 	regexp          bool
@@ -92,6 +93,11 @@ func (b *builder) Build(build string) *builder {
 	return b
 }
 
+func (b *builder) Bundle(bundle string) *builder {
+	b.bundle = bundle
+	return b
+}
+
 func (b *builder) Recursive(recursive bool) *builder {
 	b.recursive = recursive
 	return b
@@ -128,6 +134,7 @@ func (b *builder) BuildSpec() *SpecFiles {
 				Offset:          b.offset,
 				Limit:           b.limit,
 				Build:           b.build,
+				Bundle:          b.bundle,
 				Explode:         b.explode,
 				Recursive:       strconv.FormatBool(b.recursive),
 				Flat:            strconv.FormatBool(b.flat),

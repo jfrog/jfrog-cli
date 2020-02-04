@@ -37,13 +37,15 @@ environment:
     secure: YEB5Wiv9a2vNpUhy+MfL+A==
   JFROG_CLI_RT_PASSWORD:
     secure: Um8o75MQIieSavIemF4ySA==
+  JFROG_CLI_DISTRIBUTION_URL:
+    secure: RIh0gGFDn2JAnLUEEqLsQrfLmtDrzDd5Qphea4gOE0Lu1Uz2Xa/y+D0Mld917gwy
   JFROG_CLI_BINTRAY_USER:
     secure: 86Gh1wUR9EjUYrNPws+0DQ==
   JFROG_CLI_BINTRAY_APIKEY:
     secure: Bm9R9Zveb6Rxc6M4IWvpVi1j1txDSBwz2L+CHKDoxwDHDfPs7vMb8+gSbB63XAq+
 
   COMMON_TESTS_ARGS:
-    test.bat -v github.com\jfrog\jfrog-cli-go --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+    test.bat -v github.com\jfrog\jfrog-cli-go --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%" --rt.distributionUrl="%JFROG_CLI_DISTRIBUTION_URL%"
   BT_CREDENTIALS_ARGS:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
@@ -77,6 +79,9 @@ environment:
     TEST_SUIT:
       "C:\\Python37-x64\\python -m venv pip-venv &&
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli-go\\pip-venv\\Scripts"
+  - RELEASE_BUNDLE_TESTS:
+    TEST_SUIT:
+      "%COMMON_TESTS_ARGS% --test.releaseBundle=true"
 
 test_script:
   - "%TEST_SUIT%"

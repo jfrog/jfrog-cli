@@ -31,13 +31,14 @@ var RtApiKey *string
 var RtSshKeyPath *string
 var RtSshPassphrase *string
 var RtAccessToken *string
+var RtDistributionUrl *string
 var BtUser *string
 var BtKey *string
 var BtOrg *string
 var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
-var TestBuildTools *bool
+var TestReleaseBundle *bool
 var TestDocker *bool
 var TestGo *bool
 var TestNpm *bool
@@ -58,13 +59,14 @@ func init() {
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
+	RtDistributionUrl = flag.String("rt.distributionUrl", "", "Distribution url")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
-	TestBuildTools = flag.Bool("test.buildTools", false, "Test Maven, Gradle and npm builds")
+	TestReleaseBundle = flag.Bool("test.releaseBundle", false, "Test release bundle")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")

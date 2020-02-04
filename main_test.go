@@ -29,6 +29,8 @@ func TestMain(m *testing.M) {
 func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
 	os.Setenv(cliutils.OfferConfig, "false")
+	// Disable progress bar:
+	os.Setenv("CI", "true")
 	flag.Parse()
 	log.SetDefaultLogger()
 
@@ -36,19 +38,16 @@ func setupIntegrationTests() {
 		InitBintrayTests()
 	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
-		initArtifactoryCli()
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
-		if artifactoryCli == nil {
-			initArtifactoryCli()
-		}
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
-		if artifactoryCli == nil {
-			initArtifactoryCli()
-		}
+		initArtifactoryCli()
+	}
+	if *tests.TestReleaseBundle {
+		InitReleaseBundleTests()
 	}
 }
 
@@ -62,11 +61,13 @@ func tearDownIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		CleanBuildToolsTests()
 	}
-	os.Setenv(cliutils.OfferConfig, "true")
-	os.Setenv(cliutils.ReportUsage, "true")
+	if *tests.TestReleaseBundle {
+		CleanReleaseBundleTests()
+	}
 }
 
 func InitBuildToolsTests() {
+	initArtifactoryCli()
 	createReposIfNeeded()
 	cleanBuildToolsTest()
 }
@@ -116,6 +117,9 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 }
 
 func initArtifactoryCli() {
+	if artifactoryCli != nil {
+		return
+	}
 	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)

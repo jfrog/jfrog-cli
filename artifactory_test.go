@@ -57,8 +57,7 @@ var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
-	// Disable progress bar:
-	os.Setenv("CI", "true")
+	initArtifactoryCli()
 	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
@@ -3184,7 +3183,7 @@ func initArtifactoryTest(t *testing.T) {
 }
 
 func cleanArtifactoryTest() {
-	if !*tests.TestArtifactory {
+	if !*tests.TestArtifactory && !*tests.TestReleaseBundle {
 		return
 	}
 	os.Unsetenv(cliutils.HomeDir)

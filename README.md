@@ -262,8 +262,13 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
 
 To run Bintray tests execute the following command: 
+On Unix based systems run:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.bintray
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.bintray [flags]
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.bintray [flags]
 ````
 Flags:
 
@@ -275,6 +280,23 @@ Flags:
 
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
+
+### Release bundle tests
+In addition to [general optional flags](#Usage) you *must* use the following flag:
+
+| Flag | Description |
+| --- | --- |
+| `-rt.distributionUrl` | Distribution URL. |
+
+To run release bundle tests run the following command:
+On Unix based systems run:
+````
+./test.sh -v github.com/jfrog/jfrog-cli-go -test.releaseBundle [flags]
+````
+On Windows run:
+````
+test.bat -v github.com/jfrog/jfrog-cli-go -test.releaseBundle [flags]
+````
 
 # Code Contributions
 We welcome code contributions through pull requests from the community.

@@ -779,6 +779,10 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
+		},
+		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
 			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
@@ -1052,6 +1056,10 @@ func getMoveFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
+		},
 		getPropertiesFlag("Only artifacts with these properties will be moved."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be moved"),
 		getFailNoOpFlag(),
@@ -1081,6 +1089,10 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
+		},
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
@@ -1105,6 +1117,10 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
+		},
 		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be deleted"),
@@ -1125,6 +1141,10 @@ func getSearchFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
+		},
+		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
 		},
 		cli.BoolFlag{
 			Name:  "count",
@@ -1185,6 +1205,10 @@ func getPropertiesFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
+		},
+		cli.StringFlag{
+			Name:  "bundle",
+			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
 		},
 		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
@@ -2879,6 +2903,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2918,6 +2943,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2939,6 +2965,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2961,6 +2988,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3053,6 +3081,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
