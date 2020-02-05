@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/url"
@@ -17,6 +17,8 @@ import (
 
 const mavenFlagName = "maven"
 const localRepoSystemProperty = "-Dmaven.repo.local="
+
+var localRepoDir string
 
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
@@ -37,7 +39,8 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	createConfigFile(destPath, configFilePath, t)
 	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
 	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
-	runCli(t, "mvn", "clean", "install", "-f", pomPath)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	runCli(t, "mvn", "clean", "install", "-f", pomPath, repoLocalSystemProp)
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 	// Validate
@@ -80,12 +83,8 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	tests.RtUrl = &proxyUrl
 
-	createJfrogHomeConfig(t)
-	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
-	tmpM2, err := ioutil.TempDir("", "tmp.m2")
-	assert.NoError(t, err)
-	defer fileutils.RemoveTempDir(tmpM2)
-	repoLocalSystemProp := localRepoSystemProperty + tmpM2
+	createHomeConfigAndLocalRepo(t)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
 	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
@@ -113,7 +112,8 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 }
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
-	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath, configFilePath)
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath+" "+repoLocalSystemProp, configFilePath)
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 
@@ -131,5 +131,16 @@ func initMavenTest(t *testing.T, disableConfig bool) {
 	if !*tests.TestMaven {
 		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
 	}
+	if !disableConfig {
+		err := createHomeConfigAndLocalRepo(t)
+		assert.NoError(t, err)
+	}
+}
+
+func createHomeConfigAndLocalRepo(t *testing.T) (err error) {
 	createJfrogHomeConfig(t)
+	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
+	// The directory wil be deleted on the test cleanup as part as the out dir.
+	localRepoDir, err = ioutil.TempDir(os.Getenv(cliutils.HomeDir), "tmp.m2")
+	return err
 }
