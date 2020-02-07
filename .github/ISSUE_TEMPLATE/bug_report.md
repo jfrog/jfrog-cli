@@ -19,7 +19,7 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Versions (please complete the following information):**
+**Versions**
 - JFrog CLI version: 
 - Artifactory Version:
 
