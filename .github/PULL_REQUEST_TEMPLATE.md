@@ -1,0 +1,5 @@
+- [ ] I signed [JFrog's CLA](https://secure.echosign.com/public/hostedForm?formid=5IYKLZ2RXB543N).
+- [ ] I ran the [tests](https://github.com/jfrog/jfrog-cli#tests) and added new tests if neccessary.
+- [ ] The pull request is on the dev branch.
+- [ ] I used gofmt for formatting the code before submitting the pull request.
+-----
