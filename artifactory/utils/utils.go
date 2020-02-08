@@ -160,3 +160,11 @@ func getOrDefaultEnv(arg, envKey string) string {
 	}
 	return os.Getenv(envKey)
 }
+
+// This error indicates that the build was scanned by Xray, but Xray found issues with the build.
+// If Xray failed to scan the build, for example due to a networking issue, a regular error should be returned.
+var buildScanError = errors.New("issues found during xray build scan")
+
+func GetBuildScanError() error {
+	return buildScanError
+}

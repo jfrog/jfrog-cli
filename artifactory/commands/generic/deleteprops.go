@@ -12,7 +12,7 @@ func NewDeletePropsCommand() *DeletePropsCommand {
 	return &DeletePropsCommand{}
 }
 
-func (deleteProps *DeletePropsCommand) SetPropsCommand(command PropsCommand) *DeletePropsCommand {
+func (deleteProps *DeletePropsCommand) DeletePropsCommand(command PropsCommand) *DeletePropsCommand {
 	deleteProps.PropsCommand = command
 	return deleteProps
 }

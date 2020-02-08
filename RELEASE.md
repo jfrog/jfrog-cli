@@ -1,3 +1,7 @@
+## 1.33.2 (Jan 27, 2020)
+- Bug fix - The "jfrog rt build-scan" command returns exit code 0 in case of a timeout. 
+- Bug fix - The --help option is not working for some commands.
+
 ## 1.33.1 (Jan 16, 2020)
 - Bug fix - Gradle builds are failing.
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -93,14 +94,12 @@ func removeDirs(dirs ...string) {
 	}
 }
 
-func IsExistLocally(expected, actual []string, t *testing.T) {
+func VerifyExistLocally(expected, actual []string, t *testing.T) {
 	if len(actual) == 0 && len(expected) != 0 {
 		t.Error("Couldn't find all expected files, expected: " + strconv.Itoa(len(expected)) + ", found: " + strconv.Itoa(len(actual)))
 	}
 	err := compare(expected, actual)
-	if err != nil {
-		t.Error(err.Error())
-	}
+	assert.NoError(t, err)
 }
 
 func ValidateListsIdentical(expected, actual []string) error {
@@ -141,9 +140,17 @@ func compare(expected, actual []string) error {
 	return nil
 }
 
-func CompareExpectedVsActuals(expected []string, actual []generic.SearchResult, t *testing.T) {
+func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
+	var paths []string
+	for _, result := range searchResults {
+		paths = append(paths, result.Path)
+	}
+	return paths
+}
+
+func CompareExpectedVsActual(expected []string, actual []generic.SearchResult, t *testing.T) {
 	if len(actual) != len(expected) {
-		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%+v", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), actual))
+		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), getPathsFromSearchResults(actual)))
 	}
 	for _, v := range expected {
 		for i, r := range actual {

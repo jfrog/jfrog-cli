@@ -5,13 +5,13 @@
       "target": "${REPO1}",
       "flat": "true",
       "recursive": "true",
-      "excludePatterns": [".*a2.*", ".*a3.in", null],
+      "exclusions": [".*a2.*", ".*a3.in", null],
       "regexp": "true"
     },
     {
       "pattern": "testsdata/a/b/b(.*)",
       "target": "${REPO1}",
-      "excludePatterns": [null, ".*b2.*", ".*b3.in"],
+      "exclusions": [null, ".*b2.*", ".*b3.in"],
       "regexp": "true"
     },
     {
@@ -19,7 +19,7 @@
       "target": "${REPO1}",
       "flat": "true",
       "recursive": "true",
-      "excludePatterns": ["testsdata/a/b/c/c1.in"],
+      "exclusions": ["testsdata/a/b/c/c1.in"],
       "regexp": "true"
     }
   ]

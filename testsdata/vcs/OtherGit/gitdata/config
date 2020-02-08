@@ -6,5 +6,5 @@
 	ignorecase = true
 	precomposeunicode = true
 [remote "origin"]
-	url = https://github.com/Postyy/jfrog-cli.git
+	url = https://github.com/jfrog/jfrog-client-go.git
 	fetch = +refs/heads/*:refs/remotes/origin/*
