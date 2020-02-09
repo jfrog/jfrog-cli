@@ -510,7 +510,7 @@ func getUploadFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "list-download",
-			Usage: "[Default: false] Set to true to add the files to the download list",
+			Usage: "[Default: false] Set to true to add the files to the download list. Requires the --publish option.",
 		},
 		cli.BoolFlag{
 			Name:  "explode",
@@ -893,7 +893,7 @@ func upload(c *cli.Context) error {
 	params.UseRegExp = c.Bool("regexp")
 
 	if params.ShowInDownloadList && !params.Publish {
-		return errors.New("the --list-download flag requires the --publish flag")
+		return errors.New("The --list-download option cannot be used without the --publish option.")
 	}
 
 	uploadConfig, err := newBintrayConfig(c)
