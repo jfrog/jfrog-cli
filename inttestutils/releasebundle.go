@@ -115,7 +115,7 @@ func DeleteBundle(t *testing.T, bundleName string, artHttpDetails httputils.Http
 }
 
 // Create the AQL for the release bundle creation
-func createAqlForCreateBundle(bundleName, bundleNumber string, triples []RepoPathName) string {
+func createAqlForCreateBundle(bundleName, bundleVersion string, triples []RepoPathName) string {
 	innerQueryPattern := ""
 	for i, triple := range triples {
 		innerQueryPattern += fmt.Sprintf(repoPathNameAqlPattern, triple.Repo, triple.Path, triple.Name)
@@ -123,5 +123,5 @@ func createAqlForCreateBundle(bundleName, bundleNumber string, triples []RepoPat
 			innerQueryPattern += ","
 		}
 	}
-	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleNumber, innerQueryPattern)
+	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern)
 }

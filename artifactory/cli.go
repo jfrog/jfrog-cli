@@ -1056,10 +1056,6 @@ func getMoveFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
-		},
 		getPropertiesFlag("Only artifacts with these properties will be moved."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be moved"),
 		getFailNoOpFlag(),
@@ -1116,10 +1112,6 @@ func getDeleteFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
-		},
-		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
 		},
 		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
@@ -2943,7 +2935,6 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
-		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).

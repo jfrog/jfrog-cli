@@ -35,7 +35,7 @@ func TestBundleDownload(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile)
+	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
 	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
@@ -43,7 +43,7 @@ func TestBundleDownload(t *testing.T) {
 	defer inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("download "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
+	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -62,7 +62,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile)
+	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
 	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
@@ -72,7 +72,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("download", "--spec="+specFile)
+	artifactoryCli.Exec("dl", "--spec="+specFile)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -83,33 +83,30 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestBundleMove(t *testing.T) {
+func TestBundleDownloadNoPattern(t *testing.T) {
 	initReleaseBundleTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
 	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
+	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "a*"}}
+	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
 	inttestutils.CreateBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
 	defer inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
-	// Move by bundle name and version
-	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
+	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
+	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("move", "--spec="+specFile)
+	artifactoryCli.Exec("dl", "*", "out/download/simple_by_build/data/", "--bundle="+bundleName+"/"+bundleVersion, "--flat")
 
-	// Validate files are moved by bundle version
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
+	// Validate files are downloaded by bundle version
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -125,8 +122,8 @@ func TestBundleCopy(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
+	artifactoryCli.Exec("u", "--spec="+specFileB)
+	artifactoryCli.Exec("u", "--spec="+specFileA)
 
 	// Create release bundle
 	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "a*"}}
@@ -136,44 +133,12 @@ func TestBundleCopy(t *testing.T) {
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("copy", "--spec="+specFile)
+	artifactoryCli.Exec("cp", "--spec="+specFile)
 
 	// Validate files are moved by bundle version
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetBuildCopyExpected(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestBundleDelete(t *testing.T) {
-	initReleaseBundleTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-
-	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "a*"}}
-	inttestutils.CreateBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
-	defer inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
-
-	// Delete by bundle name and version
-	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("del", "--quiet", "--spec="+specFile)
-
-	// Validate files are moved by bundle version
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -185,7 +150,7 @@ func TestBundleSetProperties(t *testing.T) {
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
 	// Upload a file.
-	artifactoryCli.Exec("upload", "testsdata/a/a1.in", tests.Repo1+"/a.in")
+	artifactoryCli.Exec("u", "testsdata/a/a1.in", tests.Repo1+"/a.in")
 
 	// Create release bundle
 	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "*", Name: "a.in"}}
