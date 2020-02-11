@@ -41,9 +41,17 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 	if err != nil {
 		return err
 	}
+
+	if flags.Target != "" && (len(vulnerabilities) > 0 || len(components) > 0) {
+		err = os.MkdirAll(flags.Target, 0777)
+		if errorutils.CheckError(err) != nil {
+			return err
+		}
+	}
+
 	if len(vulnerabilities) > 0 {
 		log.Info("Downloading vulnerabilities...")
-		err := saveData(xrayTempDir, "vuln", zipSuffix, vulnerabilities)
+		err := saveData(xrayTempDir, "vuln", zipSuffix, flags.Target, vulnerabilities)
 		if err != nil {
 			return err
 		}
@@ -53,7 +61,7 @@ func OfflineUpdate(flags *OfflineUpdatesFlags) error {
 
 	if len(components) > 0 {
 		log.Info("Downloading components...")
-		err := saveData(xrayTempDir, "comp", zipSuffix, components)
+		err := saveData(xrayTempDir, "comp", zipSuffix, flags.Target, components)
 		if err != nil {
 			return err
 		}
@@ -119,7 +127,7 @@ func getXrayTempDir() (string, error) {
 	return xrayDir, nil
 }
 
-func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) error {
+func saveData(xrayTmpDir, filesPrefix, zipSuffix, targetPath string, urlsList []string) error {
 	dataDir, err := ioutil.TempDir(xrayTmpDir, filesPrefix)
 	if err != nil {
 		return err
@@ -151,7 +159,7 @@ func saveData(xrayTmpDir, filesPrefix, zipSuffix string, urlsList []string) erro
 		}
 	}
 	log.Info("Zipping files.")
-	err = fileutils.ZipFolderFiles(dataDir, filesPrefix+zipSuffix+".zip")
+	err = fileutils.ZipFolderFiles(dataDir, filepath.Join(targetPath, filesPrefix+zipSuffix+".zip"))
 	if err != nil {
 		return err
 	}
@@ -223,6 +231,7 @@ type OfflineUpdatesFlags struct {
 	From    int64
 	To      int64
 	Version string
+	Target	string
 }
 
 type FilesList struct {
