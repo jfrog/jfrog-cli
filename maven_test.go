@@ -16,6 +16,7 @@ import (
 )
 
 const mavenFlagName = "maven"
+const mavenTestsProxyPort = "1027"
 const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
@@ -67,7 +68,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 func TestInsecureTlsMavenBuild(t *testing.T) {
 	initMavenTest(t, true)
 	// Establish a reverse proxy without any certificates
-	os.Setenv(tests.HttpsProxyEnvVar, "1024")
+	os.Setenv(tests.HttpsProxyEnvVar, mavenTestsProxyPort)
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, false)
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	os.Remove(certificate.KEY_FILE)
@@ -75,7 +76,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	// Wait for the reverse proxy to start up.
 	err := checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
 	if err != nil {
-		t.Error(err)
+		assert.NoError(t, err)
 	}
 	// Save the original Artifactory url, and change the url to proxy url
 	oldRtUrl := tests.RtUrl
