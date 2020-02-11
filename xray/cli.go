@@ -47,7 +47,7 @@ func offlineUpdateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "target",
-			Usage: "[Optional] Path for downloaded update files.` `",
+			Usage: "[Default: ./] Path for downloaded update files.` `",
 		},
 	}
 }
