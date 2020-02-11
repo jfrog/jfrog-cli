@@ -74,13 +74,8 @@ Once completed, you will find the JFrog CLI executable at your current directory
 
 # Tests
 ### Usage
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
+go test -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
 ````
 
 The flags are:
@@ -120,13 +115,8 @@ In addition to [general optional flags](#Usage) you can use the following option
 
 ##### Examples
 To run artifactory tests execute the following command.
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
 ````
 
 #### Npm tests
@@ -138,14 +128,8 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
 
 ##### Examples
 To run npm tests execute the following command.
-
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
 ````
 
 #### Maven tests
@@ -158,13 +142,8 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
 
 ##### Examples
 To run maven tests execute the following command.
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
 ````
 
 #### Gradle tests
@@ -177,14 +156,8 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
 
 ##### Examples
 To run gradle tests execute the following command.
-
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.gradle [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.gradle [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.gradle [flags]
 ````
 
 #### Docker tests
@@ -197,27 +170,15 @@ In addition to [general optional flags](#Usage) you *must* use the following doc
 
 ##### Examples
 To run docker tests execute the following command (fill out the missing parameters as described below).
-
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
 ````
 
 #### Go commands tests
 ##### Examples
 To run go tests run the following command.
-
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.go [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.go [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.go [flags]
 ````
 
 #### NuGet tests
@@ -227,13 +188,8 @@ test.bat -v github.com/jfrog/jfrog-cli-go -test.go [flags]
 * Run the following command.
 
 ##### Examples
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.nuget [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.nuget [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.nuget [flags]
 ````
 
 #### Pip tests
@@ -249,13 +205,8 @@ In addition to [general optional flags](#Usage) you can use the following option
 | `-rt.pipVirtualEnv` | [Optional] Path to the directory of a clean pip virtual-environment. Make sure to provide the binaries directory (in unix: */bin*, in windows: *\Scripts*). |
 
 ##### Examples
-On Unix based systems run:
 ````
-./test.sh -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
-````
-On Windows run:
-````
-test.bat -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
 ````
 
 ### Bintray tests
