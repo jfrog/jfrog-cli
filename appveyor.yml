@@ -43,14 +43,14 @@ environment:
     secure: Bm9R9Zveb6Rxc6M4IWvpVi1j1txDSBwz2L+CHKDoxwDHDfPs7vMb8+gSbB63XAq+
 
   COMMON_TESTS_ARGS:
-    test.bat -v github.com\jfrog\jfrog-cli-go --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+    go test -v github.com\jfrog\jfrog-cli-go --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
   BT_CREDENTIALS_ARGS:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
   - VET:
     TEST_SUIT:
-      python\addresources.bat && go vet github.com\jfrog\jfrog-cli-go
+      go vet github.com\jfrog\jfrog-cli-go
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS%  --test.artifactory=true"
