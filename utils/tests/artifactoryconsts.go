@@ -19,7 +19,7 @@ const (
 	BundleDownloadSpec                     = "bundle_download_spec.json"
 	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
-	CopyByBundleSpec                       = "move_copy_delete_by_bundle_spec.json"
+	CopyByBundleSpec                       = "copy_by_bundle_spec.json"
 	CopyItemsSpec                          = "copy_items_spec.json"
 	CopyMoveSimpleSpec                     = "copy_move_simple.json"
 	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
