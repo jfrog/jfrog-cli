@@ -8,14 +8,13 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
+	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 )
 
 const GoCommandName = "rt_go"
 
 type GoCommand struct {
-
 	noRegistry         bool
 	publishDeps        bool
 	goArg              []string
@@ -144,9 +143,9 @@ func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServi
 	var artifactoryVersion string
 	var err error
 	if deployerServiceManager != nil {
-		artifactoryVersion, err = deployerServiceManager.GetConfig().GetArtDetails().GetVersion()
+		artifactoryVersion, err = deployerServiceManager.GetConfig().GetCommonDetails().GetVersion()
 	} else {
-		artifactoryVersion, err = resolverServiceManager.GetConfig().GetArtDetails().GetVersion()
+		artifactoryVersion, err = resolverServiceManager.GetConfig().GetCommonDetails().GetVersion()
 	}
 	if err != nil {
 		return false, err

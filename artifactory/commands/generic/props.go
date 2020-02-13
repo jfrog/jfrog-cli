@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -47,7 +48,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	serviceConfig, err := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).

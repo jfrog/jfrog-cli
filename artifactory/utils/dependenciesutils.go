@@ -111,7 +111,7 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 	client, err := rthttpclient.ArtifactoryClientBuilder().
 		SetCertificatesPath(securityDir).
 		SetInsecureTls(artDetails.InsecureTls).
-		SetArtDetails(&auth).
+		SetCommonDetails(&auth).
 		Build()
 	if err != nil {
 		return err

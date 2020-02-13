@@ -122,7 +122,7 @@ func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber stri
 		return err
 	}
 	// Create the info file if Artifactory version is 6.10.0 and above.
-	artifactoryVersion, err := servicesManager.GetConfig().GetArtDetails().GetVersion()
+	artifactoryVersion, err := servicesManager.GetConfig().GetCommonDetails().GetVersion()
 	if err != nil {
 		return err
 	}

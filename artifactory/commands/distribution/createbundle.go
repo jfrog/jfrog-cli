@@ -2,69 +2,54 @@ package distribution
 
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-)
-
-type ReleaseNotesType string
-
-const (
-	Markdown  ReleaseNotesType = "markdown"
-	Asciidoc                   = "asciidoc"
-	PlainText                  = "plain_text"
+	"github.com/jfrog/jfrog-client-go/distribution/services"
 )
 
 type CreateBundleCommand struct {
-	name             string
-	version          string
-	dryRun           bool
-	signImmediately  bool
-	description      string
-	releaseNotesPath string
-	releaseNotesType ReleaseNotesType
-	spec             *spec.SpecFiles
-	rtDetails        *config.ArtifactoryDetails
+	rtDetails           *config.ArtifactoryDetails
+	createBundlesParams services.CreateBundleParams
+	spec                *spec.SpecFiles
+	dryRun              bool
 }
 
 func NewCreateBundleCommand() *CreateBundleCommand {
 	return &CreateBundleCommand{}
 }
 
-func (cbc *CreateBundleCommand) SetName(name string) *CreateBundleCommand {
-	cbc.name = name
-	return cbc
+func (createBundle *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CreateBundleCommand {
+	createBundle.rtDetails = rtDetails
+	return createBundle
 }
 
-func (cbc *CreateBundleCommand) SetVersion(version string) *CreateBundleCommand {
-	cbc.version = version
-	return cbc
+func (createBundle *CreateBundleCommand) SetCreateBundleParams(params services.CreateBundleParams) *CreateBundleCommand {
+	createBundle.createBundlesParams = params
+	return createBundle
 }
 
-func (cbc *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCommand {
-	cbc.dryRun = dryRun
-	return cbc
+func (createBundle *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCommand {
+	createBundle.dryRun = dryRun
+	return createBundle
 }
 
-func (cbc *CreateBundleCommand) SetSignImmediately(signImmediately bool) *CreateBundleCommand {
-	cbc.signImmediately = signImmediately
-	return cbc
+func (cbc *CreateBundleCommand) Run() error {
+	servicesManager, err := utils.CreateDistributionServiceManager(cbc.rtDetails, cbc.dryRun)
+	if err != nil {
+		return err
+	}
+
+	for _, spec := range cbc.spec.Files {
+		cbc.createBundlesParams.SpecFiles = append(cbc.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
+	}
+
+	return servicesManager.CreateReleaseBundle(cbc.createBundlesParams)
 }
 
-func (cbc *CreateBundleCommand) SetDescription(description string) *CreateBundleCommand {
-	cbc.description = description
-	return cbc
+func (cbc *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return cbc.rtDetails, nil
 }
 
-func (cbc *CreateBundleCommand) SetReleaseNotesPath(releaseNotesPath string) *CreateBundleCommand {
-	cbc.releaseNotesPath = releaseNotesPath
-	return cbc
-}
-
-func (cbc *CreateBundleCommand) SetReleaseNotesType(releaseNotesType ReleaseNotesType) *CreateBundleCommand {
-	cbc.releaseNotesType = releaseNotesType
-	return cbc
-}
-
-func (cbc *CreateBundleCommand) SetSpec(spec *spec.SpecFiles) *CreateBundleCommand {
-	cbc.spec = spec
-	return cbc
+func (cbc *CreateBundleCommand) CommandName() string {
+	return "rt_create_bundle"
 }

@@ -11,7 +11,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	"github.com/jfrog/jfrog-client-go/distribution"
 	"github.com/jfrog/jfrog-client-go/auth"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -92,7 +94,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	serviceConfig, err := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
@@ -102,6 +104,27 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 		return nil, err
 	}
 	return artifactory.New(&artAuth, serviceConfig)
+}
+
+func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*distribution.DistributionServicesManager, error) {
+	certPath, err := GetJfrogSecurityDir()
+	if err != nil {
+		return nil, err
+	}
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+	serviceConfig, err := clientConfig.NewConfigBuilder().
+		SetArtDetails(artAuth).
+		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
+		SetDryRun(isDryRun).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	return distribution.New(&artAuth, serviceConfig)
 }
 
 func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error) {

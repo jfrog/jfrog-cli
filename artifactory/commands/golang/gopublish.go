@@ -2,15 +2,16 @@ package golang
 
 import (
 	"errors"
+	"os/exec"
+	"strings"
+
 	commandutils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/golang/project"
-	"github.com/jfrog/jfrog-client-go/artifactory/services/go"
+	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
-	"os/exec"
-	"strings"
 )
 
 const minSupportedArtifactoryVersion = "6.2.0"
@@ -71,7 +72,7 @@ func (gpc *GoPublishCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	artifactoryVersion, err := serviceManager.GetConfig().GetArtDetails().GetVersion()
+	artifactoryVersion, err := serviceManager.GetConfig().GetCommonDetails().GetVersion()
 	if err != nil {
 		return err
 	}

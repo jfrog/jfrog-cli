@@ -12,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/golang"
@@ -73,6 +74,7 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -490,12 +492,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "nuget-deps-tree",
-			Aliases:   []string{"ndt"},
-			Usage:     nugettree.Description,
-			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
-			UsageText: nugettree.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:         "nuget-deps-tree",
+			Aliases:      []string{"ndt"},
+			Usage:        nugettree.Description,
+			HelpName:     common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
+			UsageText:    nugettree.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
@@ -603,6 +605,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return pipInstallCmd(c)
+			},
+		},
+		{
+			Name:    "create-release-bundle",
+			Flags:   getReleaseBundleFlags(),
+			Aliases: []string{"crb"},
+			// Usage:           pipinstall.Description,
+			// HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			// UsageText:       pipinstall.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createReleaseBundleCmd(c)
 			},
 		},
 	}
@@ -1439,6 +1454,40 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
+func getReleaseBundleFlags() []cli.Flag {
+	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
+	return append(releaseBundleFlags, []cli.Flag{
+		cli.StringFlag{
+			Name:  "distribution-url",
+			Usage: "[Optional] Distribution URL.` `",
+		},
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+		},
+		cli.BoolFlag{
+			Name:  "sign-immediately",
+			Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
+		},
+		cli.StringFlag{
+			Name:  "storing-repository",
+			Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
+		},
+		cli.StringFlag{
+			Name:  "description",
+			Usage: "[Optional] Description of the release bundle.` `",
+		},
+		cli.StringFlag{
+			Name:  "release-notes-path",
+			Usage: "[Optional] Path to a file describes the release notes for the release bundle version.` `",
+		},
+		cli.StringFlag{
+			Name:  "release-notes-syntax",
+			Usage: "[Default: plain_text] The syntax for the release notes. One of 'markdown', 'asciidoc', or 'plain_text` `",
+		},
+	}...)
+}
+
 func getBuildScanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolTFlag{
@@ -1472,6 +1521,17 @@ func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*confi
 	}
 	if artDetails.Url == "" {
 		return nil, errors.New("the --url option is mandatory")
+	}
+	return artDetails, nil
+}
+
+func createDistributionDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
+	artDetails, err := createArtifactoryDetails(c, includeConfig)
+	if err != nil {
+		return nil, err
+	}
+	if artDetails.DistributionUrl == "" {
+		return nil, errors.New("the --distribution-url option is mandatory")
 	}
 	return artDetails, nil
 }
@@ -2725,6 +2785,36 @@ func buildDiscardCmd(c *cli.Context) error {
 	return commands.Exec(buildDiscardCmd)
 }
 
+func createReleaseBundleCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var createBundleSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		createBundleSpec, err = getSpec(c, true)
+	} else {
+		createBundleSpec, err = createDefaultDownloadSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(createBundleSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
+
+	configuration := createReleaseBundleCreateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
+	createBundleCommand := distribution.NewCreateBundleCommand()
+	rtDetails, err := createDistributionDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	createBundleCommand.SetRtDetails(rtDetails).SetCreateBundleParams(configuration).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(createBundleCommand)
+}
+
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -2840,6 +2930,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
+	details.DistributionUrl = c.String("distribution-url")
 	details.ApiKey = c.String("apikey")
 	details.User = c.String("user")
 	details.Password = c.String("password")
@@ -2865,6 +2956,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 
 		if details.Url == "" {
 			details.Url = confDetails.Url
+		}
+		if details.DistributionUrl == "" {
+			details.DistributionUrl = confDetails.DistributionUrl
 		}
 
 		if !isAuthMethodSet(details) {
@@ -3068,6 +3162,23 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	distributeParamsImpl.TargetRepo = c.Args().Get(2)
 	return distributeParamsImpl
+}
+
+func createReleaseBundleCreateConfiguration(c *cli.Context, bundleName, bundleVersion string) distributionServices.CreateBundleParams {
+	releaseBundleParams := distributionServices.NewCreateBundleParams(bundleName, bundleVersion)
+	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
+	releaseBundleParams.StoringRepository = c.String("storing-repository")
+	releaseBundleParams.Description = c.String("description")
+	releaseBundleParams.ReleaseNotesPath = c.String("release-notes-path")
+	switch c.String("release-notes-syntax") {
+	case "markdown":
+		releaseBundleParams.ReleaseNotesSyntax = distributionServices.Markdown
+	case "asciidoc":
+		releaseBundleParams.ReleaseNotesSyntax = distributionServices.Asciidoc
+	default:
+		releaseBundleParams.ReleaseNotesSyntax = distributionServices.PlainText
+	}
+	return releaseBundleParams
 }
 
 func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {

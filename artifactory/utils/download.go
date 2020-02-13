@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/io"
 )
 
@@ -15,7 +16,7 @@ func CreateDownloadServiceManager(artDetails *config.ArtifactoryDetails, flags *
 	if err != nil {
 		return nil, err
 	}
-	servicesConfig, err := artifactory.NewConfigBuilder().
+	servicesConfig, err := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetDryRun(dryRun).
 		SetCertificatesPath(certPath).
