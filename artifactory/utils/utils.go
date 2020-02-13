@@ -11,7 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
@@ -45,7 +45,7 @@ func getConfigDir(global bool) (string, error) {
 	return config.GetJfrogHomeDir()
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails, insecureTls bool) (string, error) {
+func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.CommonDetails, insecureTls bool) (string, error) {
 	u, err := url.Parse(artifactoryAuth.GetUrl())
 	if err != nil {
 		return "", err
@@ -104,7 +104,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
+func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error) {
 	artHttpDetails := artDetails.CreateHttpClientDetails()
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
@@ -121,7 +121,7 @@ func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, 
 	return false, nil
 }
 
-func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) error {
+func CheckIfRepoExists(repository string, artDetails auth.CommonDetails) error {
 	repoExists, err := isRepoExists(repository, artDetails)
 	if err != nil {
 		return err

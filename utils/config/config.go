@@ -12,7 +12,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
+	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -341,6 +342,7 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 type ArtifactoryDetails struct {
 	Url               string            `json:"url,omitempty"`
 	SshUrl            string            `json:"-"`
+	DistributionUrl   string            `json:"distributionUrl,omitempty"`
 	User              string            `json:"user,omitempty"`
 	Password          string            `json:"password,omitempty"`
 	SshKeyPath        string            `json:"sshKeyPath,omitempty"`
@@ -405,6 +407,10 @@ func (artifactoryDetails *ArtifactoryDetails) GetUrl() string {
 	return artifactoryDetails.Url
 }
 
+func (artifactoryDetails *ArtifactoryDetails) GetDistributionUrl() string {
+	return artifactoryDetails.DistributionUrl
+}
+
 func (artifactoryDetails *ArtifactoryDetails) GetUser() string {
 	return artifactoryDetails.User
 }
@@ -429,8 +435,8 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 	return len(artifactoryDetails.SshAuthHeaders) > 0
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {
-	artAuth := auth.NewArtifactoryDetails()
+func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.CommonDetails, error) {
+	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
 	artAuth.SetSshUrl(artifactoryDetails.SshUrl)
 	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)

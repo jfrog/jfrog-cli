@@ -32,7 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -53,7 +53,7 @@ var artifactoryCli *tests.JfrogCli
 var configArtifactoryCli *tests.JfrogCli
 
 var artifactoryDetails *config.ArtifactoryDetails
-var artAuth auth.ArtifactoryDetails
+var artAuth auth.CommonDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
