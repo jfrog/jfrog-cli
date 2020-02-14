@@ -38,7 +38,7 @@ var BtOrg *string
 var TestArtifactory *bool
 var TestBintray *bool
 var TestArtifactoryProxy *bool
-var TestReleaseBundle *bool
+var TestDistribution *bool
 var TestDocker *bool
 var TestGo *bool
 var TestNpm *bool
@@ -66,7 +66,7 @@ func init() {
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
-	TestReleaseBundle = flag.Bool("test.releaseBundle", false, "Test release bundle")
+	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")

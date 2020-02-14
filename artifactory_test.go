@@ -3183,7 +3183,7 @@ func initArtifactoryTest(t *testing.T) {
 }
 
 func cleanArtifactoryTest() {
-	if !*tests.TestArtifactory && !*tests.TestReleaseBundle {
+	if !*tests.TestArtifactory && !*tests.TestDistribution {
 		return
 	}
 	os.Unsetenv(cliutils.HomeDir)

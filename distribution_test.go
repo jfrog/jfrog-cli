@@ -10,25 +10,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func InitReleaseBundleTests() {
+func InitDistributionTests() {
 	*tests.RtDistributionUrl = utils.AddTrailingSlashIfNeeded(*tests.RtDistributionUrl)
 	initArtifactoryCli()
 	InitArtifactoryTests()
 	inttestutils.SendGpgKeys(artHttpDetails)
 }
 
-func CleanReleaseBundleTests() {
+func CleanDistributionTests() {
 	inttestutils.DeleteGpgKeys(artHttpDetails)
 }
 
-func initReleaseBundleTest(t *testing.T) {
-	if !*tests.TestReleaseBundle {
-		t.Skip("Release bundle is not being tested, skipping...")
+func initDistributionTest(t *testing.T) {
+	if !*tests.TestDistribution {
+		t.Skip("Distribution is not being tested, skipping...")
 	}
 }
 
 func TestBundleDownload(t *testing.T) {
-	initReleaseBundleTest(t)
+	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
@@ -55,7 +55,7 @@ func TestBundleDownload(t *testing.T) {
 }
 
 func TestBundleDownloadUsingSpec(t *testing.T) {
-	initReleaseBundleTest(t)
+	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
@@ -84,7 +84,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 }
 
 func TestBundleDownloadNoPattern(t *testing.T) {
-	initReleaseBundleTest(t)
+	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
@@ -113,7 +113,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 }
 
 func TestBundleCopy(t *testing.T) {
-	initReleaseBundleTest(t)
+	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 
@@ -145,7 +145,7 @@ func TestBundleCopy(t *testing.T) {
 }
 
 func TestBundleSetProperties(t *testing.T) {
-	initReleaseBundleTest(t)
+	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, artHttpDetails)
 

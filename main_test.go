@@ -45,8 +45,8 @@ func setupIntegrationTests() {
 	if *tests.TestDocker {
 		initArtifactoryCli()
 	}
-	if *tests.TestReleaseBundle {
-		InitReleaseBundleTests()
+	if *tests.TestDistribution {
+		InitDistributionTests()
 	}
 }
 
@@ -60,8 +60,8 @@ func tearDownIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		CleanBuildToolsTests()
 	}
-	if *tests.TestReleaseBundle {
-		CleanReleaseBundleTests()
+	if *tests.TestDistribution {
+		CleanDistributionTests()
 	}
 }
 
