@@ -227,16 +227,16 @@ Flags:
 * Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
-### Release bundle tests
+### Distribution tests
 In addition to [general optional flags](#Usage) you *must* use the following flag:
 
 | Flag | Description |
 | --- | --- |
 | `-rt.distributionUrl` | Distribution URL. |
 
-To run release bundle tests run the following command:
+To run distribution tests run the following command:
 ```
-go test -v github.com/jfrog/jfrog-cli-go -test.releaseBundle [flags]
+go test -v github.com/jfrog/jfrog-cli-go -test.distribution [flags]
 ```
 
 # Code Contributions
