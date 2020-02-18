@@ -1,12 +1,14 @@
 package inttestutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
@@ -30,6 +32,7 @@ const (
 		`]}`
 	distributionGpgKeyCreatePattern = `{"public_key":"%s", "private_key":"%s"}`
 	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key", "public_key":"%s"}`
+	distributionPattern             = `{"dry_run":false,"distribution_rules":[{"site_name":"HOME"}]}`
 )
 
 type RepoPathName struct {
@@ -38,10 +41,28 @@ type RepoPathName struct {
 	Name string
 }
 
+type DistributionStatus string
+
+const (
+	NotDistributed DistributionStatus = "Not distributed"
+	InProgress                        = "In progress"
+	Completed                         = "Completed"
+	Failed                            = "Failed"
+)
+
+type DistributionResponse struct {
+	Id     string             `json:"id,omitempty"`
+	Status DistributionStatus `json:"status,omitempty"`
+}
+
+type DistributionResponses struct {
+	distributionResponse []DistributionResponse
+}
+
 // Send GPG keys to Distribution and Artifactory to allow signing of release bundles
 func SendGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	// Read gpg public and private keys
-	keysDir := filepath.Join(tests.GetTestResourcesPath(), "releasebundles")
+	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
 	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
 	cliutils.ExitOnErr(err)
 	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
@@ -88,8 +109,7 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-// Create a release bundle
-func CreateBundle(t *testing.T, bundleName, bundleVersion string, triples []RepoPathName, artHttpDetails httputils.HttpClientDetails) {
+func CreateAndDistributeBundle(t *testing.T, bundleName, bundleVersion string, triples []RepoPathName, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	aql := createAqlForCreateBundle(bundleName, bundleVersion, triples)
@@ -99,16 +119,37 @@ func CreateBundle(t *testing.T, bundleName, bundleVersion string, triples []Repo
 		t.Error(resp.Status)
 		t.Error(string(body))
 	}
+	Distribute(t, bundleName, bundleVersion, artHttpDetails)
 }
 
-// Delete a release bundle
-func DeleteBundle(t *testing.T, bundleName string, artHttpDetails httputils.HttpClientDetails) {
+func Distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+	url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
+	resp, body, err := client.SendPost(url, []byte(distributionPattern), artHttpDetails)
+	assert.NoError(t, err)
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNotFound {
+		t.Error(resp.Status)
+		t.Error(string(body))
+	}
+	waitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+}
+
+func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+	// Delete distributable bundle at Distribution
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	resp, body, err := client.SendDelete(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName, nil, artHttpDetails)
 	assert.NoError(t, err)
-
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
+		t.Error(resp.Status)
+		t.Error(string(body))
+	}
+
+	// Delete received bundle at Artifactory
+	resp, body, err = client.SendDelete(*tests.RtUrl+"api/release/bundles/"+bundleName+"/"+bundleVersion, nil, artHttpDetails)
+	assert.NoError(t, err)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 		t.Error(resp.Status)
 		t.Error(string(body))
 	}
@@ -124,4 +165,38 @@ func createAqlForCreateBundle(bundleName, bundleVersion string, triples []RepoPa
 		}
 	}
 	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern)
+}
+
+func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	for {
+		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
+		assert.NoError(t, err)
+		if resp.StatusCode != http.StatusOK {
+			t.Error(resp.Status)
+			t.Error(string(body))
+			return
+		}
+		response := &DistributionResponses{}
+		err = json.Unmarshal(body, &response.distributionResponse)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		switch response.distributionResponse[0].Status {
+		case Completed:
+			return
+		case Failed:
+			t.Error("Distribution failed for " + bundleName + "/" + bundleVersion)
+			return
+		case InProgress, NotDistributed:
+			// Wait
+		}
+		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
+		time.Sleep(time.Second)
+	}
+
 }
