@@ -79,7 +79,7 @@ environment:
     TEST_SUIT:
       "C:\\Python37-x64\\python -m venv pip-venv &&
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli-go\\pip-venv\\Scripts"
-  - RELEASE_BUNDLE_TESTS:
+  - DISTRIBUTION_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.distribution=true"
 
