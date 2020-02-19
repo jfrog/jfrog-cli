@@ -141,40 +141,40 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 			return errors.New("Spec must include a pattern.")
 		}
 		if isBuild && isBundle {
-			return fileSpecCannotIncludeBothPropertiesValidation("build", "bundle")
+			return fileSpecValidationError("build", "bundle")
 		}
 		if isSearchBasedSpec {
 			if !isAql && !isPattern && !isBuild && !isBundle {
-				return errors.New("Spec must include either aql, pattern or build.")
+				return errors.New("Spec must include either aql, pattern, build or bundle.")
 			}
 			if isOffset {
 				if isBuild {
-					return fileSpecCannotIncludeBothPropertiesValidation("build", "offset")
+					return fileSpecValidationError("build", "offset")
 				}
 				if isBundle {
-					return fileSpecCannotIncludeBothPropertiesValidation("bundle", "offset")
+					return fileSpecValidationError("bundle", "offset")
 				}
 			}
 			if isLimit {
 				if isBuild {
-					return fileSpecCannotIncludeBothPropertiesValidation("build", "limit")
+					return fileSpecValidationError("build", "limit")
 				}
 				if isBundle {
-					return fileSpecCannotIncludeBothPropertiesValidation("bundle", "limit")
+					return fileSpecValidationError("bundle", "limit")
 				}
 			}
 		}
 		if isAql && isPattern {
-			return fileSpecCannotIncludeBothPropertiesValidation("aql", "pattern")
+			return fileSpecValidationError("aql", "pattern")
 		}
 		if isAql && isExcludePatterns {
-			return fileSpecCannotIncludeBothPropertiesValidation("aql", "exclude-patterns")
+			return fileSpecValidationError("aql", "exclude-patterns")
 		}
 		if isAql && isExclusions {
-			return fileSpecCannotIncludeBothPropertiesValidation("aql", "exclusions")
+			return fileSpecValidationError("aql", "exclusions")
 		}
 		if isExclusions && isExcludePatterns {
-			return fileSpecCannotIncludeBothPropertiesValidation("exclusions", "exclude-patterns")
+			return fileSpecValidationError("exclusions", "exclude-patterns")
 		}
 		if !isSortBy && isSortOrder {
 			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
@@ -189,7 +189,7 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 	return nil
 }
 
-func fileSpecCannotIncludeBothPropertiesValidation(fieldA, fieldB string) error {
+func fileSpecValidationError(fieldA, fieldB string) error {
 	return errors.New(fmt.Sprintf("Spec cannot include both '%s' and '%s.'", fieldA, fieldB))
 }
 

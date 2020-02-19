@@ -490,12 +490,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "nuget-deps-tree",
-			Aliases:   []string{"ndt"},
-			Usage:     nugettree.Description,
-			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
-			UsageText: nugettree.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:         "nuget-deps-tree",
+			Aliases:      []string{"ndt"},
+			Usage:        nugettree.Description,
+			HelpName:     common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
+			UsageText:    nugettree.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
@@ -837,10 +837,6 @@ func getDownloadFlags() []cli.Flag {
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
 		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
-		},
-		cli.StringFlag{
 			Name:  "min-split",
 			Value: "",
 			Usage: "[Default: " + strconv.Itoa(cliutils.DownloadMinSplitKb) + "] Minimum file size in KB to split into ranges when downloading. Set to -1 for no splits.` `",
@@ -866,6 +862,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be downloaded"),
@@ -1143,10 +1140,7 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
-		},
+		getBundleFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
@@ -1192,14 +1186,11 @@ func getSearchFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
-		},
 		cli.BoolFlag{
 			Name:  "count",
 			Usage: "[Optional] Set to true to display only the total of files or folders found.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
@@ -1256,10 +1247,7 @@ func getPropertiesFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		cli.StringFlag{
-			Name:  "bundle",
-			Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The property format is bundle-name/bundle-version.` `",
-		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
@@ -1286,6 +1274,13 @@ func getThreadsFlag() cli.Flag {
 		Name:  "threads",
 		Value: "",
 		Usage: "[Default: 3] Number of working threads.` `",
+	}
+}
+
+func getBundleFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "bundle",
+		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
 	}
 }
 
@@ -2253,7 +2248,7 @@ func downloadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
+	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 

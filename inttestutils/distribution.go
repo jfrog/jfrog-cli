@@ -119,10 +119,10 @@ func CreateAndDistributeBundle(t *testing.T, bundleName, bundleVersion string, t
 		t.Error(resp.Status)
 		t.Error(string(body))
 	}
-	Distribute(t, bundleName, bundleVersion, artHttpDetails)
+	distribute(t, bundleName, bundleVersion, artHttpDetails)
 }
 
-func Distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
@@ -136,7 +136,7 @@ func Distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails h
 }
 
 func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	// Delete distributable bundle at Distribution
+	// Delete distributable bundle on Distribution
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	resp, body, err := client.SendDelete(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName, nil, artHttpDetails)
@@ -146,7 +146,7 @@ func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails
 		t.Error(string(body))
 	}
 
-	// Delete received bundle at Artifactory
+	// Delete received bundle in Artifactory
 	resp, body, err = client.SendDelete(*tests.RtUrl+"api/release/bundles/"+bundleName+"/"+bundleVersion, nil, artHttpDetails)
 	assert.NoError(t, err)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -157,21 +157,22 @@ func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails
 
 // Create the AQL for the release bundle creation
 func createAqlForCreateBundle(bundleName, bundleVersion string, triples []RepoPathName) string {
-	innerQueryPattern := ""
+	innerQueryPattern := "{\\\"$or\\\":["
 	for i, triple := range triples {
 		innerQueryPattern += fmt.Sprintf(repoPathNameAqlPattern, triple.Repo, triple.Path, triple.Name)
 		if i+1 < len(triples) {
 			innerQueryPattern += ","
 		}
 	}
-	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern)
+	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern+"]}")
 }
 
+// Wait for distribution of a release bundle
 func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	for {
+	for i := 0; i < 120; i++ {
 		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
 		assert.NoError(t, err)
 		if resp.StatusCode != http.StatusOK {
@@ -198,5 +199,5 @@ func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
 		time.Sleep(time.Second)
 	}
-
+	t.Error("Timeout for release bundle distribution " + bundleName + "/" + bundleVersion)
 }
