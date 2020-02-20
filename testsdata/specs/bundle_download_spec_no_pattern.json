@@ -1,0 +1,8 @@
+{
+    "files": [
+      {
+        "target": "out/download/simple_by_build/data/",
+        "bundle": "cli-test-bundle/10"
+      }
+    ]
+  }
