@@ -3354,6 +3354,7 @@ func createRandomReposName() {
 	}
 }
 
+// Important - Virtual repositories most be deleted first
 func deleteRepos() {
 	repos := []string{
 		tests.VirtualRepo,
@@ -3366,6 +3367,12 @@ func deleteRepos() {
 
 	if *tests.TestNpm {
 		repos = append(repos, tests.NpmLocalRepo, tests.NpmRemoteRepo)
+	}
+	if *tests.TestGo {
+		repos = append(repos, tests.GoLocalRepo)
+	}
+	if *tests.TestPip {
+		repos = append(repos, tests.PypiVirtualRepo, tests.PypiRemoteRepo)
 	}
 
 	for _, repoName := range repos {
