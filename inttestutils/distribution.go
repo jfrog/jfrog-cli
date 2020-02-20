@@ -30,9 +30,9 @@ const (
 		`{\"path\":{\"$match\":\"%s\"}},` +
 		`{\"name\":{\"$match\":\"%s\"}}` +
 		`]}`
-	distributionGpgKeyCreatePattern = `{"public_key":"%s", "private_key":"%s"}`
-	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key", "public_key":"%s"}`
-	distributionPattern             = `{"dry_run":false,"distribution_rules":[{"site_name":"HOME"}]}`
+	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
+	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
+	distributionPattern             = `{"dry_run":false,"distribution_rules":[{"site_name":"*"}]}`
 )
 
 type RepoPathName struct {
