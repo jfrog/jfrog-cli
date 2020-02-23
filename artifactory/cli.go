@@ -877,6 +877,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be downloaded"),
@@ -1154,6 +1155,7 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getBundleFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
@@ -1203,6 +1205,7 @@ func getSearchFlags() []cli.Flag {
 			Name:  "count",
 			Usage: "[Optional] Set to true to display only the total of files or folders found.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
@@ -1259,6 +1262,7 @@ func getPropertiesFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
@@ -1285,6 +1289,13 @@ func getThreadsFlag() cli.Flag {
 		Name:  "threads",
 		Value: "",
 		Usage: "[Default: 3] Number of working threads.` `",
+	}
+}
+
+func getBundleFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "bundle",
+		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
 	}
 }
 
@@ -2297,7 +2308,7 @@ func downloadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
+	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -3018,6 +3029,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3078,6 +3090,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3100,6 +3113,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3209,6 +3223,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).

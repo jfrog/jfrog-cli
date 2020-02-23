@@ -1,0 +1,11 @@
+{
+    "files": [
+      {
+        "pattern": "${REPO1}/data/*",
+        "target": "${REPO2}/",
+        "flat": "false",
+        "recursive": "true",
+        "bundle": "cli-test-bundle/10"
+      }
+    ]
+  }
