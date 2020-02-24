@@ -12,8 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-const fileSpecCannotIncludeBothPropertiesValidationMessage = "Spec cannot include both '%s' and '%s.'"
-
 type SpecFiles struct {
 	Files []File
 }
@@ -55,8 +53,8 @@ func replaceSpecVars(content []byte, specVars map[string]string) []byte {
 }
 
 type File struct {
-	Aql             utils.Aql
-	Pattern         string
+	Aql     utils.Aql
+	Pattern string
 	// Deprecated, use Exclusions instead
 	ExcludePatterns []string
 	Exclusions      []string
@@ -69,6 +67,7 @@ type File struct {
 	Offset          int
 	Limit           int
 	Build           string
+	Bundle          string
 	Recursive       string
 	Flat            string
 	Regexp          string
@@ -106,6 +105,7 @@ func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
 	params.Props = f.Props
 	params.ExcludeProps = f.ExcludeProps
 	params.Build = f.Build
+	params.Bundle = f.Bundle
 	params.SortOrder = f.SortOrder
 	params.SortBy = f.SortBy
 	params.Offset = f.Offset
@@ -129,6 +129,9 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		isSortOrder := len(file.SortOrder) > 0
 		isSortBy := len(file.SortBy) > 0
 		isBuild := len(file.Build) > 0
+		isBundle := len(file.Bundle) > 0
+		isOffset := file.Offset > 0
+		isLimit := file.Limit > 0
 		isValidSortOrder := file.SortOrder == "asc" || file.SortOrder == "desc"
 
 		if isTargetMandatory && !isTarget {
@@ -137,31 +140,47 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 		if !isSearchBasedSpec && !isPattern {
 			return errors.New("Spec must include a pattern.")
 		}
-		if isSearchBasedSpec && !isAql && !isPattern && !isBuild {
-			return errors.New("Spec must include either aql, pattern or build.")
+		if isBuild && isBundle {
+			return fileSpecValidationError("build", "bundle")
+		}
+		if isSearchBasedSpec {
+			if !isAql && !isPattern && !isBuild && !isBundle {
+				return errors.New("Spec must include either aql, pattern, build or bundle.")
+			}
+			if isOffset {
+				if isBuild {
+					return fileSpecValidationError("build", "offset")
+				}
+				if isBundle {
+					return fileSpecValidationError("bundle", "offset")
+				}
+			}
+			if isLimit {
+				if isBuild {
+					return fileSpecValidationError("build", "limit")
+				}
+				if isBundle {
+					return fileSpecValidationError("bundle", "limit")
+				}
+			}
 		}
 		if isAql && isPattern {
-			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "pattern"))
+			return fileSpecValidationError("aql", "pattern")
 		}
 		if isAql && isExcludePatterns {
-			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "exclude-patterns"))
+			return fileSpecValidationError("aql", "exclude-patterns")
 		}
 		if isAql && isExclusions {
-			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "aql", "exclusions"))
+			return fileSpecValidationError("aql", "exclusions")
 		}
 		if isExclusions && isExcludePatterns {
-			return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "exclusions", "exclude-patterns"))
+			return fileSpecValidationError("exclusions", "exclude-patterns")
 		}
 		if !isSortBy && isSortOrder {
 			return errors.New("Spec cannot include 'sort-order' if 'sort-by' is not included")
 		}
 		if isSortOrder && !isValidSortOrder {
 			return errors.New("The value of 'sort-order' can only be 'asc' or 'desc'.")
-		}
-		if isBuild && isSearchBasedSpec {
-			if err := validateFileSpecWithBuild(file); err != nil {
-				return err
-			}
 		}
 	}
 	if excludePatternsUsed {
@@ -170,17 +189,8 @@ func ValidateSpec(files []File, isTargetMandatory, isSearchBasedSpec bool) error
 	return nil
 }
 
-func validateFileSpecWithBuild(file File) error {
-	isOffset := file.Offset > 0
-	isLimit := file.Limit > 0
-
-	if isOffset {
-		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "offset"))
-	}
-	if isLimit {
-		return errors.New(fmt.Sprintf(fileSpecCannotIncludeBothPropertiesValidationMessage, "build", "limit"))
-	}
-	return nil
+func fileSpecValidationError(fieldA, fieldB string) error {
+	return errors.New(fmt.Sprintf("Spec cannot include both '%s' and '%s.'", fieldA, fieldB))
 }
 
 func showDeprecationOnExcludePatterns() {

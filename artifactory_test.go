@@ -57,8 +57,7 @@ var artAuth auth.ArtifactoryDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
-	// Disable progress bar:
-	os.Setenv("CI", "true")
+	initArtifactoryCli()
 	createReposIfNeeded()
 	cleanArtifactoryTest()
 }
@@ -3184,7 +3183,7 @@ func initArtifactoryTest(t *testing.T) {
 }
 
 func cleanArtifactoryTest() {
-	if !*tests.TestArtifactory {
+	if !*tests.TestArtifactory && !*tests.TestDistribution {
 		return
 	}
 	os.Unsetenv(cliutils.HomeDir)
@@ -3355,6 +3354,7 @@ func createRandomReposName() {
 	}
 }
 
+// Important - Virtual repositories most be deleted first
 func deleteRepos() {
 	repos := []string{
 		tests.VirtualRepo,
@@ -3367,6 +3367,12 @@ func deleteRepos() {
 
 	if *tests.TestNpm {
 		repos = append(repos, tests.NpmLocalRepo, tests.NpmRemoteRepo)
+	}
+	if *tests.TestGo {
+		repos = append(repos, tests.GoLocalRepo)
+	}
+	if *tests.TestPip {
+		repos = append(repos, tests.PypiVirtualRepo, tests.PypiRemoteRepo)
 	}
 
 	for _, repoName := range repos {

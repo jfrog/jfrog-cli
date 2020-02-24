@@ -9,7 +9,6 @@ import (
 
 	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/prompt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/log"
@@ -29,6 +28,8 @@ func TestMain(m *testing.M) {
 func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
 	os.Setenv(cliutils.OfferConfig, "false")
+	// Disable progress bar:
+	os.Setenv("CI", "true")
 	flag.Parse()
 	log.SetDefaultLogger()
 
@@ -36,19 +37,16 @@ func setupIntegrationTests() {
 		InitBintrayTests()
 	}
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
-		initArtifactoryCli()
 		InitArtifactoryTests()
 	}
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
-		if artifactoryCli == nil {
-			initArtifactoryCli()
-		}
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
-		if artifactoryCli == nil {
-			initArtifactoryCli()
-		}
+		initArtifactoryCli()
+	}
+	if *tests.TestDistribution {
+		InitDistributionTests()
 	}
 }
 
@@ -62,11 +60,13 @@ func tearDownIntegrationTests() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		CleanBuildToolsTests()
 	}
-	os.Setenv(cliutils.OfferConfig, "true")
-	os.Setenv(cliutils.ReportUsage, "true")
+	if *tests.TestDistribution {
+		CleanDistributionTests()
+	}
 }
 
 func InitBuildToolsTests() {
+	initArtifactoryCli()
 	createReposIfNeeded()
 	cleanBuildToolsTest()
 }
@@ -116,6 +116,9 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 }
 
 func initArtifactoryCli() {
+	if artifactoryCli != nil {
+		return
+	}
 	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
 	cred := authenticate()
 	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
@@ -128,10 +131,8 @@ func createConfigFileForTest(dirs []string, resolver, deployer string, t *testin
 	var filePath string
 	for _, atDir := range dirs {
 		d, err := yaml.Marshal(&commandUtils.ConfigFile{
-			CommonConfig: prompt.CommonConfig{
-				Version:    1,
-				ConfigType: confType.String(),
-			},
+			Version:    1,
+			ConfigType: confType.String(),
 			Resolver: artifactoryUtils.Repository{
 				Repo:     resolver,
 				ServerId: "default",

@@ -61,7 +61,6 @@ import (
 	nugettree "github.com/jfrog/jfrog-cli-go/docs/artifactory/nugetdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipdepstree"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
@@ -341,7 +340,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getMavenConfigFlags(),
 			Usage:        mvnconfig.Description,
 			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -366,7 +365,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getGradleConfigFlags(),
 			Usage:        gradleconfig.Description,
 			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -416,7 +415,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "npm-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"npmc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
@@ -467,7 +466,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"nugetc"},
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
@@ -491,19 +490,20 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:      "nuget-deps-tree",
-			Aliases:   []string{"ndt"},
-			Usage:     nugettree.Description,
-			HelpName:  common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
-			UsageText: nugettree.Arguments,
-			ArgsUsage: common.CreateEnvVars(),
+			Name:         "nuget-deps-tree",
+			Aliases:      []string{"ndt"},
+			Usage:        nugettree.Description,
+			HelpName:     common.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
+			UsageText:    nugettree.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
 			},
 		},
 		{
 			Name:         "go-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -581,7 +581,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        getGlobalConfigFlag(),
+			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
@@ -605,29 +605,87 @@ func GetCommands() []cli.Command {
 				return pipInstallCmd(c)
 			},
 		},
-		{
-			Name:            "pip-deps-tree",
-			Aliases:         []string{"pdt"},
-			Usage:           pipinstall.Description,
-			HelpName:        common.CreateUsage("rt pdt", pipdepstree.Description, pipdepstree.Usage),
-			UsageText:       pipdepstree.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return pipDepsTreeCmd(c)
-			},
+	}
+}
+
+func getBaseBuildToolsConfigFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.BoolFlag{
+			Name:  commandUtils.Global,
+			Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionServerId,
+			Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentServerId,
+			Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
 		},
 	}
 }
 
-func getGlobalConfigFlag() []cli.Flag {
-	return []cli.Flag{
-		cli.BoolFlag{
-			Name:  "global",
-			Usage: "[Default: false] Set to true, if you'd like to configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+func getCommonBuildToolsConfigFlags() []cli.Flag {
+	return append(getBaseBuildToolsConfigFlags(),
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionRepo,
+			Usage: "[Optional] Repository for dependencies resolution.` `",
 		},
-	}
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentRepo,
+			Usage: "[Optional] Repository for artifacts deployment.` `",
+		},
+	)
+}
+
+func getMavenConfigFlags() []cli.Flag {
+	return append(getBaseBuildToolsConfigFlags(),
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionReleasesRepo,
+			Usage: "[Optional] Resolution repository for release dependencies.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionSnapshotsRepo,
+			Usage: "[Optional] Resolution repository for snapshot dependencies.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentReleasesRepo,
+			Usage: "[Optional] Deployment repository for release artifacts.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.DeploymentSnapshotsRepo,
+			Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
+		},
+	)
+}
+
+func getGradleConfigFlags() []cli.Flag {
+	return append(getCommonBuildToolsConfigFlags(),
+		cli.BoolFlag{
+			Name:  commandUtils.UsesPlugin,
+			Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
+		},
+		cli.BoolFlag{
+			Name:  commandUtils.UseWrapper,
+			Usage: "[Default: false] Set to true if you'd like to use the Gradle wrapper.` `",
+		},
+		cli.BoolTFlag{
+			Name:  commandUtils.DeployMavenDesc,
+			Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
+		},
+		cli.BoolTFlag{
+			Name:  commandUtils.DeployIvyDesc,
+			Usage: "[Default: true] Set to false if you do not wish to deploy Ivy descriptors.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.IvyDescPattern,
+			Usage: "[Default: '[organization]/[module]/ivy-[revision].xml' Set the deployed Ivy descriptor pattern.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.IvyArtifactsPattern,
+			Usage: "[Default: '[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]' Set the deployed Ivy artifacts pattern.` `",
+		},
+	)
 }
 
 func getUrlFlag() []cli.Flag {
@@ -804,6 +862,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be downloaded"),
@@ -873,8 +932,8 @@ func getExclusionsFlags() []cli.Flag {
 func getUploadExclusionsFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:  "exclude-patterns",
-			Usage: "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
+			Name:   "exclude-patterns",
+			Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
 			Hidden: true,
 		},
 		cli.StringFlag{
@@ -1081,6 +1140,7 @@ func getCopyFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getBundleFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be copied."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
@@ -1130,6 +1190,7 @@ func getSearchFlags() []cli.Flag {
 			Name:  "count",
 			Usage: "[Optional] Set to true to display only the total of files or folders found.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be returned."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
@@ -1186,6 +1247,7 @@ func getPropertiesFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
+		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getFailNoOpFlag(),
 		getThreadsFlag(),
@@ -1212,6 +1274,13 @@ func getThreadsFlag() cli.Flag {
 		Name:  "threads",
 		Value: "",
 		Usage: "[Default: 3] Number of working threads.` `",
+	}
+}
+
+func getBundleFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "bundle",
+		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
 	}
 }
 
@@ -2117,40 +2186,42 @@ func createGradleConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Gradle)
+	return commandUtils.CreateBuildConfig(c, utils.Gradle)
 }
 
 func createMvnConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Maven)
+	return commandUtils.CreateBuildConfig(c, utils.Maven)
 }
 
 func createGoConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Go)
+	return commandUtils.CreateBuildConfig(c, utils.Go)
 }
 
 func createNpmConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, true, utils.Npm)
+	return commandUtils.CreateBuildConfig(c, utils.Npm)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	global := c.Bool("global")
-	return commandUtils.CreateBuildConfig(global, false, utils.Nuget)
+	return commandUtils.CreateBuildConfig(c, utils.Nuget)
+}
+
+func createPipConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Pip)
 }
 
 func pingCmd(c *cli.Context) error {
@@ -2177,7 +2248,7 @@ func downloadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
+	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -2693,23 +2764,7 @@ func curlCmd(c *cli.Context) error {
 	return commands.Exec(curlCommand)
 }
 
-func createPipConfigCmd(c *cli.Context) error {
-	if c.NArg() != 0 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	global := c.Bool("global")
-	return pip.CreateBuildConfig(global)
-}
-
 func pipInstallCmd(c *cli.Context) error {
-	return runPipCmd(c, "pip-install", pip.NewPipInstallCommand())
-}
-
-func pipDepsTreeCmd(c *cli.Context) error {
-	return runPipCmd(c, "pip-deps-tree", pip.NewPipDepTreeCommand())
-}
-
-func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -2722,7 +2777,7 @@ func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) e
 	pipConfig, err := piputils.GetPipConfiguration()
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), cmdName))
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
 	}
 
 	// Set arg values.
@@ -2732,6 +2787,7 @@ func runPipCmd(c *cli.Context, cmdName string, pipCmd pip.PipCommandInterface) e
 	}
 
 	// Run command.
+	pipCmd := pip.NewPipInstallCommand()
 	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
 	return commands.Exec(pipCmd)
 }
@@ -2879,6 +2935,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2939,6 +2996,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -2961,6 +3019,7 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3053,6 +3112,7 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).

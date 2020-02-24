@@ -1,13 +1,18 @@
 package pip
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	piputils "github.com/jfrog/jfrog-cli-go/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/pip/dependencies"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -111,13 +116,8 @@ func (pic *PipInstallCommand) determineModuleName(pythonExecutablePath string) e
 		return nil
 	}
 
-	extractor, err := dependencies.CreateCompatibleExtractor(pythonExecutablePath, pic.args)
-	if err != nil {
-		return err
-	}
-
-	// Get package-name from extractor.
-	moduleName, err := extractor.PackageName()
+	// Get package-name.
+	moduleName, err := getPackageName(pythonExecutablePath, pic.args)
 	if err != nil {
 		return err
 	}
@@ -153,6 +153,70 @@ func (pic *PipInstallCommand) prepare() (pythonExecutablePath string, err error)
 	}
 
 	return
+}
+
+func getPackageName(pythonExecutablePath string, pipArgs []string) (string, error) {
+	// Check if using requirements file.
+	isRequirementsFileUsed, err := isCommandUsesRequirementsFile(pipArgs)
+	if err != nil {
+		return "", err
+	}
+	if isRequirementsFileUsed {
+		return "", nil
+	}
+
+	// Build uses setup.py file.
+	// Setup.py should be in current dir.
+	filePath, err := getSetuppyFilePath()
+	if err != nil {
+		return "", err
+	}
+
+	if filePath == "" {
+		// Couldn't resolve requirements file or setup.py.
+		return "", errorutils.CheckError(errors.New("Could not find installation file for pip command, the command must include '--requirement' or be executed from within the directory containing the 'setup.py' file."))
+	}
+
+	// Extract package name from setup.py.
+	packageName, err := piputils.ExtractPackageNameFromSetupPy(filePath, pythonExecutablePath)
+	if err != nil {
+		return "", errors.New("Failed determining module-name from 'setup.py' file: " + err.Error())
+	}
+	return packageName, err
+}
+
+// Look for 'requirements' flag in command args.
+// If found, validate the file exists and return its path.
+func isCommandUsesRequirementsFile(args []string) (bool, error) {
+	// Get requirements flag args.
+	_, _, requirementsFilePath, err := utils.FindFlagFirstMatch([]string{"-r", "--requirement"}, args)
+	if err != nil || requirementsFilePath == "" {
+		// Args don't include a path to requirements file.
+		return false, err
+	}
+
+	return true, nil
+}
+
+// Look for 'setup.py' file in current work dir.
+// If found, return its absolute path.
+func getSetuppyFilePath() (string, error) {
+	wd, err := os.Getwd()
+	if errorutils.CheckError(err) != nil {
+		return "", err
+	}
+
+	filePath := filepath.Join(wd, "setup.py")
+	// Check if setup.py exists.
+	validPath, err := fileutils.IsFileExists(filePath, false)
+	if err != nil {
+		return "", err
+	}
+	if !validPath {
+		return "", errorutils.CheckError(errors.New(fmt.Sprintf("Could not find setup.py file in current directory: %s", wd)))
+	}
+
+	return filePath, nil
 }
 
 func (pic *PipInstallCommand) cleanBuildInfoDir() {
