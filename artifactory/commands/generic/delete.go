@@ -39,7 +39,7 @@ func (dc *DeleteCommand) SetDeleteItems(deleteItems []clientutils.ResultItem) *D
 }
 
 func (dc *DeleteCommand) CommandName() string {
-	return "rt_download"
+	return "rt_delete"
 }
 
 func (dc *DeleteCommand) Run() error {
