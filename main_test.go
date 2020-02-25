@@ -27,9 +27,7 @@ func TestMain(m *testing.M) {
 
 func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
-	os.Setenv(cliutils.OfferConfig, "false")
-	// Disable progress bar:
-	os.Setenv("CI", "true")
+	os.Setenv(cliutils.CI, "true")
 	flag.Parse()
 	log.SetDefaultLogger()
 

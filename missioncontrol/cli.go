@@ -267,13 +267,13 @@ func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlag
 
 func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) {
 	flags = new(commands.ConfigFlags)
-	flags.Interactive = c.BoolT("interactive")
+	flags.Interactive = cliutils.GetInteractiveValue(c)
 	flags.MissionControlDetails, err = createMissionControlDetails(c, false)
 	if err != nil {
 		return
 	}
 	if !flags.Interactive && (flags.MissionControlDetails.Url == "" || flags.MissionControlDetails.AccessToken == "") {
-		return nil, cliutils.PrintHelpAndReturnError("the --url and --access-token options are mandatory when the --interactive option is set to false", c)
+		return nil, cliutils.PrintHelpAndReturnError("the --url and --access-token options are mandatory when the --interactive option is set to false or the CI environment variable is set to true.", c)
 	}
 	return
 }

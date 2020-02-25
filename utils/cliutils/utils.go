@@ -13,6 +13,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -135,6 +137,31 @@ func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
 	return errors.New(msg)
+}
+
+func GetQuietValue(c *cli.Context) bool {
+	if c.IsSet("quiet") {
+		return c.Bool("quiet")
+	}
+
+	return getCiValue()
+}
+
+func GetInteractiveValue(c *cli.Context) bool {
+	if c.IsSet("interactive") {
+		return c.BoolT("interactive")
+	}
+
+	return !getCiValue()
+}
+
+func getCiValue() bool {
+	var ci bool
+	var err error
+	if ci, err = clientutils.GetBoolEnvValue(CI, false); err != nil {
+		return false
+	}
+	return ci
 }
 
 func InteractiveConfirm(message string) bool {
