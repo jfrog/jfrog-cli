@@ -139,6 +139,10 @@ func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	return errors.New(msg)
 }
 
+// This function indicates whether the command should be executed without
+// confirmation warning or not.
+// If the --quiet option was sent, it is used to determine whether to prompt the confirmation or not.
+// If not, the command will prompt the confirmation, unless the CI environment variable was set to true.
 func GetQuietValue(c *cli.Context) bool {
 	if c.IsSet("quiet") {
 		return c.Bool("quiet")
@@ -147,6 +151,10 @@ func GetQuietValue(c *cli.Context) bool {
 	return getCiValue()
 }
 
+// This function indicates whether the command should be executed in
+// an interactive mode.
+// If the --interactive option was sent, it is used to determine the mode.
+// If not, the mode will be interactive, unless the CI environment variable was set to true.
 func GetInteractiveValue(c *cli.Context) bool {
 	if c.IsSet("interactive") {
 		return c.BoolT("interactive")
@@ -155,6 +163,7 @@ func GetInteractiveValue(c *cli.Context) bool {
 	return !getCiValue()
 }
 
+// Return the true if the CI environment variable was set to true.
 func getCiValue() bool {
 	var ci bool
 	var err error

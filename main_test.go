@@ -27,6 +27,7 @@ func TestMain(m *testing.M) {
 
 func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
+	// Disable progress bar and confirmation messages.
 	os.Setenv(cliutils.CI, "true")
 	flag.Parse()
 	log.SetDefaultLogger()
