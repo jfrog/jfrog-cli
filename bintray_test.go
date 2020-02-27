@@ -49,7 +49,7 @@ func TestBintrayPackages(t *testing.T) {
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 	bintrayCli.Exec("package-show", packagePath)
 	bintrayCli.Exec("package-update", packagePath, "--licenses=GPL-3.0", "--vcs-url=other.url.com")
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 
 	cleanBintrayTest()
 }
@@ -65,8 +65,8 @@ func TestBintrayVersions(t *testing.T) {
 	bintrayCli.Exec("version-show", versionPath)
 	bintrayCli.Exec("version-update", versionPath, "--desc=newVersionDescription", "--vcs-tag=new.vcs.tag")
 	bintrayCli.Exec("version-publish", versionPath)
-	bintrayCli.Exec("version-delete", versionPath, "--quiet=true")
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("version-delete", versionPath)
+	bintrayCli.Exec("package-delete", packagePath)
 
 	cleanBintrayTest()
 }
@@ -96,7 +96,7 @@ func TestBintraySimpleUpload(t *testing.T) {
 		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -124,7 +124,7 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -155,7 +155,7 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
 	os.Remove(testFileAbs)
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -174,7 +174,7 @@ func TestBintrayUploadOverride(t *testing.T) {
 	bintrayCli.Exec("upload", path, versionPath, "a1.in", "--flat=true", "--recursive=false", "--override=true")
 	assertPackageFiles(tests.BintrayExpectedUploadFlatNonRecursiveModified, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -223,7 +223,7 @@ func TestBintrayLogs(t *testing.T) {
 	assertPackageFiles(tests.BintrayExpectedUploadFlatRecursive, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("logs", packagePath)
 
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -282,7 +282,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 	tests.VerifyExistLocally(expected, paths, t)
 
 	// Cleanup
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -311,7 +311,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 		filepath.Join(tests.Out, "bintray", "c3.in"),
 	}
 	tests.VerifyExistLocally(expected, paths, t)
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -344,7 +344,7 @@ func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 		Sha1:    "507ac63c6b0f650fb6f36b5621e70ebca3b0965c"}}
 	assertPackageFiles(expected, getPackageFiles(packageName), t)
 
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 	cleanBintrayTest()
 }
 
@@ -411,7 +411,7 @@ func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.Pac
 
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+relPath, versionPath, flags)
 	assertPackageFiles(expected, getPackageFiles(tests.BintrayUploadTestPackageName), t)
-	bintrayCli.Exec("package-delete", packagePath, "--quiet=true")
+	bintrayCli.Exec("package-delete", packagePath)
 }
 
 func getPackageFiles(packageName string) []tests.PackageSearchResultItem {
