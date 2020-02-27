@@ -36,5 +36,5 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 
 	CI
 		[Default: false]
-		If true, disables progress bar on the supporting commands.
+		If true, disables interactive prompts and progress bar.
 		`
