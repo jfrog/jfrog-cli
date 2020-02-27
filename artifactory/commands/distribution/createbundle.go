@@ -28,6 +28,11 @@ func (createBundle *CreateBundleCommand) SetCreateBundleParams(params services.C
 	return createBundle
 }
 
+func (createBundle *CreateBundleCommand) SetSpec(spec *spec.SpecFiles) *CreateBundleCommand {
+	createBundle.spec = spec
+	return createBundle
+}
+
 func (createBundle *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCommand {
 	createBundle.dryRun = dryRun
 	return createBundle

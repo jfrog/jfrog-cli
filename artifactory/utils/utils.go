@@ -111,7 +111,7 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 	if err != nil {
 		return nil, err
 	}
-	artAuth, err := artDetails.CreateArtAuthConfig()
+	artAuth, err := artDetails.CreateDistAuthConfig()
 	if err != nil {
 		return nil, err
 	}

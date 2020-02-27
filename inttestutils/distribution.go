@@ -109,20 +109,7 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-func CreateAndDistributeBundle(t *testing.T, bundleName, bundleVersion string, triples []RepoPathName, artHttpDetails httputils.HttpClientDetails) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	aql := createAqlForCreateBundle(bundleName, bundleVersion, triples)
-	resp, body, err := client.SendPost(*tests.RtDistributionUrl+"api/v1/release_bundle", []byte(aql), artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-	distribute(t, bundleName, bundleVersion, artHttpDetails)
-}
-
-func distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func DistributeBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 	url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion

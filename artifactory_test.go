@@ -32,10 +32,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -65,6 +65,9 @@ func InitArtifactoryTests() {
 func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
 	cred := "--url=" + *tests.RtUrl
+	if *tests.RtDistributionUrl != "" {
+		cred += " --distribution-url=" + *tests.RtDistributionUrl
+	}
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey

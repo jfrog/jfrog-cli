@@ -38,8 +38,8 @@ func TestBundleDownload(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
@@ -65,8 +65,8 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
@@ -94,8 +94,8 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "b1.in"}}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl", "*", "out/download/simple_by_build/data/", "--bundle="+bundleName+"/"+bundleVersion, "--flat")
@@ -120,7 +120,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestBundleDownloadExclusions(t *testing.T) {
+func TestBundleExclusions(t *testing.T) {
 	initDistributionTest(t)
 	bundleName, bundleVersion := "cli-test-bundle", "10"
 	inttestutils.DeleteBundle(t, bundleName, bundleVersion, artHttpDetails)
@@ -130,12 +130,9 @@ func TestBundleDownloadExclusions(t *testing.T) {
 	assert.NoError(t, err)
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
-	// Create release bundle
-	triples := []inttestutils.RepoPathName{
-		{Repo: tests.Repo1, Path: "data", Name: "b1.in"},
-		{Repo: tests.Repo1, Path: "data", Name: "b2.in"},
-	}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b*.in", "--sign-immediately", "--exclusions=*b3.in")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion, "--exclusions=*b2.in")
@@ -164,8 +161,8 @@ func TestBundleCopy(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFileA)
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "data", Name: "a*"}}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/a*", "--sign-immediately")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
@@ -191,8 +188,8 @@ func TestBundleSetProperties(t *testing.T) {
 	artifactoryCli.Exec("u", "testsdata/a/a1.in", tests.Repo1+"/a.in")
 
 	// Create release bundle
-	triples := []inttestutils.RepoPathName{{Repo: tests.Repo1, Path: "*", Name: "a.in"}}
-	inttestutils.CreateAndDistributeBundle(t, bundleName, bundleVersion, triples, artHttpDetails)
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/a.in", "--sign-immediately")
+	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Set the 'prop=red' property to the file.
 	artifactoryCli.Exec("sp", tests.Repo1+"/a.*", "prop=red", "--bundle="+bundleName+"/"+bundleVersion)

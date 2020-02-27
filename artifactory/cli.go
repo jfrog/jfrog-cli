@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -703,17 +704,21 @@ func getGradleConfigFlags() []cli.Flag {
 	)
 }
 
-func getUrlFlag() []cli.Flag {
+func getUrlFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
 			Usage: "[Optional] Artifactory URL.` `",
 		},
+		cli.StringFlag{
+			Name:  "distribution-url",
+			Usage: "[Optional] Distribution URL.` `",
+		},
 	}
 }
 
 func getBaseFlags() []cli.Flag {
-	return append(getUrlFlag(),
+	return append(getUrlFlags(),
 		cli.StringFlag{
 			Name:  "user",
 			Usage: "[Optional] Artifactory username.` `",
@@ -1468,10 +1473,6 @@ func getBuildDiscardFlags() []cli.Flag {
 func getReleaseBundleFlags() []cli.Flag {
 	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
 	return append(releaseBundleFlags, []cli.Flag{
-		cli.StringFlag{
-			Name:  "distribution-url",
-			Usage: "[Optional] Distribution URL.` `",
-		},
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
@@ -1495,6 +1496,10 @@ func getReleaseBundleFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "release-notes-syntax",
 			Usage: "[Default: plain_text] The syntax for the release notes. One of 'markdown', 'asciidoc', or 'plain_text` `",
+		},
+		cli.StringFlag{
+			Name:  "exclusions",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
 		},
 	}...)
 }
@@ -2805,7 +2810,7 @@ func createReleaseBundleCmd(c *cli.Context) error {
 	if c.IsSet("spec") {
 		createBundleSpec, err = getSpec(c, true)
 	} else {
-		createBundleSpec, err = createDefaultDownloadSpec(c)
+		createBundleSpec = createDefaultReleaseBundleSpec(c)
 	}
 	if err != nil {
 		return err
@@ -2815,13 +2820,16 @@ func createReleaseBundleCmd(c *cli.Context) error {
 		return err
 	}
 
-	configuration := createReleaseBundleCreateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
+	configuration, err := createReleaseBundleCreateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
 	createBundleCommand := distribution.NewCreateBundleCommand()
 	rtDetails, err := createDistributionDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
-	createBundleCommand.SetRtDetails(rtDetails).SetCreateBundleParams(configuration).SetDryRun(c.Bool("dry-run"))
+	createBundleCommand.SetRtDetails(rtDetails).SetCreateBundleParams(configuration).SetSpec(createBundleSpec).SetDryRun(c.Bool("dry-run"))
 
 	return commands.Exec(createBundleCommand)
 }
@@ -2997,6 +3005,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 		}
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
+	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
 	return
 }
 
@@ -3178,21 +3187,27 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
-func createReleaseBundleCreateConfiguration(c *cli.Context, bundleName, bundleVersion string) distributionServices.CreateBundleParams {
+func createReleaseBundleCreateConfiguration(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateBundleParams, error) {
 	releaseBundleParams := distributionServices.NewCreateBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")
 	releaseBundleParams.Description = c.String("description")
-	releaseBundleParams.ReleaseNotesPath = c.String("release-notes-path")
-	switch c.String("release-notes-syntax") {
-	case "markdown":
-		releaseBundleParams.ReleaseNotesSyntax = distributionServices.Markdown
-	case "asciidoc":
-		releaseBundleParams.ReleaseNotesSyntax = distributionServices.Asciidoc
-	default:
-		releaseBundleParams.ReleaseNotesSyntax = distributionServices.PlainText
+	if c.IsSet("release-notes-path") {
+		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		if err != nil {
+			return releaseBundleParams, errorutils.CheckError(err)
+		}
+		releaseBundleParams.ReleaseNotes = string(bytes)
+		switch c.String("release-notes-syntax") {
+		case "markdown":
+			releaseBundleParams.ReleaseNotesSyntax = distributionServices.Markdown
+		case "asciidoc":
+			releaseBundleParams.ReleaseNotesSyntax = distributionServices.Asciidoc
+		default:
+			releaseBundleParams.ReleaseNotesSyntax = distributionServices.PlainText
+		}
 	}
-	return releaseBundleParams
+	return releaseBundleParams, nil
 }
 
 func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {
@@ -3296,6 +3311,17 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
+		Regexp(c.Bool("regexp")).
+		BuildSpec()
+}
+
+func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(2)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Bundle(c.String("bundle")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		BuildSpec()
