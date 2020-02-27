@@ -1336,7 +1336,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 		"- API Key\n" +
 		"- Default Package Licenses\n" +
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-		"You can also configure these parameters later using the 'config' command.\n" +
+		"You can also configure these parameters later using the 'jfrog bt c' command.\n" +
 		"Configure now?"
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
