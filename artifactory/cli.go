@@ -611,11 +611,11 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "get-tokens",
+			Name:         "tokens-show",
 			Flags:        getCommonFlags(),
-			Aliases:      []string{"gt"},
+			Aliases:      []string{"ts"},
 			Usage:        gettokens.Description,
-			HelpName:     common.CreateUsage("rt get-tokens", gettokens.Description, gettokens.Usage),
+			HelpName:     common.CreateUsage("rt tokens-show", gettokens.Description, gettokens.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -623,11 +623,11 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "create-token",
+			Name:         "token-create",
 			Flags:        getCreateTokenFlags(),
-			Aliases:      []string{"ct"},
+			Aliases:      []string{"tc"},
 			Usage:        createtoken.Description,
-			HelpName:     common.CreateUsage("rt create-token", createtoken.Description, createtoken.Usage),
+			HelpName:     common.CreateUsage("rt token-create", createtoken.Description, createtoken.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -635,10 +635,10 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "revoke-token",
+			Name:         "token-revoke",
 			Flags:        getRevokeTokenFlags(),
 			Usage:        revoketoken.Description,
-			HelpName:     common.CreateUsage("rt revoke-token", revoketoken.Description, revoketoken.Usage),
+			HelpName:     common.CreateUsage("rt token-revoke", revoketoken.Description, revoketoken.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -646,10 +646,10 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "refresh-token",
+			Name:         "token-refresh",
 			Flags:        getCreateTokenFlags(),
 			Usage:        refreshtoken.Description,
-			HelpName:     common.CreateUsage("rt refresh-token", refreshtoken.Description, refreshtoken.Usage),
+			HelpName:     common.CreateUsage("rt token-refresh", refreshtoken.Description, refreshtoken.Usage),
 			UsageText:    refreshtoken.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -1531,12 +1531,12 @@ func getPipInstallFlags() []cli.Flag {
 func getCreateTokenFlags() []cli.Flag {
 	return append(getCommonFlags(), []cli.Flag{
 		cli.StringFlag{
-			Name:  "username",
-			Usage: "[Optional] The user name for which this token is created. If the user does not exist, a transient user is created. Non-admin users can only create tokens for themselves so they must specify their own username. If the user does not exist, the member-of-groups scope token must be provided (e.g. member-of-groups: g1, g2, g3...) ` `",
+			Name:  "token-user",
+			Usage: "[Optional] The user name for which this token is created. If this option is not provided, a token is created for the current user (determined either by the configured default server or the --user option)` `",
 		},
 		cli.StringFlag{
 			Name:  "scope",
-			Usage: "[Optional] The scope to assign to the token provided as a space-separated list of scope tokens",
+			Usage: "[Optional] The scope to assign to the token provided as a space-separated list of scope tokens. This value for this option should be wrapped in quotes to avoid failure of command-line parsing.",
 		},
 		cli.BoolFlag{
 			Name:  "refreshable",
@@ -1544,7 +1544,7 @@ func getCreateTokenFlags() []cli.Flag {
 		},
 		cli.IntFlag{
 			Name:  "expires-in",
-			Usage: "[Default: 3600] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
+			Usage: "[Default: 3600] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin users can only set a value that is equal to or less than the default 3600.` `",
 		},
 		cli.StringFlag{
 			Name:  "audience",
@@ -2670,7 +2670,7 @@ func refreshTokenCmd(c *cli.Context) error {
 
 func buildCreateTokenParams(c *cli.Context) services.CreateTokenParams {
 	params := services.NewCreateTokenParams()
-	params.Username = c.String("username")
+	params.Username = c.String("token-user")
 	params.Scope = c.String("scope")
 	params.ExpiresIn = c.Int("expires-in")
 	params.Refreshable = c.Bool("refreshable")

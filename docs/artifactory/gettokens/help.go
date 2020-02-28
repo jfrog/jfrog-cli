@@ -1,5 +1,5 @@
 package gettokens
 
-const Description = "Fetch access tokens."
+const Description = "Show all access tokens."
 
-var Usage = []string{"jfrog rt gt"}
+var Usage = []string{"jfrog rt ts"}

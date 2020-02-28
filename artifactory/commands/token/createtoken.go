@@ -32,6 +32,10 @@ func (ct *CreateTokenCommand) Run() error {
 	if err != nil {
 		return err
 	}
+	// If username is not provided, use the current user from configuration or the `--user` flag
+	if ct.params.Username == "" {
+		ct.params.Username = servicesManager.GetConfig().GetArtDetails().GetUser()
+	}
 	result, err := servicesManager.CreateToken(ct.params)
 	if err != nil {
 		return err
