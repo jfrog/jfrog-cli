@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/token"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -3146,7 +3147,7 @@ func TestCreateToken(t *testing.T) {
 func TestRevokeToken(t *testing.T) {
 	initArtifactoryTest(t)
 	// Create a token
-	createTokenCommand := generic.NewCreateTokenCommand()
+	createTokenCommand := token.NewCreateTokenCommand()
 	createTokenCommand.SetRtDetails(artifactoryDetails)
 	createTokenCommand.SetParams(services.CreateTokenParams{
 		Scope:    "member-of-groups:readers",
@@ -3176,7 +3177,7 @@ func TestRevokeToken(t *testing.T) {
 func TestRefreshToken(t *testing.T) {
 	initArtifactoryTest(t)
 	// Create a token
-	createTokenCommand := generic.NewCreateTokenCommand()
+	createTokenCommand := token.NewCreateTokenCommand()
 	createTokenCommand.SetRtDetails(artifactoryDetails)
 	createTokenCommand.SetParams(services.CreateTokenParams{
 		Scope:       "member-of-groups:readers",
@@ -3185,7 +3186,7 @@ func TestRefreshToken(t *testing.T) {
 		Refreshable: true,
 	})
 	createTokenCommand.Run()
-	token := createTokenCommand.Results()
+	token := createTokenCommand.Result()
 
 	// Whe have to call "get tokens" to get the access token and refresh token
 	// needed for refreshing.
@@ -3474,10 +3475,10 @@ func cleanArtifactory() {
 
 func getTestTokens() services.GetTokensResponseData {
 	testTokens := services.GetTokensResponseData{}
-	cmd := generic.NewGetTokensCommand()
+	cmd := token.NewGetTokensCommand()
 	cmd.SetRtDetails(artifactoryDetails)
 	cmd.Run()
-	tokens := cmd.Results()
+	tokens := cmd.Result()
 	for _, token := range tokens.Tokens {
 		if strings.Contains(token.Subject, testTokenUsername) {
 			testTokens.Tokens = append(testTokens.Tokens, token)
@@ -3489,11 +3490,11 @@ func getTestTokens() services.GetTokensResponseData {
 // Search for tokens with the special test user and revoke them.
 func revokeTestTokens() {
 	testTokens := getTestTokens()
-	for _, token := range testTokens.Tokens {
-		removeCmd := generic.NewRevokeTokenCommand()
+	for _, testToken := range testTokens.Tokens {
+		removeCmd := token.NewRevokeTokenCommand()
 		removeCmd.SetRtDetails(artifactoryDetails)
 		removeCmd.SetParams(services.RevokeTokenParams{
-			TokenId: token.TokenId,
+			TokenId: testToken.TokenId,
 		})
 		removeCmd.Run()
 	}
