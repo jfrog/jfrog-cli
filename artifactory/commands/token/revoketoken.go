@@ -7,8 +7,9 @@ import (
 
 type RevokeTokenCommand struct {
 	TokenCommand
-	params    services.RevokeTokenParams
-	result   string
+	token   string
+	tokenID string
+	result  string
 }
 
 func NewRevokeTokenCommand() *RevokeTokenCommand {
@@ -23,8 +24,14 @@ func (rt *RevokeTokenCommand) Result() string {
 	return rt.result
 }
 
-func (rt *RevokeTokenCommand) SetParams(params services.RevokeTokenParams) {
-	rt.params = params
+func (rt *RevokeTokenCommand) SetToken(token string) *RevokeTokenCommand {
+	rt.token = token
+	return rt
+}
+
+func (rt *RevokeTokenCommand) SetTokenID(tokenID string) *RevokeTokenCommand {
+	rt.tokenID = tokenID
+	return rt
 }
 
 func (rt *RevokeTokenCommand) Run() error {
@@ -32,7 +39,10 @@ func (rt *RevokeTokenCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	result, err := servicesManager.RevokeToken(rt.params)
+	params := services.NewRevokeTokenParams()
+	params.TokenId = rt.tokenID
+	params.Token = rt.token
+	result, err := servicesManager.RevokeToken(params)
 	if err != nil {
 		return err
 	}

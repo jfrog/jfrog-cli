@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/token"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/token"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
@@ -3149,10 +3149,7 @@ func TestRevokeToken(t *testing.T) {
 	// Create a token
 	createTokenCommand := token.NewCreateTokenCommand()
 	createTokenCommand.SetRtDetails(artifactoryDetails)
-	createTokenCommand.SetParams(services.CreateTokenParams{
-		Scope:    "member-of-groups:readers",
-		Username: testTokenUsername,
-	})
+	createTokenCommand.SetScope("member-of-groups:readers").SetUsername(testTokenUsername)
 	createTokenCommand.Run()
 
 	// validate that a single token was created
@@ -3179,21 +3176,16 @@ func TestRefreshToken(t *testing.T) {
 	// Create a token
 	createTokenCommand := token.NewCreateTokenCommand()
 	createTokenCommand.SetRtDetails(artifactoryDetails)
-	createTokenCommand.SetParams(services.CreateTokenParams{
-		Scope:       "member-of-groups:readers",
-		Username:    testTokenUsername,
-		ExpiresIn:   3600,
-		Refreshable: true,
-	})
+	createTokenCommand.SetUsername(testTokenUsername).SetScope("member-of-groups:readers").SetExpiresIn(3600).SetRefreshable(true)
 	createTokenCommand.Run()
-	token := createTokenCommand.Result()
+	newToken := createTokenCommand.Result()
 
 	// Whe have to call "get tokens" to get the access token and refresh token
 	// needed for refreshing.
 	initialToken := getTestTokens().Tokens[0]
 
 	// Refresh the token
-	artifactoryCli.Exec("token-refresh", token.RefreshToken, token.AccessToken)
+	artifactoryCli.Exec("token-refresh", newToken.RefreshToken, newToken.AccessToken)
 
 	// Validate there is only one test token
 	testTokens := getTestTokens().Tokens
@@ -3493,9 +3485,7 @@ func revokeTestTokens() {
 	for _, testToken := range testTokens.Tokens {
 		removeCmd := token.NewRevokeTokenCommand()
 		removeCmd.SetRtDetails(artifactoryDetails)
-		removeCmd.SetParams(services.RevokeTokenParams{
-			TokenId: testToken.TokenId,
-		})
+		removeCmd.SetTokenID(testToken.TokenId)
 		removeCmd.Run()
 	}
 }

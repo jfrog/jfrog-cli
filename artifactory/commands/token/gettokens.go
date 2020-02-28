@@ -2,19 +2,29 @@ package token
 
 import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 )
 
 type GetTokensCommand struct {
 	TokenCommand
-	result services.GetTokensResponseData
+	result GetTokensResult
+}
+
+type GetTokensResult struct {
+	Tokens []struct {
+		Issuer      string `json:"issuer,omitempty"`
+		Subject     string `json:"subject,omitempty"`
+		Refreshable bool   `json:"refreshable,omitempty"`
+		Expiry      int    `json:"expiry,omitempty"`
+		TokenId     string `json:"token_id,omitempty"`
+		IssuedAt    int    `json:"issued_at,omitempty"`
+	}
 }
 
 func NewGetTokensCommand() *GetTokensCommand {
 	return &GetTokensCommand{TokenCommand: *NewTokenCommand()}
 }
 
-func (gt *GetTokensCommand) Result() services.GetTokensResponseData {
+func (gt *GetTokensCommand) Result() GetTokensResult {
 	return gt.result
 }
 
@@ -31,6 +41,6 @@ func (gt *GetTokensCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	gt.result = resultItems
+	gt.result = GetTokensResult{Tokens: resultItems.Tokens}
 	return err
 }

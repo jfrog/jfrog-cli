@@ -2598,14 +2598,13 @@ func getTokensCmd(c *cli.Context) error {
 }
 
 func createTokenCmd(c *cli.Context) error {
-	params := buildCreateTokenParams(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
 	createTokenCmd := token.NewCreateTokenCommand()
 	createTokenCmd.SetRtDetails(rtDetails)
-	createTokenCmd.SetParams(params)
+	createTokenCmd.SetAudience(c.String("audience")).SetExpiresIn(c.Int("expires-in")).SetRefreshable(c.Bool("refreshable")).SetScope(c.String("scope")).SetUsername(c.String("token-user"))
 	err = commands.Exec(createTokenCmd)
 	if err != nil {
 		return err
@@ -2623,16 +2622,13 @@ func revokeTokenCmd(c *cli.Context) error {
 		c.IsSet("token") && c.IsSet("token-id") {
 		return cliutils.PrintHelpAndReturnError("Exactly one of [--token-id] or [--token] must be set.", c)
 	}
-	params := services.NewRevokeTokenParams()
-	params.Token = c.String("token")
-	params.TokenId = c.String("token-id")
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
 	revokeTokenCmd := token.NewRevokeTokenCommand()
 	revokeTokenCmd.SetRtDetails(rtDetails)
-	revokeTokenCmd.SetParams(params)
+	revokeTokenCmd.SetToken(c.String("token")).SetTokenID(c.String("token-id"))
 	err = commands.Exec(revokeTokenCmd)
 	if err != nil {
 		return err
@@ -2645,17 +2641,13 @@ func refreshTokenCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	params := services.NewRefreshTokenParams()
-	params.RefreshToken = c.Args().Get(0)
-	params.AccessToken = c.Args().Get(1)
-	params.Token = buildCreateTokenParams(c)
 	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
 	refreshTokenCmd := token.NewRefreshTokenCommand()
 	refreshTokenCmd.SetRtDetails(rtDetails)
-	refreshTokenCmd.SetParams(params)
+	refreshTokenCmd.SetRefreshToken(c.Args().Get(0)).SetAccessToken(c.Args().Get(1)).SetAudience(c.String("audience")).SetExpiresIn(c.Int("expires-in")).SetRefreshable(c.Bool("refreshable")).SetScope(c.String("scope")).SetUsername(c.String("token-user"))
 	err = commands.Exec(refreshTokenCmd)
 	if err != nil {
 		return err
@@ -2666,16 +2658,6 @@ func refreshTokenCmd(c *cli.Context) error {
 	}
 	log.Output(clientutils.IndentJson(result))
 	return err
-}
-
-func buildCreateTokenParams(c *cli.Context) services.CreateTokenParams {
-	params := services.NewCreateTokenParams()
-	params.Username = c.String("token-user")
-	params.Scope = c.String("scope")
-	params.ExpiresIn = c.Int("expires-in")
-	params.Refreshable = c.Bool("refreshable")
-	params.Audience = c.String("audience")
-	return params
 }
 
 func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
