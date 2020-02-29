@@ -110,15 +110,15 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 }
 
 func DistributeBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
-	resp, body, err := client.SendPost(url, []byte(distributionPattern), artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
+	// client, err := httpclient.ClientBuilder().Build()
+	// assert.NoError(t, err)
+	// url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
+	// resp, body, err := client.SendPost(url, []byte(distributionPattern), artHttpDetails)
+	// assert.NoError(t, err)
+	// if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNotFound {
+	// 	t.Error(resp.Status)
+	// 	t.Error(string(body))
+	// }
 	waitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 }
 

@@ -38,23 +38,23 @@ func (createBundle *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCom
 	return createBundle
 }
 
-func (cbc *CreateBundleCommand) Run() error {
-	servicesManager, err := utils.CreateDistributionServiceManager(cbc.rtDetails, cbc.dryRun)
+func (createBundle *CreateBundleCommand) Run() error {
+	servicesManager, err := utils.CreateDistributionServiceManager(createBundle.rtDetails, createBundle.dryRun)
 	if err != nil {
 		return err
 	}
 
-	for _, spec := range cbc.spec.Files {
-		cbc.createBundlesParams.SpecFiles = append(cbc.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
+	for _, spec := range createBundle.spec.Files {
+		createBundle.createBundlesParams.SpecFiles = append(createBundle.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
 	}
 
-	return servicesManager.CreateReleaseBundle(cbc.createBundlesParams)
+	return servicesManager.CreateReleaseBundle(createBundle.createBundlesParams)
 }
 
-func (cbc *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return cbc.rtDetails, nil
+func (createBundle *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return createBundle.rtDetails, nil
 }
 
-func (cbc *CreateBundleCommand) CommandName() string {
+func (createBundle *CreateBundleCommand) CommandName() string {
 	return "rt_create_bundle"
 }

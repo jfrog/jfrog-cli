@@ -621,6 +621,19 @@ func GetCommands() []cli.Command {
 				return createReleaseBundleCmd(c)
 			},
 		},
+		{
+			Name:    "distribute-release-bundle",
+			Flags:   getDistributeReleaseBundleFlags(),
+			Aliases: []string{"drb"},
+			// Usage:           pipinstall.Description,
+			// HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
+			// UsageText:       pipinstall.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return distributeReleaseBundle(c)
+			},
+		},
 	}
 }
 
@@ -1504,6 +1517,20 @@ func getReleaseBundleFlags() []cli.Flag {
 	}...)
 }
 
+func getDistributeReleaseBundleFlags() []cli.Flag {
+	distributeReleaseBundleFlags := getServerFlags()
+	return append(distributeReleaseBundleFlags, []cli.Flag{
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+		},
+		cli.StringFlag{
+			Name:  "distribution-rules",
+			Usage: "Path to distribution rules.` `",
+		},
+	}...)
+}
+
 func getBuildScanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolTFlag{
@@ -1530,25 +1557,21 @@ func getPipInstallFlags() []cli.Flag {
 	return getBuildAndModuleFlags()
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, includeConfig)
+func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config.ArtifactoryDetails, error) {
+	artDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return nil, err
 	}
-	if artDetails.Url == "" {
-		return nil, errors.New("the --url option is mandatory")
+	if distribution {
+		if artDetails.DistributionUrl == "" {
+			return nil, errors.New("the --distribution-url option is mandatory")
+		}
+	} else {
+		if artDetails.Url == "" {
+			return nil, errors.New("the --url option is mandatory")
+		}
 	}
-	return artDetails, nil
-}
 
-func createDistributionDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, includeConfig)
-	if err != nil {
-		return nil, err
-	}
-	if artDetails.DistributionUrl == "" {
-		return nil, errors.New("the --distribution-url option is mandatory")
-	}
 	return artDetails, nil
 }
 
@@ -1808,7 +1831,7 @@ func dockerPushCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1834,7 +1857,7 @@ func dockerPullCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1893,7 +1916,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1924,7 +1947,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyInstallCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1979,7 +2002,7 @@ func npmLegacyCiCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyCiCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2029,7 +2052,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 		return err
 	}
 	npmPublicCmd := npm.NewNpmPublishCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2060,7 +2083,7 @@ func goPublishCmd(c *cli.Context) error {
 	}
 	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2188,7 +2211,7 @@ func goLegacyCmd(c *cli.Context) error {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	targetRepo := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2237,7 +2260,7 @@ func goRecursivePublishCmd(c *cli.Context) error {
 	if targetRepo == "" {
 		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
 	}
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2293,7 +2316,7 @@ func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2336,7 +2359,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2386,7 +2409,7 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2422,7 +2445,7 @@ func moveCmd(c *cli.Context) error {
 		return err
 	}
 	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2458,7 +2481,7 @@ func copyCmd(c *cli.Context) error {
 	}
 
 	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2494,7 +2517,7 @@ func deleteCmd(c *cli.Context) error {
 	}
 
 	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2528,7 +2551,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2579,7 +2602,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	}
 
 	command := generic.NewPropsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return nil, err
 	}
@@ -2630,7 +2653,7 @@ func buildPublishCmd(c *cli.Context) error {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2714,7 +2737,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2757,7 +2780,7 @@ func buildPromoteCmd(c *cli.Context) error {
 		return err
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2825,7 +2848,7 @@ func createReleaseBundleCmd(c *cli.Context) error {
 		return err
 	}
 	createBundleCommand := distribution.NewCreateBundleCommand()
-	rtDetails, err := createDistributionDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
 	}
@@ -2834,13 +2857,43 @@ func createReleaseBundleCmd(c *cli.Context) error {
 	return commands.Exec(createBundleCommand)
 }
 
+func distributeReleaseBundle(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("distribution-rules") || (c.NArg() == 3 && !c.IsSet("distribution-rules"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionSpec *spec.DistributionSpecs
+	var err error
+	if c.IsSet("distribution-rules") {
+		distributionSpec, err = spec.CreateDistributionSpecFromFile(c.String("distribution-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionSpec = &spec.DistributionSpecs{
+			Specs: []spec.DistributionSpec{{
+				SiteName: c.Args().Get(2),
+			}},
+		}
+	}
+
+	configuration := distributionServices.NewDistributeParams(c.Args().Get(0), c.Args().Get(1))
+	distributeBundleCommand := distribution.NewDistributeBundleCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetSpec(distributionSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(distributeBundleCommand)
+}
+
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -3454,6 +3507,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Props, c, "props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.Bundle, c, "bundle")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
 	overrideStringIfSet(&spec.Explode, c, "explode")

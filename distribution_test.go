@@ -162,6 +162,7 @@ func TestBundleCopy(t *testing.T) {
 
 	// Create release bundle
 	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/a*", "--sign-immediately")
+	artifactoryCli.Exec("drb", bundleName, bundleVersion, "*")
 	inttestutils.DistributeBundle(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Copy by bundle name and version
