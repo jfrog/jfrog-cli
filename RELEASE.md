@@ -1,4 +1,6 @@
 ## 1.34.0 (Feb 27, 2020)
+- Allow filtering files by Release Bundle, when searching, downloading, moving, etc. 
+- 'exclude-patterns' file spec property and command option is deprecated and replaced by 'exclusions'.
 - Allow non-interactive usage of the npm-config, maven-config, gradle-config, nuget-config and go-config commands. 
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
