@@ -16,7 +16,7 @@ import (
 )
 
 const mavenFlagName = "maven"
-const mavenTestsProxyPort = "1027"
+const mavenTestsProxyPort = "1028"
 const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
