@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -678,6 +680,19 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return releaseBundleDeleteCmd(c)
+			},
+		},
+		{
+			Name:            "repo-template",
+			Aliases:         []string{"rpt"},
+			Usage:           repotemplate.Description,
+			HelpName:        common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
+			UsageText:       repotemplate.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoTemplateCmd(c)
 			},
 		},
 	}
@@ -3109,6 +3124,21 @@ func pipInstallCmd(c *cli.Context) error {
 	pipCmd := pip.NewPipInstallCommand()
 	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
 	return commands.Exec(pipCmd)
+}
+
+func repoTemplateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Run command.
+	repoTemplateCmd := repository.NewRepoTemplateCommand()
+	repoTemplateCmd.SetTemplatePath(c.Args().Get(0))
+	return commands.Exec(repoTemplateCmd)
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
