@@ -69,7 +69,7 @@ func (dc *DownloadCommand) Run() error {
 	}
 
 	// Create Service Manager:
-	servicesManager, err := utils.CreateDownloadServiceManager(dc.rtDetails, dc.configuration, dc.DryRun(), progressBar)
+	servicesManager, err := utils.CreateDownloadServiceManager(dc.rtDetails, dc.configuration.Threads, dc.DryRun(), progressBar)
 	if err != nil {
 		return err
 	}
