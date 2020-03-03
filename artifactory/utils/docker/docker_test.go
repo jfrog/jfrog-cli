@@ -76,7 +76,7 @@ func TestCheckDockerMinVersion(t *testing.T) {
 	// Supported
 	have := "Docker version 19.03.5, build 633a0ea"
 	want := true
-	got := docker.CheckDockerMinVersion(have)
+	got := checkDockerMinVersion(have)
 
 	if got != want {
 		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
@@ -85,7 +85,7 @@ func TestCheckDockerMinVersion(t *testing.T) {
 	// Not supported
 	have = "Docker version 17.03.5, build 633a0ea"
 	want = false
-	got = docker.CheckDockerMinVersion(have)
+	got = checkDockerMinVersion(have)
 
 	if got != want {
 		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)

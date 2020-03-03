@@ -351,13 +351,13 @@ func ValidateVersion() error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	if !CheckDockerMinVersion(strings.Trim(content, "\n")) {
+	if !checkDockerMinVersion(strings.Trim(content, "\n")) {
 		return errorutils.CheckError(errors.New("This operation requires Docker version " + MinSupportedVersion + " or higher."))
 	}
 	return nil
 }
 
-func CheckDockerMinVersion(dockerOutput string) bool {
+func checkDockerMinVersion(dockerOutput string) bool {
 	versionStr := versionRegex.Find([]byte(dockerOutput))
 	currentVersion := version.NewVersion(string(versionStr))
 	return currentVersion.AtLeast(MinSupportedVersion)
