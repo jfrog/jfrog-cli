@@ -1,10 +1,7 @@
 package docker
 
 import (
-	"strings"
 	"testing"
-
-	gofrogcmd "github.com/jfrog/gofrog/io"
 )
 
 func TestGetImagePath(t *testing.T) {
@@ -72,33 +69,5 @@ func TestResolveRegistryFromTag(t *testing.T) {
 		if result != v.expected {
 			t.Errorf("ResolveRegistryFromTag(\"%s\") => '%s', expected '%s'", v.in, result, v.expected)
 		}
-	}
-}
-
-func TestCheckDockerMinVersion(t *testing.T) {
-	// Supported
-	have := "Docker version 19.03.5, build 633a0ea"
-	want := true
-	got := checkDockerMinVersion(have)
-
-	if got != want {
-		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
-	}
-
-	// Not supported
-	have = "Docker version 17.03.5, build 633a0ea"
-	want = false
-	got = checkDockerMinVersion(have)
-
-	if got != want {
-		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
-	}
-}
-
-func TestDockerVersionScript(t *testing.T) {
-	cmd := &versionCmd{}
-	content, err := gofrogcmd.RunCmdOutput(cmd)
-	if err != nil || strings.Index(content, "Docker version") == -1 {
-		t.Errorf("Could not get docker version, error: %s", err.Error())
 	}
 }

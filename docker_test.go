@@ -1,17 +1,20 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
@@ -166,4 +169,32 @@ func dockerTestCleanup(imageName, buildName string) {
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+}
+
+func TestCheckDockerMinVersion(t *testing.T) {
+	// Supported
+	have := "Docker version 19.03.5, build 633a0ea"
+	want := true
+	got := docker.CheckDockerMinVersion(have)
+
+	if got != want {
+		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
+	}
+
+	// Not supported
+	have = "Docker version 17.03.5, build 633a0ea"
+	want = false
+	got = docker.CheckDockerMinVersion(have)
+
+	if got != want {
+		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
+	}
+}
+
+func TestDockerVersionScript(t *testing.T) {
+	cmd := &docker.VersionCmd{}
+	content, err := gofrogcmd.RunCmdOutput(cmd)
+	if err != nil || strings.Index(content, "Docker version") == -1 {
+		t.Errorf("Could not get docker version, error: %s", err.Error())
+	}
 }
