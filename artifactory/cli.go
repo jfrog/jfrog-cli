@@ -634,6 +634,16 @@ func GetCommands() []cli.Command {
 				return distributeReleaseBundle(c)
 			},
 		},
+		{
+			Name:         "delete-release-bundle",
+			Flags:        getDeleteReleaseBundleFlags(),
+			Aliases:      []string{"delrb"},
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return deleteReleaseBundle(c)
+			},
+		},
 	}
 }
 
@@ -1518,8 +1528,7 @@ func getReleaseBundleFlags() []cli.Flag {
 }
 
 func getDistributeReleaseBundleFlags() []cli.Flag {
-	distributeReleaseBundleFlags := getServerFlags()
-	return append(distributeReleaseBundleFlags, []cli.Flag{
+	return append(getServerFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
@@ -1528,6 +1537,28 @@ func getDistributeReleaseBundleFlags() []cli.Flag {
 			Name:  "distribution-rules",
 			Usage: "Path to distribution rules.` `",
 		},
+		cli.StringFlag{
+			Name:  "site-name",
+			Usage: "[Default: '*'] Wildcard filter for site name. ` `",
+		},
+		cli.StringFlag{
+			Name:  "city-name",
+			Usage: "[Default: '*'] Wildcard filter for site city name. ` `",
+		},
+		cli.StringFlag{
+			Name:  "country-codes",
+			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
+		},
+	}...)
+}
+
+func getDeleteReleaseBundleFlags() []cli.Flag {
+	return append(getDistributeReleaseBundleFlags(), []cli.Flag{
+		cli.BoolFlag{
+			Name:  "delete-from-distribution",
+			Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
+		},
+		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
 	}...)
 }
 
@@ -2843,7 +2874,7 @@ func createReleaseBundleCmd(c *cli.Context) error {
 		return err
 	}
 
-	configuration, err := createReleaseBundleCreateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
+	configuration, err := createReleaseBundleCreateUpdateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
 	if err != nil {
 		return err
 	}
@@ -2858,22 +2889,21 @@ func createReleaseBundleCmd(c *cli.Context) error {
 }
 
 func distributeReleaseBundle(c *cli.Context) error {
-	if !(c.NArg() == 2 && c.IsSet("distribution-rules") || (c.NArg() == 3 && !c.IsSet("distribution-rules"))) {
+	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	var distributionSpec *spec.DistributionSpecs
-	var err error
+	var distributionSpec *spec.DistributionRules
 	if c.IsSet("distribution-rules") {
-		distributionSpec, err = spec.CreateDistributionSpecFromFile(c.String("distribution-rules"))
+		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
+		}
+		var err error
+		distributionSpec, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
 		if err != nil {
 			return err
 		}
 	} else {
-		distributionSpec = &spec.DistributionSpecs{
-			Specs: []spec.DistributionSpec{{
-				SiteName: c.Args().Get(2),
-			}},
-		}
+		distributionSpec = createDefaultDistributionRules(c)
 	}
 
 	configuration := distributionServices.NewDistributeParams(c.Args().Get(0), c.Args().Get(1))
@@ -2882,7 +2912,37 @@ func distributeReleaseBundle(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetSpec(distributionSpec).SetDryRun(c.Bool("dry-run"))
+	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(distributeBundleCommand)
+}
+
+func deleteReleaseBundle(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("distribution-rules") {
+		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	configuration := distributionServices.NewDeleteDistributionParams(c.Args().Get(0), c.Args().Get(1))
+	configuration.DeleteFromDistribution = c.BoolT("delete-from-distribution")
+	distributeBundleCommand := distribution.NewDeleteBundleCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
 
 	return commands.Exec(distributeBundleCommand)
 }
@@ -3240,7 +3300,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
-func createReleaseBundleCreateConfiguration(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateBundleParams, error) {
+func createReleaseBundleCreateUpdateConfiguration(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateBundleParams, error) {
 	releaseBundleParams := distributionServices.NewCreateBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")
@@ -3378,6 +3438,16 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		BuildSpec()
+}
+
+func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
+	return &spec.DistributionRules{
+		DistributionRules: []spec.DistributionRule{{
+			SiteName:     c.String("site-name"),
+			CityName:     c.String("city-name"),
+			CountryCodes: cliutils.GetStringsArrFlagValue(c, "country-codes"),
+		}},
+	}
 }
 
 func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {

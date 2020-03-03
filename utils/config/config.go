@@ -12,8 +12,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/auth"
 	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
 	distributionAuth "github.com/jfrog/jfrog-client-go/distribution/auth"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -439,45 +439,33 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.CommonDetails, error) {
 	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
-	artAuth.SetSshUrl(artifactoryDetails.SshUrl)
-	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
-	artAuth.SetApiKey(artifactoryDetails.ApiKey)
-	artAuth.SetUser(artifactoryDetails.User)
-	artAuth.SetPassword(artifactoryDetails.Password)
-	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
-	artAuth.SetClientCertPath(artifactoryDetails.ClientCertPath)
-	artAuth.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
-	artAuth.SetSshKeyPath(artifactoryDetails.SshKeyPath)
-	artAuth.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if artAuth.IsSshAuthentication() && !artAuth.IsSshAuthHeaderSet() {
-		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return artAuth, nil
+	return artifactoryDetails.createArtAuthConfig(artAuth)
 }
 
 func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.CommonDetails, error) {
 	artAuth := distributionAuth.NewDistributionDetails()
 	artAuth.SetUrl(artifactoryDetails.DistributionUrl)
-	artAuth.SetSshUrl(artifactoryDetails.SshUrl)
-	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
-	artAuth.SetApiKey(artifactoryDetails.ApiKey)
-	artAuth.SetUser(artifactoryDetails.User)
-	artAuth.SetPassword(artifactoryDetails.Password)
-	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
-	artAuth.SetClientCertPath(artifactoryDetails.ClientCertPath)
-	artAuth.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
-	artAuth.SetSshKeyPath(artifactoryDetails.SshKeyPath)
-	artAuth.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if artAuth.IsSshAuthentication() && !artAuth.IsSshAuthHeaderSet() {
-		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
+	return artifactoryDetails.createArtAuthConfig(artAuth)
+}
+
+func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(commonDetails auth.CommonDetails) (auth.CommonDetails, error) {
+	commonDetails.SetSshUrl(artifactoryDetails.SshUrl)
+	commonDetails.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
+	commonDetails.SetApiKey(artifactoryDetails.ApiKey)
+	commonDetails.SetUser(artifactoryDetails.User)
+	commonDetails.SetPassword(artifactoryDetails.Password)
+	commonDetails.SetAccessToken(artifactoryDetails.AccessToken)
+	commonDetails.SetClientCertPath(artifactoryDetails.ClientCertPath)
+	commonDetails.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
+	commonDetails.SetSshKeyPath(artifactoryDetails.SshKeyPath)
+	commonDetails.SetSshPassphrase(artifactoryDetails.SshPassphrase)
+	if commonDetails.IsSshAuthentication() && !commonDetails.IsSshAuthHeaderSet() {
+		err := commonDetails.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return artAuth, nil
+	return commonDetails, nil
 }
 
 func (missionControlDetails *MissionControlDetails) GetAccessToken() string {

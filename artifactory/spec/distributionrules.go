@@ -8,24 +8,24 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
 
-type DistributionSpecs struct {
-	Specs []DistributionSpec
+type DistributionRules struct {
+	DistributionRules []DistributionRule
 }
 
-func (spec *DistributionSpecs) Get(index int) *DistributionSpec {
-	if index < len(spec.Specs) {
-		return &spec.Specs[index]
+func (spec *DistributionRules) Get(index int) *DistributionRule {
+	if index < len(spec.DistributionRules) {
+		return &spec.DistributionRules[index]
 	}
-	return new(DistributionSpec)
+	return new(DistributionRule)
 }
 
-type DistributionSpec struct {
+type DistributionRule struct {
 	SiteName     string
 	CityName     string
 	CountryCodes []string
 }
 
-func (ds *DistributionSpec) ToDistributionCommonParams() *utils.DistributionCommonParams {
+func (ds *DistributionRule) ToDistributionCommonParams() *utils.DistributionCommonParams {
 	return &utils.DistributionCommonParams{
 		SiteName:     ds.SiteName,
 		CityName:     ds.CityName,
@@ -33,14 +33,14 @@ func (ds *DistributionSpec) ToDistributionCommonParams() *utils.DistributionComm
 	}
 }
 
-func CreateDistributionSpecFromFile(distributionSpecPath string) (spec *DistributionSpecs, err error) {
-	spec = new(DistributionSpecs)
+func CreateDistributionRulesFromFile(distributionSpecPath string) (rule *DistributionRules, err error) {
+	rule = new(DistributionRules)
 	content, err := fileutils.ReadFile(distributionSpecPath)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
 
-	err = json.Unmarshal(content, spec)
+	err = json.Unmarshal(content, rule)
 	if errorutils.CheckError(err) != nil {
 		return
 	}

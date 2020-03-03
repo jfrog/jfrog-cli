@@ -20,26 +20,9 @@ import (
 
 const (
 	gpgKeyId                = "234503"
-	releaseBundleAqlPattern = `{"name":"%s",` +
-		`"version":"%s",` +
-		`"dry_run":false,` +
-		`"sign_immediately":true,` +
-		`"spec":{"queries":[{"aql":"items.find(%s)"}]}}`
-	repoPathNameAqlPattern = `{\"$and\":[` +
-		`{\"repo\":{\"$match\":\"%s\"}},` +
-		`{\"path\":{\"$match\":\"%s\"}},` +
-		`{\"name\":{\"$match\":\"%s\"}}` +
-		`]}`
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
 	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
-	distributionPattern             = `{"dry_run":false,"distribution_rules":[{"site_name":"*"}]}`
 )
-
-type RepoPathName struct {
-	Repo string
-	Path string
-	Name string
-}
 
 type DistributionStatus string
 
@@ -109,53 +92,8 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-func DistributeBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	// client, err := httpclient.ClientBuilder().Build()
-	// assert.NoError(t, err)
-	// url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
-	// resp, body, err := client.SendPost(url, []byte(distributionPattern), artHttpDetails)
-	// assert.NoError(t, err)
-	// if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNotFound {
-	// 	t.Error(resp.Status)
-	// 	t.Error(string(body))
-	// }
-	waitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
-}
-
-func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	// Delete distributable bundle on Distribution
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	resp, body, err := client.SendDelete(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName, nil, artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-
-	// Delete received bundle in Artifactory
-	resp, body, err = client.SendDelete(*tests.RtUrl+"api/release/bundles/"+bundleName+"/"+bundleVersion, nil, artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-}
-
-// Create the AQL for the release bundle creation
-func createAqlForCreateBundle(bundleName, bundleVersion string, triples []RepoPathName) string {
-	innerQueryPattern := "{\\\"$or\\\":["
-	for i, triple := range triples {
-		innerQueryPattern += fmt.Sprintf(repoPathNameAqlPattern, triple.Repo, triple.Path, triple.Name)
-		if i+1 < len(triples) {
-			innerQueryPattern += ","
-		}
-	}
-	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern+"]}")
-}
-
 // Wait for distribution of a release bundle
-func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
@@ -187,4 +125,25 @@ func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 		time.Sleep(time.Second)
 	}
 	t.Error("Timeout for release bundle distribution " + bundleName + "/" + bundleVersion)
+}
+
+func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	for i := 0; i < 120; i++ {
+		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
+		assert.NoError(t, err)
+		if resp.StatusCode == http.StatusNotFound {
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Error(resp.Status)
+			t.Error(string(body))
+			return
+		}
+		t.Log("Waiting for distribution deletion " + bundleName + "/" + bundleVersion + "...")
+		time.Sleep(time.Second)
+	}
+	t.Error("Timeout for release bundle deletion " + bundleName + "/" + bundleVersion)
 }

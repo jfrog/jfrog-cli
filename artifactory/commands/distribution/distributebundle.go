@@ -10,7 +10,7 @@ import (
 type DistributeBundleCommand struct {
 	rtDetails               *config.ArtifactoryDetails
 	distributeBundlesParams services.DistributionParams
-	spec                    *spec.DistributionSpecs
+	distributionRules       *spec.DistributionRules
 	dryRun                  bool
 }
 
@@ -28,8 +28,8 @@ func (distributeBundle *DistributeBundleCommand) SetDistributeBundleParams(param
 	return distributeBundle
 }
 
-func (distributeBundle *DistributeBundleCommand) SetSpec(spec *spec.DistributionSpecs) *DistributeBundleCommand {
-	distributeBundle.spec = spec
+func (distributeBundle *DistributeBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DistributeBundleCommand {
+	distributeBundle.distributionRules = distributionRules
 	return distributeBundle
 }
 
@@ -44,8 +44,8 @@ func (distributeBundle *DistributeBundleCommand) Run() error {
 		return err
 	}
 
-	for _, spec := range distributeBundle.spec.Specs {
-		distributeBundle.distributeBundlesParams.DistributionSpecs = append(distributeBundle.distributeBundlesParams.DistributionSpecs, spec.ToDistributionCommonParams())
+	for _, rule := range distributeBundle.distributionRules.DistributionRules {
+		distributeBundle.distributeBundlesParams.DistributionRules = append(distributeBundle.distributeBundlesParams.DistributionRules, rule.ToDistributionCommonParams())
 	}
 
 	return servicesManager.DistributeReleaseBundle(distributeBundle.distributeBundlesParams)
