@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	bundleName    = "cli-test-bundle"
+	bundleVersion = "10"
+)
+
 func InitDistributionTests() {
 	*tests.RtDistributionUrl = utils.AddTrailingSlashIfNeeded(*tests.RtDistributionUrl)
 	InitArtifactoryTests()
@@ -25,20 +30,26 @@ func initDistributionTest(t *testing.T) {
 	if !*tests.TestDistribution {
 		t.Skip("Distribution is not being tested, skipping...")
 	}
+	// Delete old release bundle
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
+	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
+}
+
+func cleanDistributionTest(t *testing.T) {
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
+	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 func TestBundleDownload(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	
+
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
-	// Create release bundle
+	// Create and distribute release bundle
 	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
 	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
@@ -52,14 +63,11 @@ func TestBundleDownload(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
 }
 
 func TestBundleDownloadUsingSpec(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
 	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
 
 	// Upload files
@@ -84,16 +92,11 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
 }
 
 func TestBundleDownloadNoPattern(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
@@ -124,16 +127,11 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
 }
 
 func TestBundleExclusions(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
@@ -154,16 +152,11 @@ func TestBundleExclusions(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
 }
 
 func TestBundleCopy(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Upload files
 	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
@@ -189,15 +182,11 @@ func TestBundleCopy(t *testing.T) {
 	verifyExistInArtifactory(tests.GetBuildCopyExpected(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
 }
 
 func TestBundleSetProperties(t *testing.T) {
 	initDistributionTest(t)
-	bundleName, bundleVersion := "cli-test-bundle", "10"
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
 
 	// Upload a file.
 	artifactoryCli.Exec("u", "testsdata/a/a1.in", tests.Repo1+"/a.in")
@@ -227,7 +216,35 @@ func TestBundleSetProperties(t *testing.T) {
 			assert.Equal(t, "green", prop.Value, "Wrong property value")
 		}
 	}
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
-	cleanArtifactoryTest()
+	cleanDistributionTest(t)
+}
+
+func TestSignReleaseBundle(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("u", "--spec="+specFile)
+
+	// Create release bundle
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in")
+	isSigned := inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
+	assert.False(t, isSigned)
+	artifactoryCli.Exec("srb", bundleName, bundleVersion)
+	isSigned = inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
+	assert.True(t, isSigned)
+	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+
+	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
+	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
+
+	// Validate files are downloaded by bundle version
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	cleanDistributionTest(t)
 }

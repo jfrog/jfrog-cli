@@ -19,27 +19,41 @@ import (
 )
 
 const (
-	gpgKeyId                = "234503"
+	gpgKeyId                        = "234503"
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
 	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
 
-type DistributionStatus string
+type distributableDistributionStatus string
+type receivedDistributionStatus string
 
 const (
-	NotDistributed DistributionStatus = "Not distributed"
-	InProgress                        = "In progress"
-	Completed                         = "Completed"
-	Failed                            = "Failed"
+	Open                 distributableDistributionStatus = "OPEN"
+	ReadyForDistribution                                 = "READY_FOR_DISTRIBUTION"
+	Signed                                               = "SIGNED"
+	NotDistributed       receivedDistributionStatus      = "Not distributed"
+	InProgress                                           = "In progress"
+	Completed                                            = "Completed"
+	Failed                                               = "Failed"
 )
 
-type DistributionResponse struct {
-	Id     string             `json:"id,omitempty"`
-	Status DistributionStatus `json:"status,omitempty"`
+// GET api/v1/release_bundle/:name/:version
+// Retreive the status of a release bundle before distribution.
+type distributableResponse struct {
+	Name    string                          `json:"name,omitempty"`
+	Version string                          `json:"version,omitempty"`
+	State   distributableDistributionStatus `json:"state,omitempty"`
 }
 
-type DistributionResponses struct {
-	distributionResponse []DistributionResponse
+// Get api/v1/release_bundle/:name/:version/distribution
+// Retreive the status of a release bundle after distribution.
+type receivedResponse struct {
+	Id     string                     `json:"id,omitempty"`
+	Status receivedDistributionStatus `json:"status,omitempty"`
+}
+
+type ReceivedResponses struct {
+	receivedResponses []receivedResponse
 }
 
 // Send GPG keys to Distribution and Artifactory to allow signing of release bundles
@@ -92,6 +106,27 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
+// Return true if the release bundle is signed
+func IsBundleSigned(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
+	assert.NoError(t, err)
+	if resp.StatusCode != http.StatusOK {
+		t.Error(resp.Status)
+		t.Error(string(body))
+		return false
+	}
+	response := &distributableResponse{}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		t.Error(err)
+		return false
+	}
+	return response.State == Signed
+}
+
 // Wait for distribution of a release bundle
 func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
@@ -105,14 +140,14 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 			t.Error(string(body))
 			return
 		}
-		response := &DistributionResponses{}
-		err = json.Unmarshal(body, &response.distributionResponse)
+		response := &ReceivedResponses{}
+		err = json.Unmarshal(body, &response.receivedResponses)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		switch response.distributionResponse[0].Status {
+		switch response.receivedResponses[0].Status {
 		case Completed:
 			return
 		case Failed:
@@ -127,6 +162,7 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 	t.Error("Timeout for release bundle distribution " + bundleName + "/" + bundleVersion)
 }
 
+// Wait for deletion of a release bundle
 func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)

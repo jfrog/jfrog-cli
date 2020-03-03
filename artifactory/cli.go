@@ -610,7 +610,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:    "create-release-bundle",
-			Flags:   getReleaseBundleFlags(),
+			Flags:   getCreateReleaseBundleFlags(),
 			Aliases: []string{"crb"},
 			// Usage:           pipinstall.Description,
 			// HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
@@ -619,6 +619,16 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return createReleaseBundleCmd(c)
+			},
+		},
+		{
+			Name:         "sign-release-bundle",
+			Flags:        getSignReleaseBundleFlags(),
+			Aliases:      []string{"srb"},
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return signReleaseBundleCmd(c)
 			},
 		},
 		{
@@ -631,7 +641,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return distributeReleaseBundle(c)
+				return distributeReleaseBundleCmd(c)
 			},
 		},
 		{
@@ -641,7 +651,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return deleteReleaseBundle(c)
+				return deleteReleaseBundleCmd(c)
 			},
 		},
 	}
@@ -1493,7 +1503,7 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
-func getReleaseBundleFlags() []cli.Flag {
+func getCreateReleaseBundleFlags() []cli.Flag {
 	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
 	return append(releaseBundleFlags, []cli.Flag{
 		cli.BoolFlag{
@@ -1523,6 +1533,15 @@ func getReleaseBundleFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "exclusions",
 			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
+		},
+	}...)
+}
+
+func getSignReleaseBundleFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "storing-repository",
+			Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
 		},
 	}...)
 }
@@ -2888,7 +2907,23 @@ func createReleaseBundleCmd(c *cli.Context) error {
 	return commands.Exec(createBundleCommand)
 }
 
-func distributeReleaseBundle(c *cli.Context) error {
+func signReleaseBundleCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	configuration := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
+	configuration.StoringRepository = c.String("storing-repository")
+	distributeBundleCommand := distribution.NewSignBundleCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCommand.SetRtDetails(rtDetails).SetSignBundleParams(configuration)
+	return commands.Exec(distributeBundleCommand)
+}
+
+func distributeReleaseBundleCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2917,7 +2952,7 @@ func distributeReleaseBundle(c *cli.Context) error {
 	return commands.Exec(distributeBundleCommand)
 }
 
-func deleteReleaseBundle(c *cli.Context) error {
+func deleteReleaseBundleCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -3073,7 +3108,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.ClientCertKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
-
+	details.GpgPassphrase = c.String("gpg-passphrase")
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.
 		details.Password = details.ApiKey

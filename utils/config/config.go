@@ -355,6 +355,7 @@ type ArtifactoryDetails struct {
 	ServerId          string            `json:"serverId,omitempty"`
 	IsDefault         bool              `json:"isDefault,omitempty"`
 	InsecureTls       bool              `json:"-"`
+	GpgPassphrase     string            `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }
@@ -445,6 +446,7 @@ func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.Common
 func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.CommonDetails, error) {
 	artAuth := distributionAuth.NewDistributionDetails()
 	artAuth.SetUrl(artifactoryDetails.DistributionUrl)
+	artAuth.SetGpgPassphrase(artifactoryDetails.GpgPassphrase)
 	return artifactoryDetails.createArtAuthConfig(artAuth)
 }
 
