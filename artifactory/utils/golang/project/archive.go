@@ -34,6 +34,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -91,89 +92,20 @@ const (
 	MaxLICENSE = 16 << 20
 )
 
-// Archive project files according to the go project standard
-func archiveProject(writer io.Writer, dir, mod, version string) error {
-	m := module.Version{Version: version, Path: mod}
-	//ignore, gitIgnoreErr := gitignore.NewFromFile(sourcePath + "/.gitignore") ??
-	var files []File
+// File provides an abstraction for a file in a directory, zip, or anything
+// else that looks like a file.
+type File interface {
+	// Path returns a clean slash-separated relative path from the module root
+	// directory to the file.
+	Path() string
 
-	err := filepath.Walk(dir, func(filePath string, info os.FileInfo, err error) error {
-		relPath, err := filepath.Rel(dir, filePath)
-		if err != nil {
-			return err
-		}
-		slashPath := filepath.ToSlash(relPath)
-		if info.IsDir() {
-			if filePath == dir {
-				// Don't skip the top-level directory.
-				return nil
-			}
+	// Lstat returns information about the file. If the file is a symbolic link,
+	// Lstat returns information about the link itself, not the file it points to.
+	Lstat() (os.FileInfo, error)
 
-			// Skip VCS directories.
-			// fossil repos are regular files with arbitrary names, so we don't try
-			// to exclude them.
-			switch filepath.Base(filePath) {
-			case ".bzr", ".git", ".hg", ".svn":
-				return filepath.SkipDir
-			}
-
-			// Skip some subdirectories inside vendor, but maintain bug
-			// golang.org/issue/31562, described in isVendoredPackage.
-			// We would like Create and CreateFromDir to produce the same result
-			// for a set of files, whether expressed as a directory tree or zip.
-
-			if isVendoredPackage(slashPath) {
-				return filepath.SkipDir
-			}
-
-			// Skip submodules (directories containing go.mod files).
-			if goModInfo, err := os.Lstat(filepath.Join(filePath, "go.mod")); err == nil && !goModInfo.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if info.Mode().IsRegular() {
-			if !isVendoredPackage(slashPath) {
-				files = append(files, dirFile{
-					filePath:  filePath,
-					slashPath: slashPath,
-					info:      info,
-				})
-			}
-			return nil
-		}
-		// Not a regular file or a directory. Probably a symbolic link.
-		// Irregular files are ignored, so skip it.
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	return Create(writer, m, files)
-}
-
-func isVendoredPackage(name string) bool {
-	var i int
-	if strings.HasPrefix(name, "vendor/") {
-		i += len("vendor/")
-	} else if j := strings.Index(name, "/vendor/"); j >= 0 {
-		// This offset looks incorrect; this should probably be
-		//
-		// 	i = j + len("/vendor/")
-		//
-		// Unfortunately, we can't fix it without invalidating checksums.
-		// Fortunately, the error appears to be strictly conservative: we'll retain
-		// vendored packages that we should have pruned, but we won't prune
-		// non-vendored packages that we should have retained.
-		//
-		// Since this defect doesn't seem to break anything, it's not worth fixing
-		// for now.
-		i += len("/vendor/")
-	} else {
-		return false
-	}
-	return strings.Contains(name[i:], "/")
+	// Open provides access to the data within a regular file. Open may return
+	// an error if called on a directory or symbolic link.
+	Open() (io.ReadCloser, error)
 }
 
 // Create builds a zip archive for module m from an abstract list of files
@@ -186,6 +118,11 @@ func isVendoredPackage(name string) bool {
 // subdirectories, most files in vendor directories, or irregular files (such
 // as symbolic links) in the output archive.
 func Create(w io.Writer, m module.Version, files []File) (err error) {
+	defer func() {
+		if err != nil {
+			err = &zipError{verb: "create zip", err: err}
+		}
+	}()
 
 	// Check that the version is canonical, the module path is well-formed, and
 	// the major version suffix matches the major version.
@@ -300,10 +237,87 @@ func Create(w io.Writer, m module.Version, files []File) (err error) {
 			return err
 		}
 	}
-	if err := zw.Close(); err != nil {
+
+	return zw.Close()
+}
+
+// CreateFromDir creates a module zip file for module m from the contents of
+// a directory, dir. The zip content is written to w.
+//
+// CreateFromDir verifies the restrictions described in the package
+// documentation and should not produce an archive that Unzip cannot extract.
+// CreateFromDir does not include files in the output archive if they don't
+// belong in the module zip. In particular, CreateFromDir will not include
+// files in modules found in subdirectories, most files in vendor directories,
+// or irregular files (such as symbolic links) in the output archive.
+// Additionally, unlike Create, CreateFromDir will not include directories
+// named ".bzr", ".git", ".hg", or ".svn".
+func CreateFromDir(w io.Writer, m module.Version, dir string) (err error) {
+	defer func() {
+		if zerr, ok := err.(*zipError); ok {
+			zerr.path = dir
+		} else if err != nil {
+			err = &zipError{verb: "create zip", path: dir, err: err}
+		}
+	}()
+
+	var files []File
+	err = filepath.Walk(dir, func(filePath string, info os.FileInfo, err error) error {
+		relPath, err := filepath.Rel(dir, filePath)
+		if err != nil {
+			return err
+		}
+		slashPath := filepath.ToSlash(relPath)
+
+		if info.IsDir() {
+			if filePath == dir {
+				// Don't skip the top-level directory.
+				return nil
+			}
+
+			// Skip VCS directories.
+			// fossil repos are regular files with arbitrary names, so we don't try
+			// to exclude them.
+			switch filepath.Base(filePath) {
+			case ".bzr", ".git", ".hg", ".svn":
+				return filepath.SkipDir
+			}
+
+			// Skip some subdirectories inside vendor, but maintain bug
+			// golang.org/issue/31562, described in isVendoredPackage.
+			// We would like Create and CreateFromDir to produce the same result
+			// for a set of files, whether expressed as a directory tree or zip.
+			if isVendoredPackage(slashPath) {
+				return filepath.SkipDir
+			}
+
+			// Skip submodules (directories containing go.mod files).
+			if goModInfo, err := os.Lstat(filepath.Join(filePath, "go.mod")); err == nil && !goModInfo.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if info.Mode().IsRegular() {
+			if !isVendoredPackage(slashPath) {
+				files = append(files, dirFile{
+					filePath:  filePath,
+					slashPath: slashPath,
+					info:      info,
+				})
+			}
+			return nil
+		}
+
+		// Not a regular file or a directory. Probably a symbolic link.
+		// Irregular files are ignored, so skip it.
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	return
+
+	return Create(w, m, files)
 }
 
 type dirFile struct {
@@ -315,6 +329,169 @@ func (f dirFile) Path() string                 { return f.slashPath }
 func (f dirFile) Lstat() (os.FileInfo, error)  { return f.info, nil }
 func (f dirFile) Open() (io.ReadCloser, error) { return os.Open(f.filePath) }
 
+func isVendoredPackage(name string) bool {
+	var i int
+	if strings.HasPrefix(name, "vendor/") {
+		i += len("vendor/")
+	} else if j := strings.Index(name, "/vendor/"); j >= 0 {
+		// This offset looks incorrect; this should probably be
+		//
+		// 	i = j + len("/vendor/")
+		//
+		// (See https://golang.org/issue/31562.)
+		//
+		// Unfortunately, we can't fix it without invalidating checksums.
+		// Fortunately, the error appears to be strictly conservative: we'll retain
+		// vendored packages that we should have pruned, but we won't prune
+		// non-vendored packages that we should have retained.
+		//
+		// Since this defect doesn't seem to break anything, it's not worth fixing
+		// for now.
+		i += len("/vendor/")
+	} else {
+		return false
+	}
+	return strings.Contains(name[i:], "/")
+}
+
+// Unzip extracts the contents of a module zip file to a directory.
+//
+// Unzip checks all restrictions listed in the package documentation and returns
+// an error if the zip archive is not valid. In some cases, files may be written
+// to dir before an error is returned (for example, if a file's uncompressed
+// size does not match its declared size).
+//
+// dir may or may not exist: Unzip will create it and any missing parent
+// directories if it doesn't exist. If dir exists, it must be empty.
+func Unzip(dir string, m module.Version, zipFile string) (err error) {
+	defer func() {
+		if err != nil {
+			err = &zipError{verb: "unzip", path: zipFile, err: err}
+		}
+	}()
+
+	if vers := module.CanonicalVersion(m.Version); vers != m.Version {
+		return fmt.Errorf("version %q is not canonical (should be %q)", m.Version, vers)
+	}
+	if err := module.Check(m.Path, m.Version); err != nil {
+		return err
+	}
+
+	// Check that the directory is empty. Don't create it yet in case there's
+	// an error reading the zip.
+	files, _ := ioutil.ReadDir(dir)
+	if len(files) > 0 {
+		return fmt.Errorf("target directory %v exists and is not empty", dir)
+	}
+
+	// Open the zip file and ensure it's under the size limit.
+	f, err := os.Open(zipFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	zipSize := info.Size()
+	if zipSize > MaxZipFile {
+		return fmt.Errorf("module zip file is too large (%d bytes; limit is %d bytes)", zipSize, MaxZipFile)
+	}
+
+	z, err := zip.NewReader(f, zipSize)
+	if err != nil {
+		return err
+	}
+
+	// Check total size, valid file names.
+	collisions := make(collisionChecker)
+	prefix := fmt.Sprintf("%s@%s/", m.Path, m.Version)
+	var size int64
+	for _, zf := range z.File {
+		if !strings.HasPrefix(zf.Name, prefix) {
+			return fmt.Errorf("unexpected file name %s", zf.Name)
+		}
+		name := zf.Name[len(prefix):]
+		if name == "" {
+			continue
+		}
+		isDir := strings.HasSuffix(name, "/")
+		if isDir {
+			name = name[:len(name)-1]
+		}
+		if path.Clean(name) != name {
+			return fmt.Errorf("invalid file name %s", zf.Name)
+		}
+		if err := module.CheckFilePath(name); err != nil {
+			return err
+		}
+		if err := collisions.check(name, isDir); err != nil {
+			return err
+		}
+		if isDir {
+			continue
+		}
+		if base := path.Base(name); strings.EqualFold(base, "go.mod") {
+			if base != name {
+				return fmt.Errorf("found go.mod file not in module root directory (%s)", zf.Name)
+			} else if name != "go.mod" {
+				return fmt.Errorf("found file named %s, want all lower-case go.mod", zf.Name)
+			}
+		}
+		s := int64(zf.UncompressedSize64)
+		if s < 0 || MaxZipFile-size < s {
+			return fmt.Errorf("total uncompressed size of module contents too large (max size is %d bytes)", MaxZipFile)
+		}
+		size += s
+		if name == "go.mod" && s > MaxGoMod {
+			return fmt.Errorf("go.mod file too large (max size is %d bytes)", MaxGoMod)
+		}
+		if name == "LICENSE" && s > MaxLICENSE {
+			return fmt.Errorf("LICENSE file too large (max size is %d bytes)", MaxLICENSE)
+		}
+	}
+
+	// Unzip, enforcing sizes checked earlier.
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
+	}
+	for _, zf := range z.File {
+		name := zf.Name[len(prefix):]
+		if name == "" || strings.HasSuffix(name, "/") {
+			continue
+		}
+		dst := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(dst), 0777); err != nil {
+			return err
+		}
+		w, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0444)
+		if err != nil {
+			return err
+		}
+		r, err := zf.Open()
+		if err != nil {
+			w.Close()
+			return err
+		}
+		lr := &io.LimitedReader{R: r, N: int64(zf.UncompressedSize64) + 1}
+		_, err = io.Copy(w, lr)
+		r.Close()
+		if err != nil {
+			w.Close()
+			return err
+		}
+		if err := w.Close(); err != nil {
+			return err
+		}
+		if lr.N <= 0 {
+			return fmt.Errorf("uncompressed size of file %s is larger than declared size (%d bytes)", zf.Name, zf.UncompressedSize64)
+		}
+	}
+
+	return nil
+}
+
 // collisionChecker finds case-insensitive name collisions and paths that
 // are listed as both files and directories.
 //
@@ -325,22 +502,6 @@ type collisionChecker map[string]pathInfo
 type pathInfo struct {
 	path  string
 	isDir bool
-}
-
-// File provides an abstraction for a file in a directory, zip, or anything
-// else that looks like a file.
-type File interface {
-	// Path returns a clean slash-separated relative path from the module root
-	// directory to the file.
-	Path() string
-
-	// Lstat returns information about the file. If the file is a symbolic link,
-	// Lstat returns information about the link itself, not the file it points to.
-	Lstat() (os.FileInfo, error)
-
-	// Open provides access to the data within a regular file. Open may return
-	// an error if called on a directory or symbolic link.
-	Open() (io.ReadCloser, error)
 }
 
 func (cc collisionChecker) check(p string, isDir bool) error {
@@ -366,6 +527,23 @@ func (cc collisionChecker) check(p string, isDir bool) error {
 		return cc.check(parent, true)
 	}
 	return nil
+}
+
+type zipError struct {
+	verb, path string
+	err        error
+}
+
+func (e *zipError) Error() string {
+	if e.path == "" {
+		return fmt.Sprintf("%s: %v", e.verb, e.err)
+	} else {
+		return fmt.Sprintf("%s %s: %v", e.verb, e.path, e.err)
+	}
+}
+
+func (e *zipError) Unwrap() error {
+	return e.err
 }
 
 // strToFold returns a string with the property that

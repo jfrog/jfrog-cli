@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
+	"golang.org/x/mod/module"
 )
 
 func TestArchiveProject(t *testing.T) {
@@ -29,7 +30,9 @@ func TestArchiveProject(t *testing.T) {
 	}
 	originalFolder := "test_.git_suffix"
 	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testdata")
-	err = archiveProject(buff, filepath.Join(pwd, "testdata"), "myproject.com/module/name", "v1.0.0")
+	projectInfo := module.Version{Path: "myproject.com/module/name", Version: "v1.0.0"}
+
+	err = CreateFromDir(buff, projectInfo, filepath.Join(pwd, "testdata"))
 	if err != nil {
 		t.Error(err)
 	}

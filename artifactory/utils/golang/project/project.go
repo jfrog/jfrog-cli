@@ -26,6 +26,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils/checksum"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
+	"golang.org/x/mod/module"
 )
 
 // Represent go project
@@ -275,7 +276,8 @@ func (project *goProject) archiveProject(version, tempDir string) (string, error
 		return "", errorutils.CheckError(err)
 	}
 	defer tempFile.Close()
-	err = archiveProject(tempFile, project.projectPath, project.moduleName, version)
+	projectInfo := module.Version{Path: project.moduleName, Version: version}
+	err = CreateFromDir(tempFile, projectInfo, project.projectPath)
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
