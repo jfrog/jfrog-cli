@@ -10,7 +10,7 @@ type InteractiveQuestionnaire struct {
 	MandatoryQuestionsKeys []string
 	OptionalKeysSuggests   []prompt.Suggest
 	QuestionsMap           map[string]QuestionInfo
-	ConfigMap              map[string]interface{}
+	ConfigMap              map[string]string
 }
 
 type answerWriter func(resultMap *map[string]interface{}, key, value string) error
@@ -96,7 +96,8 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 		answer = AskString(question.Msg, question.PromptPrefix)
 	}
 	if question.Writer != nil {
-		err = question.Writer(&iq.ConfigMap, question.MapKey, answer)
+		//err = question.Writer(&iq.ConfigMap, question.MapKey, answer)
+		iq.ConfigMap[question.MapKey] = answer
 		if err != nil {
 			return "", err
 		}
@@ -111,7 +112,7 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 }
 
 func (iq *InteractiveQuestionnaire) Perform() error {
-	iq.ConfigMap = make(map[string]interface{})
+	iq.ConfigMap = make(map[string]string)
 	for i := 0; i < len(iq.MandatoryQuestionsKeys); i++ {
 		iq.AskQuestion(iq.QuestionsMap[iq.MandatoryQuestionsKeys[i]])
 	}

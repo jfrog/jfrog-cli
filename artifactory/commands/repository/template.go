@@ -21,7 +21,7 @@ const (
 	// Strings for prompt questions
 	SelectConfigKeyMsg    = "Select the next configuration key, or type ':x' to exit"
 	InsertValueMsg        = "Insert value for %s: "
-	CommaSeparatedListMsg = " (as comma-separated list) "
+	CommaSeparatedListMsg = "The value should be a comma separated list"
 
 	// Template types
 	TemplateType = "templateType"
@@ -429,8 +429,8 @@ var intQuestionInfo = utils.QuestionInfo{
 	Writer:    writeIntAnswer,
 }
 
-var arrayStringQuestionInfo = utils.QuestionInfo{
-	Msg:       "The value should be a comma separated list",
+var stringListQuestionInfo = utils.QuestionInfo{
+	Msg:       CommaSeparatedListMsg,
 	Options:   nil,
 	AllowVars: true,
 	Writer:    writeStringArrayAnswer,
@@ -469,28 +469,28 @@ type contentSynchronisation struct {
 	Source     struct{ OriginAbsenceDetection bool }
 }
 
-func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, enabled string) (value string, err error) {
-	var cs contentSynchronisation
-	cs.Enabled, err = strconv.ParseBool(enabled)
+func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer string) (value string, err error) {
+	//var cs contentSynchronisation
+	//cs.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for statistic.enable >", false, getBoolSuggests())
-	cs.Statistics.Enabled, err = strconv.ParseBool(enabled)
+	answer += "," + utils.AskFromList("", "Insert the value for statistic.enable >", false, getBoolSuggests())
+	//cs.Statistics.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for properties.enable >", false, getBoolSuggests())
-	cs.Properties.Enabled, err = strconv.ParseBool(enabled)
+	answer += "," + utils.AskFromList("", "Insert the value for properties.enable >", false, getBoolSuggests())
+	//cs.Properties.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, getBoolSuggests())
-	cs.Source.OriginAbsenceDetection, err = strconv.ParseBool(enabled)
+	answer += "," + utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, getBoolSuggests())
+	//cs.Source.OriginAbsenceDetection, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	iq.ConfigMap[ContentSynchronisation] = cs
+	iq.ConfigMap[ContentSynchronisation] = answer
 	return "", nil
 }
 
@@ -596,8 +596,8 @@ var questionMap = map[string]utils.QuestionInfo{
 	Url:             freeStringQuestionInfo,
 	Description:     freeStringQuestionInfo,
 	Notes:           freeStringQuestionInfo,
-	IncludePatterns: freeStringQuestionInfo,
-	ExcludePatterns: freeStringQuestionInfo,
+	IncludePatterns: stringListQuestionInfo,
+	ExcludePatterns: stringListQuestionInfo,
 	RepoLayoutRef: {
 		Options: []prompt.Suggest{
 			{Text: BowerDefault},
@@ -628,7 +628,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	BlockPushingSchema1:          boolQuestionInfo,
 	DebianTrivialLayout:          boolQuestionInfo,
 	ExternalDependenciesEnabled:  boolQuestionInfo,
-	ExternalDependenciesPatterns: arrayStringQuestionInfo,
+	ExternalDependenciesPatterns: stringListQuestionInfo,
 	ChecksumPolicyType: {
 		Options: []prompt.Suggest{
 			{Text: ClientChecksum},
@@ -648,7 +648,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		Writer:    writeStringAnswer,
 	},
 	XrayIndex:              boolQuestionInfo,
-	PropertySets:           arrayStringQuestionInfo,
+	PropertySets:           stringListQuestionInfo,
 	ArchiveBrowsingEnabled: boolQuestionInfo,
 	CalculateYumMetadata:   boolQuestionInfo,
 	YumRootDepth:           intQuestionInfo,
@@ -662,7 +662,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	},
 	EnableFileListsIndexing: boolQuestionInfo,
 	OptionalIndexCompressionFormats: {
-		Msg:       "Enter a semicolon separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
+		Msg:       "Enter a comma separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
 		Options:   nil,
 		AllowVars: false,
 		Writer:    writeStringArrayAnswer,
@@ -726,7 +726,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		Writer:    nil,
 		Callback:  contentSynchronisationCallBack,
 	},
-	Repositories: arrayStringQuestionInfo,
+	Repositories: stringListQuestionInfo,
 	ArtifactoryRequestsCanRetrieveRemoteArtifacts: boolQuestionInfo,
 	KeyPair: freeStringQuestionInfo,
 	PomRepositoryReferencesCleanupPolicy: {
