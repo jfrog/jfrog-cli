@@ -14,11 +14,7 @@ import (
 )
 
 type RepoTemplateCommand struct {
-	path                   string
-	mandatoryQuestionsKeys []string
-	optionalKeysSuggests   []prompt.Suggest
-	optionalQuestionsMap   map[string]questionInfo
-	configMap              map[string]interface{}
+	path string
 }
 
 const (
@@ -26,7 +22,6 @@ const (
 	SelectConfigKeyMsg    = "Select the next configuration key, or type ':x' to exit"
 	InsertValueMsg        = "Insert value for %s: "
 	CommaSeparatedListMsg = " (as comma-separated list) "
-	WriteAndExist         = ":x"
 
 	// Template types
 	TemplateType = "templateType"
@@ -34,7 +29,6 @@ const (
 	Update       = "update"
 
 	MandatoryUrl = "mandatoryUrl"
-	OptionalKey  = "OptionalKey"
 
 	// Common repository configuration JSON keys
 	Key             = "key"
@@ -216,7 +210,7 @@ const (
 )
 
 var commonConfKeys = []prompt.Suggest{
-	{Text: WriteAndExist},
+	{Text: utils.WriteAndExist},
 	{Text: Description},
 	{Text: Notes},
 	{Text: IncludePatterns},
@@ -343,24 +337,15 @@ func (rtc *RepoTemplateCommand) SetTemplatePath(path string) *RepoTemplateComman
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	rtc.mandatoryQuestionsKeys = []string{TemplateType, Key}
-	rtc.configMap = make(map[string]interface{})
-	rtc.optionalQuestionsMap = questionMap
-	for i := 0; i < len(rtc.mandatoryQuestionsKeys); i++ {
-		rtc.askQuestion(questionMap[rtc.mandatoryQuestionsKeys[i]])
+	repoTemplateQuestionnarie := &utils.InteractiveQuestionnaire{
+		MandatoryQuestionsKeys: []string{TemplateType, Key},
+		QuestionsMap:           questionMap,
 	}
-	OptionalKeyQuestion := rtc.optionalQuestionsMap[OptionalKey]
-	OptionalKeyQuestion.options = rtc.optionalKeysSuggests
-	for {
-		key, err := rtc.askQuestion(OptionalKeyQuestion)
-		if err != nil {
-			return err
-		}
-		if key == WriteAndExist {
-			break
-		}
+	err = repoTemplateQuestionnarie.Perform()
+	if err != nil {
+		return err
 	}
-	resBytes, err := json.Marshal(rtc.configMap)
+	resBytes, err := json.Marshal(repoTemplateQuestionnarie.ConfigMap)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -379,42 +364,6 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 
 func (rtc *RepoTemplateCommand) CommandName() string {
 	return "rt_repo_template"
-}
-
-func (rtc *RepoTemplateCommand) askQuestion(question questionInfo) (value string, err error) {
-
-	var answer string
-	if question.options != nil {
-		answer = utils.AskFromList(question.msg, question.promptPrefix, question.allowVars, question.options)
-	} else {
-		answer = utils.AskString(question.msg, question.promptPrefix)
-	}
-	if question.writer != nil {
-		err = question.writer(&rtc.configMap, question.mapKey, answer)
-		if err != nil {
-			return "", err
-		}
-	}
-	if question.callback != nil {
-		_, err = question.callback(rtc, answer)
-		if err != nil {
-			return "", err
-		}
-	}
-	return answer, nil
-}
-
-type answerWriter func(resultMap *map[string]interface{}, key, value string) error
-type questionCallback func(rtc *RepoTemplateCommand, answer string) (string, error)
-
-type questionInfo struct {
-	msg          string
-	promptPrefix string
-	options      []prompt.Suggest
-	allowVars    bool
-	writer       answerWriter
-	mapKey       string
-	callback     questionCallback
 }
 
 func writeStringAnswer(resultMap *map[string]interface{}, key, value string) error {
@@ -455,154 +404,154 @@ func writeStringArrayAnswer(resultMap *map[string]interface{}, key, value string
 	return nil
 }
 
-var freeStringQuestionInfo = questionInfo{
-	options:   nil,
-	allowVars: false,
-	writer:    writeStringAnswer,
+var freeStringQuestionInfo = utils.QuestionInfo{
+	Options:   nil,
+	AllowVars: false,
+	Writer:    writeStringAnswer,
 }
 
-func getBoolSuggets() []prompt.Suggest {
+func getBoolSuggests() []prompt.Suggest {
 	return []prompt.Suggest{
 		{Text: True},
 		{Text: False},
 	}
 }
 
-var boolQuestionInfo = questionInfo{
-	options:   getBoolSuggets(),
-	allowVars: true,
-	writer:    writeBoolAnswer,
+var boolQuestionInfo = utils.QuestionInfo{
+	Options:   getBoolSuggests(),
+	AllowVars: true,
+	Writer:    writeBoolAnswer,
 }
 
-var intQuestionInfo = questionInfo{
-	options:   nil,
-	allowVars: true,
-	writer:    writeIntAnswer,
+var intQuestionInfo = utils.QuestionInfo{
+	Options:   nil,
+	AllowVars: true,
+	Writer:    writeIntAnswer,
 }
 
-var arrayStringQuestionInfo = questionInfo{
-	msg:       "The value should be a comma separated list",
-	options:   nil,
-	allowVars: true,
-	writer:    writeStringArrayAnswer,
+var arrayStringQuestionInfo = utils.QuestionInfo{
+	Msg:       "The value should be a comma separated list",
+	Options:   nil,
+	AllowVars: true,
+	Writer:    writeStringArrayAnswer,
 }
 
-func templateTypeCallback(rtc *RepoTemplateCommand, templateType string) (string, error) {
+func templateTypeCallback(iq *utils.InteractiveQuestionnaire, templateType string) (string, error) {
 	switch templateType {
 	// For creation template rclass and packgeType are mandatory keys
 	case Create:
-		rtc.mandatoryQuestionsKeys = append(rtc.mandatoryQuestionsKeys, Rclass, PackageType)
+		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, Rclass, PackageType)
 	// For update template packageType is an optional common key to modify, and we have to offer all keys as optional to
 	case Update:
-		rtc.optionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
+		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
 	}
 	return "", nil
 }
 
-func rclassCallback(rtc *RepoTemplateCommand, rclass string) (string, error) {
+func rclassCallback(iq *utils.InteractiveQuestionnaire, rclass string) (string, error) {
 	switch rclass {
 	case Remote:
-		rtc.askQuestion(rtc.optionalQuestionsMap[MandatoryUrl])
-		rtc.optionalKeysSuggests = getRemoteRepoConfKeys()
+		iq.AskQuestion(iq.QuestionsMap[MandatoryUrl])
+		iq.OptionalKeysSuggests = getRemoteRepoConfKeys()
 	case Local:
-		rtc.optionalKeysSuggests = getLocalRepoConfKeys()
+		iq.OptionalKeysSuggests = getLocalRepoConfKeys()
 	case Virtual:
-		rtc.optionalKeysSuggests = getVirtualRepoConfKeys()
+		iq.OptionalKeysSuggests = getVirtualRepoConfKeys()
 
 	}
 	return "", nil
 }
 
-type contentSyncronisation struct {
+type contentSynchronisation struct {
 	Enabled    bool
 	Statistics struct{ Enabled bool }
 	Properties struct{ Enabled bool }
 	Source     struct{ OriginAbsenceDetection bool }
 }
 
-func contentSynchronisationCallBack(rtc *RepoTemplateCommand, enabled string) (value string, err error) {
-	var cs contentSyncronisation
+func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, enabled string) (value string, err error) {
+	var cs contentSynchronisation
 	cs.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for statistic.enable >", false, getBoolSuggets())
+	enabled = utils.AskFromList("", "Insert the value for statistic.enable >", false, getBoolSuggests())
 	cs.Statistics.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for properties.enable >", false, getBoolSuggets())
+	enabled = utils.AskFromList("", "Insert the value for properties.enable >", false, getBoolSuggests())
 	cs.Properties.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	enabled = utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, getBoolSuggets())
+	enabled = utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, getBoolSuggests())
 	cs.Source.OriginAbsenceDetection, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	rtc.configMap[ContentSynchronisation] = cs
+	iq.ConfigMap[ContentSynchronisation] = cs
 	return "", nil
 }
 
-func optionalKeyCallback(rtc *RepoTemplateCommand, key string) (value string, err error) {
-	if key != WriteAndExist {
-		valueQuestion := rtc.optionalQuestionsMap[key]
-		valueQuestion.mapKey = key
-		valueQuestion.promptPrefix = "Insert the value for " + key
-		if valueQuestion.options != nil {
-			valueQuestion.promptPrefix += utils.PressTabMsg
+func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value string, err error) {
+	if key != utils.WriteAndExist {
+		valueQuestion := iq.QuestionsMap[key]
+		valueQuestion.MapKey = key
+		valueQuestion.PromptPrefix = "Insert the value for " + key
+		if valueQuestion.Options != nil {
+			valueQuestion.PromptPrefix += utils.PressTabMsg
 		}
-		valueQuestion.promptPrefix += " >"
-		value, err = rtc.askQuestion(valueQuestion)
+		valueQuestion.PromptPrefix += " >"
+		value, err = iq.AskQuestion(valueQuestion)
 	}
 	return value, err
 }
 
-var questionMap = map[string]questionInfo{
+var questionMap = map[string]utils.QuestionInfo{
 	TemplateType: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: Create, Description: "Template for creating a new repository"},
 			{Text: Update, Description: "Template for updating an existing repository"},
 		},
-		msg:          "Select the template type",
-		promptPrefix: ">",
-		allowVars:    false,
-		writer:       nil,
-		mapKey:       "",
-		callback:     templateTypeCallback,
+		Msg:          "Select the template type",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       nil,
+		MapKey:       "",
+		Callback:     templateTypeCallback,
 	},
-	OptionalKey: {
-		msg:          "Select the next property, or \":x\" to finish",
-		promptPrefix: ">",
-		allowVars:    false,
-		writer:       nil,
-		mapKey:       "",
-		callback:     optionalKeyCallback,
+	utils.OptionalKey: {
+		Msg:          "Select the next property, or \":x\" to finish",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       nil,
+		MapKey:       "",
+		Callback:     optionalKeyCallback,
 	},
 	Key: {
-		msg:          "Insert the repository key",
-		promptPrefix: ">",
-		allowVars:    true,
-		writer:       writeStringAnswer,
-		mapKey:       Key,
-		callback:     nil,
+		Msg:          "Insert the repository key",
+		PromptPrefix: ">",
+		AllowVars:    true,
+		Writer:       writeStringAnswer,
+		MapKey:       Key,
+		Callback:     nil,
 	},
 	Rclass: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: Local, Description: "A physical, locally-managed repositories into which you can deploy artifacts"},
 			{Text: Remote, Description: "A caching proxy for a repository managed at a remote URL"},
 			{Text: Virtual, Description: "An Aggregation of several repositories with the same package type under a common URL."},
 		},
-		msg:          "Select the repository class",
-		promptPrefix: ">",
-		allowVars:    false,
-		writer:       writeStringAnswer,
-		mapKey:       Rclass,
-		callback:     rclassCallback,
+		Msg:          "Select the repository class",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       writeStringAnswer,
+		MapKey:       Rclass,
+		Callback:     rclassCallback,
 	},
 	PackageType: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: Generic},
 			{Text: Maven},
 			{Text: Gradle},
@@ -629,20 +578,20 @@ var questionMap = map[string]questionInfo{
 			{Text: Chef},
 			{Text: Puppet},
 		},
-		msg:          "Select the repository's package type",
-		promptPrefix: ">",
-		allowVars:    false,
-		writer:       writeStringAnswer,
-		mapKey:       PackageType,
-		callback:     nil, // TODO: implement pkgTypeCallback,
+		Msg:          "Select the repository's package type",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       writeStringAnswer,
+		MapKey:       PackageType,
+		Callback:     nil, // TODO: implement pkgTypeCallback,
 	},
 	MandatoryUrl: {
-		msg:          "",
-		promptPrefix: "Insert the remote repository URL >",
-		allowVars:    true,
-		writer:       writeStringAnswer,
-		mapKey:       Url,
-		callback:     nil,
+		Msg:          "",
+		PromptPrefix: "Insert the remote repository URL >",
+		AllowVars:    true,
+		Writer:       writeStringAnswer,
+		MapKey:       Url,
+		Callback:     nil,
 	},
 	Url:             freeStringQuestionInfo,
 	Description:     freeStringQuestionInfo,
@@ -650,7 +599,7 @@ var questionMap = map[string]questionInfo{
 	IncludePatterns: freeStringQuestionInfo,
 	ExcludePatterns: freeStringQuestionInfo,
 	RepoLayoutRef: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: BowerDefault},
 			{Text: buildDefault},
 			{Text: ComposerDefault},
@@ -667,8 +616,8 @@ var questionMap = map[string]questionInfo{
 			{Text: SimpleDefault},
 			{Text: VcsDefault},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	HandleReleases:               boolQuestionInfo,
 	HandleSnapshots:              boolQuestionInfo,
@@ -681,22 +630,22 @@ var questionMap = map[string]questionInfo{
 	ExternalDependenciesEnabled:  boolQuestionInfo,
 	ExternalDependenciesPatterns: arrayStringQuestionInfo,
 	ChecksumPolicyType: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: ClientChecksum},
 			{Text: ServerGeneratedChecksums},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	MaxUniqueTags: intQuestionInfo,
 	SnapshotVersionBehavior: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: Unique},
 			{Text: NonUnique},
 			{Text: Deployer},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	XrayIndex:              boolQuestionInfo,
 	PropertySets:           arrayStringQuestionInfo,
@@ -704,32 +653,32 @@ var questionMap = map[string]questionInfo{
 	CalculateYumMetadata:   boolQuestionInfo,
 	YumRootDepth:           intQuestionInfo,
 	DockerApiVersion: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: V1},
 			{Text: V2},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	EnableFileListsIndexing: boolQuestionInfo,
 	OptionalIndexCompressionFormats: {
-		msg:       "Enter a semicolon separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
-		options:   nil,
-		allowVars: false,
-		writer:    writeStringArrayAnswer,
+		Msg:       "Enter a semicolon separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
+		Options:   nil,
+		AllowVars: false,
+		Writer:    writeStringArrayAnswer,
 	},
 	Username: freeStringQuestionInfo,
 	Password: freeStringQuestionInfo,
 	Proxy:    freeStringQuestionInfo,
 	RemoteRepoChecksumPolicyType: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: GenerateIfAbsent},
 			{Text: Fail},
 			{Text: IgnoreAndGenerate},
 			{Text: PassThru},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	HardFail:                          boolQuestionInfo,
 	Offline:                           boolQuestionInfo,
@@ -754,7 +703,7 @@ var questionMap = map[string]questionInfo{
 	PyPIRegistryUrl:                   freeStringQuestionInfo,
 	//	VcsType : {[]string{Git}, writeStringAnswer},
 	VcsGitProvider: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: Github},
 			{Text: Bitbucket},
 			{Text: Oldstash},
@@ -762,8 +711,8 @@ var questionMap = map[string]questionInfo{
 			{Text: Artifactory},
 			{Text: Custom},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	VcsGitDownloadUrl:    freeStringQuestionInfo,
 	BypassHeadRequests:   boolQuestionInfo,
@@ -772,22 +721,22 @@ var questionMap = map[string]questionInfo{
 	DownloadContextPath:  freeStringQuestionInfo,
 	V3FeedUrl:            freeStringQuestionInfo,
 	ContentSynchronisation: {
-		options:   getBoolSuggets(),
-		allowVars: true,
-		writer:    nil,
-		callback:  contentSynchronisationCallBack,
+		Options:   getBoolSuggests(),
+		AllowVars: true,
+		Writer:    nil,
+		Callback:  contentSynchronisationCallBack,
 	},
 	Repositories: arrayStringQuestionInfo,
 	ArtifactoryRequestsCanRetrieveRemoteArtifacts: boolQuestionInfo,
 	KeyPair: freeStringQuestionInfo,
 	PomRepositoryReferencesCleanupPolicy: {
-		options: []prompt.Suggest{
+		Options: []prompt.Suggest{
 			{Text: DiscardActiveRefrence},
 			{Text: DiscardAnyReference},
 			{Text: Nothing},
 		},
-		allowVars: true,
-		writer:    writeStringAnswer,
+		AllowVars: true,
+		Writer:    writeStringAnswer,
 	},
 	DefaultDeploymentRepo:          freeStringQuestionInfo,
 	ForceMavenAuthentication:       boolQuestionInfo,
