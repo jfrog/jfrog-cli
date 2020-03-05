@@ -68,7 +68,6 @@ func TestBundleDownload(t *testing.T) {
 
 func TestBundleDownloadUsingSpec(t *testing.T) {
 	initDistributionTest(t)
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
 
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
@@ -77,8 +76,10 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Create release bundle
+	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
+	assert.NoError(t, err)
 	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--distribution-rules="+distributionRules)
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should

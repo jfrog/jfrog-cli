@@ -9,7 +9,13 @@ import (
 )
 
 type DistributionRules struct {
-	DistributionRules []DistributionRule
+	DistributionRules []DistributionRule `json:"distribution_rules,omitempty"`
+}
+
+type DistributionRule struct {
+	SiteName     string   `json:"site_name,omitempty"`
+	CityName     string   `json:"city_name,omitempty"`
+	CountryCodes []string `json:"country_codes,omitempty"`
 }
 
 func (spec *DistributionRules) Get(index int) *DistributionRule {
@@ -17,12 +23,6 @@ func (spec *DistributionRules) Get(index int) *DistributionRule {
 		return &spec.DistributionRules[index]
 	}
 	return new(DistributionRule)
-}
-
-type DistributionRule struct {
-	SiteName     string
-	CityName     string
-	CountryCodes []string
 }
 
 func (ds *DistributionRule) ToDistributionCommonParams() *utils.DistributionCommonParams {
@@ -33,16 +33,15 @@ func (ds *DistributionRule) ToDistributionCommonParams() *utils.DistributionComm
 	}
 }
 
-func CreateDistributionRulesFromFile(distributionSpecPath string) (rule *DistributionRules, err error) {
-	rule = new(DistributionRules)
+func CreateDistributionRulesFromFile(distributionSpecPath string) (*DistributionRules, error) {
 	content, err := fileutils.ReadFile(distributionSpecPath)
-	if errorutils.CheckError(err) != nil {
-		return
+	if err != nil {
+		return nil, errorutils.CheckError(err)
 	}
-
-	err = json.Unmarshal(content, rule)
-	if errorutils.CheckError(err) != nil {
-		return
+	distributionRules := new(DistributionRules)
+	err = json.Unmarshal(content, distributionRules)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
 	}
-	return
+	return distributionRules, nil
 }

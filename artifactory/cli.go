@@ -38,9 +38,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildscan"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/copy"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/createreleasebundle"
 	curldocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deleteprops"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deletereleasebundle"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/distributereleasebundle"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/download"
@@ -66,6 +69,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/signreleasebundle"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
@@ -609,12 +613,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "create-release-bundle",
-			Flags:   getCreateReleaseBundleFlags(),
-			Aliases: []string{"crb"},
-			// Usage:           pipinstall.Description,
-			// HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
-			// UsageText:       pipinstall.Arguments,
+			Name:         "create-release-bundle",
+			Flags:        getCreateReleaseBundleFlags(),
+			Aliases:      []string{"crb"},
+			Usage:        createreleasebundle.Description,
+			HelpName:     common.CreateUsage("rt crb", createreleasebundle.Description, createreleasebundle.Usage),
+			UsageText:    createreleasebundle.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -625,6 +629,9 @@ func GetCommands() []cli.Command {
 			Name:         "sign-release-bundle",
 			Flags:        getSignReleaseBundleFlags(),
 			Aliases:      []string{"srb"},
+			Usage:        signreleasebundle.Description,
+			HelpName:     common.CreateUsage("rt srb", signreleasebundle.Description, signreleasebundle.Usage),
+			UsageText:    signreleasebundle.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -632,12 +639,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:    "distribute-release-bundle",
-			Flags:   getDistributeReleaseBundleFlags(),
-			Aliases: []string{"drb"},
-			// Usage:           pipinstall.Description,
-			// HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
-			// UsageText:       pipinstall.Arguments,
+			Name:         "distribute-release-bundle",
+			Flags:        getDistributeReleaseBundleFlags(),
+			Aliases:      []string{"drb"},
+			Usage:        distributereleasebundle.Description,
+			HelpName:     common.CreateUsage("rt drb", distributereleasebundle.Description, distributereleasebundle.Usage),
+			UsageText:    distributereleasebundle.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -648,6 +655,9 @@ func GetCommands() []cli.Command {
 			Name:         "delete-release-bundle",
 			Flags:        getDeleteReleaseBundleFlags(),
 			Aliases:      []string{"delrb"},
+			Usage:        deletereleasebundle.Description,
+			HelpName:     common.CreateUsage("rt delrb", deletereleasebundle.Description, deletereleasebundle.Usage),
+			UsageText:    deletereleasebundle.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {

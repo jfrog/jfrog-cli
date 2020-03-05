@@ -73,10 +73,6 @@ type File struct {
 	Regexp          string
 	IncludeDirs     string
 	ArchiveEntries  string
-	// Distribution:
-	SiteName     string
-	CityName     string
-	CountryCodes []string
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
