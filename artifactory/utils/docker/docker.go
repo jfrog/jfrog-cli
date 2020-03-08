@@ -327,10 +327,10 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 type VersionCmd struct{}
 
 func (versionCmd *VersionCmd) GetCmd() *exec.Cmd {
-	if cliutils.IsWindows() {
-		return exec.Command("cmd", "/C", "echo", "%DOCKER_PASS%|", "docker", "--version")
-	}
-	return exec.Command("sh", "-c", "docker --version")
+	var cmd []string
+	cmd = append(cmd, "docker")
+	cmd = append(cmd, "--version")
+	return exec.Command(cmd[0], cmd[1:]...)
 }
 
 func (versionCmd *VersionCmd) GetEnv() map[string]string {
