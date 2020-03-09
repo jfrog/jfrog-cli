@@ -249,3 +249,23 @@ func TestSignReleaseBundle(t *testing.T) {
 	// Cleanup
 	cleanDistributionTest(t)
 }
+
+func TestBundleDeleteLocal(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("u", "--spec="+specFile)
+
+	// Create a release bundle
+	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	assert.True(t, inttestutils.IsBundleExistLocally(t, bundleName, bundleVersion, artHttpDetails))
+
+	// Delete release bundle locally
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
+	assert.False(t, inttestutils.IsBundleExistLocally(t, bundleName, bundleVersion, artHttpDetails))
+
+	// Cleanup
+	cleanDistributionTest(t)
+}

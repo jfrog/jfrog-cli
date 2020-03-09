@@ -96,7 +96,7 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	cliutils.ExitOnErr(err)
 
-	// Send public key to Artifactory
+	// Delete public key from Artifactory
 	resp, body, err := client.SendDelete(*tests.RtUrl+"api/security/keys/trusted/"+gpgKeyId, nil, artHttpDetails)
 	cliutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusNoContent {
@@ -106,20 +106,40 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-// Return true if the release bundle is signed
-func IsBundleSigned(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
+func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
 	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
 	assert.NoError(t, err)
+	return resp, body
+}
+
+// Return true if the release bundle is exist locally on distribution
+func IsBundleExistLocally(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
+	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return true
+	case http.StatusNotFound:
+		return false
+	default:
+		t.Error(resp.Status)
+		t.Error(string(body))
+		return false
+	}
+}
+
+// Return true if the release bundle is signed
+func IsBundleSigned(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
+	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error(resp.Status)
 		t.Error(string(body))
 		return false
 	}
 	response := &distributableResponse{}
-	err = json.Unmarshal(body, &response)
+	err := json.Unmarshal(body, &response)
 	if err != nil {
 		t.Error(err)
 		return false
