@@ -87,7 +87,7 @@ func TestDockerClientApiVersionRegex(t *testing.T) {
 	}
 
 	for _, v := range versionStrings {
-		result := ClientApiVersionRegex.Match([]byte(v.in))
+		result := ApiVersionRegex.Match([]byte(v.in))
 		if result != v.expected {
 			t.Errorf("Version(\"%s\") => '%v', want '%v'", v.in, result, v.expected)
 		}

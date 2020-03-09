@@ -177,14 +177,14 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 	}
 
 	// Run docker version command and expect no errors
-	cmd := &docker.ClientApiVersionCmd{}
+	cmd := &docker.VersionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	assert.NoError(t, err)
 
 	// Expect VersionRegex to match the output API version
 	content = strings.TrimSpace(content)
-	assert.True(t, docker.ClientApiVersionRegex.Match([]byte(content)))
+	assert.True(t, docker.ApiVersionRegex.Match([]byte(content)))
 
 	// Assert docker min API version
-	assert.True(t, docker.CheckDockerMinVersion(content))
+	assert.True(t, docker.IsCompatibleApiVersion(content))
 }
