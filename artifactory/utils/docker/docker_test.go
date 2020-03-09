@@ -72,22 +72,24 @@ func TestResolveRegistryFromTag(t *testing.T) {
 	}
 }
 
-func TestCheckDockerMinVersion(t *testing.T) {
-	// Supported
-	have := "Docker version 19.03.5, build 633a0ea"
-	want := true
-	got := checkDockerMinVersion(have)
-
-	if got != want {
-		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
+func TestDockerClientApiVersionRegex(t *testing.T) {
+	var versionStrings = []struct {
+		in       string
+		expected bool
+	}{
+		{"1", false},
+		{"1.1", true},
+		{"1.11", true},
+		{"12.12", true},
+		{"1.1.11", false},
+		{"1.illegal", false},
+		{"1 11", false},
 	}
 
-	// Not supported
-	have = "Docker version 17.03.5, build 633a0ea"
-	want = false
-	got = checkDockerMinVersion(have)
-
-	if got != want {
-		t.Errorf("checkDockerMinVersion(%s) == %t, want %t", have, got, want)
+	for _, v := range versionStrings {
+		result := ClientApiVersionRegex.Match([]byte(v.in))
+		if result != v.expected {
+			t.Errorf("Version(\"%s\") => '%v', want '%v'", v.in, result, v.expected)
+		}
 	}
 }

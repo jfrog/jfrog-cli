@@ -20,10 +20,11 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/version"
 )
 
-// Search for version format pattern e.g. 1.2.3
-var versionRegex = regexp.MustCompile(`(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)`)
+// Search for docker API version format pattern e.g. 1.40
+var ClientApiVersionRegex = regexp.MustCompile(`^(\d+)\.(\d+)$`)
 
-const MinSupportedVersion string = "17.07.0"
+// Docker API version 1.31 is compatible with Docker version 17.07.0, according to https://docs.docker.com/engine/api/#api-version-matrix
+const MinSupportedApiVersion string = "1.31"
 
 // Docker login error message
 const DockerLoginFailureMessage string = "Docker login failed for: %s.\nDocker image must be in the form: docker-registry-domain/path-in-repository/image-name:version."
@@ -324,41 +325,44 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 }
 
 // Version command
-type VersionCmd struct{}
+type ClientApiVersionCmd struct{}
 
-func (versionCmd *VersionCmd) GetCmd() *exec.Cmd {
+func (versionCmd *ClientApiVersionCmd) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "docker")
-	cmd = append(cmd, "--version")
+	cmd = append(cmd, "version")
+	cmd = append(cmd, "--format", "{{.Client.APIVersion}}")
 	return exec.Command(cmd[0], cmd[1:]...)
 }
 
-func (versionCmd *VersionCmd) GetEnv() map[string]string {
+func (versionCmd *ClientApiVersionCmd) GetEnv() map[string]string {
 	return map[string]string{}
 }
 
-func (versionCmd *VersionCmd) GetStdWriter() io.WriteCloser {
+func (versionCmd *ClientApiVersionCmd) GetStdWriter() io.WriteCloser {
 	return nil
 }
 
-func (versionCmd *VersionCmd) GetErrWriter() io.WriteCloser {
+func (versionCmd *ClientApiVersionCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func ValidateVersion() error {
-	cmd := &VersionCmd{}
+func ValidateClientApiVersion() error {
+	cmd := &ClientApiVersionCmd{}
+	// 'docker version' may return 1 in case of errors from daemon. We should ignore this kind of errors.
 	content, err := gofrogcmd.RunCmdOutput(cmd)
-	if err != nil {
+	content = strings.TrimSpace(content)
+	if (!ClientApiVersionRegex.Match([]byte(content))) {
+		// The Api version is expected to be 'x.x'. Anything else should return an error.
 		return errorutils.CheckError(err)
 	}
-	if !checkDockerMinVersion(strings.Trim(content, "\n")) {
-		return errorutils.CheckError(errors.New("This operation requires Docker version " + MinSupportedVersion + " or higher."))
+	if !CheckDockerMinVersion(content) {
+		return errorutils.CheckError(errors.New("This operation requires Docker API version " + MinSupportedApiVersion + " or higher."))
 	}
 	return nil
 }
 
-func checkDockerMinVersion(dockerOutput string) bool {
-	versionStr := versionRegex.Find([]byte(dockerOutput))
-	currentVersion := version.NewVersion(string(versionStr))
-	return currentVersion.AtLeast(MinSupportedVersion)
+func CheckDockerMinVersion(dockerOutput string) bool {
+	currentVersion := version.NewVersion(dockerOutput)
+	return currentVersion.AtLeast(MinSupportedApiVersion)
 }
