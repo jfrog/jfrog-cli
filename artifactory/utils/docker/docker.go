@@ -352,7 +352,7 @@ func ValidateClientApiVersion() error {
 	// 'docker version' may return 1 in case of errors from daemon. We should ignore this kind of errors.
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	content = strings.TrimSpace(content)
-	if (!ClientApiVersionRegex.Match([]byte(content))) {
+	if !ClientApiVersionRegex.Match([]byte(content)) {
 		// The Api version is expected to be 'x.x'. Anything else should return an error.
 		return errorutils.CheckError(err)
 	}

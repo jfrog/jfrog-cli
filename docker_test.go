@@ -175,7 +175,7 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
-	
+
 	// Run docker version command and expect no errors
 	cmd := &docker.ClientApiVersionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
