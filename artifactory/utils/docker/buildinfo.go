@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"path"
+	"strings"
+
 	buildutils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -11,9 +15,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"path"
-	"strings"
 )
 
 const (
@@ -111,14 +112,14 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 	imagePath := builder.image.Path()
 
 	// Search layers - assuming reverse proxy.
-	searchResults, err := searchImageLayers(builder.imageId, path.Join(builder.repository, imagePath, "*"), builder.serviceManager)
+	searchResults, err := searchImageLayers(builder, path.Join(builder.repository, imagePath, "*"), builder.serviceManager)
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Search layers - assuming proxy-less (repository path).
 	// Need to remove the "/" from the image path.
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(imagePath[1:], "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(imagePath[1:], "*"), builder.serviceManager)
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
@@ -134,13 +135,13 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]uti
 	}
 
 	// Assume reverse proxy - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Assume proxy-less - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder.imageId, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
@@ -316,7 +317,44 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 }
 
 // Search for image layers in Artifactory.
-func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+	resultMap, err := searchImageHandler(builder, imagePathPattern, serviceManager)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate image ID layer exists.
+	if _, ok := resultMap[digestToLayer(builder.imageId)]; !ok {
+		// In case of a fat-manifest, Artifactory will create two folders.
+		// One folder named as the image tag, contain inside the fat manifest,
+		// The second folder, named as image's manifest digest, will contain the image layers and the image's manifest.
+		if _, ok := resultMap["list.manifest.json"]; ok {
+			v, _ := builder.image.Manifest()
+			var listManifest []Manifest
+			err := json.Unmarshal([]byte(v), &listManifest)
+			if err != nil {
+				return nil, err
+			}
+			result := ""
+			for _, manifest := range listManifest {
+				if *manifest.SchemaV2Manifest.Config.Digest == builder.imageId {
+					result = *manifest.Descriptor.Digest
+					break
+				}
+			}
+			if result != "" {
+				// Remove the tag from the pattern, and place the manifest digest instead.
+				imagePathPattern = strings.Replace(imagePathPattern, "/*", "", 1)
+				imagePathPattern = path.Join(imagePathPattern[:strings.LastIndex(imagePathPattern, "/")], strings.Replace(result, ":", "__", 1), "*")
+				return searchImageHandler(builder, imagePathPattern, serviceManager)
+			}
+		}
+		return nil, nil
+	}
+	return resultMap, nil
+}
+
+func searchImageHandler(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern
@@ -327,11 +365,6 @@ func searchImageLayers(imageId, imagePathPattern string, serviceManager *artifac
 	resultMap := map[string]utils.ResultItem{}
 	for _, v := range results {
 		resultMap[v.Name] = v
-	}
-
-	// Validate image ID layer exists.
-	if _, ok := resultMap[digestToLayer(imageId)]; !ok {
-		return nil, nil
 	}
 	return resultMap, nil
 }
