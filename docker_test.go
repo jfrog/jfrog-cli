@@ -171,13 +171,20 @@ func dockerTestCleanup(imageName, buildName string) {
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
-func TestDockerVersionScript(t *testing.T) {
+func TestDockerClientApiVersionCmd(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
 	}
+
+	// Run docker version command and expect no errors
 	cmd := &docker.VersionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
-	if err != nil || strings.Index(content, "Docker version") == -1 {
-		t.Errorf("Could not get docker version, error: %s", err.Error())
-	}
+	assert.NoError(t, err)
+
+	// Expect VersionRegex to match the output API version
+	content = strings.TrimSpace(content)
+	assert.True(t, docker.ApiVersionRegex.Match([]byte(content)))
+
+	// Assert docker min API version
+	assert.True(t, docker.IsCompatibleApiVersion(content))
 }
