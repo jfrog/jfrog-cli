@@ -65,6 +65,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlecreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
@@ -619,6 +620,19 @@ func GetCommands() []cli.Command {
 			Usage:        releasebundlecreate.Description,
 			HelpName:     common.CreateUsage("rt rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
 			UsageText:    releasebundlecreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleCreateCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-update",
+			Flags:        getReleaseBundleCreateFlags(),
+			Aliases:      []string{"rbu"},
+			Usage:        releasebundleupdate.Description,
+			HelpName:     common.CreateUsage("rt rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
+			UsageText:    releasebundleupdate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -2908,7 +2922,40 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand()
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(distribution.Create)
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateUpdateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(releaseBundleCreateCmd)
+}
+
+func updateBundleCreateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var releaseBundleCreateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleCreateSpec, err = getSpec(c, true)
+	} else {
+		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(distribution.Update)
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
@@ -3350,8 +3397,8 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
-func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateReleaseBundleParams, error) {
-	releaseBundleParams := distributionServices.NewCreateBundleParams(bundleName, bundleVersion)
+func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateUpdateReleaseBundleParams, error) {
+	releaseBundleParams := distributionServices.NewCreateUpdateBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")
 	releaseBundleParams.Description = c.String("description")

@@ -269,3 +269,16 @@ func TestBundleDeleteLocal(t *testing.T) {
 	// Cleanup
 	cleanDistributionTest(t)
 }
+
+func TestUpdateReleaseBundle(t *testing.T) {
+	initDistributionTest(t)
+
+		// Upload files
+		specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+		assert.NoError(t, err)
+		artifactoryCli.Exec("u", "--spec="+specFile)
+	
+		// Create a release bundle
+		artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+		inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, true, artHttpDetails)
+}

@@ -7,14 +7,22 @@ import (
 	"github.com/jfrog/jfrog-client-go/distribution/services"
 )
 
+type CommandType string
+
+const (
+	Create CommandType = "Create"
+	Update             = "Update"
+)
+
 type CreateBundleCommand struct {
+	commandType         CommandType
 	rtDetails           *config.ArtifactoryDetails
-	createBundlesParams services.CreateReleaseBundleParams
+	createBundlesParams services.CreateUpdateReleaseBundleParams
 	spec                *spec.SpecFiles
 	dryRun              bool
 }
 
-func NewReleaseBundleCreateUpdateCommand() *CreateBundleCommand {
+func NewReleaseBundleCreateUpdateCommand(commandType CommandType) *CreateBundleCommand {
 	return &CreateBundleCommand{}
 }
 
@@ -23,7 +31,7 @@ func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails
 	return cb
 }
 
-func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params services.CreateReleaseBundleParams) *CreateBundleCommand {
+func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params services.CreateUpdateReleaseBundleParams) *CreateBundleCommand {
 	cb.createBundlesParams = params
 	return cb
 }
