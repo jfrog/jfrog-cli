@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -218,15 +217,7 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 }
 
 func (cc *ConfigCommand) readClientCertInfoFromConsole() {
-	answer := "no"
-	// If the user provided one or both of the client cert flags, assume that client cert
-	// configuration is needed. No need to ask whether to configure it.
-	if !(cc.details.ClientCertPath != "" || cc.details.ClientCertKeyPath != "") {
-		ioutils.ScanFromConsole("Is the Artifactory reverse proxy configured to accept a client certificate?", &answer, answer)
-	} else {
-		answer = "yes"
-	}
-	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
+	if cliutils.InteractiveConfirm("Is the Artifactory reverse proxy configured to accept a client certificate?") {
 		if cc.details.ClientCertPath == "" {
 			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
 		}

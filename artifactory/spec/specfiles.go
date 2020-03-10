@@ -194,10 +194,13 @@ func fileSpecValidationError(fieldA, fieldB string) error {
 }
 
 func showDeprecationOnExcludePatterns() {
-	log.Warn(`exclude-patterns is deprecated. Please use exclusions instead.
-	Unlike exclude-patterns, the exclusions take into account the repository.
+	log.Warn(`The --exclude-patterns command option and the 'excludePatterns' File Spec property are deprecated. 
+	Please use the --exclusions command option or the 'exclusions' File Spec property instead.
+	Unlike exclude-patterns, exclusions take into account the repository as part of the pattern.
 	For example: 
-	exclude-patterns = 'a.zip' 
+	"excludePatterns": ["a.zip"]
 	can be translated to
-	exclusions = 'repo-name/a.zip' or '*/a.zip'`)
+	"exclusions": ["repo-name/a.zip"]
+	or
+	"exclusions": ["*/a.zip"]`)
 }

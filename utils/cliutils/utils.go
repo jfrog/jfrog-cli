@@ -13,6 +13,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
+
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
@@ -135,6 +137,40 @@ func PrintHelpAndReturnError(msg string, context *cli.Context) error {
 	log.Error(msg + " " + GetDocumentationMessage())
 	cli.ShowCommandHelp(context, context.Command.Name)
 	return errors.New(msg)
+}
+
+// This function indicates whether the command should be executed without
+// confirmation warning or not.
+// If the --quiet option was sent, it is used to determine whether to prompt the confirmation or not.
+// If not, the command will prompt the confirmation, unless the CI environment variable was set to true.
+func GetQuietValue(c *cli.Context) bool {
+	if c.IsSet("quiet") {
+		return c.Bool("quiet")
+	}
+
+	return getCiValue()
+}
+
+// This function indicates whether the command should be executed in
+// an interactive mode.
+// If the --interactive option was sent, it is used to determine the mode.
+// If not, the mode will be interactive, unless the CI environment variable was set to true.
+func GetInteractiveValue(c *cli.Context) bool {
+	if c.IsSet("interactive") {
+		return c.BoolT("interactive")
+	}
+
+	return !getCiValue()
+}
+
+// Return the true if the CI environment variable was set to true.
+func getCiValue() bool {
+	var ci bool
+	var err error
+	if ci, err = clientutils.GetBoolEnvValue(CI, false); err != nil {
+		return false
+	}
+	return ci
 }
 
 func InteractiveConfirm(message string) bool {

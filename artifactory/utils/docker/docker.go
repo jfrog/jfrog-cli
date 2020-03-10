@@ -325,29 +325,29 @@ func DockerLogin(imageTag string, config *DockerLoginConfig) error {
 }
 
 // Version command
-type versionCmd struct{}
+type VersionCmd struct{}
 
-func (versionCmd *versionCmd) GetCmd() *exec.Cmd {
+func (versionCmd *VersionCmd) GetCmd() *exec.Cmd {
 	if cliutils.IsWindows() {
 		return exec.Command("cmd", "/C", "echo", "%DOCKER_PASS%|", "docker", "--version")
 	}
 	return exec.Command("sh", "-c", "docker --version")
 }
 
-func (versionCmd *versionCmd) GetEnv() map[string]string {
+func (versionCmd *VersionCmd) GetEnv() map[string]string {
 	return map[string]string{}
 }
 
-func (versionCmd *versionCmd) GetStdWriter() io.WriteCloser {
+func (versionCmd *VersionCmd) GetStdWriter() io.WriteCloser {
 	return nil
 }
 
-func (versionCmd *versionCmd) GetErrWriter() io.WriteCloser {
+func (versionCmd *VersionCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
 func ValidateVersion() error {
-	cmd := &versionCmd{}
+	cmd := &VersionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	if err != nil {
 		return errorutils.CheckError(err)

@@ -1,3 +1,19 @@
+## 1.34.1 (Mar 4, 2020)
+- Improve URL masking reg exp.
+
+## 1.34.0 (Feb 27, 2020)
+- Allow filtering files by Release Bundle, when searching, downloading, moving, etc. 
+- 'exclude-patterns' file spec property and command option is deprecated and replaced by 'exclusions'.
+- Allow non-interactive usage of the npm-config, maven-config, gradle-config, nuget-config and go-config commands. 
+- Disable all interactive prompts when CI=true
+- New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
+- New --target option added to the "jfrog xr offline-update" command.
+- New --list-download option added to the the "jfrog bt u" command.
+- Bug fix - docker version check failing on Windows.
+- Bug fix - npm-install and npm-ci commands - JSON output is used by default and cannot be disabled.
+- New issues and pull request templates
+- The pip-deps-tree command was removed.
+
 ## 1.33.2 (Jan 27, 2020)
 - Bug fix - The "jfrog rt build-scan" command returns exit code 0 in case of a timeout. 
 - Bug fix - The --help option is not working for some commands.

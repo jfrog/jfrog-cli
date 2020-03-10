@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -114,7 +115,7 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 }
 
 func isInteractive(c *cli.Context) bool {
-	if strings.ToLower(os.Getenv("CI")) == "true" {
+	if strings.ToLower(os.Getenv(cliutils.CI)) == "true" {
 		return false
 	}
 	return !isAnyFlagSet(c, ResolutionServerId, ResolutionRepo, DeploymentServerId, DeploymentRepo)
@@ -152,7 +153,7 @@ func (configFile *ConfigFile) populateGradleConfigFromFlags(c *cli.Context) {
 	configFile.Deployer.DeployMavenDesc = c.BoolT(DeployMavenDesc)
 	configFile.Deployer.DeployIvyDesc = c.BoolT(DeployIvyDesc)
 	configFile.Deployer.IvyPattern = defaultIfNotSet(c, IvyDescPattern, "[organization]/[module]/ivy-[revision].xml")
-	configFile.Deployer.ArtifactsPattern = defaultIfNotSet(c, IvyArtifactsPattern, "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")	
+	configFile.Deployer.ArtifactsPattern = defaultIfNotSet(c, IvyArtifactsPattern, "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")
 	configFile.UsePlugin = c.Bool(UsesPlugin)
 	configFile.UseWrapper = c.Bool(UseWrapper)
 	configFile.Interactive = configFile.Interactive && !isAnyFlagSet(c, DeployMavenDesc, DeployIvyDesc, IvyDescPattern, IvyArtifactsPattern, UsesPlugin, UseWrapper)

@@ -32,7 +32,7 @@ environment:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
 
   JFROG_CLI_RT_URL:
-    secure: RIh0gGFDn2JAnLUEEqLsQnZ5H3XFWg1s+Qq8Z4i+Xu+FtQf6Tsu2AnfY4/6AaXJ8
+    secure: RIh0gGFDn2JAnLUEEqLsQm0ihToJ6/4LiR411QpvqDgYYE7Y4Eif2e+wYndvHXnW
   JFROG_CLI_RT_USER:
     secure: YEB5Wiv9a2vNpUhy+MfL+A==
   JFROG_CLI_RT_PASSWORD:

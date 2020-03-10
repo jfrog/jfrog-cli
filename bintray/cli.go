@@ -446,7 +446,7 @@ func getCreateAndUpdateVersionFlags() []cli.Flag {
 func getDeletePackageAndVersionFlags() []cli.Flag {
 	return append(getFlags(), cli.BoolFlag{
 		Name:  "quiet",
-		Usage: "[Default: false] Set to true to skip the delete confirmation message.",
+		Usage: "[Default: $CI] Set to true to skip the delete confirmation message.",
 	})
 }
 
@@ -639,10 +639,10 @@ func configure(c *cli.Context) error {
 			return errors.New("Unknown argument '" + c.Args().Get(0) + "'. Available arguments are 'show' and 'clear'.")
 		}
 	} else {
-		interactive := c.BoolT("interactive")
+		interactive := cliutils.GetInteractiveValue(c)
 		if !interactive {
 			if c.String("user") == "" || c.String("key") == "" {
-				return errors.New("The --user and --key options are mandatory when the --interactive option is set to false")
+				return errors.New("The --user and --key options are mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
 			}
 		}
 		bintrayDetails, err := createBintrayDetails(c, false)
@@ -778,7 +778,7 @@ func deletePackage(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if !c.Bool("quiet") {
+	if !cliutils.GetQuietValue(c) {
 		confirmed := cliutils.InteractiveConfirm("Delete package " + packagePath.Package + "?")
 		if !confirmed {
 			return nil
@@ -800,7 +800,7 @@ func deleteVersion(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if !c.Bool("quiet") {
+	if !cliutils.GetQuietValue(c) {
 		confirmed := cliutils.InteractiveConfirm("Delete version " + versionPath.Version +
 			" of package " + versionPath.Package + "?")
 		if !confirmed {
@@ -1336,7 +1336,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 		"- API Key\n" +
 		"- Default Package Licenses\n" +
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
-		"You can also configure these parameters later using the 'config' command.\n" +
+		"You can also configure these parameters later using the 'jfrog bt c' command.\n" +
 		"Configure now?"
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {

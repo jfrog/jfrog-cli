@@ -877,7 +877,7 @@ func getUploadFlags() []cli.Flag {
 		getFailNoOpFlag(),
 		getThreadsFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `"),
-		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
+		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
 }
 
@@ -933,7 +933,7 @@ func getDownloadFlags() []cli.Flag {
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
-		getQuiteFlag("[Default: false] Set to true to skip the sync-deletes confirmation message.` `"),
+		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
 }
 
@@ -1228,7 +1228,7 @@ func getDeleteFlags() []cli.Flag {
 			Name:  "build",
 			Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
 		},
-		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
+		getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"),
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be deleted"),
 		getFailNoOpFlag(),
@@ -1458,7 +1458,7 @@ func getGitLfsCleanFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.` `",
 		},
-		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
+		getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"),
 	}...)
 }
 
@@ -1466,7 +1466,7 @@ func getConfigFlags() []cli.Flag {
 	flags := []cli.Flag{
 		cli.BoolTFlag{
 			Name:  "interactive",
-			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
+			Usage: "[Default: true, unless $CI is true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
 		},
 		cli.BoolTFlag{
 			Name:  "enc-password",
@@ -2428,7 +2428,7 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet"))
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c))
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
@@ -2473,7 +2473,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(c.Bool("quiet"))
+	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c))
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
@@ -2581,7 +2581,8 @@ func deleteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	deleteCommand.SetQuiet(c.Bool("quiet")).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
+
+	deleteCommand.SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
@@ -3062,19 +3063,23 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		return nil, err
 	}
 
-	var val bool
-	val, err = clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
-	if err != nil {
+	var ci bool
+	if ci, err = clientutils.GetBoolEnvValue(cliutils.CI, false); err != nil {
 		return nil, err
 	}
-	if !val {
+	var offerConfig bool
+	if offerConfig, err = clientutils.GetBoolEnvValue(cliutils.OfferConfig, !ci); err != nil {
+		return nil, err
+	}
+	if !offerConfig {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil
 	}
+
 	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
 		"The CLI commands require the Artifactory URL and authentication details\n"+
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
-		"You can also configure these parameters later using the 'config' command.\n"+
+		"You can also configure these parameters later using the 'jfrog rt c' command.\n"+
 		"Configure now?", cliutils.OfferConfig)
 	confirmed := cliutils.InteractiveConfirm(msg)
 	if !confirmed {
@@ -3377,7 +3382,7 @@ func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *g
 	}
 
 	gitLfsCleanConfiguration.Repo = c.String("repo")
-	gitLfsCleanConfiguration.Quiet = c.Bool("quiet")
+	gitLfsCleanConfiguration.Quiet = cliutils.GetQuietValue(c)
 	dotGitPath := ""
 	if c.NArg() == 1 {
 		dotGitPath = c.Args().Get(0)
@@ -3577,13 +3582,13 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 		return
 	}
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
-	configCommandConfiguration.Interactive = c.BoolT("interactive")
+	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	return
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
-		return errors.New("the --url option is mandatory when the --interactive option is set to false")
+		return errors.New("the --url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
 	}
 	return nil
 }
