@@ -11,7 +11,7 @@ type SignBundleCommand struct {
 	signBundlesParams services.SignBundleParams
 }
 
-func NewSignBundleCommand() *SignBundleCommand {
+func NewReleaseBundleSignCommand() *SignBundleCommand {
 	return &SignBundleCommand{}
 }
 
@@ -20,7 +20,7 @@ func (sb *SignBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) 
 	return sb
 }
 
-func (sb *SignBundleCommand) SetSignBundleParams(params services.SignBundleParams) *SignBundleCommand {
+func (sb *SignBundleCommand) SetReleaseBundleSignParams(params services.SignBundleParams) *SignBundleCommand {
 	sb.signBundlesParams = params
 	return sb
 }

@@ -1,8 +1,8 @@
-package distributereleasebundle
+package releasebundledistribute
 
 const Description = "Distribute a release bundle."
 
-var Usage = []string{"jfrog rt drb [command options] <bundle name> <bundle version>"}
+var Usage = []string{"jfrog rt rbd [command options] <bundle name> <bundle version>"}
 
 const Arguments string = `	bundle name
 		Bundle name.

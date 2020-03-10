@@ -1,8 +1,8 @@
-package deletereleasebundle
+package releasebundledelete
 
 const Description = "Delete a release bundle."
 
-var Usage = []string{"jfrog rt delrb [command options] <bundle name> <bundle version>"}
+var Usage = []string{"jfrog rt rbdel [command options] <bundle name> <bundle version>"}
 
 const Arguments string = `	bundle name
 		Bundle name.

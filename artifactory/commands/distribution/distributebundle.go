@@ -14,7 +14,7 @@ type DistributeBundleCommand struct {
 	dryRun                  bool
 }
 
-func NewDistributeBundleCommand() *DistributeBundleCommand {
+func NewReleaseBundleDistributeCommand() *DistributeBundleCommand {
 	return &DistributeBundleCommand{}
 }
 

@@ -9,12 +9,12 @@ import (
 
 type CreateBundleCommand struct {
 	rtDetails           *config.ArtifactoryDetails
-	createBundlesParams services.CreateBundleParams
+	createBundlesParams services.CreateReleaseBundleParams
 	spec                *spec.SpecFiles
 	dryRun              bool
 }
 
-func NewCreateBundleCommand() *CreateBundleCommand {
+func NewReleaseBundleCreateUpdateCommand() *CreateBundleCommand {
 	return &CreateBundleCommand{}
 }
 
@@ -23,7 +23,7 @@ func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails
 	return cb
 }
 
-func (cb *CreateBundleCommand) SetCreateBundleParams(params services.CreateBundleParams) *CreateBundleCommand {
+func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params services.CreateReleaseBundleParams) *CreateBundleCommand {
 	cb.createBundlesParams = params
 	return cb
 }

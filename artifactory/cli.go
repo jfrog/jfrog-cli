@@ -38,12 +38,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/buildscan"
 	configdocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/config"
 	copydocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/copy"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/createreleasebundle"
 	curldocs "github.com/jfrog/jfrog-cli-go/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deleteprops"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/deletereleasebundle"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/distributereleasebundle"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/download"
@@ -67,9 +64,12 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlecreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledelete"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/signreleasebundle"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli-go/docs/common"
@@ -613,55 +613,55 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "create-release-bundle",
-			Flags:        getCreateReleaseBundleFlags(),
-			Aliases:      []string{"crb"},
-			Usage:        createreleasebundle.Description,
-			HelpName:     common.CreateUsage("rt crb", createreleasebundle.Description, createreleasebundle.Usage),
-			UsageText:    createreleasebundle.Arguments,
+			Name:         "release-bundle-create",
+			Flags:        getReleaseBundleCreateFlags(),
+			Aliases:      []string{"rbc"},
+			Usage:        releasebundlecreate.Description,
+			HelpName:     common.CreateUsage("rt rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
+			UsageText:    releasebundlecreate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return createReleaseBundleCmd(c)
+				return releaseBundleCreateCmd(c)
 			},
 		},
 		{
-			Name:         "sign-release-bundle",
-			Flags:        getSignReleaseBundleFlags(),
-			Aliases:      []string{"srb"},
-			Usage:        signreleasebundle.Description,
-			HelpName:     common.CreateUsage("rt srb", signreleasebundle.Description, signreleasebundle.Usage),
-			UsageText:    signreleasebundle.Arguments,
+			Name:         "release-bundle-sign",
+			Flags:        getReleaseBundleSignFlags(),
+			Aliases:      []string{"rbs"},
+			Usage:        releasebundlesign.Description,
+			HelpName:     common.CreateUsage("rt rbs", releasebundlesign.Description, releasebundlesign.Usage),
+			UsageText:    releasebundlesign.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return signReleaseBundleCmd(c)
+				return releaseBundleSignCmd(c)
 			},
 		},
 		{
-			Name:         "distribute-release-bundle",
-			Flags:        getDistributeReleaseBundleFlags(),
-			Aliases:      []string{"drb"},
-			Usage:        distributereleasebundle.Description,
-			HelpName:     common.CreateUsage("rt drb", distributereleasebundle.Description, distributereleasebundle.Usage),
-			UsageText:    distributereleasebundle.Arguments,
+			Name:         "release-bundle-distribute",
+			Flags:        getReleaseBundleDistributeFlags(),
+			Aliases:      []string{"rbd"},
+			Usage:        releasebundledistribute.Description,
+			HelpName:     common.CreateUsage("rt rbd", releasebundledistribute.Description, releasebundledistribute.Usage),
+			UsageText:    releasebundledistribute.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return distributeReleaseBundleCmd(c)
+				return releaseBundleDistributeCmd(c)
 			},
 		},
 		{
-			Name:         "delete-release-bundle",
-			Flags:        getDeleteReleaseBundleFlags(),
-			Aliases:      []string{"delrb"},
-			Usage:        deletereleasebundle.Description,
-			HelpName:     common.CreateUsage("rt delrb", deletereleasebundle.Description, deletereleasebundle.Usage),
-			UsageText:    deletereleasebundle.Arguments,
+			Name:         "release-bundle-delete",
+			Flags:        getReleaseBundleDeleteFlags(),
+			Aliases:      []string{"rbdel"},
+			Usage:        releasebundledelete.Description,
+			HelpName:     common.CreateUsage("rt rbdel", releasebundledelete.Description, releasebundledelete.Usage),
+			UsageText:    releasebundledelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return deleteReleaseBundleCmd(c)
+				return releaseBundleDeleteCmd(c)
 			},
 		},
 	}
@@ -1513,7 +1513,7 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
-func getCreateReleaseBundleFlags() []cli.Flag {
+func getReleaseBundleCreateFlags() []cli.Flag {
 	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
 	return append(releaseBundleFlags, []cli.Flag{
 		cli.BoolFlag{
@@ -1547,7 +1547,7 @@ func getCreateReleaseBundleFlags() []cli.Flag {
 	}...)
 }
 
-func getSignReleaseBundleFlags() []cli.Flag {
+func getReleaseBundleSignFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.StringFlag{
 			Name:  "storing-repository",
@@ -1556,7 +1556,7 @@ func getSignReleaseBundleFlags() []cli.Flag {
 	}...)
 }
 
-func getDistributeReleaseBundleFlags() []cli.Flag {
+func getReleaseBundleDistributeFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "dry-run",
@@ -1581,8 +1581,8 @@ func getDistributeReleaseBundleFlags() []cli.Flag {
 	}...)
 }
 
-func getDeleteReleaseBundleFlags() []cli.Flag {
-	return append(getDistributeReleaseBundleFlags(), []cli.Flag{
+func getReleaseBundleDeleteFlags() []cli.Flag {
+	return append(getReleaseBundleDistributeFlags(), []cli.Flag{
 		cli.BoolFlag{
 			Name:  "delete-from-distribution",
 			Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
@@ -2884,85 +2884,56 @@ func buildDiscardCmd(c *cli.Context) error {
 	return commands.Exec(buildDiscardCmd)
 }
 
-func createReleaseBundleCmd(c *cli.Context) error {
+func releaseBundleCreateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	var createBundleSpec *spec.SpecFiles
+	var releaseBundleCreateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		createBundleSpec, err = getSpec(c, true)
+		releaseBundleCreateSpec, err = getSpec(c, true)
 	} else {
-		createBundleSpec = createDefaultReleaseBundleSpec(c)
+		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
 	}
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(createBundleSpec.Files, false, true)
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
 	if err != nil {
 		return err
 	}
 
-	configuration, err := createReleaseBundleCreateUpdateConfiguration(c, c.Args().Get(0), c.Args().Get(1))
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
 	if err != nil {
 		return err
 	}
-	createBundleCommand := distribution.NewCreateBundleCommand()
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
 	}
-	createBundleCommand.SetRtDetails(rtDetails).SetCreateBundleParams(configuration).SetSpec(createBundleSpec).SetDryRun(c.Bool("dry-run"))
+	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateUpdateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
 
-	return commands.Exec(createBundleCommand)
+	return commands.Exec(releaseBundleCreateCmd)
 }
 
-func signReleaseBundleCmd(c *cli.Context) error {
+func releaseBundleSignCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	configuration := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
-	configuration.StoringRepository = c.String("storing-repository")
-	distributeBundleCommand := distribution.NewSignBundleCommand()
+	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.StoringRepository = c.String("storing-repository")
+	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
 	}
-	distributeBundleCommand.SetRtDetails(rtDetails).SetSignBundleParams(configuration)
-	return commands.Exec(distributeBundleCommand)
+	releaseBundleSignCmd.SetRtDetails(rtDetails).SetReleaseBundleSignParams(params)
+	return commands.Exec(releaseBundleSignCmd)
 }
 
-func distributeReleaseBundleCmd(c *cli.Context) error {
-	if c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	var distributionSpec *spec.DistributionRules
-	if c.IsSet("distribution-rules") {
-		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
-		}
-		var err error
-		distributionSpec, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
-		if err != nil {
-			return err
-		}
-	} else {
-		distributionSpec = createDefaultDistributionRules(c)
-	}
-
-	configuration := distributionServices.NewDistributeParams(c.Args().Get(0), c.Args().Get(1))
-	distributeBundleCommand := distribution.NewDistributeBundleCommand()
-	rtDetails, err := createArtifactoryDetails(c, true)
-	if err != nil {
-		return err
-	}
-	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionSpec).SetDryRun(c.Bool("dry-run"))
-
-	return commands.Exec(distributeBundleCommand)
-}
-
-func deleteReleaseBundleCmd(c *cli.Context) error {
+func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2980,16 +2951,45 @@ func deleteReleaseBundleCmd(c *cli.Context) error {
 		distributionRules = createDefaultDistributionRules(c)
 	}
 
-	configuration := distributionServices.NewDeleteDistributionParams(c.Args().Get(0), c.Args().Get(1))
-	configuration.DeleteFromDistribution = c.BoolT("delete-from-distribution")
-	distributeBundleCommand := distribution.NewDeleteBundleCommand()
+	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
 	}
-	distributeBundleCommand.SetQuiet(c.Bool("quiet")).SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
 
-	return commands.Exec(distributeBundleCommand)
+	return commands.Exec(releaseBundleDistributeCmd)
+}
+
+func releaseBundleDeleteCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("distribution-rules") {
+		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.DeleteFromDistribution = c.BoolT("delete-from-distribution")
+	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCmd.SetQuiet(c.Bool("quiet")).SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(distributeBundleCmd)
 }
 
 func gitLfsCleanCmd(c *cli.Context) error {
@@ -3345,7 +3345,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
-func createReleaseBundleCreateUpdateConfiguration(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateBundleParams, error) {
+func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateReleaseBundleParams, error) {
 	releaseBundleParams := distributionServices.NewCreateBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")

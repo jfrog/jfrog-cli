@@ -31,12 +31,12 @@ func initDistributionTest(t *testing.T) {
 		t.Skip("Distribution is not being tested, skipping...")
 	}
 	// Delete old release bundle
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
+	artifactoryCli.Exec("rbdel", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
 	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 }
 
 func cleanDistributionTest(t *testing.T) {
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
+	artifactoryCli.Exec("rbdel", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
 	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 	cleanArtifactoryTest()
 }
@@ -50,8 +50,8 @@ func TestBundleDownload(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create and distribute release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -78,8 +78,8 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Create release bundle
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--distribution-rules="+distributionRules)
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--distribution-rules="+distributionRules)
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -105,8 +105,8 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
@@ -140,8 +140,8 @@ func TestBundleExclusions(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b*.in", "--sign-immediately", "--exclusions=*b3.in")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b*.in", "--sign-immediately", "--exclusions=*b3.in")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -168,8 +168,8 @@ func TestBundleCopy(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFileA)
 
 	// Create release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/a*", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/a*", "--sign-immediately")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Copy by bundle name and version
@@ -193,8 +193,8 @@ func TestBundleSetProperties(t *testing.T) {
 	artifactoryCli.Exec("u", "testsdata/a/a1.in", tests.Repo1+"/a.in")
 
 	// Create release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/a.in", "--sign-immediately")
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/a.in", "--sign-immediately")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Set the 'prop=red' property to the file.
@@ -229,13 +229,13 @@ func TestSignReleaseBundle(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in")
 	isSigned := inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
 	assert.False(t, isSigned)
-	artifactoryCli.Exec("srb", bundleName, bundleVersion)
+	artifactoryCli.Exec("rbs", bundleName, bundleVersion)
 	isSigned = inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
 	assert.True(t, isSigned)
-	artifactoryCli.Exec("drb", bundleName, bundleVersion, "--site-name=*")
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
 	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
@@ -259,11 +259,11 @@ func TestBundleDeleteLocal(t *testing.T) {
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
 	// Create a release bundle
-	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
 	inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, true, artHttpDetails)
 
 	// Delete release bundle locally
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
+	artifactoryCli.Exec("rbdel", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
 	inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, false, artHttpDetails)
 
 	// Cleanup

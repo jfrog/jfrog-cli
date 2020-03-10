@@ -21,7 +21,7 @@ type DeleteBundleCommand struct {
 	quiet               bool
 }
 
-func NewDeleteBundleCommand() *DeleteBundleCommand {
+func NewReleaseBundleDeleteParams() *DeleteBundleCommand {
 	return &DeleteBundleCommand{}
 }
 
