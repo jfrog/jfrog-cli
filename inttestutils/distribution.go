@@ -116,18 +116,27 @@ func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetai
 }
 
 // Return true if the release bundle is exist locally on distribution
-func IsBundleExistLocally(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
-	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return true
-	case http.StatusNotFound:
-		return false
-	default:
-		t.Error(resp.Status)
-		t.Error(string(body))
-		return false
+func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, artHttpDetails httputils.HttpClientDetails) {
+	for i := 0; i < 120; i++ {
+		resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+		switch resp.StatusCode {
+		case http.StatusOK:
+			if expectExist {
+				return
+			}
+		case http.StatusNotFound:
+			if !expectExist {
+				return
+			}
+		default:
+			t.Error(resp.Status)
+			t.Error(string(body))
+			return
+		}
+		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
+		time.Sleep(time.Second)
 	}
+	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
 }
 
 // Return true if the release bundle is signed

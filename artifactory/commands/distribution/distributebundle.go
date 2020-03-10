@@ -18,43 +18,43 @@ func NewDistributeBundleCommand() *DistributeBundleCommand {
 	return &DistributeBundleCommand{}
 }
 
-func (distributeBundle *DistributeBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DistributeBundleCommand {
-	distributeBundle.rtDetails = rtDetails
-	return distributeBundle
+func (db *DistributeBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DistributeBundleCommand {
+	db.rtDetails = rtDetails
+	return db
 }
 
-func (distributeBundle *DistributeBundleCommand) SetDistributeBundleParams(params services.DistributionParams) *DistributeBundleCommand {
-	distributeBundle.distributeBundlesParams = params
-	return distributeBundle
+func (db *DistributeBundleCommand) SetDistributeBundleParams(params services.DistributionParams) *DistributeBundleCommand {
+	db.distributeBundlesParams = params
+	return db
 }
 
-func (distributeBundle *DistributeBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DistributeBundleCommand {
-	distributeBundle.distributionRules = distributionRules
-	return distributeBundle
+func (db *DistributeBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DistributeBundleCommand {
+	db.distributionRules = distributionRules
+	return db
 }
 
-func (distributeBundle *DistributeBundleCommand) SetDryRun(dryRun bool) *DistributeBundleCommand {
-	distributeBundle.dryRun = dryRun
-	return distributeBundle
+func (db *DistributeBundleCommand) SetDryRun(dryRun bool) *DistributeBundleCommand {
+	db.dryRun = dryRun
+	return db
 }
 
-func (distributeBundle *DistributeBundleCommand) Run() error {
-	servicesManager, err := utils.CreateDistributionServiceManager(distributeBundle.rtDetails, distributeBundle.dryRun)
+func (db *DistributeBundleCommand) Run() error {
+	servicesManager, err := utils.CreateDistributionServiceManager(db.rtDetails, db.dryRun)
 	if err != nil {
 		return err
 	}
 
-	for _, rule := range distributeBundle.distributionRules.DistributionRules {
-		distributeBundle.distributeBundlesParams.DistributionRules = append(distributeBundle.distributeBundlesParams.DistributionRules, rule.ToDistributionCommonParams())
+	for _, rule := range db.distributionRules.DistributionRules {
+		db.distributeBundlesParams.DistributionRules = append(db.distributeBundlesParams.DistributionRules, rule.ToDistributionCommonParams())
 	}
 
-	return servicesManager.DistributeReleaseBundle(distributeBundle.distributeBundlesParams)
+	return servicesManager.DistributeReleaseBundle(db.distributeBundlesParams)
 }
 
-func (distributeBundle *DistributeBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return distributeBundle.rtDetails, nil
+func (db *DistributeBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return db.rtDetails, nil
 }
 
-func (distributeBundle *DistributeBundleCommand) CommandName() string {
+func (db *DistributeBundleCommand) CommandName() string {
 	return "rt_distribute_bundle"
 }

@@ -15,29 +15,29 @@ func NewSignBundleCommand() *SignBundleCommand {
 	return &SignBundleCommand{}
 }
 
-func (signBundle *SignBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *SignBundleCommand {
-	signBundle.rtDetails = rtDetails
-	return signBundle
+func (sb *SignBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *SignBundleCommand {
+	sb.rtDetails = rtDetails
+	return sb
 }
 
-func (signBundle *SignBundleCommand) SetSignBundleParams(params services.SignBundleParams) *SignBundleCommand {
-	signBundle.signBundlesParams = params
-	return signBundle
+func (sb *SignBundleCommand) SetSignBundleParams(params services.SignBundleParams) *SignBundleCommand {
+	sb.signBundlesParams = params
+	return sb
 }
 
-func (signBundle *SignBundleCommand) Run() error {
-	servicesManager, err := utils.CreateDistributionServiceManager(signBundle.rtDetails, false)
+func (sb *SignBundleCommand) Run() error {
+	servicesManager, err := utils.CreateDistributionServiceManager(sb.rtDetails, false)
 	if err != nil {
 		return err
 	}
 
-	return servicesManager.SignReleaseBundle(signBundle.signBundlesParams)
+	return servicesManager.SignReleaseBundle(sb.signBundlesParams)
 }
 
-func (signBundle *SignBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return signBundle.rtDetails, nil
+func (sb *SignBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return sb.rtDetails, nil
 }
 
-func (signBundle *SignBundleCommand) CommandName() string {
+func (sb *SignBundleCommand) CommandName() string {
 	return "rt_sign_bundle"
 }

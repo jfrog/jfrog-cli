@@ -2987,7 +2987,7 @@ func deleteReleaseBundleCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	distributeBundleCommand.SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	distributeBundleCommand.SetQuiet(c.Bool("quiet")).SetRtDetails(rtDetails).SetDistributeBundleParams(configuration).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
 
 	return commands.Exec(distributeBundleCommand)
 }

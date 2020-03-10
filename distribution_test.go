@@ -31,12 +31,12 @@ func initDistributionTest(t *testing.T) {
 		t.Skip("Distribution is not being tested, skipping...")
 	}
 	// Delete old release bundle
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
 	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 }
 
 func cleanDistributionTest(t *testing.T) {
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
 	inttestutils.WaitForDeletion(t, bundleName, bundleVersion, artHttpDetails)
 	cleanArtifactoryTest()
 }
@@ -260,11 +260,11 @@ func TestBundleDeleteLocal(t *testing.T) {
 
 	// Create a release bundle
 	artifactoryCli.Exec("crb", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-	assert.True(t, inttestutils.IsBundleExistLocally(t, bundleName, bundleVersion, artHttpDetails))
+	inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, true, artHttpDetails)
 
 	// Delete release bundle locally
-	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution")
-	assert.False(t, inttestutils.IsBundleExistLocally(t, bundleName, bundleVersion, artHttpDetails))
+	artifactoryCli.Exec("delrb", bundleName, bundleVersion, "--site-name=*", "--delete-from-distribution", "--quiet")
+	inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, false, artHttpDetails)
 
 	// Cleanup
 	cleanDistributionTest(t)

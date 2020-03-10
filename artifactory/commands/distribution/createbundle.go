@@ -18,43 +18,43 @@ func NewCreateBundleCommand() *CreateBundleCommand {
 	return &CreateBundleCommand{}
 }
 
-func (createBundle *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CreateBundleCommand {
-	createBundle.rtDetails = rtDetails
-	return createBundle
+func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CreateBundleCommand {
+	cb.rtDetails = rtDetails
+	return cb
 }
 
-func (createBundle *CreateBundleCommand) SetCreateBundleParams(params services.CreateBundleParams) *CreateBundleCommand {
-	createBundle.createBundlesParams = params
-	return createBundle
+func (cb *CreateBundleCommand) SetCreateBundleParams(params services.CreateBundleParams) *CreateBundleCommand {
+	cb.createBundlesParams = params
+	return cb
 }
 
-func (createBundle *CreateBundleCommand) SetSpec(spec *spec.SpecFiles) *CreateBundleCommand {
-	createBundle.spec = spec
-	return createBundle
+func (cb *CreateBundleCommand) SetSpec(spec *spec.SpecFiles) *CreateBundleCommand {
+	cb.spec = spec
+	return cb
 }
 
-func (createBundle *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCommand {
-	createBundle.dryRun = dryRun
-	return createBundle
+func (cb *CreateBundleCommand) SetDryRun(dryRun bool) *CreateBundleCommand {
+	cb.dryRun = dryRun
+	return cb
 }
 
-func (createBundle *CreateBundleCommand) Run() error {
-	servicesManager, err := utils.CreateDistributionServiceManager(createBundle.rtDetails, createBundle.dryRun)
+func (cb *CreateBundleCommand) Run() error {
+	servicesManager, err := utils.CreateDistributionServiceManager(cb.rtDetails, cb.dryRun)
 	if err != nil {
 		return err
 	}
 
-	for _, spec := range createBundle.spec.Files {
-		createBundle.createBundlesParams.SpecFiles = append(createBundle.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
+	for _, spec := range cb.spec.Files {
+		cb.createBundlesParams.SpecFiles = append(cb.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
 	}
 
-	return servicesManager.CreateReleaseBundle(createBundle.createBundlesParams)
+	return servicesManager.CreateReleaseBundle(cb.createBundlesParams)
 }
 
-func (createBundle *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return createBundle.rtDetails, nil
+func (cb *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return cb.rtDetails, nil
 }
 
-func (createBundle *CreateBundleCommand) CommandName() string {
+func (cb *CreateBundleCommand) CommandName() string {
 	return "rt_create_bundle"
 }
