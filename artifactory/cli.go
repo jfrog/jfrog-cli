@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
 	"io/ioutil"
 	"os"
@@ -695,6 +696,19 @@ func GetCommands() []cli.Command {
 				return repoTemplateCmd(c)
 			},
 		},
+		{
+			Name:         "repo-create",
+			Aliases:      []string{"rc"},
+			Flags:        getRepoCreateFlags(),
+			Usage:        repocreate.Description,
+			HelpName:     common.CreateUsage("rt rc", repocreate.Description, repocreate.Usage),
+			UsageText:    repocreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoCreateCmd(c)
+			},
+		},
 	}
 }
 
@@ -966,6 +980,13 @@ func getDownloadFlags() []cli.Flag {
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
 		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
+}
+
+func getRepoCreateFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), cli.StringFlag{
+		Name:  "vars",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+	})
 }
 
 func getBuildFlags() []cli.Flag {
@@ -3139,6 +3160,26 @@ func repoTemplateCmd(c *cli.Context) error {
 	repoTemplateCmd := repository.NewRepoTemplateCommand()
 	repoTemplateCmd.SetTemplatePath(c.Args().Get(0))
 	return commands.Exec(repoTemplateCmd)
+}
+
+func repoCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoCreateCmd := repository.NewRepoCreateCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(repoCreateCmd)
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {

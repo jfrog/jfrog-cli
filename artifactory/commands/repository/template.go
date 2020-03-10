@@ -9,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
-	"strconv"
 	"strings"
 )
 
@@ -68,6 +67,7 @@ const (
 	DockerApiVersion                = "dockerApiVersion"
 	EnableFileListsIndexing         = "enableFileListsIndexing"
 	OptionalIndexCompressionFormats = "optionalIndexCompressionFormats"
+	ForceNugetAuthentication        = "forceNugetAuthentication"
 
 	// Unique remote repository configuration JSON keys
 	Url                               = "url"
@@ -88,6 +88,7 @@ const (
 	AssumedOfflinePeriodSecs          = "assumedOfflinePeriodSecs"
 	FetchJarsEagerly                  = "fetchJarsEagerly"
 	FetchSourcesEagerly               = "fetchSourcesEagerly"
+	RejectInvalidJars                 = "rejectInvalidJars"
 	ShareConfiguration                = "shareConfiguration"
 	SynchronizeProperties             = "synchronizeProperties"
 	BlockMismatchingMimeTypes         = "blockMismatchingMimeTypes"
@@ -105,6 +106,9 @@ const (
 	DownloadContextPath               = "downloadContextPath"
 	V3FeedUrl                         = "v3FeedUrl"
 	ContentSynchronisation            = "contentSynchronisation"
+	ListRemoteFolderItems             = "listRemoteFolderItems"
+	EnableTokenAuthentication         = "enableTokenAuthentication"
+	PodsSpecsRepoUrl                  = "podsSpecsRepoUrl"
 
 	// Unique virtual repository configuration JSON keys
 	Repositories                                  = "repositories"
@@ -146,6 +150,9 @@ const (
 	Conan     = "conan"
 	Chef      = "chef"
 	Puppet    = "puppet"
+	Vcs       = "vcs"
+	Conda     = "conda"
+	P2        = "p2"
 
 	// Boolean answers
 	True  = "true"
@@ -209,122 +216,214 @@ const (
 	Nothing               = "nothing"
 )
 
-var commonConfKeys = []prompt.Suggest{
-	{Text: utils.WriteAndExist},
-	{Text: Description},
-	{Text: Notes},
-	{Text: IncludePatterns},
-	{Text: ExcludePatterns},
-	{Text: RepoLayoutRef},
+var SuggestionMap = map[string]prompt.Suggest{
+	utils.WriteAndExist:               {Text: utils.WriteAndExist},
+	Description:                       {Text: Description},
+	Notes:                             {Text: Notes},
+	IncludePatterns:                   {Text: IncludePatterns},
+	ExcludePatterns:                   {Text: ExcludePatterns},
+	RepoLayoutRef:                     {Text: RepoLayoutRef},
+	HandleReleases:                    {Text: HandleReleases},
+	HandleSnapshots:                   {Text: HandleSnapshots},
+	MaxUniqueSnapshots:                {Text: MaxUniqueSnapshots},
+	SuppressPomConsistencyChecks:      {Text: SuppressPomConsistencyChecks},
+	BlackedOut:                        {Text: BlackedOut},
+	DownloadRedirect:                  {Text: DownloadRedirect},
+	BlockPushingSchema1:               {Text: BlockPushingSchema1},
+	DebianTrivialLayout:               {Text: DebianTrivialLayout},
+	ExternalDependenciesEnabled:       {Text: ExternalDependenciesEnabled},
+	ExternalDependenciesPatterns:      {Text: ExternalDependenciesPatterns},
+	ChecksumPolicyType:                {Text: ChecksumPolicyType},
+	MaxUniqueTags:                     {Text: MaxUniqueTags},
+	SnapshotVersionBehavior:           {Text: SnapshotVersionBehavior},
+	XrayIndex:                         {Text: XrayIndex},
+	PropertySets:                      {Text: PropertySets},
+	ArchiveBrowsingEnabled:            {Text: ArchiveBrowsingEnabled},
+	CalculateYumMetadata:              {Text: CalculateYumMetadata},
+	YumRootDepth:                      {Text: YumRootDepth},
+	DockerApiVersion:                  {Text: DockerApiVersion},
+	EnableFileListsIndexing:           {Text: EnableFileListsIndexing},
+	OptionalIndexCompressionFormats:   {Text: OptionalIndexCompressionFormats},
+	Username:                          {Text: Username},
+	Password:                          {Text: Password},
+	Proxy:                             {Text: Proxy},
+	RemoteRepoChecksumPolicyType:      {Text: RemoteRepoChecksumPolicyType},
+	HardFail:                          {Text: HardFail},
+	Offline:                           {Text: Offline},
+	StoreArtifactsLocally:             {Text: StoreArtifactsLocally},
+	SocketTimeoutMillis:               {Text: SocketTimeoutMillis},
+	LocalAddress:                      {Text: LocalAddress},
+	RetrievalCachePeriodSecs:          {Text: RetrievalCachePeriodSecs},
+	FailedRetrievalCachePeriodSecs:    {Text: FailedRetrievalCachePeriodSecs},
+	MissedRetrievalCachePeriodSecs:    {Text: MissedRetrievalCachePeriodSecs},
+	UnusedArtifactsCleanupEnabled:     {Text: UnusedArtifactsCleanupEnabled},
+	UnusedArtifactsCleanupPeriodHours: {Text: UnusedArtifactsCleanupPeriodHours},
+	AssumedOfflinePeriodSecs:          {Text: AssumedOfflinePeriodSecs},
+	FetchJarsEagerly:                  {Text: FetchJarsEagerly},
+	FetchSourcesEagerly:               {Text: FetchSourcesEagerly},
+	RejectInvalidJars:                 {Text: RejectInvalidJars},
+	ShareConfiguration:                {Text: ShareConfiguration},
+	SynchronizeProperties:             {Text: SynchronizeProperties},
+	BlockMismatchingMimeTypes:         {Text: BlockMismatchingMimeTypes},
+	AllowAnyHostAuth:                  {Text: AllowAnyHostAuth},
+	EnableCookieManagement:            {Text: EnableCookieManagement},
+	BowerRegistryUrl:                  {Text: BowerRegistryUrl},
+	ComposerRegistryUrl:               {Text: ComposerRegistryUrl},
+	PyPIRegistryUrl:                   {Text: PyPIRegistryUrl},
+	VcsType:                           {Text: VcsType},
+	VcsGitProvider:                    {Text: VcsGitProvider},
+	VcsGitDownloadUrl:                 {Text: VcsGitDownloadUrl},
+	BypassHeadRequests:                {Text: BypassHeadRequests},
+	ClientTlsCertificate:              {Text: ClientTlsCertificate},
+	FeedContextPath:                   {Text: FeedContextPath},
+	DownloadContextPath:               {Text: DownloadContextPath},
+	V3FeedUrl:                         {Text: V3FeedUrl},
+	ContentSynchronisation:            {Text: ContentSynchronisation},
+	ListRemoteFolderItems:             {Text: ListRemoteFolderItems},
+	PodsSpecsRepoUrl:                  {Text: PodsSpecsRepoUrl},
+	EnableTokenAuthentication:         {Text: EnableTokenAuthentication},
+	Repositories:                      {Text: Repositories},
+	ArtifactoryRequestsCanRetrieveRemoteArtifacts: {Text: ArtifactoryRequestsCanRetrieveRemoteArtifacts},
+	KeyPair:                              {Text: KeyPair},
+	PomRepositoryReferencesCleanupPolicy: {Text: PomRepositoryReferencesCleanupPolicy},
+	DefaultDeploymentRepo:                {Text: DefaultDeploymentRepo},
+	ForceMavenAuthentication:             {Text: ForceMavenAuthentication},
+	ExternalDependenciesRemoteRepo:       {Text: ExternalDependenciesRemoteRepo},
 }
 
-var localRemoteConfKeys = []prompt.Suggest{
-	{Text: HandleReleases},
-	{Text: HandleSnapshots},
-	{Text: MaxUniqueSnapshots},
-	{Text: SuppressPomConsistencyChecks},
-	{Text: BlackedOut},
-	{Text: DownloadRedirect},
-	{Text: BlockPushingSchema1},
+var baseLocalRepoConfKeys = []string{
+	Description, Notes, IncludePatterns, ExcludePatterns, RepoLayoutRef, BlackedOut, XrayIndex,
+	PropertySets, ArchiveBrowsingEnabled, OptionalIndexCompressionFormats, DownloadRedirect, BlockPushingSchema1,
 }
 
-var localVirtualConfKeys = []prompt.Suggest{
-	{Text: DebianTrivialLayout},
+var mavenGradleLocalRepoConfKeys = []string{
+	MaxUniqueSnapshots, HandleReleases, HandleSnapshots, SuppressPomConsistencyChecks, SnapshotVersionBehavior, ChecksumPolicyType,
 }
 
-var remoteVirtualConfKeys = []prompt.Suggest{
-	{Text: ExternalDependenciesEnabled},
-	{Text: ExternalDependenciesPatterns},
+var rpmLocalRepoConfKeys = []string{
+	YumRootDepth, CalculateYumMetadata, EnableFileListsIndexing,
 }
 
-var uniqueLocalConfKeys = []prompt.Suggest{
-	{Text: ChecksumPolicyType},
-	{Text: MaxUniqueTags},
-	{Text: SnapshotVersionBehavior},
-	{Text: XrayIndex},
-	{Text: PropertySets},
-	{Text: ArchiveBrowsingEnabled},
-	{Text: CalculateYumMetadata},
-	{Text: YumRootDepth},
-	{Text: DockerApiVersion},
-	{Text: EnableFileListsIndexing},
-	{Text: OptionalIndexCompressionFormats},
+var nugetLocalRepoConfKeys = []string{
+	MaxUniqueSnapshots, ForceNugetAuthentication,
 }
 
-func getLocalRepoConfKeys() []prompt.Suggest {
-	localKeys := append(commonConfKeys, localRemoteConfKeys...)
-	localKeys = append(localKeys, localVirtualConfKeys...)
-	return append(localKeys, uniqueLocalConfKeys...)
+var debianLocalRepoConfKeys = []string{
+	DebianTrivialLayout,
 }
 
-var uniqueRemoteConfKeys = []prompt.Suggest{
-	{Text: Username},
-	{Text: Password},
-	{Text: Proxy},
-	{Text: RemoteRepoChecksumPolicyType},
-	{Text: HardFail},
-	{Text: Offline},
-	{Text: StoreArtifactsLocally},
-	{Text: SocketTimeoutMillis},
-	{Text: LocalAddress},
-	{Text: RetrievalCachePeriodSecs},
-	{Text: FailedRetrievalCachePeriodSecs},
-	{Text: MissedRetrievalCachePeriodSecs},
-	{Text: UnusedArtifactsCleanupEnabled},
-	{Text: UnusedArtifactsCleanupPeriodHours},
-	{Text: AssumedOfflinePeriodSecs},
-	{Text: FetchJarsEagerly},
-	{Text: FetchSourcesEagerly},
-	{Text: ShareConfiguration},
-	{Text: SynchronizeProperties},
-	{Text: BlockMismatchingMimeTypes},
-	{Text: AllowAnyHostAuth},
-	{Text: EnableCookieManagement},
-	{Text: BowerRegistryUrl},
-	{Text: ComposerRegistryUrl},
-	{Text: PyPIRegistryUrl},
-	{Text: VcsType},
-	{Text: VcsGitProvider},
-	{Text: VcsGitDownloadUrl},
-	{Text: BypassHeadRequests},
-	{Text: ClientTlsCertificate},
-	{Text: FeedContextPath},
-	{Text: DownloadContextPath},
-	{Text: V3FeedUrl},
-	{Text: ContentSynchronisation},
+var dockerLocalRepoConfKeys = []string{
+	DockerApiVersion, MaxUniqueTags,
 }
 
-func getRemoteRepoConfKeys() []prompt.Suggest {
-	remoteKeys := append(commonConfKeys, localRemoteConfKeys...)
-	remoteKeys = append(remoteKeys, remoteVirtualConfKeys...)
-	return append(remoteKeys, uniqueRemoteConfKeys...)
+var baseRemoteRepoConfKeys = []string{
+	Username, Password, Proxy, Description, Notes, IncludePatterns, ExcludePatterns, RepoLayoutRef, HardFail, Offline,
+	BlackedOut, StoreArtifactsLocally, SocketTimeoutMillis, LocalAddress, RetrievalCachePeriodSecs, FailedRetrievalCachePeriodSecs,
+	MissedRetrievalCachePeriodSecs, UnusedArtifactsCleanupEnabled, UnusedArtifactsCleanupPeriodHours, AssumedOfflinePeriodSecs,
+	ShareConfiguration, SynchronizeProperties, BlockMismatchingMimeTypes, PropertySets, AllowAnyHostAuth, EnableCookieManagement,
+	BypassHeadRequests, ClientTlsCertificate, DownloadRedirect, BlockPushingSchema1, ContentSynchronisation,
 }
 
-var uniqueVirtualConfKeys = []prompt.Suggest{
-	{Text: Repositories},
-	{Text: ArtifactoryRequestsCanRetrieveRemoteArtifacts},
-	{Text: KeyPair},
-	{Text: PomRepositoryReferencesCleanupPolicy},
-	{Text: DefaultDeploymentRepo},
-	{Text: ForceMavenAuthentication},
-	{Text: ExternalDependenciesRemoteRepo},
+var mavenGradleRemoteRepoConfKeys = []string{
+	FetchJarsEagerly, FetchSourcesEagerly, RemoteRepoChecksumPolicyType, HandleReleases, HandleSnapshots,
+	SuppressPomConsistencyChecks, RejectInvalidJars,
 }
 
-func getVirtualRepoConfKeys() []prompt.Suggest {
-	virtualKeys := append(commonConfKeys, localVirtualConfKeys...)
-	virtualKeys = append(virtualKeys, remoteVirtualConfKeys...)
-	return append(virtualKeys, uniqueVirtualConfKeys...)
+var cocapodsRemoteRepoConfKeys = []string{
+	PodsSpecsRepoUrl,
+}
+
+var opkgRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var rpmRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var nugetRemoteRepoConfKeys = []string{
+	FeedContextPath, DownloadContextPath, V3FeedUrl, ForceNugetAuthentication,
+}
+
+var gemsRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var npmRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var bowerRemoteRepoConfKeys = []string{
+	BowerRegistryUrl,
+}
+
+var debianRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var composerRemoteRepoConfKeys = []string{
+	ComposerRegistryUrl,
+}
+
+var pypiRemoteRepoConfKeys = []string{
+	PyPIRegistryUrl, ListRemoteFolderItems,
+}
+
+var dockerRemoteRepoConfKeys = []string{
+	ExternalDependenciesEnabled, ExternalDependenciesPatterns, EnableTokenAuthentication,
+}
+
+var gitlfsRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var vcsRemoteRepoConfKeys = []string{
+	VcsGitProvider, VcsType, MaxUniqueSnapshots, VcsGitDownloadUrl, ListRemoteFolderItems,
+}
+
+var genericRemoteRepoConfKeys = []string{
+	ListRemoteFolderItems,
+}
+
+var baseVirtualRepoConfKeys = []string{
+	Repositories, Description, Notes, IncludePatterns, ExcludePatterns, RepoLayoutRef, ArtifactoryRequestsCanRetrieveRemoteArtifacts,
+	DefaultDeploymentRepo,
+}
+
+var mavenGradleVirtualRepoConfKeys = []string{
+	ForceMavenAuthentication, PomRepositoryReferencesCleanupPolicy, KeyPair,
+}
+
+var nugetVirtualRepoConfKeys = []string{
+	ForceNugetAuthentication,
+}
+
+var npmVirtualRepoConfKeys = []string{
+	ExternalDependenciesEnabled, ExternalDependenciesPatterns, ExternalDependenciesRemoteRepo,
+}
+
+var bowerVirtualRepoConfKeys = []string{
+	ExternalDependenciesEnabled, ExternalDependenciesPatterns, ExternalDependenciesRemoteRepo,
+}
+
+var debianVirtualRepoConfKeys = []string{
+	DebianTrivialLayout,
+}
+
+var goVirtualRepoConfKeys = []string{
+	ExternalDependenciesEnabled, ExternalDependenciesPatterns,
 }
 
 func getAllPossibleOptionalRepoConfKeys() []prompt.Suggest {
-	allKeys := append(commonConfKeys, prompt.Suggest{Text: PackageType})
-	allKeys = append(allKeys, localRemoteConfKeys...)
-	allKeys = append(allKeys, localVirtualConfKeys...)
-	allKeys = append(allKeys, remoteVirtualConfKeys...)
-	allKeys = append(allKeys, uniqueLocalConfKeys...)
-	allKeys = append(allKeys, uniqueRemoteConfKeys...)
-	allKeys = append(allKeys, prompt.Suggest{Text: Url})
-	return append(allKeys, uniqueVirtualConfKeys...)
+	//allKeys := append(commonConfKeys, prompt.Suggest{Text: PackageType})
+	//allKeys = append(allKeys, localRemoteConfKeys...)
+	//allKeys = append(allKeys, localVirtualConfKeys...)
+	//allKeys = append(allKeys, remoteVirtualConfKeys...)
+	//allKeys = append(allKeys, uniqueLocalConfKeys...)
+	//allKeys = append(allKeys, uniqueRemoteConfKeys...)
+	//allKeys = append(allKeys, prompt.Suggest{Text: Url})
+	//return append(allKeys, uniqueVirtualConfKeys...)
+	return nil
 }
 
 func NewRepoTemplateCommand() *RepoTemplateCommand {
@@ -364,44 +463,6 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 
 func (rtc *RepoTemplateCommand) CommandName() string {
 	return "rt_repo_template"
-}
-
-func writeStringAnswer(resultMap *map[string]interface{}, key, value string) error {
-	(*resultMap)[key] = value
-	return nil
-}
-
-func writeBoolAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	boolValue, err := strconv.ParseBool(value)
-	if err != nil {
-		return err
-	}
-	(*resultMap)[key] = boolValue
-	return nil
-}
-
-func writeIntAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	intValue, err := strconv.Atoi(value)
-	if err != nil {
-		return err
-	}
-	(*resultMap)[key] = intValue
-	return nil
-}
-
-func writeStringArrayAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	arrValue := strings.Split(value, ",")
-	(*resultMap)[key] = arrValue
-	return nil
 }
 
 var freeStringQuestionInfo = utils.QuestionInfo{
@@ -452,21 +513,113 @@ func rclassCallback(iq *utils.InteractiveQuestionnaire, rclass string) (string, 
 	switch rclass {
 	case Remote:
 		iq.AskQuestion(iq.QuestionsMap[MandatoryUrl])
-		iq.OptionalKeysSuggests = getRemoteRepoConfKeys()
+		//iq.OptionalKeysSuggests )= getRemoteRepoConfKeys(
 	case Local:
-		iq.OptionalKeysSuggests = getLocalRepoConfKeys()
+		//iq.OptionalKeysSuggests = getLocalRepoConfKeys()
 	case Virtual:
-		iq.OptionalKeysSuggests = getVirtualRepoConfKeys()
+		//iq.OptionalKeysSuggests = getVirtualRepoConfKeys()
 
 	}
 	return "", nil
 }
 
-type contentSynchronisation struct {
-	Enabled    bool
-	Statistics struct{ Enabled bool }
-	Properties struct{ Enabled bool }
-	Source     struct{ OriginAbsenceDetection bool }
+func pkgTypeCallback(iq *utils.InteractiveQuestionnaire, pkgType string) (string, error) {
+	rclass := iq.ConfigMap[Rclass]
+	switch rclass {
+	case Remote:
+		iq.OptionalKeysSuggests = getRemoteRepoConfKeys(pkgType)
+	case Local:
+		iq.OptionalKeysSuggests = getLocalRepoConfKeys(pkgType)
+	case Virtual:
+		iq.OptionalKeysSuggests = getVirtualRepoConfKeys(pkgType)
+
+	}
+	return "", nil
+}
+
+func getRemoteRepoConfKeys(pkgType string) []prompt.Suggest {
+	optionalKeys := []string{utils.WriteAndExist}
+	optionalKeys = append(optionalKeys, baseRemoteRepoConfKeys...)
+	switch pkgType {
+	case Gradle:
+	case Maven:
+		optionalKeys = append(optionalKeys, mavenGradleRemoteRepoConfKeys...)
+	case Cocoapods:
+		optionalKeys = append(optionalKeys, cocapodsRemoteRepoConfKeys...)
+	case Opkg:
+		optionalKeys = append(optionalKeys, opkgRemoteRepoConfKeys...)
+	case Rpm:
+		optionalKeys = append(optionalKeys, rpmRemoteRepoConfKeys...)
+	case Nuget:
+		optionalKeys = append(optionalKeys, nugetRemoteRepoConfKeys...)
+	case Gems:
+		optionalKeys = append(optionalKeys, gemsRemoteRepoConfKeys...)
+	case Npm:
+		optionalKeys = append(optionalKeys, npmRemoteRepoConfKeys...)
+	case Bower:
+		optionalKeys = append(optionalKeys, bowerRemoteRepoConfKeys...)
+	case Debian:
+		optionalKeys = append(optionalKeys, debianRemoteRepoConfKeys...)
+	case Composer:
+		optionalKeys = append(optionalKeys, composerRemoteRepoConfKeys...)
+	case Pypi:
+		optionalKeys = append(optionalKeys, pypiRemoteRepoConfKeys...)
+	case Docker:
+		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
+	case Gitlfs:
+		optionalKeys = append(optionalKeys, gitlfsRemoteRepoConfKeys...)
+	case Vcs:
+		optionalKeys = append(optionalKeys, vcsRemoteRepoConfKeys...)
+	}
+	return getSuggestsFromKeys(optionalKeys)
+}
+
+func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
+	optionalKeys := []string{utils.WriteAndExist}
+	optionalKeys = append(optionalKeys, baseVirtualRepoConfKeys...)
+	switch pkgType {
+	case Gradle:
+	case Maven:
+		optionalKeys = append(optionalKeys, mavenGradleVirtualRepoConfKeys...)
+	case Nuget:
+		optionalKeys = append(optionalKeys, nugetVirtualRepoConfKeys...)
+	case Npm:
+		optionalKeys = append(optionalKeys, npmVirtualRepoConfKeys...)
+	case Bower:
+		optionalKeys = append(optionalKeys, bowerVirtualRepoConfKeys...)
+	case Debian:
+		optionalKeys = append(optionalKeys, debianVirtualRepoConfKeys...)
+	case Go:
+		optionalKeys = append(optionalKeys, goVirtualRepoConfKeys...)
+	}
+	return getSuggestsFromKeys(optionalKeys)
+}
+
+func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
+	optionalKeys := []string{utils.WriteAndExist}
+	optionalKeys = append(optionalKeys, baseLocalRepoConfKeys...)
+	switch pkgType {
+	case Gradle:
+	case Maven:
+		optionalKeys = append(optionalKeys, mavenGradleLocalRepoConfKeys...)
+	case Rpm:
+		optionalKeys = append(optionalKeys, rpmLocalRepoConfKeys...)
+	case Nuget:
+		optionalKeys = append(optionalKeys, nugetLocalRepoConfKeys...)
+	case Debian:
+		optionalKeys = append(optionalKeys, debianLocalRepoConfKeys...)
+	case Docker:
+		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
+	}
+	return getSuggestsFromKeys(optionalKeys)
+}
+
+func getSuggestsFromKeys(keys []string) []prompt.Suggest {
+	var suggests []prompt.Suggest
+	for _, key := range keys {
+		suggests = append(suggests, SuggestionMap[key])
+	}
+	return suggests
 }
 
 func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer string) (value string, err error) {
@@ -577,13 +730,16 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Conan},
 			{Text: Chef},
 			{Text: Puppet},
+			{Text: Vcs},
+			{Text: Conda},
+			{Text: P2},
 		},
 		Msg:          "Select the repository's package type",
 		PromptPrefix: ">",
 		AllowVars:    false,
 		Writer:       writeStringAnswer,
 		MapKey:       PackageType,
-		Callback:     nil, // TODO: implement pkgTypeCallback,
+		Callback:     pkgTypeCallback,
 	},
 	MandatoryUrl: {
 		Msg:          "",
@@ -693,6 +849,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	AssumedOfflinePeriodSecs:          intQuestionInfo,
 	FetchJarsEagerly:                  boolQuestionInfo,
 	FetchSourcesEagerly:               boolQuestionInfo,
+	RejectInvalidJars:                 boolQuestionInfo,
 	ShareConfiguration:                boolQuestionInfo,
 	SynchronizeProperties:             boolQuestionInfo,
 	BlockMismatchingMimeTypes:         boolQuestionInfo,
@@ -714,12 +871,15 @@ var questionMap = map[string]utils.QuestionInfo{
 		AllowVars: true,
 		Writer:    writeStringAnswer,
 	},
-	VcsGitDownloadUrl:    freeStringQuestionInfo,
-	BypassHeadRequests:   boolQuestionInfo,
-	ClientTlsCertificate: freeStringQuestionInfo,
-	FeedContextPath:      freeStringQuestionInfo,
-	DownloadContextPath:  freeStringQuestionInfo,
-	V3FeedUrl:            freeStringQuestionInfo,
+	VcsGitDownloadUrl:         freeStringQuestionInfo,
+	BypassHeadRequests:        boolQuestionInfo,
+	ClientTlsCertificate:      freeStringQuestionInfo,
+	FeedContextPath:           freeStringQuestionInfo,
+	DownloadContextPath:       freeStringQuestionInfo,
+	V3FeedUrl:                 freeStringQuestionInfo,
+	ListRemoteFolderItems:     boolQuestionInfo,
+	EnableTokenAuthentication: boolQuestionInfo,
+	PodsSpecsRepoUrl:          freeStringQuestionInfo,
 	ContentSynchronisation: {
 		Options:   getBoolSuggests(),
 		AllowVars: true,

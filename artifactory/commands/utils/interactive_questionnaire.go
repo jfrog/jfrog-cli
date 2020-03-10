@@ -13,7 +13,7 @@ type InteractiveQuestionnaire struct {
 	ConfigMap              map[string]string
 }
 
-type answerWriter func(resultMap *map[string]interface{}, key, value string) error
+type AnswerWriter func(resultMap *map[string]interface{}, key, value string) error
 type questionCallback func(*InteractiveQuestionnaire, string) (string, error)
 
 type QuestionInfo struct {
@@ -21,7 +21,7 @@ type QuestionInfo struct {
 	PromptPrefix string
 	Options      []prompt.Suggest
 	AllowVars    bool
-	Writer       answerWriter
+	Writer       AnswerWriter
 	MapKey       string
 	Callback     questionCallback
 }

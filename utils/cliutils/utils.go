@@ -1,6 +1,7 @@
 package cliutils
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"runtime"
@@ -257,4 +258,15 @@ type Credentials interface {
 	SetPassword(string)
 	GetUser() string
 	GetPassword() string
+}
+
+func ReplaceSpecVars(content []byte, specVars map[string]string) []byte {
+	log.Debug("Replacing variables in the provided File Spec: \n" + string(content))
+	for key, val := range specVars {
+		key = "${" + key + "}"
+		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
+		content = bytes.Replace(content, []byte(key), []byte(val), -1)
+	}
+	log.Debug("The reformatted File Spec is: \n" + string(content))
+	return content
 }

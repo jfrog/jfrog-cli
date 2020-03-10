@@ -1,8 +1,10 @@
 package cliutils
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/jfrog/jfrog-cli-go/utils/log"
 	"reflect"
 	"testing"
 )
@@ -65,5 +67,42 @@ func TestGetExitCode(t *testing.T) {
 func checkExitCode(t *testing.T, expected, actual ExitCode) {
 	if expected != actual {
 		t.Errorf("Exit code expected %v, got %v", expected, actual)
+	}
+}
+
+func TestReplaceSpecVars(t *testing.T) {
+	log.SetDefaultLogger()
+	var actual []byte
+	actual = ReplaceSpecVars([]byte("${foo}aa"), map[string]string{"a": "k", "foo": "bar"})
+	assertVariablesMap([]byte("baraa"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"foo": "bar"})
+	assertVariablesMap([]byte("abara"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("aa${foo}"), map[string]string{"foo": "bar"})
+	assertVariablesMap([]byte("aabar"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("${foo}${foo}${foo}"), map[string]string{"foo": "bar"})
+	assertVariablesMap([]byte("barbarbar"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("${talk}-${broh}-${foo}"), map[string]string{"foo": "bar", "talk": "speak", "broh": "sroh"})
+	assertVariablesMap([]byte("speak-sroh-bar"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"foo": ""})
+	assertVariablesMap([]byte("aa"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"a": "k", "f": "a"})
+	assertVariablesMap([]byte("a${foo}a"), actual, t)
+
+	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{})
+	assertVariablesMap([]byte("a${foo}a"), actual, t)
+
+	actual = ReplaceSpecVars(nil, nil)
+	assertVariablesMap([]byte(""), actual, t)
+}
+
+func assertVariablesMap(expected, actual []byte, t *testing.T) {
+	if 0 != bytes.Compare(expected, actual) {
+		t.Error("Wrong matching expected: `" + string(expected) + "` Got `" + string(actual) + "`")
 	}
 }
