@@ -18,9 +18,8 @@ type RepoTemplateCommand struct {
 
 const (
 	// Strings for prompt questions
-	SelectConfigKeyMsg    = "Select the next configuration key, or type ':x' to exit"
+	SelectConfigKeyMsg    = "Select the next configuration key"
 	InsertValueMsg        = "Insert value for %s: "
-	CommaSeparatedListMsg = "The value should be a comma separated list"
 
 	// Template types
 	TemplateType = "templateType"
@@ -153,10 +152,6 @@ const (
 	Vcs       = "vcs"
 	Conda     = "conda"
 	P2        = "p2"
-
-	// Boolean answers
-	True  = "true"
-	False = "false"
 
 	// Repo layout Refs
 	BowerDefault    = "bower-default"

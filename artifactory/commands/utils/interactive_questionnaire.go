@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,6 +35,12 @@ const (
 	EmptyValueMsg    = "The value can not be empty. Please enter a valid value:"
 	OptionalKey      = "OptionalKey"
 	WriteAndExist    = ":x"
+
+	// Boolean answers
+	True  = "true"
+	False = "false"
+
+	CommaSeparatedListMsg = "The value should be a comma separated list"
 )
 
 var VarPattern = regexp.MustCompile(`^\$\{\w+\}+$`)
@@ -119,6 +124,7 @@ func (iq *InteractiveQuestionnaire) Perform() error {
 	for i := 0; i < len(iq.MandatoryQuestionsKeys); i++ {
 		iq.AskQuestion(iq.QuestionsMap[iq.MandatoryQuestionsKeys[i]])
 	}
+	fmt.Println("You can type \":x\" at any time to save and exit.")
 	OptionalKeyQuestion := iq.QuestionsMap[OptionalKey]
 	OptionalKeyQuestion.Options = iq.OptionalKeysSuggests
 	for {
@@ -187,8 +193,8 @@ var FreeStringQuestionInfo = QuestionInfo{
 
 func GetBoolSuggests() []prompt.Suggest {
 	return []prompt.Suggest{
-		{Text: repository.True},
-		{Text: repository.False},
+		{Text: True},
+		{Text: False},
 	}
 }
 
@@ -205,7 +211,7 @@ var IntQuestionInfo = QuestionInfo{
 }
 
 var StringListQuestionInfo = QuestionInfo{
-	Msg:       repository.CommaSeparatedListMsg,
+	Msg:       CommaSeparatedListMsg,
 	Options:   nil,
 	AllowVars: true,
 	Writer:    WriteStringArrayAnswer,
