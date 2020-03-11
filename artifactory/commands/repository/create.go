@@ -77,44 +77,6 @@ func (rcc *RepoCreateCommand) Run() (err error) {
 	return err
 }
 
-func writeStringAnswer(resultMap *map[string]interface{}, key, value string) error {
-	(*resultMap)[key] = value
-	return nil
-}
-
-func writeBoolAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	boolValue, err := strconv.ParseBool(value)
-	if err != nil {
-		return err
-	}
-	(*resultMap)[key] = boolValue
-	return nil
-}
-
-func writeIntAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	intValue, err := strconv.Atoi(value)
-	if err != nil {
-		return err
-	}
-	(*resultMap)[key] = intValue
-	return nil
-}
-
-func writeStringArrayAnswer(resultMap *map[string]interface{}, key, value string) error {
-	if regexMatch := utils.VarPattern.FindStringSubmatch(value); regexMatch != nil {
-		return writeStringAnswer(resultMap, key, value)
-	}
-	arrValue := strings.Split(value, ",")
-	(*resultMap)[key] = arrValue
-	return nil
-}
-
 func writeContentSynchronisation(resultMap *map[string]interface{}, key, value string) error {
 	answerArray := strings.Split(value, ",")
 	if len(answerArray) != 4 {
@@ -132,83 +94,82 @@ func writeContentSynchronisation(resultMap *map[string]interface{}, key, value s
 }
 
 var writertsMap = map[string]utils.AnswerWriter{
-
-	Key:                               writeStringAnswer,
-	Rclass:                            writeStringAnswer,
-	PackageType:                       writeStringAnswer,
-	MandatoryUrl:                      writeStringAnswer,
-	Url:                               writeStringAnswer,
-	Description:                       writeStringAnswer,
-	Notes:                             writeStringAnswer,
-	IncludePatterns:                   writeStringAnswer,
-	ExcludePatterns:                   writeStringAnswer,
-	RepoLayoutRef:                     writeStringAnswer,
-	HandleReleases:                    writeBoolAnswer,
-	HandleSnapshots:                   writeBoolAnswer,
-	MaxUniqueSnapshots:                writeIntAnswer,
-	SuppressPomConsistencyChecks:      writeBoolAnswer,
-	BlackedOut:                        writeBoolAnswer,
-	DownloadRedirect:                  writeBoolAnswer,
-	BlockPushingSchema1:               writeBoolAnswer,
-	DebianTrivialLayout:               writeBoolAnswer,
-	ExternalDependenciesEnabled:       writeBoolAnswer,
-	ExternalDependenciesPatterns:      writeStringArrayAnswer,
-	ChecksumPolicyType:                writeStringAnswer,
-	MaxUniqueTags:                     writeIntAnswer,
-	SnapshotVersionBehavior:           writeStringAnswer,
-	XrayIndex:                         writeBoolAnswer,
-	PropertySets:                      writeStringArrayAnswer,
-	ArchiveBrowsingEnabled:            writeBoolAnswer,
-	CalculateYumMetadata:              writeBoolAnswer,
-	YumRootDepth:                      writeIntAnswer,
-	DockerApiVersion:                  writeStringAnswer,
-	EnableFileListsIndexing:           writeBoolAnswer,
-	OptionalIndexCompressionFormats:   writeStringAnswer,
-	Username:                          writeStringAnswer,
-	Password:                          writeStringAnswer,
-	Proxy:                             writeStringAnswer,
-	RemoteRepoChecksumPolicyType:      writeStringAnswer,
-	HardFail:                          writeBoolAnswer,
-	Offline:                           writeBoolAnswer,
-	StoreArtifactsLocally:             writeBoolAnswer,
-	SocketTimeoutMillis:               writeIntAnswer,
-	LocalAddress:                      writeStringAnswer,
-	RetrievalCachePeriodSecs:          writeIntAnswer,
-	FailedRetrievalCachePeriodSecs:    writeIntAnswer,
-	MissedRetrievalCachePeriodSecs:    writeIntAnswer,
-	UnusedArtifactsCleanupEnabled:     writeBoolAnswer,
-	UnusedArtifactsCleanupPeriodHours: writeIntAnswer,
-	AssumedOfflinePeriodSecs:          writeIntAnswer,
-	FetchJarsEagerly:                  writeBoolAnswer,
-	FetchSourcesEagerly:               writeBoolAnswer,
-	ShareConfiguration:                writeBoolAnswer,
-	SynchronizeProperties:             writeBoolAnswer,
-	BlockMismatchingMimeTypes:         writeBoolAnswer,
-	AllowAnyHostAuth:                  writeBoolAnswer,
-	EnableCookieManagement:            writeBoolAnswer,
-	BowerRegistryUrl:                  writeStringAnswer,
-	ComposerRegistryUrl:               writeStringAnswer,
-	PyPIRegistryUrl:                   writeStringAnswer,
-	VcsType:                           writeStringAnswer,
-	VcsGitProvider:                    writeStringAnswer,
-	VcsGitDownloadUrl:                 writeStringAnswer,
-	BypassHeadRequests:                writeBoolAnswer,
-	ClientTlsCertificate:              writeStringAnswer,
-	FeedContextPath:                   writeStringAnswer,
-	DownloadContextPath:               writeStringAnswer,
-	V3FeedUrl:                         writeStringAnswer,
+	Key:                               utils.WriteStringAnswer,
+	Rclass:                            utils.WriteStringAnswer,
+	PackageType:                       utils.WriteStringAnswer,
+	MandatoryUrl:                      utils.WriteStringAnswer,
+	Url:                               utils.WriteStringAnswer,
+	Description:                       utils.WriteStringAnswer,
+	Notes:                             utils.WriteStringAnswer,
+	IncludePatterns:                   utils.WriteStringAnswer,
+	ExcludePatterns:                   utils.WriteStringAnswer,
+	RepoLayoutRef:                     utils.WriteStringAnswer,
+	HandleReleases:                    utils.WriteBoolAnswer,
+	HandleSnapshots:                   utils.WriteBoolAnswer,
+	MaxUniqueSnapshots:                utils.WriteIntAnswer,
+	SuppressPomConsistencyChecks:      utils.WriteBoolAnswer,
+	BlackedOut:                        utils.WriteBoolAnswer,
+	DownloadRedirect:                  utils.WriteBoolAnswer,
+	BlockPushingSchema1:               utils.WriteBoolAnswer,
+	DebianTrivialLayout:               utils.WriteBoolAnswer,
+	ExternalDependenciesEnabled:       utils.WriteBoolAnswer,
+	ExternalDependenciesPatterns:      utils.WriteStringArrayAnswer,
+	ChecksumPolicyType:                utils.WriteStringAnswer,
+	MaxUniqueTags:                     utils.WriteIntAnswer,
+	SnapshotVersionBehavior:           utils.WriteStringAnswer,
+	XrayIndex:                         utils.WriteBoolAnswer,
+	PropertySets:                      utils.WriteStringArrayAnswer,
+	ArchiveBrowsingEnabled:            utils.WriteBoolAnswer,
+	CalculateYumMetadata:              utils.WriteBoolAnswer,
+	YumRootDepth:                      utils.WriteIntAnswer,
+	DockerApiVersion:                  utils.WriteStringAnswer,
+	EnableFileListsIndexing:           utils.WriteBoolAnswer,
+	OptionalIndexCompressionFormats:   utils.WriteStringAnswer,
+	Username:                          utils.WriteStringAnswer,
+	Password:                          utils.WriteStringAnswer,
+	Proxy:                             utils.WriteStringAnswer,
+	RemoteRepoChecksumPolicyType:      utils.WriteStringAnswer,
+	HardFail:                          utils.WriteBoolAnswer,
+	Offline:                           utils.WriteBoolAnswer,
+	StoreArtifactsLocally:             utils.WriteBoolAnswer,
+	SocketTimeoutMillis:               utils.WriteIntAnswer,
+	LocalAddress:                      utils.WriteStringAnswer,
+	RetrievalCachePeriodSecs:          utils.WriteIntAnswer,
+	FailedRetrievalCachePeriodSecs:    utils.WriteIntAnswer,
+	MissedRetrievalCachePeriodSecs:    utils.WriteIntAnswer,
+	UnusedArtifactsCleanupEnabled:     utils.WriteBoolAnswer,
+	UnusedArtifactsCleanupPeriodHours: utils.WriteIntAnswer,
+	AssumedOfflinePeriodSecs:          utils.WriteIntAnswer,
+	FetchJarsEagerly:                  utils.WriteBoolAnswer,
+	FetchSourcesEagerly:               utils.WriteBoolAnswer,
+	ShareConfiguration:                utils.WriteBoolAnswer,
+	SynchronizeProperties:             utils.WriteBoolAnswer,
+	BlockMismatchingMimeTypes:         utils.WriteBoolAnswer,
+	AllowAnyHostAuth:                  utils.WriteBoolAnswer,
+	EnableCookieManagement:            utils.WriteBoolAnswer,
+	BowerRegistryUrl:                  utils.WriteStringAnswer,
+	ComposerRegistryUrl:               utils.WriteStringAnswer,
+	PyPIRegistryUrl:                   utils.WriteStringAnswer,
+	VcsType:                           utils.WriteStringAnswer,
+	VcsGitProvider:                    utils.WriteStringAnswer,
+	VcsGitDownloadUrl:                 utils.WriteStringAnswer,
+	BypassHeadRequests:                utils.WriteBoolAnswer,
+	ClientTlsCertificate:              utils.WriteStringAnswer,
+	FeedContextPath:                   utils.WriteStringAnswer,
+	DownloadContextPath:               utils.WriteStringAnswer,
+	V3FeedUrl:                         utils.WriteStringAnswer,
 	ContentSynchronisation:            writeContentSynchronisation,
-	ListRemoteFolderItems:             writeBoolAnswer,
-	RejectInvalidJars:                 writeBoolAnswer,
-	PodsSpecsRepoUrl:                  writeStringAnswer,
-	EnableTokenAuthentication:         writeBoolAnswer,
-	Repositories:                      writeStringArrayAnswer,
-	ArtifactoryRequestsCanRetrieveRemoteArtifacts: writeBoolAnswer,
-	KeyPair:                              writeStringAnswer,
-	PomRepositoryReferencesCleanupPolicy: writeStringAnswer,
-	DefaultDeploymentRepo:                writeStringAnswer,
-	ForceMavenAuthentication:             writeBoolAnswer,
-	ExternalDependenciesRemoteRepo:       writeStringAnswer,
+	ListRemoteFolderItems:             utils.WriteBoolAnswer,
+	RejectInvalidJars:                 utils.WriteBoolAnswer,
+	PodsSpecsRepoUrl:                  utils.WriteStringAnswer,
+	EnableTokenAuthentication:         utils.WriteBoolAnswer,
+	Repositories:                      utils.WriteStringArrayAnswer,
+	ArtifactoryRequestsCanRetrieveRemoteArtifacts: utils.WriteBoolAnswer,
+	KeyPair:                              utils.WriteStringAnswer,
+	PomRepositoryReferencesCleanupPolicy: utils.WriteStringAnswer,
+	DefaultDeploymentRepo:                utils.WriteStringAnswer,
+	ForceMavenAuthentication:             utils.WriteBoolAnswer,
+	ExternalDependenciesRemoteRepo:       utils.WriteStringAnswer,
 }
 
 type repoCreator func(*config.ArtifactoryDetails, []byte) error

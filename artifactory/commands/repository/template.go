@@ -216,7 +216,7 @@ const (
 	Nothing               = "nothing"
 )
 
-var SuggestionMap = map[string]prompt.Suggest{
+var optionalSuggestsMap = map[string]prompt.Suggest{
 	utils.WriteAndExist:               {Text: utils.WriteAndExist},
 	Description:                       {Text: Description},
 	Notes:                             {Text: Notes},
@@ -465,38 +465,6 @@ func (rtc *RepoTemplateCommand) CommandName() string {
 	return "rt_repo_template"
 }
 
-var freeStringQuestionInfo = utils.QuestionInfo{
-	Options:   nil,
-	AllowVars: false,
-	Writer:    writeStringAnswer,
-}
-
-func getBoolSuggests() []prompt.Suggest {
-	return []prompt.Suggest{
-		{Text: True},
-		{Text: False},
-	}
-}
-
-var boolQuestionInfo = utils.QuestionInfo{
-	Options:   getBoolSuggests(),
-	AllowVars: true,
-	Writer:    writeBoolAnswer,
-}
-
-var intQuestionInfo = utils.QuestionInfo{
-	Options:   nil,
-	AllowVars: true,
-	Writer:    writeIntAnswer,
-}
-
-var stringListQuestionInfo = utils.QuestionInfo{
-	Msg:       CommaSeparatedListMsg,
-	Options:   nil,
-	AllowVars: true,
-	Writer:    writeStringArrayAnswer,
-}
-
 func templateTypeCallback(iq *utils.InteractiveQuestionnaire, templateType string) (string, error) {
 	switch templateType {
 	// For creation template rclass and packgeType are mandatory keys
@@ -571,7 +539,7 @@ func getRemoteRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Vcs:
 		optionalKeys = append(optionalKeys, vcsRemoteRepoConfKeys...)
 	}
-	return getSuggestsFromKeys(optionalKeys)
+	return utils.GetSuggestsFromKeys(optionalKeys,optionalSuggestsMap)
 }
 
 func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
@@ -592,7 +560,7 @@ func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Go:
 		optionalKeys = append(optionalKeys, goVirtualRepoConfKeys...)
 	}
-	return getSuggestsFromKeys(optionalKeys)
+	return utils.GetSuggestsFromKeys(optionalKeys,optionalSuggestsMap)
 }
 
 func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
@@ -611,15 +579,7 @@ func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Docker:
 		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
 	}
-	return getSuggestsFromKeys(optionalKeys)
-}
-
-func getSuggestsFromKeys(keys []string) []prompt.Suggest {
-	var suggests []prompt.Suggest
-	for _, key := range keys {
-		suggests = append(suggests, SuggestionMap[key])
-	}
-	return suggests
+	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
 }
 
 func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer string) (value string, err error) {
@@ -628,17 +588,17 @@ func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer s
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for statistic.enable >", false, getBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for statistic.enable >", false, utils.GetBoolSuggests())
 	//cs.Statistics.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for properties.enable >", false, getBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for properties.enable >", false, utils.GetBoolSuggests())
 	//cs.Properties.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, getBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, utils.GetBoolSuggests())
 	//cs.Source.OriginAbsenceDetection, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
@@ -686,7 +646,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		Msg:          "Insert the repository key",
 		PromptPrefix: ">",
 		AllowVars:    true,
-		Writer:       writeStringAnswer,
+		Writer:       utils.WriteStringAnswer,
 		MapKey:       Key,
 		Callback:     nil,
 	},
@@ -699,7 +659,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		Msg:          "Select the repository class",
 		PromptPrefix: ">",
 		AllowVars:    false,
-		Writer:       writeStringAnswer,
+		Writer:       utils.WriteStringAnswer,
 		MapKey:       Rclass,
 		Callback:     rclassCallback,
 	},
@@ -737,7 +697,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		Msg:          "Select the repository's package type",
 		PromptPrefix: ">",
 		AllowVars:    false,
-		Writer:       writeStringAnswer,
+		Writer:       utils.WriteStringAnswer,
 		MapKey:       PackageType,
 		Callback:     pkgTypeCallback,
 	},
@@ -745,15 +705,15 @@ var questionMap = map[string]utils.QuestionInfo{
 		Msg:          "",
 		PromptPrefix: "Insert the remote repository URL >",
 		AllowVars:    true,
-		Writer:       writeStringAnswer,
+		Writer:       utils.WriteStringAnswer,
 		MapKey:       Url,
 		Callback:     nil,
 	},
-	Url:             freeStringQuestionInfo,
-	Description:     freeStringQuestionInfo,
-	Notes:           freeStringQuestionInfo,
-	IncludePatterns: stringListQuestionInfo,
-	ExcludePatterns: stringListQuestionInfo,
+	Url:             utils.FreeStringQuestionInfo,
+	Description:     utils.FreeStringQuestionInfo,
+	Notes:           utils.FreeStringQuestionInfo,
+	IncludePatterns: utils.StringListQuestionInfo,
+	ExcludePatterns: utils.StringListQuestionInfo,
 	RepoLayoutRef: {
 		Options: []prompt.Suggest{
 			{Text: BowerDefault},
@@ -773,27 +733,27 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: VcsDefault},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	HandleReleases:               boolQuestionInfo,
-	HandleSnapshots:              boolQuestionInfo,
-	MaxUniqueSnapshots:           intQuestionInfo,
-	SuppressPomConsistencyChecks: boolQuestionInfo,
-	BlackedOut:                   boolQuestionInfo,
-	DownloadRedirect:             boolQuestionInfo,
-	BlockPushingSchema1:          boolQuestionInfo,
-	DebianTrivialLayout:          boolQuestionInfo,
-	ExternalDependenciesEnabled:  boolQuestionInfo,
-	ExternalDependenciesPatterns: stringListQuestionInfo,
+	HandleReleases:               utils.BoolQuestionInfo,
+	HandleSnapshots:              utils.BoolQuestionInfo,
+	MaxUniqueSnapshots:           utils.IntQuestionInfo,
+	SuppressPomConsistencyChecks: utils.BoolQuestionInfo,
+	BlackedOut:                   utils.BoolQuestionInfo,
+	DownloadRedirect:             utils.BoolQuestionInfo,
+	BlockPushingSchema1:          utils.BoolQuestionInfo,
+	DebianTrivialLayout:          utils.BoolQuestionInfo,
+	ExternalDependenciesEnabled:  utils.BoolQuestionInfo,
+	ExternalDependenciesPatterns: utils.StringListQuestionInfo,
 	ChecksumPolicyType: {
 		Options: []prompt.Suggest{
 			{Text: ClientChecksum},
 			{Text: ServerGeneratedChecksums},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	MaxUniqueTags: intQuestionInfo,
+	MaxUniqueTags: utils.IntQuestionInfo,
 	SnapshotVersionBehavior: {
 		Options: []prompt.Suggest{
 			{Text: Unique},
@@ -801,31 +761,31 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Deployer},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	XrayIndex:              boolQuestionInfo,
-	PropertySets:           stringListQuestionInfo,
-	ArchiveBrowsingEnabled: boolQuestionInfo,
-	CalculateYumMetadata:   boolQuestionInfo,
-	YumRootDepth:           intQuestionInfo,
+	XrayIndex:              utils.BoolQuestionInfo,
+	PropertySets:           utils.StringListQuestionInfo,
+	ArchiveBrowsingEnabled: utils.BoolQuestionInfo,
+	CalculateYumMetadata:   utils.BoolQuestionInfo,
+	YumRootDepth:           utils.IntQuestionInfo,
 	DockerApiVersion: {
 		Options: []prompt.Suggest{
 			{Text: V1},
 			{Text: V2},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	EnableFileListsIndexing: boolQuestionInfo,
+	EnableFileListsIndexing: utils.BoolQuestionInfo,
 	OptionalIndexCompressionFormats: {
 		Msg:       "Enter a comma separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
 		Options:   nil,
 		AllowVars: false,
-		Writer:    writeStringArrayAnswer,
+		Writer:    utils.WriteStringArrayAnswer,
 	},
-	Username: freeStringQuestionInfo,
-	Password: freeStringQuestionInfo,
-	Proxy:    freeStringQuestionInfo,
+	Username: utils.FreeStringQuestionInfo,
+	Password: utils.FreeStringQuestionInfo,
+	Proxy:    utils.FreeStringQuestionInfo,
 	RemoteRepoChecksumPolicyType: {
 		Options: []prompt.Suggest{
 			{Text: GenerateIfAbsent},
@@ -834,30 +794,30 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: PassThru},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	HardFail:                          boolQuestionInfo,
-	Offline:                           boolQuestionInfo,
-	StoreArtifactsLocally:             boolQuestionInfo,
-	SocketTimeoutMillis:               intQuestionInfo,
-	LocalAddress:                      freeStringQuestionInfo,
-	RetrievalCachePeriodSecs:          intQuestionInfo,
-	FailedRetrievalCachePeriodSecs:    intQuestionInfo,
-	MissedRetrievalCachePeriodSecs:    intQuestionInfo,
-	UnusedArtifactsCleanupEnabled:     boolQuestionInfo,
-	UnusedArtifactsCleanupPeriodHours: intQuestionInfo,
-	AssumedOfflinePeriodSecs:          intQuestionInfo,
-	FetchJarsEagerly:                  boolQuestionInfo,
-	FetchSourcesEagerly:               boolQuestionInfo,
-	RejectInvalidJars:                 boolQuestionInfo,
-	ShareConfiguration:                boolQuestionInfo,
-	SynchronizeProperties:             boolQuestionInfo,
-	BlockMismatchingMimeTypes:         boolQuestionInfo,
-	AllowAnyHostAuth:                  boolQuestionInfo,
-	EnableCookieManagement:            boolQuestionInfo,
-	BowerRegistryUrl:                  freeStringQuestionInfo,
-	ComposerRegistryUrl:               freeStringQuestionInfo,
-	PyPIRegistryUrl:                   freeStringQuestionInfo,
+	HardFail:                          utils.BoolQuestionInfo,
+	Offline:                           utils.BoolQuestionInfo,
+	StoreArtifactsLocally:             utils.BoolQuestionInfo,
+	SocketTimeoutMillis:               utils.IntQuestionInfo,
+	LocalAddress:                      utils.FreeStringQuestionInfo,
+	RetrievalCachePeriodSecs:          utils.IntQuestionInfo,
+	FailedRetrievalCachePeriodSecs:    utils.IntQuestionInfo,
+	MissedRetrievalCachePeriodSecs:    utils.IntQuestionInfo,
+	UnusedArtifactsCleanupEnabled:     utils.BoolQuestionInfo,
+	UnusedArtifactsCleanupPeriodHours: utils.IntQuestionInfo,
+	AssumedOfflinePeriodSecs:          utils.IntQuestionInfo,
+	FetchJarsEagerly:                  utils.BoolQuestionInfo,
+	FetchSourcesEagerly:               utils.BoolQuestionInfo,
+	RejectInvalidJars:                 utils.BoolQuestionInfo,
+	ShareConfiguration:                utils.BoolQuestionInfo,
+	SynchronizeProperties:             utils.BoolQuestionInfo,
+	BlockMismatchingMimeTypes:         utils.BoolQuestionInfo,
+	AllowAnyHostAuth:                  utils.BoolQuestionInfo,
+	EnableCookieManagement:            utils.BoolQuestionInfo,
+	BowerRegistryUrl:                  utils.FreeStringQuestionInfo,
+	ComposerRegistryUrl:               utils.FreeStringQuestionInfo,
+	PyPIRegistryUrl:                   utils.FreeStringQuestionInfo,
 	//	VcsType : {[]string{Git}, writeStringAnswer},
 	VcsGitProvider: {
 		Options: []prompt.Suggest{
@@ -869,26 +829,26 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Custom},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	VcsGitDownloadUrl:         freeStringQuestionInfo,
-	BypassHeadRequests:        boolQuestionInfo,
-	ClientTlsCertificate:      freeStringQuestionInfo,
-	FeedContextPath:           freeStringQuestionInfo,
-	DownloadContextPath:       freeStringQuestionInfo,
-	V3FeedUrl:                 freeStringQuestionInfo,
-	ListRemoteFolderItems:     boolQuestionInfo,
-	EnableTokenAuthentication: boolQuestionInfo,
-	PodsSpecsRepoUrl:          freeStringQuestionInfo,
+	VcsGitDownloadUrl:         utils.FreeStringQuestionInfo,
+	BypassHeadRequests:        utils.BoolQuestionInfo,
+	ClientTlsCertificate:      utils.FreeStringQuestionInfo,
+	FeedContextPath:           utils.FreeStringQuestionInfo,
+	DownloadContextPath:       utils.FreeStringQuestionInfo,
+	V3FeedUrl:                 utils.FreeStringQuestionInfo,
+	ListRemoteFolderItems:     utils.BoolQuestionInfo,
+	EnableTokenAuthentication: utils.BoolQuestionInfo,
+	PodsSpecsRepoUrl:          utils.FreeStringQuestionInfo,
 	ContentSynchronisation: {
-		Options:   getBoolSuggests(),
+		Options:   utils.GetBoolSuggests(),
 		AllowVars: true,
 		Writer:    nil,
 		Callback:  contentSynchronisationCallBack,
 	},
-	Repositories: stringListQuestionInfo,
-	ArtifactoryRequestsCanRetrieveRemoteArtifacts: boolQuestionInfo,
-	KeyPair: freeStringQuestionInfo,
+	Repositories: utils.StringListQuestionInfo,
+	ArtifactoryRequestsCanRetrieveRemoteArtifacts: utils.BoolQuestionInfo,
+	KeyPair: utils.FreeStringQuestionInfo,
 	PomRepositoryReferencesCleanupPolicy: {
 		Options: []prompt.Suggest{
 			{Text: DiscardActiveRefrence},
@@ -896,9 +856,9 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Nothing},
 		},
 		AllowVars: true,
-		Writer:    writeStringAnswer,
+		Writer:    utils.WriteStringAnswer,
 	},
-	DefaultDeploymentRepo:          freeStringQuestionInfo,
-	ForceMavenAuthentication:       boolQuestionInfo,
-	ExternalDependenciesRemoteRepo: freeStringQuestionInfo,
+	DefaultDeploymentRepo:          utils.FreeStringQuestionInfo,
+	ForceMavenAuthentication:       utils.BoolQuestionInfo,
+	ExternalDependenciesRemoteRepo: utils.FreeStringQuestionInfo,
 }

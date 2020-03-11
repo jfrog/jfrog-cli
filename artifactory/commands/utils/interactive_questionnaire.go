@@ -3,7 +3,10 @@ package utils
 import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
 	"regexp"
+	"strconv"
+	"strings"
 )
 
 type InteractiveQuestionnaire struct {
@@ -129,3 +132,82 @@ func (iq *InteractiveQuestionnaire) Perform() error {
 	}
 	return nil
 }
+
+func WriteStringAnswer(resultMap *map[string]interface{}, key, value string) error {
+	(*resultMap)[key] = value
+	return nil
+}
+
+func WriteBoolAnswer(resultMap *map[string]interface{}, key, value string) error {
+	if regexMatch := VarPattern.FindStringSubmatch(value); regexMatch != nil {
+		return WriteStringAnswer(resultMap, key, value)
+	}
+	boolValue, err := strconv.ParseBool(value)
+	if err != nil {
+		return err
+	}
+	(*resultMap)[key] = boolValue
+	return nil
+}
+
+func WriteIntAnswer(resultMap *map[string]interface{}, key, value string) error {
+	if regexMatch := VarPattern.FindStringSubmatch(value); regexMatch != nil {
+		return WriteStringAnswer(resultMap, key, value)
+	}
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return err
+	}
+	(*resultMap)[key] = intValue
+	return nil
+}
+
+func WriteStringArrayAnswer(resultMap *map[string]interface{}, key, value string) error {
+	if regexMatch := VarPattern.FindStringSubmatch(value); regexMatch != nil {
+		return WriteStringAnswer(resultMap, key, value)
+	}
+	arrValue := strings.Split(value, ",")
+	(*resultMap)[key] = arrValue
+	return nil
+}
+
+func GetSuggestsFromKeys(keys []string, SuggestionMap map[string]prompt.Suggest) []prompt.Suggest {
+	var suggests []prompt.Suggest
+	for _, key := range keys {
+		suggests = append(suggests, SuggestionMap[key])
+	}
+	return suggests
+}
+
+var FreeStringQuestionInfo = QuestionInfo{
+	Options:   nil,
+	AllowVars: false,
+	Writer:    WriteStringAnswer,
+}
+
+func GetBoolSuggests() []prompt.Suggest {
+	return []prompt.Suggest{
+		{Text: repository.True},
+		{Text: repository.False},
+	}
+}
+
+var BoolQuestionInfo = QuestionInfo{
+	Options:   GetBoolSuggests(),
+	AllowVars: true,
+	Writer:    WriteBoolAnswer,
+}
+
+var IntQuestionInfo = QuestionInfo{
+	Options:   nil,
+	AllowVars: true,
+	Writer:    WriteIntAnswer,
+}
+
+var StringListQuestionInfo = QuestionInfo{
+	Msg:       repository.CommaSeparatedListMsg,
+	Options:   nil,
+	AllowVars: true,
+	Writer:    WriteStringArrayAnswer,
+}
+
