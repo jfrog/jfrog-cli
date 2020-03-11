@@ -65,10 +65,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlecreate"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -636,7 +636,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return releaseBundleCreateCmd(c)
+				return releaseBundleUpdateCmd(c)
 			},
 		},
 		{
@@ -2900,39 +2900,14 @@ func buildDiscardCmd(c *cli.Context) error {
 }
 
 func releaseBundleCreateCmd(c *cli.Context) error {
-	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	var releaseBundleCreateSpec *spec.SpecFiles
-	var err error
-	if c.IsSet("spec") {
-		releaseBundleCreateSpec, err = getSpec(c, true)
-	} else {
-		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
-	}
-	if err != nil {
-		return err
-	}
-	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
-	if err != nil {
-		return err
-	}
-
-	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
-	if err != nil {
-		return err
-	}
-	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(distribution.Create)
-	rtDetails, err := createArtifactoryDetails(c, true)
-	if err != nil {
-		return err
-	}
-	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateUpdateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
-
-	return commands.Exec(releaseBundleCreateCmd)
+	return releaseBundleCreateUpdateCmd(c, distribution.Create)
 }
 
-func updateBundleCreateCmd(c *cli.Context) error {
+func releaseBundleUpdateCmd(c *cli.Context) error {
+	return releaseBundleCreateUpdateCmd(c, distribution.Update)
+}
+
+func releaseBundleCreateUpdateCmd(c *cli.Context, commandType distribution.CommandType) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2955,7 +2930,7 @@ func updateBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(distribution.Update)
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(commandType)
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err

@@ -273,12 +273,30 @@ func TestBundleDeleteLocal(t *testing.T) {
 func TestUpdateReleaseBundle(t *testing.T) {
 	initDistributionTest(t)
 
-		// Upload files
-		specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
-		assert.NoError(t, err)
-		artifactoryCli.Exec("u", "--spec="+specFile)
-	
-		// Create a release bundle
-		artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
-		inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, true, artHttpDetails)
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("u", "--spec="+specFile)
+
+	// Create a release bundle with b2.in
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b2.in")
+	inttestutils.VerifyLocalBundleExistence(t, bundleName, bundleVersion, true, artHttpDetails)
+
+	// Update release bundle to have b1.in
+	artifactoryCli.Exec("rbu", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign-immediately")
+
+	// Distribute release bundle
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
+	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+
+	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
+	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
+
+	// Validate files are downloaded by bundle version
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	cleanDistributionTest(t)
 }

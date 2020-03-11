@@ -10,8 +10,10 @@ import (
 
 func TestBasicAuth(t *testing.T) {
 	log.SetDefaultLogger()
-	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "admin", Password: "password",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "admin", Password: "password",
 		ApiKey: "", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
@@ -21,15 +23,19 @@ func TestBasicAuth(t *testing.T) {
 func TestApiKey(t *testing.T) {
 	// API key is no longer allowed to be configured without providing a username.
 	// This test is here to make sure that old configurations (with API key and no username) are still accepted.
-	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "", Password: "",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "", Password: "",
 		ApiKey: "apiKey", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
 	configAndTest(t, &inputDetails)
 
-	inputDetails = config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "admin", Password: "",
+	inputDetails = config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "admin", Password: "",
 		ApiKey: "apiKey", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
@@ -37,8 +43,10 @@ func TestApiKey(t *testing.T) {
 }
 
 func TestSshKey(t *testing.T) {
-	inputDetails := config.ArtifactoryDetails{Url: "ssh://localhost:1339/",
-		User: "", Password: "",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "ssh://localhost:1339/",
+		DistributionUrl: "http://localhost:1339/distribution",
+		User:            "", Password: "",
 		ApiKey: "", SshKeyPath: "/tmp/sshKey", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
@@ -46,8 +54,10 @@ func TestSshKey(t *testing.T) {
 }
 
 func TestAccessToken(t *testing.T) {
-	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "", Password: "",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "", Password: "",
 		ApiKey: "", SshKeyPath: "", AccessToken: "accessToken",
 		ServerId:  "test",
 		IsDefault: false}
@@ -55,8 +65,10 @@ func TestAccessToken(t *testing.T) {
 }
 
 func TestEmpty(t *testing.T) {
-	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "", Password: "",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "", Password: "",
 		ApiKey: "", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
@@ -90,8 +102,10 @@ func configStructToString(artConfig *config.ArtifactoryDetails) string {
 }
 
 func TestGetConfigurationFromUser(t *testing.T) {
-	inputDetails := config.ArtifactoryDetails{Url: "http://localhost:8080/artifactory",
-		User: "admin", Password: "password",
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "admin", Password: "password",
 		ApiKey: "", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}

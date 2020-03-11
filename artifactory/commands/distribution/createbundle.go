@@ -23,7 +23,7 @@ type CreateBundleCommand struct {
 }
 
 func NewReleaseBundleCreateUpdateCommand(commandType CommandType) *CreateBundleCommand {
-	return &CreateBundleCommand{}
+	return &CreateBundleCommand{commandType: commandType}
 }
 
 func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CreateBundleCommand {
@@ -56,7 +56,10 @@ func (cb *CreateBundleCommand) Run() error {
 		cb.createBundlesParams.SpecFiles = append(cb.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
 	}
 
-	return servicesManager.CreateReleaseBundle(cb.createBundlesParams)
+	if cb.commandType == Create {
+		return servicesManager.CreateReleaseBundle(cb.createBundlesParams)
+	}
+	return servicesManager.UpdateReleaseBundle(cb.createBundlesParams)
 }
 
 func (cb *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {

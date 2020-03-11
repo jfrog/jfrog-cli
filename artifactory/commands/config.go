@@ -14,11 +14,11 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/lock"
+	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/auth"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -186,10 +186,18 @@ func (cc *ConfigCommand) resolveServerId() string {
 
 func (cc *ConfigCommand) getConfigurationFromUser() error {
 	allowUsingSavedPassword := true
+	// Artifactory URL
 	if cc.details.Url == "" {
-		ioutils.ScanFromConsole("Artifactory URL", &cc.details.Url, cc.defaultDetails.Url)
+		ioutils.ScanFromConsole("JFrog Artifactory URL", &cc.details.Url, cc.defaultDetails.Url)
 		allowUsingSavedPassword = false
 	}
+
+	// Distribution URL
+	if cc.details.DistributionUrl == "" {
+		ioutils.ScanFromConsole("JFrog Distribution URL (Optional)", &cc.details.DistributionUrl, cc.defaultDetails.DistributionUrl)
+		allowUsingSavedPassword = false
+	}
+
 	// Ssh-Key
 	if fileutils.IsSshUrl(cc.details.Url) {
 		return getSshKeyPath(cc.details)

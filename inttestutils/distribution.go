@@ -175,6 +175,10 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 			t.Error(err)
 			return
 		}
+		if len(response.receivedResponses) == 0 {
+			t.Error("Release bundle \"" + bundleName + "/" + bundleVersion + "\" not found")
+			return
+		}
 
 		switch response.receivedResponses[0].Status {
 		case Completed:
