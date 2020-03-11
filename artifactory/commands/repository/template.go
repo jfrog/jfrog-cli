@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
@@ -18,8 +19,8 @@ type RepoTemplateCommand struct {
 
 const (
 	// Strings for prompt questions
-	SelectConfigKeyMsg    = "Select the next configuration key"
-	InsertValueMsg        = "Insert value for %s: "
+	SelectConfigKeyMsg = "Select the next configuration key"
+	InsertValueMsg     = "Insert value for %s: "
 
 	// Template types
 	TemplateType = "templateType"
@@ -421,6 +422,52 @@ func getAllPossibleOptionalRepoConfKeys() []prompt.Suggest {
 	return nil
 }
 
+var localRepoPkgTypes = []string{
+	Maven, Gradle, Ivy, Sbt, Helm, Cocoapods, Opkg, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Composer, Pypi, Docker,
+	Vagrant, Gitlfs, Go, Yum, Conan, Chef, Puppet, Generic,
+}
+
+var remoteRepoPkgTypes = []string{
+	Maven, Gradle, Ivy, Sbt, Helm, Cocoapods, Opkg, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Composer, Pypi, Docker,
+	Gitlfs, Go, Yum, Conan, Chef, Puppet, Conda, P2, Vcs, Generic,
+}
+
+var virtualRepoPkgTypes = []string{
+	Maven, Gradle, Ivy, Sbt, Helm, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Pypi, Docker, Gitlfs, Go, Yum, Conan,
+	Chef, Puppet, Conda, P2, Generic,
+}
+
+var pkgTypeSuggestsMap = map[string]prompt.Suggest{
+	Generic:   {Text: Generic},
+	Maven:     {Text: Maven},
+	Gradle:    {Text: Gradle},
+	Ivy:       {Text: Ivy},
+	Sbt:       {Text: Sbt},
+	Helm:      {Text: Helm},
+	Cocoapods: {Text: Cocoapods},
+	Opkg:      {Text: Opkg},
+	Rpm:       {Text: Rpm},
+	Nuget:     {Text: Nuget},
+	Cran:      {Text: Cran},
+	Gems:      {Text: Gems},
+	Npm:       {Text: Npm},
+	Bower:     {Text: Bower},
+	Debian:    {Text: Debian},
+	Composer:  {Text: Composer},
+	Pypi:      {Text: Pypi},
+	Docker:    {Text: Docker},
+	Vagrant:   {Text: Vagrant},
+	Gitlfs:    {Text: Gitlfs},
+	Go:        {Text: Go},
+	Yum:       {Text: Yum},
+	Conan:     {Text: Conan},
+	Chef:      {Text: Chef},
+	Puppet:    {Text: Puppet},
+	Vcs:       {Text: Vcs},
+	Conda:     {Text: Conda},
+	P2:        {Text: P2},
+}
+
 func NewRepoTemplateCommand() *RepoTemplateCommand {
 	return &RepoTemplateCommand{}
 }
@@ -431,15 +478,15 @@ func (rtc *RepoTemplateCommand) SetTemplatePath(path string) *RepoTemplateComman
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	repoTemplateQuestionnarie := &utils.InteractiveQuestionnaire{
-		MandatoryQuestionsKeys: []string{TemplateType, Key},
+	repoTemplateQuestionnaire := &utils.InteractiveQuestionnaire{
+		MandatoryQuestionsKeys: []string{Key, Rclass},
 		QuestionsMap:           questionMap,
 	}
-	err = repoTemplateQuestionnarie.Perform()
+	err = repoTemplateQuestionnaire.Perform()
 	if err != nil {
 		return err
 	}
-	resBytes, err := json.Marshal(repoTemplateQuestionnarie.ConfigMap)
+	resBytes, err := json.Marshal(repoTemplateQuestionnaire.ConfigMap)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -460,30 +507,29 @@ func (rtc *RepoTemplateCommand) CommandName() string {
 	return "rt_repo_template"
 }
 
-func templateTypeCallback(iq *utils.InteractiveQuestionnaire, templateType string) (string, error) {
-	switch templateType {
-	// For creation template rclass and packgeType are mandatory keys
-	case Create:
-		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, Rclass, PackageType)
-	// For update template packageType is an optional common key to modify, and we have to offer all keys as optional to
-	case Update:
-		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
-	}
-	return "", nil
-}
-
 func rclassCallback(iq *utils.InteractiveQuestionnaire, rclass string) (string, error) {
+	var pkgTypes []string
 	switch rclass {
 	case Remote:
 		iq.AskQuestion(iq.QuestionsMap[MandatoryUrl])
-		//iq.OptionalKeysSuggests )= getRemoteRepoConfKeys(
+		pkgTypes = remoteRepoPkgTypes
 	case Local:
-		//iq.OptionalKeysSuggests = getLocalRepoConfKeys()
+		pkgTypes = localRepoPkgTypes
 	case Virtual:
-		//iq.OptionalKeysSuggests = getVirtualRepoConfKeys()
-
+		pkgTypes = virtualRepoPkgTypes
+	default:
+		return "", errors.New("unsupported rclass")
 	}
-	return "", nil
+	var pkgTypeQuestion = utils.QuestionInfo{
+		Options:      utils.GetSuggestsFromKeys(pkgTypes, pkgTypeSuggestsMap),
+		Msg:          "Select the repository's package type",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       utils.WriteStringAnswer,
+		MapKey:       PackageType,
+		Callback:     pkgTypeCallback,
+	}
+	return iq.AskQuestion(pkgTypeQuestion)
 }
 
 func pkgTypeCallback(iq *utils.InteractiveQuestionnaire, pkgType string) (string, error) {
@@ -495,7 +541,8 @@ func pkgTypeCallback(iq *utils.InteractiveQuestionnaire, pkgType string) (string
 		iq.OptionalKeysSuggests = getLocalRepoConfKeys(pkgType)
 	case Virtual:
 		iq.OptionalKeysSuggests = getVirtualRepoConfKeys(pkgType)
-
+	default:
+		return "", errors.New("unsupported rclass was configured")
 	}
 	return "", nil
 }
@@ -534,7 +581,7 @@ func getRemoteRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Vcs:
 		optionalKeys = append(optionalKeys, vcsRemoteRepoConfKeys...)
 	}
-	return utils.GetSuggestsFromKeys(optionalKeys,optionalSuggestsMap)
+	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
 }
 
 func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
@@ -555,7 +602,7 @@ func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Go:
 		optionalKeys = append(optionalKeys, goVirtualRepoConfKeys...)
 	}
-	return utils.GetSuggestsFromKeys(optionalKeys,optionalSuggestsMap)
+	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
 }
 
 func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
@@ -617,20 +664,8 @@ func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value 
 }
 
 var questionMap = map[string]utils.QuestionInfo{
-	TemplateType: {
-		Options: []prompt.Suggest{
-			{Text: Create, Description: "Template for creating a new repository"},
-			{Text: Update, Description: "Template for updating an existing repository"},
-		},
-		Msg:          "Select the template type",
-		PromptPrefix: ">",
-		AllowVars:    false,
-		Writer:       nil,
-		MapKey:       "",
-		Callback:     templateTypeCallback,
-	},
 	utils.OptionalKey: {
-		Msg:          "Select the next property, or \":x\" to finish",
+		Msg:          "Select the next property",
 		PromptPrefix: ">",
 		AllowVars:    false,
 		Writer:       nil,
@@ -657,44 +692,6 @@ var questionMap = map[string]utils.QuestionInfo{
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       Rclass,
 		Callback:     rclassCallback,
-	},
-	PackageType: {
-		Options: []prompt.Suggest{
-			{Text: Generic},
-			{Text: Maven},
-			{Text: Gradle},
-			{Text: Ivy},
-			{Text: Sbt},
-			{Text: Helm},
-			{Text: Cocoapods},
-			{Text: Opkg},
-			{Text: Rpm},
-			{Text: Nuget},
-			{Text: Cran},
-			{Text: Gems},
-			{Text: Npm},
-			{Text: Bower},
-			{Text: Debian},
-			{Text: Composer},
-			{Text: Pypi},
-			{Text: Docker},
-			{Text: Vagrant},
-			{Text: Gitlfs},
-			{Text: Go},
-			{Text: Yum},
-			{Text: Conan},
-			{Text: Chef},
-			{Text: Puppet},
-			{Text: Vcs},
-			{Text: Conda},
-			{Text: P2},
-		},
-		Msg:          "Select the repository's package type",
-		PromptPrefix: ">",
-		AllowVars:    false,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       PackageType,
-		Callback:     pkgTypeCallback,
 	},
 	MandatoryUrl: {
 		Msg:          "",

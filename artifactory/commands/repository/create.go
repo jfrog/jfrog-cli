@@ -71,6 +71,8 @@ func (rcc *RepoCreateCommand) Run() (err error) {
 		err = localRepoCreators[repoConfigMap[PackageType].(string)](rcc.rtDetails, content)
 	case Remote:
 		err = remoteRepoCreators[repoConfigMap[PackageType].(string)](rcc.rtDetails, content)
+	case Virtual:
+		err = virtualRepoCreators[repoConfigMap[PackageType].(string)](rcc.rtDetails, content)
 	default:
 		return errors.New("unsupported rclass")
 	}
@@ -750,4 +752,260 @@ func createRemoteGeneric(rtDetails *config.ArtifactoryDetails, jsonConfig []byte
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
 	return servicesManager.CreateRemoteRepository().Generic(params)
+}
+
+var virtualRepoCreators = map[string]repoCreator{
+	Maven:   createVirtualMaven,
+	Gradle:  createVirtualGradle,
+	Ivy:     createVirtualIvy,
+	Sbt:     createVirtualSbt,
+	Helm:    createVirtualHelm,
+	Rpm:     createVirtualRpm,
+	Nuget:   createVirtualNuget,
+	Cran:    createVirtualCran,
+	Gems:    createVirtualGems,
+	Npm:     createVirtualNpm,
+	Bower:   createVirtualBower,
+	Debian:  createVirtualDebian,
+	Pypi:    createVirtualPypi,
+	Docker:  createVirtualDocker,
+	Gitlfs:  createVirtualGitlfs,
+	Go:      createVirtualGo,
+	Yum:     createVirtualYum,
+	Conan:   createVirtualConan,
+	Chef:    createVirtualChef,
+	Puppet:  createVirtualPuppet,
+	Conda:   createVirtualConda,
+	P2:      createVirtualP2,
+	Generic: createVirtualGeneric,
+}
+
+func createVirtualMaven(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.MavenGradleVirtualRepositoryParams
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Maven(params)
+}
+
+func createVirtualGradle(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.MavenGradleVirtualRepositoryParams
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Gradle(params)
+}
+
+func createVirtualIvy(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.IvyVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Ivy(params)
+}
+
+func createVirtualSbt(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.SbtVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Sbt(params)
+}
+
+func createVirtualHelm(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.HelmVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Helm(params)
+}
+
+func createVirtualRpm(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.RpmVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Rpm(params)
+}
+
+func createVirtualNuget(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.NugetVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Nuget(params)
+}
+
+func createVirtualCran(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.CranVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Cran(params)
+}
+
+func createVirtualGems(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.GemsVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Gems(params)
+}
+
+func createVirtualNpm(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.NpmVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Npm(params)
+}
+
+func createVirtualBower(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.BowerVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Bower(params)
+}
+
+func createVirtualDebian(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.DebianVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Debian(params)
+}
+
+func createVirtualPypi(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.PypiVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Pypi(params)
+}
+
+func createVirtualDocker(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.DockerVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Docker(params)
+}
+
+func createVirtualGitlfs(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.GitlfsVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Gitlfs(params)
+}
+
+func createVirtualGo(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.GoVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Go(params)
+}
+
+func createVirtualConan(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.ConanVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Conan(params)
+}
+
+func createVirtualChef(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.ChefVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Chef(params)
+}
+
+func createVirtualPuppet(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.PuppetVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Puppet(params)
+}
+
+func createVirtualYum(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.YumVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Yum(params)
+}
+
+func createVirtualP2(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.P2VirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().P2(params)
+}
+
+func createVirtualConda(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.CondaVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Conda(params)
+}
+
+func createVirtualGeneric(rtDetails *config.ArtifactoryDetails, jsonConfig []byte) error {
+	var params services.GenericVirtualRepositoryParam
+	err := json.Unmarshal(jsonConfig, &params)
+	if err != nil {
+		return err
+	}
+	servicesManager, err := rtUtils.CreateServiceManager(rtDetails, false)
+	return servicesManager.CreateVirtualRepository().Generic(params)
 }
