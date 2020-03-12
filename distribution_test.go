@@ -230,23 +230,17 @@ func TestSignReleaseBundle(t *testing.T) {
 	assert.NoError(t, err)
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
-	// Create release bundle
+	// Create a release bundle without --sign-immediately and make sure it is not signed
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in")
-	isSigned := inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
-	assert.False(t, isSigned)
+	distributableResponse := inttestutils.GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	assert.NotNil(t, distributableResponse)
+	assert.Equal(t, inttestutils.Open, distributableResponse.State)
+
+	// Sign the release bundle and make sure it is signed
 	artifactoryCli.Exec("rbs", bundleName, bundleVersion)
-	isSigned = inttestutils.IsBundleSigned(t, bundleName, bundleVersion, artHttpDetails)
-	assert.True(t, isSigned)
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site-name=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
-
-	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
-
-	// Validate files are downloaded by bundle version
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
-	assert.NoError(t, err)
+	distributableResponse = inttestutils.GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	assert.NotNil(t, distributableResponse)
+	assert.Equal(t, inttestutils.Signed, distributableResponse.State)
 
 	// Cleanup
 	cleanDistributionTest(t)
@@ -311,12 +305,12 @@ func TestCreateBundleText(t *testing.T) {
 	assert.NoError(t, err)
 	artifactoryCli.Exec("u", "--spec="+specFile)
 
+	// Create a release bundle with release notes and description
 	releaseNotesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "releasenotes.md")
 	description := "thisIsADescription"
-
-	// Create and distribute release bundle
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/*", "--release-notes-path="+releaseNotesPath, "--description="+description)
 
+	// Validate release notes and description
 	distributableResponse := inttestutils.GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
 	if distributableResponse != nil {
 		assert.Equal(t, description, distributableResponse.Description)

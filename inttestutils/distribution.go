@@ -29,17 +29,17 @@ type receivedDistributionStatus string
 
 const (
 	Open                 distributableDistributionStatus = "OPEN"
-	ReadyForDistribution                                 = "READY_FOR_DISTRIBUTION"
-	Signed                                               = "SIGNED"
+	ReadyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
+	Signed               distributableDistributionStatus = "SIGNED"
 	NotDistributed       receivedDistributionStatus      = "Not distributed"
-	InProgress                                           = "In progress"
-	Completed                                            = "Completed"
-	Failed                                               = "Failed"
+	InProgress           receivedDistributionStatus      = "In progress"
+	Completed            receivedDistributionStatus      = "Completed"
+	Failed               receivedDistributionStatus      = "Failed"
 )
 
 // GET api/v1/release_bundle/:name/:version
 // Retreive the status of a release bundle before distribution.
-type DistributableResponse struct {
+type distributableResponse struct {
 	Name         string                          `json:"name,omitempty"`
 	Version      string                          `json:"version,omitempty"`
 	State        distributableDistributionStatus `json:"state,omitempty"`
@@ -113,14 +113,15 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) *DistributableResponse {
+// Get a local release bundle
+func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) *distributableResponse {
 	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error(resp.Status)
 		t.Error(string(body))
 		return nil
 	}
-	response := &DistributableResponse{}
+	response := &distributableResponse{}
 	err := json.Unmarshal(body, &response)
 	if err != nil {
 		t.Error(err)
@@ -151,12 +152,6 @@ func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, 
 		time.Sleep(time.Second)
 	}
 	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
-}
-
-// Return true if the release bundle is signed
-func IsBundleSigned(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
-	response := GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
-	return response != nil && response.State == Signed
 }
 
 // Wait for distribution of a release bundle
