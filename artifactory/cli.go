@@ -616,7 +616,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-create",
-			Flags:        getReleaseBundleCreateFlags(),
+			Flags:        getReleaseBundleCreateUpdateFlags(),
 			Aliases:      []string{"rbc"},
 			Usage:        releasebundlecreate.Description,
 			HelpName:     common.CreateUsage("rt rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
@@ -629,7 +629,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-update",
-			Flags:        getReleaseBundleCreateFlags(),
+			Flags:        getReleaseBundleCreateUpdateFlags(),
 			Aliases:      []string{"rbu"},
 			Usage:        releasebundleupdate.Description,
 			HelpName:     common.CreateUsage("rt rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
@@ -1528,7 +1528,7 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
-func getReleaseBundleCreateFlags() []cli.Flag {
+func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
 	return append(releaseBundleFlags, []cli.Flag{
 		cli.BoolFlag{
@@ -1538,10 +1538,6 @@ func getReleaseBundleCreateFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "sign-immediately",
 			Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
-		},
-		cli.StringFlag{
-			Name:  "storing-repository",
-			Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
 		},
 		cli.StringFlag{
 			Name:  "description",
@@ -1559,16 +1555,27 @@ func getReleaseBundleCreateFlags() []cli.Flag {
 			Name:  "exclusions",
 			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
 		},
+		getGpgPassphraseFlag(),
+		getStoringRepositoryFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), []cli.Flag{
-		cli.StringFlag{
-			Name:  "storing-repository",
-			Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
-		},
-	}...)
+	return append(getServerFlags(), getGpgPassphraseFlag(), getStoringRepositoryFlag())
+}
+
+func getGpgPassphraseFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "gpg-passphrase",
+		Usage: "[Optional] The passphrase for the signing key. ` `",
+	}
+}
+
+func getStoringRepositoryFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "storing-repository",
+		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
+	}
 }
 
 func getReleaseBundleDistributeFlags() []cli.Flag {

@@ -111,12 +111,12 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 	if err != nil {
 		return nil, err
 	}
-	artAuth, err := artDetails.CreateDistAuthConfig()
+	distAuth, err := artDetails.CreateDistAuthConfig()
 	if err != nil {
 		return nil, err
 	}
 	serviceConfig, err := clientConfig.NewConfigBuilder().
-		SetArtDetails(artAuth).
+		SetArtDetails(distAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun).
@@ -124,7 +124,7 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 	if err != nil {
 		return nil, err
 	}
-	return distribution.New(&artAuth, serviceConfig)
+	return distribution.New(&distAuth, serviceConfig)
 }
 
 func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error) {
