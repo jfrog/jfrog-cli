@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
 	"io/ioutil"
 	"os"
@@ -709,6 +710,19 @@ func GetCommands() []cli.Command {
 				return repoCreateCmd(c)
 			},
 		},
+		{
+			Name:         "repo-delete",
+			Aliases:      []string{"rd"},
+			Flags:        getRepoDeleteFlags(),
+			Usage:        repodelete.Description,
+			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
+			UsageText:    repodelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoDeleteCmd(c)
+			},
+		},
 	}
 }
 
@@ -987,6 +1001,10 @@ func getRepoCreateFlags() []cli.Flag {
 		Name:  "vars",
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
 	})
+}
+
+func getRepoDeleteFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"))
 }
 
 func getBuildFlags() []cli.Flag {
@@ -3180,6 +3198,26 @@ func repoCreateCmd(c *cli.Context) error {
 	repoCreateCmd := repository.NewRepoCreateCommand()
 	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
 	return commands.Exec(repoCreateCmd)
+}
+
+func repoDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoDeleteCmd := repository.NewRepoDeleteCommand()
+	repoDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
+	return commands.Exec(repoDeleteCmd)
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
