@@ -13,6 +13,14 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
+var (
+	defaultDeleteRules = spec.DistributionRules{
+		DistributionRules: []spec.DistributionRule{{
+			SiteName: "*",
+		}},
+	}
+)
+
 type DeleteBundleCommand struct {
 	rtDetails           *config.ArtifactoryDetails
 	deleteBundlesParams services.DeleteDistributionParams
@@ -60,8 +68,9 @@ func (db *DeleteBundleCommand) Run() error {
 		db.deleteBundlesParams.DistributionRules = append(db.deleteBundlesParams.DistributionRules, spec.ToDistributionCommonParams())
 	}
 
+	distributionRulesEmpty := db.distributionRulesEmpty()
 	if !db.quiet {
-		confirm, err := db.confirmDelete()
+		confirm, err := db.confirmDelete(distributionRulesEmpty)
 		if err != nil {
 			return err
 		}
@@ -70,6 +79,9 @@ func (db *DeleteBundleCommand) Run() error {
 		}
 	}
 
+	if distributionRulesEmpty && db.deleteBundlesParams.DeleteFromDistribution {
+		return servicesManager.DeleteLocalReleaseBundle(db.deleteBundlesParams)
+	}
 	return servicesManager.DeleteReleaseBundle(db.deleteBundlesParams)
 }
 
@@ -81,7 +93,20 @@ func (db *DeleteBundleCommand) CommandName() string {
 	return "rt_delete_bundle"
 }
 
-func (db *DeleteBundleCommand) confirmDelete() (bool, error) {
+// Return true iff there are no distribution rules
+func (db *DeleteBundleCommand) distributionRulesEmpty() bool {
+	return db.distributionRules == nil ||
+		len(db.distributionRules.DistributionRules) == 0 ||
+		len(db.distributionRules.DistributionRules) == 1 && db.distributionRules.DistributionRules[0].IsEmpty()
+}
+
+func (db *DeleteBundleCommand) confirmDelete(distributionRulesEmpty bool) (bool, error) {
+	message := "Are you sure you want to delete the release bundle \"" + db.deleteBundlesParams.Name + "/" + db.deleteBundlesParams.Version + "\" "
+	if distributionRulesEmpty {
+		return cliutils.InteractiveConfirm(message + "locally from distribution?\n" +
+			"You can avoid this confirmation message by adding --quiet to the command."), nil
+	}
+
 	var distributionRulesBodies []services.DistributionRulesBody
 	for _, rule := range db.deleteBundlesParams.DistributionRules {
 		distributionRulesBodies = append(distributionRulesBodies, services.DistributionRulesBody{
@@ -99,7 +124,6 @@ func (db *DeleteBundleCommand) confirmDelete() (bool, error) {
 	if db.deleteBundlesParams.DeleteFromDistribution {
 		fmt.Println("This command will also delete the release bundle locally from distribution.")
 	}
-	return cliutils.InteractiveConfirm("Are you sure you want to delete the release bundle \"" +
-		db.deleteBundlesParams.Name + "/" + db.deleteBundlesParams.Version + "\" with the above distribution rules?\n" +
+	return cliutils.InteractiveConfirm(message + "with the above distribution rules?\n" +
 		"You can avoid this confirmation message by adding --quiet to the command."), nil
 }

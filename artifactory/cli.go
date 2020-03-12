@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -3383,13 +3384,9 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 			return releaseBundleParams, errorutils.CheckError(err)
 		}
 		releaseBundleParams.ReleaseNotes = string(bytes)
-		switch c.String("release-notes-syntax") {
-		case "markdown":
-			releaseBundleParams.ReleaseNotesSyntax = distributionServices.Markdown
-		case "asciidoc":
-			releaseBundleParams.ReleaseNotesSyntax = distributionServices.Asciidoc
-		default:
-			releaseBundleParams.ReleaseNotesSyntax = distributionServices.PlainText
+		releaseBundleParams.ReleaseNotesSyntax, err = populateReleaseNotesSyntax(c)
+		if err != nil {
+			return releaseBundleParams, err
 		}
 	}
 	return releaseBundleParams, nil
@@ -3703,4 +3700,27 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 	This will create the configuration inside the .jfrog directory under the root directory of the project.
 	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
+}
+
+func populateReleaseNotesSyntax(c *cli.Context) (distributionServices.ReleaseNotesSyntax, error) {
+	// If release notes syntax is set, use it
+	releaseNotexSyntax := c.String("release-notes-syntax")
+	if releaseNotexSyntax != "" {
+		switch releaseNotexSyntax {
+		case "markdown":
+			return distributionServices.Markdown, nil
+		case "asciidoc":
+			return distributionServices.Asciidoc, nil
+		case "plain_text":
+			return distributionServices.PlainText, nil
+		default:
+			return distributionServices.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+		}
+	}
+	// If the file extension is ".md" or ".markdown", use the markdonwn syntax
+	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
+	if extension == ".md" || extension == ".markdown" {
+		return distributionServices.Markdown, nil
+	}
+	return distributionServices.PlainText, nil
 }

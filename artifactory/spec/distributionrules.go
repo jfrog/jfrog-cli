@@ -18,19 +18,23 @@ type DistributionRule struct {
 	CountryCodes []string `json:"country_codes,omitempty"`
 }
 
-func (spec *DistributionRules) Get(index int) *DistributionRule {
-	if index < len(spec.DistributionRules) {
-		return &spec.DistributionRules[index]
+func (distributionRules *DistributionRules) Get(index int) *DistributionRule {
+	if index < len(distributionRules.DistributionRules) {
+		return &distributionRules.DistributionRules[index]
 	}
 	return new(DistributionRule)
 }
 
-func (ds *DistributionRule) ToDistributionCommonParams() *utils.DistributionCommonParams {
+func (distributionRule *DistributionRule) ToDistributionCommonParams() *utils.DistributionCommonParams {
 	return &utils.DistributionCommonParams{
-		SiteName:     ds.SiteName,
-		CityName:     ds.CityName,
-		CountryCodes: ds.CountryCodes,
+		SiteName:     distributionRule.SiteName,
+		CityName:     distributionRule.CityName,
+		CountryCodes: distributionRule.CountryCodes,
 	}
+}
+
+func (distributionRule *DistributionRule) IsEmpty() bool {
+	return distributionRule.SiteName == "" && distributionRule.CityName == "" && len(distributionRule.CountryCodes) == 0
 }
 
 func CreateDistributionRulesFromFile(distributionSpecPath string) (*DistributionRules, error) {

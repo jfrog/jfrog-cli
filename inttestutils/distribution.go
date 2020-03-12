@@ -21,7 +21,7 @@ import (
 const (
 	gpgKeyId                        = "234503"
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
-	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
+	artifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
 
 type distributableDistributionStatus string
@@ -39,10 +39,17 @@ const (
 
 // GET api/v1/release_bundle/:name/:version
 // Retreive the status of a release bundle before distribution.
-type distributableResponse struct {
-	Name    string                          `json:"name,omitempty"`
-	Version string                          `json:"version,omitempty"`
-	State   distributableDistributionStatus `json:"state,omitempty"`
+type DistributableResponse struct {
+	Name         string                          `json:"name,omitempty"`
+	Version      string                          `json:"version,omitempty"`
+	State        distributableDistributionStatus `json:"state,omitempty"`
+	Description  string                          `json:"description,omitempty"`
+	ReleaseNotes releaseNotesResponse            `json:"release_notes,omitempty"`
+}
+
+type releaseNotesResponse struct {
+	Content string `json:"content,omitempty"`
+	Syntax  string `json:"syntax,omitempty"`
 }
 
 // Get api/v1/release_bundle/:name/:version/distribution
@@ -80,7 +87,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 
 	// Send public key to Artifactory
-	content = fmt.Sprintf(artifactoryGpgkeyCreatePattern, publicKey)
+	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.RtUrl+"api/security/keys/trusted", []byte(content), artHttpDetails)
 	cliutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
@@ -106,13 +113,20 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-
-	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
-	assert.NoError(t, err)
-	return resp, body
+func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) *DistributableResponse {
+	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	if resp.StatusCode != http.StatusOK {
+		t.Error(resp.Status)
+		t.Error(string(body))
+		return nil
+	}
+	response := &DistributableResponse{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+	return response
 }
 
 // Return true if the release bundle is exist locally on distribution
@@ -141,19 +155,8 @@ func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, 
 
 // Return true if the release bundle is signed
 func IsBundleSigned(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) bool {
-	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
-	if resp.StatusCode != http.StatusOK {
-		t.Error(resp.Status)
-		t.Error(string(body))
-		return false
-	}
-	response := &distributableResponse{}
-	err := json.Unmarshal(body, &response)
-	if err != nil {
-		t.Error(err)
-		return false
-	}
-	return response.State == Signed
+	response := GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	return response != nil && response.State == Signed
 }
 
 // Wait for distribution of a release bundle
@@ -215,4 +218,13 @@ func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDeta
 		time.Sleep(time.Second)
 	}
 	t.Error("Timeout for release bundle deletion " + bundleName + "/" + bundleVersion)
+}
+
+func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
+	assert.NoError(t, err)
+	return resp, body
 }

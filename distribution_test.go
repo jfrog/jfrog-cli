@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
@@ -298,5 +300,31 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Cleanup
+	cleanDistributionTest(t)
+}
+
+func TestCreateBundleText(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("u", "--spec="+specFile)
+
+	releaseNotesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "releasenotes.md")
+	description := "thisIsADescription"
+
+	// Create and distribute release bundle
+	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/*", "--release-notes-path="+releaseNotesPath, "--description="+description)
+
+	distributableResponse := inttestutils.GetLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	if distributableResponse != nil {
+		assert.Equal(t, description, distributableResponse.Description)
+		releaseNotes, err := ioutil.ReadFile(releaseNotesPath)
+		assert.NoError(t, err)
+		assert.Equal(t, string(releaseNotes), distributableResponse.ReleaseNotes.Content)
+		assert.Equal(t, "markdown", distributableResponse.ReleaseNotes.Syntax)
+	}
+
 	cleanDistributionTest(t)
 }
