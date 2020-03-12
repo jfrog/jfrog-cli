@@ -1555,18 +1555,18 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 			Name:  "exclusions",
 			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
 		},
-		getGpgPassphraseFlag(),
+		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), getGpgPassphraseFlag(), getStoringRepositoryFlag())
+	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
 }
 
-func getGpgPassphraseFlag() cli.Flag {
+func getDistributionPassphraseFlag() cli.Flag {
 	return cli.StringFlag{
-		Name:  "gpg-passphrase",
+		Name:  "passphrase",
 		Usage: "[Optional] The passphrase for the signing key. ` `",
 	}
 }
@@ -2955,6 +2955,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 
 	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.StoringRepository = c.String("storing-repository")
+	params.GpgPassphrase = c.String("passphrase")
 	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
@@ -3153,7 +3154,6 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.ClientCertKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
-	details.GpgPassphrase = c.String("gpg-passphrase")
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.
 		details.Password = details.ApiKey
@@ -3384,6 +3384,7 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 	releaseBundleParams := distributionServices.NewCreateUpdateBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")
+	releaseBundleParams.GpgPassphrase = c.String("passphrase")
 	releaseBundleParams.Description = c.String("description")
 	if c.IsSet("release-notes-path") {
 		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
