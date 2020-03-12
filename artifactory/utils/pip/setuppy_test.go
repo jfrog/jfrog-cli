@@ -29,7 +29,7 @@ func TestExtractPkginfoPathFromCommandOutput(t *testing.T) {
 	tests := []struct {
 		commandOutput       string
 		expectedPkginfoPath string
-		shouldFail	bool
+		shouldFail          bool
 	}{
 		{"running egg_info\nwriting jfrog_python_example_unix.egg-info/PKG-INFO\nwriting dependency_links to jfrog_python_example.egg-info/dependency_links.txt\nwriting requirements to jfrog_python_example.egg-info/requires.txt\nwriting top-level names to jfrog_python_example.egg-info/top_level.txt\nreading manifest file 'jfrog_python_example.egg-info/SOURCES.txt'\nwriting manifest file 'jfrog_python_example.egg-info/SOURCES.txt'", "jfrog_python_example_unix.egg-info/PKG-INFO", false},
 		{"running egg_info\nwriting jfrog_python_example_windows.egg-info\\PKG-INFO\nwriting dependency_links to jfrog_python_example.egg-info\\dependency_links.txt\nwriting requirements to jfrog_python_example.egg-info\\requires.txt\nwriting top-level names to jfrog_python_example.egg-info\\top_level.txt\nreading manifest file 'jfrog_python_example.egg-info\\SOURCES.txt'\nwriting manifest file 'jfrog_python_example.egg-info\\SOURCES.txt'", "jfrog_python_example_windows.egg-info\\PKG-INFO", false},

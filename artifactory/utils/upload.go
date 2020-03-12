@@ -2,8 +2,8 @@ package utils
 
 import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/io"
 )
 
