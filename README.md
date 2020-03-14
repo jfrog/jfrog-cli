@@ -45,7 +45,7 @@ JFrog CLI is written in the [Go programming language](https://golang.org/), so t
 ## Install Go
 
 To download and install `Go`, please refer to the [Go documentation](https://golang.org/doc/install).
-Please download `Go 1.12.7` or above.
+Please download `Go 1.14.x` or above.
 
 ## Download and Build the CLI
 
@@ -103,7 +103,7 @@ The types are:
 
 * Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
 Once the tests are completed, the content of these repositories will be deleted.
- 
+
 #### Artifactory tests
 In addition to [general optional flags](#Usage) you can use the following optional artifactory flags.
 
@@ -212,7 +212,7 @@ go test -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
 ### Bintray tests
 Bintray tests credentials are taken from the CLI configuration. If non configured or not passed as flags, the tests will fail.
 
-To run Bintray tests execute the following command: 
+To run Bintray tests execute the following command:
 ````
 go test -v github.com/jfrog/jfrog-cli-go -test.bintray
 ````
