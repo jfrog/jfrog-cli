@@ -19,7 +19,7 @@ func NewDockerPullCommand() *DockerPullCommand {
 
 // Pull docker image and create build info if needed
 func (dpc *DockerPullCommand) Run() error {
-	err := docker.ValidateVersion()
+	err := docker.ValidateClientApiVersion()
 	if err != nil {
 		return err
 	}

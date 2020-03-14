@@ -29,7 +29,7 @@ func (dpc *DockerPushCommand) SetThreads(threads int) *DockerPushCommand {
 
 // Push docker image and create build info if needed
 func (dpc *DockerPushCommand) Run() error {
-	err := docker.ValidateVersion()
+	err := docker.ValidateClientApiVersion()
 	if err != nil {
 		return err
 	}

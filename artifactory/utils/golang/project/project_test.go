@@ -15,7 +15,7 @@ func TestParseModuleName(t *testing.T) {
 
 module github.com/jfrog/go-example
 
-go 1.12
+go 1.14
 
 require (
         github.com/Sirupsen/logrus v1.0.6

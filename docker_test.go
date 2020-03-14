@@ -1,17 +1,20 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
@@ -166,4 +169,22 @@ func dockerTestCleanup(imageName, buildName string) {
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+}
+
+func TestDockerClientApiVersionCmd(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+
+	// Run docker version command and expect no errors
+	cmd := &docker.VersionCmd{}
+	content, err := gofrogcmd.RunCmdOutput(cmd)
+	assert.NoError(t, err)
+
+	// Expect VersionRegex to match the output API version
+	content = strings.TrimSpace(content)
+	assert.True(t, docker.ApiVersionRegex.Match([]byte(content)))
+
+	// Assert docker min API version
+	assert.True(t, docker.IsCompatibleApiVersion(content))
 }
