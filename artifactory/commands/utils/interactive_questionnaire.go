@@ -8,13 +8,30 @@ import (
 	"strings"
 )
 
+// The interactive questionnaire works as follows:
+//	We have to provide a map of QuestionInfo which include all possible questions may be asked.
+//	1. Mandatory Questions:
+//		* We will ask all the questions in MandatoryQuestionsKeys list one after the other.
+//	2. Optional questions:
+//		* we have to provide a slice of prompt.Suggest, in which each suggest.Text is a key of a question in the map.
+//		* after a suggest was chosen from the list, the corresponding question from the map will be asked.
+//		* aach answer is written to to the configMap using its writer, under the MapKey specified in the questionInfo.
+//		* we will execute the previous step until the WriteAndExit string was inserted.
 type InteractiveQuestionnaire struct {
+	QuestionsMap           map[string]QuestionInfo
 	MandatoryQuestionsKeys []string
 	OptionalKeysSuggests   []prompt.Suggest
-	QuestionsMap           map[string]QuestionInfo
-	ConfigMap              map[string]string
+	AnswersMap             map[string]string
 }
 
+// Each question can have the following properties:
+// 		* Msg - will be printed in separate line
+// 		* PromptPrefix - will be printed before the input cursor in the answer line
+// 		* Options - In case the answer must be selected from a predefined list
+// 		* AllowVars - a flag indicates whether a variable (in form of ${var}) is an acceptable answer despite the predefined list
+// 		* Writer - how to write the answer to the final config map
+// 		* MapKey - the key under which the answer will be written to the configMap
+// 		* Callback - optional function can be executed after the answer was inserted. Can be used to implement some dependencies between questions.
 type AnswerWriter func(resultMap *map[string]interface{}, key, value string) error
 type questionCallback func(*InteractiveQuestionnaire, string) (string, error)
 
@@ -43,6 +60,7 @@ const (
 	CommaSeparatedListMsg = "The value should be a comma separated list"
 )
 
+// Var can be inserted in the form of ${key}
 var VarPattern = regexp.MustCompile(`^\$\{\w+\}+$`)
 
 func prefixCompleter(options []prompt.Suggest) prompt.Completer {
@@ -51,6 +69,8 @@ func prefixCompleter(options []prompt.Suggest) prompt.Completer {
 	}
 }
 
+// Ask question with free string answer, answer cannot be empty.
+// Variable aren't check and can be part of the answer
 func AskString(msg, promptPrefix string) string {
 	if msg != "" {
 		fmt.Println(msg + ":")
@@ -64,6 +84,8 @@ func AskString(msg, promptPrefix string) string {
 	}
 }
 
+// Ask question with list of possible answers.
+// The answer must be chosen from the list, but can be a variable if allowVars set to true.
 func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Suggest) string {
 	if msg != "" {
 		fmt.Println(msg + PressTabMsg)
@@ -95,6 +117,10 @@ func validateAnswer(answer string, options []prompt.Suggest, allowVars bool) boo
 	return false
 }
 
+// Ask question steps:
+// 		1. Ask for string/from list
+//		2. Write the answer to answersMap (if writer provided)
+// 		3. Run callback (if provided)q
 func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value string, err error) {
 
 	var answer string
@@ -104,8 +130,8 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 		answer = AskString(question.Msg, question.PromptPrefix)
 	}
 	if question.Writer != nil {
-		//err = question.Writer(&iq.ConfigMap, question.MapKey, answer)
-		iq.ConfigMap[question.MapKey] = answer
+		//err = question.Writer(&iq.AnswersMap, question.MapKey, answer)
+		iq.AnswersMap[question.MapKey] = answer
 		if err != nil {
 			return "", err
 		}
@@ -119,8 +145,9 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 	return answer, nil
 }
 
+// The main function to perform the questionnaire
 func (iq *InteractiveQuestionnaire) Perform() error {
-	iq.ConfigMap = make(map[string]string)
+	iq.AnswersMap = make(map[string]string)
 	for i := 0; i < len(iq.MandatoryQuestionsKeys); i++ {
 		iq.AskQuestion(iq.QuestionsMap[iq.MandatoryQuestionsKeys[i]])
 	}
@@ -139,6 +166,40 @@ func (iq *InteractiveQuestionnaire) Perform() error {
 	return nil
 }
 
+// Common questions
+var FreeStringQuestionInfo = QuestionInfo{
+	Options:   nil,
+	AllowVars: false,
+	Writer:    WriteStringAnswer,
+}
+
+func GetBoolSuggests() []prompt.Suggest {
+	return []prompt.Suggest{
+		{Text: True},
+		{Text: False},
+	}
+}
+
+var BoolQuestionInfo = QuestionInfo{
+	Options:   GetBoolSuggests(),
+	AllowVars: true,
+	Writer:    WriteBoolAnswer,
+}
+
+var IntQuestionInfo = QuestionInfo{
+	Options:   nil,
+	AllowVars: true,
+	Writer:    WriteIntAnswer,
+}
+
+var StringListQuestionInfo = QuestionInfo{
+	Msg:       CommaSeparatedListMsg,
+	Options:   nil,
+	AllowVars: true,
+	Writer:    WriteStringArrayAnswer,
+}
+
+// Common writers
 func WriteStringAnswer(resultMap *map[string]interface{}, key, value string) error {
 	(*resultMap)[key] = value
 	return nil
@@ -184,36 +245,3 @@ func GetSuggestsFromKeys(keys []string, SuggestionMap map[string]prompt.Suggest)
 	}
 	return suggests
 }
-
-var FreeStringQuestionInfo = QuestionInfo{
-	Options:   nil,
-	AllowVars: false,
-	Writer:    WriteStringAnswer,
-}
-
-func GetBoolSuggests() []prompt.Suggest {
-	return []prompt.Suggest{
-		{Text: True},
-		{Text: False},
-	}
-}
-
-var BoolQuestionInfo = QuestionInfo{
-	Options:   GetBoolSuggests(),
-	AllowVars: true,
-	Writer:    WriteBoolAnswer,
-}
-
-var IntQuestionInfo = QuestionInfo{
-	Options:   nil,
-	AllowVars: true,
-	Writer:    WriteIntAnswer,
-}
-
-var StringListQuestionInfo = QuestionInfo{
-	Msg:       CommaSeparatedListMsg,
-	Options:   nil,
-	AllowVars: true,
-	Writer:    WriteStringArrayAnswer,
-}
-

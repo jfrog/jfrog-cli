@@ -19,10 +19,9 @@ type RepoTemplateCommand struct {
 
 const (
 	// Strings for prompt questions
-	SelectConfigKeyMsg = "Select the next configuration key"
-	InsertValueMsg     = "Insert value for %s: "
+	SelectConfigKeyMsg   = "Select the next configuration key"
+	InsertValuePromptMsg = "Insert the value for "
 
-	// Template types
 	TemplateType = "templateType"
 	Create       = "create"
 	Update       = "update"
@@ -39,9 +38,6 @@ const (
 	ExcludePatterns = "excludesPattern"
 	RepoLayoutRef   = "repoLayoutRef"
 
-	// Mutual local and virtual repository configuration JSON keys
-	DebianTrivialLayout = "debianTrivialLayout"
-
 	// Mutual local and remote repository configuration JSON keys
 	HandleReleases               = "handleReleases"
 	HandleSnapshots              = "handleSnapshots"
@@ -51,6 +47,9 @@ const (
 	PropertySets                 = "propertySets"
 	DownloadRedirect             = "downloadRedirect"
 	BlockPushingSchema1          = "blockPushingSchema1"
+
+	// Mutual local and virtual repository configuration JSON keys
+	DebianTrivialLayout = "debianTrivialLayout"
 
 	// Mutual remote and virtual repository configuration JSON keys
 	ExternalDependenciesEnabled  = "externalDependenciesEnabled"
@@ -155,61 +154,61 @@ const (
 	P2        = "p2"
 
 	// Repo layout Refs
-	BowerDefault    = "bower-default"
-	buildDefault    = "build-default"
-	ComposerDefault = "composer-default"
-	ConanDefault    = "conan-default"
-	GoDefault       = "go-default"
-	GradleDefault   = "gradle-default"
-	IvyDefault      = "ivy-default"
-	Maven1Default   = "maven-1-default"
-	Maven2Default   = "maven-2-default"
-	NpmDefault      = "npm-default"
-	NugetDefault    = "nuget-default"
-	puppetDefault   = "puppet-default"
-	SbtDefault      = "sbt-default"
-	SimpleDefault   = "simple-default"
-	VcsDefault      = "vcs-default"
+	BowerDefaultRepoLayout    = "bower-default"
+	buildDefaultRepoLayout    = "build-default"
+	ComposerDefaultRepoLayout = "composer-default"
+	ConanDefaultRepoLayout    = "conan-default"
+	GoDefaultRepoLayout       = "go-default"
+	GradleDefaultRepoLayout   = "gradle-default"
+	IvyDefaultRepoLayout      = "ivy-default"
+	Maven1DefaultRepoLayout   = "maven-1-default"
+	Maven2DefaultRepoLayout   = "maven-2-default"
+	NpmDefaultRepoLayout      = "npm-default"
+	NugetDefaultRepoLayout    = "nuget-default"
+	puppetDefaultRepoLayout   = "puppet-default"
+	SbtDefaultRepoLayout      = "sbt-default"
+	SimpleDefaultRepoLayout   = "simple-default"
+	VcsDefaultRepoLayout      = "vcs-default"
 
-	// Checksum Policy Types
-	ClientChecksum           = "client-checksums"
-	ServerGeneratedChecksums = "server-generated-checksums"
+	// Checksum Policies
+	ClientChecksumPolicy           = "client-checksums"
+	ServerGeneratedChecksumsPolicy = "server-generated-checksums"
 
 	// Snapshot version behaviors
-	Unique    = "unique"
-	NonUnique = "non-unique"
-	Deployer  = "deployer"
+	UniqueBehavior    = "unique"
+	NonUniqueBehavior = "non-unique"
+	DeployerBehavior  = "deployer"
 
 	// Optional index compression formats
-	Bz2  = "bz2"
-	Lzma = "lzma"
-	Xz   = "xz"
+	Bz2Compression  = "bz2"
+	LzmaCompression = "lzma"
+	XzCompression   = "xz"
 
 	// Docker api versions
-	V1 = "V1"
-	V2 = "V2"
+	DockerApiV1 = "V1"
+	DockerApiV2 = "V2"
 
-	// Remote repo checksum policy types
-	GenerateIfAbsent  = "generate-if-absent"
-	Fail              = "fail"
-	IgnoreAndGenerate = "ignore-and-generate"
-	PassThru          = "pass-thru"
+	// Remote repo checksum policies
+	GenerateIfAbsentPolicy  = "generate-if-absent"
+	FailPolicy              = "fail"
+	IgnoreAndGeneratePolicy = "ignore-and-generate"
+	PassThruPolicy          = "pass-thru"
 
 	// Vcs Types
 	Git = "GIT"
 
 	// Vcs git provider
-	Github      = "GITHUB"
-	Bitbucket   = "BITBUCKET"
-	Oldstash    = "OLDSTASH"
-	Stash       = "STASH"
-	Artifactory = "ARTIFACTORY"
-	Custom      = "CUSTOM"
+	GithubVcsProvider      = "GITHUB"
+	BitbucketVcsProvider   = "BITBUCKET"
+	OldstashVcsProvider    = "OLDSTASH"
+	StashVcsProvider       = "STASH"
+	ArtifactoryVcsProvider = "ARTIFACTORY"
+	CustomVcsProvider      = "CUSTOM"
 
 	// POM repository references cleanup policies
-	DiscardActiveRefrence = "discard_active_reference"
-	DiscardAnyReference   = "discard_any_reference"
-	Nothing               = "nothing"
+	DiscardActiveRefrencePolicy = "discard_active_reference"
+	DiscardAnyReferencePolicy   = "discard_any_reference"
+	NothingPolicy               = "nothing"
 )
 
 var optionalSuggestsMap = map[string]prompt.Suggest{
@@ -240,6 +239,7 @@ var optionalSuggestsMap = map[string]prompt.Suggest{
 	DockerApiVersion:                  {Text: DockerApiVersion},
 	EnableFileListsIndexing:           {Text: EnableFileListsIndexing},
 	OptionalIndexCompressionFormats:   {Text: OptionalIndexCompressionFormats},
+	Url:                               {Text: Url},
 	Username:                          {Text: Username},
 	Password:                          {Text: Password},
 	Proxy:                             {Text: Proxy},
@@ -325,7 +325,7 @@ var mavenGradleRemoteRepoConfKeys = []string{
 	SuppressPomConsistencyChecks, RejectInvalidJars,
 }
 
-var cocapodsRemoteRepoConfKeys = []string{
+var cocoapodsRemoteRepoConfKeys = []string{
 	PodsSpecsRepoUrl,
 }
 
@@ -410,31 +410,21 @@ var goVirtualRepoConfKeys = []string{
 	ExternalDependenciesEnabled, ExternalDependenciesPatterns,
 }
 
-func getAllPossibleOptionalRepoConfKeys() []prompt.Suggest {
-	//allKeys := append(commonConfKeys, prompt.Suggest{Text: PackageType})
-	//allKeys = append(allKeys, localRemoteConfKeys...)
-	//allKeys = append(allKeys, localVirtualConfKeys...)
-	//allKeys = append(allKeys, remoteVirtualConfKeys...)
-	//allKeys = append(allKeys, uniqueLocalConfKeys...)
-	//allKeys = append(allKeys, uniqueRemoteConfKeys...)
-	//allKeys = append(allKeys, prompt.Suggest{Text: Url})
-	//return append(allKeys, uniqueVirtualConfKeys...)
-	return nil
-}
-
-var localRepoPkgTypes = []string{
-	Maven, Gradle, Ivy, Sbt, Helm, Cocoapods, Opkg, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Composer, Pypi, Docker,
-	Vagrant, Gitlfs, Go, Yum, Conan, Chef, Puppet, Generic,
-}
-
-var remoteRepoPkgTypes = []string{
-	Maven, Gradle, Ivy, Sbt, Helm, Cocoapods, Opkg, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Composer, Pypi, Docker,
-	Gitlfs, Go, Yum, Conan, Chef, Puppet, Conda, P2, Vcs, Generic,
-}
-
-var virtualRepoPkgTypes = []string{
+var commonPkgTypes = []string{
 	Maven, Gradle, Ivy, Sbt, Helm, Rpm, Nuget, Cran, Gems, Npm, Bower, Debian, Pypi, Docker, Gitlfs, Go, Yum, Conan,
-	Chef, Puppet, Conda, P2, Generic,
+	Chef, Puppet, Generic,
+}
+
+var localRepoAdditionalPkgTypes = []string{
+	Cocoapods, Opkg, Composer, Vagrant,
+}
+
+var remoteRepoAdditionalPkgTypes = []string{
+	Cocoapods, Opkg, Composer, Conda, P2, Vcs,
+}
+
+var virtualRepoAdditionalPkgTypes = []string{
+	Conda, P2,
 }
 
 var pkgTypeSuggestsMap = map[string]prompt.Suggest{
@@ -477,30 +467,30 @@ func (rtc *RepoTemplateCommand) SetTemplatePath(path string) *RepoTemplateComman
 	return rtc
 }
 
+func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	// Since it's a local command, usage won't be reported.
+	return nil, nil
+}
+
 func (rtc *RepoTemplateCommand) Run() (err error) {
 	repoTemplateQuestionnaire := &utils.InteractiveQuestionnaire{
-		MandatoryQuestionsKeys: []string{Key, Rclass},
+		MandatoryQuestionsKeys: []string{TemplateType, Key, Rclass},
 		QuestionsMap:           questionMap,
 	}
 	err = repoTemplateQuestionnaire.Perform()
 	if err != nil {
 		return err
 	}
-	resBytes, err := json.Marshal(repoTemplateQuestionnaire.ConfigMap)
+	resBytes, err := json.Marshal(repoTemplateQuestionnaire.AnswersMap)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 	if err = ioutil.WriteFile(rtc.path, resBytes, 0644); err != nil {
 		return errorutils.CheckError(err)
 	}
-	log.Info(fmt.Sprintf("Repository creation config template successfully created at %s.", rtc.path))
+	log.Info(fmt.Sprintf("Repository configuration template successfully created at %s.", rtc.path))
 
 	return nil
-}
-
-func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	// Since it's a local command, usage won't be reported.
-	return nil, nil
 }
 
 func (rtc *RepoTemplateCommand) CommandName() string {
@@ -511,15 +501,22 @@ func rclassCallback(iq *utils.InteractiveQuestionnaire, rclass string) (string, 
 	var pkgTypes []string
 	switch rclass {
 	case Remote:
-		iq.AskQuestion(iq.QuestionsMap[MandatoryUrl])
-		pkgTypes = remoteRepoPkgTypes
+		// For create template url is mandatory, for update we will allow url as an optional key
+		if _, ok := iq.AnswersMap[TemplateType]; !ok {
+			return "", errors.New("package type is missing in configuration map")
+		}
+		if iq.AnswersMap[TemplateType] == Create {
+			iq.AskQuestion(iq.QuestionsMap[MandatoryUrl])
+		}
+		pkgTypes = append(commonPkgTypes, remoteRepoAdditionalPkgTypes...)
 	case Local:
-		pkgTypes = localRepoPkgTypes
+		pkgTypes = append(commonPkgTypes, localRepoAdditionalPkgTypes...)
 	case Virtual:
-		pkgTypes = virtualRepoPkgTypes
+		pkgTypes = append(commonPkgTypes, virtualRepoAdditionalPkgTypes...)
 	default:
 		return "", errors.New("unsupported rclass")
 	}
+	// PackageType is also mandatory. Since the possible types depend on which rcalss was chosen, we ask the question here.
 	var pkgTypeQuestion = utils.QuestionInfo{
 		Options:      utils.GetSuggestsFromKeys(pkgTypes, pkgTypeSuggestsMap),
 		Msg:          "Select the repository's package type",
@@ -533,29 +530,61 @@ func rclassCallback(iq *utils.InteractiveQuestionnaire, rclass string) (string, 
 }
 
 func pkgTypeCallback(iq *utils.InteractiveQuestionnaire, pkgType string) (string, error) {
-	rclass := iq.ConfigMap[Rclass]
-	switch rclass {
-	case Remote:
-		iq.OptionalKeysSuggests = getRemoteRepoConfKeys(pkgType)
+	// Each combination of (rclass,packageType) has its own optional configuration keys.
+	// We set the questionnaire's optionalKeys suggests according to the selected combination.
+	if _, ok := iq.AnswersMap[Rclass]; !ok {
+		return "", errors.New("rclass is missing in configuration map")
+	}
+	switch iq.AnswersMap[Rclass] {
 	case Local:
 		iq.OptionalKeysSuggests = getLocalRepoConfKeys(pkgType)
+	case Remote:
+		// For update template we need to allow url as an optional key
+		if _, ok := iq.AnswersMap[TemplateType]; !ok {
+			return "", errors.New("package type is missing in configuration map")
+		}
+		iq.OptionalKeysSuggests = getRemoteRepoConfKeys(pkgType, iq.AnswersMap[TemplateType])
 	case Virtual:
 		iq.OptionalKeysSuggests = getVirtualRepoConfKeys(pkgType)
 	default:
 		return "", errors.New("unsupported rclass was configured")
 	}
+	// We don't need the templateType value in the final configuration
+	delete(iq.AnswersMap, TemplateType)
 	return "", nil
 }
 
-func getRemoteRepoConfKeys(pkgType string) []prompt.Suggest {
+func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
 	optionalKeys := []string{utils.WriteAndExist}
+	optionalKeys = append(optionalKeys, baseLocalRepoConfKeys...)
+	switch pkgType {
+	case Gradle:
+	case Maven:
+		optionalKeys = append(optionalKeys, mavenGradleLocalRepoConfKeys...)
+	case Rpm:
+		optionalKeys = append(optionalKeys, rpmLocalRepoConfKeys...)
+	case Nuget:
+		optionalKeys = append(optionalKeys, nugetLocalRepoConfKeys...)
+	case Debian:
+		optionalKeys = append(optionalKeys, debianLocalRepoConfKeys...)
+	case Docker:
+		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
+	}
+	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
+}
+
+func getRemoteRepoConfKeys(pkgType, templateType string) []prompt.Suggest {
+	optionalKeys := []string{utils.WriteAndExist}
+	if templateType == Update {
+		optionalKeys = append(optionalKeys, Url)
+	}
 	optionalKeys = append(optionalKeys, baseRemoteRepoConfKeys...)
 	switch pkgType {
 	case Gradle:
 	case Maven:
 		optionalKeys = append(optionalKeys, mavenGradleRemoteRepoConfKeys...)
 	case Cocoapods:
-		optionalKeys = append(optionalKeys, cocapodsRemoteRepoConfKeys...)
+		optionalKeys = append(optionalKeys, cocoapodsRemoteRepoConfKeys...)
 	case Opkg:
 		optionalKeys = append(optionalKeys, opkgRemoteRepoConfKeys...)
 	case Rpm:
@@ -575,7 +604,7 @@ func getRemoteRepoConfKeys(pkgType string) []prompt.Suggest {
 	case Pypi:
 		optionalKeys = append(optionalKeys, pypiRemoteRepoConfKeys...)
 	case Docker:
-		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
+		optionalKeys = append(optionalKeys, dockerRemoteRepoConfKeys...)
 	case Gitlfs:
 		optionalKeys = append(optionalKeys, gitlfsRemoteRepoConfKeys...)
 	case Vcs:
@@ -605,28 +634,9 @@ func getVirtualRepoConfKeys(pkgType string) []prompt.Suggest {
 	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
 }
 
-func getLocalRepoConfKeys(pkgType string) []prompt.Suggest {
-	optionalKeys := []string{utils.WriteAndExist}
-	optionalKeys = append(optionalKeys, baseLocalRepoConfKeys...)
-	switch pkgType {
-	case Gradle:
-	case Maven:
-		optionalKeys = append(optionalKeys, mavenGradleLocalRepoConfKeys...)
-	case Rpm:
-		optionalKeys = append(optionalKeys, rpmLocalRepoConfKeys...)
-	case Nuget:
-		optionalKeys = append(optionalKeys, nugetLocalRepoConfKeys...)
-	case Debian:
-		optionalKeys = append(optionalKeys, debianLocalRepoConfKeys...)
-	case Docker:
-		optionalKeys = append(optionalKeys, dockerLocalRepoConfKeys...)
-	}
-	return utils.GetSuggestsFromKeys(optionalKeys, optionalSuggestsMap)
-}
-
 func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer string) (value string, err error) {
-	//var cs contentSynchronisation
-	//cs.Enabled, err = strconv.ParseBool(enabled)
+	// contentSynchronisation has an object value with 4 bool fields.
+	// We ask for the rest of the values and writes the values in comma separated list.
 	if err != nil {
 		return "", nil
 	}
@@ -645,15 +655,17 @@ func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer s
 	if err != nil {
 		return "", nil
 	}
-	iq.ConfigMap[ContentSynchronisation] = answer
+	iq.AnswersMap[ContentSynchronisation] = answer
 	return "", nil
 }
 
+// After an optionla value was chosen we'll ask for its value
 func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value string, err error) {
 	if key != utils.WriteAndExist {
 		valueQuestion := iq.QuestionsMap[key]
+		// Since we are using default question in most of the cases we set set the mak key here
 		valueQuestion.MapKey = key
-		valueQuestion.PromptPrefix = "Insert the value for " + key
+		valueQuestion.PromptPrefix = InsertValuePromptMsg + key
 		if valueQuestion.Options != nil {
 			valueQuestion.PromptPrefix += utils.PressTabMsg
 		}
@@ -664,8 +676,20 @@ func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value 
 }
 
 var questionMap = map[string]utils.QuestionInfo{
+	TemplateType: {
+		Options: []prompt.Suggest{
+			{Text: Create, Description: "Template for creating a new repository"},
+			{Text: Update, Description: "Template for updating an existing repository"},
+		},
+		Msg:          "Select the template type",
+		PromptPrefix: ">",
+		AllowVars:    false,
+		Writer:       utils.WriteStringAnswer,
+		MapKey:       TemplateType,
+		Callback:     nil,
+	},
 	utils.OptionalKey: {
-		Msg:          "Select the next property",
+		Msg:          SelectConfigKeyMsg,
 		PromptPrefix: ">",
 		AllowVars:    false,
 		Writer:       nil,
@@ -682,7 +706,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	},
 	Rclass: {
 		Options: []prompt.Suggest{
-			{Text: Local, Description: "A physical, locally-managed repositories into which you can deploy artifacts"},
+			{Text: Local, Description: "A physical, locally-managed repository into which you can deploy artifacts"},
 			{Text: Remote, Description: "A caching proxy for a repository managed at a remote URL"},
 			{Text: Virtual, Description: "An Aggregation of several repositories with the same package type under a common URL."},
 		},
@@ -708,21 +732,21 @@ var questionMap = map[string]utils.QuestionInfo{
 	ExcludePatterns: utils.StringListQuestionInfo,
 	RepoLayoutRef: {
 		Options: []prompt.Suggest{
-			{Text: BowerDefault},
-			{Text: buildDefault},
-			{Text: ComposerDefault},
-			{Text: ConanDefault},
-			{Text: GoDefault},
-			{Text: GradleDefault},
-			{Text: IvyDefault},
-			{Text: Maven1Default},
-			{Text: Maven2Default},
-			{Text: NpmDefault},
-			{Text: NugetDefault},
-			{Text: puppetDefault},
-			{Text: SbtDefault},
-			{Text: SimpleDefault},
-			{Text: VcsDefault},
+			{Text: BowerDefaultRepoLayout},
+			{Text: buildDefaultRepoLayout},
+			{Text: ComposerDefaultRepoLayout},
+			{Text: ConanDefaultRepoLayout},
+			{Text: GoDefaultRepoLayout},
+			{Text: GradleDefaultRepoLayout},
+			{Text: IvyDefaultRepoLayout},
+			{Text: Maven1DefaultRepoLayout},
+			{Text: Maven2DefaultRepoLayout},
+			{Text: NpmDefaultRepoLayout},
+			{Text: NugetDefaultRepoLayout},
+			{Text: puppetDefaultRepoLayout},
+			{Text: SbtDefaultRepoLayout},
+			{Text: SimpleDefaultRepoLayout},
+			{Text: VcsDefaultRepoLayout},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
@@ -739,8 +763,8 @@ var questionMap = map[string]utils.QuestionInfo{
 	ExternalDependenciesPatterns: utils.StringListQuestionInfo,
 	ChecksumPolicyType: {
 		Options: []prompt.Suggest{
-			{Text: ClientChecksum},
-			{Text: ServerGeneratedChecksums},
+			{Text: ClientChecksumPolicy},
+			{Text: ServerGeneratedChecksumsPolicy},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
@@ -748,9 +772,9 @@ var questionMap = map[string]utils.QuestionInfo{
 	MaxUniqueTags: utils.IntQuestionInfo,
 	SnapshotVersionBehavior: {
 		Options: []prompt.Suggest{
-			{Text: Unique},
-			{Text: NonUnique},
-			{Text: Deployer},
+			{Text: UniqueBehavior},
+			{Text: NonUniqueBehavior},
+			{Text: DeployerBehavior},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
@@ -762,17 +786,17 @@ var questionMap = map[string]utils.QuestionInfo{
 	YumRootDepth:           utils.IntQuestionInfo,
 	DockerApiVersion: {
 		Options: []prompt.Suggest{
-			{Text: V1},
-			{Text: V2},
+			{Text: DockerApiV1},
+			{Text: DockerApiV2},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
 	},
 	EnableFileListsIndexing: utils.BoolQuestionInfo,
 	OptionalIndexCompressionFormats: {
-		Msg:       "Enter a comma separated list of values from " + strings.Join([]string{Bz2, Lzma, Xz}, ","),
+		Msg:       "Enter a comma separated list of values from " + strings.Join([]string{Bz2Compression, LzmaCompression, XzCompression}, ","),
 		Options:   nil,
-		AllowVars: false,
+		AllowVars: true,
 		Writer:    utils.WriteStringArrayAnswer,
 	},
 	Username: utils.FreeStringQuestionInfo,
@@ -780,10 +804,10 @@ var questionMap = map[string]utils.QuestionInfo{
 	Proxy:    utils.FreeStringQuestionInfo,
 	RemoteRepoChecksumPolicyType: {
 		Options: []prompt.Suggest{
-			{Text: GenerateIfAbsent},
-			{Text: Fail},
-			{Text: IgnoreAndGenerate},
-			{Text: PassThru},
+			{Text: GenerateIfAbsentPolicy},
+			{Text: FailPolicy},
+			{Text: IgnoreAndGeneratePolicy},
+			{Text: PassThruPolicy},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
@@ -810,15 +834,21 @@ var questionMap = map[string]utils.QuestionInfo{
 	BowerRegistryUrl:                  utils.FreeStringQuestionInfo,
 	ComposerRegistryUrl:               utils.FreeStringQuestionInfo,
 	PyPIRegistryUrl:                   utils.FreeStringQuestionInfo,
-	//	VcsType : {[]string{Git}, writeStringAnswer},
+	VcsType: {
+		Options: []prompt.Suggest{
+			{Text: Git},
+		},
+		AllowVars: true,
+		Writer:    utils.WriteStringAnswer,
+	},
 	VcsGitProvider: {
 		Options: []prompt.Suggest{
-			{Text: Github},
-			{Text: Bitbucket},
-			{Text: Oldstash},
-			{Text: Stash},
-			{Text: Artifactory},
-			{Text: Custom},
+			{Text: GithubVcsProvider},
+			{Text: BitbucketVcsProvider},
+			{Text: OldstashVcsProvider},
+			{Text: StashVcsProvider},
+			{Text: ArtifactoryVcsProvider},
+			{Text: CustomVcsProvider},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,
@@ -843,9 +873,9 @@ var questionMap = map[string]utils.QuestionInfo{
 	KeyPair: utils.FreeStringQuestionInfo,
 	PomRepositoryReferencesCleanupPolicy: {
 		Options: []prompt.Suggest{
-			{Text: DiscardActiveRefrence},
-			{Text: DiscardAnyReference},
-			{Text: Nothing},
+			{Text: DiscardActiveRefrencePolicy},
+			{Text: DiscardAnyReferencePolicy},
+			{Text: NothingPolicy},
 		},
 		AllowVars: true,
 		Writer:    utils.WriteStringAnswer,

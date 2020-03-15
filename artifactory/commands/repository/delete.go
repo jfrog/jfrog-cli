@@ -44,5 +44,8 @@ func (rdc *RepoDeleteCommand) Run() (err error) {
 		return nil
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rdc.rtDetails, false)
+	if err != nil {
+		return err
+	}
 	return servicesManager.DeleteRepository(rdc.repoKey)
 }

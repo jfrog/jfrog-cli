@@ -1,8 +1,8 @@
 package repotemplate
 
-const Description = "Create a new repository in Artifactory."
+const Description = "Create a JSON template for repository creation or update."
 
-var Usage = []string{`jfrog rt rc <template path>`}
+var Usage = []string{`jfrog rt rpt <template path>`}
 
 const Arguments string = `	template path
-		Specifies the local file system path for the template file to bw used for the repository creation.`
+		Specifies the local file system path for the template file.`

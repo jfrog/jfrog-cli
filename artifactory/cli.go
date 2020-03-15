@@ -8,6 +8,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repoupdate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -700,14 +701,27 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "repo-create",
 			Aliases:      []string{"rc"},
-			Flags:        getRepoCreateFlags(),
+			Flags:        getTemplateUsersFlags(),
 			Usage:        repocreate.Description,
 			HelpName:     common.CreateUsage("rt rc", repocreate.Description, repocreate.Usage),
 			UsageText:    repocreate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return repoCreateCmd(c)
+				return repoCmd(c, false)
+			},
+		},
+		{
+			Name:         "repo-update",
+			Aliases:      []string{"ru"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        repoupdate.Description,
+			HelpName:     common.CreateUsage("rt ru", repoupdate.Description, repoupdate.Usage),
+			UsageText:    repoupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoCmd(c, true)
 			},
 		},
 		{
@@ -996,7 +1010,7 @@ func getDownloadFlags() []cli.Flag {
 	}...)
 }
 
-func getRepoCreateFlags() []cli.Flag {
+func getTemplateUsersFlags() []cli.Flag {
 	return append(getServerWithClientCertsFlags(), cli.StringFlag{
 		Name:  "vars",
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -3180,7 +3194,7 @@ func repoTemplateCmd(c *cli.Context) error {
 	return commands.Exec(repoTemplateCmd)
 }
 
-func repoCreateCmd(c *cli.Context) error {
+func repoCmd(c *cli.Context, isUpdate bool) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -3195,8 +3209,8 @@ func repoCreateCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	repoCreateCmd := repository.NewRepoCreateCommand()
-	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	repoCreateCmd := repository.NewRepoCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars")).SetIsUpdate(isUpdate)
 	return commands.Exec(repoCreateCmd)
 }
 
