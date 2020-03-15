@@ -1,10 +1,8 @@
 package generic
 
 import (
-	"fmt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -13,11 +11,21 @@ import (
 type DeleteCommand struct {
 	deleteItems []clientutils.ResultItem
 	GenericCommand
-	quiet bool
+	quiet   bool
+	threads int
 }
 
 func NewDeleteCommand() *DeleteCommand {
 	return &DeleteCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (dc *DeleteCommand) Threads() int {
+	return dc.threads
+}
+
+func (dc *DeleteCommand) SetThreads(threads int) *DeleteCommand {
+	dc.threads = threads
+	return dc
 }
 
 func (dc *DeleteCommand) Quiet() bool {
@@ -47,7 +55,7 @@ func (dc *DeleteCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	if dc.quiet || confirmDelete(dc.deleteItems) {
+	if dc.quiet || utils.ConfirmDelete(dc.deleteItems) {
 		success, failed, err := dc.DeleteFiles()
 		result := dc.Result()
 		result.SetFailCount(failed)
@@ -86,7 +94,7 @@ func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error
 	if errorutils.CheckError(err) != nil {
 		return 0, 0, err
 	}
-	servicesManager, err := utils.CreateServiceManager(rtDetails, dc.DryRun())
+	servicesManager, err := utils.CreateDeleteServiceManager(rtDetails, dc.Threads(), dc.DryRun())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -102,15 +110,4 @@ func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err erro
 		return
 	}
 	return
-}
-
-func confirmDelete(pathsToDelete []clientutils.ResultItem) bool {
-	if len(pathsToDelete) < 1 {
-		return false
-	}
-	for _, v := range pathsToDelete {
-		fmt.Println("  " + v.GetItemRelativePath())
-	}
-	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?\n" +
-		"You can avoid this confirmation message by adding --quiet to the command.")
 }

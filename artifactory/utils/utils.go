@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-client-go/utils/io"
 	"net/http"
 	"net/url"
 	"os"
@@ -84,6 +85,10 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
+	return CreateServiceManagerWithThreads(artDetails, isDryRun, 0)
+}
+
+func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (*artifactory.ArtifactoryServicesManager, error) {
 	certPath, err := GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
@@ -92,16 +97,42 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	config := artifactory.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
-		SetDryRun(isDryRun).
-		Build()
+		SetDryRun(isDryRun)
+	if threads > 0 {
+		config.SetThreads(threads)
+	}
+	serviceConfig, err := config.Build()
 	if err != nil {
 		return nil, err
 	}
 	return artifactory.New(&artAuth, serviceConfig)
+}
+
+func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
+	certPath, err := GetJfrogSecurityDir()
+	if err != nil {
+		return nil, err
+	}
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+	servicesConfig, err := artifactory.NewConfigBuilder().
+		SetArtDetails(artAuth).
+		SetDryRun(dryRun).
+		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
+		SetThreads(threads).
+		Build()
+
+	if err != nil {
+		return nil, err
+	}
+	return artifactory.NewWithProgress(&artAuth, servicesConfig, progressBar)
 }
 
 func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
