@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/distribution/services"
+	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 )
 
 type CommandType string
@@ -15,11 +16,11 @@ const (
 )
 
 type CreateBundleCommand struct {
-	commandType         CommandType
-	rtDetails           *config.ArtifactoryDetails
-	createBundlesParams services.CreateUpdateReleaseBundleParams
-	spec                *spec.SpecFiles
-	dryRun              bool
+	commandType          CommandType
+	rtDetails            *config.ArtifactoryDetails
+	releaseBundlesParams distributionServicesUtils.ReleaseBundleParams
+	spec                 *spec.SpecFiles
+	dryRun               bool
 }
 
 func NewReleaseBundleCreateUpdateCommand(commandType CommandType) *CreateBundleCommand {
@@ -31,8 +32,8 @@ func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails
 	return cb
 }
 
-func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params services.CreateUpdateReleaseBundleParams) *CreateBundleCommand {
-	cb.createBundlesParams = params
+func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params distributionServicesUtils.ReleaseBundleParams) *CreateBundleCommand {
+	cb.releaseBundlesParams = params
 	return cb
 }
 
@@ -53,13 +54,19 @@ func (cb *CreateBundleCommand) Run() error {
 	}
 
 	for _, spec := range cb.spec.Files {
-		cb.createBundlesParams.SpecFiles = append(cb.createBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
+		cb.releaseBundlesParams.SpecFiles = append(cb.releaseBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
 	}
 
 	if cb.commandType == Create {
-		return servicesManager.CreateReleaseBundle(cb.createBundlesParams)
+		params := services.CreateReleaseBundleParams{
+			ReleaseBundleParams: cb.releaseBundlesParams,
+		}
+		return servicesManager.CreateReleaseBundle(params)
 	}
-	return servicesManager.UpdateReleaseBundle(cb.createBundlesParams)
+	params := services.UpdateReleaseBundleParams{
+		ReleaseBundleParams: cb.releaseBundlesParams,
+	}
+	return servicesManager.UpdateReleaseBundle(params)
 }
 
 func (cb *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {

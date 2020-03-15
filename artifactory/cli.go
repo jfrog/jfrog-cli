@@ -82,6 +82,7 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
+	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -3380,8 +3381,8 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
-func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServices.CreateUpdateReleaseBundleParams, error) {
-	releaseBundleParams := distributionServices.NewCreateUpdateBundleParams(bundleName, bundleVersion)
+func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServicesUtils.ReleaseBundleParams, error) {
+	releaseBundleParams := distributionServicesUtils.NewReleaseBundleParams(bundleName, bundleVersion)
 	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
 	releaseBundleParams.StoringRepository = c.String("storing-repository")
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
@@ -3710,25 +3711,25 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
 
-func populateReleaseNotesSyntax(c *cli.Context) (distributionServices.ReleaseNotesSyntax, error) {
+func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.ReleaseNotesSyntax, error) {
 	// If release notes syntax is set, use it
 	releaseNotexSyntax := c.String("release-notes-syntax")
 	if releaseNotexSyntax != "" {
 		switch releaseNotexSyntax {
 		case "markdown":
-			return distributionServices.Markdown, nil
+			return distributionServicesUtils.Markdown, nil
 		case "asciidoc":
-			return distributionServices.Asciidoc, nil
+			return distributionServicesUtils.Asciidoc, nil
 		case "plain_text":
-			return distributionServices.PlainText, nil
+			return distributionServicesUtils.PlainText, nil
 		default:
-			return distributionServices.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+			return distributionServicesUtils.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
 		}
 	}
 	// If the file extension is ".md" or ".markdown", use the markdonwn syntax
 	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
 	if extension == ".md" || extension == ".markdown" {
-		return distributionServices.Markdown, nil
+		return distributionServicesUtils.Markdown, nil
 	}
-	return distributionServices.PlainText, nil
+	return distributionServicesUtils.PlainText, nil
 }
