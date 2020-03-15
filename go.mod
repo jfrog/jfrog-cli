@@ -20,3 +20,7 @@ require (
 	gopkg.in/src-d/go-git-fixtures.v3 v3.3.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )
+
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+
+// replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
