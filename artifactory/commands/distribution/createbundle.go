@@ -8,23 +8,15 @@ import (
 	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 )
 
-type CommandType string
-
-const (
-	Create CommandType = "Create"
-	Update             = "Update"
-)
-
 type CreateBundleCommand struct {
-	commandType          CommandType
 	rtDetails            *config.ArtifactoryDetails
 	releaseBundlesParams distributionServicesUtils.ReleaseBundleParams
 	spec                 *spec.SpecFiles
 	dryRun               bool
 }
 
-func NewReleaseBundleCreateUpdateCommand(commandType CommandType) *CreateBundleCommand {
-	return &CreateBundleCommand{commandType: commandType}
+func NewReleaseBundleCreateCommand() *CreateBundleCommand {
+	return &CreateBundleCommand{}
 }
 
 func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *CreateBundleCommand {
@@ -32,7 +24,7 @@ func (cb *CreateBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails
 	return cb
 }
 
-func (cb *CreateBundleCommand) SetReleaseBundleCreateUpdateParams(params distributionServicesUtils.ReleaseBundleParams) *CreateBundleCommand {
+func (cb *CreateBundleCommand) SetReleaseBundleCreateParams(params distributionServicesUtils.ReleaseBundleParams) *CreateBundleCommand {
 	cb.releaseBundlesParams = params
 	return cb
 }
@@ -57,16 +49,8 @@ func (cb *CreateBundleCommand) Run() error {
 		cb.releaseBundlesParams.SpecFiles = append(cb.releaseBundlesParams.SpecFiles, spec.ToArtifactoryCommonParams())
 	}
 
-	if cb.commandType == Create {
-		params := services.CreateReleaseBundleParams{
-			ReleaseBundleParams: cb.releaseBundlesParams,
-		}
-		return servicesManager.CreateReleaseBundle(params)
-	}
-	params := services.UpdateReleaseBundleParams{
-		ReleaseBundleParams: cb.releaseBundlesParams,
-	}
-	return servicesManager.UpdateReleaseBundle(params)
+	params := services.CreateReleaseBundleParams{ReleaseBundleParams: cb.releaseBundlesParams}
+	return servicesManager.CreateReleaseBundle(params)
 }
 
 func (cb *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
@@ -74,5 +58,5 @@ func (cb *CreateBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 }
 
 func (cb *CreateBundleCommand) CommandName() string {
-	return "rt_create_bundle"
+	return "rt_bundle_create"
 }

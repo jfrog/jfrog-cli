@@ -770,7 +770,7 @@ func getUrlFlags() []cli.Flag {
 			Usage: "[Optional] Artifactory URL.` `",
 		},
 		cli.StringFlag{
-			Name:  "distribution-url",
+			Name:  "dist-url",
 			Usage: "[Optional] Distribution URL.` `",
 		},
 	}
@@ -1003,7 +1003,7 @@ func getExclusionsFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "exclusions",
-			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 		},
 	}
 }
@@ -1534,14 +1534,14 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 	return append(releaseBundleFlags, []cli.Flag{
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+			Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
 		},
 		cli.BoolFlag{
-			Name:  "sign-immediately",
+			Name:  "sign",
 			Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
 		},
 		cli.StringFlag{
-			Name:  "description",
+			Name:  "desc",
 			Usage: "[Optional] Description of the release bundle.` `",
 		},
 		cli.StringFlag{
@@ -1550,11 +1550,11 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "release-notes-syntax",
-			Usage: "[Default: plain_text] The syntax for the release notes. One of 'markdown', 'asciidoc', or 'plain_text` `",
+			Usage: "[Default: plain_text] The syntax for the release notes. Can be one of 'markdown', 'asciidoc', or 'plain_text` `",
 		},
 		cli.StringFlag{
 			Name:  "exclusions",
-			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 		},
 		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
@@ -1574,7 +1574,7 @@ func getDistributionPassphraseFlag() cli.Flag {
 
 func getStoringRepositoryFlag() cli.Flag {
 	return cli.StringFlag{
-		Name:  "storing-repository",
+		Name:  "repo",
 		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
 	}
 }
@@ -1586,15 +1586,15 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
 		},
 		cli.StringFlag{
-			Name:  "distribution-rules",
+			Name:  "dist-rules",
 			Usage: "Path to distribution rules.` `",
 		},
 		cli.StringFlag{
-			Name:  "site-name",
+			Name:  "site",
 			Usage: "[Default: '*'] Wildcard filter for site name. ` `",
 		},
 		cli.StringFlag{
-			Name:  "city-name",
+			Name:  "city",
 			Usage: "[Default: '*'] Wildcard filter for site city name. ` `",
 		},
 		cli.StringFlag{
@@ -1607,7 +1607,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 func getReleaseBundleDeleteFlags() []cli.Flag {
 	return append(getReleaseBundleDistributeFlags(), []cli.Flag{
 		cli.BoolFlag{
-			Name:  "delete-from-distribution",
+			Name:  "delete-from-dist",
 			Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
 		},
 		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
@@ -1647,7 +1647,7 @@ func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config
 	}
 	if distribution {
 		if artDetails.DistributionUrl == "" {
-			return nil, errors.New("the --distribution-url option is mandatory")
+			return nil, errors.New("the --dist-url option is mandatory")
 		}
 	} else {
 		if artDetails.Url == "" {
@@ -2909,14 +2909,6 @@ func buildDiscardCmd(c *cli.Context) error {
 }
 
 func releaseBundleCreateCmd(c *cli.Context) error {
-	return releaseBundleCreateUpdateCmd(c, distribution.Create)
-}
-
-func releaseBundleUpdateCmd(c *cli.Context) error {
-	return releaseBundleCreateUpdateCmd(c, distribution.Update)
-}
-
-func releaseBundleCreateUpdateCmd(c *cli.Context, commandType distribution.CommandType) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2939,14 +2931,47 @@ func releaseBundleCreateUpdateCmd(c *cli.Context, commandType distribution.Comma
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateUpdateCommand(commandType)
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateUpdateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
+	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
 
 	return commands.Exec(releaseBundleCreateCmd)
+}
+
+func releaseBundleUpdateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var releaseBundleUpdateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleUpdateSpec, err = getSpec(c, true)
+	} else {
+		releaseBundleUpdateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd.SetRtDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(releaseBundleUpdateCmd)
 }
 
 func releaseBundleSignCmd(c *cli.Context) error {
@@ -2955,7 +2980,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	}
 
 	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
-	params.StoringRepository = c.String("storing-repository")
+	params.StoringRepository = c.String("repo")
 	params.GpgPassphrase = c.String("passphrase")
 	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
 	rtDetails, err := createArtifactoryDetails(c, true)
@@ -2971,12 +2996,12 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	var distributionRules *spec.DistributionRules
-	if c.IsSet("distribution-rules") {
-		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
 		}
 		var err error
-		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
 		if err != nil {
 			return err
 		}
@@ -3000,12 +3025,12 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	var distributionRules *spec.DistributionRules
-	if c.IsSet("distribution-rules") {
-		if c.IsSet("site-name") || c.IsSet("city-name") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --distribution-rules can't be used with --site-name, --city-name or --country-code", c)
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
 		}
 		var err error
-		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("distribution-rules"))
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
 		if err != nil {
 			return err
 		}
@@ -3014,7 +3039,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 	}
 
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
-	params.DeleteFromDistribution = c.BoolT("delete-from-distribution")
+	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
 	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
 	rtDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
@@ -3144,7 +3169,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
-	details.DistributionUrl = c.String("distribution-url")
+	details.DistributionUrl = c.String("dist-url")
 	details.ApiKey = c.String("apikey")
 	details.User = c.String("user")
 	details.Password = c.String("password")
@@ -3383,10 +3408,10 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 
 func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServicesUtils.ReleaseBundleParams, error) {
 	releaseBundleParams := distributionServicesUtils.NewReleaseBundleParams(bundleName, bundleVersion)
-	releaseBundleParams.SignImmediately = c.Bool("sign-immediately")
-	releaseBundleParams.StoringRepository = c.String("storing-repository")
+	releaseBundleParams.SignImmediately = c.Bool("sign")
+	releaseBundleParams.StoringRepository = c.String("repo")
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
-	releaseBundleParams.Description = c.String("description")
+	releaseBundleParams.Description = c.String("desc")
 	if c.IsSet("release-notes-path") {
 		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
 		if err != nil {
@@ -3521,8 +3546,8 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
 	return &spec.DistributionRules{
 		DistributionRules: []spec.DistributionRule{{
-			SiteName:     c.String("site-name"),
-			CityName:     c.String("city-name"),
+			SiteName:     c.String("site"),
+			CityName:     c.String("city"),
 			CountryCodes: cliutils.GetStringsArrFlagValue(c, "country-codes"),
 		}},
 	}

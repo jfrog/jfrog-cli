@@ -2,10 +2,10 @@ package releasebundlesign
 
 const Description = "Sign a release bundle."
 
-var Usage = []string{"jfrog rt rbs [command options] <bundle name> <bundle version>"}
+var Usage = []string{"jfrog rt rbs [command options] <release bundle name> <release bundle version>"}
 
-const Arguments string = `	bundle name
-		Bundle name.
+const Arguments string = `	release bundle name
+		Release bundle name.
 
-	bundle version
-		Bundle version.`
+	release bundle version
+		Release bundle version.`

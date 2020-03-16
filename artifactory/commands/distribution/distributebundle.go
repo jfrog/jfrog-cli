@@ -7,38 +7,38 @@ import (
 	"github.com/jfrog/jfrog-client-go/distribution/services"
 )
 
-type DistributeBundleCommand struct {
+type DistributeReleaseBundleCommand struct {
 	rtDetails               *config.ArtifactoryDetails
 	distributeBundlesParams services.DistributionParams
 	distributionRules       *spec.DistributionRules
 	dryRun                  bool
 }
 
-func NewReleaseBundleDistributeCommand() *DistributeBundleCommand {
-	return &DistributeBundleCommand{}
+func NewReleaseBundleDistributeCommand() *DistributeReleaseBundleCommand {
+	return &DistributeReleaseBundleCommand{}
 }
 
-func (db *DistributeBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DistributeBundleCommand {
+func (db *DistributeReleaseBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DistributeReleaseBundleCommand {
 	db.rtDetails = rtDetails
 	return db
 }
 
-func (db *DistributeBundleCommand) SetDistributeBundleParams(params services.DistributionParams) *DistributeBundleCommand {
+func (db *DistributeReleaseBundleCommand) SetDistributeBundleParams(params services.DistributionParams) *DistributeReleaseBundleCommand {
 	db.distributeBundlesParams = params
 	return db
 }
 
-func (db *DistributeBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DistributeBundleCommand {
+func (db *DistributeReleaseBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DistributeReleaseBundleCommand {
 	db.distributionRules = distributionRules
 	return db
 }
 
-func (db *DistributeBundleCommand) SetDryRun(dryRun bool) *DistributeBundleCommand {
+func (db *DistributeReleaseBundleCommand) SetDryRun(dryRun bool) *DistributeReleaseBundleCommand {
 	db.dryRun = dryRun
 	return db
 }
 
-func (db *DistributeBundleCommand) Run() error {
+func (db *DistributeReleaseBundleCommand) Run() error {
 	servicesManager, err := utils.CreateDistributionServiceManager(db.rtDetails, db.dryRun)
 	if err != nil {
 		return err
@@ -51,10 +51,10 @@ func (db *DistributeBundleCommand) Run() error {
 	return servicesManager.DistributeReleaseBundle(db.distributeBundlesParams)
 }
 
-func (db *DistributeBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+func (db *DistributeReleaseBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	return db.rtDetails, nil
 }
 
-func (db *DistributeBundleCommand) CommandName() string {
+func (db *DistributeReleaseBundleCommand) CommandName() string {
 	return "rt_distribute_bundle"
 }

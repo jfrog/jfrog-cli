@@ -66,7 +66,7 @@ func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
 	cred := "--url=" + *tests.RtUrl
 	if *tests.RtDistributionUrl != "" {
-		cred += " --distribution-url=" + *tests.RtDistributionUrl
+		cred += " --dist-url=" + *tests.RtDistributionUrl
 	}
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {

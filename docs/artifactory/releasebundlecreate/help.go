@@ -2,14 +2,14 @@ package releasebundlecreate
 
 const Description = "Create a release bundle."
 
-var Usage = []string{"jfrog rt rbc [command options] <bundle name> <bundle version> <pattern>",
-	"jfrog rt rbc --spec=<File Spec path> [command options] <bundle name> <bundle version>"}
+var Usage = []string{"jfrog rt rbc [command options] <release bundle name> <release bundle version> <pattern>",
+	"jfrog rt rbc --spec=<File Spec path> [command options] <release bundle name> <release bundle version>"}
 
-const Arguments string = `	bundle name
-		Build name.
+const Arguments string = `	release bundle name
+		The name of the release bundle.
 
-	bundle version
-		Bundle version.
+	release bundle version
+		The release bundle version.
 
 	pattern
 		Specifies the source path in Artifactory, from which the artifacts should be bundled,

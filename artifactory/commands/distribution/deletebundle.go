@@ -21,7 +21,7 @@ var (
 	}
 )
 
-type DeleteBundleCommand struct {
+type DeleteReleaseBundleCommand struct {
 	rtDetails           *config.ArtifactoryDetails
 	deleteBundlesParams services.DeleteDistributionParams
 	distributionRules   *spec.DistributionRules
@@ -29,36 +29,36 @@ type DeleteBundleCommand struct {
 	quiet               bool
 }
 
-func NewReleaseBundleDeleteParams() *DeleteBundleCommand {
-	return &DeleteBundleCommand{}
+func NewReleaseBundleDeleteParams() *DeleteReleaseBundleCommand {
+	return &DeleteReleaseBundleCommand{}
 }
 
-func (db *DeleteBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DeleteBundleCommand {
+func (db *DeleteReleaseBundleCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DeleteReleaseBundleCommand {
 	db.rtDetails = rtDetails
 	return db
 }
 
-func (db *DeleteBundleCommand) SetDistributeBundleParams(params services.DeleteDistributionParams) *DeleteBundleCommand {
+func (db *DeleteReleaseBundleCommand) SetDistributeBundleParams(params services.DeleteDistributionParams) *DeleteReleaseBundleCommand {
 	db.deleteBundlesParams = params
 	return db
 }
 
-func (db *DeleteBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DeleteBundleCommand {
+func (db *DeleteReleaseBundleCommand) SetDistributionRules(distributionRules *spec.DistributionRules) *DeleteReleaseBundleCommand {
 	db.distributionRules = distributionRules
 	return db
 }
 
-func (db *DeleteBundleCommand) SetDryRun(dryRun bool) *DeleteBundleCommand {
+func (db *DeleteReleaseBundleCommand) SetDryRun(dryRun bool) *DeleteReleaseBundleCommand {
 	db.dryRun = dryRun
 	return db
 }
 
-func (db *DeleteBundleCommand) SetQuiet(quiet bool) *DeleteBundleCommand {
+func (db *DeleteReleaseBundleCommand) SetQuiet(quiet bool) *DeleteReleaseBundleCommand {
 	db.quiet = quiet
 	return db
 }
 
-func (db *DeleteBundleCommand) Run() error {
+func (db *DeleteReleaseBundleCommand) Run() error {
 	servicesManager, err := utils.CreateDistributionServiceManager(db.rtDetails, db.dryRun)
 	if err != nil {
 		return err
@@ -85,23 +85,23 @@ func (db *DeleteBundleCommand) Run() error {
 	return servicesManager.DeleteReleaseBundle(db.deleteBundlesParams)
 }
 
-func (db *DeleteBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+func (db *DeleteReleaseBundleCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	return db.rtDetails, nil
 }
 
-func (db *DeleteBundleCommand) CommandName() string {
-	return "rt_delete_bundle"
+func (db *DeleteReleaseBundleCommand) CommandName() string {
+	return "rt_bundle_delete"
 }
 
 // Return true iff there are no distribution rules
-func (db *DeleteBundleCommand) distributionRulesEmpty() bool {
+func (db *DeleteReleaseBundleCommand) distributionRulesEmpty() bool {
 	return db.distributionRules == nil ||
 		len(db.distributionRules.DistributionRules) == 0 ||
 		len(db.distributionRules.DistributionRules) == 1 && db.distributionRules.DistributionRules[0].IsEmpty()
 }
 
-func (db *DeleteBundleCommand) confirmDelete(distributionRulesEmpty bool) (bool, error) {
-	message := "Are you sure you want to delete the release bundle \"" + db.deleteBundlesParams.Name + "/" + db.deleteBundlesParams.Version + "\" "
+func (db *DeleteReleaseBundleCommand) confirmDelete(distributionRulesEmpty bool) (bool, error) {
+	message := fmt.Sprintf("Are you sure you want to delete the release bundle \"%s\"/\"%s\" ", db.deleteBundlesParams.Name, db.deleteBundlesParams.Version)
 	if distributionRulesEmpty && db.deleteBundlesParams.DeleteFromDistribution {
 		return cliutils.InteractiveConfirm(message + "locally from distribution?\n" +
 			"You can avoid this confirmation message by adding --quiet to the command."), nil
