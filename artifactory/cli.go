@@ -4,12 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repoupdate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/golang"
@@ -28,6 +23,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/replication"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
 	commandUtils "github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
@@ -75,6 +72,14 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobcreate"
+	replicationdelete "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobdelete"
+	replicationshow "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobshow"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationtemplate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repoupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -735,6 +740,58 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return repoDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "replication-template-create",
+			Aliases:      []string{"rtc"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        replicationtemplate.Description,
+			HelpName:     common.CreateUsage("rt rtc", replicationtemplate.Description, replicationtemplate.Usage),
+			UsageText:    replicationtemplate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return replicationTemplateCmd(c)
+			},
+		},
+		{
+			Name:         "replication-job-create",
+			Aliases:      []string{"rjc"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        replicationjobcreate.Description,
+			HelpName:     common.CreateUsage("rt rjc", replicationjobcreate.Description, replicationjobcreate.Usage),
+			UsageText:    replicationjobcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return replicationCreateCmd(c)
+			},
+		},
+		{
+			Name:         "replication-job-delete",
+			Aliases:      []string{"rjd"},
+			Flags:        getRepoDeleteFlags(),
+			Usage:        replicationdelete.Description,
+			HelpName:     common.CreateUsage("rt rjd", replicationdelete.Description, replicationdelete.Usage),
+			UsageText:    replicationdelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return replicationDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "replication-job-show",
+			Aliases:      []string{"rjs"},
+			Flags:        getRepoDeleteFlags(),
+			Usage:        replicationshow.Description,
+			HelpName:     common.CreateUsage("rt rjs", replicationshow.Description, replicationshow.Usage),
+			UsageText:    replicationshow.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return replicationShowCmd(c)
 			},
 		},
 	}
@@ -3306,10 +3363,78 @@ func repoDeleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	// Run command.
 	repoDeleteCmd := repository.NewRepoDeleteCommand()
 	repoDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(repoDeleteCmd)
+}
+
+func replicationTemplateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	replicationTemplateCmd := replication.NewReplicationTemplateCommand()
+	replicationTemplateCmd.SetTemplatePath(c.Args().Get(0))
+	return commands.Exec(replicationTemplateCmd)
+}
+
+func replicationCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	replicationCreateCmd := replication.NewReplicationCreateCommand()
+	replicationCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(replicationCreateCmd)
+}
+
+func replicationDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
+	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
+	return commands.Exec(replicationDeleteCmd)
+}
+
+func replicationShowCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	replicationShowCmd := replication.NewReplicationShowCommand()
+	replicationShowCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails)
+	err = commands.Exec(replicationShowCmd)
+	if err != nil {
+		return err
+	}
+	showResult, err := json.MarshalIndent(replicationShowCmd.ShowResult(), "", "  ")
+	if err != nil {
+		return err
+	}
+	log.Info("Replication configuration for " + replicationShowCmd.RepoKey() + ":\n" + string(showResult))
+	return err
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
@@ -3421,12 +3546,6 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
 			}
-			if details.RefreshToken == "" {
-				details.RefreshToken = confDetails.RefreshToken
-			}
-			if details.TokenRefreshInterval == cliutils.TokenRefreshDisabled {
-				details.TokenRefreshInterval = confDetails.TokenRefreshInterval
-			}
 			if details.ClientCertPath == "" {
 				details.ClientCertPath = confDetails.ClientCertPath
 			}
@@ -3437,8 +3556,6 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
-
-	err = config.CreateInitialRefreshTokensIfNeeded(details)
 	return
 }
 
