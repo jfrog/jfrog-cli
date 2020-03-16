@@ -207,7 +207,7 @@ func (getImageId *getParentId) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-// Image get image manifest command
+// Get image manifest command
 type getImageManifestCmd struct {
 	image *image
 }

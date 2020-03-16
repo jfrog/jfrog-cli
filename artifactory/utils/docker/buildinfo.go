@@ -326,13 +326,18 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 	// Validate image ID layer exists.
 	if _, ok := resultMap[digestToLayer(builder.imageId)]; !ok {
 		// In case of a fat-manifest, Artifactory will create two folders.
-		// One folder named as the image tag, contain inside the fat manifest,
-		// The second folder, named as image's manifest digest, will contain the image layers and the image's manifest.
+		// One folder named as the image tag, which contains the fat manifest.
+		// The second folder, named as image's manifest digest, contains the image layers and the image's manifest.
 		if _, ok := resultMap["list.manifest.json"]; ok {
-			v, _ := builder.image.Manifest()
-			var listManifest []Manifest
-			err := json.Unmarshal([]byte(v), &listManifest)
+			v, err := builder.image.Manifest()
 			if err != nil {
+				log.Error("Fail to run docker inspect " + builder.image.Tag() + " \nError: " + err.Error())
+				return nil, err
+			}
+			var listManifest []Manifest
+			err = json.Unmarshal([]byte(v), &listManifest)
+			if err != nil {
+				log.Error("json.Unmarshal failed with " + err.Error() + "\n" + v)
 				return nil, err
 			}
 			result := ""
