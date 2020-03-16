@@ -1,6 +1,8 @@
 package generic
 
 import (
+	"errors"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
@@ -57,20 +59,26 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem) {
+func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem, err error) {
+	var errorOccurred = false
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 
 		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 		resultItems = append(resultItems, currentResultItems...)
+	}
+	if errorOccurred {
+		err = errors.New("Copy finished with errors, please review the logs.")
 	}
 	return
 }
