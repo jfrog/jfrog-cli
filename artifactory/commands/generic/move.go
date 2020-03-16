@@ -48,7 +48,7 @@ func (mc *MoveCommand) Run() error {
 		}
 	}
 	if errorOccurred {
-		return errors.New("Copy finished with errors, please review the logs.")
+		return errors.New("Move finished with errors, please review the logs.")
 	}
 	return err
 

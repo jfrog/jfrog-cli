@@ -78,7 +78,7 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 		resultItems = append(resultItems, currentResultItems...)
 	}
 	if errorOccurred {
-		err = errors.New("Copy finished with errors, please review the logs.")
+		err = errors.New("Operation finished with errors, please review the logs.")
 	}
 	return
 }
