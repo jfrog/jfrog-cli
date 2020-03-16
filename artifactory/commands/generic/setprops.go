@@ -31,7 +31,7 @@ func (setProps *SetPropsCommand) Run() error {
 		return err
 	}
 
-	resultItems := searchItems(setProps.Spec(), servicesManager)
+	resultItems, searchErr := searchItems(setProps.Spec(), servicesManager)
 
 	propsParams := GetPropsParams(resultItems, setProps.props)
 	success, err := servicesManager.SetProps(propsParams)
@@ -39,5 +39,8 @@ func (setProps *SetPropsCommand) Run() error {
 	result := setProps.Result()
 	result.SetSuccessCount(success)
 	result.SetFailCount(len(resultItems) - success)
+	if err == nil {
+		return searchErr
+	}
 	return err
 }
