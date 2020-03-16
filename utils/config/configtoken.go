@@ -10,6 +10,7 @@ const tokenVersion = 1
 type configToken struct {
 	Version           int    `json:"version,omitempty"`
 	Url               string `json:"url,omitempty"`
+	DistributionUrl   string `json:"distributionUrl,omitempty"`
 	User              string `json:"user,omitempty"`
 	Password          string `json:"password,omitempty"`
 	SshKeyPath        string `json:"sshKeyPath,omitempty"`
@@ -25,6 +26,7 @@ func fromArtifactoryDetails(details *ArtifactoryDetails) *configToken {
 	return &configToken{
 		Version:           tokenVersion,
 		Url:               details.Url,
+		DistributionUrl:   details.DistributionUrl,
 		User:              details.User,
 		Password:          details.Password,
 		SshKeyPath:        details.SshKeyPath,
@@ -40,6 +42,7 @@ func fromArtifactoryDetails(details *ArtifactoryDetails) *configToken {
 func toArtifactoryDetails(detailsSerialization *configToken) *ArtifactoryDetails {
 	return &ArtifactoryDetails{
 		Url:               detailsSerialization.Url,
+		DistributionUrl:   detailsSerialization.DistributionUrl,
 		User:              detailsSerialization.User,
 		Password:          detailsSerialization.Password,
 		SshKeyPath:        detailsSerialization.SshKeyPath,

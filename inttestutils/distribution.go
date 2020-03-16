@@ -19,44 +19,48 @@ import (
 )
 
 const (
-	gpgKeyId                = "234503"
-	releaseBundleAqlPattern = `{"name":"%s",` +
-		`"version":"%s",` +
-		`"dry_run":false,` +
-		`"sign_immediately":true,` +
-		`"spec":{"queries":[{"aql":"items.find(%s)"}]}}`
-	repoPathNameAqlPattern = `{\"$and\":[` +
-		`{\"repo\":{\"$match\":\"%s\"}},` +
-		`{\"path\":{\"$match\":\"%s\"}},` +
-		`{\"name\":{\"$match\":\"%s\"}}` +
-		`]}`
+	gpgKeyId                        = "234503"
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
-	artifactoryGpgkeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
-	distributionPattern             = `{"dry_run":false,"distribution_rules":[{"site_name":"*"}]}`
+	artifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
 
-type RepoPathName struct {
-	Repo string
-	Path string
-	Name string
-}
-
-type DistributionStatus string
+type distributableDistributionStatus string
+type receivedDistributionStatus string
 
 const (
-	NotDistributed DistributionStatus = "Not distributed"
-	InProgress                        = "In progress"
-	Completed                         = "Completed"
-	Failed                            = "Failed"
+	Open                 distributableDistributionStatus = "OPEN"
+	ReadyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
+	Signed               distributableDistributionStatus = "SIGNED"
+	NotDistributed       receivedDistributionStatus      = "Not distributed"
+	InProgress           receivedDistributionStatus      = "In progress"
+	Completed            receivedDistributionStatus      = "Completed"
+	Failed               receivedDistributionStatus      = "Failed"
 )
 
-type DistributionResponse struct {
-	Id     string             `json:"id,omitempty"`
-	Status DistributionStatus `json:"status,omitempty"`
+// GET api/v1/release_bundle/:name/:version
+// Retreive the status of a release bundle before distribution.
+type distributableResponse struct {
+	Name         string                          `json:"name,omitempty"`
+	Version      string                          `json:"version,omitempty"`
+	State        distributableDistributionStatus `json:"state,omitempty"`
+	Description  string                          `json:"description,omitempty"`
+	ReleaseNotes releaseNotesResponse            `json:"release_notes,omitempty"`
 }
 
-type DistributionResponses struct {
-	distributionResponse []DistributionResponse
+type releaseNotesResponse struct {
+	Content string `json:"content,omitempty"`
+	Syntax  string `json:"syntax,omitempty"`
+}
+
+// Get api/v1/release_bundle/:name/:version/distribution
+// Retreive the status of a release bundle after distribution.
+type receivedResponse struct {
+	Id     string                     `json:"id,omitempty"`
+	Status receivedDistributionStatus `json:"status,omitempty"`
+}
+
+type ReceivedResponses struct {
+	receivedResponses []receivedResponse
 }
 
 // Send GPG keys to Distribution and Artifactory to allow signing of release bundles
@@ -83,7 +87,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 
 	// Send public key to Artifactory
-	content = fmt.Sprintf(artifactoryGpgkeyCreatePattern, publicKey)
+	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.RtUrl+"api/security/keys/trusted", []byte(content), artHttpDetails)
 	cliutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
@@ -99,7 +103,7 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	cliutils.ExitOnErr(err)
 
-	// Send public key to Artifactory
+	// Delete public key from Artifactory
 	resp, body, err := client.SendDelete(*tests.RtUrl+"api/security/keys/trusted/"+gpgKeyId, nil, artHttpDetails)
 	cliutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusNoContent {
@@ -109,66 +113,49 @@ func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 	}
 }
 
-func CreateAndDistributeBundle(t *testing.T, bundleName, bundleVersion string, triples []RepoPathName, artHttpDetails httputils.HttpClientDetails) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	aql := createAqlForCreateBundle(bundleName, bundleVersion, triples)
-	resp, body, err := client.SendPost(*tests.RtDistributionUrl+"api/v1/release_bundle", []byte(aql), artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNotFound {
+// Get a local release bundle
+func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) *distributableResponse {
+	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+	if resp.StatusCode != http.StatusOK {
 		t.Error(resp.Status)
 		t.Error(string(body))
+		return nil
 	}
-	distribute(t, bundleName, bundleVersion, artHttpDetails)
+	response := &distributableResponse{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+	return response
 }
 
-func distribute(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	url := *tests.RtDistributionUrl + "api/v1/distribution/" + bundleName + "/" + bundleVersion
-	resp, body, err := client.SendPost(url, []byte(distributionPattern), artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-	waitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
-}
-
-func DeleteBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
-	// Delete distributable bundle on Distribution
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	resp, body, err := client.SendDelete(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName, nil, artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-
-	// Delete received bundle in Artifactory
-	resp, body, err = client.SendDelete(*tests.RtUrl+"api/release/bundles/"+bundleName+"/"+bundleVersion, nil, artHttpDetails)
-	assert.NoError(t, err)
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		t.Error(resp.Status)
-		t.Error(string(body))
-	}
-}
-
-// Create the AQL for the release bundle creation
-func createAqlForCreateBundle(bundleName, bundleVersion string, triples []RepoPathName) string {
-	innerQueryPattern := "{\\\"$or\\\":["
-	for i, triple := range triples {
-		innerQueryPattern += fmt.Sprintf(repoPathNameAqlPattern, triple.Repo, triple.Path, triple.Name)
-		if i+1 < len(triples) {
-			innerQueryPattern += ","
+// Return true if the release bundle exists locally on distribution
+func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, artHttpDetails httputils.HttpClientDetails) {
+	for i := 0; i < 120; i++ {
+		resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+		switch resp.StatusCode {
+		case http.StatusOK:
+			if expectExist {
+				return
+			}
+		case http.StatusNotFound:
+			if !expectExist {
+				return
+			}
+		default:
+			t.Error(resp.Status)
+			t.Error(string(body))
+			return
 		}
+		t.Log("Waiting for " + bundleName + "/" + bundleVersion + "...")
+		time.Sleep(time.Second)
 	}
-	return fmt.Sprintf(releaseBundleAqlPattern, bundleName, bundleVersion, innerQueryPattern+"]}")
+	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
 }
 
 // Wait for distribution of a release bundle
-func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
@@ -180,14 +167,18 @@ func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 			t.Error(string(body))
 			return
 		}
-		response := &DistributionResponses{}
-		err = json.Unmarshal(body, &response.distributionResponse)
+		response := &ReceivedResponses{}
+		err = json.Unmarshal(body, &response.receivedResponses)
 		if err != nil {
 			t.Error(err)
 			return
 		}
+		if len(response.receivedResponses) == 0 {
+			t.Error("Release bundle \"" + bundleName + "/" + bundleVersion + "\" not found")
+			return
+		}
 
-		switch response.distributionResponse[0].Status {
+		switch response.receivedResponses[0].Status {
 		case Completed:
 			return
 		case Failed:
@@ -200,4 +191,35 @@ func waitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 		time.Sleep(time.Second)
 	}
 	t.Error("Timeout for release bundle distribution " + bundleName + "/" + bundleVersion)
+}
+
+// Wait for deletion of a release bundle
+func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	for i := 0; i < 120; i++ {
+		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
+		assert.NoError(t, err)
+		if resp.StatusCode == http.StatusNotFound {
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Error(resp.Status)
+			t.Error(string(body))
+			return
+		}
+		t.Log("Waiting for distribution deletion " + bundleName + "/" + bundleVersion + "...")
+		time.Sleep(time.Second)
+	}
+	t.Error("Timeout for release bundle deletion " + bundleName + "/" + bundleVersion)
+}
+
+func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
+	client, err := httpclient.ClientBuilder().Build()
+	assert.NoError(t, err)
+
+	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
+	assert.NoError(t, err)
+	return resp, body
 }

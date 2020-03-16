@@ -13,7 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget/solution"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"

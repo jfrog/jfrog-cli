@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/golang"
@@ -62,6 +65,11 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/ping"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipconfig"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/pipinstall"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlecreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledelete"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/search"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/upload"
@@ -73,6 +81,8 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
+	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -605,6 +615,71 @@ func GetCommands() []cli.Command {
 				return pipInstallCmd(c)
 			},
 		},
+		{
+			Name:         "release-bundle-create",
+			Flags:        getReleaseBundleCreateUpdateFlags(),
+			Aliases:      []string{"rbc"},
+			Usage:        releasebundlecreate.Description,
+			HelpName:     common.CreateUsage("rt rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
+			UsageText:    releasebundlecreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleCreateCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-update",
+			Flags:        getReleaseBundleCreateUpdateFlags(),
+			Aliases:      []string{"rbu"},
+			Usage:        releasebundleupdate.Description,
+			HelpName:     common.CreateUsage("rt rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
+			UsageText:    releasebundleupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleUpdateCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-sign",
+			Flags:        getReleaseBundleSignFlags(),
+			Aliases:      []string{"rbs"},
+			Usage:        releasebundlesign.Description,
+			HelpName:     common.CreateUsage("rt rbs", releasebundlesign.Description, releasebundlesign.Usage),
+			UsageText:    releasebundlesign.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleSignCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-distribute",
+			Flags:        getReleaseBundleDistributeFlags(),
+			Aliases:      []string{"rbd"},
+			Usage:        releasebundledistribute.Description,
+			HelpName:     common.CreateUsage("rt rbd", releasebundledistribute.Description, releasebundledistribute.Usage),
+			UsageText:    releasebundledistribute.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleDistributeCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-delete",
+			Flags:        getReleaseBundleDeleteFlags(),
+			Aliases:      []string{"rbdel"},
+			Usage:        releasebundledelete.Description,
+			HelpName:     common.CreateUsage("rt rbdel", releasebundledelete.Description, releasebundledelete.Usage),
+			UsageText:    releasebundledelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleDeleteCmd(c)
+			},
+		},
 	}
 }
 
@@ -688,17 +763,21 @@ func getGradleConfigFlags() []cli.Flag {
 	)
 }
 
-func getUrlFlag() []cli.Flag {
+func getUrlFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
 			Usage: "[Optional] Artifactory URL.` `",
 		},
+		cli.StringFlag{
+			Name:  "dist-url",
+			Usage: "[Optional] Distribution URL.` `",
+		},
 	}
 }
 
 func getBaseFlags() []cli.Flag {
-	return append(getUrlFlag(),
+	return append(getUrlFlags(),
 		cli.StringFlag{
 			Name:  "user",
 			Usage: "[Optional] Artifactory username.` `",
@@ -924,7 +1003,7 @@ func getExclusionsFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "exclusions",
-			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions may contain the * and the ? wildcards.` `",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
 		},
 	}
 }
@@ -1451,6 +1530,91 @@ func getBuildDiscardFlags() []cli.Flag {
 	}...)
 }
 
+func getReleaseBundleCreateUpdateFlags() []cli.Flag {
+	releaseBundleFlags := append(getServerFlags(), getSpecFlags()...)
+	return append(releaseBundleFlags, []cli.Flag{
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
+		},
+		cli.BoolFlag{
+			Name:  "sign",
+			Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
+		},
+		cli.StringFlag{
+			Name:  "desc",
+			Usage: "[Optional] Description of the release bundle.` `",
+		},
+		cli.StringFlag{
+			Name:  "release-notes-path",
+			Usage: "[Optional] Path to a file describes the release notes for the release bundle version.` `",
+		},
+		cli.StringFlag{
+			Name:  "release-notes-syntax",
+			Usage: "[Default: plain_text] The syntax for the release notes. Can be one of 'markdown', 'asciidoc', or 'plain_text` `",
+		},
+		cli.StringFlag{
+			Name:  "exclusions",
+			Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
+		},
+		getDistributionPassphraseFlag(),
+		getStoringRepositoryFlag(),
+	}...)
+}
+
+func getReleaseBundleSignFlags() []cli.Flag {
+	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
+}
+
+func getDistributionPassphraseFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "passphrase",
+		Usage: "[Optional] The passphrase for the signing key. ` `",
+	}
+}
+
+func getStoringRepositoryFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "repo",
+		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
+	}
+}
+
+func getReleaseBundleDistributeFlags() []cli.Flag {
+	return append(getServerFlags(), []cli.Flag{
+		cli.BoolFlag{
+			Name:  "dry-run",
+			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+		},
+		cli.StringFlag{
+			Name:  "dist-rules",
+			Usage: "Path to distribution rules.` `",
+		},
+		cli.StringFlag{
+			Name:  "site",
+			Usage: "[Default: '*'] Wildcard filter for site name. ` `",
+		},
+		cli.StringFlag{
+			Name:  "city",
+			Usage: "[Default: '*'] Wildcard filter for site city name. ` `",
+		},
+		cli.StringFlag{
+			Name:  "country-codes",
+			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
+		},
+	}...)
+}
+
+func getReleaseBundleDeleteFlags() []cli.Flag {
+	return append(getReleaseBundleDistributeFlags(), []cli.Flag{
+		cli.BoolFlag{
+			Name:  "delete-from-dist",
+			Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
+		},
+		getQuiteFlag("[Default: false] Set to true to skip the delete confirmation message.` `"),
+	}...)
+}
+
 func getBuildScanFlags() []cli.Flag {
 	return append(getServerFlags(), []cli.Flag{
 		cli.BoolTFlag{
@@ -1477,14 +1641,21 @@ func getPipInstallFlags() []cli.Flag {
 	return getBuildAndModuleFlags()
 }
 
-func createArtifactoryDetailsByFlags(c *cli.Context, includeConfig bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, includeConfig)
+func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config.ArtifactoryDetails, error) {
+	artDetails, err := createArtifactoryDetails(c, true)
 	if err != nil {
 		return nil, err
 	}
-	if artDetails.Url == "" {
-		return nil, errors.New("the --url option is mandatory")
+	if distribution {
+		if artDetails.DistributionUrl == "" {
+			return nil, errors.New("the --dist-url option is mandatory")
+		}
+	} else {
+		if artDetails.Url == "" {
+			return nil, errors.New("the --url option is mandatory")
+		}
 	}
+
 	return artDetails, nil
 }
 
@@ -1744,7 +1915,7 @@ func dockerPushCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1770,7 +1941,7 @@ func dockerPullCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1829,7 +2000,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1860,7 +2031,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyInstallCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1915,7 +2086,7 @@ func npmLegacyCiCmd(c *cli.Context) error {
 		return err
 	}
 	npmCmd := npm.NewNpmLegacyCiCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1965,7 +2136,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 		return err
 	}
 	npmPublicCmd := npm.NewNpmPublishCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1996,7 +2167,7 @@ func goPublishCmd(c *cli.Context) error {
 	}
 	targetRepo := c.Args().Get(0)
 	version := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2124,7 +2295,7 @@ func goLegacyCmd(c *cli.Context) error {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	targetRepo := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2173,7 +2344,7 @@ func goRecursivePublishCmd(c *cli.Context) error {
 	if targetRepo == "" {
 		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
 	}
-	details, err := createArtifactoryDetailsByFlags(c, true)
+	details, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2229,7 +2400,7 @@ func pingCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent.", c)
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2272,7 +2443,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2322,7 +2493,7 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd := generic.NewUploadCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2358,7 +2529,7 @@ func moveCmd(c *cli.Context) error {
 		return err
 	}
 	moveCmd := generic.NewMoveCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2394,7 +2565,7 @@ func copyCmd(c *cli.Context) error {
 	}
 
 	copyCommand := generic.NewCopyCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2430,7 +2601,7 @@ func deleteCmd(c *cli.Context) error {
 	}
 
 	deleteCommand := generic.NewDeleteCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2469,7 +2640,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	artDetails, err := createArtifactoryDetailsByFlags(c, true)
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2520,7 +2691,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	}
 
 	command := generic.NewPropsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return nil, err
 	}
@@ -2571,7 +2742,7 @@ func buildPublishCmd(c *cli.Context) error {
 		return err
 	}
 	buildInfoConfiguration := createBuildInfoConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2655,7 +2826,7 @@ func buildScanCmd(c *cli.Context) error {
 	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2698,7 +2869,7 @@ func buildPromoteCmd(c *cli.Context) error {
 		return err
 	}
 	configuration := createBuildPromoteConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2742,13 +2913,155 @@ func buildDiscardCmd(c *cli.Context) error {
 	return commands.Exec(buildDiscardCmd)
 }
 
+func releaseBundleCreateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var releaseBundleCreateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleCreateSpec, err = getSpec(c, true)
+	} else {
+		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd.SetRtDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(releaseBundleCreateCmd)
+}
+
+func releaseBundleUpdateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var releaseBundleUpdateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleUpdateSpec, err = getSpec(c, true)
+	} else {
+		releaseBundleUpdateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd.SetRtDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(releaseBundleUpdateCmd)
+}
+
+func releaseBundleSignCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.StoringRepository = c.String("repo")
+	params.GpgPassphrase = c.String("passphrase")
+	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleSignCmd.SetRtDetails(rtDetails).SetReleaseBundleSignParams(params)
+	return commands.Exec(releaseBundleSignCmd)
+}
+
+func releaseBundleDistributeCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(releaseBundleDistributeCmd)
+}
+
+func releaseBundleDeleteCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
+	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
+	rtDetails, err := createArtifactoryDetails(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCmd.SetQuiet(c.Bool("quiet")).SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(distributeBundleCmd)
+}
+
 func gitLfsCleanCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	configuration := createGitLfsCleanConfiguration(c)
 	gitLfsCmd := generic.NewGitLfsCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2861,6 +3174,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
+	details.DistributionUrl = c.String("dist-url")
 	details.ApiKey = c.String("apikey")
 	details.User = c.String("user")
 	details.Password = c.String("password")
@@ -2871,7 +3185,6 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.ClientCertKeyPath = c.String("client-cert-key-path")
 	details.ServerId = c.String("server-id")
 	details.InsecureTls = c.Bool("insecure-tls")
-
 	if details.ApiKey != "" && details.User != "" && details.Password == "" {
 		// The API Key is deprecated, use password option instead.
 		details.Password = details.ApiKey
@@ -2886,6 +3199,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 
 		if details.Url == "" {
 			details.Url = confDetails.Url
+		}
+		if details.DistributionUrl == "" {
+			details.DistributionUrl = confDetails.DistributionUrl
 		}
 
 		if !isAuthMethodSet(details) {
@@ -2913,6 +3229,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 		}
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
+	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
 	return
 }
 
@@ -3094,6 +3411,26 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	return distributeParamsImpl
 }
 
+func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServicesUtils.ReleaseBundleParams, error) {
+	releaseBundleParams := distributionServicesUtils.NewReleaseBundleParams(bundleName, bundleVersion)
+	releaseBundleParams.SignImmediately = c.Bool("sign")
+	releaseBundleParams.StoringRepository = c.String("repo")
+	releaseBundleParams.GpgPassphrase = c.String("passphrase")
+	releaseBundleParams.Description = c.String("desc")
+	if c.IsSet("release-notes-path") {
+		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		if err != nil {
+			return releaseBundleParams, errorutils.CheckError(err)
+		}
+		releaseBundleParams.ReleaseNotes = string(bytes)
+		releaseBundleParams.ReleaseNotesSyntax, err = populateReleaseNotesSyntax(c)
+		if err != nil {
+			return releaseBundleParams, err
+		}
+	}
+	return releaseBundleParams, nil
+}
+
 func createGitLfsCleanConfiguration(c *cli.Context) (gitLfsCleanConfiguration *generic.GitLfsCleanConfiguration) {
 	gitLfsCleanConfiguration = new(generic.GitLfsCleanConfiguration)
 
@@ -3198,6 +3535,27 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		BuildSpec()
+}
+
+func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(2)).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Bundle(c.String("bundle")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
+		Regexp(c.Bool("regexp")).
+		BuildSpec()
+}
+
+func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
+	return &spec.DistributionRules{
+		DistributionRules: []spec.DistributionRule{{
+			SiteName:     c.String("site"),
+			CityName:     c.String("city"),
+			CountryCodes: cliutils.GetStringsArrFlagValue(c, "country-codes"),
+		}},
+	}
 }
 
 func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {
@@ -3327,6 +3685,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Props, c, "props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.Bundle, c, "bundle")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
 	overrideStringIfSet(&spec.Explode, c, "explode")
@@ -3380,4 +3739,27 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 	This will create the configuration inside the .jfrog directory under the root directory of the project.
 	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
+}
+
+func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.ReleaseNotesSyntax, error) {
+	// If release notes syntax is set, use it
+	releaseNotexSyntax := c.String("release-notes-syntax")
+	if releaseNotexSyntax != "" {
+		switch releaseNotexSyntax {
+		case "markdown":
+			return distributionServicesUtils.Markdown, nil
+		case "asciidoc":
+			return distributionServicesUtils.Asciidoc, nil
+		case "plain_text":
+			return distributionServicesUtils.PlainText, nil
+		default:
+			return distributionServicesUtils.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+		}
+	}
+	// If the file extension is ".md" or ".markdown", use the markdonwn syntax
+	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
+	if extension == ".md" || extension == ".markdown" {
+		return distributionServicesUtils.Markdown, nil
+	}
+	return distributionServicesUtils.PlainText, nil
 }

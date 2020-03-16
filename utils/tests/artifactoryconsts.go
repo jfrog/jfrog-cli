@@ -31,6 +31,7 @@ const (
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
+	DistributionRules                      = "distribution_rules.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"

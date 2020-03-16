@@ -3,14 +3,14 @@ package spec
 import "strconv"
 
 type builder struct {
-	pattern         string
+	pattern string
 	// Deprecated, use Exclusions instead
 	excludePatterns []string
 	exclusions      []string
 	target          string
 	explode         string
 	props           string
-	excludeProps	string
+	excludeProps    string
 	sortOrder       string
 	sortBy          []string
 	offset          int
@@ -122,13 +122,13 @@ func (b *builder) BuildSpec() *SpecFiles {
 	return &SpecFiles{
 		Files: []File{
 			{
-				Pattern:         b.pattern,
+				Pattern: b.pattern,
 				// Deprecated, use Exclusions instead
 				ExcludePatterns: b.excludePatterns,
 				Exclusions:      b.exclusions,
 				Target:          b.target,
 				Props:           b.props,
-				ExcludeProps:	 b.excludeProps,
+				ExcludeProps:    b.excludeProps,
 				SortOrder:       b.sortOrder,
 				SortBy:          b.sortBy,
 				Offset:          b.offset,

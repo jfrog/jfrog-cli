@@ -232,7 +232,7 @@ In addition to [general optional flags](#Usage) you *must* use the following fla
 
 | Flag | Description |
 | --- | --- |
-| `-rt.distributionUrl` | Distribution URL. |
+| `-rt.distUrl` | JFrog Distribution URL. |
 
 To run distribution tests run the following command:
 ```
