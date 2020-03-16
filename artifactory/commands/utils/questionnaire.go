@@ -13,15 +13,15 @@ import (
 //	1. Mandatory Questions:
 //		* We will ask all the questions in MandatoryQuestionsKeys list one after the other.
 //	2. Optional questions:
-//		* we have to provide a slice of prompt.Suggest, in which each suggest.Text is a key of a question in the map.
-//		* after a suggest was chosen from the list, the corresponding question from the map will be asked.
-//		* aach answer is written to to the configMap using its writer, under the MapKey specified in the questionInfo.
-//		* we will execute the previous step until the WriteAndExit string was inserted.
+//		* We have to provide a slice of prompt.Suggest, in which each suggest.Text is a key of a question in the map.
+//		* After a suggest was chosen from the list, the corresponding question from the map will be asked.
+//		* Each answer is written to to the configMap using its writer, under the MapKey specified in the questionInfo.
+//		* We will execute the previous step until the SaveAndExit string was inserted.
 type InteractiveQuestionnaire struct {
 	QuestionsMap           map[string]QuestionInfo
 	MandatoryQuestionsKeys []string
 	OptionalKeysSuggests   []prompt.Suggest
-	AnswersMap             map[string]string
+	AnswersMap             map[string]interface{}
 }
 
 // Each question can have the following properties:
@@ -49,9 +49,9 @@ const (
 	PressTabMsg      = " (press Tab for options):"
 	InvalidAnswerMsg = "Invalid answer. Please select value from the suggestions list."
 	VariableUseMsg   = " You may use dynamic variable in the form of ${key}."
-	EmptyValueMsg    = "The value can not be empty. Please enter a valid value:"
+	EmptyValueMsg    = "The value cannot be empty. Please enter a valid value:"
 	OptionalKey      = "OptionalKey"
-	WriteAndExist    = ":x"
+	SaveAndExit      = ":x"
 
 	// Boolean answers
 	True  = "true"
@@ -130,8 +130,7 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 		answer = AskString(question.Msg, question.PromptPrefix)
 	}
 	if question.Writer != nil {
-		//err = question.Writer(&iq.AnswersMap, question.MapKey, answer)
-		iq.AnswersMap[question.MapKey] = answer
+		err = question.Writer(&iq.AnswersMap, question.MapKey, answer)
 		if err != nil {
 			return "", err
 		}
@@ -147,7 +146,7 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 
 // The main function to perform the questionnaire
 func (iq *InteractiveQuestionnaire) Perform() error {
-	iq.AnswersMap = make(map[string]string)
+	iq.AnswersMap = make(map[string]interface{})
 	for i := 0; i < len(iq.MandatoryQuestionsKeys); i++ {
 		iq.AskQuestion(iq.QuestionsMap[iq.MandatoryQuestionsKeys[i]])
 	}
@@ -159,7 +158,7 @@ func (iq *InteractiveQuestionnaire) Perform() error {
 		if err != nil {
 			return err
 		}
-		if key == WriteAndExist {
+		if key == SaveAndExit {
 			break
 		}
 	}

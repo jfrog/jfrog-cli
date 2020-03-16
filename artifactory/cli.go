@@ -708,7 +708,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return repoCmd(c, false)
+				return repoCreateCmd(c)
 			},
 		},
 		{
@@ -721,12 +721,12 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return repoCmd(c, true)
+				return repoUpdateCmd(c)
 			},
 		},
 		{
 			Name:         "repo-delete",
-			Aliases:      []string{"rd"},
+			Aliases:      []string{"rdel"},
 			Flags:        getRepoDeleteFlags(),
 			Usage:        repodelete.Description,
 			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
@@ -3194,7 +3194,7 @@ func repoTemplateCmd(c *cli.Context) error {
 	return commands.Exec(repoTemplateCmd)
 }
 
-func repoCmd(c *cli.Context, isUpdate bool) error {
+func repoCreateCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -3209,8 +3209,28 @@ func repoCmd(c *cli.Context, isUpdate bool) error {
 	}
 
 	// Run command.
-	repoCreateCmd := repository.NewRepoCommand()
-	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars")).SetIsUpdate(isUpdate)
+	repoCreateCmd := repository.NewCreateRepoCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(repoCreateCmd)
+}
+
+func repoUpdateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoCreateCmd := repository.NewUpdateRepoCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
 	return commands.Exec(repoCreateCmd)
 }
 

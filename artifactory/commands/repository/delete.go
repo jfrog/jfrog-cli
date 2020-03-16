@@ -40,7 +40,7 @@ func (rdc *RepoDeleteCommand) CommandName() string {
 }
 
 func (rdc *RepoDeleteCommand) Run() (err error) {
-	if !rdc.quiet && !cliutils.InteractiveConfirm("Are you sure you want to remove the repository "+rdc.repoKey+"?") {
+	if !rdc.quiet && !cliutils.InteractiveConfirm("Are you sure you want to permanently delete the repository "+rdc.repoKey+" including all of it content?") {
 		return nil
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rdc.rtDetails, false)

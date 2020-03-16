@@ -19,45 +19,9 @@ type RepoCommand struct {
 	rtDetails    *config.ArtifactoryDetails
 	templatePath string
 	vars         string
-	isUpdate     bool
 }
 
-func NewRepoCommand() *RepoCommand {
-	return &RepoCommand{}
-}
-
-func (rc *RepoCommand) SetTemplatePath(path string) *RepoCommand {
-	rc.templatePath = path
-	return rc
-}
-
-func (rc *RepoCommand) SetIsUpdate(isUpdate bool) *RepoCommand {
-	rc.isUpdate = isUpdate
-	return rc
-}
-
-func (rc *RepoCommand) SetVars(vars string) *RepoCommand {
-	rc.vars = vars
-	return rc
-}
-
-func (rc *RepoCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *RepoCommand {
-	rc.rtDetails = rtDetails
-	return rc
-}
-
-func (rc *RepoCommand) RtDetails() (*config.ArtifactoryDetails, error) {
-	return rc.rtDetails, nil
-}
-
-func (rc *RepoCommand) CommandName() string {
-	if rc.isUpdate {
-		return "rt_repo_update"
-	}
-	return "rt_repo_create"
-}
-
-func (rc *RepoCommand) Run() (err error) {
+func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 	// Read the template file
 	content, err := fileutils.ReadFile(rc.templatePath)
 	if errorutils.CheckError(err) != nil {
@@ -90,13 +54,13 @@ func (rc *RepoCommand) Run() (err error) {
 	// Using their values we'll pick the suitable handler from one of the handler maps to create/update a repository
 	switch repoConfigMap[Rclass] {
 	case Local:
-		err = localRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, rc.isUpdate)
+		err = localRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, isUpdate)
 	case Remote:
-		err = remoteRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, rc.isUpdate)
+		err = remoteRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, isUpdate)
 	case Virtual:
-		err = virtualRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, rc.isUpdate)
+		err = virtualRepoHandlers[repoConfigMap[PackageType].(string)](servicesManager, content, isUpdate)
 	default:
-		return errors.New("unsupported rclass")
+		return errorutils.CheckError(errors.New("unsupported rclass"))
 	}
 	return err
 }
@@ -231,7 +195,7 @@ var localRepoHandlers = map[string]repoHandler{
 func localMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewMavenLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -245,7 +209,7 @@ func localMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func localGradleHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGradleLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -259,7 +223,7 @@ func localGradleHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func localIvyHandles(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewIvyLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -273,7 +237,7 @@ func localIvyHandles(servicesManager *artifactory.ArtifactoryServicesManager, js
 func localSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewSbtLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -287,7 +251,7 @@ func localSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func localHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewHelmLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -301,7 +265,7 @@ func localHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localCocoapodsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCocoapodsLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -315,7 +279,7 @@ func localCocoapodsHandler(servicesManager *artifactory.ArtifactoryServicesManag
 func localOpkgHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewOpkgLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -329,7 +293,7 @@ func localOpkgHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewRpmLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -343,7 +307,7 @@ func localRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func localNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNugetLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -357,7 +321,7 @@ func localNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func localCranHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCranLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -371,7 +335,7 @@ func localCranHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGemsLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -385,7 +349,7 @@ func localGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNpmLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -399,7 +363,7 @@ func localNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func localBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewBowerLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -413,7 +377,7 @@ func localBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func localDebianHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDebianLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -427,7 +391,7 @@ func localDebianHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func localComposerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewComposerLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -441,7 +405,7 @@ func localComposerHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func localPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPypiLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -455,7 +419,7 @@ func localPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localDockerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDockerLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -469,7 +433,7 @@ func localDockerHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func localVagrantHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewVagrantLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -483,7 +447,7 @@ func localVagrantHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func localGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGitlfsLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -497,7 +461,7 @@ func localGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func localGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGoLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -511,7 +475,7 @@ func localGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, jso
 func localYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewYumLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -525,7 +489,7 @@ func localYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func localConanHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewConanLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -539,7 +503,7 @@ func localConanHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func localChefHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewChefLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -553,7 +517,7 @@ func localChefHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func localPuppetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPuppetLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -567,7 +531,7 @@ func localPuppetHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func localGenericHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGenericLocalRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 
@@ -612,7 +576,7 @@ var remoteRepoHandlers = map[string]repoHandler{
 func remoteMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewMavenRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -626,7 +590,7 @@ func remoteMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteGradleHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGradleRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -640,7 +604,7 @@ func remoteGradleHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func remoteIvyHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewIvyRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -654,7 +618,7 @@ func remoteIvyHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewSbtRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -668,7 +632,7 @@ func remoteSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewHelmRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -682,7 +646,7 @@ func remoteHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func remoteCocoapodsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCocoapodsRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -696,7 +660,7 @@ func remoteCocoapodsHandler(servicesManager *artifactory.ArtifactoryServicesMana
 func remoteOpkgHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewOpkgRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -710,7 +674,7 @@ func remoteOpkgHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func remoteRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewRpmRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -724,7 +688,7 @@ func remoteRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNugetRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -738,7 +702,7 @@ func remoteNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteCranHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCranRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -752,7 +716,7 @@ func remoteCranHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func remoteGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGemsRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -766,7 +730,7 @@ func remoteGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func remoteNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNpmRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -780,7 +744,7 @@ func remoteNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewBowerRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -794,7 +758,7 @@ func remoteBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteDebianHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDebianRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -808,7 +772,7 @@ func remoteDebianHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func remoteComposerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewComposerRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -822,7 +786,7 @@ func remoteComposerHandler(servicesManager *artifactory.ArtifactoryServicesManag
 func remotelPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPypiRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -836,7 +800,7 @@ func remotelPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteDockerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDockerRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -850,7 +814,7 @@ func remoteDockerHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func remoteGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGitlfsRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -864,7 +828,7 @@ func remoteGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func remoteGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGoRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -878,7 +842,7 @@ func remoteGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func remoteConanHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewConanRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -892,7 +856,7 @@ func remoteConanHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteChefHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewChefRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -906,7 +870,7 @@ func remoteChefHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func remotePuppetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPuppetRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -920,7 +884,7 @@ func remotePuppetHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func remoteVcsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewVcsRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -934,7 +898,7 @@ func remoteVcsHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteP2Handler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewP2RemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -948,7 +912,7 @@ func remoteP2Handler(servicesManager *artifactory.ArtifactoryServicesManager, js
 func remoteCondaHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCondaRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -962,7 +926,7 @@ func remoteCondaHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func remoteYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewYumRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -976,7 +940,7 @@ func remoteYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func remoteGenericHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGenericRemoteRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1016,7 +980,7 @@ var virtualRepoHandlers = map[string]repoHandler{
 func virtualMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewMavenVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1030,7 +994,7 @@ func virtualMavenHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func virtualGradleHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGradleVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1044,7 +1008,7 @@ func virtualGradleHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func virtualIvyHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewIvyVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1058,7 +1022,7 @@ func virtualIvyHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func virtualSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewSbtVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1072,7 +1036,7 @@ func virtualSbtHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func virtualHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewHelmVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1086,7 +1050,7 @@ func virtualHelmHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func virtualRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewRpmVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1100,7 +1064,7 @@ func virtualRpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func virtualNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNugetVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1114,7 +1078,7 @@ func virtualNugetHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func virtualCranHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCranVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1128,7 +1092,7 @@ func virtualCranHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func virtualGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGemsVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1142,7 +1106,7 @@ func virtualGemsHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func virtualNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewNpmVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1156,7 +1120,7 @@ func virtualNpmHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func virtualBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewBowerVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1170,7 +1134,7 @@ func virtualBowerHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func virtualDebianHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDebianVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1184,7 +1148,7 @@ func virtualDebianHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func virtualPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPypiVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1198,7 +1162,7 @@ func virtualPypiHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func virtualDockerHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewDockerVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1212,7 +1176,7 @@ func virtualDockerHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func virtualGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGitlfsVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1226,7 +1190,7 @@ func virtualGitlfsHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func virtualGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGoVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1240,7 +1204,7 @@ func virtualGoHandler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func virtualConanHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewConanVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1254,7 +1218,7 @@ func virtualConanHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func virtualChefHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewChefVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1268,7 +1232,7 @@ func virtualChefHandler(servicesManager *artifactory.ArtifactoryServicesManager,
 func virtualPuppetHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewPuppetVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1282,7 +1246,7 @@ func virtualPuppetHandler(servicesManager *artifactory.ArtifactoryServicesManage
 func virtualYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewYumVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1296,7 +1260,7 @@ func virtualYumHandler(servicesManager *artifactory.ArtifactoryServicesManager, 
 func virtualP2Handler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewP2VirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1310,7 +1274,7 @@ func virtualP2Handler(servicesManager *artifactory.ArtifactoryServicesManager, j
 func virtualCondaHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewCondaVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {
@@ -1324,7 +1288,7 @@ func virtualCondaHandler(servicesManager *artifactory.ArtifactoryServicesManager
 func virtualGenericHandler(servicesManager *artifactory.ArtifactoryServicesManager, jsonConfig []byte, isUpdate bool) error {
 	params := services.NewGenericVirtualRepositoryParams()
 	err := json.Unmarshal(jsonConfig, &params)
-	if err != nil {
+	if errorutils.CheckError(err) != nil {
 		return err
 	}
 	if isUpdate {

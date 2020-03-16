@@ -1,8 +1,8 @@
 package repodelete
 
-const Description = "Remove a repository from Artifactory."
+const Description = "Permanently delete a repository with all of its content from Artifactory."
 
-var Usage = []string{`jfrog rt rd <repository key>`}
+var Usage = []string{`jfrog rt rdel <repository key>`}
 
 const Arguments string = `	repository key
 		Specifies the repository that should be removed.`
