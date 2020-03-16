@@ -361,7 +361,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "mvn",
-			Flags:           getBuildFlags(),
+			Flags:           getMavenGradleFlags(),
 			Usage:           mvndoc.Description,
 			HelpName:        common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText:       mvndoc.Arguments,
@@ -386,7 +386,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "gradle",
-			Flags:           getBuildFlags(),
+			Flags:           getMavenGradleFlags(),
 			Usage:           gradledoc.Description,
 			HelpName:        common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText:       gradledoc.Arguments,
@@ -1035,6 +1035,11 @@ func getSpecFlags() []cli.Flag {
 	}
 }
 
+func getMavenGradleFlags() []cli.Flag {
+	flags := getBuildFlags()
+	return append(flags, getDeploymentThreadsFlag())
+}
+
 func getDockerPushFlags() []cli.Flag {
 	var flags []cli.Flag
 	flags = append(flags, getDockerFlags()...)
@@ -1103,8 +1108,8 @@ func getNpmFlags() []cli.Flag {
 }
 
 func getBasicBuildToolsFlags() []cli.Flag {
-	npmFlags := getBaseFlags()
-	return append(npmFlags, getServerIdFlag())
+	baseFlags := getBaseFlags()
+	return append(baseFlags, getServerIdFlag())
 }
 
 func getNugetFlags() []cli.Flag {
@@ -1346,6 +1351,14 @@ func getArchiveEntriesFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "archive-entries",
 		Usage: "[Optional] If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts.` `",
+	}
+}
+
+func getDeploymentThreadsFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "threads",
+		Value: "",
+		Usage: "[Default: 3] Number of threads for uploading build artifacts.` `",
 	}
 }
 
@@ -1829,7 +1842,11 @@ func mvnLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals(c.Args().Get(0))
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return err
+	}
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals(c.Args().Get(0)).SetThreads(threads)
 
 	return commands.Exec(mvnCmd)
 }
@@ -1858,7 +1875,14 @@ func mvnCmd(c *cli.Context) error {
 			return err
 		}
 		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredMavenArgs, " "))
+		if err != nil {
+			return err
+		}
+		filteredMavenArgs, threads, err := extractThreadsFlagFromNativeCommand(filteredMavenArgs)
+		if err != nil {
+			return err
+		}
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredMavenArgs, " ")).SetThreads(threads)
 		return commands.Exec(mvnCmd)
 	}
 	return mvnLegacyCmd(c)
@@ -1888,8 +1912,14 @@ func gradleCmd(c *cli.Context) error {
 			return err
 		}
 		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath)
-
+		if err != nil {
+			return err
+		}
+		filteredGradleArgs, threads, err := extractThreadsFlagFromNativeCommand(filteredGradleArgs)
+		if err != nil {
+			return err
+		}
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads)
 		return commands.Exec(gradleCmd)
 	}
 	return gradleLegacyCmd(c)
@@ -1905,8 +1935,12 @@ func gradleLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return err
+	}
 	gradleCmd := gradle.NewGradleCommand()
-	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1))
+	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1)).SetThreads(threads)
 
 	return commands.Exec(gradleCmd)
 }
@@ -3739,6 +3773,24 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 	This will create the configuration inside the .jfrog directory under the root directory of the project.
 	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
+}
+
+func extractThreadsFlagFromNativeCommand(args []string) (cleanArgs []string, threadsCount int, err error) {
+	// Extract threads flag.
+	cleanArgs = append([]string(nil), args...)
+	threadsFlagIndex, threadsValueIndex, threads, err := utils.FindFlag("--threads", cleanArgs)
+	if err != nil {
+		return
+	}
+	utils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
+
+	// Convert flag value to int.
+	threadsCount, err = strconv.Atoi(threads)
+	if err != nil {
+		err = errors.New("The '--threads' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+	}
+
+	return
 }
 
 func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.ReleaseNotesSyntax, error) {
