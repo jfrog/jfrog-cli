@@ -3782,6 +3782,9 @@ func extractThreadsFlagFromNativeCommand(args []string) (cleanArgs []string, thr
 	if err != nil {
 		return
 	}
+	if threadsFlagIndex < 0 {
+		return
+	}
 	utils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
 
 	// Convert flag value to int.
