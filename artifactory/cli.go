@@ -1878,7 +1878,7 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		filteredMavenArgs, threads, err := extractThreadsFlagFromNativeCommand(filteredMavenArgs)
+		filteredMavenArgs, threads, err := extractThreadsFlag(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
@@ -1915,7 +1915,7 @@ func gradleCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		filteredGradleArgs, threads, err := extractThreadsFlagFromNativeCommand(filteredGradleArgs)
+		filteredGradleArgs, threads, err := extractThreadsFlag(filteredGradleArgs)
 		if err != nil {
 			return err
 		}
@@ -3775,14 +3775,11 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
 
-func extractThreadsFlagFromNativeCommand(args []string) (cleanArgs []string, threadsCount int, err error) {
+func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, err error) {
 	// Extract threads flag.
 	cleanArgs = append([]string(nil), args...)
 	threadsFlagIndex, threadsValueIndex, threads, err := utils.FindFlag("--threads", cleanArgs)
-	if err != nil {
-		return
-	}
-	if threadsFlagIndex < 0 {
+	if err != nil || threadsFlagIndex < 0 {
 		return
 	}
 	utils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
