@@ -130,7 +130,7 @@ func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetai
 	return response
 }
 
-// Return true if the release bundle is exist locally on distribution
+// Return true if the release bundle exists locally on distribution
 func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, artHttpDetails httputils.HttpClientDetails) {
 	for i := 0; i < 120; i++ {
 		resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
