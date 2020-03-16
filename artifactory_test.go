@@ -22,7 +22,9 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
@@ -3662,4 +3664,30 @@ func initVcsTestDir(t *testing.T) string {
 	path, err := filepath.Abs(tests.Temp)
 	assert.NoError(t, err)
 	return path
+}
+func TestArtifactoryReplicationCreate(t *testing.T) {
+	initArtifactoryTest(t)
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
+	assert.NoError(t, err)
+
+	// Create push replication job
+	err = artifactoryCli.Exec("rjc", specFile)
+	assert.NoError(t, err)
+
+	// Validate create replication
+	replicationShowCmd := replication.NewReplicationShowCommand()
+	replicationShowCmd.SetRepoKey(tests.Repo1).SetRtDetails(artifactoryDetails)
+	err = commands.Exec(replicationShowCmd)
+	assert.ElementsMatch(t, replicationShowCmd.ShowResult(), tests.GetReplicationConfig())
+
+	// Delete replication job
+	err = artifactoryCli.Exec("rjd", tests.Repo1)
+	assert.NoError(t, err)
+
+	// Validate delete replication
+	err = commands.Exec(replicationShowCmd)
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
 }
