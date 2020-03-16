@@ -1248,6 +1248,7 @@ func getDeleteFlags() []cli.Flag {
 		getPropertiesFlag("Only artifacts with these properties will be deleted."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be deleted"),
 		getFailNoOpFlag(),
+		getThreadsFlag(),
 		getArchiveEntriesFlag(),
 	}...)
 }
@@ -2605,7 +2606,11 @@ func deleteCmd(c *cli.Context) error {
 		return err
 	}
 
-	deleteCommand.SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return err
+	}
+	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)

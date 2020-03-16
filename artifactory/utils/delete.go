@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	rtclientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
@@ -14,4 +16,8 @@ func ConfirmDelete(pathsToDelete []rtclientutils.ResultItem) bool {
 		fmt.Println("  " + v.GetItemRelativePath())
 	}
 	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?")
+}
+
+func CreateDeleteServiceManager(artDetails *config.ArtifactoryDetails, threads int, dryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
+	return CreateServiceManagerWithThreads(artDetails, dryRun, threads)
 }

@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine as builder
+FROM golang:1.14-alpine as builder
 WORKDIR /jfrog-cli-go
 COPY . /jfrog-cli-go
 RUN apk add --update git && sh build.sh

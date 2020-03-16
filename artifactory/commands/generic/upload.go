@@ -81,10 +81,6 @@ func (uc *UploadCommand) upload() error {
 	}
 
 	// Create Service Manager:
-	certPath, err := utils.GetJfrogSecurityDir()
-	if err != nil {
-		return err
-	}
 	uc.uploadConfiguration.MinChecksumDeploySize, err = getMinChecksumDeploySize()
 	if err != nil {
 		return err
@@ -93,7 +89,7 @@ func (uc *UploadCommand) upload() error {
 	if errorutils.CheckError(err) != nil {
 		return err
 	}
-	servicesManager, err := utils.CreateUploadServiceManager(rtDetails, uc.uploadConfiguration, certPath, uc.DryRun(), progressBar)
+	servicesManager, err := utils.CreateUploadServiceManager(rtDetails, uc.uploadConfiguration.Threads, uc.DryRun(), progressBar)
 	if err != nil {
 		return err
 	}
