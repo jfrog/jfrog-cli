@@ -1,10 +1,10 @@
 package spec
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -31,7 +31,7 @@ func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *
 	}
 
 	if len(specVars) > 0 {
-		content = replaceSpecVars(content, specVars)
+		content = cliutils.ReplaceSpecVars(content, specVars)
 	}
 
 	err = json.Unmarshal(content, spec)
@@ -39,17 +39,6 @@ func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *
 		return
 	}
 	return
-}
-
-func replaceSpecVars(content []byte, specVars map[string]string) []byte {
-	log.Debug("Replacing variables in the provided File Spec: \n" + string(content))
-	for key, val := range specVars {
-		key = "${" + key + "}"
-		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
-		content = bytes.Replace(content, []byte(key), []byte(val), -1)
-	}
-	log.Debug("The reformatted File Spec is: \n" + string(content))
-	return content
 }
 
 type File struct {

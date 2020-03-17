@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repotemplate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repoupdate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -680,6 +685,58 @@ func GetCommands() []cli.Command {
 				return releaseBundleDeleteCmd(c)
 			},
 		},
+		{
+			Name:            "repo-template",
+			Aliases:         []string{"rpt"},
+			Usage:           repotemplate.Description,
+			HelpName:        common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
+			UsageText:       repotemplate.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoTemplateCmd(c)
+			},
+		},
+		{
+			Name:         "repo-create",
+			Aliases:      []string{"rc"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        repocreate.Description,
+			HelpName:     common.CreateUsage("rt rc", repocreate.Description, repocreate.Usage),
+			UsageText:    repocreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoCreateCmd(c)
+			},
+		},
+		{
+			Name:         "repo-update",
+			Aliases:      []string{"ru"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        repoupdate.Description,
+			HelpName:     common.CreateUsage("rt ru", repoupdate.Description, repoupdate.Usage),
+			UsageText:    repoupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoUpdateCmd(c)
+			},
+		},
+		{
+			Name:         "repo-delete",
+			Aliases:      []string{"rdel"},
+			Flags:        getRepoDeleteFlags(),
+			Usage:        repodelete.Description,
+			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
+			UsageText:    repodelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return repoDeleteCmd(c)
+			},
+		},
 	}
 }
 
@@ -951,6 +1008,17 @@ func getDownloadFlags() []cli.Flag {
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
 		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
 	}...)
+}
+
+func getTemplateUsersFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), cli.StringFlag{
+		Name:  "vars",
+		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
+	})
+}
+
+func getRepoDeleteFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"))
 }
 
 func getBuildFlags() []cli.Flag {
@@ -3143,6 +3211,81 @@ func pipInstallCmd(c *cli.Context) error {
 	pipCmd := pip.NewPipInstallCommand()
 	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
 	return commands.Exec(pipCmd)
+}
+
+func repoTemplateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Run command.
+	repoTemplateCmd := repository.NewRepoTemplateCommand()
+	repoTemplateCmd.SetTemplatePath(c.Args().Get(0))
+	return commands.Exec(repoTemplateCmd)
+}
+
+func repoCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoCreateCmd := repository.NewCreateRepoCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(repoCreateCmd)
+}
+
+func repoUpdateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoCreateCmd := repository.NewUpdateRepoCommand()
+	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(repoCreateCmd)
+}
+
+func repoDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	repoDeleteCmd := repository.NewRepoDeleteCommand()
+	repoDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
+	return commands.Exec(repoDeleteCmd)
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
