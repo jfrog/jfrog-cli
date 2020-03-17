@@ -13,6 +13,10 @@ import (
 )
 
 const (
+	// Strings for prompt questions
+	SelectConfigKeyMsg   = "Select the next configuration key" + utils.PressTabMsg
+	InsertValuePromptMsg = "Insert the value for "
+
 	// Template types
 	TemplateType = "templateType"
 	JobType      = "jobType"
@@ -21,9 +25,7 @@ const (
 	Push         = "push"
 
 	// Common replication configuration JSON keys
-	Username               = "username"
-	Password               = "password"
-	URL                    = "url"
+	ServerId               = "serverId"
 	CronExp                = "cronExp"
 	RepoKey                = "repoKey"
 	EnableEventReplication = "enableEventReplication"
@@ -88,7 +90,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	},
 	TemplateType: {
 		Options: []prompt.Suggest{
-			{Text: Create, Description: "Template for creating a new replication job"},
+			{Text: Create, Description: "Template for creating a new replication"},
 		},
 		Msg:          "Select the template type",
 		PromptPrefix: ">",
@@ -99,8 +101,8 @@ var questionMap = map[string]utils.QuestionInfo{
 	},
 	JobType: {
 		Options: []prompt.Suggest{
-			{Text: Pull, Description: "Pull replication job"},
-			{Text: Push, Description: "Push replication job"},
+			{Text: Pull, Description: "Pull replication"},
+			{Text: Push, Description: "Push replication"},
 		},
 		Msg:          "Select job type",
 		PromptPrefix: ">",
@@ -117,28 +119,12 @@ var questionMap = map[string]utils.QuestionInfo{
 		MapKey:       RepoKey,
 		Callback:     nil,
 	},
-	Username: {
-		Msg:          "Enter user name",
+	ServerId: {
+		Msg:          "Enter server id",
 		PromptPrefix: ">",
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
-		MapKey:       Username,
-		Callback:     nil,
-	},
-	Password: {
-		Msg:          "Enter password",
-		PromptPrefix: ">",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       Password,
-		Callback:     nil,
-	},
-	URL: {
-		Msg:          "Enter URL",
-		PromptPrefix: ">",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       URL,
+		MapKey:       ServerId,
 		Callback:     nil,
 	},
 	CronExp: {
@@ -177,26 +163,26 @@ func jobTypeCallback(iq *utils.InteractiveQuestionnaire, jobType string) (string
 	if jobType == Pull {
 		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
 	} else {
-		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, Username, Password, URL)
+		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, ServerId)
 		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
 	}
 	return "", nil
 }
 
 func getAllPossibleOptionalRepoConfKeys(values ...string) []prompt.Suggest {
-	optionalKeys := []string{utils.WriteAndExist, Enabled, SyncDeletes, SyncProperties, SyncStatistics, PathPrefix, EnableEventReplication, SocketTimeoutMillis}
+	optionalKeys := []string{utils.SaveAndExit, Enabled, SyncDeletes, SyncProperties, SyncStatistics, PathPrefix, EnableEventReplication, SocketTimeoutMillis}
 	if len(values) > 0 {
 		optionalKeys = append(optionalKeys, values...)
 	}
 	return utils.GetSuggestsFromKeys(optionalKeys, suggestionMap)
 }
 
-//duplicate code
 func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value string, err error) {
-	if key != utils.WriteAndExist {
+	if key != utils.SaveAndExit {
 		valueQuestion := iq.QuestionsMap[key]
+		// Since we are using default question in most of the cases we set the map key here
 		valueQuestion.MapKey = key
-		valueQuestion.PromptPrefix = "Insert the value for " + key
+		valueQuestion.PromptPrefix = InsertValuePromptMsg + key
 		if valueQuestion.Options != nil {
 			valueQuestion.PromptPrefix += utils.PressTabMsg
 		}
@@ -207,10 +193,8 @@ func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value 
 }
 
 var suggestionMap = map[string]prompt.Suggest{
-	utils.WriteAndExist:    {Text: utils.WriteAndExist},
-	Username:               {Text: Username},
-	Password:               {Text: Password},
-	URL:                    {Text: URL},
+	utils.SaveAndExit:      {Text: utils.SaveAndExit},
+	ServerId:               {Text: ServerId},
 	RepoKey:                {Text: RepoKey},
 	CronExp:                {Text: CronExp},
 	EnableEventReplication: {Text: EnableEventReplication},

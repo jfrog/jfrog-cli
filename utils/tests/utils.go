@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
@@ -389,6 +390,7 @@ func getRepositoriesNameMap() map[string]string {
 		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
 		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,
 		"${GO_REPO}":             GoLocalRepo,
+		"${RT_SERVER_ID}":        RtServerId,
 		"${RT_URL}":              *RtUrl,
 		"${RT_API_KEY}":          *RtApiKey,
 		"${RT_USERNAME}":         *RtUser,

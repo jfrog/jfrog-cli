@@ -72,6 +72,8 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundledistribute"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationcreate"
+	replicationdelete "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationdelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobcreate"
 	replicationdelete "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobdelete"
 	replicationshow "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobshow"
@@ -743,11 +745,11 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "replication-template-create",
-			Aliases:      []string{"rtc"},
+			Name:         "replication-template",
+			Aliases:      []string{"rplt"},
 			Flags:        getTemplateUsersFlags(),
 			Usage:        replicationtemplate.Description,
-			HelpName:     common.CreateUsage("rt rtc", replicationtemplate.Description, replicationtemplate.Usage),
+			HelpName:     common.CreateUsage("rt rplt", replicationtemplate.Description, replicationtemplate.Usage),
 			UsageText:    replicationtemplate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -756,12 +758,12 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "replication-job-create",
-			Aliases:      []string{"rjc"},
+			Name:         "replication-create",
+			Aliases:      []string{"rplc"},
 			Flags:        getTemplateUsersFlags(),
-			Usage:        replicationjobcreate.Description,
-			HelpName:     common.CreateUsage("rt rjc", replicationjobcreate.Description, replicationjobcreate.Usage),
-			UsageText:    replicationjobcreate.Arguments,
+			Usage:        replicationcreate.Description,
+			HelpName:     common.CreateUsage("rt rplc", replicationcreate.Description, replicationcreate.Usage),
+			UsageText:    replicationcreate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -769,29 +771,16 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "replication-job-delete",
-			Aliases:      []string{"rjd"},
-			Flags:        getRepoDeleteFlags(),
+			Name:         "replication-delete",
+			Aliases:      []string{"rpldel"},
+			Flags:        getReplicationDeleteFlags(),
 			Usage:        replicationdelete.Description,
-			HelpName:     common.CreateUsage("rt rjd", replicationdelete.Description, replicationdelete.Usage),
+			HelpName:     common.CreateUsage("rt rpldel", replicationdelete.Description, replicationdelete.Usage),
 			UsageText:    replicationdelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return replicationDeleteCmd(c)
-			},
-		},
-		{
-			Name:         "replication-job-show",
-			Aliases:      []string{"rjs"},
-			Flags:        getRepoDeleteFlags(),
-			Usage:        replicationshow.Description,
-			HelpName:     common.CreateUsage("rt rjs", replicationshow.Description, replicationshow.Usage),
-			UsageText:    replicationshow.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: common.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return replicationShowCmd(c)
 			},
 		},
 	}
@@ -1085,6 +1074,10 @@ func getTemplateUsersFlags() []cli.Flag {
 
 func getRepoDeleteFlags() []cli.Flag {
 	return append(getServerWithClientCertsFlags(), getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"))
+}
+
+func getReplicationDeleteFlags() []cli.Flag {
+	return getRepoDeleteFlags()
 }
 
 func getBuildFlags() []cli.Flag {
@@ -1997,7 +1990,7 @@ func mvnLegacyCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2038,7 +2031,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2142,7 +2135,7 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2232,7 +2225,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 }
 
 func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2282,7 +2275,7 @@ func npmLegacyCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2364,7 +2357,7 @@ func goPublishCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
-func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
+func getCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
 	}
@@ -2444,7 +2437,7 @@ func shouldSkipGradleFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3267,7 +3260,7 @@ func curlCmd(c *cli.Context) error {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3295,7 +3288,7 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func repoTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3350,7 +3343,7 @@ func repoUpdateCmd(c *cli.Context) error {
 }
 
 func repoDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3369,7 +3362,7 @@ func repoDeleteCmd(c *cli.Context) error {
 }
 
 func replicationTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
@@ -3381,7 +3374,7 @@ func replicationTemplateCmd(c *cli.Context) error {
 }
 
 func replicationCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
@@ -3397,7 +3390,7 @@ func replicationCreateCmd(c *cli.Context) error {
 }
 
 func replicationDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
@@ -3410,31 +3403,6 @@ func replicationDeleteCmd(c *cli.Context) error {
 	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
 	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(replicationDeleteCmd)
-}
-
-func replicationShowCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
-	if err != nil {
-		return err
-	}
-	replicationShowCmd := replication.NewReplicationShowCommand()
-	replicationShowCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails)
-	err = commands.Exec(replicationShowCmd)
-	if err != nil {
-		return err
-	}
-	showResult, err := json.MarshalIndent(replicationShowCmd.ShowResult(), "", "  ")
-	if err != nil {
-		return err
-	}
-	log.Info("Replication configuration for " + replicationShowCmd.RepoKey() + ":\n" + string(showResult))
-	return err
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {

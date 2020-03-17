@@ -22,9 +22,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
@@ -3667,27 +3665,32 @@ func initVcsTestDir(t *testing.T) string {
 }
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
+	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--interactive=false")
+
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
 	assert.NoError(t, err)
 
-	// Create push replication job
-	err = artifactoryCli.Exec("rjc", specFile)
+	// Create push replication
+	err = artifactoryCli.Exec("rplc", specFile)
 	assert.NoError(t, err)
 
 	// Validate create replication
-	replicationShowCmd := replication.NewReplicationShowCommand()
-	replicationShowCmd.SetRepoKey(tests.Repo1).SetRtDetails(artifactoryDetails)
-	err = commands.Exec(replicationShowCmd)
-	assert.ElementsMatch(t, replicationShowCmd.ShowResult(), tests.GetReplicationConfig())
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	result, err := servicesManager.GetPushReplication(tests.Repo1)
+	assert.NoError(t, err)
+	result[0].Password = ""
+	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
 
-	// Delete replication job
-	err = artifactoryCli.Exec("rjd", tests.Repo1)
+	// Delete replication
+	err = artifactoryCli.Exec("rpldel", tests.Repo1)
 	assert.NoError(t, err)
 
 	// Validate delete replication
-	err = commands.Exec(replicationShowCmd)
+	result, err = servicesManager.GetPushReplication(tests.Repo1)
 	assert.Error(t, err)
-
+	// Cleanup
+	deleteServerConfig()
 	cleanArtifactoryTest()
 }

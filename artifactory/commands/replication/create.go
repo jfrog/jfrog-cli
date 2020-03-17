@@ -79,10 +79,17 @@ func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
 	}
 }
 
+func updateArtifactoryInfo(param *clientutils.ReplicationParams, serverId string) error {
+	singleConfig, err := config.GetArtifactorySpecificConfig(serverId)
+	if err != nil {
+		return err
+	}
+	param.URL, param.Password, param.Username = singleConfig.GetUrl(), singleConfig.GetPassword(), singleConfig.GetUser()
+	return nil
+}
+
 var writertsMap = map[string]utils.AnswerWriter{
-	Username:               utils.WriteStringAnswer,
-	Password:               utils.WriteStringAnswer,
-	URL:                    utils.WriteStringAnswer,
+	ServerId:               utils.WriteStringAnswer,
 	RepoKey:                utils.WriteStringAnswer,
 	CronExp:                utils.WriteStringAnswer,
 	EnableEventReplication: utils.WriteBoolAnswer,

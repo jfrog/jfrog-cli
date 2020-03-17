@@ -1268,9 +1268,9 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 func GetReplicationConfig() []services.PushReplicationParams {
 	return []services.PushReplicationParams{
 		{
-			URL:      "http://www.jfrog.com",
-			Username: "jfrog",
-			Password: "password",
+			URL:      *RtUrl,
+			Username: *RtUser,
+			Password: "",
 			CommonReplicationParams: services.CommonReplicationParams{
 				CronExp:                "0 0 12 * * ?",
 				RepoKey:                Repo1,

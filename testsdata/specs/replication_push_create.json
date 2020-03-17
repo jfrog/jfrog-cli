@@ -2,10 +2,8 @@
     "cronExp": "0 0 12 * * ?",
     "enabled": "true",
     "jobType": "push",
-    "password": "password",
     "pathPrefix": "/my/path",
     "repoKey": "${REPO1}",
     "syncDeletes": "true",
-    "url": "http://www.jfrog.com",
-    "username": "jfrog"
+    "serverId": "${RT_SERVER_ID}"
 }
