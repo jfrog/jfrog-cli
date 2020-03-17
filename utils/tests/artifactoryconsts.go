@@ -1268,7 +1268,7 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{
-			URL:                    *RtUrl,
+			Url:                    *RtUrl,
 			Username:               *RtUser,
 			Password:               "",
 			CronExp:                "0 0 12 * * ?",

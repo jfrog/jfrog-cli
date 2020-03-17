@@ -3663,9 +3663,11 @@ func initVcsTestDir(t *testing.T) string {
 	assert.NoError(t, err)
 	return path
 }
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
-	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--interactive=false")
+	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--apikey="+*tests.RtApiKey, "--access-token="+*tests.RtAccessToken, "--interactive=false")
+	defer deleteServerConfig()
 
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
@@ -3691,6 +3693,5 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	result, err = servicesManager.GetReplication(tests.Repo1)
 	assert.Error(t, err)
 	// Cleanup
-	deleteServerConfig()
 	cleanArtifactoryTest()
 }

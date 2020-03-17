@@ -7,7 +7,7 @@ import (
 	rtUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
@@ -77,16 +77,16 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	var params *clientutils.ReplicationParams
+	var params services.CreateReplicationParams
 	err = json.Unmarshal(content, &params)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rcc.rtDetails, false)
 	if serverId != "" {
-		updateArtifactoryInfo(params, serverId)
+		updateArtifactoryInfo(&params, serverId)
 	}
-	return servicesManager.CreateReplication(*params)
+	return servicesManager.CreateReplication(params)
 }
 
 func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
@@ -98,12 +98,12 @@ func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
 	}
 }
 
-func updateArtifactoryInfo(param *clientutils.ReplicationParams, serverId string) error {
+func updateArtifactoryInfo(param *services.CreateReplicationParams, serverId string) error {
 	singleConfig, err := config.GetArtifactorySpecificConfig(serverId)
 	if err != nil {
 		return err
 	}
-	param.URL, param.Password, param.Username = singleConfig.GetUrl(), singleConfig.GetPassword(), singleConfig.GetUser()
+	param.Url, param.Password, param.Username = singleConfig.GetUrl(), singleConfig.GetPassword(), singleConfig.GetUser()
 	return nil
 }
 
