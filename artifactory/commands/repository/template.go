@@ -477,14 +477,18 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	if strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
-		return errors.New("Path cannot be a directory." + PathErrorSuffixMsg)
-	}
-	exist, err := fileutils.IsFileExists(rtc.path, true)
+	exists, err := fileutils.IsDirExists(rtc.path, true)
 	if err != nil {
 		return err
 	}
-	if exist {
+	if exists || strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
+		return errors.New("Path cannot be a directory." + PathErrorSuffixMsg)
+	}
+	exists, err = fileutils.IsFileExists(rtc.path, true)
+	if err != nil {
+		return err
+	}
+	if exists {
 		return errors.New("File already exists." + PathErrorSuffixMsg)
 	}
 
