@@ -74,17 +74,14 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	os.Remove(certificate.KEY_FILE)
 	os.Remove(certificate.CERT_FILE)
 	// Wait for the reverse proxy to start up.
-	err := checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false)
-	if err != nil {
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url
 	oldRtUrl := tests.RtUrl
 	parsedUrl, err := url.Parse(artifactoryDetails.Url)
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	tests.RtUrl = &proxyUrl
 
-	createHomeConfigAndLocalRepo(t)
+	assert.NoError(t, createHomeConfigAndLocalRepo(t))
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
