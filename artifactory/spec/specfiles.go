@@ -31,7 +31,7 @@ func CreateSpecFromFile(specFilePath string, specVars map[string]string) (spec *
 	}
 
 	if len(specVars) > 0 {
-		content = cliutils.ReplaceSpecVars(content, specVars)
+		content = cliutils.ReplaceVars(content, specVars)
 	}
 
 	err = json.Unmarshal(content, spec)

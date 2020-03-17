@@ -30,7 +30,7 @@ func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 	// Replace vars string-by-string if needed
 	if len(rc.vars) > 0 {
 		templateVars := cliutils.SpecVarsStringToMap(rc.vars)
-		content = cliutils.ReplaceSpecVars(content, templateVars)
+		content = cliutils.ReplaceVars(content, templateVars)
 	}
 	// Unmarshal template to a map
 	var repoConfigMap map[string]interface{}
