@@ -1,7 +1,7 @@
 package cliutils
 
 import (
-	errors2 "errors"
+	"bytes"
 	"fmt"
 	"os"
 	"path"
@@ -262,6 +262,17 @@ type Credentials interface {
 	GetPassword() string
 }
 
+func ReplaceVars(content []byte, specVars map[string]string) []byte {
+	log.Debug("Replacing variables in the provided content: \n" + string(content))
+	for key, val := range specVars {
+		key = "${" + key + "}"
+		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
+		content = bytes.Replace(content, []byte(key), []byte(val), -1)
+	}
+	log.Debug("The reformatted content is: \n" + string(content))
+	return content
+}
+
 func GetJfrogHomeDir() (string, error) {
 	// The JfrogHomeEnv environment variable has been deprecated and replaced with HomeDir
 	if os.Getenv(HomeDir) != "" {
@@ -272,7 +283,7 @@ func GetJfrogHomeDir() (string, error) {
 
 	userHomeDir := fileutils.GetHomeDir()
 	if userHomeDir == "" {
-		err := errorutils.CheckError(errors2.New("couldn't find home directory. Make sure your HOME environment variable is set"))
+		err := errorutils.CheckError(errors.New("couldn't find home directory. Make sure your HOME environment variable is set"))
 		if err != nil {
 			return "", err
 		}

@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-const gradleExtractorDependencyVersion = "4.13.0"
+const gradleExtractorDependencyVersion = "4.15.0"
 const gradleInitScriptTemplate = "gradle.init"
 
 const usePlugin = "useplugin"
@@ -30,6 +30,7 @@ type GradleCommand struct {
 	configPath    string
 	configuration *utils.BuildConfiguration
 	rtDetails     *config.ArtifactoryDetails
+	threads       int
 }
 
 func NewGradleCommand() *GradleCommand {
@@ -60,7 +61,7 @@ func (gc *GradleCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	gradleRunConfig, err := createGradleRunConfig(gc.tasks, gc.configPath, gc.configuration, gradleDependenciesDir, gradlePluginFilename)
+	gradleRunConfig, err := createGradleRunConfig(gc.tasks, gc.configPath, gc.configuration, gc.threads, gradleDependenciesDir, gradlePluginFilename)
 	if err != nil {
 		return err
 	}
@@ -90,6 +91,11 @@ func (gc *GradleCommand) SetTasks(tasks string) *GradleCommand {
 	return gc
 }
 
+func (gc *GradleCommand) SetThreads(threads int) *GradleCommand {
+	gc.threads = threads
+	return gc
+}
+
 func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename string, err error) {
 	dependenciesPath, err := config.GetJfrogDependenciesPath()
 	if err != nil {
@@ -106,7 +112,7 @@ func downloadGradleDependencies() (gradleDependenciesDir, gradlePluginFilename s
 	return
 }
 
-func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildConfiguration, gradleDependenciesDir, gradlePluginFilename string) (*gradleRunConfig, error) {
+func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildConfiguration, threads int, gradleDependenciesDir, gradlePluginFilename string) (*gradleRunConfig, error) {
 	runConfig := &gradleRunConfig{env: map[string]string{}}
 	runConfig.tasks = tasks
 
@@ -118,6 +124,10 @@ func createGradleRunConfig(tasks, configPath string, configuration *utils.BuildC
 	runConfig.gradle, err = getGradleExecPath(vConfig.GetBool(useWrapper))
 	if err != nil {
 		return nil, err
+	}
+
+	if threads > 0 {
+		vConfig.Set(utils.FORK_COUNT, threads)
 	}
 
 	runConfig.env[gradleBuildInfoProperties], err = utils.CreateBuildInfoPropertiesFile(configuration.BuildName, configuration.BuildNumber, vConfig, utils.Gradle)

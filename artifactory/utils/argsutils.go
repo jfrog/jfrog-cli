@@ -134,34 +134,6 @@ func FindFlagFirstMatch(flags, args []string) (flagIndex, flagValueIndex int, fl
 	}
 	return
 }
-func ExtractNpmOptionsFromArgs(args []string) (threads int, jsonOutput bool, cleanArgs []string, buildConfig *BuildConfiguration, err error) {
-	threads = 3
-	// Extract threads information from the args.
-	flagIndex, valueIndex, numOfThreads, err := FindFlag("--threads", args)
-	if err != nil {
-		return
-	}
-	RemoveFlagFromCommand(&args, flagIndex, valueIndex)
-	if numOfThreads != "" {
-		threads, err = strconv.Atoi(numOfThreads)
-		if err != nil {
-			err = errorutils.CheckError(err)
-			return
-		}
-	}
-
-	// Since we use --json flag for retrieving the npm config for writing the temp .npmrc, json=true is written to the config list.
-	// We don't want to force the json output for all users, so we check whether the json output was explicitly required.
-	flagIndex, jsonOutput, err = FindBooleanFlag("--json", args)
-	if err != nil {
-		return
-	}
-	// Since boolean flag might appear as --flag or --flag=value, the value index is the same as the flag index.
-	RemoveFlagFromCommand(&args, flagIndex, flagIndex)
-
-	cleanArgs, buildConfig, err = ExtractBuildDetailsFromArgs(args)
-	return
-}
 
 func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig *BuildConfiguration, err error) {
 	var flagIndex, valueIndex int
@@ -189,5 +161,16 @@ func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig
 	}
 	RemoveFlagFromCommand(&cleanArgs, flagIndex, valueIndex)
 	err = ValidateBuildAndModuleParams(buildConfig)
+	return
+}
+
+func ExtractInsecureTlsFromArgs(args []string) (cleanArgs []string, insecureTls bool, err error) {
+	cleanArgs = append([]string(nil), args...)
+
+	flagIndex, insecureTls, err := FindBooleanFlag("--insecure-tls", args)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&cleanArgs, flagIndex, flagIndex)
 	return
 }

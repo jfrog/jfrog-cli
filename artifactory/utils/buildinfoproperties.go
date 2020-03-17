@@ -41,6 +41,7 @@ const BUILD_NAME = "build.name"
 const BUILD_NUMBER = "build.number"
 const BUILD_TIMESTAMP = "build.timestamp"
 const GENERATED_BUILD_INFO = "buildInfo.generated"
+const INSECURE_TLS = "insecureTls"
 
 const RESOLVER_PREFIX = "resolver."
 const DEPLOYER_PREFIX = "deployer."
@@ -60,6 +61,7 @@ const IVY_PATTERN = "ivyPattern"
 const ARTIFACT_PATTERN = "artifactPattern"
 const USE_GRADLE_PLUGIN = "usePlugin"
 const USE_GRADLE_WRAPPER = "useWrapper"
+const FORK_COUNT = "forkCount"
 
 // For path and temp files
 const PROPERTIES_TEMP_PREFIX = "buildInfoProperties"
@@ -86,6 +88,7 @@ var defaultPropertiesValues = map[string]string{
 	"buildInfo.licenseControl.runChecks":                 "false",
 	"org.jfrog.build.extractor.maven.recorder.activate":  "true",
 	"buildInfo.env.extractor.used":                       "true",
+	"artifactory.publish.forkCount":                      "3",
 }
 
 var commonConfigMapping = map[string]string{
@@ -110,6 +113,8 @@ var commonConfigMapping = map[string]string{
 	"buildInfo.generated.build.info":                     GENERATED_BUILD_INFO,
 	"artifactory.proxy.host":                             PROXY + HOST,
 	"artifactory.proxy.port":                             PROXY + PORT,
+	"artifactory.publish.forkCount":                      FORK_COUNT,
+	"artifactory.insecureTls":                            INSECURE_TLS,
 }
 
 var mavenConfigMapping = map[string]string{
