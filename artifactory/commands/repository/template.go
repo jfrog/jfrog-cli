@@ -8,8 +8,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -18,6 +20,8 @@ type RepoTemplateCommand struct {
 }
 
 const (
+	PathErrorSuffixMsg = " Please enter a path, in which the new template file will be created."
+
 	// Strings for prompt questions
 	SelectConfigKeyMsg   = "Select the next configuration key" + utils.PressTabMsg
 	InsertValuePromptMsg = "Insert the value for "
@@ -473,6 +477,17 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
+	if strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
+		return errors.New("Path cannot be a directory." + PathErrorSuffixMsg)
+	}
+	exist, err := fileutils.IsFileExists(rtc.path, true)
+	if err != nil {
+		return err
+	}
+	if exist {
+		return errors.New("File already exists." + PathErrorSuffixMsg)
+	}
+
 	repoTemplateQuestionnaire := &utils.InteractiveQuestionnaire{
 		MandatoryQuestionsKeys: []string{TemplateType, Key, Rclass},
 		QuestionsMap:           questionMap,
