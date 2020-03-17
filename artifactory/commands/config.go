@@ -26,12 +26,12 @@ import (
 var mutex sync.Mutex
 
 type ConfigCommand struct {
-	details              *config.ArtifactoryDetails
-	defaultDetails       *config.ArtifactoryDetails
-	interactive          bool
-	encPassword          bool
-	useRefreshableToken  bool
-	serverId             string
+	details             *config.ArtifactoryDetails
+	defaultDetails      *config.ArtifactoryDetails
+	interactive         bool
+	encPassword         bool
+	useRefreshableToken bool
+	serverId            string
 }
 
 func NewConfigCommand() *ConfigCommand {

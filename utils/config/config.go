@@ -567,7 +567,7 @@ func CreateInitialRefreshTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) 
 		return err
 	}
 
-	newToken, err := CreateTokensForConfig(artifactoryDetails, artifactoryDetails.TokenRefreshInterval * 60)
+	newToken, err := CreateTokensForConfig(artifactoryDetails, artifactoryDetails.TokenRefreshInterval*60)
 	if err != nil {
 		return err
 	}
