@@ -1,3 +1,15 @@
+## 1.35.0 (Mar 17, 2020)
+- New repo-create, repo-update and repo-delete commands for Artifactory.
+- New replication-create and replication-delete commands for Artifactory.
+- "jfriog rt mvn" and "jfrog rt gradle" now support parallel deployment. 
+- "jfrog rt mvn" - New --insecure-tls option. 
+- New commands - release-bundle-create, release-bundle-update, release-bundle-sign, release-bundle-distribute, release-bundle-delete
+- "jfrog rt delete" now includes a new --threads option.
+- "jfrog rt docker-pull" now supports docker fat manifest.
+- Support using refreshable tokens for authentication with Artifactory.
+- Bug fix - Wring exit code returned for the move, copy, set-props and delete-props commands.
+- Bug fix - Docker version checks fails for specific versions.
+
 ## 1.34.1 (Mar 4, 2020)
 - Improve URL masking reg exp.
 
