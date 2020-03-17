@@ -163,3 +163,14 @@ func ExtractBuildDetailsFromArgs(args []string) (cleanArgs []string, buildConfig
 	err = ValidateBuildAndModuleParams(buildConfig)
 	return
 }
+
+func ExtractInsecureTlsFromArgs(args []string) (cleanArgs []string, insecureTls bool, err error) {
+	cleanArgs = append([]string(nil), args...)
+
+	flagIndex, insecureTls, err := FindBooleanFlag("--insecure-tls", args)
+	if err != nil {
+		return
+	}
+	RemoveFlagFromCommand(&cleanArgs, flagIndex, flagIndex)
+	return
+}

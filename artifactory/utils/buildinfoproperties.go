@@ -41,6 +41,7 @@ const BUILD_NAME = "build.name"
 const BUILD_NUMBER = "build.number"
 const BUILD_TIMESTAMP = "build.timestamp"
 const GENERATED_BUILD_INFO = "buildInfo.generated"
+const INSECURE_TLS = "insecureTls"
 
 const RESOLVER_PREFIX = "resolver."
 const DEPLOYER_PREFIX = "deployer."
@@ -113,6 +114,7 @@ var commonConfigMapping = map[string]string{
 	"artifactory.proxy.host":                             PROXY + HOST,
 	"artifactory.proxy.port":                             PROXY + PORT,
 	"artifactory.publish.forkCount":                      FORK_COUNT,
+	"artifactory.insecureTls":                            INSECURE_TLS,
 }
 
 var mavenConfigMapping = map[string]string{

@@ -26,6 +26,7 @@ const MavenHome = "M2_HOME"
 type MvnCommand struct {
 	goals         string
 	configPath    string
+	insecureTls   bool
 	configuration *utils.BuildConfiguration
 	rtDetails     *config.ArtifactoryDetails
 	threads       int
@@ -60,6 +61,11 @@ func (mc *MvnCommand) SetThreads(threads int) *MvnCommand {
 	return mc
 }
 
+func (mc *MvnCommand) SetInsecureTls(insecureTls bool) *MvnCommand {
+	mc.insecureTls = insecureTls
+	return mc
+}
+
 func (mc *MvnCommand) Run() error {
 	log.Info("Running Mvn...")
 	err := validateMavenInstallation()
@@ -79,11 +85,7 @@ func (mc *MvnCommand) Run() error {
 	}
 
 	defer os.Remove(mvnRunConfig.buildInfoProperties)
-	if err := gofrogcmd.RunCmd(mvnRunConfig); err != nil {
-		return err
-	}
-
-	return nil
+	return gofrogcmd.RunCmd(mvnRunConfig)
 }
 
 // Returns the ArtfiactoryDetails. The information returns from the config file provided.
@@ -188,6 +190,7 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 			return nil, err
 		}
 	}
+	vConfig.Set(utils.INSECURE_TLS, mc.insecureTls)
 
 	if mc.threads > 0 {
 		vConfig.Set(utils.FORK_COUNT, mc.threads)

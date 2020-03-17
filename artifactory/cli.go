@@ -569,7 +569,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "ping",
-			Flags:        getServerWithClientCertsFlags(),
+			Flags:        getPingFlags(),
 			Aliases:      []string{"p"},
 			Usage:        ping.Description,
 			HelpName:     common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -850,11 +850,14 @@ func getBaseFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "access-token",
 			Usage: "[Optional] Artifactory access token.` `",
-		},
-		cli.BoolFlag{
-			Name:  "insecure-tls",
-			Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
 		})
+}
+
+func getInsecureTlsFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "insecure-tls",
+		Usage: "[Default: false] Set to true to skip TLS certificates verification.` `",
+	}
 }
 
 func getClientCertsFlags() []cli.Flag {
@@ -885,6 +888,10 @@ func getServerFlags() []cli.Flag {
 
 func getServerWithClientCertsFlags() []cli.Flag {
 	return append(getServerFlags(), getClientCertsFlags()...)
+}
+
+func getPingFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), getInsecureTlsFlag())
 }
 
 func getSortLimitFlags() []cli.Flag {
@@ -951,6 +958,7 @@ func getUploadFlags() []cli.Flag {
 		getThreadsFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `"),
 		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1007,6 +1015,7 @@ func getDownloadFlags() []cli.Flag {
 		getArchiveEntriesFlag(),
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
 		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1176,8 +1185,7 @@ func getNpmFlags() []cli.Flag {
 }
 
 func getBasicBuildToolsFlags() []cli.Flag {
-	baseFlags := getBaseFlags()
-	return append(baseFlags, getServerIdFlag())
+	return append(getBaseFlags(), getServerIdFlag())
 }
 
 func getNugetFlags() []cli.Flag {
@@ -1267,6 +1275,7 @@ func getMoveFlags() []cli.Flag {
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be moved"),
 		getFailNoOpFlag(),
 		getArchiveEntriesFlag(),
+		getInsecureTlsFlag(),
 	}...)
 
 }
@@ -1297,6 +1306,7 @@ func getCopyFlags() []cli.Flag {
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be copied"),
 		getFailNoOpFlag(),
 		getArchiveEntriesFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1323,6 +1333,7 @@ func getDeleteFlags() []cli.Flag {
 		getFailNoOpFlag(),
 		getThreadsFlag(),
 		getArchiveEntriesFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1349,6 +1360,7 @@ func getSearchFlags() []cli.Flag {
 		getExcludePropertiesFlag("Only artifacts without the specified properties will be returned"),
 		getFailNoOpFlag(),
 		getArchiveEntriesFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1363,6 +1375,7 @@ func getSetOrDeletePropsFlags() []cli.Flag {
 	flags := append(getSpecFlags(), []cli.Flag{
 		getPropertiesFlag("Only artifacts with these properties are affected."),
 		getExcludePropertiesFlag("Only artifacts without the specified properties are affected"),
+		getInsecureTlsFlag(),
 	}...)
 	return append(flags, getPropertiesFlags()...)
 }
@@ -1463,6 +1476,7 @@ func getBuildPublishFlags() []cli.Flag {
 			Name:  "env-exclude",
 			Usage: "[Default: *password*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1509,7 +1523,9 @@ func getBuildPromotionFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, promotion is only simulated. The build is not promoted.` `",
-		}, getPropertiesFlag("A list of properties to attach to the build artifacts."),
+		},
+		getPropertiesFlag("A list of properties to attach to the build artifacts."),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1539,6 +1555,7 @@ func getBuildDistributeFlags() []cli.Flag {
 			Name:  "dry-run",
 			Usage: "[Default: false] If true, distribution is only simulated. No files are actually moved.` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1557,6 +1574,7 @@ func getGitLfsCleanFlags() []cli.Flag {
 			Usage: "[Default: false] If true, cleanup is only simulated. No files are actually deleted.` `",
 		},
 		getQuiteFlag("[Default: $CI] Set to true to skip the delete confirmation message.` `"),
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1608,6 +1626,7 @@ func getBuildDiscardFlags() []cli.Flag {
 			Name:  "async",
 			Usage: "[Default: false] If set to true, build discard will run asynchronously and will not wait for response.` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1702,6 +1721,7 @@ func getBuildScanFlags() []cli.Flag {
 			Name:  "fail",
 			Usage: "[Default: true] Set to false if you do not wish the command to return exit code 3, even if the 'Fail Build' rule is matched by Xray.` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1942,7 +1962,11 @@ func mvnCmd(c *cli.Context) error {
 		if err := validateCommand(args, getBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		filteredMavenArgs, insecureTls, err := utils.ExtractInsecureTlsFromArgs(args)
+		if err != nil {
+			return err
+		}
+		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
@@ -1950,7 +1974,7 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredMavenArgs, " ")).SetThreads(threads)
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(strings.Join(filteredMavenArgs, " ")).SetThreads(threads).SetInsecureTls(insecureTls)
 		return commands.Exec(mvnCmd)
 	}
 	return mvnLegacyCmd(c)
