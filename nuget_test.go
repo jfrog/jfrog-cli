@@ -11,7 +11,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
@@ -96,7 +95,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 func TestNuGetWithGlobalConfig(t *testing.T) {
 	initNugetTest(t)
 	projectPath := createNugetProject(t, "packagesconfig")
-	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)

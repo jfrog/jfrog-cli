@@ -1,17 +1,17 @@
 package utils
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"path/filepath"
 	"testing"
 )
 
 func TestGetHomeDir(t *testing.T) {
-	path, err := GetJfrogSecurityDir()
+	path, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		t.Error(err.Error())
 	}
-	homeDir, err := config.GetJfrogHomeDir()
+	homeDir, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err.Error())
 	}

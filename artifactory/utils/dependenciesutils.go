@@ -3,7 +3,8 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/bintray/commands"
+	bintrayutils "github.com/jfrog/jfrog-cli-go/bintray/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/httpclient"
 	"github.com/jfrog/jfrog-client-go/bintray"
@@ -103,7 +104,7 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 	if err != nil {
 		return err
 	}
-	securityDir, err := GetJfrogSecurityDir()
+	securityDir, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return err
 	}
@@ -140,6 +141,6 @@ func downloadFileFromBintray(downloadPath, targetPath string) error {
 	params.TargetPath = targetPath
 	params.Flat = true
 
-	_, _, err = commands.DownloadFile(config, params)
+	_, _, err = bintrayutils.DownloadFileFromBintray(config, params)
 	return err
 }

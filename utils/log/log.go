@@ -2,7 +2,6 @@ package log
 
 import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -30,7 +29,7 @@ func SetDefaultLogger() {
 }
 
 func CreateLogFile() (*os.File, error) {
-	logDir, err := config.CreateDirInJfrogHome("logs")
+	logDir, err := cliutils.CreateDirInJfrogHome("logs")
 	if err != nil {
 		return nil, err
 	}

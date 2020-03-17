@@ -4,7 +4,7 @@ package zsh
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"path/filepath"
@@ -22,7 +22,7 @@ const ZshAutocomplete = `_jfrog() {
 compdef _jfrog jfrog`
 
 func WriteZshCompletionScript() {
-	homeDir, err := config.GetJfrogHomeDir()
+	homeDir, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)
 		return

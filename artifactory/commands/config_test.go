@@ -8,8 +8,11 @@ import (
 	"testing"
 )
 
-func TestBasicAuth(t *testing.T) {
+func init() {
 	log.SetDefaultLogger()
+}
+
+func TestBasicAuth(t *testing.T) {
 	inputDetails := config.ArtifactoryDetails{
 		Url:             "http://localhost:8080/artifactory",
 		DistributionUrl: "http://localhost:8080/distribution",
@@ -59,6 +62,26 @@ func TestAccessToken(t *testing.T) {
 		DistributionUrl: "http://localhost:8080/distribution",
 		User:            "", Password: "",
 		ApiKey: "", SshKeyPath: "", AccessToken: "accessToken",
+		ServerId:  "test",
+		IsDefault: false}
+	configAndTest(t, &inputDetails)
+}
+
+func TestRefreshToken(t *testing.T) {
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "", Password: "",
+		ApiKey: "", SshKeyPath: "", AccessToken: "accessToken", RefreshToken: "refreshToken",
+		ServerId:  "test",
+		IsDefault: false}
+	configAndTest(t, &inputDetails)
+
+	inputDetails = config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "user", Password: "pass",
+		ApiKey: "", SshKeyPath: "", AccessToken: "", RefreshToken: "", TokenRefreshInterval: 10,
 		ServerId:  "test",
 		IsDefault: false}
 	configAndTest(t, &inputDetails)

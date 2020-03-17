@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/repository"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
@@ -19,7 +20,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/golang"
@@ -3421,6 +3421,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
 			}
+			if details.RefreshToken == "" {
+				details.RefreshToken = confDetails.RefreshToken
+			}
+			if details.TokenRefreshInterval == cliutils.TokenRefreshDisabled {
+				details.TokenRefreshInterval = confDetails.TokenRefreshInterval
+			}
 			if details.ClientCertPath == "" {
 				details.ClientCertPath = confDetails.ClientCertPath
 			}
@@ -3431,6 +3437,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
+
+	err = config.CreateInitialRefreshTokensIfNeeded(details)
 	return
 }
 
