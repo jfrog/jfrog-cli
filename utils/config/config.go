@@ -579,6 +579,7 @@ func CreateInitialRefreshTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) 
 func RefreshExpiredToken(artifactoryDetails *ArtifactoryDetails, currentAccessToken string, refreshToken string) (services.CreateTokenResponseData, error) {
 	// The tokens passed as parameters are also used for authentication
 	noCredsDetails := new(ArtifactoryDetails)
+	noCredsDetails.Url = artifactoryDetails.Url
 	noCredsDetails.ClientCertPath = artifactoryDetails.ClientCertPath
 	noCredsDetails.ClientCertKeyPath = artifactoryDetails.ClientCertKeyPath
 	noCredsDetails.ServerId = artifactoryDetails.ServerId
