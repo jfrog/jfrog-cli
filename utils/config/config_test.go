@@ -171,7 +171,7 @@ func TestGetJfrogDependenciesPath(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	jfrogHomeDir, err := GetJfrogHomeDir()
+	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		t.Error(err.Error())
 	}

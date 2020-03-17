@@ -20,6 +20,8 @@ const (
 
 	// Common
 	Retries = 3
+	TokenExpiryDisabled = -1
+	TokenExpiryDefault = 60
 
 	// Env
 	ReportUsage     = "JFROG_CLI_REPORT_USAGE"

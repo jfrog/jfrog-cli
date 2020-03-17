@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
@@ -255,7 +254,7 @@ func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := utils.GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}

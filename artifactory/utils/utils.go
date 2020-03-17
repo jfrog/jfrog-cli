@@ -21,14 +21,6 @@ import (
 
 const repoDetailsUrl = "api/repositories/"
 
-func GetJfrogSecurityDir() (string, error) {
-	homeDir, err := config.GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, "security"), nil
-}
-
 func GetProjectDir(global bool) (string, error) {
 	configDir, err := getConfigDir(global)
 	if err != nil {
@@ -45,7 +37,7 @@ func getConfigDir(global bool) (string, error) {
 		}
 		return filepath.Join(wd, ".jfrog"), nil
 	}
-	return config.GetJfrogHomeDir()
+	return cliutils.GetJfrogHomeDir()
 }
 
 func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.CommonDetails, insecureTls bool) (string, error) {
@@ -55,7 +47,7 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.CommonDetails, ins
 	}
 	u.Path = path.Join(u.Path, "api/security/encryptedPassword")
 	httpClientsDetails := artifactoryAuth.CreateHttpClientDetails()
-	securityDir, err := GetJfrogSecurityDir()
+	securityDir, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return "", err
 	}
@@ -91,7 +83,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 }
 
 func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +107,7 @@ func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDr
 }
 
 func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +130,7 @@ func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, 
 }
 
 func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*distribution.DistributionServicesManager, error) {
-	certPath, err := GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}

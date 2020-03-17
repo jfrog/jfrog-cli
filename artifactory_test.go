@@ -778,7 +778,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
 	artifactoryDetails.InsecureTls = false
-	securityDirPath, err := utils.GetJfrogSecurityDir()
+	securityDirPath, err := cliutils.GetJfrogSecurityDir()
 	assert.NoError(t, err)
 	err = fileutils.CopyFile(securityDirPath, certificate.KEY_FILE)
 	assert.NoError(t, err)

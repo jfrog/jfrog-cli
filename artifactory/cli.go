@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/distribution"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/golang"
@@ -1489,6 +1489,10 @@ func getConfigFlags() []cli.Flag {
 			Name:  "enc-password",
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 		},
+		cli.StringFlag{
+			Name:  "token-expiry",
+			Usage: "[Default: " + strconv.Itoa(cliutils.TokenExpiryDisabled) + "] Set to a positive numeric value if you'd like to use provided credentials to create and use refreshable tokens. This value will be the token expiry in minutes. Only supported with username and password/API key.` `",
+		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getClientCertsFlags()...)
@@ -1718,6 +1722,20 @@ func getRetries(c *cli.Context) (retries int, err error) {
 	return retries, nil
 }
 
+func getTokenExpiry(c *cli.Context) (expiry int, err error) {
+	expiry = cliutils.TokenExpiryDisabled
+	err = nil
+	if c.String("token-expiry") != "" {
+		expiry, err = strconv.Atoi(c.String("token-expiry"))
+		if err != nil {
+			err = errors.New("The '--expiry' option should have a numeric value. " + cliutils.GetDocumentationMessage())
+			return expiry, err
+		}
+	}
+
+	return expiry, nil
+}
+
 func validateServerId(serverId string) error {
 	reservedIds := []string{"delete", "use", "show", "clear"}
 	for _, reservedId := range reservedIds {
@@ -1816,7 +1834,12 @@ func configCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
+	configCmd := commands.NewConfigCommand().
+		SetDetails(configCommandConfiguration.ArtDetails).
+		SetInteractive(configCommandConfiguration.Interactive).
+		SetServerId(serverId).
+		SetEncPassword(configCommandConfiguration.EncPassword).
+		SetTokenExpiry(configCommandConfiguration.TokenExpiry)
 	return configCmd.Config()
 }
 
@@ -3220,6 +3243,9 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
 			}
+			if details.RefreshToken == "" {
+				details.RefreshToken = confDetails.RefreshToken
+			}
 			if details.ClientCertPath == "" {
 				details.ClientCertPath = confDetails.ClientCertPath
 			}
@@ -3641,6 +3667,10 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 	}
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
+	configCommandConfiguration.TokenExpiry, err = getTokenExpiry(c)
+	if err != nil {
+		return
+	}
 	return
 }
 

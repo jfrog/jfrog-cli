@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"path/filepath"
 	"reflect"
 
@@ -79,7 +80,7 @@ func GetProjectConfFilePath(projectType ProjectType) (confFilePath string, exist
 		}
 	}
 	// If missing in the root project, check in the home dir
-	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		return "", exists, err
 	}
