@@ -19,9 +19,9 @@ const (
 	DownloadMaxSplitCount = 15
 
 	// Common
-	Retries = 3
-	TokenExpiryDisabled = -1
-	TokenExpiryDefault = 60
+	Retries                     = 3
+	TokenRefreshDisabled        = 0
+	TokenRefreshDefaultInterval = 60
 
 	// Env
 	ReportUsage     = "JFROG_CLI_REPORT_USAGE"

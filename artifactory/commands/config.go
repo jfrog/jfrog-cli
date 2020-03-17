@@ -6,7 +6,6 @@ import (
 	auth2 "github.com/jfrog/jfrog-client-go/auth"
 	"io/ioutil"
 	"reflect"
-	"strconv"
 	"sync"
 	"syscall"
 
@@ -27,12 +26,12 @@ import (
 var mutex sync.Mutex
 
 type ConfigCommand struct {
-	details            *config.ArtifactoryDetails
-	defaultDetails     *config.ArtifactoryDetails
-	interactive        bool
-	encPassword        bool
-	tokenExpiryMinutes int
-	serverId           string
+	details              *config.ArtifactoryDetails
+	defaultDetails       *config.ArtifactoryDetails
+	interactive          bool
+	encPassword          bool
+	useRefreshableToken  bool
+	serverId             string
 }
 
 func NewConfigCommand() *ConfigCommand {
@@ -49,8 +48,8 @@ func (cc *ConfigCommand) SetEncPassword(encPassword bool) *ConfigCommand {
 	return cc
 }
 
-func (cc *ConfigCommand) SetTokenExpiry(tokenExpiry int) *ConfigCommand {
-	cc.tokenExpiryMinutes = tokenExpiry
+func (cc *ConfigCommand) SetUseRefreshableToken(useRefreshableToken bool) *ConfigCommand {
+	cc.useRefreshableToken = useRefreshableToken
 	return cc
 }
 
@@ -126,15 +125,22 @@ func (cc *ConfigCommand) Config() error {
 		}
 	}
 
-	if cc.tokenExpiryMinutes > 0 {
-		err = cc.createRefreshableToken()
+	if cc.useRefreshableToken {
+		err = cc.configRefreshableToken()
 		if err != nil {
 			return err
 		}
 	}
 
-	err = config.SaveArtifactoryConf(configurations)
-	return err
+	return config.SaveArtifactoryConf(configurations)
+}
+
+func (cc *ConfigCommand) configRefreshableToken() error {
+	if (cc.details.User == "" || cc.details.Password == "") && cc.details.ApiKey == "" {
+		return errors.New("refreshable token mode is only available with Username & Password or API key")
+	}
+	cc.details.TokenRefreshInterval = cliutils.TokenRefreshDefaultInterval
+	return nil
 }
 
 func (cc *ConfigCommand) prepareConfigurationData() ([]*config.ArtifactoryDetails, error) {
@@ -229,14 +235,10 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 			if err != nil {
 				return err
 			}
-
-			err = cc.readTokenExpiryFromConsole()
-			if err != nil {
-				return err
-			}
 		}
 	}
 
+	cc.readRefreshableTokensFromConsole()
 	cc.readClientCertInfoFromConsole()
 	return nil
 }
@@ -252,17 +254,10 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 	}
 }
 
-func (cc *ConfigCommand) readTokenExpiryFromConsole() error {
-	if cliutils.InteractiveConfirm("Would you like the CLI to use the provided credentials to create and use refreshable tokens?") {
-		expiryInput := ""
-		ioutils.ScanFromConsole("Token expiry (minutes)", &expiryInput, strconv.Itoa(cliutils.TokenExpiryDefault))
-		expiry, err := strconv.Atoi(expiryInput)
-		if err != nil || expiry < 1 {
-			return errorutils.CheckError(errors.New("the token expiry option should have a positive numeric value"))
-		}
-		cc.tokenExpiryMinutes = expiry
+func (cc *ConfigCommand) readRefreshableTokensFromConsole() {
+	if (cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "" {
+		cc.useRefreshableToken = cliutils.InteractiveConfirm("Use refreshable tokens?")
 	}
-	return nil
 }
 
 func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
@@ -493,23 +488,9 @@ func (cc *ConfigCommand) encryptPassword() error {
 	return err
 }
 
-func (cc *ConfigCommand) createRefreshableToken() error {
-	if (cc.details.User == "" || cc.details.Password == "") && cc.details.ApiKey == "" {
-		log.Info("Refreshable token mode is only available with Username & Password or API key...")
-		return nil
-	}
-	log.Info("Creating tokens...")
-	newToken, err := config.CreateTokensForConfig(cc.details, cc.tokenExpiryMinutes * 60)
-	if err != nil {
-		return err
-	}
-	cc.details.AccessToken = newToken.AccessToken
-	cc.details.RefreshToken = newToken.RefreshToken
-	return err
-}
-
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url), details.AccessToken != "" && details.RefreshToken == ""}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url),
+		details.AccessToken != "" && details.TokenRefreshInterval == cliutils.TokenRefreshDisabled}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		return errorutils.CheckError(errors.New("Only one authentication method is allowed: Username + Password/API key, RSA Token (SSH) or Access Token."))
 	}
@@ -517,10 +498,10 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 }
 
 type ConfigCommandConfiguration struct {
-	ArtDetails  *config.ArtifactoryDetails
-	Interactive bool
-	EncPassword bool
-	TokenExpiry int
+	ArtDetails           *config.ArtifactoryDetails
+	Interactive          bool
+	EncPassword          bool
+	TokenRefreshInterval int
 }
 
 func GetAllArtifactoryServerIds() []string {

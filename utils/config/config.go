@@ -315,21 +315,22 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 }
 
 type ArtifactoryDetails struct {
-	Url               string            `json:"url,omitempty"`
-	SshUrl            string            `json:"-"`
-	DistributionUrl   string            `json:"distributionUrl,omitempty"`
-	User              string            `json:"user,omitempty"`
-	Password          string            `json:"password,omitempty"`
-	SshKeyPath        string            `json:"sshKeyPath,omitempty"`
-	SshPassphrase     string            `json:"SshPassphrase,omitempty"`
-	SshAuthHeaders    map[string]string `json:"SshAuthHeaders,omitempty"`
-	AccessToken       string            `json:"accessToken,omitempty"`
-	RefreshToken      string            `json:"refreshToken,omitempty"`
-	ClientCertPath    string            `json:"clientCertPath,omitempty"`
-	ClientCertKeyPath string            `json:"clientCertKeyPath,omitempty"`
-	ServerId          string            `json:"serverId,omitempty"`
-	IsDefault         bool              `json:"isDefault,omitempty"`
-	InsecureTls       bool              `json:"-"`
+	Url                  string            `json:"url,omitempty"`
+	SshUrl               string            `json:"-"`
+	DistributionUrl      string            `json:"distributionUrl,omitempty"`
+	User                 string            `json:"user,omitempty"`
+	Password             string            `json:"password,omitempty"`
+	SshKeyPath           string            `json:"sshKeyPath,omitempty"`
+	SshPassphrase        string            `json:"SshPassphrase,omitempty"`
+	SshAuthHeaders       map[string]string `json:"SshAuthHeaders,omitempty"`
+	AccessToken          string            `json:"accessToken,omitempty"`
+	RefreshToken         string            `json:"refreshToken,omitempty"`
+	TokenRefreshInterval int               `json:"tokenRefreshInterval,omitempty"`
+	ClientCertPath       string            `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath    string            `json:"clientCertKeyPath,omitempty"`
+	ServerId             string            `json:"serverId,omitempty"`
+	IsDefault            bool              `json:"isDefault,omitempty"`
+	InsecureTls          bool              `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }
@@ -483,7 +484,7 @@ func TokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 		return "", nil
 	}
 	// Token already refreshed
-	if serverConfiguration.AccessToken != currentAccessToken {
+	if serverConfiguration.AccessToken != "" && serverConfiguration.AccessToken != currentAccessToken {
 		return serverConfiguration.AccessToken, nil
 	}
 
@@ -509,14 +510,14 @@ func TokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 		}
 	}
 
-	err = writeNewTokens(serverConfiguration, newToken.AccessToken, newToken.RefreshToken)
+	err = writeNewTokens(serverConfiguration, tokenRefreshServerId, newToken.AccessToken, newToken.RefreshToken)
 	if err != nil {
 		log.Error("Failed writing new tokens to config after handling access token expiry: " + err.Error())
 	}
 	return newToken.AccessToken, nil
 }
 
-func writeNewTokens(serverConfiguration *ArtifactoryDetails, accessToken, refreshToken string) error {
+func writeNewTokens(serverConfiguration *ArtifactoryDetails, serverId, accessToken, refreshToken string) error {
 	serverConfiguration.SetAccessToken(accessToken)
 	serverConfiguration.SetRefreshToken(refreshToken)
 
@@ -527,7 +528,7 @@ func writeNewTokens(serverConfiguration *ArtifactoryDetails, accessToken, refres
 	}
 
 	// Remove and get the server details from the configurations list
-	_, configurations = GetAndRemoveConfiguration(tokenRefreshServerId, configurations)
+	_, configurations = GetAndRemoveConfiguration(serverId, configurations)
 
 	// Append the configuration to the configurations list
 	configurations = append(configurations, serverConfiguration)
@@ -552,6 +553,27 @@ func CreateTokensForConfig(artifactoryDetails *ArtifactoryDetails, expirySeconds
 		return services.CreateTokenResponseData{}, err
 	}
 	return newToken, nil
+}
+
+func CreateInitialRefreshTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) (err error) {
+	if !(artifactoryDetails.TokenRefreshInterval > 0 && artifactoryDetails.RefreshToken == "" && artifactoryDetails.AccessToken == "") {
+		return nil
+	}
+	mutex.Lock()
+	lockFile, err := lock.CreateLock()
+	defer mutex.Unlock()
+	defer lockFile.Unlock()
+	if err != nil {
+		return err
+	}
+
+	newToken, err := CreateTokensForConfig(artifactoryDetails, artifactoryDetails.TokenRefreshInterval * 60)
+	if err != nil {
+		return err
+	}
+	// remove initializing value
+	artifactoryDetails.TokenRefreshInterval = 0
+	return writeNewTokens(artifactoryDetails, artifactoryDetails.ServerId, newToken.AccessToken, newToken.RefreshToken)
 }
 
 func RefreshExpiredToken(artifactoryDetails *ArtifactoryDetails, currentAccessToken string, refreshToken string) (services.CreateTokenResponseData, error) {
