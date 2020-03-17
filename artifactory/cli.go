@@ -73,10 +73,7 @@ import (
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundlesign"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/releasebundleupdate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationcreate"
-	replicationdelete "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationdelete"
-	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobcreate"
-	replicationdelete "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobdelete"
-	replicationshow "github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationjobshow"
+	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationdelete"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/replicationtemplate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repocreate"
 	"github.com/jfrog/jfrog-cli-go/docs/artifactory/repodelete"
@@ -1990,7 +1987,7 @@ func mvnLegacyCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2031,7 +2028,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2135,7 +2132,7 @@ func dockerPullCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2225,7 +2222,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 }
 
 func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2275,7 +2272,7 @@ func npmLegacyCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -2357,7 +2354,7 @@ func goPublishCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
-func getCmdHelpIfNeeded(c *cli.Context) (bool, error) {
+func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
 	}
@@ -2437,7 +2434,7 @@ func shouldSkipGradleFlagParsing() bool {
 }
 
 func goCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3260,7 +3257,7 @@ func curlCmd(c *cli.Context) error {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3288,7 +3285,7 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func repoTemplateCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3343,7 +3340,7 @@ func repoUpdateCmd(c *cli.Context) error {
 }
 
 func repoDeleteCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -3362,7 +3359,7 @@ func repoDeleteCmd(c *cli.Context) error {
 }
 
 func replicationTemplateCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
@@ -3374,13 +3371,13 @@ func replicationTemplateCmd(c *cli.Context) error {
 }
 
 func replicationCreateCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -3390,13 +3387,13 @@ func replicationCreateCmd(c *cli.Context) error {
 }
 
 func replicationDeleteCmd(c *cli.Context) error {
-	if show, err := getCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}

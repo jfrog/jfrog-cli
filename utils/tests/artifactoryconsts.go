@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
 const (
@@ -1265,23 +1265,21 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 	}
 }
 
-func GetReplicationConfig() []services.PushReplicationParams {
-	return []services.PushReplicationParams{
+func GetReplicationConfig() []clientutils.ReplicationParams {
+	return []clientutils.ReplicationParams{
 		{
-			URL:      *RtUrl,
-			Username: *RtUser,
-			Password: "",
-			CommonReplicationParams: services.CommonReplicationParams{
-				CronExp:                "0 0 12 * * ?",
-				RepoKey:                Repo1,
-				EnableEventReplication: false,
-				SocketTimeoutMillis:    15000,
-				Enabled:                true,
-				SyncDeletes:            true,
-				SyncProperties:         true,
-				SyncStatistics:         false,
-				PathPrefix:             "/my/path",
-			},
+			URL:                    *RtUrl,
+			Username:               *RtUser,
+			Password:               "",
+			CronExp:                "0 0 12 * * ?",
+			RepoKey:                Repo1,
+			EnableEventReplication: false,
+			SocketTimeoutMillis:    15000,
+			Enabled:                true,
+			SyncDeletes:            true,
+			SyncProperties:         true,
+			SyncStatistics:         false,
+			PathPrefix:             "/my/path",
 		},
 	}
 }

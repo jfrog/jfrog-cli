@@ -107,8 +107,8 @@ var questionMap = map[string]utils.QuestionInfo{
 		Msg:          "Select job type",
 		PromptPrefix: ">",
 		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       JobType,
+		Writer:       nil,
+		MapKey:       "",
 		Callback:     jobTypeCallback,
 	},
 	RepoKey: {

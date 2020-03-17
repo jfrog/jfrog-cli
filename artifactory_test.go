@@ -3678,7 +3678,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	// Validate create replication
 	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
 	assert.NoError(t, err)
-	result, err := servicesManager.GetPushReplication(tests.Repo1)
+	result, err := servicesManager.GetReplication(tests.Repo1)
 	assert.NoError(t, err)
 	result[0].Password = ""
 	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
@@ -3688,7 +3688,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate delete replication
-	result, err = servicesManager.GetPushReplication(tests.Repo1)
+	result, err = servicesManager.GetReplication(tests.Repo1)
 	assert.Error(t, err)
 	// Cleanup
 	deleteServerConfig()

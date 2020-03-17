@@ -50,32 +50,51 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	// Replace vars string-by-string if needed
 	if len(rcc.vars) > 0 {
 		templateVars := cliutils.SpecVarsStringToMap(rcc.vars)
-		content = cliutils.ReplaceSpecVars(content, templateVars)
+		content = cliutils.ReplaceVars(content, templateVars)
 	}
+	// Unmarshal template to a map
 	var replicationConfigMap map[string]interface{}
 	err = json.Unmarshal(content, &replicationConfigMap)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
+	// All the values in the template are strings
+	// Go over the the confMap and write the values with the correct type using the writersMap
+	serverId := ""
+	for key, value := range replicationConfigMap {
+		if key == "serverId" {
+			serverId = value.(string)
+		} else {
+			writersMap[key](&replicationConfigMap, key, value.(string))
+		}
+	}
 	fillMissingDefaultValue(replicationConfigMap)
+	// Write a JSON with the correct values
 	content, err = json.Marshal(replicationConfigMap)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
 	var params *clientutils.ReplicationParams
 	err = json.Unmarshal(content, &params)
-	if err != nil {
-		return err
+	if errorutils.CheckError(err) != nil {
+		return
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rcc.rtDetails, false)
+	if serverId != "" {
+		updateArtifactoryInfo(params, serverId)
+	}
 	return servicesManager.CreateReplication(*params)
 }
 
 func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
 	if _, ok := replicationConfigMap["socketTimeoutMillis"]; !ok {
-		writertsMap["socketTimeoutMillis"](&replicationConfigMap, "socketTimeoutMillis", "15000")
+		writersMap["socketTimeoutMillis"](&replicationConfigMap, "socketTimeoutMillis", "15000")
 	}
 	if _, ok := replicationConfigMap["syncProperties"]; !ok {
-		writertsMap["syncProperties"](&replicationConfigMap, "syncProperties", "true")
+		writersMap["syncProperties"](&replicationConfigMap, "syncProperties", "true")
 	}
 }
 
@@ -88,7 +107,7 @@ func updateArtifactoryInfo(param *clientutils.ReplicationParams, serverId string
 	return nil
 }
 
-var writertsMap = map[string]utils.AnswerWriter{
+var writersMap = map[string]utils.AnswerWriter{
 	ServerId:               utils.WriteStringAnswer,
 	RepoKey:                utils.WriteStringAnswer,
 	CronExp:                utils.WriteStringAnswer,
