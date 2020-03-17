@@ -20,7 +20,7 @@ type RepoTemplateCommand struct {
 }
 
 const (
-	PathErrorSuffixMsg = " Please enter a path, in which the new template file will be created."
+	PathErrorSuffixMsg = " please enter a path, in which the new template file will be created"
 
 	// Strings for prompt questions
 	SelectConfigKeyMsg   = "Select the next configuration key" + utils.PressTabMsg
@@ -479,17 +479,17 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 func (rtc *RepoTemplateCommand) Run() (err error) {
 	exists, err := fileutils.IsDirExists(rtc.path, true)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	if exists || strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
-		return errors.New("Path cannot be a directory." + PathErrorSuffixMsg)
+		return errorutils.CheckError(errors.New("path cannot be a directory," + PathErrorSuffixMsg))
 	}
 	exists, err = fileutils.IsFileExists(rtc.path, true)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	if exists {
-		return errors.New("File already exists." + PathErrorSuffixMsg)
+		return errorutils.CheckError(errors.New("file already exists," + PathErrorSuffixMsg))
 	}
 
 	repoTemplateQuestionnaire := &utils.InteractiveQuestionnaire{
