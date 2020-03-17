@@ -1898,7 +1898,7 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
