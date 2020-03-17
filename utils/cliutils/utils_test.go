@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"reflect"
 	"testing"
 )
@@ -71,33 +71,33 @@ func checkExitCode(t *testing.T, expected, actual ExitCode) {
 }
 
 func TestReplaceSpecVars(t *testing.T) {
-	log.SetDefaultLogger()
+	log.SetLogger(log.NewLogger(log.INFO, nil))
 	var actual []byte
-	actual = ReplaceSpecVars([]byte("${foo}aa"), map[string]string{"a": "k", "foo": "bar"})
+	actual = ReplaceVars([]byte("${foo}aa"), map[string]string{"a": "k", "foo": "bar"})
 	assertVariablesMap([]byte("baraa"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"foo": "bar"})
+	actual = ReplaceVars([]byte("a${foo}a"), map[string]string{"foo": "bar"})
 	assertVariablesMap([]byte("abara"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("aa${foo}"), map[string]string{"foo": "bar"})
+	actual = ReplaceVars([]byte("aa${foo}"), map[string]string{"foo": "bar"})
 	assertVariablesMap([]byte("aabar"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("${foo}${foo}${foo}"), map[string]string{"foo": "bar"})
+	actual = ReplaceVars([]byte("${foo}${foo}${foo}"), map[string]string{"foo": "bar"})
 	assertVariablesMap([]byte("barbarbar"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("${talk}-${broh}-${foo}"), map[string]string{"foo": "bar", "talk": "speak", "broh": "sroh"})
+	actual = ReplaceVars([]byte("${talk}-${broh}-${foo}"), map[string]string{"foo": "bar", "talk": "speak", "broh": "sroh"})
 	assertVariablesMap([]byte("speak-sroh-bar"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"foo": ""})
+	actual = ReplaceVars([]byte("a${foo}a"), map[string]string{"foo": ""})
 	assertVariablesMap([]byte("aa"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{"a": "k", "f": "a"})
+	actual = ReplaceVars([]byte("a${foo}a"), map[string]string{"a": "k", "f": "a"})
 	assertVariablesMap([]byte("a${foo}a"), actual, t)
 
-	actual = ReplaceSpecVars([]byte("a${foo}a"), map[string]string{})
+	actual = ReplaceVars([]byte("a${foo}a"), map[string]string{})
 	assertVariablesMap([]byte("a${foo}a"), actual, t)
 
-	actual = ReplaceSpecVars(nil, nil)
+	actual = ReplaceVars(nil, nil)
 	assertVariablesMap([]byte(""), actual, t)
 }
 

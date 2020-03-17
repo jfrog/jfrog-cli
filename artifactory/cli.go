@@ -3237,7 +3237,7 @@ func repoCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -3257,7 +3257,7 @@ func repoUpdateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -3277,7 +3277,7 @@ func repoDeleteCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}

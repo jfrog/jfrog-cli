@@ -260,13 +260,13 @@ type Credentials interface {
 	GetPassword() string
 }
 
-func ReplaceSpecVars(content []byte, specVars map[string]string) []byte {
-	log.Debug("Replacing variables in the provided File Spec: \n" + string(content))
+func ReplaceVars(content []byte, specVars map[string]string) []byte {
+	log.Debug("Replacing variables in the provided content: \n" + string(content))
 	for key, val := range specVars {
 		key = "${" + key + "}"
 		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
 		content = bytes.Replace(content, []byte(key), []byte(val), -1)
 	}
-	log.Debug("The reformatted File Spec is: \n" + string(content))
+	log.Debug("The reformatted content is: \n" + string(content))
 	return content
 }
