@@ -100,7 +100,7 @@ func (nic *NpmInstallCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	threads, jsonOutput, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(nic.npmArgs)
+	threads, jsonOutput, filteredNpmArgs, buildConfiguration, err := npm.ExtractNpmOptionsFromArgs(nic.npmArgs)
 	nic.SetRepoConfig(resolverParams).SetArgs(filteredNpmArgs).SetThreads(threads).SetJsonOutput(jsonOutput).SetBuildConfiguration(buildConfiguration)
 	if err != nil {
 		return err

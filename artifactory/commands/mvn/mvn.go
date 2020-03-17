@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const mavenExtractorDependencyVersion = "2.15.0"
+const mavenExtractorDependencyVersion = "2.17.0"
 const classworldsConfFileName = "classworlds.conf"
 const MavenHome = "M2_HOME"
 
@@ -28,6 +28,7 @@ type MvnCommand struct {
 	configPath    string
 	configuration *utils.BuildConfiguration
 	rtDetails     *config.ArtifactoryDetails
+	threads       int
 }
 
 func NewMvnCommand() *MvnCommand {
@@ -51,6 +52,11 @@ func (mc *MvnCommand) SetConfigPath(configPath string) *MvnCommand {
 
 func (mc *MvnCommand) SetGoals(goals string) *MvnCommand {
 	mc.goals = goals
+	return mc
+}
+
+func (mc *MvnCommand) SetThreads(threads int) *MvnCommand {
+	mc.threads = threads
 	return mc
 }
 
@@ -181,6 +187,10 @@ func (mc *MvnCommand) createMvnRunConfig(dependenciesPath string) (*mvnRunConfig
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if mc.threads > 0 {
+		vConfig.Set(utils.FORK_COUNT, mc.threads)
 	}
 
 	buildInfoProperties, err := utils.CreateBuildInfoPropertiesFile(mc.configuration.BuildName, mc.configuration.BuildNumber, vConfig, utils.Maven)
