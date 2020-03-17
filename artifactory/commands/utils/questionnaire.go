@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
-	"github.com/c-bata/go-prompt"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/c-bata/go-prompt"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 )
 
 // The interactive questionnaire works as follows:
@@ -69,6 +72,17 @@ func prefixCompleter(options []prompt.Suggest) prompt.Completer {
 	}
 }
 
+// Bind ctrl+c key to interrupt the command
+func interruptKeyBind() prompt.Option {
+	interrupt := prompt.KeyBind{
+		Key: prompt.ControlC,
+		Fn: func(buf *prompt.Buffer) {
+			cliutils.ExitOnErr(errors.New("Interrupted"))
+		},
+	}
+	return prompt.OptionAddKeyBind(interrupt)
+}
+
 // Ask question with free string answer, answer cannot be empty.
 // Variable aren't check and can be part of the answer
 func AskString(msg, promptPrefix string) string {
@@ -76,7 +90,7 @@ func AskString(msg, promptPrefix string) string {
 		fmt.Println(msg + ":")
 	}
 	for {
-		answer := prompt.Input(promptPrefix+" ", prefixCompleter(nil))
+		answer := prompt.Input(promptPrefix+" ", prefixCompleter(nil), interruptKeyBind())
 		if answer != "" {
 			return answer
 		}
@@ -95,7 +109,7 @@ func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Sugg
 		errMsg += VariableUseMsg
 	}
 	for {
-		answer := prompt.Input(promptPrefix+" ", prefixCompleter(options))
+		answer := prompt.Input(promptPrefix+" ", prefixCompleter(options), interruptKeyBind())
 		if validateAnswer(answer, options, allowVars) {
 			return answer
 		}
