@@ -3,7 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
-	auth2 "github.com/jfrog/jfrog-client-go/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -300,7 +300,7 @@ func getSshKeyPath(details *config.ArtifactoryDetails) error {
 		if err != nil {
 			return nil
 		}
-		encryptedKey, err := auth2.IsEncrypted(sshKeyBytes)
+		encryptedKey, err := auth.IsEncrypted(sshKeyBytes)
 		// If exists and not encrypted (or error occurred), return without asking for passphrase
 		if err != nil || !encryptedKey {
 			return err

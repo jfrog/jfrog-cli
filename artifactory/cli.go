@@ -3439,10 +3439,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
 
 	err = config.CreateInitialRefreshTokensIfNeeded(details)
-	if err != nil {
-		return details, err
-	}
-	return
+	return details, err
 }
 
 func credentialsChanged(details *config.ArtifactoryDetails) bool {

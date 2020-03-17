@@ -584,7 +584,7 @@ func RefreshExpiredToken(artifactoryDetails *ArtifactoryDetails, currentAccessTo
 	noCredsDetails.ServerId = artifactoryDetails.ServerId
 	noCredsDetails.IsDefault = artifactoryDetails.IsDefault
 
-	servicesManager, err := CreateTokensServiceManager(artifactoryDetails)
+	servicesManager, err := CreateTokensServiceManager(noCredsDetails)
 	if err != nil {
 		return services.CreateTokenResponseData{}, err
 	}
