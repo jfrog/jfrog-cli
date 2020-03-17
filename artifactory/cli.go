@@ -2920,7 +2920,7 @@ func buildDistributeCmd(c *cli.Context) error {
 		return err
 	}
 	configuration := createBuildDistributionConfiguration(c)
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2938,7 +2938,7 @@ func buildDiscardCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Build name is expected as a command argument or environment variable.", c)
 	}
 	buildDiscardCmd := buildinfo.NewBuildDiscardCommand()
-	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -2971,7 +2971,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
-	rtDetails, err := createArtifactoryDetails(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
@@ -3004,7 +3004,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 		return err
 	}
 	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
-	rtDetails, err := createArtifactoryDetails(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
@@ -3022,7 +3022,7 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	params.StoringRepository = c.String("repo")
 	params.GpgPassphrase = c.String("passphrase")
 	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
-	rtDetails, err := createArtifactoryDetails(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
@@ -3050,7 +3050,7 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 
 	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
-	rtDetails, err := createArtifactoryDetails(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
@@ -3080,7 +3080,7 @@ func releaseBundleDeleteCmd(c *cli.Context) error {
 	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
 	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
 	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
-	rtDetails, err := createArtifactoryDetails(c, true)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, true)
 	if err != nil {
 		return err
 	}
