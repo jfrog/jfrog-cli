@@ -1117,12 +1117,7 @@ func getNpmFlags() []cli.Flag {
 }
 
 func getBasicBuildToolsFlags() []cli.Flag {
-<<<<<<< HEAD
-	baseFlags := getBaseFlags()
-	return append(baseFlags, getServerIdFlag())
-=======
 	return append(getBaseFlags(), getServerIdFlag())
->>>>>>> Mvn cmd - add insecure-tls flag.
 }
 
 func getNugetFlags() []cli.Flag {
