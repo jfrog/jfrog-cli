@@ -1,7 +1,6 @@
 {
     "cronExp": "0 0 12 * * ?",
     "enabled": "true",
-    "jobType": "push",
     "pathPrefix": "/my/path",
     "repoKey": "${REPO1}",
     "syncDeletes": "true",
