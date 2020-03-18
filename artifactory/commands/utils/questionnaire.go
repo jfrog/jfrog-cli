@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 const (
@@ -277,12 +279,12 @@ func OptionalKeyCallback(iq *InteractiveQuestionnaire, key string) (value string
 	return value, err
 }
 
-func IsValideParams(key string, value interface{}, writersMap map[string]AnswerWriter) bool {
+func ValidateMapEntry(key string, value interface{}, writersMap map[string]AnswerWriter) error {
 	if _, ok := writersMap[key]; !ok {
-		return false
+		return errorutils.CheckError(errors.New("unknown key: \"" + key + "\"."))
 	}
 	if _, ok := value.(string); !ok {
-		return false
+		return errorutils.CheckError(errors.New("the value for the  key: \"" + key + "\" is not a string type."))
 	}
-	return true
+	return nil
 }

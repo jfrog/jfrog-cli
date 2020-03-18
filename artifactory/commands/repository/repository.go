@@ -42,8 +42,7 @@ func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 	// All the values in the template are strings
 	// Go over the the confMap and write the values with the correct type using the writersMap
 	for key, value := range repoConfigMap {
-		if !utils.IsValideParams(key, value, writersMap) {
-			err = errorutils.CheckError(errors.New("unknown key: \"" + key + "\" or its value type is not string."))
+		if err = utils.ValidateMapEntry(key, value, writersMap); err != nil {
 			return
 		}
 		writersMap[key](&repoConfigMap, key, value.(string))
