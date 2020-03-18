@@ -135,11 +135,11 @@ var questionMap = map[string]utils.QuestionInfo{
 		MapKey:       CronExp,
 		Callback:     nil,
 	},
-	EnableEventReplication: utils.BoolQuestionInfo,
-	Enabled:                utils.BoolQuestionInfo,
-	SyncDeletes:            utils.BoolQuestionInfo,
-	SyncProperties:         utils.BoolQuestionInfo,
-	SyncStatistics:         utils.BoolQuestionInfo,
+	EnableEventReplication: BoolToStringQuestionInfo,
+	Enabled:                BoolToStringQuestionInfo,
+	SyncDeletes:            BoolToStringQuestionInfo,
+	SyncProperties:         BoolToStringQuestionInfo,
+	SyncStatistics:         BoolToStringQuestionInfo,
 	PathPrefix: {
 		Msg:          "Enter path prefix",
 		PromptPrefix: ">",
@@ -190,6 +190,13 @@ func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value 
 		value, err = iq.AskQuestion(valueQuestion)
 	}
 	return value, err
+}
+
+// Specific writers for repo templates, since all the values in the templates should be written as string
+var BoolToStringQuestionInfo = utils.QuestionInfo{
+	Options:   utils.GetBoolSuggests(),
+	AllowVars: true,
+	Writer:    utils.WriteStringAnswer,
 }
 
 var suggestionMap = map[string]prompt.Suggest{
