@@ -370,7 +370,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "mvn",
-			Flags:           getMavenGradleFlags(),
+			Flags:           getMavenFlags(),
 			Usage:           mvndoc.Description,
 			HelpName:        common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText:       mvndoc.Arguments,
@@ -395,7 +395,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "gradle",
-			Flags:           getMavenGradleFlags(),
+			Flags:           getGradleFlags(),
 			Usage:           gradledoc.Description,
 			HelpName:        common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText:       gradledoc.Arguments,
@@ -1159,9 +1159,13 @@ func getSpecFlags() []cli.Flag {
 	}
 }
 
-func getMavenGradleFlags() []cli.Flag {
-	flags := getBuildFlags()
-	return append(flags, getDeploymentThreadsFlag())
+func getGradleFlags() []cli.Flag {
+	return append(getBuildFlags(), getDeploymentThreadsFlag())
+}
+
+func getMavenFlags() []cli.Flag {
+	flags := append(getBuildFlags(), getDeploymentThreadsFlag())
+	return append(flags, getInsecureTlsFlag())
 }
 
 func getDockerPushFlags() []cli.Flag {
