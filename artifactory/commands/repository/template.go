@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 type RepoTemplateCommand struct {
@@ -698,22 +699,6 @@ var StringListToStringQuestionInfo = utils.QuestionInfo{
 	Writer:    utils.WriteStringAnswer,
 }
 
-// After an optional value was chosen we'll ask for its value
-func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value string, err error) {
-	if key != utils.SaveAndExit {
-		valueQuestion := iq.QuestionsMap[key]
-		// Since we are using default question in most of the cases we set the map key here
-		valueQuestion.MapKey = key
-		valueQuestion.PromptPrefix = InsertValuePromptMsg + key
-		if valueQuestion.Options != nil {
-			valueQuestion.PromptPrefix += utils.PressTabMsg
-		}
-		valueQuestion.PromptPrefix += " >"
-		value, err = iq.AskQuestion(valueQuestion)
-	}
-	return value, err
-}
-
 var questionMap = map[string]utils.QuestionInfo{
 	TemplateType: {
 		Options: []prompt.Suggest{
@@ -733,7 +718,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
-		Callback:     optionalKeyCallback,
+		Callback:     utils.OptionalKeyCallback,
 	},
 	Key: {
 		Msg:          "",

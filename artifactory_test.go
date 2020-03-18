@@ -3663,3 +3663,35 @@ func initVcsTestDir(t *testing.T) string {
 	assert.NoError(t, err)
 	return path
 }
+
+func TestArtifactoryReplicationCreate(t *testing.T) {
+	initArtifactoryTest(t)
+	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--apikey="+*tests.RtApiKey, "--access-token="+*tests.RtAccessToken, "--interactive=false")
+	defer deleteServerConfig()
+
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
+	assert.NoError(t, err)
+
+	// Create push replication
+	err = artifactoryCli.Exec("rplc", specFile)
+	assert.NoError(t, err)
+
+	// Validate create replication
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	result, err := servicesManager.GetReplication(tests.Repo1)
+	assert.NoError(t, err)
+	result[0].Password = ""
+	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
+
+	// Delete replication
+	err = artifactoryCli.Exec("rpldel", tests.Repo1)
+	assert.NoError(t, err)
+
+	// Validate delete replication
+	result, err = servicesManager.GetReplication(tests.Repo1)
+	assert.Error(t, err)
+	// Cleanup
+	cleanArtifactoryTest()
+}

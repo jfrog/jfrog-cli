@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
+	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
 const (
@@ -92,6 +93,7 @@ const (
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
+	ReplicationTempCreate                  = "replication_push_create.json"
 )
 
 var Repo1 = "jfrog-cli-tests-repo1"
@@ -1260,5 +1262,24 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 		Repo1 + "/syncDir/b.zip",
 		Repo1 + "/syncDir/c.zip",
 		Repo1 + "/syncDir/d.zip",
+	}
+}
+
+func GetReplicationConfig() []clientutils.ReplicationParams {
+	return []clientutils.ReplicationParams{
+		{
+			Url:                    *RtUrl,
+			Username:               *RtUser,
+			Password:               "",
+			CronExp:                "0 0 12 * * ?",
+			RepoKey:                Repo1,
+			EnableEventReplication: false,
+			SocketTimeoutMillis:    15000,
+			Enabled:                true,
+			SyncDeletes:            true,
+			SyncProperties:         true,
+			SyncStatistics:         false,
+			PathPrefix:             "/my/path",
+		},
 	}
 }
