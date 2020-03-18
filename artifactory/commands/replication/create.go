@@ -2,6 +2,7 @@ package replication
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	rtUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -68,7 +69,12 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 		if key == "serverId" {
 			serverId = value.(string)
 		} else {
-			writersMap[key](&replicationConfigMap, key, value.(string))
+			if writerMapFunc, ok := writersMap[key]; ok {
+				writerMapFunc(&replicationConfigMap, key, value.(string))
+			} else {
+				err = errorutils.CheckError(errors.New("Unknown key: \"" + key + "\" for replication create"))
+				return
+			}
 		}
 	}
 	fillMissingDefaultValue(replicationConfigMap)
