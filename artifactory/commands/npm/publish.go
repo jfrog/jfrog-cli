@@ -299,7 +299,8 @@ func (npc *NpmPublishCommand) readPackageInfoFromTarball() error {
 			}
 			return errorutils.CheckError(err)
 		}
-		if strings.HasSuffix(hdr.Name, "package.json") {
+		parent := filepath.Dir(hdr.Name)
+		if filepath.Base(parent) == "package" && strings.HasSuffix(hdr.Name, "package.json") {
 			packageJson, err := ioutil.ReadAll(tarReader)
 			if err != nil {
 				return errorutils.CheckError(err)
