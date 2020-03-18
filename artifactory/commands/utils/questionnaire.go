@@ -11,6 +11,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 )
 
+const (
+	InsertValuePromptMsg = "Insert the value for "
+)
+
 // The interactive questionnaire works as follows:
 //	We have to provide a map of QuestionInfo which include all possible questions may be asked.
 //	1. Mandatory Questions:
@@ -257,4 +261,20 @@ func GetSuggestsFromKeys(keys []string, SuggestionMap map[string]prompt.Suggest)
 		suggests = append(suggests, SuggestionMap[key])
 	}
 	return suggests
+}
+
+// After an optional value was chosen we'll ask for its value.
+func OptionalKeyCallback(iq *InteractiveQuestionnaire, key string) (value string, err error) {
+	if key != SaveAndExit {
+		valueQuestion := iq.QuestionsMap[key]
+		// Since we are using default question in most of the cases we set the map key here.
+		valueQuestion.MapKey = key
+		valueQuestion.PromptPrefix = InsertValuePromptMsg + key
+		if valueQuestion.Options != nil {
+			valueQuestion.PromptPrefix += PressTabMsg
+		}
+		valueQuestion.PromptPrefix += " >"
+		value, err = iq.AskQuestion(valueQuestion)
+	}
+	return value, err
 }

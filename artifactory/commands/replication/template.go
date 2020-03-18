@@ -14,8 +14,7 @@ import (
 
 const (
 	// Strings for prompt questions
-	SelectConfigKeyMsg   = "Select the next configuration key" + utils.PressTabMsg
-	InsertValuePromptMsg = "Insert the value for "
+	SelectConfigKeyMsg = "Select the next configuration key" + utils.PressTabMsg
 
 	// Template types
 	TemplateType = "templateType"
@@ -86,7 +85,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
-		Callback:     optionalKeyCallback,
+		Callback:     utils.OptionalKeyCallback,
 	},
 	TemplateType: {
 		Options: []prompt.Suggest{
@@ -177,22 +176,7 @@ func getAllPossibleOptionalRepoConfKeys(values ...string) []prompt.Suggest {
 	return utils.GetSuggestsFromKeys(optionalKeys, suggestionMap)
 }
 
-func optionalKeyCallback(iq *utils.InteractiveQuestionnaire, key string) (value string, err error) {
-	if key != utils.SaveAndExit {
-		valueQuestion := iq.QuestionsMap[key]
-		// Since we are using default question in most of the cases we set the map key here
-		valueQuestion.MapKey = key
-		valueQuestion.PromptPrefix = InsertValuePromptMsg + key
-		if valueQuestion.Options != nil {
-			valueQuestion.PromptPrefix += utils.PressTabMsg
-		}
-		valueQuestion.PromptPrefix += " >"
-		value, err = iq.AskQuestion(valueQuestion)
-	}
-	return value, err
-}
-
-// Specific writers for repo templates, since all the values in the templates should be written as string
+// Specific writers for repo templates, since all the values in the templates should be written as string.
 var BoolToStringQuestionInfo = utils.QuestionInfo{
 	Options:   utils.GetBoolSuggests(),
 	AllowVars: true,
