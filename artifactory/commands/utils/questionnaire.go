@@ -1,14 +1,12 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 )
 
 // The interactive questionnaire works as follows:
@@ -77,7 +75,7 @@ func interruptKeyBind() prompt.Option {
 	interrupt := prompt.KeyBind{
 		Key: prompt.ControlC,
 		Fn: func(buf *prompt.Buffer) {
-			cliutils.ExitOnErr(errors.New("Interrupted"))
+			panic("Interrupted")
 		},
 	}
 	return prompt.OptionAddKeyBind(interrupt)
