@@ -276,3 +276,13 @@ func OptionalKeyCallback(iq *InteractiveQuestionnaire, key string) (value string
 	}
 	return value, err
 }
+
+func IsValideParams(key string, value interface{}, writersMap map[string]AnswerWriter) bool {
+	if _, ok := writersMap[key]; !ok {
+		return false
+	}
+	if _, ok := value.(string); !ok {
+		return false
+	}
+	return true
+}

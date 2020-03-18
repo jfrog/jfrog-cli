@@ -69,11 +69,12 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 		if key == "serverId" {
 			serverId = value.(string)
 		} else {
-			if writerMapFunc, ok := writersMap[key]; ok {
-				writerMapFunc(&replicationConfigMap, key, value.(string))
-			} else {
-				err = errorutils.CheckError(errors.New("Unknown key: \"" + key + "\" for replication create"))
-				return
+			for key, value := range replicationConfigMap {
+				if !utils.IsValideParams(key, value, writersMap) {
+					err = errorutils.CheckError(errors.New("unknown key: \"" + key + "\" or its value type is not string."))
+					return
+				}
+				writersMap[key](&replicationConfigMap, key, value.(string))
 			}
 		}
 	}

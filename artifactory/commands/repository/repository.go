@@ -42,12 +42,11 @@ func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 	// All the values in the template are strings
 	// Go over the the confMap and write the values with the correct type using the writersMap
 	for key, value := range repoConfigMap {
-		if writerMapFunc, ok := writersMap[key]; ok {
-			writerMapFunc(&repoConfigMap, key, value.(string))
-		} else {
-			err = errorutils.CheckError(errors.New("Unknown key: \"" + key + "\" for repo create"))
+		if !utils.IsValideParams(key, value, writersMap) {
+			err = errorutils.CheckError(errors.New("unknown key: \"" + key + "\" or its value type is not string."))
 			return
 		}
+		writersMap[key](&repoConfigMap, key, value.(string))
 	}
 	// Write a JSON with the correct values
 	content, err = json.Marshal(repoConfigMap)
