@@ -1,3 +1,8 @@
+## 1.35.1 (Mar 18, 2020)
+- Bug fix - "jfrog rt npm-publish" can publish an incorrect module name.
+- Bug fix - The --insecure-tls option is missing for "jfrog rt mvn",
+- Bug fix - The replication-create and replication-delete commands are missing.  
+
 ## 1.35.0 (Mar 17, 2020)
 - New repo-create, repo-update and repo-delete commands for Artifactory.
 - New replication-create and replication-delete commands for Artifactory.
