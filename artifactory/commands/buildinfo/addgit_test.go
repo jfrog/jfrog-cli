@@ -121,7 +121,6 @@ func TestPopulateIssuesConfigurations(t *testing.T) {
 	// Test failing scenarios
 	failing := []string{
 		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_issues.yaml"),
-		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_no_server.yaml"),
 		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_groupindex.yaml"),
 		filepath.Join("..", "testdata", "buildissues", "issuesconfig_fail_invalid_aggregate.yaml"),
 	}

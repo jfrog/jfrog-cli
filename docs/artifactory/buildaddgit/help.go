@@ -11,4 +11,4 @@ const Arguments string = `	build name
 		Build number.
 
 	path to .git
-		Path to a directory containing the .git directory. If not specific, the .git directory is assumed to be in the current directory.`
+		Path to a directory containing the .git directory. If not specified, the .git directory is assumed to be in the current directory or in one of the parent directories.`

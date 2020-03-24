@@ -30,6 +30,7 @@ type BuildAddGitCommand struct {
 	buildConfiguration *utils.BuildConfiguration
 	dotGitPath         string
 	configFilePath     string
+	serverId           string
 	issuesConfig       *IssuesConfiguration
 }
 
@@ -54,6 +55,11 @@ func (config *BuildAddGitCommand) SetDotGitPath(dotGitPath string) *BuildAddGitC
 
 func (config *BuildAddGitCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *BuildAddGitCommand {
 	config.buildConfiguration = buildConfiguration
+	return config
+}
+
+func (config *BuildAddGitCommand) SetServerId(serverId string) *BuildAddGitCommand {
+	config.serverId = serverId
 	return config
 }
 
@@ -118,10 +124,15 @@ func (config *BuildAddGitCommand) Run() error {
 	return nil
 }
 
-// Returns the ArtifactoryDetails.
-// If a config file exists, the information is taken from it. if not, the default server is returned.
+// Priorities for selecting server:
+// 1. 'server-id' flag.
+// 2. 'serverID' in config file.
+// 3. Default server.
 func (config *BuildAddGitCommand) RtDetails() (*utilsconfig.ArtifactoryDetails, error) {
-	if config.configFilePath != "" {
+	var serverId string
+	if config.serverId != "" {
+		serverId = config.serverId
+	} else if config.configFilePath != "" {
 		// Get the server ID from the conf file.
 		var vConfig *viper.Viper
 		vConfig, err := utils.ReadConfigFile(config.configFilePath, utils.YAML)
@@ -129,13 +140,12 @@ func (config *BuildAddGitCommand) RtDetails() (*utilsconfig.ArtifactoryDetails, 
 			return nil, err
 		}
 
-		if !vConfig.IsSet(ConfigIssuesPrefix+"serverID") || vConfig.GetString(ConfigIssuesPrefix+"serverID") == "" {
-			return nil, errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID"))
+		if vConfig.IsSet(ConfigIssuesPrefix+"serverID") {
+			serverId = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 		}
-		serverId := vConfig.GetString(ConfigIssuesPrefix + "serverID")
-		return utilsconfig.GetArtifactorySpecificConfig(serverId)
+		serverId = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 	}
-	return utilsconfig.GetDefaultArtifactoryConf()
+	return utilsconfig.GetArtifactorySpecificConfig(serverId)
 }
 
 func (config *BuildAddGitCommand) CommandName() string {
@@ -232,6 +242,11 @@ func (config *BuildAddGitCommand) createIssuesConfigs() (err error) {
 		return
 	}
 
+	// Use 'server-id' flag if provided.
+	if config.serverId != "" {
+		config.issuesConfig.ServerID = config.serverId
+	}
+
 	// Build ArtifactoryDetails from provided serverID.
 	err = config.issuesConfig.setArtifactoryDetails()
 	if err != nil {
@@ -293,10 +308,9 @@ func (ic *IssuesConfiguration) populateIssuesConfigsFromSpec(configFilePath stri
 	}
 
 	// Get server-id.
-	if !vConfig.IsSet(ConfigIssuesPrefix+"serverID") || vConfig.GetString(ConfigIssuesPrefix+"serverID") == "" {
-		return errorutils.CheckError(errors.New(fmt.Sprintf(MissingConfigurationError, ConfigIssuesPrefix+"serverID")))
+	if vConfig.IsSet(ConfigIssuesPrefix+"serverID") {
+		ic.ServerID = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 	}
-	ic.ServerID = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 
 	// Set log limit.
 	ic.LogLimit = GitLogLimit
@@ -354,7 +368,8 @@ func (ic *IssuesConfiguration) populateIssuesConfigsFromSpec(configFilePath stri
 }
 
 func (ic *IssuesConfiguration) setArtifactoryDetails() error {
-	artDetails, err := utilsconfig.GetArtifactoryConf(ic.ServerID)
+	// If no server-id provided, use default server.
+	artDetails, err := utilsconfig.GetArtifactorySpecificConfig(ic.ServerID)
 	if err != nil {
 		return err
 	}
