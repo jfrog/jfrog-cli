@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -486,6 +487,15 @@ func TokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 	// Token already refreshed
 	if serverConfiguration.AccessToken != "" && serverConfiguration.AccessToken != currentAccessToken {
 		return serverConfiguration.AccessToken, nil
+	}
+
+	// If token isn't already expired, Wait to make sure requests using the current token are sent before it is refreshed and becomes invalid
+	timeLeft, err := auth.GetTokenMinutesLeft(currentAccessToken)
+	if err != nil {
+		return "", err
+	}
+	if timeLeft > 0 {
+		time.Sleep(auth.WaitBeforeRefreshSeconds * time.Second)
 	}
 
 	refreshToken := serverConfiguration.RefreshToken
