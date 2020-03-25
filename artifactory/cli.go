@@ -1777,12 +1777,13 @@ func getBuildScanFlags() []cli.Flag {
 }
 
 func getBuildAddGitFlags() []cli.Flag {
-	return []cli.Flag{
+	bagFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  "config",
 			Usage: "[Optional] Path to a configuration file.` `",
 		},
 	}
+	return append(bagFlags, getServerIdFlag())
 }
 
 func getCurlFlags() []cli.Flag {
@@ -2986,7 +2987,7 @@ func buildAddGitCmd(c *cli.Context) error {
 		return err
 	}
 
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetBuildConfiguration(buildConfiguration).SetConfigFilePath(c.String("config"))
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetBuildConfiguration(buildConfiguration).SetConfigFilePath(c.String("config")).SetServerId(c.String("server-id"))
 	if c.NArg() == 3 {
 		buildAddGitConfigurationCmd.SetDotGitPath(c.Args().Get(2))
 	} else if c.NArg() == 1 {
