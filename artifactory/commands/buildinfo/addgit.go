@@ -139,10 +139,6 @@ func (config *BuildAddGitCommand) RtDetails() (*utilsconfig.ArtifactoryDetails, 
 		if err != nil {
 			return nil, err
 		}
-
-		if vConfig.IsSet(ConfigIssuesPrefix+"serverID") {
-			serverId = vConfig.GetString(ConfigIssuesPrefix + "serverID")
-		}
 		serverId = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 	}
 	return utilsconfig.GetArtifactorySpecificConfig(serverId)
