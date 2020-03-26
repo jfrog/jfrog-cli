@@ -2005,7 +2005,7 @@ func mvnCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		args, err := shellwords.Parse(utils.EscapeBackslash(strings.Join(extractCommand(c), " ")))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -2046,7 +2046,7 @@ func gradleCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		args, err := shellwords.Parse(utils.EscapeBackslash(strings.Join(extractCommand(c), " ")))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -2151,7 +2151,7 @@ func nugetCmd(c *cli.Context) error {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
 		// Found a config file.
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		args, err := shellwords.Parse(utils.EscapeBackslash(strings.Join(extractCommand(c), " ")))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -2217,7 +2217,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmInstallArgs, err := shellwords.Parse(c.String("npm-args"))
+	npmInstallArgs, err := shellwords.Parse(utils.EscapeBackslash(c.String("npm-args")))
 	if err != nil {
 		return err
 	}
@@ -2238,7 +2238,7 @@ func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyComma
 
 	if exists {
 		// Found a config file. Continue as native command.
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		args, err := shellwords.Parse(utils.EscapeBackslash(strings.Join(extractCommand(c), " ")))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -2287,7 +2287,7 @@ func npmPublishCmd(c *cli.Context) error {
 	}
 	if exists {
 		// Found a config file. Continue as native command.
-		args, err := shellwords.Parse(strings.Join(extractCommand(c), " "))
+		args, err := shellwords.Parse(utils.EscapeBackslash(strings.Join(extractCommand(c), " ")))
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -2318,7 +2318,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmPublicArgs, err := shellwords.Parse(c.String("npm-args"))
+	npmPublicArgs, err := shellwords.Parse(utils.EscapeBackslash(c.String("npm-args")))
 	if err != nil {
 		return err
 	}
@@ -2468,7 +2468,7 @@ func goLegacyCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	goArg, err := shellwords.Parse(c.Args().Get(0))
+	goArg, err := shellwords.Parse(utils.EscapeBackslash(c.Args().Get(0)))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, err)
 	}

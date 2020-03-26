@@ -174,3 +174,7 @@ func ExtractInsecureTlsFromArgs(args []string) (cleanArgs []string, insecureTls 
 	RemoveFlagFromCommand(&cleanArgs, flagIndex, flagIndex)
 	return
 }
+
+func EscapeBackslash(strToBeEscape string) string {
+	return strings.ReplaceAll(strToBeEscape, `\`, `\\`)
+}
