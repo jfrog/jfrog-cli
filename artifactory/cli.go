@@ -3516,6 +3516,12 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 			if details.AccessToken == "" {
 				details.AccessToken = confDetails.AccessToken
 			}
+			if details.RefreshToken == "" {
+				details.RefreshToken = confDetails.RefreshToken
+			}
+			if details.TokenRefreshInterval == cliutils.TokenRefreshDisabled {
+				details.TokenRefreshInterval = confDetails.TokenRefreshInterval
+			}
 			if details.ClientCertPath == "" {
 				details.ClientCertPath = confDetails.ClientCertPath
 			}
@@ -3526,6 +3532,8 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
+
+	err = config.CreateInitialRefreshTokensIfNeeded(details)
 	return
 }
 
