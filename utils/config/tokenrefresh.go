@@ -46,6 +46,7 @@ func AccessTokenRefreshPreRequestInterceptor(fields *auth.CommonConfigFields, ht
 }
 
 func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err error) {
+	log.Debug("Refreshing token...")
 	// Lock config to prevent access from different processes
 	lockFile, err := lock.CreateLock()
 	defer lockFile.Unlock()
@@ -59,6 +60,7 @@ func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 	}
 	// If token already refreshed, get new token from config
 	if serverConfiguration.AccessToken != "" && serverConfiguration.AccessToken != currentAccessToken {
+		log.Debug("Fetched new token from config.")
 		return serverConfiguration.AccessToken, nil
 	}
 
@@ -91,6 +93,9 @@ func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 		if err != nil {
 			return "", nil
 		}
+		log.Debug("New token created successfully.")
+	} else {
+		log.Debug("Token refreshed successfully.")
 	}
 
 	err = writeNewTokens(serverConfiguration, tokenRefreshServerId, newToken.AccessToken, newToken.RefreshToken)
