@@ -18,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/mattn/go-shellwords"
 )
 
 type NugetCommandArgs struct {
@@ -375,14 +374,14 @@ func (nca *NugetCommandArgs) createNugetCmd() (*nuget.Cmd, error) {
 		return nil, err
 	}
 	if nca.args != "" {
-		c.Command, err = shellwords.Parse(nca.args)
+		c.Command, err = utils.ParseEnvVars(strings.Split(nca.args, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
 	if nca.flags != "" {
-		c.CommandFlags, err = shellwords.Parse(nca.flags)
+		c.CommandFlags, err = utils.ParseEnvVars(strings.Split(nca.flags, " "))
 	}
 
 	return c, errorutils.CheckError(err)

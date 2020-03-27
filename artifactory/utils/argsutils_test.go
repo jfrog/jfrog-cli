@@ -236,3 +236,37 @@ type testCase struct {
 	flagValueIndex int
 	expectErr      bool
 }
+
+func TestParseEnvVars(t *testing.T) {
+	//Check with no quote
+	want := []string{`rt`}
+	got, err := ParseEnvVars([]string{`rt`})
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseEnvVars == %s, want %s", got, want)
+	}
+
+	//Check with space and backslash
+	want = []string{`-f a\b\pom.xml`}
+	got, err = ParseEnvVars([]string{`"-f a\b\pom.xml"`})
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseEnvVars == %s, want %s", got, want)
+	}
+	os.Setenv("JFROGPARSETEST", "jfrog")
+	defer os.Unsetenv("JFROGPARSETEST")
+
+	//Check env variable parse
+	want = []string{`--build-name=jfrog`}
+	got, err = ParseEnvVars([]string{`"--build-name=$JFROGPARSETEST"`})
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseEnvVars == %s, want %s", got, want)
+	}
+}
