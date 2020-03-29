@@ -1,7 +1,7 @@
 package npm
 
 import (
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"strconv"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"

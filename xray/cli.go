@@ -3,9 +3,9 @@ package xray
 import (
 	"errors"
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-go/docs/common"
-	"github.com/jfrog/jfrog-cli-go/docs/xray/offlineupdate"
-	"github.com/jfrog/jfrog-cli-go/xray/commands"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	"github.com/jfrog/jfrog-cli/xray/commands"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
 )

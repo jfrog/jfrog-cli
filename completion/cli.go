@@ -2,11 +2,11 @@ package completion
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-go/completion/shells/bash"
-	"github.com/jfrog/jfrog-cli-go/completion/shells/zsh"
-	"github.com/jfrog/jfrog-cli-go/docs/common"
-	bash_docs "github.com/jfrog/jfrog-cli-go/docs/completion/bash"
-	zsh_docs "github.com/jfrog/jfrog-cli-go/docs/completion/zsh"
+	"github.com/jfrog/jfrog-cli/completion/shells/bash"
+	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	bash_docs "github.com/jfrog/jfrog-cli/docs/completion/bash"
+	zsh_docs "github.com/jfrog/jfrog-cli/docs/completion/zsh"
 )
 
 func GetCommands() []cli.Command {

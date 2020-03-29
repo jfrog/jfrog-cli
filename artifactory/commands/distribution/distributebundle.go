@@ -1,9 +1,9 @@
 package distribution
 
 import (
-	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/distribution/services"
 )
 

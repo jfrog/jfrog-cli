@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli-go/completion/shells/bash"
-	"github.com/jfrog/jfrog-cli-go/completion/shells/zsh"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-cli/completion/shells/bash"
+	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/log"
 )
 
 func main() {

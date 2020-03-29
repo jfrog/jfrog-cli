@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/config"
-	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
-	"github.com/jfrog/jfrog-cli-go/utils/lock"
+	"github.com/jfrog/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli/utils/lock"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"golang.org/x/crypto/ssh/terminal"

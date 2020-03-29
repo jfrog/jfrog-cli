@@ -3,8 +3,8 @@ package commands
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli/missioncontrol/utils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"

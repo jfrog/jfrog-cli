@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/inttestutils"
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 )
 
 const gradleFlagName = "gradle"

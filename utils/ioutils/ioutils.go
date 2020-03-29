@@ -3,7 +3,7 @@ package ioutils
 import (
 	"bufio"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"

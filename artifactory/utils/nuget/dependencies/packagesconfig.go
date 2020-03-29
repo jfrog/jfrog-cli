@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"

@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-go/artifactory"
-	"github.com/jfrog/jfrog-cli-go/bintray"
-	"github.com/jfrog/jfrog-cli-go/completion"
-	"github.com/jfrog/jfrog-cli-go/docs/common"
-	"github.com/jfrog/jfrog-cli-go/missioncontrol"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
-	"github.com/jfrog/jfrog-cli-go/xray"
+	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/bintray"
+	"github.com/jfrog/jfrog-cli/completion"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/missioncontrol"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"os"
 )

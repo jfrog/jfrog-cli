@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/jfrog/gocmd/executers"
-	"github.com/jfrog/jfrog-cli-go/inttestutils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"

@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/bintray/helpers"
+	"github.com/jfrog/jfrog-cli/bintray/helpers"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"io"
 	"net/http"

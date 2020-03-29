@@ -2,8 +2,8 @@ package commands
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/missioncontrol/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli/missioncontrol/utils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"

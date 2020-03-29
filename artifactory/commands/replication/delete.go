@@ -1,9 +1,9 @@
 package replication
 
 import (
-	rtUtils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	rtUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 )
 
 type ReplicationDeleteCommand struct {

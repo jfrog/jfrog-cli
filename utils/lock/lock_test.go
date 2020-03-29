@@ -2,7 +2,7 @@ package lock
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"math"
 	"os"

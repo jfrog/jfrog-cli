@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils/docker"
-	"github.com/jfrog/jfrog-cli-go/inttestutils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/docker"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 )
 
 const DockerTestImage string = "jfrog_cli_test_image"

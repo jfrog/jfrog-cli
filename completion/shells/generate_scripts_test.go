@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-go/completion/shells/bash"
-	"github.com/jfrog/jfrog-cli-go/completion/shells/zsh"
+	"github.com/jfrog/jfrog-cli/completion/shells/bash"
+	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

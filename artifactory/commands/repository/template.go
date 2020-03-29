@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"

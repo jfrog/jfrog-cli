@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )

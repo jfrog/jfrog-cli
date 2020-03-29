@@ -2,7 +2,7 @@ package dependencies
 
 import (
 	"fmt"
-	deptree "github.com/jfrog/jfrog-cli-go/artifactory/utils/dependenciestree"
+	deptree "github.com/jfrog/jfrog-cli/artifactory/utils/dependenciestree"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )

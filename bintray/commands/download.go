@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/jfrog/jfrog-cli-go/bintray/utils"
+	"github.com/jfrog/jfrog-cli/bintray/utils"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
 )

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/url"
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli-go/utils/tests"
-	cliproxy "github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 )
 
 const mavenFlagName = "maven"

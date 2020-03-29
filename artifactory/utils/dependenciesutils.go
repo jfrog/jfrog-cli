@@ -3,9 +3,9 @@ package utils
 import (
 	"errors"
 	"fmt"
-	bintrayutils "github.com/jfrog/jfrog-cli-go/bintray/utils"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	bintrayutils "github.com/jfrog/jfrog-cli/bintray/utils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	rthttpclient "github.com/jfrog/jfrog-client-go/artifactory/httpclient"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"

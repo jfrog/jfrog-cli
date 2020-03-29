@@ -3,7 +3,7 @@ package tests
 import (
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 

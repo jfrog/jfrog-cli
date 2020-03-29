@@ -1,8 +1,8 @@
 package progressbar
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	logUtils "github.com/jfrog/jfrog-cli-go/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/buger/jsonparser"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/auth"
 	distributionAuth "github.com/jfrog/jfrog-client-go/distribution/auth"

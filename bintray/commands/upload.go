@@ -2,7 +2,7 @@ package commands
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
 	"github.com/jfrog/jfrog-client-go/bintray/services/packages"

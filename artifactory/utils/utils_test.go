@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"path/filepath"
 	"testing"
 )

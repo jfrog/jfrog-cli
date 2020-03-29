@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-go/utils/summary"
+	"github.com/jfrog/jfrog-cli/utils/summary"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"

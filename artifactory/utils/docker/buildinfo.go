@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	buildutils "github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	buildutils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"

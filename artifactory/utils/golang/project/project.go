@@ -16,7 +16,7 @@ import (
 	"github.com/jfrog/gocmd/cmd"
 	"github.com/jfrog/gocmd/executers"
 	executersutils "github.com/jfrog/gocmd/executers/utils"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"

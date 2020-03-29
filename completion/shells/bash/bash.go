@@ -4,7 +4,7 @@ package bash
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"path/filepath"
