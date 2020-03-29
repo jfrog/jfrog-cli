@@ -256,7 +256,7 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 
 func (cc *ConfigCommand) readRefreshableTokensFromConsole() {
 	if (cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "" {
-		cc.useRefreshableToken = cliutils.InteractiveConfirm("Use refreshable tokens?")
+		cc.useRefreshableToken = cliutils.InteractiveConfirm("Replace username and password/API key with automatically created access token that’s refreshed hourly?")
 	}
 }
 
