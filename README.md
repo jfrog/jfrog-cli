@@ -49,7 +49,7 @@ Please download `Go 1.14.x` or above.
 
 ## Download and Build the CLI
 
-Navigate to a directory where you want to create the jfrog-cli-go project, **outside** the `$GOPATH` tree.
+Navigate to a directory where you want to create the jfrog-cli project, **outside** the `$GOPATH` tree.
 
 If the `GOPATH` variable is unset, it's default value is the go folder under the user home.
 

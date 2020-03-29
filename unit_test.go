@@ -12,7 +12,7 @@ import (
 
 const (
 	JfrogTestsHome      = ".jfrogTest"
-	CliIntegrationTests = "github.com/jfrog/jfrog-cli-go"
+	CliIntegrationTests = "github.com/jfrog/jfrog-cli"
 )
 
 func TestUnitTests(t *testing.T) {
