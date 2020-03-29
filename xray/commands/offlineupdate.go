@@ -231,7 +231,7 @@ type OfflineUpdatesFlags struct {
 	From    int64
 	To      int64
 	Version string
-	Target	string
+	Target  string
 }
 
 type FilesList struct {

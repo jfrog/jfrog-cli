@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-	"path/filepath"
-
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
+	distributionAuth "github.com/jfrog/jfrog-client-go/distribution/auth"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -263,41 +263,12 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 	return content, err
 }
 
-func GetJfrogHomeDir() (string, error) {
-
-	// The JfrogHomeEnv environment variable has been deprecated and replaced with HomeDir
-	if os.Getenv(cliutils.HomeDir) != "" {
-		return os.Getenv(cliutils.HomeDir), nil
-	} else if os.Getenv(cliutils.JfrogHomeEnv) != "" {
-		return path.Join(os.Getenv(cliutils.JfrogHomeEnv), ".jfrog"), nil
-	}
-
-	userHomeDir := fileutils.GetHomeDir()
-	if userHomeDir == "" {
-		err := errorutils.CheckError(errors.New("Couldn't find home directory. Make sure your HOME environment variable is set."))
-		if err != nil {
-			return "", err
-		}
-	}
-	return filepath.Join(userHomeDir, ".jfrog"), nil
-}
-
-func CreateDirInJfrogHome(dirName string) (string, error) {
-	homeDir, err := GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	folderName := filepath.Join(homeDir, dirName)
-	err = fileutils.CreateDirIfNotExist(folderName)
-	return folderName, err
-}
-
 func GetJfrogDependenciesPath() (string, error) {
 	dependenciesDir := os.Getenv(cliutils.DependenciesDir)
 	if dependenciesDir != "" {
 		return utils.AddTrailingSlashIfNeeded(dependenciesDir), nil
 	}
-	jfrogHome, err := GetJfrogHomeDir()
+	jfrogHome, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		return "", err
 	}
@@ -305,7 +276,7 @@ func GetJfrogDependenciesPath() (string, error) {
 }
 
 func getConfFilePath() (string, error) {
-	confPath, err := GetJfrogHomeDir()
+	confPath, err := cliutils.GetJfrogHomeDir()
 	if err != nil {
 		return "", err
 	}
@@ -339,19 +310,22 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 }
 
 type ArtifactoryDetails struct {
-	Url               string            `json:"url,omitempty"`
-	SshUrl            string            `json:"-"`
-	User              string            `json:"user,omitempty"`
-	Password          string            `json:"password,omitempty"`
-	SshKeyPath        string            `json:"sshKeyPath,omitempty"`
-	SshPassphrase     string            `json:"SshPassphrase,omitempty"`
-	SshAuthHeaders    map[string]string `json:"SshAuthHeaders,omitempty"`
-	AccessToken       string            `json:"accessToken,omitempty"`
-	ClientCertPath    string            `json:"clientCertPath,omitempty"`
-	ClientCertKeyPath string            `json:"clientCertKeyPath,omitempty"`
-	ServerId          string            `json:"serverId,omitempty"`
-	IsDefault         bool              `json:"isDefault,omitempty"`
-	InsecureTls       bool              `json:"-"`
+	Url                  string            `json:"url,omitempty"`
+	SshUrl               string            `json:"-"`
+	DistributionUrl      string            `json:"distributionUrl,omitempty"`
+	User                 string            `json:"user,omitempty"`
+	Password             string            `json:"password,omitempty"`
+	SshKeyPath           string            `json:"sshKeyPath,omitempty"`
+	SshPassphrase        string            `json:"SshPassphrase,omitempty"`
+	SshAuthHeaders       map[string]string `json:"SshAuthHeaders,omitempty"`
+	AccessToken          string            `json:"accessToken,omitempty"`
+	RefreshToken         string            `json:"refreshToken,omitempty"`
+	TokenRefreshInterval int               `json:"tokenRefreshInterval,omitempty"`
+	ClientCertPath       string            `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath    string            `json:"clientCertKeyPath,omitempty"`
+	ServerId             string            `json:"serverId,omitempty"`
+	IsDefault            bool              `json:"isDefault,omitempty"`
+	InsecureTls          bool              `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }
@@ -389,6 +363,10 @@ func (artifactoryDetails *ArtifactoryDetails) SetAccessToken(accessToken string)
 	artifactoryDetails.AccessToken = accessToken
 }
 
+func (artifactoryDetails *ArtifactoryDetails) SetRefreshToken(refreshToken string) {
+	artifactoryDetails.RefreshToken = refreshToken
+}
+
 func (artifactoryDetails *ArtifactoryDetails) SetClientCertPath(certificatePath string) {
 	artifactoryDetails.ClientCertPath = certificatePath
 }
@@ -405,6 +383,10 @@ func (artifactoryDetails *ArtifactoryDetails) GetUrl() string {
 	return artifactoryDetails.Url
 }
 
+func (artifactoryDetails *ArtifactoryDetails) GetDistributionUrl() string {
+	return artifactoryDetails.DistributionUrl
+}
+
 func (artifactoryDetails *ArtifactoryDetails) GetUser() string {
 	return artifactoryDetails.User
 }
@@ -415,6 +397,10 @@ func (artifactoryDetails *ArtifactoryDetails) GetPassword() string {
 
 func (artifactoryDetails *ArtifactoryDetails) GetAccessToken() string {
 	return artifactoryDetails.AccessToken
+}
+
+func (artifactoryDetails *ArtifactoryDetails) GetRefreshToken() string {
+	return artifactoryDetails.RefreshToken
 }
 
 func (artifactoryDetails *ArtifactoryDetails) GetClientCertPath() string {
@@ -429,26 +415,45 @@ func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
 	return len(artifactoryDetails.SshAuthHeaders) > 0
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ArtifactoryDetails, error) {
-	artAuth := auth.NewArtifactoryDetails()
+func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.CommonDetails, error) {
+	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
-	artAuth.SetSshUrl(artifactoryDetails.SshUrl)
-	artAuth.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
-	artAuth.SetApiKey(artifactoryDetails.ApiKey)
-	artAuth.SetUser(artifactoryDetails.User)
-	artAuth.SetPassword(artifactoryDetails.Password)
-	artAuth.SetAccessToken(artifactoryDetails.AccessToken)
-	artAuth.SetClientCertPath(artifactoryDetails.ClientCertPath)
-	artAuth.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
-	artAuth.SetSshKeyPath(artifactoryDetails.SshKeyPath)
-	artAuth.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if artAuth.IsSshAuthentication() && !artAuth.IsSshAuthHeaderSet() {
-		err := artAuth.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
-		if err != nil {
-			return nil, err
-		}
+	return artifactoryDetails.createArtAuthConfig(artAuth)
+}
+
+func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.CommonDetails, error) {
+	artAuth := distributionAuth.NewDistributionDetails()
+	artAuth.SetUrl(artifactoryDetails.DistributionUrl)
+	return artifactoryDetails.createArtAuthConfig(artAuth)
+}
+
+func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(commonDetails auth.CommonDetails) (auth.CommonDetails, error) {
+	commonDetails.SetSshUrl(artifactoryDetails.SshUrl)
+	commonDetails.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
+	commonDetails.SetAccessToken(artifactoryDetails.AccessToken)
+	// If refresh token is not empty, set a refresh handler and skip other credentials
+	if artifactoryDetails.RefreshToken != "" {
+		tokenRefreshServerId = artifactoryDetails.ServerId
+		commonDetails.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
+	} else {
+		commonDetails.SetApiKey(artifactoryDetails.ApiKey)
+		commonDetails.SetUser(artifactoryDetails.User)
+		commonDetails.SetPassword(artifactoryDetails.Password)
 	}
-	return artAuth, nil
+	commonDetails.SetClientCertPath(artifactoryDetails.ClientCertPath)
+	commonDetails.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
+	commonDetails.SetSshKeyPath(artifactoryDetails.SshKeyPath)
+	commonDetails.SetSshPassphrase(artifactoryDetails.SshPassphrase)
+	if commonDetails.IsSshAuthentication() {
+		if !commonDetails.IsSshAuthHeaderSet() {
+			err := commonDetails.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
+			if err != nil {
+				return nil, err
+			}
+		}
+		commonDetails.AppendPreRequestInterceptor(auth.SshTokenRefreshPreRequestInterceptor)
+	}
+	return commonDetails, nil
 }
 
 func (missionControlDetails *MissionControlDetails) GetAccessToken() string {

@@ -2,6 +2,7 @@ package ioutils
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"golang.org/x/crypto/ssh/terminal"
@@ -31,6 +32,8 @@ func ReadCredentialsFromConsole(details, savedDetails cliutils.Credentials, allo
 		if details.GetPassword() == "" && allowUsingSavedPassword {
 			details.SetPassword(savedDetails.GetPassword())
 		}
+		// New-line required after the password input:
+		fmt.Println()
 	}
 	return nil
 }

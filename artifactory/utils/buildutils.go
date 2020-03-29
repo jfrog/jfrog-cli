@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -241,17 +241,17 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 }
 
 type BuildInfoConfiguration struct {
-	artDetails auth.ArtifactoryDetails
+	artDetails auth.CommonDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (config *BuildInfoConfiguration) GetArtifactoryDetails() auth.ArtifactoryDetails {
+func (config *BuildInfoConfiguration) GetArtifactoryDetails() auth.CommonDetails {
 	return config.artDetails
 }
 
-func (config *BuildInfoConfiguration) SetArtifactoryDetails(art auth.ArtifactoryDetails) {
+func (config *BuildInfoConfiguration) SetArtifactoryDetails(art auth.CommonDetails) {
 	config.artDetails = art
 }
 

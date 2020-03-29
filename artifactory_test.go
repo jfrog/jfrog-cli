@@ -32,10 +32,10 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli-go/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -53,7 +53,7 @@ var artifactoryCli *tests.JfrogCli
 var configArtifactoryCli *tests.JfrogCli
 
 var artifactoryDetails *config.ArtifactoryDetails
-var artAuth auth.ArtifactoryDetails
+var artAuth auth.CommonDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
@@ -65,6 +65,9 @@ func InitArtifactoryTests() {
 func authenticate() string {
 	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
 	cred := "--url=" + *tests.RtUrl
+	if *tests.RtDistributionUrl != "" {
+		cred += " --dist-url=" + *tests.RtDistributionUrl
+	}
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
@@ -775,7 +778,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
 	artifactoryDetails.InsecureTls = false
-	securityDirPath, err := utils.GetJfrogSecurityDir()
+	securityDirPath, err := cliutils.GetJfrogSecurityDir()
 	assert.NoError(t, err)
 	err = fileutils.CopyFile(securityDirPath, certificate.KEY_FILE)
 	assert.NoError(t, err)
@@ -3659,4 +3662,36 @@ func initVcsTestDir(t *testing.T) string {
 	path, err := filepath.Abs(tests.Temp)
 	assert.NoError(t, err)
 	return path
+}
+
+func TestArtifactoryReplicationCreate(t *testing.T) {
+	initArtifactoryTest(t)
+	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--apikey="+*tests.RtApiKey, "--access-token="+*tests.RtAccessToken, "--interactive=false")
+	defer deleteServerConfig()
+
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
+	assert.NoError(t, err)
+
+	// Create push replication
+	err = artifactoryCli.Exec("rplc", specFile)
+	assert.NoError(t, err)
+
+	// Validate create replication
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	result, err := servicesManager.GetReplication(tests.Repo1)
+	assert.NoError(t, err)
+	result[0].Password = ""
+	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
+
+	// Delete replication
+	err = artifactoryCli.Exec("rpldel", tests.Repo1)
+	assert.NoError(t, err)
+
+	// Validate delete replication
+	result, err = servicesManager.GetReplication(tests.Repo1)
+	assert.Error(t, err)
+	// Cleanup
+	cleanArtifactoryTest()
 }

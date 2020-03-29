@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
@@ -38,6 +38,7 @@ type Image interface {
 	Push() error
 	Id() (string, error)
 	ParentId() (string, error)
+	Manifest() (string, error)
 	Tag() string
 	Path() string
 	Name() string
@@ -87,6 +88,13 @@ func (image *image) Path() string {
 		return path.Join(image.tag[indexOfFirstSlash:], "latest")
 	}
 	return path.Join(image.tag[indexOfFirstSlash:indexOfLastColon], image.tag[indexOfLastColon+1:])
+}
+
+// Get docker image manifest
+func (image *image) Manifest() (string, error) {
+	cmd := &getImageManifestCmd{image: image}
+	content, err := gofrogcmd.RunCmdOutput(cmd)
+	return content, err
 }
 
 // Get docker image name
@@ -157,6 +165,23 @@ func (getImageId *getImageIdCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
+type Manifest struct {
+	Descriptor       Descriptor       `json:"descriptor"`
+	SchemaV2Manifest SchemaV2Manifest `json:"SchemaV2Manifest"`
+}
+
+type Descriptor struct {
+	Digest *string `json:"digest"`
+}
+
+type SchemaV2Manifest struct {
+	Config Config `json:"config"`
+}
+
+type Config struct {
+	Digest *string `json:"digest"`
+}
+
 // Image get parent image id command
 type getParentId struct {
 	image *image
@@ -180,6 +205,33 @@ func (getImageId *getParentId) GetStdWriter() io.WriteCloser {
 }
 
 func (getImageId *getParentId) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+// Get image manifest command
+type getImageManifestCmd struct {
+	image *image
+}
+
+func (getImageManifest *getImageManifestCmd) GetCmd() *exec.Cmd {
+	var cmd []string
+	cmd = append(cmd, "docker")
+	cmd = append(cmd, "manifest")
+	cmd = append(cmd, "inspect")
+	cmd = append(cmd, getImageManifest.image.tag)
+	cmd = append(cmd, "--verbose")
+	return exec.Command(cmd[0], cmd[1:]...)
+}
+
+func (getImageManifest *getImageManifestCmd) GetEnv() map[string]string {
+	return map[string]string{}
+}
+
+func (getImageManifest *getImageManifestCmd) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (getImageManifest *getImageManifestCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
@@ -254,7 +306,7 @@ func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := utils.GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +315,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*
 		return nil, err
 	}
 
-	configBuilder := artifactory.NewConfigBuilder().
+	configBuilder := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).

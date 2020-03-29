@@ -1,12 +1,15 @@
 package generic
 
 import (
+	"errors"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -39,7 +42,7 @@ func (pc *PropsCommand) SetProps(props string) *PropsCommand {
 }
 
 func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := utils.GetJfrogSecurityDir()
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +50,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	serviceConfig, err := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
@@ -57,20 +60,26 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem) {
+func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem, err error) {
+	var errorOccurred = false
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 
 		currentResultItems, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
 		resultItems = append(resultItems, currentResultItems...)
+	}
+	if errorOccurred {
+		err = errors.New("Operation finished with errors, please review the logs.")
 	}
 	return
 }

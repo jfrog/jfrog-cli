@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-client-go/utils/io"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,20 +12,14 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-client-go/auth"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	"github.com/jfrog/jfrog-client-go/distribution"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 const repoDetailsUrl = "api/repositories/"
-
-func GetJfrogSecurityDir() (string, error) {
-	homeDir, err := config.GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, "security"), nil
-}
 
 func GetProjectDir(global bool) (string, error) {
 	configDir, err := getConfigDir(global)
@@ -42,17 +37,17 @@ func getConfigDir(global bool) (string, error) {
 		}
 		return filepath.Join(wd, ".jfrog"), nil
 	}
-	return config.GetJfrogHomeDir()
+	return cliutils.GetJfrogHomeDir()
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails, insecureTls bool) (string, error) {
+func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.CommonDetails, insecureTls bool) (string, error) {
 	u, err := url.Parse(artifactoryAuth.GetUrl())
 	if err != nil {
 		return "", err
 	}
 	u.Path = path.Join(u.Path, "api/security/encryptedPassword")
 	httpClientsDetails := artifactoryAuth.CreateHttpClientDetails()
-	securityDir, err := GetJfrogSecurityDir()
+	securityDir, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +79,11 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ArtifactoryDetails
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := GetJfrogSecurityDir()
+	return CreateServiceManagerWithThreads(artDetails, isDryRun, 0)
+}
+
+func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (*artifactory.ArtifactoryServicesManager, error) {
+	certPath, err := cliutils.GetJfrogSecurityDir()
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +91,55 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	serviceConfig, err := artifactory.NewConfigBuilder().
+	config := clientConfig.NewConfigBuilder().
 		SetArtDetails(artAuth).
+		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
+		SetDryRun(isDryRun)
+	if threads > 0 {
+		config.SetThreads(threads)
+	}
+	serviceConfig, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
+	return artifactory.New(&artAuth, serviceConfig)
+}
+
+func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
+	certPath, err := cliutils.GetJfrogSecurityDir()
+	if err != nil {
+		return nil, err
+	}
+	artAuth, err := artDetails.CreateArtAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+	servicesConfig, err := clientConfig.NewConfigBuilder().
+		SetArtDetails(artAuth).
+		SetDryRun(dryRun).
+		SetCertificatesPath(certPath).
+		SetInsecureTls(artDetails.InsecureTls).
+		SetThreads(threads).
+		Build()
+
+	if err != nil {
+		return nil, err
+	}
+	return artifactory.NewWithProgress(&artAuth, servicesConfig, progressBar)
+}
+
+func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*distribution.DistributionServicesManager, error) {
+	certPath, err := cliutils.GetJfrogSecurityDir()
+	if err != nil {
+		return nil, err
+	}
+	distAuth, err := artDetails.CreateDistAuthConfig()
+	if err != nil {
+		return nil, err
+	}
+	serviceConfig, err := clientConfig.NewConfigBuilder().
+		SetArtDetails(distAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun).
@@ -101,10 +147,10 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 	if err != nil {
 		return nil, err
 	}
-	return artifactory.New(&artAuth, serviceConfig)
+	return distribution.New(&distAuth, serviceConfig)
 }
 
-func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, error) {
+func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error) {
 	artHttpDetails := artDetails.CreateHttpClientDetails()
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
@@ -121,7 +167,7 @@ func isRepoExists(repository string, artDetails auth.ArtifactoryDetails) (bool, 
 	return false, nil
 }
 
-func CheckIfRepoExists(repository string, artDetails auth.ArtifactoryDetails) error {
+func CheckIfRepoExists(repository string, artDetails auth.CommonDetails) error {
 	repoExists, err := isRepoExists(repository, artDetails)
 	if err != nil {
 		return err

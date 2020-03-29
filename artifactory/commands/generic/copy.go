@@ -1,6 +1,8 @@
 package generic
 
 import (
+	"errors"
+
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -27,11 +29,13 @@ func (cc *CopyCommand) Run() error {
 		return err
 	}
 
+	var errorOccurred = false
 	// Copy Loop:
 	for i := 0; i < len(cc.spec.Files); i++ {
 
 		copyParams, err := getCopyParams(cc.spec.Get(i))
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
@@ -42,9 +46,13 @@ func (cc *CopyCommand) Run() error {
 		failed := cc.result.FailCount() + partialFailed
 		cc.result.SetFailCount(failed)
 		if err != nil {
+			errorOccurred = true
 			log.Error(err)
 			continue
 		}
+	}
+	if errorOccurred {
+		return errors.New("Copy finished with errors, please review the logs.")
 	}
 	return err
 }

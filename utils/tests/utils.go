@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-go/artifactory/spec"
@@ -59,7 +60,7 @@ func init() {
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
-	RtDistributionUrl = flag.String("rt.distributionUrl", "", "Distribution url")
+	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
@@ -337,7 +338,7 @@ func RenamePath(oldPath, newPath string, t *testing.T) {
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
 	deleteCommand := generic.NewDeleteCommand()
-	deleteCommand.SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
+	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
 	err = deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
@@ -389,6 +390,7 @@ func getRepositoriesNameMap() map[string]string {
 		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
 		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,
 		"${GO_REPO}":             GoLocalRepo,
+		"${RT_SERVER_ID}":        RtServerId,
 		"${RT_URL}":              *RtUrl,
 		"${RT_API_KEY}":          *RtApiKey,
 		"${RT_USERNAME}":         *RtUser,

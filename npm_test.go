@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-go/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-go/inttestutils"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -181,7 +181,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	assert.NoError(t, err)
 
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
-	jfrogHomeDir, err := config.GetJfrogHomeDir()
+	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, true)
 	assert.NoError(t, err)

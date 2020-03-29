@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -14,7 +15,6 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-cli-go/utils/lock"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -26,11 +26,12 @@ import (
 var mutex sync.Mutex
 
 type ConfigCommand struct {
-	details        *config.ArtifactoryDetails
-	defaultDetails *config.ArtifactoryDetails
-	interactive    bool
-	encPassword    bool
-	serverId       string
+	details             *config.ArtifactoryDetails
+	defaultDetails      *config.ArtifactoryDetails
+	interactive         bool
+	encPassword         bool
+	useRefreshableToken bool
+	serverId            string
 }
 
 func NewConfigCommand() *ConfigCommand {
@@ -44,6 +45,11 @@ func (cc *ConfigCommand) SetServerId(serverId string) *ConfigCommand {
 
 func (cc *ConfigCommand) SetEncPassword(encPassword bool) *ConfigCommand {
 	cc.encPassword = encPassword
+	return cc
+}
+
+func (cc *ConfigCommand) SetUseRefreshableToken(useRefreshableToken bool) *ConfigCommand {
+	cc.useRefreshableToken = useRefreshableToken
 	return cc
 }
 
@@ -119,8 +125,22 @@ func (cc *ConfigCommand) Config() error {
 		}
 	}
 
-	err = config.SaveArtifactoryConf(configurations)
-	return err
+	if cc.useRefreshableToken {
+		err = cc.configRefreshableToken()
+		if err != nil {
+			return err
+		}
+	}
+
+	return config.SaveArtifactoryConf(configurations)
+}
+
+func (cc *ConfigCommand) configRefreshableToken() error {
+	if (cc.details.User == "" || cc.details.Password == "") && cc.details.ApiKey == "" {
+		return errors.New("refreshable token mode is only available with Username & Password or API key")
+	}
+	cc.details.TokenRefreshInterval = cliutils.TokenRefreshDefaultInterval
+	return nil
 }
 
 func (cc *ConfigCommand) prepareConfigurationData() ([]*config.ArtifactoryDetails, error) {
@@ -186,10 +206,18 @@ func (cc *ConfigCommand) resolveServerId() string {
 
 func (cc *ConfigCommand) getConfigurationFromUser() error {
 	allowUsingSavedPassword := true
+	// Artifactory URL
 	if cc.details.Url == "" {
-		ioutils.ScanFromConsole("Artifactory URL", &cc.details.Url, cc.defaultDetails.Url)
+		ioutils.ScanFromConsole("JFrog Artifactory URL", &cc.details.Url, cc.defaultDetails.Url)
 		allowUsingSavedPassword = false
 	}
+
+	// Distribution URL
+	if cc.details.DistributionUrl == "" {
+		ioutils.ScanFromConsole("JFrog Distribution URL (Optional)", &cc.details.DistributionUrl, cc.defaultDetails.DistributionUrl)
+		allowUsingSavedPassword = false
+	}
+
 	// Ssh-Key
 	if fileutils.IsSshUrl(cc.details.Url) {
 		return getSshKeyPath(cc.details)
@@ -208,10 +236,9 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 				return err
 			}
 		}
-		// New-line required after the password input:
-		fmt.Println()
 	}
 
+	cc.readRefreshableTokensFromConsole()
 	cc.readClientCertInfoFromConsole()
 	return nil
 }
@@ -224,6 +251,12 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 		if cc.details.ClientCertKeyPath == "" {
 			ioutils.ScanFromConsole("Client certificate key path", &cc.details.ClientCertKeyPath, cc.defaultDetails.ClientCertKeyPath)
 		}
+	}
+}
+
+func (cc *ConfigCommand) readRefreshableTokensFromConsole() {
+	if (cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "" {
+		cc.useRefreshableToken = cliutils.InteractiveConfirm("Use refreshable tokens?")
 	}
 }
 
@@ -346,6 +379,9 @@ func printConfigs(configuration []*config.ArtifactoryDetails) {
 		if details.AccessToken != "" {
 			log.Output("Access token: ***")
 		}
+		if details.RefreshToken != "" {
+			log.Output("Refresh token: ***")
+		}
 		if details.SshKeyPath != "" {
 			log.Output("SSH key file path: " + details.SshKeyPath)
 		}
@@ -453,7 +489,8 @@ func (cc *ConfigCommand) encryptPassword() error {
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url), details.AccessToken != ""}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url),
+		details.AccessToken != "" && details.TokenRefreshInterval == cliutils.TokenRefreshDisabled}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		return errorutils.CheckError(errors.New("Only one authentication method is allowed: Username + Password/API key, RSA Token (SSH) or Access Token."))
 	}
@@ -461,9 +498,10 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 }
 
 type ConfigCommandConfiguration struct {
-	ArtDetails  *config.ArtifactoryDetails
-	Interactive bool
-	EncPassword bool
+	ArtDetails           *config.ArtifactoryDetails
+	Interactive          bool
+	EncPassword          bool
+	TokenRefreshInterval int
 }
 
 func GetAllArtifactoryServerIds() []string {

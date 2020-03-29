@@ -21,9 +21,9 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 	"github.com/jfrog/jfrog-cli-go/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
-	"github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	cliutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -48,7 +48,7 @@ type NpmCommandArgs struct {
 	collectBuildInfo bool
 	dependencies     map[string]*dependency
 	typeRestriction  string
-	artDetails       auth.ArtifactoryDetails
+	artDetails       auth.CommonDetails
 	packageInfo      *npm.PackageInfo
 	NpmCommand
 }
@@ -100,7 +100,7 @@ func (nic *NpmInstallCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	threads, jsonOutput, filteredNpmArgs, buildConfiguration, err := utils.ExtractNpmOptionsFromArgs(nic.npmArgs)
+	threads, jsonOutput, filteredNpmArgs, buildConfiguration, err := npm.ExtractNpmOptionsFromArgs(nic.npmArgs)
 	nic.SetRepoConfig(resolverParams).SetArgs(filteredNpmArgs).SetThreads(threads).SetJsonOutput(jsonOutput).SetBuildConfiguration(buildConfiguration)
 	if err != nil {
 		return err
@@ -606,7 +606,7 @@ func (nca *NpmCommandArgs) setNpmExecutable() error {
 	return nil
 }
 
-func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
+func getArtifactoryDetails(artDetails auth.CommonDetails) (npmAuth string, err error) {
 	// Check Artifactory version.
 	err = validateArtifactoryVersion(artDetails)
 	if err != nil {
@@ -620,7 +620,7 @@ func getArtifactoryDetails(artDetails auth.ArtifactoryDetails) (npmAuth string, 
 	return getDetailsUsingAccessToken(artDetails)
 }
 
-func validateArtifactoryVersion(artDetails auth.ArtifactoryDetails) error {
+func validateArtifactoryVersion(artDetails auth.CommonDetails) error {
 	// Get Artifactory version.
 	versionStr, err := artDetails.GetVersion()
 	if err != nil {
@@ -636,7 +636,7 @@ func validateArtifactoryVersion(artDetails auth.ArtifactoryDetails) error {
 	return nil
 }
 
-func getDetailsUsingAccessToken(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
+func getDetailsUsingAccessToken(artDetails auth.CommonDetails) (npmAuth string, err error) {
 	npmAuthString := "_auth = %s\nalways-auth = true"
 	// Build npm token, consists of <username:password> encoded.
 	// Use Artifactory's access-token as username and password to create npm token.
@@ -650,7 +650,7 @@ func getDetailsUsingAccessToken(artDetails auth.ArtifactoryDetails) (npmAuth str
 	return npmAuth, err
 }
 
-func getDetailsUsingBasicAuth(artDetails auth.ArtifactoryDetails) (npmAuth string, err error) {
+func getDetailsUsingBasicAuth(artDetails auth.CommonDetails) (npmAuth string, err error) {
 	authApiUrl := artDetails.GetUrl() + "api/npm/auth"
 	log.Debug("Sending npm auth request")
 

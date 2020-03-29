@@ -1,8 +1,11 @@
 package cliutils
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -257,4 +260,51 @@ type Credentials interface {
 	SetPassword(string)
 	GetUser() string
 	GetPassword() string
+}
+
+func ReplaceVars(content []byte, specVars map[string]string) []byte {
+	log.Debug("Replacing variables in the provided content: \n" + string(content))
+	for key, val := range specVars {
+		key = "${" + key + "}"
+		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
+		content = bytes.Replace(content, []byte(key), []byte(val), -1)
+	}
+	log.Debug("The reformatted content is: \n" + string(content))
+	return content
+}
+
+func GetJfrogHomeDir() (string, error) {
+	// The JfrogHomeEnv environment variable has been deprecated and replaced with HomeDir
+	if os.Getenv(HomeDir) != "" {
+		return os.Getenv(HomeDir), nil
+	} else if os.Getenv(JfrogHomeEnv) != "" {
+		return path.Join(os.Getenv(JfrogHomeEnv), ".jfrog"), nil
+	}
+
+	userHomeDir := fileutils.GetHomeDir()
+	if userHomeDir == "" {
+		err := errorutils.CheckError(errors.New("couldn't find home directory. Make sure your HOME environment variable is set"))
+		if err != nil {
+			return "", err
+		}
+	}
+	return filepath.Join(userHomeDir, ".jfrog"), nil
+}
+
+func CreateDirInJfrogHome(dirName string) (string, error) {
+	homeDir, err := GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+	folderName := filepath.Join(homeDir, dirName)
+	err = fileutils.CreateDirIfNotExist(folderName)
+	return folderName, err
+}
+
+func GetJfrogSecurityDir() (string, error) {
+	homeDir, err := GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(homeDir, "security"), nil
 }

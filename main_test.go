@@ -81,7 +81,7 @@ func createJfrogHomeConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = os.Setenv(cliutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	assert.NoError(t, err)
-	jfrogHomePath, err := config.GetJfrogHomeDir()
+	jfrogHomePath, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath)
 	assert.NoError(t, err)
@@ -91,7 +91,7 @@ func prepareHomeDir(t *testing.T) (string, string) {
 	oldHomeDir := os.Getenv(cliutils.HomeDir)
 	// Populate cli config with 'default' server
 	createJfrogHomeConfig(t)
-	newHomeDir, err := config.GetJfrogHomeDir()
+	newHomeDir, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	return oldHomeDir, newHomeDir
 }

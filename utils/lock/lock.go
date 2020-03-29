@@ -3,7 +3,7 @@ package lock
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-go/utils/config"
+	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -54,7 +54,7 @@ func (lock *Lock) CreateNewLockFile() error {
 }
 
 func CreateLockDir() (string, error) {
-	return config.CreateDirInJfrogHome("lock")
+	return cliutils.CreateDirInJfrogHome("lock")
 }
 
 func (lock *Lock) CreateFile(folderName string, pid int) error {

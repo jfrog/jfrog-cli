@@ -49,6 +49,31 @@ func (image *buildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
+type deleteDockerImage struct {
+	dockerImageTag string
+}
+
+func (image *deleteDockerImage) GetCmd() *exec.Cmd {
+	var cmd []string
+	cmd = append(cmd, "docker")
+	cmd = append(cmd, "image")
+	cmd = append(cmd, "rm")
+	cmd = append(cmd, image.dockerImageTag)
+	return exec.Command(cmd[0], cmd[1:]...)
+}
+
+func (image *deleteDockerImage) GetEnv() map[string]string {
+	return map[string]string{}
+}
+
+func (image *deleteDockerImage) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (image *deleteDockerImage) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
 func TestDockerPush(t *testing.T) {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
@@ -151,6 +176,11 @@ func buildTestDockerImage(imageName string) string {
 	return imageTag
 }
 
+func deleteTestDockerImage(imageTag string) {
+	imageBuilder := &deleteDockerImage{dockerImageTag: imageTag}
+	gofrogcmd.RunCmd(imageBuilder)
+}
+
 func validateDockerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	searchCmd := generic.NewSearchCommand()
@@ -187,4 +217,26 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 
 	// Assert docker min API version
 	assert.True(t, docker.IsCompatibleApiVersion(content))
+}
+
+func TestDockerFatManifestPull(t *testing.T) {
+	if !*tests.TestDocker {
+		t.Skip("Skipping docker test. To run docker test add the '-test.docker=true' option.")
+	}
+
+	imageName := "traefik"
+	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":2.2")
+	buildName := "docker-pull"
+	buildNumber := "1"
+
+	// Pull docker image using docker client
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+buildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("build-publish", buildName, buildNumber)
+
+	//Validate
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
+
+	dockerTestCleanup(imageName, buildName)
+	deleteTestDockerImage(imageTag)
 }
