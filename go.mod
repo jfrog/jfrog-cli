@@ -1,4 +1,4 @@
-module github.com/jfrog/jfrog-cli-go
+module github.com/jfrog/jfrog-cli
 
 require (
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
