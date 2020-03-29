@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/mattn/go-shellwords"
 )
 
 // Removes the provided flag and value from the command arguments
@@ -173,4 +174,22 @@ func ExtractInsecureTlsFromArgs(args []string) (cleanArgs []string, insecureTls 
 	}
 	RemoveFlagFromCommand(&cleanArgs, flagIndex, flagIndex)
 	return
+}
+
+// Iterate over each argument, if env variable is found (e.g $HOME) replace it with env value.
+func ParseArgs(args []string) ([]string, error) {
+	// Escape backslash & space
+	for i := 0; i < len(args); i++ {
+		args[i] = strings.ReplaceAll(args[i], `\`, `\\`)
+		if strings.Index(args[i], ` `) != -1 && !isQuote(args[i]) {
+			args[i] = `"` + args[i] + `"`
+		}
+	}
+	parser := shellwords.NewParser()
+	parser.ParseEnv = true
+	return parser.Parse(strings.Join(args, " "))
+}
+
+func isQuote(s string) bool {
+	return len(s) > 0 && ((s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\''))
 }

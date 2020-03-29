@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFindAndRemoveFlagFromCommand(t *testing.T) {
@@ -235,4 +236,31 @@ type testCase struct {
 	flagValue      string
 	flagValueIndex int
 	expectErr      bool
+}
+
+func TestParseArgs(t *testing.T) {
+	// Check with no quote
+	want := []string{`rt`}
+	got, _ := ParseArgs([]string{`rt`})
+	assert.EqualValues(t, got, want)
+	// Check middle quote
+	want = []string{`pom.xml`}
+	got, _ = ParseArgs([]string{`"p"o"m.xml"`})
+	assert.EqualValues(t, got, want)
+
+	// Check with space and backslash
+	want = []string{`-f a\b\pom.xml`}
+	got, _ = ParseArgs([]string{`"-f a\b\pom.xml"`})
+	assert.EqualValues(t, got, want)
+	os.Setenv("JFROGPARSETEST", "jfrog")
+	defer os.Unsetenv("JFROGPARSETEST")
+
+	// Check env variable parse
+	want = []string{`--build-name=jfrog`}
+	got, _ = ParseArgs([]string{`"--build-name=$JFROGPARSETEST"`})
+	assert.EqualValues(t, got, want)
+
+	want = []string{`--build-name=jfrog jfrog`, "--build-number=1"}
+	got, _ = ParseArgs([]string{`"--build-name=jfrog jfrog"`, "--build-number=1"})
+	assert.EqualValues(t, got, want)
 }
