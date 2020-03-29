@@ -23,7 +23,7 @@ image:
 build: off
 skip_tags: true
 stack: go 1.14, node 8, jdk 8
-clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli-go
+clone_folder: c:\gopath\src\github.com\jfrog\jfrog-cli
 environment:
   GOPATH: c:\gopath
   GO111MODULE: on
@@ -45,14 +45,14 @@ environment:
     secure: Bm9R9Zveb6Rxc6M4IWvpVi1j1txDSBwz2L+CHKDoxwDHDfPs7vMb8+gSbB63XAq+
 
   COMMON_TESTS_ARGS:
-    go test -v github.com\jfrog\jfrog-cli-go --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
+    go test -v github.com\jfrog\jfrog-cli --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
   BT_CREDENTIALS_ARGS:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
   - VET:
     TEST_SUIT:
-      go vet github.com\jfrog\jfrog-cli-go
+      go vet github.com\jfrog\jfrog-cli
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS%  --test.artifactory=true"
@@ -78,7 +78,7 @@ environment:
   - PIP_TESTS:
     TEST_SUIT:
       "C:\\Python37-x64\\python -m venv pip-venv &&
-      %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli-go\\pip-venv\\Scripts"
+      %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli\\pip-venv\\Scripts"
   - DISTRIBUTION_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --test.distribution=true"

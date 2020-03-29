@@ -75,7 +75,7 @@ Once completed, you will find the JFrog CLI executable at your current directory
 # Tests
 ### Usage
 ````
-go test -v github.com/jfrog/jfrog-cli-go [test-types] [flags]
+go test -v github.com/jfrog/jfrog-cli [test-types] [flags]
 ````
 
 The flags are:
@@ -116,7 +116,7 @@ In addition to [general optional flags](#Usage) you can use the following option
 ##### Examples
 To run artifactory tests execute the following command.
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
+go test -v github.com/jfrog/jfrog-cli -test.artifactory [flags]
 ````
 
 #### Npm tests
@@ -129,7 +129,7 @@ go test -v github.com/jfrog/jfrog-cli-go -test.artifactory [flags]
 ##### Examples
 To run npm tests execute the following command.
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
+go test -v github.com/jfrog/jfrog-cli -test.npm [flags]
 ````
 
 #### Maven tests
@@ -143,7 +143,7 @@ go test -v github.com/jfrog/jfrog-cli-go -test.npm [flags]
 ##### Examples
 To run maven tests execute the following command.
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
+go test -v github.com/jfrog/jfrog-cli -test.maven [flags]
 ````
 
 #### Gradle tests
@@ -157,7 +157,7 @@ go test -v github.com/jfrog/jfrog-cli-go -test.maven [flags]
 ##### Examples
 To run gradle tests execute the following command.
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.gradle [flags]
+go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 ````
 
 #### Docker tests
@@ -171,14 +171,14 @@ In addition to [general optional flags](#Usage) you *must* use the following doc
 ##### Examples
 To run docker tests execute the following command (fill out the missing parameters as described below).
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
+go test -v github.com/jfrog/jfrog-cli -test.docker -rt.dockerRepoDomain=DOCKER_DOMAIN -rt.dockerTargetRepo=DOCKER_TARGET_REPO [flags]
 ````
 
 #### Go commands tests
 ##### Examples
 To run go tests run the following command.
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.go [flags]
+go test -v github.com/jfrog/jfrog-cli -test.go [flags]
 ````
 
 #### NuGet tests
@@ -189,7 +189,7 @@ go test -v github.com/jfrog/jfrog-cli-go -test.go [flags]
 
 ##### Examples
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.nuget [flags]
+go test -v github.com/jfrog/jfrog-cli -test.nuget [flags]
 ````
 
 #### Pip tests
@@ -206,7 +206,7 @@ In addition to [general optional flags](#Usage) you can use the following option
 
 ##### Examples
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.pip [flags]
+go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
 ````
 
 ### Bintray tests
@@ -214,7 +214,7 @@ Bintray tests credentials are taken from the CLI configuration. If non configure
 
 To run Bintray tests execute the following command:
 ````
-go test -v github.com/jfrog/jfrog-cli-go -test.bintray
+go test -v github.com/jfrog/jfrog-cli -test.bintray
 ````
 Flags:
 
@@ -236,7 +236,7 @@ In addition to [general optional flags](#Usage) you *must* use the following fla
 
 To run distribution tests run the following command:
 ```
-go test -v github.com/jfrog/jfrog-cli-go -test.distribution [flags]
+go test -v github.com/jfrog/jfrog-cli -test.distribution [flags]
 ```
 
 # Code Contributions
