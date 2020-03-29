@@ -3319,7 +3319,7 @@ func repoCreateCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	repoCreateCmd := repository.NewCreateRepoCommand()
+	repoCreateCmd := repository.NewRepoCreateCommand()
 	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
 	return commands.Exec(repoCreateCmd)
 }
@@ -3339,9 +3339,9 @@ func repoUpdateCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	repoCreateCmd := repository.NewUpdateRepoCommand()
-	repoCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
-	return commands.Exec(repoCreateCmd)
+	repoUpdateCmd := repository.NewRepoUpdateCommand()
+	repoUpdateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(repoUpdateCmd)
 }
 
 func repoDeleteCmd(c *cli.Context) error {
