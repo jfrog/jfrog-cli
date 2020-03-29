@@ -1,3 +1,8 @@
+## 1.35.2 (Mar 29, 2020)
+- "jfrog rt bag" now includes a new -server-id option
+- Improvement - Refreshable tokens for authentication with Artifactory
+- Bug Fix - Cannot add arguments with white spaces in package manager related commands
+
 ## 1.35.1 (Mar 18, 2020)
 - Bug fix - "jfrog rt npm-publish" can publish an incorrect module name.
 - Bug fix - The --insecure-tls option is missing for "jfrog rt mvn",
