@@ -4,37 +4,37 @@ import (
 	"github.com/jfrog/jfrog-cli-go/utils/config"
 )
 
-type UpdateRepoCommand struct {
+type RepoUpdateCommand struct {
 	RepoCommand
 }
 
-func NewUpdateRepoCommand() *UpdateRepoCommand {
-	return &UpdateRepoCommand{}
+func NewRepoUpdateCommand() *RepoUpdateCommand {
+	return &RepoUpdateCommand{}
 }
 
-func (ruc *UpdateRepoCommand) SetTemplatePath(path string) *UpdateRepoCommand {
+func (ruc *RepoUpdateCommand) SetTemplatePath(path string) *RepoUpdateCommand {
 	ruc.templatePath = path
 	return ruc
 }
 
-func (ruc *UpdateRepoCommand) SetVars(vars string) *UpdateRepoCommand {
+func (ruc *RepoUpdateCommand) SetVars(vars string) *RepoUpdateCommand {
 	ruc.vars = vars
 	return ruc
 }
 
-func (ruc *UpdateRepoCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *UpdateRepoCommand {
+func (ruc *RepoUpdateCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *RepoUpdateCommand {
 	ruc.rtDetails = rtDetails
 	return ruc
 }
 
-func (ruc *UpdateRepoCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+func (ruc *RepoUpdateCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	return ruc.rtDetails, nil
 }
 
-func (ruc *UpdateRepoCommand) CommandName() string {
+func (ruc *RepoUpdateCommand) CommandName() string {
 	return "rt_repo_update"
 }
 
-func (ruc *UpdateRepoCommand) Run() (err error) {
+func (ruc *RepoUpdateCommand) Run() (err error) {
 	return ruc.PerformRepoCmd(true)
 }
