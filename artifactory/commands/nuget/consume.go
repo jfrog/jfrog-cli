@@ -374,14 +374,14 @@ func (nca *NugetCommandArgs) createNugetCmd() (*nuget.Cmd, error) {
 		return nil, err
 	}
 	if nca.args != "" {
-		c.Command, err = utils.ParseEnvVars(strings.Split(nca.args, " "))
+		c.Command, err = utils.ParseArgs(strings.Split(nca.args, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
 	if nca.flags != "" {
-		c.CommandFlags, err = utils.ParseEnvVars(strings.Split(nca.flags, " "))
+		c.CommandFlags, err = utils.ParseArgs(strings.Split(nca.flags, " "))
 	}
 
 	return c, errorutils.CheckError(err)

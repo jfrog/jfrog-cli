@@ -14,7 +14,7 @@ import (
 
 func RunList(flags, executablePath string) (stdResult, errResult []byte, err error) {
 	log.Debug("Running npm list command.")
-	splitFlags, err := utils.ParseEnvVars(strings.Split(flags, " "))
+	splitFlags, err := utils.ParseArgs(strings.Split(flags, " "))
 	if err != nil {
 		return nil, nil, errorutils.CheckError(err)
 	}

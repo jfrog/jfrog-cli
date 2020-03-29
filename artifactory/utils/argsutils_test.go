@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-go/utils/cliutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFindAndRemoveFlagFromCommand(t *testing.T) {
@@ -237,36 +238,29 @@ type testCase struct {
 	expectErr      bool
 }
 
-func TestParseEnvVars(t *testing.T) {
-	//Check with no quote
+func TestParseArgs(t *testing.T) {
+	// Check with no quote
 	want := []string{`rt`}
-	got, err := ParseEnvVars([]string{`rt`})
-	if err != nil {
-		t.Error(err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ParseEnvVars == %s, want %s", got, want)
-	}
+	got, _ := ParseArgs([]string{`rt`})
+	assert.EqualValues(t, got, want)
+	// Check middle quote
+	want = []string{`pom.xml`}
+	got, _ = ParseArgs([]string{`"p"o"m.xml"`})
+	assert.EqualValues(t, got, want)
 
-	//Check with space and backslash
+	// Check with space and backslash
 	want = []string{`-f a\b\pom.xml`}
-	got, err = ParseEnvVars([]string{`"-f a\b\pom.xml"`})
-	if err != nil {
-		t.Error(err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ParseEnvVars == %s, want %s", got, want)
-	}
+	got, _ = ParseArgs([]string{`"-f a\b\pom.xml"`})
+	assert.EqualValues(t, got, want)
 	os.Setenv("JFROGPARSETEST", "jfrog")
 	defer os.Unsetenv("JFROGPARSETEST")
 
-	//Check env variable parse
+	// Check env variable parse
 	want = []string{`--build-name=jfrog`}
-	got, err = ParseEnvVars([]string{`"--build-name=$JFROGPARSETEST"`})
-	if err != nil {
-		t.Error(err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ParseEnvVars == %s, want %s", got, want)
-	}
+	got, _ = ParseArgs([]string{`"--build-name=$JFROGPARSETEST"`})
+	assert.EqualValues(t, got, want)
+
+	want = []string{`--build-name=jfrog jfrog`, "--build-number=1"}
+	got, _ = ParseArgs([]string{`"--build-name=jfrog jfrog"`, "--build-number=1"})
+	assert.EqualValues(t, got, want)
 }

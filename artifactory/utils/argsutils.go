@@ -177,7 +177,7 @@ func ExtractInsecureTlsFromArgs(args []string) (cleanArgs []string, insecureTls 
 }
 
 // Iterate over each argument, if env variable is found (e.g $HOME) replace it with env value.
-func ParseEnvVars(args []string) ([]string, error) {
+func ParseArgs(args []string) ([]string, error) {
 	// Escape backslash & space
 	for i := 0; i < len(args); i++ {
 		args[i] = strings.ReplaceAll(args[i], `\`, `\\`)
