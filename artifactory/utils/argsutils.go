@@ -182,6 +182,8 @@ func ParseArgs(args []string) ([]string, error) {
 	for i := 0; i < len(args); i++ {
 		args[i] = strings.ReplaceAll(args[i], `\`, `\\`)
 		if strings.Index(args[i], ` `) != -1 && !isQuote(args[i]) {
+			args[i] = strings.ReplaceAll(args[i], `"`, ``)
+			args[i] = strings.ReplaceAll(args[i], `'`, ``)
 			args[i] = `"` + args[i] + `"`
 		}
 	}
