@@ -263,4 +263,8 @@ func TestParseArgs(t *testing.T) {
 	want = []string{`--build-name=jfrog jfrog`, "--build-number=1"}
 	got, _ = ParseArgs([]string{`"--build-name=jfrog jfrog"`, "--build-number=1"})
 	assert.EqualValues(t, got, want)
+
+	want = []string{`--build-name=jfrog jfrog`, "--build-number=1"}
+	got, _ = ParseArgs([]string{`--build-name="jfrog jfrog"`, "--build-number=1"})
+	assert.EqualValues(t, got, want)
 }
