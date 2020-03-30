@@ -2159,8 +2159,12 @@ func nugetCmd(c *cli.Context) error {
 		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
 			return err
 		}
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		if err != nil {
+			return err
+		}
 		nugetCmd := nuget.NewNugetCommand()
-		nugetCmd.SetConfigFilePath(configFilePath).SetArgs(strings.Join(args, " "))
+		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(strings.Join(filteredNugetArgs, " "))
 		return commands.Exec(nugetCmd)
 	}
 	// If config file not found, use nuget legacy command

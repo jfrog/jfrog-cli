@@ -85,14 +85,11 @@ func (nc *NugetCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(strings.Split(nc.args, " "))
 	RtDetails, err := resolveParams.RtDetails()
 	if err != nil {
 		return err
 	}
-	nc.SetArgs(strings.Join(filteredNugetArgs, " ")).
-		SetRepoName(resolveParams.TargetRepo()).
-		SetBuildConfiguration(buildConfiguration).
+	nc.SetRepoName(resolveParams.TargetRepo()).
 		SetRtDetails(RtDetails)
 	return nc.run()
 }
