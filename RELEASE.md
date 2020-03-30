@@ -1,3 +1,6 @@
+## 1.35.3 (Mar 30, 2020)
+- Bug fix - Native commands does not accept quoted strings.
+
 ## 1.35.2 (Mar 29, 2020)
 - "jfrog rt bag" now includes a new -server-id option
 - Improvement - Refreshable tokens for authentication with Artifactory
