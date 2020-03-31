@@ -159,7 +159,6 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	downParams = services.NewDownloadParams()
 	downParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
 	downParams.Symlink = configuration.Symlink
-	downParams.ValidateSymlink = configuration.ValidateSymlink
 	downParams.MinSplitSize = configuration.MinSplitSize
 	downParams.SplitCount = configuration.SplitCount
 
@@ -179,6 +178,11 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	}
 
 	downParams.Explode, err = f.IsExplode(false)
+	if err != nil {
+		return
+	}
+
+	downParams.ValidateSymlink, err = f.IsVlidateSymlinks(false)
 	if err != nil {
 		return
 	}

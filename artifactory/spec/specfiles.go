@@ -45,23 +45,24 @@ type File struct {
 	Aql     utils.Aql
 	Pattern string
 	// Deprecated, use Exclusions instead
-	ExcludePatterns []string
-	Exclusions      []string
-	Target          string
-	Explode         string
-	Props           string
-	ExcludeProps    string
-	SortOrder       string
-	SortBy          []string
-	Offset          int
-	Limit           int
-	Build           string
-	Bundle          string
-	Recursive       string
-	Flat            string
-	Regexp          string
-	IncludeDirs     string
-	ArchiveEntries  string
+	ExcludePatterns  []string
+	Exclusions       []string
+	Target           string
+	Explode          string
+	Props            string
+	ExcludeProps     string
+	SortOrder        string
+	SortBy           []string
+	Offset           int
+	Limit            int
+	Build            string
+	Bundle           string
+	Recursive        string
+	Flat             string
+	Regexp           string
+	IncludeDirs      string
+	ArchiveEntries   string
+	ValidateSymlinks string
 }
 
 func (f File) IsFlat(defaultValue bool) (bool, error) {
@@ -82,6 +83,10 @@ func (f File) IsRecursive(defaultValue bool) (bool, error) {
 
 func (f File) IsIncludeDirs(defaultValue bool) (bool, error) {
 	return clientutils.StringToBool(f.IncludeDirs, defaultValue)
+}
+
+func (f File) IsVlidateSymlinks(defaultValue bool) (bool, error) {
+	return clientutils.StringToBool(f.ValidateSymlinks, defaultValue)
 }
 
 func (f *File) ToArtifactoryCommonParams() *utils.ArtifactoryCommonParams {
