@@ -65,15 +65,13 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 	// Go over the the confMap and write the values with the correct type using the writersMap
 	serverId := ""
 	for key, value := range replicationConfigMap {
+		if err = utils.ValidateMapEntry(key, value, writersMap); err != nil {
+			return
+		}
 		if key == "serverId" {
 			serverId = value.(string)
 		} else {
-			for key, value := range replicationConfigMap {
-				if err = utils.ValidateMapEntry(key, value, writersMap); err != nil {
-					return
-				}
-				writersMap[key](&replicationConfigMap, key, value.(string))
-			}
+			writersMap[key](&replicationConfigMap, key, value.(string))
 		}
 	}
 	fillMissingDefaultValue(replicationConfigMap)
