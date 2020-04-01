@@ -317,7 +317,6 @@ type ArtifactoryDetails struct {
 	Password             string            `json:"password,omitempty"`
 	SshKeyPath           string            `json:"sshKeyPath,omitempty"`
 	SshPassphrase        string            `json:"SshPassphrase,omitempty"`
-	SshAuthHeaders       map[string]string `json:"SshAuthHeaders,omitempty"`
 	AccessToken          string            `json:"accessToken,omitempty"`
 	RefreshToken         string            `json:"refreshToken,omitempty"`
 	TokenRefreshInterval int               `json:"tokenRefreshInterval,omitempty"`
@@ -411,10 +410,6 @@ func (artifactoryDetails *ArtifactoryDetails) GetClientCertKeyPath() string {
 	return artifactoryDetails.ClientCertKeyPath
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
-	return len(artifactoryDetails.SshAuthHeaders) > 0
-}
-
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.CommonDetails, error) {
 	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
@@ -429,7 +424,6 @@ func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.Commo
 
 func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(commonDetails auth.CommonDetails) (auth.CommonDetails, error) {
 	commonDetails.SetSshUrl(artifactoryDetails.SshUrl)
-	commonDetails.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
 	commonDetails.SetAccessToken(artifactoryDetails.AccessToken)
 	// If refresh token is not empty, set a refresh handler and skip other credentials
 	if artifactoryDetails.RefreshToken != "" {
@@ -444,15 +438,6 @@ func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(commonDetails 
 	commonDetails.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
 	commonDetails.SetSshKeyPath(artifactoryDetails.SshKeyPath)
 	commonDetails.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if commonDetails.IsSshAuthentication() {
-		if !commonDetails.IsSshAuthHeaderSet() {
-			err := commonDetails.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
-			if err != nil {
-				return nil, err
-			}
-		}
-		commonDetails.AppendPreRequestInterceptor(auth.SshTokenRefreshPreRequestInterceptor)
-	}
 	return commonDetails, nil
 }
 
