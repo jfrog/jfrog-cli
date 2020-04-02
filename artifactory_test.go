@@ -3675,3 +3675,37 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	// Cleanup
 	cleanArtifactoryTest()
 }
+
+func TestTokenCreate(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Set new logger with output redirection to buffer, so we can extract the token from the command output
+	previousLog := log.Logger
+	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
+
+	buffer := &bytes.Buffer{}
+	newLog.SetOutputWriter(buffer)
+	log.SetLogger(newLog)
+
+	// Create access token for current user
+	err := artifactoryCli.Exec("tc", *tests.RtUser)
+	assert.NoError(t, err)
+
+	// Write the command output to the origin
+	content := buffer.Bytes()
+	buffer.Reset()
+	previousLog.Output(string(content))
+
+	// Extract the the token from the output
+	token, err := jsonparser.GetString(content, "access_token")
+	assert.NoError(t, err)
+
+	// Try ping with the new token
+	err = artifactoryCli.Exec("ping", "--access-token="+token)
+	assert.NoError(t, err)
+
+	// Restore previous logger
+	log.SetLogger(previousLog)
+	// Cleanup
+	cleanArtifactoryTest()
+}
