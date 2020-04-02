@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/tokencreate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -779,6 +780,19 @@ func GetCommands() []cli.Command {
 				return replicationDeleteCmd(c)
 			},
 		},
+		{
+			Name:         "token-create",
+			Aliases:      []string{"tc"},
+			Flags:        getTokenCreateFlags(),
+			Usage:        tokencreate.Description,
+			HelpName:     common.CreateUsage("rt tc", tokencreate.Description, tokencreate.Usage),
+			UsageText:    tokencreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return tokenCreateCmd(c)
+			},
+		},
 	}
 }
 
@@ -1074,6 +1088,31 @@ func getRepoDeleteFlags() []cli.Flag {
 
 func getReplicationDeleteFlags() []cli.Flag {
 	return getRepoDeleteFlags()
+}
+
+func getTokenCreateFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name:  "groups",
+			Usage: "[Optional] A list of comma-separated groups that the token is associated with.` `",
+		},
+		cli.StringFlag{
+			Name:  "admin-privileges",
+			Usage: "[Optional] An Artifactory instance ID to be given admin privileges.` `",
+		},
+		cli.StringFlag{
+			Name:  "expiry",
+			Usage: "[Default: " + strconv.Itoa(cliutils.TokenExpiry) + "] The time in seconds for which the token will be valid.` `",
+		},
+		cli.BoolFlag{
+			Name:  "refreshable",
+			Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
+		},
+		cli.StringFlag{
+			Name:  "audience",
+			Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token.` `",
+		},
+	}...)
 }
 
 func getBuildFlags() []cli.Flag {
@@ -3408,6 +3447,38 @@ func replicationDeleteCmd(c *cli.Context) error {
 	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
 	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(replicationDeleteCmd)
+}
+
+func tokenCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
+	if err != nil {
+		return err
+	}
+	tokenCreateCmd := generic.NewTokenCreateCommand()
+	tokenCreateCmd.SetUserName(c.Args().Get(0)).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetAdminPrivilegesInstanceId(c.String("admin-privileges"))
+	err = commands.Exec(tokenCreateCmd)
+	if err != nil {
+		return err
+	}
+	resString, err := tokenCreateCmd.Response()
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(resString))
+
+	return nil
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
