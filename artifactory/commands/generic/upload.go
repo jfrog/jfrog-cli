@@ -22,11 +22,16 @@ type UploadCommand struct {
 	GenericCommand
 	uploadConfiguration *utils.UploadConfiguration
 	buildConfiguration  *utils.BuildConfiguration
+	affectedFilesInfo   []clientutils.FileInfo
 	logFile             *os.File
 }
 
 func NewUploadCommand() *UploadCommand {
 	return &UploadCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (uc *UploadCommand) AffectedFilesInfo() []clientutils.FileInfo {
+	return uc.affectedFilesInfo
 }
 
 func (uc *UploadCommand) LogFile() *os.File {
@@ -130,6 +135,7 @@ func (uc *UploadCommand) upload() error {
 	result := uc.Result()
 	result.SetSuccessCount(successCount)
 	result.SetFailCount(failCount)
+	uc.affectedFilesInfo = filesInfo
 	if errorOccurred {
 		err = errors.New("Upload finished with errors, Please review the logs.")
 		return err

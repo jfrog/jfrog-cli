@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -994,6 +995,7 @@ func getUploadFlags() []cli.Flag {
 			Name:  "symlinks",
 			Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 		},
+		getListFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Those properties will be attached to the uploaded artifacts."),
 		getFailNoOpFlag(),
@@ -1048,6 +1050,7 @@ func getDownloadFlags() []cli.Flag {
 			Name:  "validate-symlinks",
 			Usage: "[Default: false] Set to true to perform a checksum validation when downloading symbolic links.` `",
 		},
+		getListFlag(),
 		getBundleFlag(),
 		getIncludeDirsFlag(),
 		getPropertiesFlag("Only artifacts with these properties will be downloaded."),
@@ -1505,6 +1508,13 @@ func getBundleFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "bundle",
 		Usage: "[Optional] If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.` `",
+	}
+}
+
+func getListFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "list",
+		Usage: "[Default: false] Set to true to list the affected files in the command summary.` `",
 	}
 }
 
@@ -2357,7 +2367,7 @@ func goPublishCmd(c *cli.Context) error {
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 }
 
 // This function checks whether the command received --help as a single option.
@@ -2473,7 +2483,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	goArg, err := utils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
+		err = cliutils.PrintSummaryReport(0, 1, nil, err)
 	}
 	targetRepo := c.Args().Get(1)
 	details, err := createArtifactoryDetailsByFlags(c, false)
@@ -2495,7 +2505,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	err = commands.Exec(goCmd)
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
+		err = cliutils.PrintSummaryReport(0, 1, nil, err)
 	}
 	return err
 }
@@ -2637,7 +2647,11 @@ func downloadCmd(c *cli.Context) error {
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	var affectedFiles []serviceutils.FileInfo
+	if c.Bool("list") {
+		affectedFiles = downloadCommand.AffectedFilesInfo()
+	}
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), affectedFiles, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2682,7 +2696,11 @@ func uploadCmd(c *cli.Context) error {
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	var affectedFiles []serviceutils.FileInfo
+	if c.Bool("list") {
+		affectedFiles = uploadCmd.AffectedFilesInfo()
+	}
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), affectedFiles, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2717,7 +2735,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(moveSpec)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2753,7 +2771,7 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2794,7 +2812,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2895,7 +2913,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2909,7 +2927,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2960,7 +2978,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, err)
 	if err != nil {
 		return err
 	}

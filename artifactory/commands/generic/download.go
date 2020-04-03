@@ -20,14 +20,19 @@ import (
 )
 
 type DownloadCommand struct {
-	buildConfiguration *utils.BuildConfiguration
 	GenericCommand
-	configuration *utils.DownloadConfiguration
-	logFile       *os.File
+	buildConfiguration *utils.BuildConfiguration
+	configuration      *utils.DownloadConfiguration
+	affectedFilesInfo  []clientutils.FileInfo
+	logFile            *os.File
 }
 
 func NewDownloadCommand() *DownloadCommand {
 	return &DownloadCommand{GenericCommand: *NewGenericCommand()}
+}
+
+func (dc *DownloadCommand) AffectedFilesInfo() []clientutils.FileInfo {
+	return dc.affectedFilesInfo
 }
 
 func (dc *DownloadCommand) LogFile() *os.File {
@@ -103,6 +108,7 @@ func (dc *DownloadCommand) Run() error {
 
 	dc.result.SetSuccessCount(len(filesInfo))
 	dc.result.SetFailCount(totalExpected - len(filesInfo))
+	dc.affectedFilesInfo = filesInfo
 	// Check for errors.
 	if errorOccurred {
 		return errors.New("Download finished with errors, please review the logs.")

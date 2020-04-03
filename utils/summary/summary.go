@@ -2,6 +2,7 @@ package summary
 
 import (
 	"encoding/json"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
 type StatusType int
@@ -35,8 +36,9 @@ func (summary *Summary) Marshal() ([]byte, error) {
 }
 
 type Summary struct {
-	Status StatusType `json:"status"`
-	Totals *Totals    `json:"totals"`
+	Status        StatusType       `json:"status"`
+	Totals        *Totals          `json:"totals"`
+	AffectedFiles []utils.FileInfo `json:"affectedFiles,omitempty"`
 }
 
 type Totals struct {

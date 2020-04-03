@@ -3,6 +3,7 @@ package cliutils
 import (
 	"bytes"
 	"fmt"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"os"
 	"path"
 	"path/filepath"
@@ -120,10 +121,11 @@ func traceExit(exitCode ExitCode, err error) {
 
 // Print summary report.
 // The given error will pass through and be returned as is if no other errors are raised.
-func PrintSummaryReport(success, failed int, err error) error {
+func PrintSummaryReport(success, failed int, affectedFiles []serviceutils.FileInfo, err error) error {
 	summaryReport := summary.New(err)
 	summaryReport.Totals.Success = success
 	summaryReport.Totals.Failure = failed
+	summaryReport.AffectedFiles = affectedFiles
 	if err == nil && summaryReport.Totals.Failure != 0 {
 		summaryReport.Status = summary.Failure
 	}
