@@ -89,6 +89,8 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 			err = configFile.configPip()
 		case utils.Npm:
 			err = configFile.configNpm()
+		case utils.Dotnet:
+			fallthrough
 		case utils.Nuget:
 			err = configFile.configNuget()
 		case utils.Maven:

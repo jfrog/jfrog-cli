@@ -29,6 +29,7 @@ const (
 	Nuget
 	Maven
 	Gradle
+	Dotnet
 )
 
 var ProjectTypes = []string{
@@ -38,6 +39,7 @@ var ProjectTypes = []string{
 	"nuget",
 	"maven",
 	"gradle",
+	"dotnet",
 }
 
 func (projectType ProjectType) String() string {
@@ -132,4 +134,22 @@ func (repo *RepositoryConfig) SetRtDetails(rtDetails *config.ArtifactoryDetails)
 
 func (repo *RepositoryConfig) RtDetails() (*config.ArtifactoryDetails, error) {
 	return repo.rtDetails, nil
+}
+
+func GetResolutionOnlyConfiguration(projectType ProjectType) (*RepositoryConfig, error) {
+	// Get configuration file path.
+	confFilePath, exists, err := GetProjectConfFilePath(projectType)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errorutils.CheckError(fmt.Errorf(projectType.String() + " Project configuration does not exist."))
+	}
+	// Read config file.
+	log.Debug("Preparing to read the config file", confFilePath)
+	vConfig, err := ReadConfigFile(confFilePath, YAML)
+	if err != nil {
+		return nil, err
+	}
+	return GetRepoConfigByPrefix(confFilePath, ProjectConfigResolverPrefix, vConfig)
 }

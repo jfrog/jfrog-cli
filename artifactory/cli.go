@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -30,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli/artifactory/utils/npm"
-	piputils "github.com/jfrog/jfrog-cli/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
@@ -436,7 +438,7 @@ func GetCommands() []cli.Command {
 			Name:         "npm-config",
 			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"npmc"},
-			Usage:        goconfig.Description,
+			Usage:        npmconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -485,9 +487,9 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
-			Flags:        getCommonBuildToolsConfigFlags(),
+			Flags:        getResolverOnlyConfigFlags(),
 			Aliases:      []string{"nugetc"},
-			Usage:        goconfig.Description,
+			Usage:        nugetconfig.Description,
 			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -518,6 +520,31 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
+			},
+		},
+		{
+			Name:         "dotnet-config",
+			Flags:        getResolverOnlyConfigFlags(),
+			Aliases:      []string{"dotnetc"},
+			Usage:        dotnetconfig.Description,
+			HelpName:     common.CreateUsage("rt dotnet-config", dotnetconfig.Description, dotnetconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createDotnetConfigCmd(c)
+			},
+		},
+		{
+			Name:            "dotnet",
+			Flags:           getBuildAndModuleFlags(),
+			Usage:           dotnetdocs.Description,
+			HelpName:        common.CreateUsage("rt dotnet", dotnetdocs.Description, dotnetdocs.Usage),
+			UsageText:       dotnetdocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return dotnetCmd(c)
 			},
 		},
 		{
@@ -600,7 +627,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        getCommonBuildToolsConfigFlags(),
+			Flags:        getResolverOnlyConfigFlags(),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
@@ -809,6 +836,23 @@ func getBaseBuildToolsConfigFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  commandUtils.DeploymentServerId,
 			Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
+		},
+	}
+}
+
+func getResolverOnlyConfigFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.BoolFlag{
+			Name:  commandUtils.Global,
+			Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionServerId,
+			Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionRepo,
+			Usage: "[Optional] Repository for dependencies resolution.` `",
 		},
 	}
 }
@@ -2243,6 +2287,44 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 	return nuget.DependencyTreeCmd()
 }
 
+func dotnetCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Get dotnet configuration.
+	dotnetConfig, err := utils.GetResolutionOnlyConfiguration(utils.Dotnet)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file: %s\n"+
+			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
+	}
+
+	// Set arg values.
+	rtDetails, err := dotnetConfig.RtDetails()
+	if err != nil {
+		return err
+	}
+
+	args, err := utils.ParseArgs(extractCommand(c))
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	dotnetCmd := dotnet.NewDotnetCommand()
+	dotnetCmd.SetRtDetails(rtDetails).SetRepo(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredDotnetArgs)
+	return commands.Exec(dotnetCmd)
+}
+
 func npmLegacyInstallCmd(c *cli.Context) error {
 	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
@@ -2609,6 +2691,13 @@ func createNugetConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commandUtils.CreateBuildConfig(c, utils.Nuget)
+}
+
+func createDotnetConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Dotnet)
 }
 
 func createPipConfigCmd(c *cli.Context) error {
@@ -3315,7 +3404,7 @@ func pipInstallCmd(c *cli.Context) error {
 	}
 
 	// Get pip configuration.
-	pipConfig, err := piputils.GetPipConfiguration()
+	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
 			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))
