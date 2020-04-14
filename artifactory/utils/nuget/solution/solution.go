@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget/solution/project"
+	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -140,7 +141,12 @@ func parseProject(projectLine, path string) (projectName, csprojPath string, err
 		return "", "", errors.New("Unexpected project information format: " + parsedLine[1])
 	}
 	projectName = removeQuotes(projectInfo[0])
-	csprojPath = filepath.Join(path, removeQuotes(projectInfo[1]))
+	// In case we are running on a non-Windows OS, the solution root path and the relative path to csproj file might used different path separators.
+	// We want to make sure we will get a valid path after we join both parts, so we will replace the csproj separators.
+	if !utils.IsWindows() {
+		projectInfo[1] = ioutils.WinToUnixPathSeparator(projectInfo[1])
+	}
+	csprojPath = filepath.Join(path, filepath.FromSlash(removeQuotes(projectInfo[1])))
 	return
 }
 
