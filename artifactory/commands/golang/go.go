@@ -143,9 +143,9 @@ func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServi
 	var artifactoryVersion string
 	var err error
 	if deployerServiceManager != nil {
-		artifactoryVersion, err = deployerServiceManager.GetConfig().GetCommonDetails().GetVersion()
+		artifactoryVersion, err = deployerServiceManager.GetConfig().GetServiceDetails().GetVersion()
 	} else {
-		artifactoryVersion, err = resolverServiceManager.GetConfig().GetCommonDetails().GetVersion()
+		artifactoryVersion, err = resolverServiceManager.GetConfig().GetServiceDetails().GetVersion()
 	}
 	if err != nil {
 		return false, err

@@ -40,7 +40,7 @@ func getConfigDir(global bool) (string, error) {
 	return cliutils.GetJfrogHomeDir()
 }
 
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.CommonDetails, insecureTls bool) (string, error) {
+func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ServiceDetails, insecureTls bool) (string, error) {
 	u, err := url.Parse(artifactoryAuth.GetUrl())
 	if err != nil {
 		return "", err
@@ -92,7 +92,7 @@ func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDr
 		return nil, err
 	}
 	config := clientConfig.NewConfigBuilder().
-		SetArtDetails(artAuth).
+		SetServiceDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun)
@@ -116,7 +116,7 @@ func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, 
 		return nil, err
 	}
 	servicesConfig, err := clientConfig.NewConfigBuilder().
-		SetArtDetails(artAuth).
+		SetServiceDetails(artAuth).
 		SetDryRun(dryRun).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
@@ -139,7 +139,7 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 		return nil, err
 	}
 	serviceConfig, err := clientConfig.NewConfigBuilder().
-		SetArtDetails(distAuth).
+		SetServiceDetails(distAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun).
@@ -150,7 +150,7 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 	return distribution.New(&distAuth, serviceConfig)
 }
 
-func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error) {
+func isRepoExists(repository string, artDetails auth.ServiceDetails) (bool, error) {
 	artHttpDetails := artDetails.CreateHttpClientDetails()
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
@@ -167,7 +167,7 @@ func isRepoExists(repository string, artDetails auth.CommonDetails) (bool, error
 	return false, nil
 }
 
-func CheckIfRepoExists(repository string, artDetails auth.CommonDetails) error {
+func CheckIfRepoExists(repository string, artDetails auth.ServiceDetails) error {
 	repoExists, err := isRepoExists(repository, artDetails)
 	if err != nil {
 		return err

@@ -194,7 +194,7 @@ func createTokensServiceManager(artDetails *ArtifactoryDetails) (*artifactory.Ar
 		return nil, err
 	}
 	serviceConfig, err := config.NewConfigBuilder().
-		SetArtDetails(artAuth).
+		SetServiceDetails(artAuth).
 		SetCertificatesPath(certPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(false).
