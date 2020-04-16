@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -264,7 +264,7 @@ func (nugetPackage *nugetPackage) getDependencies() []string {
 }
 
 func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
-	localsCmd, err := nuget.NewNugetCmd()
+	localsCmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
 	if err != nil {
 		return "", err
 	}

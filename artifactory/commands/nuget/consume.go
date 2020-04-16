@@ -10,8 +10,8 @@ import (
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget/solution"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/solution"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/auth"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -217,7 +217,7 @@ func (nca *NugetCommandArgs) prepareAndRunCmd(configDirPath string) error {
 // Checks if the user provided input such as -configfile flag or -Source flag.
 // If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
-func (nca *NugetCommandArgs) prepareConfigFile(cmd *nuget.Cmd, configDirPath string) error {
+func (nca *NugetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
 	currentConfigPath, err := getFlagValueIfExists("-configfile", cmd)
 	if err != nil {
 		return err
@@ -239,7 +239,7 @@ func (nca *NugetCommandArgs) prepareConfigFile(cmd *nuget.Cmd, configDirPath str
 }
 
 // Returns the value of the flag if exists
-func getFlagValueIfExists(cmdFlag string, cmd *nuget.Cmd) (string, error) {
+func getFlagValueIfExists(cmdFlag string, cmd *dotnet.Cmd) (string, error) {
 	for i := 0; i < len(cmd.CommandFlags); i++ {
 		if !strings.EqualFold(cmd.CommandFlags[i], cmdFlag) {
 			continue
@@ -254,7 +254,7 @@ func getFlagValueIfExists(cmdFlag string, cmd *nuget.Cmd) (string, error) {
 }
 
 // Initializing a new NuGet config file that NuGet will use into a temp file
-func (nca *NugetCommandArgs) initNewConfig(cmd *nuget.Cmd, configDirPath string) error {
+func (nca *NugetCommandArgs) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
 	configFile, err := writeToTempConfigFile(cmd, configDirPath)
 	if err != nil {
@@ -276,12 +276,12 @@ func (nca *NugetCommandArgs) addNugetAuthenticationToNewConfig(configFile *os.Fi
 		return err
 	}
 
-	err = addNugetApiKey(user, password, configFile.Name())
+	//err = addNugetApiKey(user, password, configFile.Name())
 	return err
 }
 
 // Creates the temp file and writes the config template into the file for NuGet can use it.
-func writeToTempConfigFile(cmd *nuget.Cmd, tempDirPath string) (*os.File, error) {
+func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error) {
 	configFile, err := ioutil.TempFile(tempDirPath, "jfrog.cli.nuget.")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -293,7 +293,7 @@ func writeToTempConfigFile(cmd *nuget.Cmd, tempDirPath string) (*os.File, error)
 	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFile.Name())
 
 	// Set Artifactory repo as source
-	content := nuget.ConfigFileTemplate
+	content := dotnet.ConfigFileTemplate
 	_, err = configFile.WriteString(content)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -303,7 +303,7 @@ func writeToTempConfigFile(cmd *nuget.Cmd, tempDirPath string) (*os.File, error)
 
 // Runs nuget sources add command
 func addNugetSource(configFileName, sourceUrl, user, password string) error {
-	cmd, err := nuget.NewNugetCmd()
+	cmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func addNugetSource(configFileName, sourceUrl, user, password string) error {
 
 // Runs nuget setapikey command
 func addNugetApiKey(user, password, configFileName string) error {
-	cmd, err := nuget.NewNugetCmd()
+	cmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
 	if err != nil {
 		return err
 	}
@@ -365,8 +365,8 @@ func (nca *NugetCommandArgs) getSourceDetails() (sourceURL, user, password strin
 	return
 }
 
-func (nca *NugetCommandArgs) createNugetCmd() (*nuget.Cmd, error) {
-	c, err := nuget.NewNugetCmd()
+func (nca *NugetCommandArgs) createNugetCmd() (*dotnet.Cmd, error) {
+	c, err := dotnet.NewDotnetCmd(dotnet.Nuget)
 	if err != nil {
 		return nil, err
 	}

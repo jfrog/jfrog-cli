@@ -3,7 +3,7 @@ package project
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dependenciestree"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget/dependencies"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/dependencies"
 )
 
 type Project interface {

@@ -3,7 +3,7 @@ package nuget
 import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
@@ -44,7 +44,7 @@ func TestGetFlagValueExists(t *testing.T) {
 				}
 				defer os.Remove(test.currentConfigPath)
 			}
-			c := &nuget.Cmd{CommandFlags: test.cmdFlags}
+			c := &dotnet.Cmd{CommandFlags: test.cmdFlags}
 			_, err := getFlagValueIfExists("-configfile", c)
 			if err != nil && !test.expectErr {
 				t.Error(err)
@@ -71,7 +71,7 @@ func TestInitNewConfig(t *testing.T) {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	c := &nuget.Cmd{}
+	c := &dotnet.Cmd{}
 	params := &NugetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {

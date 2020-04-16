@@ -3,7 +3,7 @@ package solution
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget/solution/project"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/solution/project"
 	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"

@@ -1,4 +1,4 @@
-package nuget
+package dotnet
 
 import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -6,17 +6,33 @@ import (
 	"os/exec"
 )
 
-func NewNugetCmd() (*Cmd, error) {
-	execPath, err := exec.LookPath("nuget")
+type CmdType int
+
+const (
+	Nuget CmdType = iota
+	Dotnet
+)
+
+var CmdTypes = []string{
+	"nuget",
+	"dotnet",
+}
+
+func (cmdType CmdType) String() string {
+	return CmdTypes[cmdType]
+}
+
+func NewDotnetCmd(cmdType CmdType) (*Cmd, error) {
+	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{Nuget: execPath}, nil
+	return &Cmd{execPath: execPath}, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, config.Nuget)
+	cmd = append(cmd, config.execPath)
 	cmd = append(cmd, config.Command...)
 	cmd = append(cmd, config.CommandFlags...)
 	return exec.Command(cmd[0], cmd[1:]...)
@@ -35,7 +51,7 @@ func (config *Cmd) GetErrWriter() io.WriteCloser {
 }
 
 type Cmd struct {
-	Nuget        string
+	execPath     string
 	Command      []string
 	CommandFlags []string
 	StrWriter    io.WriteCloser
