@@ -2960,6 +2960,8 @@ func TestSummaryReport(t *testing.T) {
 
 	previousLog := log.Logger
 	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
+	// Restore previous logger when the function returns
+	defer log.SetLogger(previousLog)
 
 	// Set new logger with output redirection to buffer
 	buffer := &bytes.Buffer{}
@@ -2988,8 +2990,6 @@ func TestSummaryReport(t *testing.T) {
 	artifactoryCli.Exec("download", "--spec="+specFile)
 	verifySummary(t, buffer, 3, 0, previousLog)
 
-	// Restore previous logger
-	log.SetLogger(previousLog)
 	cleanArtifactoryTest()
 }
 
@@ -3676,19 +3676,21 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestTokenCreate(t *testing.T) {
+func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t)
 
-	// Set new logger with output redirection to buffer, so we can extract the token from the command output
+	// Set new logger with output redirection to a buffer, so we can extract the token from the command output
 	previousLog := log.Logger
 	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
+	// Restore previous logger when the function returns
+	defer log.SetLogger(previousLog)
 
 	buffer := &bytes.Buffer{}
 	newLog.SetOutputWriter(buffer)
 	log.SetLogger(newLog)
 
 	// Create access token for current user
-	err := artifactoryCli.Exec("tc", *tests.RtUser)
+	err := artifactoryCli.Exec("atc", *tests.RtUser)
 	assert.NoError(t, err)
 
 	// Write the command output to the origin
@@ -3704,8 +3706,6 @@ func TestTokenCreate(t *testing.T) {
 	err = artifactoryCli.Exec("ping", "--access-token="+token)
 	assert.NoError(t, err)
 
-	// Restore previous logger
-	log.SetLogger(previousLog)
 	// Cleanup
 	cleanArtifactoryTest()
 }

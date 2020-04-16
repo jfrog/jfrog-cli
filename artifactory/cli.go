@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/tokencreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -781,16 +781,16 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "token-create",
-			Aliases:      []string{"tc"},
-			Flags:        getTokenCreateFlags(),
-			Usage:        tokencreate.Description,
-			HelpName:     common.CreateUsage("rt tc", tokencreate.Description, tokencreate.Usage),
-			UsageText:    tokencreate.Arguments,
+			Name:         "access-token-create",
+			Aliases:      []string{"atc"},
+			Flags:        getAccessTokenCreateFlags(),
+			Usage:        accesstokencreate.Description,
+			HelpName:     common.CreateUsage("rt atc", accesstokencreate.Description, accesstokencreate.Usage),
+			UsageText:    accesstokencreate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return tokenCreateCmd(c)
+				return accessTokenCreateCmd(c)
 			},
 		},
 	}
@@ -1090,19 +1090,21 @@ func getReplicationDeleteFlags() []cli.Flag {
 	return getRepoDeleteFlags()
 }
 
-func getTokenCreateFlags() []cli.Flag {
+func getAccessTokenCreateFlags() []cli.Flag {
 	return append(getServerWithClientCertsFlags(), []cli.Flag{
 		cli.StringFlag{
-			Name:  "groups",
-			Usage: "[Optional] A list of comma-separated groups that the token is associated with.` `",
+			Name: "groups",
+			Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
+				"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
+				"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
 		},
-		cli.StringFlag{
-			Name:  "admin-privileges",
-			Usage: "[Optional] An Artifactory instance ID to be given admin privileges.` `",
+		cli.BoolFlag{
+			Name:  "grant-admin",
+			Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
 		},
 		cli.StringFlag{
 			Name:  "expiry",
-			Usage: "[Default: " + strconv.Itoa(cliutils.TokenExpiry) + "] The time in seconds for which the token will be valid.` `",
+			Usage: "[Default: " + strconv.Itoa(cliutils.TokenExpiry) + "] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
 		},
 		cli.BoolFlag{
 			Name:  "refreshable",
@@ -1110,7 +1112,7 @@ func getTokenCreateFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "audience",
-			Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token.` `",
+			Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 		},
 	}...)
 }
@@ -3449,7 +3451,7 @@ func replicationDeleteCmd(c *cli.Context) error {
 	return commands.Exec(replicationDeleteCmd)
 }
 
-func tokenCreateCmd(c *cli.Context) error {
+func accessTokenCreateCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -3466,13 +3468,13 @@ func tokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	tokenCreateCmd := generic.NewTokenCreateCommand()
-	tokenCreateCmd.SetUserName(c.Args().Get(0)).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetAdminPrivilegesInstanceId(c.String("admin-privileges"))
-	err = commands.Exec(tokenCreateCmd)
+	accessTokenCreateCmd := generic.NewAccessTokenCreateCommand()
+	accessTokenCreateCmd.SetUserName(c.Args().Get(0)).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
+	err = commands.Exec(accessTokenCreateCmd)
 	if err != nil {
 		return err
 	}
-	resString, err := tokenCreateCmd.Response()
+	resString, err := accessTokenCreateCmd.Response()
 	if err != nil {
 		return err
 	}
