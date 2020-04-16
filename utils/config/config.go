@@ -427,33 +427,33 @@ func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.Servi
 	return artifactoryDetails.createArtAuthConfig(artAuth)
 }
 
-func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(ServiceDetails auth.ServiceDetails) (auth.ServiceDetails, error) {
-	ServiceDetails.SetSshUrl(artifactoryDetails.SshUrl)
-	ServiceDetails.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
-	ServiceDetails.SetAccessToken(artifactoryDetails.AccessToken)
+func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.ServiceDetails) (auth.ServiceDetails, error) {
+	details.SetSshUrl(artifactoryDetails.SshUrl)
+	details.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
+	details.SetAccessToken(artifactoryDetails.AccessToken)
 	// If refresh token is not empty, set a refresh handler and skip other credentials
 	if artifactoryDetails.RefreshToken != "" {
 		tokenRefreshServerId = artifactoryDetails.ServerId
-		ServiceDetails.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
+		details.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
 	} else {
-		ServiceDetails.SetApiKey(artifactoryDetails.ApiKey)
-		ServiceDetails.SetUser(artifactoryDetails.User)
-		ServiceDetails.SetPassword(artifactoryDetails.Password)
+		details.SetApiKey(artifactoryDetails.ApiKey)
+		details.SetUser(artifactoryDetails.User)
+		details.SetPassword(artifactoryDetails.Password)
 	}
-	ServiceDetails.SetClientCertPath(artifactoryDetails.ClientCertPath)
-	ServiceDetails.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
-	ServiceDetails.SetSshKeyPath(artifactoryDetails.SshKeyPath)
-	ServiceDetails.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if ServiceDetails.IsSshAuthentication() {
-		if !ServiceDetails.IsSshAuthHeaderSet() {
-			err := ServiceDetails.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
+	details.SetClientCertPath(artifactoryDetails.ClientCertPath)
+	details.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
+	details.SetSshKeyPath(artifactoryDetails.SshKeyPath)
+	details.SetSshPassphrase(artifactoryDetails.SshPassphrase)
+	if details.IsSshAuthentication() {
+		if !details.IsSshAuthHeaderSet() {
+			err := details.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
 			if err != nil {
 				return nil, err
 			}
 		}
-		ServiceDetails.AppendPreRequestInterceptor(auth.SshTokenRefreshPreRequestInterceptor)
+		details.AppendPreRequestInterceptor(auth.SshTokenRefreshPreRequestInterceptor)
 	}
-	return ServiceDetails, nil
+	return details, nil
 }
 
 func (missionControlDetails *MissionControlDetails) GetAccessToken() string {
