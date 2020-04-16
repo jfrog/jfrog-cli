@@ -241,17 +241,17 @@ func RemoveBuildDir(buildName, buildNumber string) error {
 }
 
 type BuildInfoConfiguration struct {
-	artDetails auth.CommonDetails
+	artDetails auth.ServiceDetails
 	DryRun     bool
 	EnvInclude string
 	EnvExclude string
 }
 
-func (config *BuildInfoConfiguration) GetArtifactoryDetails() auth.CommonDetails {
+func (config *BuildInfoConfiguration) GetArtifactoryDetails() auth.ServiceDetails {
 	return config.artDetails
 }
 
-func (config *BuildInfoConfiguration) SetArtifactoryDetails(art auth.CommonDetails) {
+func (config *BuildInfoConfiguration) SetArtifactoryDetails(art auth.ServiceDetails) {
 	config.artDetails = art
 }
 
