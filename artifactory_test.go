@@ -53,7 +53,7 @@ var artifactoryCli *tests.JfrogCli
 var configArtifactoryCli *tests.JfrogCli
 
 var artifactoryDetails *config.ArtifactoryDetails
-var artAuth auth.CommonDetails
+var artAuth auth.ServiceDetails
 var artHttpDetails httputils.HttpClientDetails
 
 func InitArtifactoryTests() {
