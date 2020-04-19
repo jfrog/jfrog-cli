@@ -3176,7 +3176,7 @@ func verifySummary(t *testing.T, buffer *bytes.Buffer, success, failure int64, l
 
 func CleanArtifactoryTests() {
 	cleanArtifactoryTest()
-	deleteRepos()
+	deleteCreatedRepos()
 }
 
 func initArtifactoryTest(t *testing.T) {
@@ -3285,10 +3285,10 @@ func execCreateRepoRest(repoConfig, repoName string) {
 func createReposIfNeeded() {
 	cleanUpOldRepositories()
 	createRandomReposName()
-	nonVirtualRepos := tests.GetNonVirtualRepositories()
-	createRepos(nonVirtualRepos)
-	virtualRepos := tests.GetVirtualRepositories()
-	createRepos(virtualRepos)
+	tests.CreatedNonVirtualRepositories = tests.GetNonVirtualRepositories()
+	createRepos(tests.CreatedNonVirtualRepositories)
+	tests.CreatedVirtualRepositories = tests.GetVirtualRepositories()
+	createRepos(tests.CreatedVirtualRepositories)
 }
 
 func cleanUpOldRepositories() {
@@ -3321,16 +3321,16 @@ func cleanUpOldRepositories() {
 	}
 }
 
-func createRepos(repos map[string]string) {
+func createRepos(repos map[*string]string) {
 	for repoName, configFile := range repos {
-		if !isRepoExist(repoName) {
+		if !isRepoExist(*repoName) {
 			repoConfig := tests.GetTestResourcesPath() + configFile
 			repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
 			if err != nil {
 				log.Error(err)
 				os.Exit(1)
 			}
-			execCreateRepoRest(repoConfig, repoName)
+			execCreateRepoRest(repoConfig, *repoName)
 		}
 	}
 }
@@ -3344,43 +3344,23 @@ func createRandomReposName() {
 	tests.LfsRepo += "-" + timestamp
 	tests.DebianRepo += "-" + timestamp
 	tests.JcenterRemoteRepo += "-" + timestamp
-	if *tests.TestNpm {
-		tests.NpmLocalRepo += "-" + timestamp
-		tests.NpmRemoteRepo += "-" + timestamp
-	}
-	if *tests.TestGo {
-		tests.GoLocalRepo += "-" + timestamp
-	}
-	if *tests.TestPip {
-		tests.PypiRemoteRepo += "-" + timestamp
-		tests.PypiVirtualRepo += "-" + timestamp
-	}
+	tests.NpmLocalRepo += "-" + timestamp
+	tests.NpmRemoteRepo += "-" + timestamp
+	tests.GoLocalRepo += "-" + timestamp
+	tests.PypiRemoteRepo += "-" + timestamp
+	tests.PypiVirtualRepo += "-" + timestamp
 }
 
-// Important - Virtual repositories most be deleted first
-func deleteRepos() {
-	repos := []string{
-		tests.VirtualRepo,
-		tests.Repo1,
-		tests.Repo2,
-		tests.LfsRepo,
-		tests.DebianRepo,
-		tests.JcenterRemoteRepo,
-	}
+func deleteCreatedRepos() {
+	// Important - Virtual repositories most be deleted first
+	deleteRepos(tests.CreatedVirtualRepositories)
+	deleteRepos(tests.CreatedNonVirtualRepositories)
+}
 
-	if *tests.TestNpm {
-		repos = append(repos, tests.NpmLocalRepo, tests.NpmRemoteRepo)
-	}
-	if *tests.TestGo {
-		repos = append(repos, tests.GoLocalRepo)
-	}
-	if *tests.TestPip {
-		repos = append(repos, tests.PypiVirtualRepo, tests.PypiRemoteRepo)
-	}
-
-	for _, repoName := range repos {
-		if isRepoExist(repoName) {
-			execDeleteRepoRest(repoName)
+func deleteRepos(repos map[*string]string) {
+	for repoName := range repos {
+		if isRepoExist(*repoName) {
+			execDeleteRepoRest(*repoName)
 		}
 	}
 }
