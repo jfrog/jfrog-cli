@@ -28,7 +28,7 @@ func (repoType RepoType) String() string {
 	return RepoTypes[repoType]
 }
 
-func GetRepositories(artDetails auth.CommonDetails, repoType ...RepoType) ([]string, error) {
+func GetRepositories(artDetails auth.ServiceDetails, repoType ...RepoType) ([]string, error) {
 	repos := []string{}
 	for _, v := range repoType {
 		r, err := execGetRepositories(artDetails, v)
@@ -43,7 +43,7 @@ func GetRepositories(artDetails auth.CommonDetails, repoType ...RepoType) ([]str
 	return repos, nil
 }
 
-func execGetRepositories(artDetails auth.CommonDetails, repoType RepoType) ([]string, error) {
+func execGetRepositories(artDetails auth.ServiceDetails, repoType RepoType) ([]string, error) {
 	repos := []string{}
 	artDetails.SetUrl(utils.AddTrailingSlashIfNeeded(artDetails.GetUrl()))
 	apiUrl := artDetails.GetUrl() + "api/repositories?type=" + repoType.String()

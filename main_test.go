@@ -72,7 +72,7 @@ func InitBuildToolsTests() {
 
 func CleanBuildToolsTests() {
 	cleanBuildToolsTest()
-	deleteRepos()
+	deleteCreatedRepos()
 }
 
 func createJfrogHomeConfig(t *testing.T) {

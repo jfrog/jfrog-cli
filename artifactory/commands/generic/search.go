@@ -15,6 +15,8 @@ type SearchResult struct {
 	Size     int64               `json:"size,omitempty"`
 	Created  string              `json:"created,omitempty"`
 	Modified string              `json:"modified,omitempty"`
+	Sha1     string              `json:"sha1,omitempty"`
+	Md5      string              `json:"md5,omitempty"`
 	Props    map[string][]string `json:"props,omitempty"`
 }
 
@@ -98,6 +100,8 @@ func aqlResultToSearchResult(aqlResult []clientutils.ResultItem) (result []Searc
 		tempResult.Size = v.Size
 		tempResult.Created = v.Created
 		tempResult.Modified = v.Modified
+		tempResult.Sha1 = v.Actual_Sha1
+		tempResult.Md5 = v.Actual_Md5
 		tempResult.Props = make(map[string][]string, len(v.Properties))
 		for _, prop := range v.Properties {
 			tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)

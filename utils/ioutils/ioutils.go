@@ -81,6 +81,10 @@ func UnixToWinPathSeparator(filePath string) string {
 	return strings.Replace(filePath, "/", "\\\\", -1)
 }
 
+func WinToUnixPathSeparator(filePath string) string {
+	return strings.Replace(filePath, "\\", "/", -1)
+}
+
 func PrepareFilePathForUnix(path string) string {
 	if cliutils.IsWindows() {
 		path = strings.Replace(path, "\\\\", "/", -1)

@@ -410,35 +410,35 @@ func (artifactoryDetails *ArtifactoryDetails) GetClientCertKeyPath() string {
 	return artifactoryDetails.ClientCertKeyPath
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.CommonDetails, error) {
+func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ServiceDetails, error) {
 	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
 	return artifactoryDetails.createArtAuthConfig(artAuth)
 }
 
-func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.CommonDetails, error) {
+func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.ServiceDetails, error) {
 	artAuth := distributionAuth.NewDistributionDetails()
 	artAuth.SetUrl(artifactoryDetails.DistributionUrl)
 	return artifactoryDetails.createArtAuthConfig(artAuth)
 }
 
-func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(commonDetails auth.CommonDetails) (auth.CommonDetails, error) {
-	commonDetails.SetSshUrl(artifactoryDetails.SshUrl)
-	commonDetails.SetAccessToken(artifactoryDetails.AccessToken)
+func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.ServiceDetails) (auth.ServiceDetails, error) {
+	details.SetSshUrl(artifactoryDetails.SshUrl)
+	details.SetAccessToken(artifactoryDetails.AccessToken)
 	// If refresh token is not empty, set a refresh handler and skip other credentials
 	if artifactoryDetails.RefreshToken != "" {
 		tokenRefreshServerId = artifactoryDetails.ServerId
-		commonDetails.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
+		details.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
 	} else {
-		commonDetails.SetApiKey(artifactoryDetails.ApiKey)
-		commonDetails.SetUser(artifactoryDetails.User)
-		commonDetails.SetPassword(artifactoryDetails.Password)
+		details.SetApiKey(artifactoryDetails.ApiKey)
+		details.SetUser(artifactoryDetails.User)
+		details.SetPassword(artifactoryDetails.Password)
 	}
-	commonDetails.SetClientCertPath(artifactoryDetails.ClientCertPath)
-	commonDetails.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
-	commonDetails.SetSshKeyPath(artifactoryDetails.SshKeyPath)
-	commonDetails.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	return commonDetails, nil
+	details.SetClientCertPath(artifactoryDetails.ClientCertPath)
+	details.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
+	details.SetSshKeyPath(artifactoryDetails.SshKeyPath)
+	details.SetSshPassphrase(artifactoryDetails.SshPassphrase)
+	return details, nil
 }
 
 func (missionControlDetails *MissionControlDetails) GetAccessToken() string {

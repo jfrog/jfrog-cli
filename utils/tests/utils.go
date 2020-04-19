@@ -347,35 +347,63 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles()
 }
 
-func GetNonVirtualRepositories() map[string]string {
-	nonVirtualRepos := map[string]string{
-		Repo1:             SpecsTestRepositoryConfig,
-		Repo2:             MoveRepositoryConfig,
-		LfsRepo:           GitLfsTestRepositoryConfig,
-		DebianRepo:        DebianTestRepositoryConfig,
-		JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
-	}
-	if *TestNpm {
-		nonVirtualRepos[NpmLocalRepo] = NpmLocalRepositoryConfig
-		nonVirtualRepos[NpmRemoteRepo] = NpmRemoteRepositoryConfig
-	}
-	if *TestPip {
-		nonVirtualRepos[PypiRemoteRepo] = PypiRemoteRepositoryConfig
-	}
-
-	return nonVirtualRepos
+var reposConfigMap = map[*string]string {
+	&Repo1:             Repo1RepositoryConfig,
+	&Repo2:             Repo2RepositoryConfig,
+	&VirtualRepo:       VirtualRepositoryConfig,
+	&JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
+	&LfsRepo:           GitLfsTestRepositoryConfig,
+	&DebianRepo:        DebianTestRepositoryConfig,
+	&NpmLocalRepo:      NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
+	&GoLocalRepo:       GoLocalRepositoryConfig,
+	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
 }
 
-func GetVirtualRepositories() map[string]string {
-	virtualRepos := map[string]string{
-		VirtualRepo: VirtualRepositoryConfig,
-	}
+var CreatedNonVirtualRepositories map[*string]string
+var CreatedVirtualRepositories map[*string]string
 
-	if *TestPip {
-		virtualRepos[PypiVirtualRepo] = PypiVirtualRepositoryConfig
+func getNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
+	reposToCreate := map[*string]string{}
+	for needed, testRepos := range reposMap {
+		if *needed {
+			for _, repo := range testRepos {
+				reposToCreate[repo] = reposConfigMap[repo]
+			}
+		}
 	}
+	return reposToCreate
+}
 
-	return virtualRepos
+func GetNonVirtualRepositories() map[*string]string {
+	NonVirtualReposMap := map[*bool][]*string {
+		TestArtifactory: {&Repo1, &Repo2, &LfsRepo, &DebianRepo},
+		TestDistribution: {&Repo1, &Repo2},
+		TestDocker: {},
+		TestGo: {},
+		TestGradle: {&Repo1},
+		TestMaven: {&Repo1, &Repo2, &JcenterRemoteRepo},
+		TestNpm: {&NpmLocalRepo, &NpmRemoteRepo},
+		TestNuget: {},
+		TestPip: {&PypiRemoteRepo},
+	}
+	return getNeededRepositories(NonVirtualReposMap)
+}
+
+func GetVirtualRepositories() map[*string]string {
+	VirtualReposMap := map[*bool][]*string {
+		TestArtifactory: {&VirtualRepo},
+		TestDistribution: {},
+		TestDocker: {},
+		TestGo: {},
+		TestGradle: {},
+		TestMaven: {},
+		TestNpm: {},
+		TestNuget: {},
+		TestPip: {&PypiVirtualRepo},
+	}
+	return getNeededRepositories(VirtualReposMap)
 }
 
 func getRepositoriesNameMap() map[string]string {

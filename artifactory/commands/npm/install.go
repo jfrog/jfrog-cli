@@ -48,7 +48,7 @@ type NpmCommandArgs struct {
 	collectBuildInfo bool
 	dependencies     map[string]*dependency
 	typeRestriction  string
-	artDetails       auth.CommonDetails
+	artDetails       auth.ServiceDetails
 	packageInfo      *npm.PackageInfo
 	NpmCommand
 }
@@ -606,7 +606,7 @@ func (nca *NpmCommandArgs) setNpmExecutable() error {
 	return nil
 }
 
-func getArtifactoryDetails(artDetails auth.CommonDetails) (npmAuth string, err error) {
+func getArtifactoryDetails(artDetails auth.ServiceDetails) (npmAuth string, err error) {
 	// Check Artifactory version.
 	err = validateArtifactoryVersion(artDetails)
 	if err != nil {
@@ -620,7 +620,7 @@ func getArtifactoryDetails(artDetails auth.CommonDetails) (npmAuth string, err e
 	return getDetailsUsingAccessToken(artDetails)
 }
 
-func validateArtifactoryVersion(artDetails auth.CommonDetails) error {
+func validateArtifactoryVersion(artDetails auth.ServiceDetails) error {
 	// Get Artifactory version.
 	versionStr, err := artDetails.GetVersion()
 	if err != nil {
@@ -636,7 +636,7 @@ func validateArtifactoryVersion(artDetails auth.CommonDetails) error {
 	return nil
 }
 
-func getDetailsUsingAccessToken(artDetails auth.CommonDetails) (npmAuth string, err error) {
+func getDetailsUsingAccessToken(artDetails auth.ServiceDetails) (npmAuth string, err error) {
 	npmAuthString := "_auth = %s\nalways-auth = true"
 	// Build npm token, consists of <username:password> encoded.
 	// Use Artifactory's access-token as username and password to create npm token.
@@ -650,7 +650,7 @@ func getDetailsUsingAccessToken(artDetails auth.CommonDetails) (npmAuth string, 
 	return npmAuth, err
 }
 
-func getDetailsUsingBasicAuth(artDetails auth.CommonDetails) (npmAuth string, err error) {
+func getDetailsUsingBasicAuth(artDetails auth.ServiceDetails) (npmAuth string, err error) {
 	authApiUrl := artDetails.GetUrl() + "api/npm/auth"
 	log.Debug("Sending npm auth request")
 

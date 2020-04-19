@@ -72,7 +72,7 @@ func (gpc *GoPublishCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	artifactoryVersion, err := serviceManager.GetConfig().GetCommonDetails().GetVersion()
+	artifactoryVersion, err := serviceManager.GetConfig().GetServiceDetails().GetVersion()
 	if err != nil {
 		return err
 	}
