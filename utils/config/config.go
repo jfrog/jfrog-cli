@@ -317,7 +317,6 @@ type ArtifactoryDetails struct {
 	Password             string            `json:"password,omitempty"`
 	SshKeyPath           string            `json:"sshKeyPath,omitempty"`
 	SshPassphrase        string            `json:"SshPassphrase,omitempty"`
-	SshAuthHeaders       map[string]string `json:"SshAuthHeaders,omitempty"`
 	AccessToken          string            `json:"accessToken,omitempty"`
 	RefreshToken         string            `json:"refreshToken,omitempty"`
 	TokenRefreshInterval int               `json:"tokenRefreshInterval,omitempty"`
@@ -411,10 +410,6 @@ func (artifactoryDetails *ArtifactoryDetails) GetClientCertKeyPath() string {
 	return artifactoryDetails.ClientCertKeyPath
 }
 
-func (artifactoryDetails *ArtifactoryDetails) SshAuthHeaderSet() bool {
-	return len(artifactoryDetails.SshAuthHeaders) > 0
-}
-
 func (artifactoryDetails *ArtifactoryDetails) CreateArtAuthConfig() (auth.ServiceDetails, error) {
 	artAuth := artifactoryAuth.NewArtifactoryDetails()
 	artAuth.SetUrl(artifactoryDetails.Url)
@@ -429,7 +424,6 @@ func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.Servi
 
 func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.ServiceDetails) (auth.ServiceDetails, error) {
 	details.SetSshUrl(artifactoryDetails.SshUrl)
-	details.SetSshAuthHeaders(artifactoryDetails.SshAuthHeaders)
 	details.SetAccessToken(artifactoryDetails.AccessToken)
 	// If refresh token is not empty, set a refresh handler and skip other credentials
 	if artifactoryDetails.RefreshToken != "" {
@@ -444,15 +438,6 @@ func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.S
 	details.SetClientCertKeyPath(artifactoryDetails.ClientCertKeyPath)
 	details.SetSshKeyPath(artifactoryDetails.SshKeyPath)
 	details.SetSshPassphrase(artifactoryDetails.SshPassphrase)
-	if details.IsSshAuthentication() {
-		if !details.IsSshAuthHeaderSet() {
-			err := details.AuthenticateSsh(artifactoryDetails.SshKeyPath, artifactoryDetails.SshPassphrase)
-			if err != nil {
-				return nil, err
-			}
-		}
-		details.AppendPreRequestInterceptor(auth.SshTokenRefreshPreRequestInterceptor)
-	}
 	return details, nil
 }
 

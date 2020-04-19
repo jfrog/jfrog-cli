@@ -3542,8 +3542,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 
 func credentialsChanged(details *config.ArtifactoryDetails) bool {
 	return details.Url != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshAuthHeaderSet() ||
-		details.AccessToken != ""
+		details.ApiKey != "" || details.SshKeyPath != "" || details.AccessToken != ""
 }
 
 func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
