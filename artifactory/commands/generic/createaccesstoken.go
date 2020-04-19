@@ -66,10 +66,7 @@ func (atcc *AccessTokenCreateCommand) SetGroups(groups string) *AccessTokenCreat
 
 func (atcc *AccessTokenCreateCommand) Response() ([]byte, error) {
 	content, err := json.Marshal(*atcc.response)
-	if errorutils.CheckError(err) != nil {
-		return nil, err
-	}
-	return content, nil
+	return content, errorutils.CheckError(err)
 }
 
 func (atcc *AccessTokenCreateCommand) RtDetails() (*config.ArtifactoryDetails, error) {
@@ -126,5 +123,5 @@ func getInstanceId(rtDetails *config.ArtifactoryDetails) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return servicesManager.CreateSystemService().GetArtifactoryServiceId()
+	return servicesManager.GetServiceId()
 }
