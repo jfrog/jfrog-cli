@@ -347,7 +347,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles()
 }
 
-var ReposConfigMap = map[*string]string {
+var reposConfigMap = map[*string]string {
 	&Repo1:             Repo1RepositoryConfig,
 	&Repo2:             Repo2RepositoryConfig,
 	&VirtualRepo:       VirtualRepositoryConfig,
@@ -364,12 +364,12 @@ var ReposConfigMap = map[*string]string {
 var CreatedNonVirtualRepositories map[*string]string
 var CreatedVirtualRepositories map[*string]string
 
-func GetNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
+func getNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
 	reposToCreate := map[*string]string{}
 	for needed, testRepos := range reposMap {
 		if *needed {
 			for _, repo := range testRepos {
-				reposToCreate[repo] = ReposConfigMap[repo]
+				reposToCreate[repo] = reposConfigMap[repo]
 			}
 		}
 	}
@@ -388,7 +388,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNuget: {},
 		TestPip: {&PypiRemoteRepo},
 	}
-	return GetNeededRepositories(NonVirtualReposMap)
+	return getNeededRepositories(NonVirtualReposMap)
 }
 
 func GetVirtualRepositories() map[*string]string {
@@ -403,7 +403,7 @@ func GetVirtualRepositories() map[*string]string {
 		TestNuget: {},
 		TestPip: {&PypiVirtualRepo},
 	}
-	return GetNeededRepositories(VirtualReposMap)
+	return getNeededRepositories(VirtualReposMap)
 }
 
 func getRepositoriesNameMap() map[string]string {
