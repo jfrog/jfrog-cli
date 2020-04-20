@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -61,9 +60,6 @@ func TestGetFlagValueExists(t *testing.T) {
 
 func TestInitNewConfig(t *testing.T) {
 	log.SetDefaultLogger()
-	if !cliutils.IsWindows() {
-		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
-	}
 
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
@@ -72,14 +68,14 @@ func TestInitNewConfig(t *testing.T) {
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &dotnet.Cmd{}
-	params := &NugetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	params := &dotnetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Prepare the config file with NuGet authentication
-	err = params.addNugetAuthenticationToNewConfig(configFile)
+	err = params.addNugetAuthenticationToNewConfig(dotnet.Nuget, configFile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -109,18 +105,6 @@ func TestInitNewConfig(t *testing.T) {
 		if packageSource.Value != source {
 			t.Error("Expected", source, ", got", packageSource.Value)
 		}
-	}
-
-	if len(nugetConfig.Apikeys) != 1 {
-		t.Error("Expected one api key, got", len(nugetConfig.Apikeys))
-	}
-
-	apiKey := nugetConfig.Apikeys[0]
-	if apiKey.Key != source {
-		t.Error("Expected", source, ", got", apiKey.Key)
-	}
-	if apiKey.Value == "" {
-		t.Error("Expected apiKey with value, got", apiKey.Value)
 	}
 
 	if len(nugetConfig.PackageSourceCredentials) != 1 {

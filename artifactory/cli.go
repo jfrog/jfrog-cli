@@ -2249,7 +2249,10 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 		nugetCmd := nuget.NewNugetCommand()
-		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(strings.Join(filteredNugetArgs, " "))
+		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(filteredNugetArgs[0])
+		if len(filteredNugetArgs) > 1 {
+			nugetCmd.SetFlags(strings.Join(filteredNugetArgs[1:], " "))
+		}
 		return commands.Exec(nugetCmd)
 	}
 	// If config file not found, use nuget legacy command

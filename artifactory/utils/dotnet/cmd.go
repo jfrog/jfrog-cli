@@ -22,12 +22,38 @@ func (cmdType CmdType) String() string {
 	return CmdTypes[cmdType]
 }
 
+var CmdFlagPrefixes = []string{
+	"-",
+	"--",
+}
+
+func (cmdType CmdType) GetTypeFlagPrefix() string {
+	return CmdFlagPrefixes[cmdType]
+}
+
+var AddSourceArgs = [][]string{
+	{"sources", "add"},
+	{"nuget", "add", "source"},
+}
+
+func (cmdType CmdType) GetAddSourceArgs() []string {
+	return AddSourceArgs[cmdType]
+}
+
 func NewDotnetCmd(cmdType CmdType) (*Cmd, error) {
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{execPath: execPath}, nil
+	return &Cmd{cmdType: cmdType, execPath: execPath}, nil
+}
+
+func NewDotnetAddSourceCmd(cmdType CmdType) (*Cmd, error) {
+	execPath, err := exec.LookPath(cmdType.String())
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	return &Cmd{cmdType: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {
@@ -50,7 +76,12 @@ func (config *Cmd) GetErrWriter() io.WriteCloser {
 	return config.ErrWriter
 }
 
+func (config *Cmd) Type() CmdType {
+	return config.cmdType
+}
+
 type Cmd struct {
+	cmdType      CmdType
 	execPath     string
 	Command      []string
 	CommandFlags []string

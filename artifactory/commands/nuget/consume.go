@@ -20,7 +20,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-type NugetCommandArgs struct {
+type dotnetCommandArgs struct {
+	cmdType            dotnet.CmdType
 	args               string
 	flags              string
 	repoName           string
@@ -31,11 +32,11 @@ type NugetCommandArgs struct {
 
 type NugetCommand struct {
 	configFilePath string
-	*NugetCommandArgs
+	*dotnetCommandArgs
 }
 
 func NewNugetCommand() *NugetCommand {
-	return &NugetCommand{"", &NugetCommandArgs{}}
+	return &NugetCommand{"", &dotnetCommandArgs{cmdType: dotnet.Nuget}}
 }
 
 func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
@@ -43,34 +44,34 @@ func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
 	return nc
 }
 
-func (nca *NugetCommandArgs) SetRtDetails(rtDetails *config.ArtifactoryDetails) *NugetCommandArgs {
-	nca.rtDetails = rtDetails
-	return nca
+func (dca *dotnetCommandArgs) SetRtDetails(rtDetails *config.ArtifactoryDetails) *dotnetCommandArgs {
+	dca.rtDetails = rtDetails
+	return dca
 }
 
-func (nca *NugetCommandArgs) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *NugetCommandArgs {
-	nca.buildConfiguration = buildConfiguration
-	return nca
+func (dca *dotnetCommandArgs) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *dotnetCommandArgs {
+	dca.buildConfiguration = buildConfiguration
+	return dca
 }
 
-func (nca *NugetCommandArgs) SetSolutionPath(solutionPath string) *NugetCommandArgs {
-	nca.solutionPath = solutionPath
-	return nca
+func (dca *dotnetCommandArgs) SetSolutionPath(solutionPath string) *dotnetCommandArgs {
+	dca.solutionPath = solutionPath
+	return dca
 }
 
-func (nca *NugetCommandArgs) SetRepoName(repoName string) *NugetCommandArgs {
-	nca.repoName = repoName
-	return nca
+func (dca *dotnetCommandArgs) SetRepoName(repoName string) *dotnetCommandArgs {
+	dca.repoName = repoName
+	return dca
 }
 
-func (nca *NugetCommandArgs) SetFlags(flags string) *NugetCommandArgs {
-	nca.flags = flags
-	return nca
+func (dca *dotnetCommandArgs) SetFlags(flags string) *dotnetCommandArgs {
+	dca.flags = flags
+	return dca
 }
 
-func (nca *NugetCommandArgs) SetArgs(args string) *NugetCommandArgs {
-	nca.args = args
-	return nca
+func (dca *dotnetCommandArgs) SetArgs(args string) *dotnetCommandArgs {
+	dca.args = args
+	return dca
 }
 
 func (nc *NugetCommand) Run() error {
@@ -89,13 +90,12 @@ func (nc *NugetCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	nc.SetRepoName(resolveParams.TargetRepo()).
-		SetRtDetails(RtDetails)
+	nc.SetRepoName(resolveParams.TargetRepo()).SetRtDetails(RtDetails)
 	return nc.run()
 }
 
 // Exec all consume type nuget commands, install, update, add, restore.
-func (nca *NugetCommandArgs) run() error {
+func (dca *dotnetCommandArgs) run() error {
 	log.Info("Running nuget...")
 	// Use temp dir to save config file, the config will be removed at the end.
 	tempDirPath, err := fileutils.CreateTempDir()
@@ -104,46 +104,46 @@ func (nca *NugetCommandArgs) run() error {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	nca.solutionPath, err = changeWorkingDir(nca.solutionPath)
+	dca.solutionPath, err = changeWorkingDir(dca.solutionPath)
 	if err != nil {
 		return err
 	}
 
-	err = nca.prepareAndRunCmd(tempDirPath)
+	err = dca.prepareAndRunCmd(tempDirPath)
 	if err != nil {
 		return err
 	}
 
-	isCollectBuildInfo := len(nca.buildConfiguration.BuildName) > 0 && len(nca.buildConfiguration.BuildNumber) > 0
+	isCollectBuildInfo := len(dca.buildConfiguration.BuildName) > 0 && len(dca.buildConfiguration.BuildNumber) > 0
 	if !isCollectBuildInfo {
 		return nil
 	}
 
 	slnFile := ""
-	flags := strings.Split(nca.flags, " ")
+	flags := strings.Split(dca.flags, " ")
 	if len(flags) > 0 && strings.HasSuffix(flags[0], ".sln") {
 		slnFile = flags[0]
 	}
-	sol, err := solution.Load(nca.solutionPath, slnFile)
+	sol, err := solution.Load(dca.solutionPath, slnFile)
 	if err != nil {
 		return err
 	}
 
-	if err = utils.SaveBuildGeneralDetails(nca.buildConfiguration.BuildName, nca.buildConfiguration.BuildNumber); err != nil {
+	if err = utils.SaveBuildGeneralDetails(dca.buildConfiguration.BuildName, dca.buildConfiguration.BuildNumber); err != nil {
 		return err
 	}
-	buildInfo, err := sol.BuildInfo(nca.buildConfiguration.Module)
+	buildInfo, err := sol.BuildInfo(dca.buildConfiguration.Module)
 	if err != nil {
 		return err
 	}
-	return utils.SaveBuildInfo(nca.buildConfiguration.BuildName, nca.buildConfiguration.BuildNumber, buildInfo)
+	return utils.SaveBuildInfo(dca.buildConfiguration.BuildName, dca.buildConfiguration.BuildNumber, buildInfo)
 }
 
-func (nca *NugetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
-	return nca.rtDetails, nil
+func (dca *dotnetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
+	return dca.rtDetails, nil
 }
 
-func (nca *NugetCommandArgs) CommandName() string {
+func (dca *dotnetCommandArgs) CommandName() string {
 	return "rt_nuget"
 }
 
@@ -191,8 +191,8 @@ func changeWorkingDir(newWorkingDir string) (string, error) {
 
 // Prepares the nuget configuration file within the temp directory
 // Runs NuGet itself with the arguments and flags provided.
-func (nca *NugetCommandArgs) prepareAndRunCmd(configDirPath string) error {
-	cmd, err := nca.createNugetCmd()
+func (dca *dotnetCommandArgs) prepareAndRunCmd(configDirPath string) error {
+	cmd, err := dca.createNugetCmd()
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func (nca *NugetCommandArgs) prepareAndRunCmd(configDirPath string) error {
 		return errorutils.CheckError(err)
 	}
 
-	err = nca.prepareConfigFile(cmd, configDirPath)
+	err = dca.prepareConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
@@ -217,8 +217,9 @@ func (nca *NugetCommandArgs) prepareAndRunCmd(configDirPath string) error {
 // Checks if the user provided input such as -configfile flag or -Source flag.
 // If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
-func (nca *NugetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
-	currentConfigPath, err := getFlagValueIfExists("-configfile", cmd)
+func (dca *dotnetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
+	cmdFlag := cmd.Type().GetTypeFlagPrefix() + "configfile"
+	currentConfigPath, err := getFlagValueIfExists(cmdFlag, cmd)
 	if err != nil {
 		return err
 	}
@@ -226,7 +227,8 @@ func (nca *NugetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath st
 		return nil
 	}
 
-	sourceCommandValue, err := getFlagValueIfExists("-source", cmd)
+	cmdFlag = cmd.Type().GetTypeFlagPrefix() + "source"
+	sourceCommandValue, err := getFlagValueIfExists(cmdFlag, cmd)
 	if err != nil {
 		return err
 	}
@@ -234,7 +236,7 @@ func (nca *NugetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath st
 		return nil
 	}
 
-	err = nca.initNewConfig(cmd, configDirPath)
+	err = dca.initNewConfig(cmd, configDirPath)
 	return err
 }
 
@@ -254,30 +256,24 @@ func getFlagValueIfExists(cmdFlag string, cmd *dotnet.Cmd) (string, error) {
 }
 
 // Initializing a new NuGet config file that NuGet will use into a temp file
-func (nca *NugetCommandArgs) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
+func (dca *dotnetCommandArgs) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
 	configFile, err := writeToTempConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
 
-	return nca.addNugetAuthenticationToNewConfig(configFile)
+	return dca.addNugetAuthenticationToNewConfig(cmd.Type(), configFile)
 }
 
 // Runs nuget add sources and setapikey commands to authenticate with Artifactory server
-func (nca *NugetCommandArgs) addNugetAuthenticationToNewConfig(configFile *os.File) error {
-	sourceUrl, user, password, err := nca.getSourceDetails()
+func (dca *dotnetCommandArgs) addNugetAuthenticationToNewConfig(cmdType dotnet.CmdType, configFile *os.File) error {
+	sourceUrl, user, password, err := dca.getSourceDetails()
 	if err != nil {
 		return err
 	}
 
-	err = addNugetSource(configFile.Name(), sourceUrl, user, password)
-	if err != nil {
-		return err
-	}
-
-	//err = addNugetApiKey(user, password, configFile.Name())
-	return err
+	return addSourceToNugetConfig(cmdType, configFile.Name(), sourceUrl, user, password)
 }
 
 // Creates the temp file and writes the config template into the file for NuGet can use it.
@@ -290,7 +286,7 @@ func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error
 
 	defer configFile.Close()
 
-	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFile.Name())
+	cmd.CommandFlags = append(cmd.CommandFlags, cmd.Type().GetTypeFlagPrefix()+"ConfigFile", configFile.Name())
 
 	// Set Artifactory repo as source
 	content := dotnet.ConfigFileTemplate
@@ -302,55 +298,36 @@ func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error
 }
 
 // Runs nuget sources add command
-func addNugetSource(configFileName, sourceUrl, user, password string) error {
-	cmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
+func addSourceToNugetConfig(cmdType dotnet.CmdType, configFileName, sourceUrl, user, password string) error {
+	cmd, err := dotnet.NewDotnetAddSourceCmd(cmdType)
 	if err != nil {
 		return err
 	}
 
-	sourceCommand := "sources"
-	cmd.Command = append(cmd.Command, sourceCommand)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
-	cmd.CommandFlags = append(cmd.CommandFlags, "Add")
-	cmd.CommandFlags = append(cmd.CommandFlags, "-Name", sourceName)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceUrl)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-username", user)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-password", password)
+	flagPrefix := cmdType.GetTypeFlagPrefix()
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"ConfigFile", configFileName)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"Name", sourceName)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"Source", sourceUrl)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"username", user)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"password", password)
 	output, err := gofrogcmd.RunCmdOutput(cmd)
 	log.Debug("Running command: Add sources. Output:", output)
 	return err
 }
 
-// Runs nuget setapikey command
-func addNugetApiKey(user, password, configFileName string) error {
-	cmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
-	if err != nil {
-		return err
-	}
-
-	cmd.Command = append(cmd.Command, "setapikey")
-	cmd.CommandFlags = append(cmd.CommandFlags, user+":"+password)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-Source", sourceName)
-	cmd.CommandFlags = append(cmd.CommandFlags, "-ConfigFile", configFileName)
-
-	output, err := gofrogcmd.RunCmdOutput(cmd)
-	log.Debug("Running command: SetApiKey. Output:", output)
-	return err
-}
-
-func (nca *NugetCommandArgs) getSourceDetails() (sourceURL, user, password string, err error) {
+func (dca *dotnetCommandArgs) getSourceDetails() (sourceURL, user, password string, err error) {
 	var u *url.URL
-	u, err = url.Parse(nca.rtDetails.Url)
+	u, err = url.Parse(dca.rtDetails.Url)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	u.Path = path.Join(u.Path, "api/nuget", nca.repoName)
+	u.Path = path.Join(u.Path, "api/nuget", dca.repoName)
 	sourceURL = u.String()
 
-	user = nca.rtDetails.User
-	password = nca.rtDetails.Password
+	user = dca.rtDetails.User
+	password = dca.rtDetails.Password
 	// If access-token is defined, extract user from it.
-	rtDetails, err := nca.RtDetails()
+	rtDetails, err := dca.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
@@ -365,20 +342,20 @@ func (nca *NugetCommandArgs) getSourceDetails() (sourceURL, user, password strin
 	return
 }
 
-func (nca *NugetCommandArgs) createNugetCmd() (*dotnet.Cmd, error) {
-	c, err := dotnet.NewDotnetCmd(dotnet.Nuget)
+func (dca *dotnetCommandArgs) createNugetCmd() (*dotnet.Cmd, error) {
+	c, err := dotnet.NewDotnetCmd(dca.cmdType)
 	if err != nil {
 		return nil, err
 	}
-	if nca.args != "" {
-		c.Command, err = utils.ParseArgs(strings.Split(nca.args, " "))
+	if dca.args != "" {
+		c.Command, err = utils.ParseArgs(strings.Split(dca.args, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
-	if nca.flags != "" {
-		c.CommandFlags, err = utils.ParseArgs(strings.Split(nca.flags, " "))
+	if dca.flags != "" {
+		c.CommandFlags, err = utils.ParseArgs(strings.Split(dca.flags, " "))
 	}
 
 	return c, errorutils.CheckError(err)
