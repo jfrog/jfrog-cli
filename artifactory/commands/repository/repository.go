@@ -3,6 +3,9 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	rtUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -11,8 +14,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"strconv"
-	"strings"
 )
 
 type RepoCommand struct {
@@ -41,6 +42,9 @@ func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 	// All the values in the template are strings
 	// Go over the the confMap and write the values with the correct type using the writersMap
 	for key, value := range repoConfigMap {
+		if err = utils.ValidateMapEntry(key, value, writersMap); err != nil {
+			return
+		}
 		writersMap[key](&repoConfigMap, key, value.(string))
 	}
 	// Write a JSON with the correct values
