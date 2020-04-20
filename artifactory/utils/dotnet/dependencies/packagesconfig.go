@@ -264,7 +264,7 @@ func (nugetPackage *nugetPackage) getDependencies() []string {
 }
 
 func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
-	localsCmd, err := dotnet.NewDotnetCmd(dotnet.Nuget)
+	localsCmd, err := dotnet.NewToolchainCmd(dotnet.Nuget)
 	if err != nil {
 		return "", err
 	}

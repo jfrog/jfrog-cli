@@ -6,10 +6,10 @@ import (
 	"os/exec"
 )
 
-type CmdType int
+type ToolchainType int
 
 const (
-	Nuget CmdType = iota
+	Nuget ToolchainType = iota
 	Dotnet
 )
 
@@ -18,8 +18,8 @@ var CmdTypes = []string{
 	"dotnet",
 }
 
-func (cmdType CmdType) String() string {
-	return CmdTypes[cmdType]
+func (toolchainType ToolchainType) String() string {
+	return CmdTypes[toolchainType]
 }
 
 var CmdFlagPrefixes = []string{
@@ -27,8 +27,8 @@ var CmdFlagPrefixes = []string{
 	"--",
 }
 
-func (cmdType CmdType) GetTypeFlagPrefix() string {
-	return CmdFlagPrefixes[cmdType]
+func (toolchainType ToolchainType) GetTypeFlagPrefix() string {
+	return CmdFlagPrefixes[toolchainType]
 }
 
 var AddSourceArgs = [][]string{
@@ -36,24 +36,24 @@ var AddSourceArgs = [][]string{
 	{"nuget", "add", "source"},
 }
 
-func (cmdType CmdType) GetAddSourceArgs() []string {
-	return AddSourceArgs[cmdType]
+func (toolchainType ToolchainType) GetAddSourceArgs() []string {
+	return AddSourceArgs[toolchainType]
 }
 
-func NewDotnetCmd(cmdType CmdType) (*Cmd, error) {
+func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{cmdType: cmdType, execPath: execPath}, nil
+	return &Cmd{toolchain: cmdType, execPath: execPath}, nil
 }
 
-func NewDotnetAddSourceCmd(cmdType CmdType) (*Cmd, error) {
+func NewDotnetAddSourceCmd(cmdType ToolchainType) (*Cmd, error) {
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{cmdType: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}, nil
+	return &Cmd{toolchain: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {
@@ -76,12 +76,12 @@ func (config *Cmd) GetErrWriter() io.WriteCloser {
 	return config.ErrWriter
 }
 
-func (config *Cmd) Type() CmdType {
-	return config.cmdType
+func (config *Cmd) Toolchain() ToolchainType {
+	return config.toolchain
 }
 
 type Cmd struct {
-	cmdType      CmdType
+	toolchain    ToolchainType
 	execPath     string
 	Command      []string
 	CommandFlags []string

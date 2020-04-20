@@ -1,4 +1,4 @@
-package nuget
+package commandArgs
 
 import (
 	"encoding/xml"
@@ -68,7 +68,7 @@ func TestInitNewConfig(t *testing.T) {
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &dotnet.Cmd{}
-	params := &dotnetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	params := &DotnetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
@@ -98,8 +98,8 @@ func TestInitNewConfig(t *testing.T) {
 	source := "http://some/url/api/nuget"
 
 	for _, packageSource := range nugetConfig.PackageSources {
-		if packageSource.Key != sourceName {
-			t.Error("Expected", sourceName, ",got", packageSource.Key)
+		if packageSource.Key != SourceName {
+			t.Error("Expected", SourceName, ",got", packageSource.Key)
 		}
 
 		if packageSource.Value != source {
