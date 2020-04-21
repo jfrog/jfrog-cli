@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-const gradleExtractorDependencyVersion = "4.15.0"
+const gradleExtractorDependencyVersion = "4.15.2"
 const gradleInitScriptTemplate = "gradle.init"
 
 const usePlugin = "useplugin"
