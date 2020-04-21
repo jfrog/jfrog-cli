@@ -48,12 +48,19 @@ func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
 	return &Cmd{toolchain: cmdType, execPath: execPath}, nil
 }
 
-func NewDotnetAddSourceCmd(cmdType ToolchainType) (*Cmd, error) {
+func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, error) {
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	return &Cmd{toolchain: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}, nil
+	addSourceCmd := Cmd{toolchain: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}
+	switch cmdType {
+	case Nuget:
+		addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "-source", sourceUrl)
+	case Dotnet:
+		addSourceCmd.Command = append(addSourceCmd.Command, sourceUrl)
+	}
+	return &addSourceCmd, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {

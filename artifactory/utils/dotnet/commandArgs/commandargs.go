@@ -68,12 +68,12 @@ func (dca *DotnetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
 }
 
 func (dca *DotnetCommandArgs) CommandName() string {
-	return "rt_nuget"
+	return "rt_" + dca.toolchainType.String()
 }
 
 // Exec all consume type nuget commands, install, update, add, restore.
 func (dca *DotnetCommandArgs) Exec() error {
-	log.Info("Running nuget...")
+	log.Info("Running " + dca.toolchainType.String() + "...")
 	// Use temp dir to save config file, the config will be removed at the end.
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
@@ -241,17 +241,20 @@ func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error
 
 // Runs nuget sources add command
 func addSourceToNugetConfig(cmdType dotnet.ToolchainType, configFileName, sourceUrl, user, password string) error {
-	cmd, err := dotnet.NewDotnetAddSourceCmd(cmdType)
+	cmd, err := dotnet.CreateDotnetAddSourceCmd(cmdType, sourceUrl)
 	if err != nil {
 		return err
 	}
 
 	flagPrefix := cmdType.GetTypeFlagPrefix()
-	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"ConfigFile", configFileName)
-	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"Name", SourceName)
-	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"Source", sourceUrl)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"configfile", configFileName)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", SourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"password", password)
+	var cmdd []string
+	cmdd = append(cmdd, cmd.Command...)
+	cmdd = append(cmdd, cmd.CommandFlags...)
+	log.Info("running: ", cmdd)
 	output, err := io.RunCmdOutput(cmd)
 	log.Debug("Running command: Add sources. Output:", output)
 	return err

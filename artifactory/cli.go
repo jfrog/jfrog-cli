@@ -2303,7 +2303,7 @@ func dotnetCmd(c *cli.Context) error {
 	dotnetConfig, err := utils.GetResolutionOnlyConfiguration(utils.Dotnet)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file: %s\n"+
-			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
+			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
 	}
 
 	// Set arg values.
@@ -2324,7 +2324,10 @@ func dotnetCmd(c *cli.Context) error {
 
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCommand()
-	dotnetCmd.SetRtDetails(rtDetails).SetRepo(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredDotnetArgs)
+	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredDotnetArgs[0])
+	if len(filteredDotnetArgs) > 1 {
+		dotnetCmd.SetFlags(strings.Join(filteredDotnetArgs[1:], " "))
+	}
 	return commands.Exec(dotnetCmd)
 }
 
