@@ -3,7 +3,7 @@ package nuget
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandArgs"
+	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/solution"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"

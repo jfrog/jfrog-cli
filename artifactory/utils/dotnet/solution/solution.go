@@ -78,54 +78,82 @@ func (solution *solution) GetProjects() []project.Project {
 }
 
 func (solution *solution) loadProjects() error {
-	allProjects, err := solution.getProjectsFromSlns()
+	slnProjects, err := solution.getProjectsFromSlns()
 	if err != nil {
 		return err
 	}
+	if slnProjects != nil {
+		return solution.loadProjectsFromSolutionFile(slnProjects)
+	}
 
-	for _, projectLine := range allProjects {
+	return solution.loadSingleProjectFromDir()
+}
+
+func (solution *solution) loadProjectsFromSolutionFile(slnProjects []string) error {
+	for _, projectLine := range slnProjects {
 		projectName, csprojPath, err := parseProject(projectLine, solution.path)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		proj, err := project.Load(projectName, filepath.Dir(csprojPath), csprojPath)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-		if proj.Extractor() != nil {
-			solution.projects = append(solution.projects, proj)
-		}
+		solution.loadSingleProject(projectName, csprojPath)
 	}
 	return nil
 }
 
-// Finds all the projects by reading the content of the the sln files. If sln file is not provided,
-// finds all sln files in the directory.
+func (solution *solution) loadSingleProjectFromDir() error {
+	csprojFiles, err := fileutils.ListFilesWithExtension(solution.path, ".csproj")
+	if err != nil {
+		return err
+	}
+	if len(csprojFiles) == 1 {
+		projectName := strings.TrimSuffix(filepath.Base(csprojFiles[0]), ".csproj")
+		solution.loadSingleProject(projectName, csprojFiles[0])
+	}
+	return nil
+}
+
+func (solution *solution) loadSingleProject(projectName, csprojPath string) {
+	proj, err := project.Load(projectName, filepath.Dir(csprojPath), csprojPath)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if proj.Extractor() != nil {
+		solution.projects = append(solution.projects, proj)
+	}
+	return
+}
+
+// Finds all the projects by reading the content of the the sln files.
 // Returns a slice with all the projects in the solution.
 func (solution *solution) getProjectsFromSlns() ([]string, error) {
 	var allProjects []string
-	if solution.slnFile == "" {
-		slnFiles, err := fileutils.ListFilesWithExtension(solution.path, ".sln")
-		if err != nil {
-			return nil, err
-		}
-		for _, slnFile := range slnFiles {
-			projects, err := parseSlnFile(slnFile)
-			if err != nil {
-				return nil, err
-			}
-			allProjects = append(allProjects, projects...)
-		}
-	} else {
-		projects, err := parseSlnFile(filepath.Join(solution.path, solution.slnFile))
+	slnFiles, err := solution.getSlnFilesList()
+	if err != nil {
+		return nil, err
+	}
+	for _, slnFile := range slnFiles {
+		projects, err := parseSlnFile(slnFile)
 		if err != nil {
 			return nil, err
 		}
 		allProjects = append(allProjects, projects...)
 	}
 	return allProjects, nil
+}
+
+// If sln file is not provided, finds all sln files in the directory.
+func (solution *solution) getSlnFilesList() (slnFiles []string, err error) {
+	if solution.slnFile != "" {
+		slnFiles = append(slnFiles, filepath.Join(solution.path, solution.slnFile))
+	} else {
+		slnFiles, err = fileutils.ListFilesWithExtension(solution.path, ".sln")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return
 }
 
 // Parses the project line for the project name and path information.
@@ -143,7 +171,9 @@ func parseProject(projectLine, path string) (projectName, csprojPath string, err
 	projectName = removeQuotes(projectInfo[0])
 	// In case we are running on a non-Windows OS, the solution root path and the relative path to csproj file might used different path separators.
 	// We want to make sure we will get a valid path after we join both parts, so we will replace the csproj separators.
-	if !utils.IsWindows() {
+	if utils.IsWindows() {
+		projectInfo[1] = ioutils.UnixToWinPathSeparator(projectInfo[1])
+	} else {
 		projectInfo[1] = ioutils.WinToUnixPathSeparator(projectInfo[1])
 	}
 	csprojPath = filepath.Join(path, filepath.FromSlash(removeQuotes(projectInfo[1])))

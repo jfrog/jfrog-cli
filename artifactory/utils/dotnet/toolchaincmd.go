@@ -1,6 +1,7 @@
 package dotnet
 
 import (
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io"
 	"os/exec"
@@ -59,6 +60,10 @@ func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, er
 		addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "-source", sourceUrl)
 	case Dotnet:
 		addSourceCmd.Command = append(addSourceCmd.Command, sourceUrl)
+		// Dotnet cli does not support password encryption on non-Windows os, so we will write the raw password.
+		if !cliutils.IsWindows() {
+			addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "--store-password-in-clear-text")
+		}
 	}
 	return &addSourceCmd, nil
 }

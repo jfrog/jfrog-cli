@@ -2,7 +2,7 @@ package nuget
 
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandArgs"
+	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 )
 
 type NugetLegacyCommand struct {

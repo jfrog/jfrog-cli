@@ -1,4 +1,4 @@
-package commandArgs
+package commandargs
 
 import (
 	"encoding/xml"
@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -113,6 +114,40 @@ func TestInitNewConfig(t *testing.T) {
 
 	if len(nugetConfig.PackageSourceCredentials[0].JFrogCli) != 2 {
 		t.Error("Expected two fields in the JFrogCli credentials, got", len(nugetConfig.PackageSourceCredentials[0].JFrogCli))
+	}
+}
+
+func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
+	workingDir, err := os.Getwd()
+	assert.NoError(t, err)
+	tests := []struct {
+		name                 string
+		flags                string
+		solutionPath         string
+		expectedSlnFile      string
+		expectedSolutionPath string
+	}{
+		{"emptyFlags", "", "/path/to/solution/", "", "/path/to/solution/"},
+		{"justFlags", "-flag1 value1 -flag2 value2", "/path/to/solution/", "", "/path/to/solution/"},
+		{"relFileArgRelPath1", "testdata/slnDir/sol.sln", "rel/path/", "sol.sln", "rel/path/testdata/slnDir"},
+		{"relDirArgRelPath2", "testdata/slnDir/", "rel/path", "", "rel/path/testdata/slnDir"},
+		{"absFileArgRelPath1", workingDir + "/testdata/slnDir/sol.sln", "./rel/path/", "sol.sln", workingDir + "/testdata/slnDir"},
+		{"absDirArgRelPath2", workingDir + "/testdata/slnDir/ -flag value", "./rel/path/", "", workingDir + "/testdata/slnDir/"},
+		{"nonExistingFile", "./dir1/sol.sln", "/path/to/solution/", "", "/path/to/solution/"},
+		{"nonExistingPath", "/non/existing/path/", "/path/to/solution/", "", "/path/to/solution/"},
+		{"relCsprojFile", "testdata/slnDir/proj.csproj", "rel/path/", "", "rel/path/testdata/slnDir"},
+		{"absCsprojFile", workingDir + "/testdata/slnDir/proj.csproj", "rel/path/", "", workingDir + "/testdata/slnDir"},
+		{"relPackagesConfigFile", "testdata/slnDir/packages.config", "rel/path/", "", "rel/path/testdata/slnDir"},
+		{"absPackagesConfigFile", workingDir + "/testdata/slnDir/packages.config", "rel/path/", "", workingDir + "/testdata/slnDir"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dca := DotnetCommandArgs{solutionPath: test.solutionPath, flags: test.flags}
+			slnFile, err := dca.updateSolutionPathAndGetFileName()
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedSlnFile, slnFile)
+			assert.Equal(t, test.expectedSolutionPath, dca.solutionPath)
+		})
 	}
 }
 

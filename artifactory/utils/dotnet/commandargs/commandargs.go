@@ -1,4 +1,4 @@
-package commandArgs
+package commandargs
 
 import (
 	"fmt"
@@ -15,8 +15,11 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
+
+const SourceName = "JFrogCli"
 
 type DotnetCommandArgs struct {
 	toolchainType      dotnet.ToolchainType
@@ -96,10 +99,9 @@ func (dca *DotnetCommandArgs) Exec() error {
 		return nil
 	}
 
-	slnFile := ""
-	flags := strings.Split(dca.flags, " ")
-	if len(flags) > 0 && strings.HasSuffix(flags[0], ".sln") {
-		slnFile = flags[0]
+	slnFile, err := dca.updateSolutionPathAndGetFileName()
+	if err != nil {
+		return err
 	}
 	sol, err := solution.Load(dca.solutionPath, slnFile)
 	if err != nil {
@@ -116,7 +118,45 @@ func (dca *DotnetCommandArgs) Exec() error {
 	return utils.SaveBuildInfo(dca.buildConfiguration.BuildName, dca.buildConfiguration.BuildNumber, buildInfo)
 }
 
-const SourceName = "JFrogCli"
+func (dca *DotnetCommandArgs) updateSolutionPathAndGetFileName() (string, error) {
+	argsAndFlags := strings.Split(dca.flags, " ")
+	cmdFirstArg := argsAndFlags[0]
+	// The path argument wasn't provided, sln file will be searched under working directory.
+	if len(cmdFirstArg) == 0 || strings.HasPrefix(cmdFirstArg, "-") {
+		return "", nil
+	}
+	exist, err := fileutils.IsDirExists(cmdFirstArg, true)
+	if err != nil {
+		return "", err
+	}
+	// The path argument is a directory. sln/csproj file will be searched under this directory.
+	if exist {
+		dca.updateSolutionPath(cmdFirstArg)
+		return "", err
+	}
+	exist, err = fileutils.IsFileExists(cmdFirstArg, true)
+	if err != nil {
+		return "", err
+	}
+	// The path argument is a .sln file.
+	if exist && strings.HasSuffix(cmdFirstArg, ".sln") {
+		dca.updateSolutionPath(filepath.Dir(cmdFirstArg))
+		return filepath.Base(cmdFirstArg), nil
+	}
+	// The path argument is a .csproj/packages.config file.
+	if exist && (strings.HasSuffix(cmdFirstArg, ".csproj") || strings.HasSuffix(cmdFirstArg, "packages.config")) {
+		dca.updateSolutionPath(filepath.Dir(cmdFirstArg))
+	}
+	return "", nil
+}
+
+func (dca *DotnetCommandArgs) updateSolutionPath(slnRootPath string) {
+	if filepath.IsAbs(slnRootPath) {
+		dca.solutionPath = slnRootPath
+	} else {
+		dca.solutionPath = filepath.Join(dca.solutionPath, slnRootPath)
+	}
+}
 
 // Changes the working directory if provided.
 // Returns the path to the solution
@@ -228,7 +268,7 @@ func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error
 
 	defer configFile.Close()
 
-	cmd.CommandFlags = append(cmd.CommandFlags, cmd.Toolchain().GetTypeFlagPrefix()+"ConfigFile", configFile.Name())
+	cmd.CommandFlags = append(cmd.CommandFlags, cmd.Toolchain().GetTypeFlagPrefix()+"configfile", configFile.Name())
 
 	// Set Artifactory repo as source
 	content := dotnet.ConfigFileTemplate
@@ -251,10 +291,6 @@ func addSourceToNugetConfig(cmdType dotnet.ToolchainType, configFileName, source
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", SourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"password", password)
-	var cmdd []string
-	cmdd = append(cmdd, cmd.Command...)
-	cmdd = append(cmdd, cmd.CommandFlags...)
-	log.Info("running: ", cmdd)
 	output, err := io.RunCmdOutput(cmd)
 	log.Debug("Running command: Add sources. Output:", output)
 	return err

@@ -59,6 +59,7 @@ const (
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
 	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
 	NugetBuildName                         = "cli-nuget-test-build"
+	DotnetBuildName                        = "cli-dotnet-test-build"
 	NugetRemoteRepo                        = "jfrog-cli-tests-nuget-remote-repo"
 	Out                                    = "out"
 	PipBuildName                           = "cli-pip-test-build"
