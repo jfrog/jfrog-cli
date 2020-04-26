@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -127,18 +128,18 @@ func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
 		expectedSlnFile      string
 		expectedSolutionPath string
 	}{
-		{"emptyFlags", "", "/path/to/solution/", "", "/path/to/solution/"},
-		{"justFlags", "-flag1 value1 -flag2 value2", "/path/to/solution/", "", "/path/to/solution/"},
-		{"relFileArgRelPath1", "testdata/slnDir/sol.sln", "rel/path/", "sol.sln", "rel/path/testdata/slnDir"},
-		{"relDirArgRelPath2", "testdata/slnDir/", "rel/path", "", "rel/path/testdata/slnDir"},
-		{"absFileArgRelPath1", workingDir + "/testdata/slnDir/sol.sln", "./rel/path/", "sol.sln", workingDir + "/testdata/slnDir"},
-		{"absDirArgRelPath2", workingDir + "/testdata/slnDir/ -flag value", "./rel/path/", "", workingDir + "/testdata/slnDir/"},
-		{"nonExistingFile", "./dir1/sol.sln", "/path/to/solution/", "", "/path/to/solution/"},
-		{"nonExistingPath", "/non/existing/path/", "/path/to/solution/", "", "/path/to/solution/"},
-		{"relCsprojFile", "testdata/slnDir/proj.csproj", "rel/path/", "", "rel/path/testdata/slnDir"},
-		{"absCsprojFile", workingDir + "/testdata/slnDir/proj.csproj", "rel/path/", "", workingDir + "/testdata/slnDir"},
-		{"relPackagesConfigFile", "testdata/slnDir/packages.config", "rel/path/", "", "rel/path/testdata/slnDir"},
-		{"absPackagesConfigFile", workingDir + "/testdata/slnDir/packages.config", "rel/path/", "", workingDir + "/testdata/slnDir"},
+		{"emptyFlags", "", workingDir, "", workingDir},
+		{"justFlags", "-flag1 value1 -flag2 value2", workingDir, "", workingDir},
+		{"relFileArgRelPath1", filepath.Join("testdata", "slnDir", "sol.sln"), filepath.Join("rel", "path"), "sol.sln", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"relDirArgRelPath2", filepath.Join("testdata", "slnDir"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absFileArgRelPath1", filepath.Join(workingDir, "testdata", "slnDir", "sol.sln"), filepath.Join(".", "rel", "path"), "sol.sln", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"absDirArgRelPath2", filepath.Join(workingDir, "testdata", "slnDir") + " -flag value", filepath.Join(".", "rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"nonExistingFile", filepath.Join(".", "dir1", "sol.sln"), workingDir, "", workingDir},
+		{"nonExistingPath", filepath.Join(workingDir, "non", "existing", "path"), workingDir, "", workingDir},
+		{"relCsprojFile", filepath.Join("testdata", "slnDir", "proj.csproj"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absCsprojFile", filepath.Join(workingDir, "testdata", "slnDir", "proj.csproj"), filepath.Join("rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"relPackagesConfigFile", filepath.Join("testdata", "slnDir", "packages.config"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absPackagesConfigFile", filepath.Join(workingDir, "testdata", "slnDir", "packages.config"), filepath.Join("rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
