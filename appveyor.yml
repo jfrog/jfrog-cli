@@ -18,7 +18,7 @@
 #   3. Override 'JFROG_CLI_RT_PASSWORD' and 'JFROG_CLI_BINTRAY_APIKEY' with variable encryption.
 
 image:
-  - Visual Studio 2017
+  - Visual Studio 2019
 
 build: off
 skip_tags: true
@@ -30,6 +30,8 @@ environment:
   CGO_ENABLED: 0
   JAVA_HOME: C:\Program Files\Java\jdk1.8.0
   GRADLE_OPTS: -Dorg.gradle.daemon=false
+  # .NET CLI version
+  CLI_VERSION: Latest
 
   JFROG_CLI_RT_URL:
     secure: RIh0gGFDn2JAnLUEEqLsQm0ihToJ6/4LiR411QpvqDgYYE7Y4Eif2e+wYndvHXnW
