@@ -1377,33 +1377,39 @@ func TestValidateValidSymlink(t *testing.T) {
 }
 
 // Upload symlink by full path to Artifactory and the link content checksum
-// Download the symlink which was uploaded.
-// validate the symlink content checksum.
+// Unlink and delete the pointed file.
+// Download the symlink which was uploaded with validation. The command should failed.
 func TestValidateBrokenSymlink(t *testing.T) {
 	if cliutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
+	// Create temporary file in resourcesPath/a/
+	tmpFile, err := ioutil.TempFile(tests.GetTestResourcesPath()+"a/", "a.in.")
+	if assert.NoError(t, err) {
+		tmpFile.Close()
+	}
+	localFile := tmpFile.Name()
 
-	// Path to broken symLink
-	brokenLink := filepath.Join(tests.GetTestResourcesPath()+"a/", "brokenLink")
-
-	// Link broken symLink to non_existing_path
-	err := os.Symlink("non-non_existing_path-path", brokenLink)
+	// Path to the symLink
+	linkPath := filepath.Join(tests.GetTestResourcesPath()+"a/", "link")
+	// Link to the temporary file
+	err = os.Symlink(localFile, linkPath)
 	assert.NoError(t, err)
 
 	// Upload symlink to artifactory
-	artifactoryCli.Exec("u", brokenLink+" "+tests.Repo1+" --symlinks=true")
+	artifactoryCli.Exec("u", linkPath, tests.Repo1, "--symlinks=true")
 
-	// Delete the local symlink
-	err = os.Remove(brokenLink)
+	// Delete the local symlink and the temporary file
+	err = os.Remove(linkPath)
+	assert.NoError(t, err)
+	err = os.Remove(localFile)
 	assert.NoError(t, err)
 
-	// Try downloading symlink from artifactory. Since the link is broken, it shouldn't be downloaded
-	artifactoryCli.Exec("dl", tests.Repo1+"/link "+tests.GetTestResourcesPath()+"a/ --validate-symlinks=true")
-	if fileutils.IsPathExists(brokenLink, true) {
-		os.Remove(brokenLink)
-		assert.Fail(t, "A broken symLink was downloaded although validate-symlinks flag was set to true")
+	// Try downloading symlink from artifactory. Since the link should be broken, it shouldn't be downloaded
+	err = artifactoryCli.Exec("dl", tests.Repo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
+	if !assert.Error(t, err, "A broken symLink was downloaded although validate-symlinks flag was set to true") {
+		os.Remove(linkPath)
 	}
 
 	// Clean
