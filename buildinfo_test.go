@@ -268,6 +268,36 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryBuildCollectEnv(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "12"
+
+	// Build collect env
+	os.Setenv("DONT_COLLECT", "foo")
+	os.Setenv("COLLECT", "bar")
+	artifactoryCli.WithSuffix("").Exec("bce", buildName, buildNumber)
+
+	// Publish build info
+	artifactoryCli.Exec("bp", buildName, buildNumber, "--env-exclude=*password*;*secret*;*key*;*token*;DONT_COLLECT")
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+
+	// Make sure no sensitive data in build env
+	for k, _ := range buildInfo.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+		assert.NotContains(t, k, "DONT_COLLECT")
+	}
+
+	// Make sure "COLLECT" env appear in build env
+	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestBuildAddGit(t *testing.T) {
 	testBuildAddGit(t, false)
 }
