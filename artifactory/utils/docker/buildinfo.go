@@ -277,9 +277,9 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 	if errorutils.CheckError(err) != nil {
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, err
 	}
-	// Filter duplicate layers.
+	// Remove duplicate layers.
 	// Docker manifest may hold 'empty layers', as a result, docker promote will fail to promote the same layer more than once.
-	imageManifest.Layers = FilterDuplicateDockerLayer(imageManifest.Layers)
+	imageManifest.Layers = removeDuplicateDockerLayers(imageManifest.Layers)
 	// Check that the manifest ID is the right one.
 	if imageManifest.Config.Digest != imageId {
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
@@ -418,7 +418,7 @@ func (configLayer *configLayer) getNumberOfDependentLayers() int {
 	return layersNum
 }
 
-func FilterDuplicateDockerLayer(imageMLayers []layer) []layer {
+func removeDuplicateDockerLayers(imageMLayers []layer) []layer {
 	res := imageMLayers[:0]
 	// Use map to record duplicates as we find them.
 	encountered := map[string]bool{}
