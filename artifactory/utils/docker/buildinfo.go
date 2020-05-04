@@ -320,7 +320,7 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 
 // Search for image layers in Artifactory.
 func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	resultMap, err := searchImageHandler(builder, imagePathPattern, serviceManager)
+	resultMap, err := searchImageHandler(imagePathPattern, serviceManager)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 				// Remove the tag from the pattern, and place the manifest digest instead.
 				imagePathPattern = strings.Replace(imagePathPattern, "/*", "", 1)
 				imagePathPattern = path.Join(imagePathPattern[:strings.LastIndex(imagePathPattern, "/")], strings.Replace(result, ":", "__", 1), "*")
-				return searchImageHandler(builder, imagePathPattern, serviceManager)
+				return searchImageHandler(imagePathPattern, serviceManager)
 			}
 		}
 		return nil, nil
@@ -361,7 +361,7 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 	return resultMap, nil
 }
 
-func searchImageHandler(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+func searchImageHandler(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern
@@ -418,7 +418,6 @@ func (configLayer *configLayer) getNumberOfDependentLayers() int {
 	return layersNum
 }
 
-// Filter duplicate docker layers
 func FilterDuplicateDockerLayer(imageMLayers []layer) []layer {
 	res := imageMLayers[:0]
 	// Use map to record duplicates as we find them.
