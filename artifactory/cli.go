@@ -1524,7 +1524,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.StringFlag{
 			Name:  "env-exclude",
-			Usage: "[Default: *password*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
+			Usage: "[Default: *password*;*psw*;*secret*;*key*;*token*] List of case insensitive patterns in the form of \"value1;value2;...\". Environment variables match those patterns will be excluded.` `",
 		},
 		getInsecureTlsFlag(),
 	}...)
@@ -3676,7 +3676,7 @@ func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	}
 	// Allow to use `env-exclude=""` and get no filters
 	if flags.EnvExclude == "" {
-		flags.EnvExclude = "*password*;*secret*;*key*;*token*"
+		flags.EnvExclude = "*password*;*psw*;*secret*;*key*;*token*"
 	}
 	return flags
 }

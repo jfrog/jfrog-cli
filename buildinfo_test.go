@@ -278,12 +278,13 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	artifactoryCli.WithSuffix("").Exec("bce", buildName, buildNumber)
 
 	// Publish build info
-	artifactoryCli.Exec("bp", buildName, buildNumber, "--env-exclude=*password*;*secret*;*key*;*token*;DONT_COLLECT")
+	artifactoryCli.Exec("bp", buildName, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 
 	// Make sure no sensitive data in build env
-	for k, _ := range buildInfo.Properties {
+	for k := range buildInfo.Properties {
 		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
 		assert.NotContains(t, k, "secret")
 		assert.NotContains(t, k, "key")
 		assert.NotContains(t, k, "token")
