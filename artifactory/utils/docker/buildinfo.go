@@ -187,9 +187,10 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	// Add layers
 	builder.layers = append(builder.layers, searchResults["manifest.json"])
 	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
-
+	totalLayers := configurationLayer.getNumberLayers()
+	totalDependencies := configurationLayer.getNumberOfDependentLayers()
 	// Add image layers as artifacts and dependencies.
-	for i := 0; i < configurationLayer.getNumberLayers(); i++ {
+	for i := 0; i < totalLayers; i++ {
 		layerFileName := digestToLayer(imageManifest.Layers[i].Digest)
 		item, layerExists := searchResults[layerFileName]
 		if !layerExists {
@@ -200,10 +201,9 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 			continue
 		}
 		// Decide if the layer is also a dependency.
-		if i < configurationLayer.getNumberOfDependentLayers() {
+		if i < totalDependencies {
 			builder.dependencies = append(builder.dependencies, item.ToDependency())
 		}
-
 		builder.artifacts = append(builder.artifacts, item.ToArtifact())
 		builder.layers = append(builder.layers, item)
 	}
@@ -277,7 +277,9 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 	if errorutils.CheckError(err) != nil {
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, err
 	}
-
+	// Filter duplicate layers.
+	// Docker manifest may hold 'empty layers', as a result, docker promote will fail to promote the same layer more than once.
+	imageManifest.Layers = FilterDuplicateDockerLayer(imageManifest.Layers)
 	// Check that the manifest ID is the right one.
 	if imageManifest.Config.Digest != imageId {
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
@@ -383,7 +385,11 @@ func digestToLayer(digest string) string {
 // Get the total number of layers from the config.
 func (configLayer *configLayer) getNumberLayers() int {
 	layersNum := len(configLayer.History)
-	for i := len(configLayer.History) - 1; i >= 0; i-- {
+	// The image ID appears to be associated with the uppermost layer, which is not part of the overall layers in the manifest or RootFS.
+	if !configLayer.History[layersNum-1].EmptyLayer {
+		layersNum--
+	}
+	for i := layersNum - 1; i >= 0; i-- {
 		if configLayer.History[i].EmptyLayer {
 			layersNum--
 		}
@@ -410,6 +416,20 @@ func (configLayer *configLayer) getNumberOfDependentLayers() int {
 		}
 	}
 	return layersNum
+}
+
+// Filter duplicate docker layers
+func FilterDuplicateDockerLayer(imageMLayers []layer) []layer {
+	res := imageMLayers[:0]
+	// Use map to record duplicates as we find them.
+	encountered := map[string]bool{}
+	for _, v := range imageMLayers {
+		if !encountered[v.Digest] {
+			res = append(res, v)
+			encountered[v.Digest] = true
+		}
+	}
+	return res
 }
 
 // To unmarshal config layer file
