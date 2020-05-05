@@ -5,16 +5,16 @@ import (
 	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 )
 
-type DotnetCommand struct {
-	*dotnetCmd.DotnetCommandArgs
+type DotnetCoreCliCommand struct {
+	*dotnetCmd.DotnetCommand
 }
 
-func NewDotnetCommand() *DotnetCommand {
-	dotnetCmd := DotnetCommand{&dotnetCmd.DotnetCommandArgs{}}
-	dotnetCmd.SetToolchainType(dotnet.Dotnet)
-	return &dotnetCmd
+func NewDotnetCoreCliCommand() *DotnetCoreCliCommand {
+	dotnetCoreCliCmd := DotnetCoreCliCommand{&dotnetCmd.DotnetCommand{}}
+	dotnetCoreCliCmd.SetToolchainType(dotnet.Dotnet)
+	return &dotnetCoreCliCmd
 }
 
-func (dc *DotnetCommand) Run() error {
-	return dc.Exec()
+func (dccc *DotnetCoreCliCommand) Run() error {
+	return dccc.Exec()
 }

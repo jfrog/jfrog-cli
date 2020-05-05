@@ -1,4 +1,4 @@
-package nuget
+package dotnet
 
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -13,11 +13,11 @@ import (
 
 type NugetCommand struct {
 	configFilePath string
-	*dotnetCmd.DotnetCommandArgs
+	*dotnetCmd.DotnetCommand
 }
 
 func NewNugetCommand() *NugetCommand {
-	nugetCmd := NugetCommand{"", &dotnetCmd.DotnetCommandArgs{}}
+	nugetCmd := NugetCommand{"", &dotnetCmd.DotnetCommand{}}
 	nugetCmd.SetToolchainType(dotnet.Nuget)
 	return &nugetCmd
 }

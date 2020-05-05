@@ -1,4 +1,4 @@
-package nuget
+package dotnet
 
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
@@ -6,15 +6,15 @@ import (
 )
 
 type NugetLegacyCommand struct {
-	*dotnetCmd.DotnetCommandArgs
+	*dotnetCmd.DotnetCommand
 }
 
 func NewLegacyNugetCommand() *NugetLegacyCommand {
-	nugetLegacyCmd := NugetLegacyCommand{&dotnetCmd.DotnetCommandArgs{}}
+	nugetLegacyCmd := NugetLegacyCommand{&dotnetCmd.DotnetCommand{}}
 	nugetLegacyCmd.SetToolchainType(dotnet.Nuget)
 	return &nugetLegacyCmd
 }
 
-func (nlic *NugetLegacyCommand) Run() error {
-	return nlic.Exec()
+func (nlc *NugetLegacyCommand) Run() error {
+	return nlc.Exec()
 }

@@ -70,7 +70,7 @@ func TestInitNewConfig(t *testing.T) {
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	c := &dotnet.Cmd{}
-	params := &DotnetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	params := &DotnetCommand{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
@@ -143,11 +143,11 @@ func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dca := DotnetCommandArgs{solutionPath: test.solutionPath, flags: test.flags}
-			slnFile, err := dca.updateSolutionPathAndGetFileName()
+			dc := DotnetCommand{solutionPath: test.solutionPath, flags: test.flags}
+			slnFile, err := dc.updateSolutionPathAndGetFileName()
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedSlnFile, slnFile)
-			assert.Equal(t, test.expectedSolutionPath, dca.solutionPath)
+			assert.Equal(t, test.expectedSolutionPath, dc.solutionPath)
 		})
 	}
 }

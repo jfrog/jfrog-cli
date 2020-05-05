@@ -25,7 +25,6 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/repository"
@@ -2248,7 +2247,7 @@ func nugetCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		nugetCmd := nuget.NewNugetCommand()
+		nugetCmd := dotnet.NewNugetCommand()
 		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(filteredNugetArgs[0])
 		if len(filteredNugetArgs) > 1 {
 			nugetCmd.SetFlags(strings.Join(filteredNugetArgs[1:], " "))
@@ -2264,7 +2263,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	nugetCmd := nuget.NewLegacyNugetCommand()
+	nugetCmd := dotnet.NewLegacyNugetCommand()
 	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
@@ -2287,7 +2286,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	return nuget.DependencyTreeCmd()
+	return dotnet.DependencyTreeCmd()
 }
 
 func dotnetCmd(c *cli.Context) error {
@@ -2323,7 +2322,7 @@ func dotnetCmd(c *cli.Context) error {
 	}
 
 	// Run command.
-	dotnetCmd := dotnet.NewDotnetCommand()
+	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
 	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredDotnetArgs[0])
 	if len(filteredDotnetArgs) > 1 {
 		dotnetCmd.SetFlags(strings.Join(filteredDotnetArgs[1:], " "))

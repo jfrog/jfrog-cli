@@ -21,7 +21,7 @@ import (
 
 const SourceName = "JFrogCli"
 
-type DotnetCommandArgs struct {
+type DotnetCommand struct {
 	toolchainType      dotnet.ToolchainType
 	args               string
 	flags              string
@@ -31,52 +31,52 @@ type DotnetCommandArgs struct {
 	rtDetails          *config.ArtifactoryDetails
 }
 
-func (dca *DotnetCommandArgs) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DotnetCommandArgs {
-	dca.rtDetails = rtDetails
-	return dca
+func (dc *DotnetCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *DotnetCommand {
+	dc.rtDetails = rtDetails
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *DotnetCommandArgs {
-	dca.buildConfiguration = buildConfiguration
-	return dca
+func (dc *DotnetCommand) SetBuildConfiguration(buildConfiguration *utils.BuildConfiguration) *DotnetCommand {
+	dc.buildConfiguration = buildConfiguration
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetToolchainType(toolchainType dotnet.ToolchainType) *DotnetCommandArgs {
-	dca.toolchainType = toolchainType
-	return dca
+func (dc *DotnetCommand) SetToolchainType(toolchainType dotnet.ToolchainType) *DotnetCommand {
+	dc.toolchainType = toolchainType
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetSolutionPath(solutionPath string) *DotnetCommandArgs {
-	dca.solutionPath = solutionPath
-	return dca
+func (dc *DotnetCommand) SetSolutionPath(solutionPath string) *DotnetCommand {
+	dc.solutionPath = solutionPath
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetRepoName(repoName string) *DotnetCommandArgs {
-	dca.repoName = repoName
-	return dca
+func (dc *DotnetCommand) SetRepoName(repoName string) *DotnetCommand {
+	dc.repoName = repoName
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetFlags(flags string) *DotnetCommandArgs {
-	dca.flags = flags
-	return dca
+func (dc *DotnetCommand) SetFlags(flags string) *DotnetCommand {
+	dc.flags = flags
+	return dc
 }
 
-func (dca *DotnetCommandArgs) SetArgs(args string) *DotnetCommandArgs {
-	dca.args = args
-	return dca
+func (dc *DotnetCommand) SetArgs(args string) *DotnetCommand {
+	dc.args = args
+	return dc
 }
 
-func (dca *DotnetCommandArgs) RtDetails() (*config.ArtifactoryDetails, error) {
-	return dca.rtDetails, nil
+func (dc *DotnetCommand) RtDetails() (*config.ArtifactoryDetails, error) {
+	return dc.rtDetails, nil
 }
 
-func (dca *DotnetCommandArgs) CommandName() string {
-	return "rt_" + dca.toolchainType.String()
+func (dc *DotnetCommand) CommandName() string {
+	return "rt_" + dc.toolchainType.String()
 }
 
 // Exec all consume type nuget commands, install, update, add, restore.
-func (dca *DotnetCommandArgs) Exec() error {
-	log.Info("Running " + dca.toolchainType.String() + "...")
+func (dc *DotnetCommand) Exec() error {
+	log.Info("Running " + dc.toolchainType.String() + "...")
 	// Use temp dir to save config file, the config will be removed at the end.
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
@@ -84,42 +84,42 @@ func (dca *DotnetCommandArgs) Exec() error {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	dca.solutionPath, err = changeWorkingDir(dca.solutionPath)
+	dc.solutionPath, err = changeWorkingDir(dc.solutionPath)
 	if err != nil {
 		return err
 	}
 
-	err = dca.prepareAndRunCmd(tempDirPath)
+	err = dc.prepareAndRunCmd(tempDirPath)
 	if err != nil {
 		return err
 	}
 
-	isCollectBuildInfo := len(dca.buildConfiguration.BuildName) > 0 && len(dca.buildConfiguration.BuildNumber) > 0
+	isCollectBuildInfo := len(dc.buildConfiguration.BuildName) > 0 && len(dc.buildConfiguration.BuildNumber) > 0
 	if !isCollectBuildInfo {
 		return nil
 	}
 
-	slnFile, err := dca.updateSolutionPathAndGetFileName()
+	slnFile, err := dc.updateSolutionPathAndGetFileName()
 	if err != nil {
 		return err
 	}
-	sol, err := solution.Load(dca.solutionPath, slnFile)
+	sol, err := solution.Load(dc.solutionPath, slnFile)
 	if err != nil {
 		return err
 	}
 
-	if err = utils.SaveBuildGeneralDetails(dca.buildConfiguration.BuildName, dca.buildConfiguration.BuildNumber); err != nil {
+	if err = utils.SaveBuildGeneralDetails(dc.buildConfiguration.BuildName, dc.buildConfiguration.BuildNumber); err != nil {
 		return err
 	}
-	buildInfo, err := sol.BuildInfo(dca.buildConfiguration.Module)
+	buildInfo, err := sol.BuildInfo(dc.buildConfiguration.Module)
 	if err != nil {
 		return err
 	}
-	return utils.SaveBuildInfo(dca.buildConfiguration.BuildName, dca.buildConfiguration.BuildNumber, buildInfo)
+	return utils.SaveBuildInfo(dc.buildConfiguration.BuildName, dc.buildConfiguration.BuildNumber, buildInfo)
 }
 
-func (dca *DotnetCommandArgs) updateSolutionPathAndGetFileName() (string, error) {
-	argsAndFlags := strings.Split(dca.flags, " ")
+func (dc *DotnetCommand) updateSolutionPathAndGetFileName() (string, error) {
+	argsAndFlags := strings.Split(dc.flags, " ")
 	cmdFirstArg := argsAndFlags[0]
 	// The path argument wasn't provided, sln file will be searched under working directory.
 	if len(cmdFirstArg) == 0 || strings.HasPrefix(cmdFirstArg, "-") {
@@ -131,7 +131,7 @@ func (dca *DotnetCommandArgs) updateSolutionPathAndGetFileName() (string, error)
 	}
 	// The path argument is a directory. sln/csproj file will be searched under this directory.
 	if exist {
-		dca.updateSolutionPath(cmdFirstArg)
+		dc.updateSolutionPath(cmdFirstArg)
 		return "", err
 	}
 	exist, err = fileutils.IsFileExists(cmdFirstArg, true)
@@ -140,21 +140,21 @@ func (dca *DotnetCommandArgs) updateSolutionPathAndGetFileName() (string, error)
 	}
 	// The path argument is a .sln file.
 	if exist && strings.HasSuffix(cmdFirstArg, ".sln") {
-		dca.updateSolutionPath(filepath.Dir(cmdFirstArg))
+		dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
 		return filepath.Base(cmdFirstArg), nil
 	}
 	// The path argument is a .csproj/packages.config file.
 	if exist && (strings.HasSuffix(cmdFirstArg, ".csproj") || strings.HasSuffix(cmdFirstArg, "packages.config")) {
-		dca.updateSolutionPath(filepath.Dir(cmdFirstArg))
+		dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
 	}
 	return "", nil
 }
 
-func (dca *DotnetCommandArgs) updateSolutionPath(slnRootPath string) {
+func (dc *DotnetCommand) updateSolutionPath(slnRootPath string) {
 	if filepath.IsAbs(slnRootPath) {
-		dca.solutionPath = slnRootPath
+		dc.solutionPath = slnRootPath
 	} else {
-		dca.solutionPath = filepath.Join(dca.solutionPath, slnRootPath)
+		dc.solutionPath = filepath.Join(dc.solutionPath, slnRootPath)
 	}
 }
 
@@ -173,8 +173,8 @@ func changeWorkingDir(newWorkingDir string) (string, error) {
 
 // Prepares the nuget configuration file within the temp directory
 // Runs NuGet itself with the arguments and flags provided.
-func (dca *DotnetCommandArgs) prepareAndRunCmd(configDirPath string) error {
-	cmd, err := dca.createToolchainCmd()
+func (dc *DotnetCommand) prepareAndRunCmd(configDirPath string) error {
+	cmd, err := dc.createToolchainCmd()
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (dca *DotnetCommandArgs) prepareAndRunCmd(configDirPath string) error {
 		return errorutils.CheckError(err)
 	}
 
-	err = dca.prepareConfigFile(cmd, configDirPath)
+	err = dc.prepareConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (dca *DotnetCommandArgs) prepareAndRunCmd(configDirPath string) error {
 // Checks if the user provided input such as -configfile flag or -Source flag.
 // If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
-func (dca *DotnetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
+func (dc *DotnetCommand) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
 	cmdFlag := cmd.Toolchain().GetTypeFlagPrefix() + "configfile"
 	currentConfigPath, err := getFlagValueIfExists(cmdFlag, cmd)
 	if err != nil {
@@ -218,7 +218,7 @@ func (dca *DotnetCommandArgs) prepareConfigFile(cmd *dotnet.Cmd, configDirPath s
 		return nil
 	}
 
-	err = dca.initNewConfig(cmd, configDirPath)
+	err = dc.initNewConfig(cmd, configDirPath)
 	return err
 }
 
@@ -238,19 +238,19 @@ func getFlagValueIfExists(cmdFlag string, cmd *dotnet.Cmd) (string, error) {
 }
 
 // Initializing a new NuGet config file that NuGet will use into a temp file
-func (dca *DotnetCommandArgs) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
+func (dc *DotnetCommand) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
 	configFile, err := writeToTempConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
 
-	return dca.addNugetAuthenticationToNewConfig(cmd.Toolchain(), configFile)
+	return dc.addNugetAuthenticationToNewConfig(cmd.Toolchain(), configFile)
 }
 
 // Runs nuget add sources and setapikey commands to authenticate with Artifactory server
-func (dca *DotnetCommandArgs) addNugetAuthenticationToNewConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
-	sourceUrl, user, password, err := dca.getSourceDetails()
+func (dc *DotnetCommand) addNugetAuthenticationToNewConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
+	sourceUrl, user, password, err := dc.getSourceDetails()
 	if err != nil {
 		return err
 	}
@@ -296,19 +296,19 @@ func addSourceToNugetConfig(cmdType dotnet.ToolchainType, configFileName, source
 	return err
 }
 
-func (dca *DotnetCommandArgs) getSourceDetails() (sourceURL, user, password string, err error) {
+func (dc *DotnetCommand) getSourceDetails() (sourceURL, user, password string, err error) {
 	var u *url.URL
-	u, err = url.Parse(dca.rtDetails.Url)
+	u, err = url.Parse(dc.rtDetails.Url)
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	u.Path = path.Join(u.Path, "api/nuget", dca.repoName)
+	u.Path = path.Join(u.Path, "api/nuget", dc.repoName)
 	sourceURL = u.String()
 
-	user = dca.rtDetails.User
-	password = dca.rtDetails.Password
+	user = dc.rtDetails.User
+	password = dc.rtDetails.Password
 	// If access-token is defined, extract user from it.
-	rtDetails, err := dca.RtDetails()
+	rtDetails, err := dc.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
@@ -323,20 +323,20 @@ func (dca *DotnetCommandArgs) getSourceDetails() (sourceURL, user, password stri
 	return
 }
 
-func (dca *DotnetCommandArgs) createToolchainCmd() (*dotnet.Cmd, error) {
-	c, err := dotnet.NewToolchainCmd(dca.toolchainType)
+func (dc *DotnetCommand) createToolchainCmd() (*dotnet.Cmd, error) {
+	c, err := dotnet.NewToolchainCmd(dc.toolchainType)
 	if err != nil {
 		return nil, err
 	}
-	if dca.args != "" {
-		c.Command, err = utils.ParseArgs(strings.Split(dca.args, " "))
+	if dc.args != "" {
+		c.Command, err = utils.ParseArgs(strings.Split(dc.args, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
-	if dca.flags != "" {
-		c.CommandFlags, err = utils.ParseArgs(strings.Split(dca.flags, " "))
+	if dc.flags != "" {
+		c.CommandFlags, err = utils.ParseArgs(strings.Split(dc.flags, " "))
 	}
 
 	return c, errorutils.CheckError(err)
