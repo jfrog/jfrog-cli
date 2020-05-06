@@ -22,6 +22,7 @@ const (
 	Retries                     = 3
 	TokenRefreshDisabled        = 0
 	TokenRefreshDefaultInterval = 60
+	TokenExpiry                 = 3600
 
 	// Env
 	ReportUsage     = "JFROG_CLI_REPORT_USAGE"

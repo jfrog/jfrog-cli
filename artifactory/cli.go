@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -779,6 +780,19 @@ func GetCommands() []cli.Command {
 				return replicationDeleteCmd(c)
 			},
 		},
+		{
+			Name:         "access-token-create",
+			Aliases:      []string{"atc"},
+			Flags:        getAccessTokenCreateFlags(),
+			Usage:        accesstokencreate.Description,
+			HelpName:     common.CreateUsage("rt atc", accesstokencreate.Description, accesstokencreate.Usage),
+			UsageText:    accesstokencreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return accessTokenCreateCmd(c)
+			},
+		},
 	}
 }
 
@@ -1074,6 +1088,33 @@ func getRepoDeleteFlags() []cli.Flag {
 
 func getReplicationDeleteFlags() []cli.Flag {
 	return getRepoDeleteFlags()
+}
+
+func getAccessTokenCreateFlags() []cli.Flag {
+	return append(getServerWithClientCertsFlags(), []cli.Flag{
+		cli.StringFlag{
+			Name: "groups",
+			Usage: "[Default: *] A list of comma-separated groups for the access token to be associated with. " +
+				"Specify * to indicate that this is a 'user-scoped token', i.e., the token provides the same access privileges that the current subject has, and is therefore evaluated dynamically. " +
+				"A non-admin user can only provide a scope that is a subset of the groups to which he belongs` `",
+		},
+		cli.BoolFlag{
+			Name:  "grant-admin",
+			Usage: "[Default: false] Set to true to provides admin privileges to the access token. This is only available for administrators.` `",
+		},
+		cli.StringFlag{
+			Name:  "expiry",
+			Usage: "[Default: " + strconv.Itoa(cliutils.TokenExpiry) + "] The time in seconds for which the token will be valid. To specify a token that never expires, set to zero. Non-admin can only set a value that is equal to or less than the default 3600.` `",
+		},
+		cli.BoolFlag{
+			Name:  "refreshable",
+			Usage: "[Default: false] Set to true if you'd like the the token to be refreshable. A refresh token will also be returned in order to be used to generate a new token once it expires.` `",
+		},
+		cli.StringFlag{
+			Name:  "audience",
+			Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
+		},
+	}...)
 }
 
 func getBuildFlags() []cli.Flag {
@@ -3408,6 +3449,38 @@ func replicationDeleteCmd(c *cli.Context) error {
 	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
 	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(replicationDeleteCmd)
+}
+
+func accessTokenCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
+	if err != nil {
+		return err
+	}
+	accessTokenCreateCmd := generic.NewAccessTokenCreateCommand()
+	accessTokenCreateCmd.SetUserName(c.Args().Get(0)).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
+	err = commands.Exec(accessTokenCreateCmd)
+	if err != nil {
+		return err
+	}
+	resString, err := accessTokenCreateCmd.Response()
+	if err != nil {
+		return err
+	}
+	log.Output(clientutils.IndentJson(resString))
+
+	return nil
 }
 
 func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
