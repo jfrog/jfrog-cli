@@ -11,34 +11,38 @@ type ToolchainType int
 
 const (
 	Nuget ToolchainType = iota
-	Dotnet
+	DotnetCore
 )
 
-var CmdTypes = []string{
-	"nuget",
-	"dotnet",
+type toolchainInfo struct {
+	name          string
+	flagPrefix    string
+	addSourceArgs []string
+}
+
+var toolchainsMap = map[ToolchainType]toolchainInfo{
+	Nuget: {
+		name:          "nuget",
+		flagPrefix:    "-",
+		addSourceArgs: []string{"sources", "add"},
+	},
+	DotnetCore: {
+		name:          "dotnet",
+		flagPrefix:    "--",
+		addSourceArgs: []string{"nuget", "add", "source"},
+	},
 }
 
 func (toolchainType ToolchainType) String() string {
-	return CmdTypes[toolchainType]
-}
-
-var CmdFlagPrefixes = []string{
-	"-",
-	"--",
+	return toolchainsMap[toolchainType].name
 }
 
 func (toolchainType ToolchainType) GetTypeFlagPrefix() string {
-	return CmdFlagPrefixes[toolchainType]
-}
-
-var AddSourceArgs = [][]string{
-	{"sources", "add"},
-	{"nuget", "add", "source"},
+	return toolchainsMap[toolchainType].flagPrefix
 }
 
 func (toolchainType ToolchainType) GetAddSourceArgs() []string {
-	return AddSourceArgs[toolchainType]
+	return toolchainsMap[toolchainType].addSourceArgs
 }
 
 func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
@@ -58,9 +62,9 @@ func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, er
 	switch cmdType {
 	case Nuget:
 		addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "-source", sourceUrl)
-	case Dotnet:
+	case DotnetCore:
 		addSourceCmd.Command = append(addSourceCmd.Command, sourceUrl)
-		// Dotnet cli does not support password encryption on non-Windows os, so we will write the raw password.
+		// DotnetCore cli does not support password encryption on non-Windows OS, so we will write the raw password.
 		if !cliutils.IsWindows() {
 			addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "--store-password-in-clear-text")
 		}
@@ -88,7 +92,7 @@ func (config *Cmd) GetErrWriter() io.WriteCloser {
 	return config.ErrWriter
 }
 
-func (config *Cmd) Toolchain() ToolchainType {
+func (config *Cmd) GetToolchain() ToolchainType {
 	return config.toolchain
 }
 

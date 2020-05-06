@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const SourceName = "JFrogCli"
+const sourceName = "JFrogCli"
 
 type DotnetCommand struct {
 	toolchainType      dotnet.ToolchainType
@@ -77,7 +77,7 @@ func (dc *DotnetCommand) CommandName() string {
 // Exec all consume type nuget commands, install, update, add, restore.
 func (dc *DotnetCommand) Exec() error {
 	log.Info("Running " + dc.toolchainType.String() + "...")
-	// Use temp dir to save config file, the config will be removed at the end.
+	// Use temp dir to save config file, so that config will be removed at the end.
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func changeWorkingDir(newWorkingDir string) (string, error) {
 // Prepares the nuget configuration file within the temp directory
 // Runs NuGet itself with the arguments and flags provided.
 func (dc *DotnetCommand) prepareAndRunCmd(configDirPath string) error {
-	cmd, err := dc.createToolchainCmd()
+	cmd, err := dc.createCmd()
 	if err != nil {
 		return err
 	}
@@ -197,10 +197,10 @@ func (dc *DotnetCommand) prepareAndRunCmd(configDirPath string) error {
 }
 
 // Checks if the user provided input such as -configfile flag or -Source flag.
-// If those flags provided, NuGet will use the provided configs (default config file or the one with -configfile)
+// If those flags were provided, NuGet will use the provided configs (default config file or the one with -configfile)
 // If neither provided, we are initializing our own config.
 func (dc *DotnetCommand) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string) error {
-	cmdFlag := cmd.Toolchain().GetTypeFlagPrefix() + "configfile"
+	cmdFlag := cmd.GetToolchain().GetTypeFlagPrefix() + "configfile"
 	currentConfigPath, err := getFlagValueIfExists(cmdFlag, cmd)
 	if err != nil {
 		return err
@@ -209,7 +209,7 @@ func (dc *DotnetCommand) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string
 		return nil
 	}
 
-	cmdFlag = cmd.Toolchain().GetTypeFlagPrefix() + "source"
+	cmdFlag = cmd.GetToolchain().GetTypeFlagPrefix() + "source"
 	sourceCommandValue, err := getFlagValueIfExists(cmdFlag, cmd)
 	if err != nil {
 		return err
@@ -245,11 +245,11 @@ func (dc *DotnetCommand) initNewConfig(cmd *dotnet.Cmd, configDirPath string) er
 		return err
 	}
 
-	return dc.addNugetAuthenticationToNewConfig(cmd.Toolchain(), configFile)
+	return dc.addNugetAuthToConfig(cmd.GetToolchain(), configFile)
 }
 
-// Runs nuget add sources and setapikey commands to authenticate with Artifactory server
-func (dc *DotnetCommand) addNugetAuthenticationToNewConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
+// Runs nuget add sources command to authenticate with Artifactory.
+func (dc *DotnetCommand) addNugetAuthToConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
 	sourceUrl, user, password, err := dc.getSourceDetails()
 	if err != nil {
 		return err
@@ -268,7 +268,7 @@ func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error
 
 	defer configFile.Close()
 
-	cmd.CommandFlags = append(cmd.CommandFlags, cmd.Toolchain().GetTypeFlagPrefix()+"configfile", configFile.Name())
+	cmd.CommandFlags = append(cmd.CommandFlags, cmd.GetToolchain().GetTypeFlagPrefix()+"configfile", configFile.Name())
 
 	// Set Artifactory repo as source
 	content := dotnet.ConfigFileTemplate
@@ -288,7 +288,7 @@ func addSourceToNugetConfig(cmdType dotnet.ToolchainType, configFileName, source
 
 	flagPrefix := cmdType.GetTypeFlagPrefix()
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"configfile", configFileName)
-	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", SourceName)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", sourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"password", password)
 	output, err := io.RunCmdOutput(cmd)
@@ -323,7 +323,7 @@ func (dc *DotnetCommand) getSourceDetails() (sourceURL, user, password string, e
 	return
 }
 
-func (dc *DotnetCommand) createToolchainCmd() (*dotnet.Cmd, error) {
+func (dc *DotnetCommand) createCmd() (*dotnet.Cmd, error) {
 	c, err := dotnet.NewToolchainCmd(dc.toolchainType)
 	if err != nil {
 		return nil, err

@@ -125,11 +125,11 @@ func (solution *solution) loadSingleProject(projectName, csprojPath string) {
 	return
 }
 
-// Finds all the projects by reading the content of the the sln files.
+// Finds all the projects by reading the content of the sln files.
 // Returns a slice with all the projects in the solution.
 func (solution *solution) getProjectsFromSlns() ([]string, error) {
 	var allProjects []string
-	slnFiles, err := solution.getSlnFilesList()
+	slnFiles, err := solution.getSlnFiles()
 	if err != nil {
 		return nil, err
 	}
@@ -144,14 +144,11 @@ func (solution *solution) getProjectsFromSlns() ([]string, error) {
 }
 
 // If sln file is not provided, finds all sln files in the directory.
-func (solution *solution) getSlnFilesList() (slnFiles []string, err error) {
+func (solution *solution) getSlnFiles() (slnFiles []string, err error) {
 	if solution.slnFile != "" {
 		slnFiles = append(slnFiles, filepath.Join(solution.path, solution.slnFile))
 	} else {
 		slnFiles, err = fileutils.ListFilesWithExtension(solution.path, ".sln")
-		if err != nil {
-			return nil, err
-		}
 	}
 	return
 }

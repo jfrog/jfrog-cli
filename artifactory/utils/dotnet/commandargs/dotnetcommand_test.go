@@ -77,7 +77,7 @@ func TestInitNewConfig(t *testing.T) {
 	}
 
 	// Prepare the config file with NuGet authentication
-	err = params.addNugetAuthenticationToNewConfig(dotnet.Nuget, configFile)
+	err = params.addNugetAuthToConfig(dotnet.Nuget, configFile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,8 +100,8 @@ func TestInitNewConfig(t *testing.T) {
 	source := "http://some/url/api/nuget"
 
 	for _, packageSource := range nugetConfig.PackageSources {
-		if packageSource.Key != SourceName {
-			t.Error("Expected", SourceName, ",got", packageSource.Key)
+		if packageSource.Key != sourceName {
+			t.Error("Expected", sourceName, ",got", packageSource.Key)
 		}
 
 		if packageSource.Value != source {

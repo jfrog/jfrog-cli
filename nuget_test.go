@@ -66,7 +66,7 @@ func TestNativeNugetResolve(t *testing.T) {
 
 func TestDotnetResolve(t *testing.T) {
 	uniqueDotnetTests := []testDescriptor{
-		{"multireferencesingleprojectdir", "multireference", []string{dotnet.Dotnet.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
+		{"multireferencesingleprojectdir", "multireference", []string{dotnet.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, utils.Dotnet)
 }

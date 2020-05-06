@@ -11,7 +11,7 @@ type DotnetCoreCliCommand struct {
 
 func NewDotnetCoreCliCommand() *DotnetCoreCliCommand {
 	dotnetCoreCliCmd := DotnetCoreCliCommand{&dotnetCmd.DotnetCommand{}}
-	dotnetCoreCliCmd.SetToolchainType(dotnet.Dotnet)
+	dotnetCoreCliCmd.SetToolchainType(dotnet.DotnetCore)
 	return &dotnetCoreCliCmd
 }
 
