@@ -5,23 +5,24 @@ import "strconv"
 type builder struct {
 	pattern string
 	// Deprecated, use Exclusions instead
-	excludePatterns []string
-	exclusions      []string
-	target          string
-	explode         string
-	props           string
-	excludeProps    string
-	sortOrder       string
-	sortBy          []string
-	offset          int
-	limit           int
-	build           string
-	bundle          string
-	recursive       bool
-	flat            bool
-	regexp          bool
-	includeDirs     bool
-	archiveEntries  string
+	excludePatterns  []string
+	exclusions       []string
+	target           string
+	explode          string
+	props            string
+	excludeProps     string
+	sortOrder        string
+	sortBy           []string
+	offset           int
+	limit            int
+	build            string
+	bundle           string
+	recursive        bool
+	flat             bool
+	regexp           bool
+	includeDirs      bool
+	archiveEntries   string
+	validateSymlinks bool
 }
 
 func NewBuilder() *builder {
@@ -118,29 +119,35 @@ func (b *builder) IncludeDirs(includeDirs bool) *builder {
 	return b
 }
 
+func (b *builder) ValidateSymlinks(validateSymlinks bool) *builder {
+	b.validateSymlinks = validateSymlinks
+	return b
+}
+
 func (b *builder) BuildSpec() *SpecFiles {
 	return &SpecFiles{
 		Files: []File{
 			{
 				Pattern: b.pattern,
 				// Deprecated, use Exclusions instead
-				ExcludePatterns: b.excludePatterns,
-				Exclusions:      b.exclusions,
-				Target:          b.target,
-				Props:           b.props,
-				ExcludeProps:    b.excludeProps,
-				SortOrder:       b.sortOrder,
-				SortBy:          b.sortBy,
-				Offset:          b.offset,
-				Limit:           b.limit,
-				Build:           b.build,
-				Bundle:          b.bundle,
-				Explode:         b.explode,
-				Recursive:       strconv.FormatBool(b.recursive),
-				Flat:            strconv.FormatBool(b.flat),
-				Regexp:          strconv.FormatBool(b.regexp),
-				IncludeDirs:     strconv.FormatBool(b.includeDirs),
-				ArchiveEntries:  b.archiveEntries,
+				ExcludePatterns:  b.excludePatterns,
+				Exclusions:       b.exclusions,
+				Target:           b.target,
+				Props:            b.props,
+				ExcludeProps:     b.excludeProps,
+				SortOrder:        b.sortOrder,
+				SortBy:           b.sortBy,
+				Offset:           b.offset,
+				Limit:            b.limit,
+				Build:            b.build,
+				Bundle:           b.bundle,
+				Explode:          b.explode,
+				Recursive:        strconv.FormatBool(b.recursive),
+				Flat:             strconv.FormatBool(b.flat),
+				Regexp:           strconv.FormatBool(b.regexp),
+				IncludeDirs:      strconv.FormatBool(b.includeDirs),
+				ArchiveEntries:   b.archiveEntries,
+				ValidateSymlinks: strconv.FormatBool(b.validateSymlinks),
 			},
 		},
 	}

@@ -3851,12 +3851,12 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(c.Args().Get(1)).
 		ArchiveEntries(c.String("archive-entries")).
+		ValidateSymlinks(c.Bool("validate-symlinks")).
 		BuildSpec(), nil
 }
 
 func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.DownloadConfiguration, err error) {
 	downloadConfiguration = new(utils.DownloadConfiguration)
-	downloadConfiguration.ValidateSymlink = c.Bool("validate-symlinks")
 	downloadConfiguration.MinSplitSize, err = getMinSplit(c)
 	if err != nil {
 		return nil, err
@@ -4070,6 +4070,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Explode, c, "explode")
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
+	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
