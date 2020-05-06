@@ -1,7 +1,6 @@
 package dotnet
 
 import (
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/solution"
@@ -28,22 +27,6 @@ func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
 }
 
 func (nc *NugetCommand) Run() error {
-	// Read config file.
-	log.Debug("Preparing to read the config file", nc.configFilePath)
-	vConfig, err := utils.ReadConfigFile(nc.configFilePath, utils.YAML)
-	if err != nil {
-		return err
-	}
-	// Extract resolution params.
-	resolveParams, err := utils.GetRepoConfigByPrefix(nc.configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
-	if err != nil {
-		return err
-	}
-	RtDetails, err := resolveParams.RtDetails()
-	if err != nil {
-		return err
-	}
-	nc.SetRepoName(resolveParams.TargetRepo()).SetRtDetails(RtDetails)
 	return nc.Exec()
 }
 

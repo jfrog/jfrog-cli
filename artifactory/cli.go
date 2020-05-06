@@ -2229,11 +2229,21 @@ func nugetCmd(c *cli.Context) error {
 		return err
 	}
 
+	// A config file was found.
 	if exists {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		// Found a config file.
+		nugetConfig, err := utils.ReadResolutionOnlyConfiguration(configFilePath)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
+		}
+		// Set arg values.
+		rtDetails, err := nugetConfig.RtDetails()
+		if err != nil {
+			return err
+		}
+
 		args, err := utils.ParseArgs(extractCommand(c))
 		if err != nil {
 			return errorutils.CheckError(err)
@@ -2243,12 +2253,14 @@ func nugetCmd(c *cli.Context) error {
 		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
 			return err
 		}
+
 		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
+
 		nugetCmd := dotnet.NewNugetCommand()
-		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(filteredNugetArgs[0])
+		nugetCmd.SetRtDetails(rtDetails).SetRepoName(nugetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredNugetArgs[0])
 		if len(filteredNugetArgs) > 1 {
 			nugetCmd.SetFlags(strings.Join(filteredNugetArgs[1:], " "))
 		}

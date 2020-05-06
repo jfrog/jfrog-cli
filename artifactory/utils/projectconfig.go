@@ -145,7 +145,11 @@ func GetResolutionOnlyConfiguration(projectType ProjectType) (*RepositoryConfig,
 	if !exists {
 		return nil, errorutils.CheckError(fmt.Errorf(projectType.String() + " Project configuration does not exist."))
 	}
-	// Read config file.
+	return ReadResolutionOnlyConfiguration(confFilePath)
+
+}
+
+func ReadResolutionOnlyConfiguration(confFilePath string) (*RepositoryConfig, error) {
 	log.Debug("Preparing to read the config file", confFilePath)
 	vConfig, err := ReadConfigFile(confFilePath, YAML)
 	if err != nil {
