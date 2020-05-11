@@ -91,7 +91,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 
 // Search, validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
-	// Search for all the image layer to get the local path inside Artifactory (supporting virtual & remote repositories).
+	// Search for all image layers to get the local path inside Artifactory.
 	searchResults, err := builder.getImageLayersFromArtifactory()
 	if err != nil {
 		return err
