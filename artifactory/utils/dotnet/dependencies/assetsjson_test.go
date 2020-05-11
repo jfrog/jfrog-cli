@@ -83,7 +83,7 @@ func TestJson(t *testing.T) {
 
 func TestNewAssetsExtractor(t *testing.T) {
 	assets := assetsExtractor{}
-	extractor, err := assets.new("testProject", filepath.Join("testdata", "assetsproject"))
+	extractor, err := assets.new(filepath.Join("testdata", "assetsproject", "obj", "project.assets.json"))
 	if err != nil {
 		t.Error(err)
 	}

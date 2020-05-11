@@ -194,7 +194,7 @@ func TestPackageNotFoundWithoutFailure(t *testing.T) {
 
 func extractDependencies(globalPackagePath string) (Extractor, error) {
 	extractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
-	packagesConfig, err := extractor.loadPackagesConfig(filepath.Join("testdata", "packagesproject"))
+	packagesConfig, err := extractor.loadPackagesConfig(filepath.Join("testdata", "packagesproject", "packages.config"))
 	if err != nil {
 		return extractor, err
 	}

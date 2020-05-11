@@ -13,15 +13,15 @@ type Project interface {
 	CreateDependencyTree() error
 }
 
-func Load(name, rootPath, csprojPath string) (Project, error) {
+func Load(name, rootPath, dependeciesSource string) (Project, error) {
 	var err error
-	project := &project{name: name, rootPath: rootPath, csprojPath: csprojPath}
+	project := &project{name: name, rootPath: rootPath, dependenciesSource: dependeciesSource}
 	project.extractor, err = project.getCompatibleExtractor()
 	return project, err
 }
 
 func (project *project) getCompatibleExtractor() (dependencies.Extractor, error) {
-	extractor, err := dependencies.CreateCompatibleExtractor(project.name, project.rootPath)
+	extractor, err := dependencies.CreateCompatibleExtractor(project.name, project.dependenciesSource)
 	return extractor, err
 }
 
@@ -32,11 +32,11 @@ func (project *project) CreateDependencyTree() error {
 }
 
 type project struct {
-	name           string
-	rootPath       string
-	csprojPath     string
-	dependencyTree dependenciestree.Tree
-	extractor      dependencies.Extractor
+	name               string
+	rootPath           string
+	dependenciesSource string
+	dependencyTree     dependenciestree.Tree
+	extractor          dependencies.Extractor
 }
 
 func (project *project) Name() string {

@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-var packagesFilePath = "packages.config"
+const PackagesFileName = "packages.config"
 
 // Register packages.config extractor
 func init() {
@@ -28,14 +28,12 @@ type packagesExtractor struct {
 	rootDependencies []string
 }
 
-func (extractor *packagesExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
-	packagesConfigPath := filepath.Join(projectRoot, packagesFilePath)
-	exists, err := fileutils.IsFileExists(packagesConfigPath, false)
-	if exists {
-		log.Debug("Found", packagesConfigPath, "file for project:", projectName)
-		return true, err
+func (extractor *packagesExtractor) IsCompatible(projectName, dependenciesSource string) bool {
+	if strings.HasSuffix(dependenciesSource, PackagesFileName) {
+		log.Debug("Found", dependenciesSource, "file for project:", projectName)
+		return true
 	}
-	return false, err
+	return false
 }
 
 func (extractor *packagesExtractor) DirectDependencies() ([]string, error) {
@@ -51,9 +49,9 @@ func (extractor *packagesExtractor) ChildrenMap() (map[string][]string, error) {
 }
 
 // Create new packages.config extractor
-func (extractor *packagesExtractor) new(projectName, projectRoot string) (Extractor, error) {
+func (extractor *packagesExtractor) new(dependenciesSource string) (Extractor, error) {
 	newExtractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
-	packagesConfig, err := newExtractor.loadPackagesConfig(projectRoot)
+	packagesConfig, err := newExtractor.loadPackagesConfig(dependenciesSource)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +130,8 @@ func createAlternativeVersionForms(originalVersion string) []string {
 	return alternativeVersions
 }
 
-func (extractor *packagesExtractor) loadPackagesConfig(rootPath string) (*packagesConfig, error) {
-	packagesFilePath := filepath.Join(rootPath, packagesFilePath)
-	content, err := ioutil.ReadFile(packagesFilePath)
+func (extractor *packagesExtractor) loadPackagesConfig(dependenciesSource string) (*packagesConfig, error) {
+	content, err := ioutil.ReadFile(dependenciesSource)
 	if err != nil {
 		return nil, err
 	}
