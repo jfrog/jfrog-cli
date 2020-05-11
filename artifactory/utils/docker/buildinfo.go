@@ -15,16 +15,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
 	Pull                      CommandType = "pull"
 	Push                      CommandType = "push"
-	ForeignLayerMediaType     string      = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
-	ImageNotFoundErrorMessage string      = "Could not find docker image in Artifactory, expecting image ID: %s"
-	DockerMarkerLayerSuffix   string      = ".marker"
+	foreignLayerMediaType     string      = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
+	imageNotFoundErrorMessage string      = "Could not find docker image in Artifactory, expecting image ID: %s"
+	dockerMarkerLayerSuffix   string      = ".marker"
 )
 
 // Docker image build info builder.
@@ -33,7 +32,7 @@ type Builder interface {
 }
 
 // Create instance of docker build info builder.
-func BuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) Builder {
+func NewBuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) (Builder, error) {
 	builder := &buildInfoBuilder{}
 	builder.image = image
 	builder.repository = repository
@@ -41,16 +40,23 @@ func BuildInfoBuilder(image Image, repository, buildName, buildNumber string, se
 	builder.buildNumber = buildNumber
 	builder.serviceManager = serviceManager
 	builder.commandType = commandType
-	return builder
+	builder.repository = repository
+	repoDetails, err := serviceManager.GetRepository(repository)
+	if err != nil {
+		return nil, err
+	}
+	if repoDetails.Rclass == "remote" {
+		builder.repository += "-cache"
+	}
+	return builder, nil
 }
 
 type buildInfoBuilder struct {
-	image           Image
-	repository      string
-	cacheRepository string
-	buildName       string
-	buildNumber     string
-	serviceManager  *artifactory.ArtifactoryServicesManager
+	image          Image
+	repository     string
+	buildName      string
+	buildNumber    string
+	serviceManager *artifactory.ArtifactoryServicesManager
 
 	// internal fields
 	imageId      string
@@ -64,10 +70,6 @@ type buildInfoBuilder struct {
 func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, error) {
 	var err error
 	builder.imageId, err = builder.image.Id()
-	if err != nil {
-		return nil, err
-	}
-	builder.cacheRepository, err = builder.getCacheRepository()
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +92,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 // Search, validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 	// Search for all the image layer to get the local path inside Artifactory (supporting virtual & remote repositories).
-	searchResults, err := getImageLayersFromArtifactory(builder)
+	searchResults, err := builder.getImageLayersFromArtifactory()
 	if err != nil {
 		return err
 	}
@@ -118,47 +120,47 @@ func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (searchResults 
 	imagePath := builder.image.Path()
 
 	// Search layers - assuming reverse proxy.
-	searchResults, err = searchImageLayers(builder, path.Join(builder.getSearchableRepository(), imagePath, "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, imagePath, "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Search layers - assuming proxy-less (repository path).
 	// Need to remove the "/" from the image path.
-	searchResults, err = searchImageLayers(builder, path.Join(imagePath[1:], "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(imagePath[1:], "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	if builder.commandType == Push {
-		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 	}
 
 	// If image path includes more than 3 slashes, Artifactory doesn't store this image under 'library',
 	// thus we should not look further.
 	if strings.Count(imagePath, "/") > 3 {
-		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 	}
 
 	// Assume reverse proxy - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder, path.Join(builder.getSearchableRepository(), "library", imagePath, "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, "library", imagePath, "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Assume proxy-less - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Image layers not found.
-	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 }
 
 func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
 	endOfRepoNameIndex := strings.Index(builder.image.Path()[1:], "/")
-	return path.Join(builder.getSearchableRepository(), "library", builder.image.Path()[endOfRepoNameIndex+1:])
+	return path.Join(builder.repository, "library", builder.image.Path()[endOfRepoNameIndex+1:])
 }
 
 func (builder *buildInfoBuilder) handlePull(manifestDependency, configLayerDependency buildinfo.Dependency, imageManifest *manifest, searchResults map[string]utils.ResultItem) error {
@@ -218,7 +220,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 
 func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string) error {
 	// Allow missing layer to be of a foreign type.
-	if layerMediaType == ForeignLayerMediaType {
+	if layerMediaType == foreignLayerMediaType {
 		log.Info(fmt.Sprintf("Foreign layer: %s is missing in Artifactory and therefore will not be added to the build-info.", layerFileName))
 		return nil
 	}
@@ -259,26 +261,6 @@ func (builder *buildInfoBuilder) createBuildInfo(module string) (*buildinfo.Buil
 		Dependencies: builder.dependencies,
 	}}}
 	return buildInfo, nil
-}
-
-// Return cache repository name for a remote repository, otherwise return empty string.
-func (builder *buildInfoBuilder) getCacheRepository() (string, error) {
-	// Get repository details
-	repoDetails, err := builder.serviceManager.GetRepository(builder.repository)
-	if err == nil {
-		if repoDetails.Rclass == "remote" {
-			return builder.repository + "-cache", nil
-		}
-	}
-	return "", err
-}
-
-// Can't search for artifacts in a remote repository, instead we use the cache remote repository.
-func (builder *buildInfoBuilder) getSearchableRepository() string {
-	if builder.cacheRepository != "" {
-		return builder.cacheRepository
-	}
-	return builder.repository
 }
 
 // Download and read the manifest from Artifactory.
@@ -345,8 +327,8 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 }
 
 // Search for image layers in Artifactory.
-func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	resultMap, err := searchImageHandler(imagePathPattern, serviceManager)
+func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string) (map[string]utils.ResultItem, error) {
+	resultMap, err := searchImageHandler(imagePathPattern, builder)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +361,7 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 				// Remove the tag from the pattern, and place the manifest digest instead.
 				imagePathPattern = strings.Replace(imagePathPattern, "/*", "", 1)
 				imagePathPattern = path.Join(imagePathPattern[:strings.LastIndex(imagePathPattern, "/")], strings.Replace(result, ":", "__", 1), "*")
-				return searchImageHandler(imagePathPattern, serviceManager)
+				return searchImageHandler(imagePathPattern, builder)
 			}
 		}
 		return nil, nil
@@ -387,7 +369,18 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 	return resultMap, nil
 }
 
-func searchImageHandler(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+func searchImageHandler(imagePathPattern string, builder *buildInfoBuilder) (map[string]utils.ResultItem, error) {
+	resultMap, err := performSearch(imagePathPattern, builder.serviceManager)
+	if err != nil {
+		return resultMap, err
+	}
+	if totalDownloaded, err := downloadMarkerLayersToRemoteCache(resultMap, builder); err != nil || totalDownloaded == 0 {
+		return resultMap, err
+	}
+	return performSearch(imagePathPattern, builder.serviceManager)
+}
+
+func performSearch(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern
@@ -457,57 +450,34 @@ func removeDuplicateDockerLayers(imageMLayers []layer) []layer {
 	return res
 }
 
-func getImageLayersFromArtifactory(builder *buildInfoBuilder) (searchResults map[string]utils.ResultItem, err error) {
-	searchResults, err = builder.getImageLayersFromArtifactory()
-	if err != nil {
-		return
+// When a client tries to pull a docker image from a remote repository in Artifactory and the client has some the layers cached locally on the disk,
+// then Artifactory will not download these layers into the remote repository cache. Instead, it will mark the layer artifacts with .marker suffix files in the remote cache.
+// This function download all the marker layers into the remote cache repository.
+func downloadMarkerLayersToRemoteCache(resultMap map[string]utils.ResultItem, builder *buildInfoBuilder) (int, error) {
+	if !strings.HasSuffix(builder.repository, "-cache") || len(resultMap) == 0 {
+		return 0, nil
 	}
-	// Remote repository may include "marker" layers, in that case 'upgradeMarkLayer' will replace al the 'marker' layers and with original layers.
-	// As a result we have to rescan each layer to get the correct meta data.
-	if builder.cacheRepository != "" && upgradeMarkLayer(searchResults, builder, &err) {
-		if err != nil {
-			return
-		}
-		searchResults, err = builder.getImageLayersFromArtifactory()
-	}
-	return
-}
-
-// When a client tries to pull a Docker image from a docker remote repository in Artifactory and if the client has some or all of the layers cached locally on the disk,
-// then Artifactory will not download these layers and mark them as .marker files in the remote cache in Artifactory(aka lazy).
-// 'upgradeMarkLayer' Scan for marker layer in remote cache repository, if found upgrade each layer to the original layer and return true, otherwise return false.
-// Source: https://jfrog.com/knowledge-base/how-to-replace-marker-layers-in-a-docker-remote-repository-cache-in-artifactory-with-the-actual-docker-layers/
-func upgradeMarkLayer(resultMap map[string]utils.ResultItem, builder *buildInfoBuilder, err *error) (foundMarkerLayer bool) {
-	if builder.cacheRepository == "" || resultMap == nil || *err != nil {
-		return
-	}
-	url := "api/docker/" + builder.repository + "/v2/"
+	totalDownloaded := 0
+	remoteRepo := strings.TrimSuffix(builder.repository, "-cache")
 	imageName := getDockerImageName(builder.image.Tag())
-	baseUrl, clientDetails := "", httputils.HttpClientDetails{}
+	clientDetails := builder.serviceManager.GetConfig().GetServiceDetails().CreateHttpClientDetails()
 	// Search for marker layers
 	for _, layerData := range resultMap {
-		if strings.HasSuffix(layerData.Name, DockerMarkerLayerSuffix) {
-			log.Debug(fmt.Sprintf("Transform docker marker layer(%s) into regular layer.", layerData.Name))
-			// Prepare the request.
-			url = url + imageName + "/blobs/" + toNoneMarkerLayer(layerData.Name)
-			clientDetails = builder.serviceManager.GetConfig().GetServiceDetails().CreateHttpClientDetails()
-			baseUrl = builder.serviceManager.GetConfig().GetServiceDetails().GetUrl()
-			// Send HEAD request to fetch metadata of the marker layer, which will transform into a regular layer.
-			resp, body, localError := builder.serviceManager.Client().SendHead(baseUrl+url, &clientDetails)
-			if localError != nil {
-				log.Debug(fmt.Sprintf("While Transforming docker marker layer succeeded, HEAD request failed.\n%s", localError.Error()))
-				*err = localError
-				return
+		if strings.HasSuffix(layerData.Name, dockerMarkerLayerSuffix) {
+			log.Debug(fmt.Sprintf("Downloading %s layer into remote repository cache...", layerData.Name))
+			baseUrl := builder.serviceManager.GetConfig().GetServiceDetails().GetUrl()
+			endpoint := "api/docker/" + remoteRepo + "/v2/" + imageName + "/blobs/" + toNoneMarkerLayer(layerData.Name)
+			resp, body, err := builder.serviceManager.Client().SendHead(baseUrl+endpoint, &clientDetails)
+			if err != nil {
+				return totalDownloaded, err
 			}
 			if resp.StatusCode != http.StatusOK {
-				*err = errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "for" + string(body)))
-				return
+				return totalDownloaded, errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "for" + string(body)))
 			}
-			log.Debug(fmt.Sprintf("Transform docker marker layer succeeded."))
+			totalDownloaded++
 		}
 	}
-	foundMarkerLayer = baseUrl != ""
-	return
+	return totalDownloaded, nil
 }
 
 func getDockerImageName(image string) string {
