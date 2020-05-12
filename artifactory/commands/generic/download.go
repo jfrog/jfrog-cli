@@ -2,6 +2,11 @@ package generic
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -13,10 +18,6 @@ import (
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 type DownloadCommand struct {
@@ -162,6 +163,7 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	downParams.ValidateSymlink = configuration.ValidateSymlink
 	downParams.MinSplitSize = configuration.MinSplitSize
 	downParams.SplitCount = configuration.SplitCount
+	downParams.Retries = configuration.Retries
 
 	downParams.Recursive, err = f.IsRecursive(true)
 	if err != nil {

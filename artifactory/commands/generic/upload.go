@@ -2,6 +2,11 @@ package generic
 
 import (
 	"errors"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -12,10 +17,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type UploadCommand struct {
@@ -202,6 +203,7 @@ func getUploadParams(f *spec.File, configuration *utils.UploadConfiguration, add
 	uploadParams.Deb = configuration.Deb
 	uploadParams.Symlink = configuration.Symlink
 	uploadParams.MinChecksumDeploy = configuration.MinChecksumDeploySize
+	uploadParams.Retries = configuration.Retries
 	uploadParams.AddVcsProps = addVcsProps
 
 	uploadParams.Recursive, err = f.IsRecursive(true)
