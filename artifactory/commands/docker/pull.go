@@ -64,7 +64,10 @@ func (dpc *DockerPullCommand) Run() error {
 		return err
 	}
 
-	builder := docker.BuildInfoBuilder(image, dpc.Repo(), buildName, buildNumber, serviceManager, docker.Pull)
+	builder, err := docker.NewBuildInfoBuilder(image, dpc.Repo(), buildName, buildNumber, serviceManager, docker.Pull)
+	if err != nil {
+		return err
+	}
 	buildInfo, err := builder.Build(dpc.BuildConfiguration().Module)
 	if err != nil {
 		return err

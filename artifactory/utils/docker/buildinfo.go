@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"strings"
 
@@ -20,8 +21,9 @@ import (
 const (
 	Pull                      CommandType = "pull"
 	Push                      CommandType = "push"
-	ForeignLayerMediaType     string      = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
-	ImageNotFoundErrorMessage string      = "Could not find docker image in Artifactory, expecting image ID: %s"
+	foreignLayerMediaType     string      = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
+	imageNotFoundErrorMessage string      = "Could not find docker image in Artifactory, expecting image ID: %s"
+	dockerMarkerLayerSuffix   string      = ".marker"
 )
 
 // Docker image build info builder.
@@ -30,7 +32,7 @@ type Builder interface {
 }
 
 // Create instance of docker build info builder.
-func BuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) Builder {
+func NewBuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) (Builder, error) {
 	builder := &buildInfoBuilder{}
 	builder.image = image
 	builder.repository = repository
@@ -38,7 +40,15 @@ func BuildInfoBuilder(image Image, repository, buildName, buildNumber string, se
 	builder.buildNumber = buildNumber
 	builder.serviceManager = serviceManager
 	builder.commandType = commandType
-	return builder
+	builder.repository = repository
+	repoDetails, err := serviceManager.GetRepository(repository)
+	if err != nil {
+		return nil, err
+	}
+	if repoDetails.Rclass == "remote" {
+		builder.repository += "-cache"
+	}
+	return builder, nil
 }
 
 type buildInfoBuilder struct {
@@ -63,7 +73,6 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 	if err != nil {
 		return nil, err
 	}
-
 	err = builder.updateArtifactsAndDependencies()
 	if err != nil {
 		return nil, err
@@ -82,7 +91,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 
 // Search, validate and create artifacts and dependencies of docker image.
 func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
-	// Search for all the image layer to get the local path inside Artifactory (supporting virtual repos).
+	// Search for all image layers to get the local path inside Artifactory.
 	searchResults, err := builder.getImageLayersFromArtifactory()
 	if err != nil {
 		return err
@@ -107,47 +116,46 @@ func (builder *buildInfoBuilder) updateArtifactsAndDependencies() error {
 
 // First we will try to get assuming using a reverse proxy (sub domain or port methods).
 // If fails, we will try the repository path (proxy-less).
-func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (map[string]utils.ResultItem, error) {
-	var searchResults map[string]utils.ResultItem
+func (builder *buildInfoBuilder) getImageLayersFromArtifactory() (searchResults map[string]utils.ResultItem, err error) {
 	imagePath := builder.image.Path()
 
 	// Search layers - assuming reverse proxy.
-	searchResults, err := searchImageLayers(builder, path.Join(builder.repository, imagePath, "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, imagePath, "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Search layers - assuming proxy-less (repository path).
 	// Need to remove the "/" from the image path.
-	searchResults, err = searchImageLayers(builder, path.Join(imagePath[1:], "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(imagePath[1:], "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	if builder.commandType == Push {
-		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 	}
 
 	// If image path includes more than 3 slashes, Artifactory doesn't store this image under 'library',
 	// thus we should not look further.
 	if strings.Count(imagePath, "/") > 3 {
-		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+		return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 	}
 
 	// Assume reverse proxy - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, "library", imagePath, "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.repository, "library", imagePath, "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Assume proxy-less - this time with 'library' as part of the path.
-	searchResults, err = searchImageLayers(builder, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"), builder.serviceManager)
+	searchResults, err = searchImageLayers(builder, path.Join(builder.buildReverseProxyPathWithLibrary(), "*"))
 	if err != nil || searchResults != nil {
 		return searchResults, err
 	}
 
 	// Image layers not found.
-	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(ImageNotFoundErrorMessage, builder.imageId)))
+	return nil, errorutils.CheckError(errors.New(fmt.Sprintf(imageNotFoundErrorMessage, builder.imageId)))
 }
 
 func (builder *buildInfoBuilder) buildReverseProxyPathWithLibrary() string {
@@ -212,7 +220,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 
 func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileName string) error {
 	// Allow missing layer to be of a foreign type.
-	if layerMediaType == ForeignLayerMediaType {
+	if layerMediaType == foreignLayerMediaType {
 		log.Info(fmt.Sprintf("Foreign layer: %s is missing in Artifactory and therefore will not be added to the build-info.", layerFileName))
 		return nil
 	}
@@ -319,8 +327,8 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 }
 
 // Search for image layers in Artifactory.
-func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
-	resultMap, err := searchImageHandler(imagePathPattern, serviceManager)
+func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string) (map[string]utils.ResultItem, error) {
+	resultMap, err := searchImageHandler(imagePathPattern, builder)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +361,7 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 				// Remove the tag from the pattern, and place the manifest digest instead.
 				imagePathPattern = strings.Replace(imagePathPattern, "/*", "", 1)
 				imagePathPattern = path.Join(imagePathPattern[:strings.LastIndex(imagePathPattern, "/")], strings.Replace(result, ":", "__", 1), "*")
-				return searchImageHandler(imagePathPattern, serviceManager)
+				return searchImageHandler(imagePathPattern, builder)
 			}
 		}
 		return nil, nil
@@ -361,7 +369,18 @@ func searchImageLayers(builder *buildInfoBuilder, imagePathPattern string, servi
 	return resultMap, nil
 }
 
-func searchImageHandler(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+func searchImageHandler(imagePathPattern string, builder *buildInfoBuilder) (map[string]utils.ResultItem, error) {
+	resultMap, err := performSearch(imagePathPattern, builder.serviceManager)
+	if err != nil {
+		return resultMap, err
+	}
+	if totalDownloaded, err := downloadMarkerLayersToRemoteCache(resultMap, builder); err != nil || totalDownloaded == 0 {
+		return resultMap, err
+	}
+	return performSearch(imagePathPattern, builder.serviceManager)
+}
+
+func performSearch(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern
@@ -429,6 +448,49 @@ func removeDuplicateDockerLayers(imageMLayers []layer) []layer {
 		}
 	}
 	return res
+}
+
+// When a client tries to pull a docker image from a remote repository in Artifactory and the client has some the layers cached locally on the disk,
+// then Artifactory will not download these layers into the remote repository cache. Instead, it will mark the layer artifacts with .marker suffix files in the remote cache.
+// This function download all the marker layers into the remote cache repository.
+func downloadMarkerLayersToRemoteCache(resultMap map[string]utils.ResultItem, builder *buildInfoBuilder) (int, error) {
+	if !strings.HasSuffix(builder.repository, "-cache") || len(resultMap) == 0 {
+		return 0, nil
+	}
+	totalDownloaded := 0
+	remoteRepo := strings.TrimSuffix(builder.repository, "-cache")
+	imageName := getDockerImageName(builder.image.Tag())
+	clientDetails := builder.serviceManager.GetConfig().GetServiceDetails().CreateHttpClientDetails()
+	// Search for marker layers
+	for _, layerData := range resultMap {
+		if strings.HasSuffix(layerData.Name, dockerMarkerLayerSuffix) {
+			log.Debug(fmt.Sprintf("Downloading %s layer into remote repository cache...", layerData.Name))
+			baseUrl := builder.serviceManager.GetConfig().GetServiceDetails().GetUrl()
+			endpoint := "api/docker/" + remoteRepo + "/v2/" + imageName + "/blobs/" + toNoneMarkerLayer(layerData.Name)
+			resp, body, err := builder.serviceManager.Client().SendHead(baseUrl+endpoint, &clientDetails)
+			if err != nil {
+				return totalDownloaded, err
+			}
+			if resp.StatusCode != http.StatusOK {
+				return totalDownloaded, errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "for" + string(body)))
+			}
+			totalDownloaded++
+		}
+	}
+	return totalDownloaded, nil
+}
+
+func getDockerImageName(image string) string {
+	imageId, tag := strings.Index(image, "/"), strings.Index(image, ":")
+	if imageId == -1 || tag == -1 {
+		return ""
+	}
+	return image[imageId+1 : tag]
+}
+
+func toNoneMarkerLayer(layer string) string {
+	imageId := strings.Replace(layer, "__", ":", 1)
+	return strings.Replace(imageId, ".marker", "", 1)
 }
 
 // To unmarshal config layer file
