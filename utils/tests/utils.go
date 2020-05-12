@@ -268,8 +268,8 @@ func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 	return cli.main()
 }
 
-func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
-	return &JfrogCli{cli.main, cli.prefix, suffix}
+func (cli *JfrogCli) WithoutCredentials() *JfrogCli {
+	return &JfrogCli{cli.main, cli.prefix, ""}
 }
 
 type gitManager struct {
