@@ -3,6 +3,7 @@ package cliutils
 import (
 	"bytes"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"os"
 	"path"
 	"path/filepath"
@@ -307,4 +308,16 @@ func GetJfrogSecurityDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(homeDir, "security"), nil
+}
+
+func AskYesNo(message string, defaultStr string, label string) (bool, error) {
+	question := &prompt.YesNo{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return false, errorutils.CheckError(err)
+	}
+	return question.Result.GetBool(label), nil
 }

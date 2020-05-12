@@ -26,12 +26,12 @@ import (
 var mutex sync.Mutex
 
 type ConfigCommand struct {
-	details             *config.ArtifactoryDetails
-	defaultDetails      *config.ArtifactoryDetails
-	interactive         bool
-	encPassword         bool
-	useRefreshableToken bool
-	serverId            string
+	details          *config.ArtifactoryDetails
+	defaultDetails   *config.ArtifactoryDetails
+	interactive      bool
+	encPassword      bool
+	useBasicAuthOnly bool
+	serverId         string
 }
 
 func NewConfigCommand() *ConfigCommand {
@@ -48,8 +48,8 @@ func (cc *ConfigCommand) SetEncPassword(encPassword bool) *ConfigCommand {
 	return cc
 }
 
-func (cc *ConfigCommand) SetUseRefreshableToken(useRefreshableToken bool) *ConfigCommand {
-	cc.useRefreshableToken = useRefreshableToken
+func (cc *ConfigCommand) SetUseBasicAuthOnly(useBasicAuthOnly bool) *ConfigCommand {
+	cc.useBasicAuthOnly = useBasicAuthOnly
 	return cc
 }
 
@@ -125,22 +125,18 @@ func (cc *ConfigCommand) Config() error {
 		}
 	}
 
-	if cc.useRefreshableToken {
-		err = cc.configRefreshableToken()
-		if err != nil {
-			return err
-		}
+	if !cc.useBasicAuthOnly {
+		cc.configRefreshableToken()
 	}
 
 	return config.SaveArtifactoryConf(configurations)
 }
 
-func (cc *ConfigCommand) configRefreshableToken() error {
+func (cc *ConfigCommand) configRefreshableToken() {
 	if (cc.details.User == "" || cc.details.Password == "") && cc.details.ApiKey == "" {
-		return errors.New("refreshable token mode is only available with Username & Password or API key")
+		return
 	}
 	cc.details.TokenRefreshInterval = cliutils.TokenRefreshDefaultInterval
-	return nil
 }
 
 func (cc *ConfigCommand) prepareConfigurationData() ([]*config.ArtifactoryDetails, error) {
@@ -238,12 +234,14 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 		}
 	}
 
-	cc.readRefreshableTokensFromConsole()
 	cc.readClientCertInfoFromConsole()
-	return nil
+	return cc.readRefreshableTokenFromConsole()
 }
 
 func (cc *ConfigCommand) readClientCertInfoFromConsole() {
+	if cc.details.ClientCertPath != "" && cc.details.ClientCertKeyPath != "" {
+		return
+	}
 	if cliutils.InteractiveConfirm("Is the Artifactory reverse proxy configured to accept a client certificate?") {
 		if cc.details.ClientCertPath == "" {
 			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
@@ -254,10 +252,16 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 	}
 }
 
-func (cc *ConfigCommand) readRefreshableTokensFromConsole() {
-	if (cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "" {
-		cc.useRefreshableToken = cliutils.InteractiveConfirm("Replace username and password/API key with automatically created access token that’s refreshed hourly?")
+func (cc *ConfigCommand) readRefreshableTokenFromConsole() error {
+	if !cc.useBasicAuthOnly && ((cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "") {
+		useRefreshableToken, err := cliutils.AskYesNo(
+			"Replace username and password/API key with automatically creates access token that's refreshed hourly? (y/n) [${default}]? ", "y", "useRefreshableToken")
+		if err != nil {
+			return err
+		}
+		cc.useBasicAuthOnly = !useRefreshableToken
 	}
+	return nil
 }
 
 func readAccessTokenFromConsole(details *config.ArtifactoryDetails) error {
@@ -489,8 +493,7 @@ func (cc *ConfigCommand) encryptPassword() error {
 }
 
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
-	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url),
-		details.AccessToken != "" && details.TokenRefreshInterval == cliutils.TokenRefreshDisabled}
+	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url), details.AccessToken != ""}
 	if cliutils.SumTrueValues(boolArr) > 1 {
 		return errorutils.CheckError(errors.New("Only one authentication method is allowed: Username + Password/API key, RSA Token (SSH) or Access Token."))
 	}
@@ -498,10 +501,10 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 }
 
 type ConfigCommandConfiguration struct {
-	ArtDetails           *config.ArtifactoryDetails
-	Interactive          bool
-	EncPassword          bool
-	TokenRefreshInterval int
+	ArtDetails    *config.ArtifactoryDetails
+	Interactive   bool
+	EncPassword   bool
+	BasicAuthOnly bool
 }
 
 func GetAllArtifactoryServerIds() []string {
