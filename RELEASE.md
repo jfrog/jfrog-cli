@@ -1,3 +1,8 @@
+## 1.35.4 (May 12, 2020)
+- Bug fix - The “jfrog rt docker-push” command may duplicate artifacts added to the build-info, which can cause build-promotion to fail.
+- Bug fix - The “jfrog rt docker-pull” command cannot collect build-info when pulling from a remote repo.
+- Bug fix - VCS props are not added when uploading only one file.
+
 ## 1.35.3 (Mar 30, 2020)
 - Bug fix - Command arguments and options wrapped with quotes are not parsed properly.
 
@@ -9,13 +14,13 @@
 ## 1.35.1 (Mar 18, 2020)
 - Bug fix - "jfrog rt npm-publish" can publish an incorrect module name.
 - Bug fix - The --insecure-tls option is missing for "jfrog rt mvn",
-- Bug fix - The replication-create and replication-delete commands are missing.  
+- Bug fix - The replication-create and replication-delete commands are missing.
 
 ## 1.35.0 (Mar 17, 2020)
 - New repo-create, repo-update and repo-delete commands for Artifactory.
 - New replication-create and replication-delete commands for Artifactory.
-- "jfriog rt mvn" and "jfrog rt gradle" now support parallel deployment. 
-- "jfrog rt mvn" - New --insecure-tls option. 
+- "jfriog rt mvn" and "jfrog rt gradle" now support parallel deployment.
+- "jfrog rt mvn" - New --insecure-tls option.
 - New commands - release-bundle-create, release-bundle-update, release-bundle-sign, release-bundle-distribute, release-bundle-delete
 - "jfrog rt delete" now includes a new --threads option.
 - "jfrog rt docker-pull" now supports docker fat manifest.
@@ -27,9 +32,9 @@
 - Improve URL masking reg exp.
 
 ## 1.34.0 (Feb 27, 2020)
-- Allow filtering files by Release Bundle, when searching, downloading, moving, etc. 
+- Allow filtering files by Release Bundle, when searching, downloading, moving, etc.
 - 'exclude-patterns' file spec property and command option is deprecated and replaced by 'exclusions'.
-- Allow non-interactive usage of the npm-config, maven-config, gradle-config, nuget-config and go-config commands. 
+- Allow non-interactive usage of the npm-config, maven-config, gradle-config, nuget-config and go-config commands.
 - Disable all interactive prompts when CI=true
 - New --client-cert-path and --client-cert-key-path options added to the "jfrog rt c" command.
 - New --target option added to the "jfrog xr offline-update" command.
@@ -40,7 +45,7 @@
 - The pip-deps-tree command was removed.
 
 ## 1.33.2 (Jan 27, 2020)
-- Bug fix - The "jfrog rt build-scan" command returns exit code 0 in case of a timeout. 
+- Bug fix - The "jfrog rt build-scan" command returns exit code 0 in case of a timeout.
 - Bug fix - The --help option is not working for some commands.
 
 ## 1.33.1 (Jan 16, 2020)
@@ -54,8 +59,8 @@
 - Validate the minimum supported version of the docker client.
 - Bug fix - Build tools config commands do not fetch local repositories.
 - Bug fix - Config created by "jfrog rt gradlec" is invalid.
-- Bug fix - Do not remove all parenthesis from path on Artifactory upload.  
-- Bug fix - Wrong command name in mvnc help. 
+- Bug fix - Do not remove all parenthesis from path on Artifactory upload.
+- Bug fix - Wrong command name in mvnc help.
 
 ## 1.32.4 (Dec 23, 2019)
 - Update jfrog-client-go version to v0.6.3
@@ -98,7 +103,7 @@
 ## 1.30.1 (Oct 31, 2019)
 - Added support for File Specs for the "jfrog rt set-props" and "jfrog rt delete-props".
 - Bug fix - "jfrog rt upload" does not upload when the path includes "..".
-- Bug fix - "jfrog rt download" - sync-deletes does not delete when the path is "./" 
+- Bug fix - "jfrog rt download" - sync-deletes does not delete when the path is "./"
 
 ## 1.30.0 (Oct 24, 2019)
 - New --sync-deletes option added to the "jfrog rt download" command.
