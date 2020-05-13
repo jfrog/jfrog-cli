@@ -195,7 +195,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	// Add layers
 	builder.layers = append(builder.layers, searchResults["manifest.json"])
 	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
-	totalLayers := configurationLayer.getNumberLayers()
+	totalLayers := len(imageManifest.Layers)
 	totalDependencies := configurationLayer.getNumberOfDependentLayers()
 	// Add image layers as artifacts and dependencies.
 	for i := 0; i < totalLayers; i++ {
@@ -399,21 +399,6 @@ func performSearch(imagePathPattern string, serviceManager *artifactory.Artifact
 // sha256__30daa5c11544632449b01f450bebfef6b89644e9e683258ed05797abe7c32a6e
 func digestToLayer(digest string) string {
 	return strings.Replace(digest, ":", "__", 1)
-}
-
-// Get the total number of layers from the config.
-func (configLayer *configLayer) getNumberLayers() int {
-	layersNum := len(configLayer.History)
-	// The image ID appears to be associated with the uppermost layer, which is not part of the overall layers in the manifest or RootFS.
-	if !configLayer.History[layersNum-1].EmptyLayer {
-		layersNum--
-	}
-	for i := layersNum - 1; i >= 0; i-- {
-		if configLayer.History[i].EmptyLayer {
-			layersNum--
-		}
-	}
-	return layersNum
 }
 
 // Get the number of dependencies layers from the config.
