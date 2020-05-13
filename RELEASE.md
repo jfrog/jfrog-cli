@@ -2,6 +2,7 @@
 - Bug fix - The “jfrog rt docker-push” command may duplicate artifacts added to the build-info, which can cause build-promotion to fail.
 - Bug fix - The “jfrog rt docker-pull” command cannot collect build-info when pulling from a remote repo.
 - Bug fix - VCS props are not added when uploading only one file.
+- Bug fix - add retries to download/upload params
 
 ## 1.35.3 (Mar 30, 2020)
 - Bug fix - Command arguments and options wrapped with quotes are not parsed properly.
