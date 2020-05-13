@@ -3762,8 +3762,18 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
-	promotionParamsImpl.TargetRepo = c.Args().Get(2)
+
+	// If the command received 3 args, read the build name, build number
+	// and target repo as ags.
+	buildName, buildNumber, targetRepo := c.Args().Get(0), c.Args().Get(1), c.Args().Get(2)
+	// But if the command received only one arg, the build name and build number
+	// are expected as env vars, and only the target repo is received as an arg.
+	if len(c.Args()) == 1 {
+		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
+	}
+
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(buildName, buildNumber)
+	promotionParamsImpl.TargetRepo = targetRepo
 	return promotionParamsImpl
 }
 
