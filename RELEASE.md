@@ -1,3 +1,7 @@
+## 1.35.5 (May 13, 2020)
+- Bug fix - Out of range for docker duplicate layers.
+- Bug fix - 'jfrog rt bpr' fails with build params as env vars
+
 ## 1.35.4 (May 12, 2020)
 - Bug fix - The “jfrog rt docker-push” command may duplicate artifacts added to the build-info, which can cause build-promotion to fail.
 - Bug fix - The “jfrog rt docker-pull” command cannot collect build-info when pulling from a remote repo.
