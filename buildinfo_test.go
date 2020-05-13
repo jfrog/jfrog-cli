@@ -3,6 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -17,12 +24,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const ModuleNameJFrogTest = "jfrog-test"
@@ -58,9 +59,22 @@ func TestBuildPromote(t *testing.T) {
 	value1 := "v1,v2"
 	key2 := "another"
 	value2 := "property"
-	artifactoryCli.Exec("build-promote", buildName, buildNumberA, tests.Repo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
+
+	// Promote build to Repo1 using build name and build number as args.
+	artifactoryCli.Exec("build-promote", buildName, buildNumberA, tests.Repo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumberA, t, artHttpDetails)
-	resultItems := getResultItemsFromArtifactory(tests.SearchRepo2, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+
+	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
+
+	// Promote the same build to Repo2 using build name and build number as env vars.
+	os.Setenv(cliutils.BuildName, buildName)
+	os.Setenv(cliutils.BuildNumber, buildNumberA)
+	defer os.Unsetenv(cliutils.BuildName)
+	defer os.Unsetenv(cliutils.BuildNumber)
+	artifactoryCli.Exec("build-promote", tests.Repo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
+	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumberA, t, artHttpDetails)
+	resultItems = getResultItemsFromArtifactory(tests.SearchRepo2, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
