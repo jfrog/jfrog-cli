@@ -107,7 +107,7 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 		}
 		if !exists {
 			if assets.isPackagePartOfTargetDependencies(library.Path) {
-				log.Warn("The file", nupkgFilePath, "doesn't exist in the NuGet cache directory but it does exist as a target in the assets files. Skipping adding this file to the build info.")
+				log.Warn("The file", nupkgFilePath, "doesn't exist in the NuGet cache directory but it does exist as a target in the assets files."+absentNupkgWarnMsg)
 				continue
 			}
 			return nil, errorutils.CheckError(errors.New("The file " + nupkgFilePath + " doesn't exist in the NuGet cache directory."))

@@ -7,6 +7,9 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
+const absentNupkgWarnMsg = " Skipping adding this dependency to the build info. This might be because the package already exists in a different NuGet cache," +
+	" possibly the SDK's NuGetFallbackFolder cache. Removing the package from this cache may resolve the issue."
+
 var extractors []Extractor
 
 // Register dependency extractor

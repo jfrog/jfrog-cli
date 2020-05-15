@@ -2310,6 +2310,10 @@ func dotnetCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
+	if err := dotnet.ValidateDotnetCoreSdkVersion(); err != nil {
+		return err
+	}
+
 	// Get dotnet configuration.
 	dotnetConfig, err := utils.GetResolutionOnlyConfiguration(utils.Dotnet)
 	if err != nil {

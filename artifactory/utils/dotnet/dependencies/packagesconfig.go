@@ -93,9 +93,7 @@ func (extractor *packagesExtractor) extract(packagesConfig *packagesConfig, glob
 			extractor.allDependencies[id] = pack.dependency
 			extractor.childrenMap[id] = pack.getDependencies()
 		} else {
-			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s and therefore not"+
-				" added to the dependecy tree. This might be because the package already exists in a different NuGet cache,"+
-				" possibly the SDK cache. Removing the package from this cache may resolve the issue", nuget.Id, nuget.Version, globalPackagesCache))
+			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s."+absentNupkgWarnMsg, nuget.Id, nuget.Version, globalPackagesCache))
 		}
 	}
 	return nil
