@@ -876,21 +876,17 @@ func getGradleConfigFlags() []cli.Flag {
 	)
 }
 
-func getUrlFlags() []cli.Flag {
+func getUrlFlag() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:  "url",
 			Usage: "[Optional] Artifactory URL.` `",
 		},
-		cli.StringFlag{
-			Name:  "dist-url",
-			Usage: "[Optional] Distribution URL.` `",
-		},
 	}
 }
 
 func getBaseFlags() []cli.Flag {
-	return append(getUrlFlags(),
+	return append(getUrlFlag(),
 		cli.StringFlag{
 			Name:  "user",
 			Usage: "[Optional] Artifactory username.` `",
@@ -1750,11 +1746,12 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 		},
 		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
+		geDistributionUrlFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
+	return append(getServerFlags(), geDistributionUrlFlag(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
 }
 
 func getDistributionPassphraseFlag() cli.Flag {
@@ -1768,6 +1765,13 @@ func getStoringRepositoryFlag() cli.Flag {
 	return cli.StringFlag{
 		Name:  "repo",
 		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
+	}
+}
+
+func geDistributionUrlFlag() cli.Flag {
+	return cli.StringFlag{
+		Name:  "dist-url",
+		Usage: "[Optional] Distribution URL.` `",
 	}
 }
 
@@ -1793,6 +1797,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "country-codes",
 			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
 		},
+		geDistributionUrlFlag(),
 	}...)
 }
 
