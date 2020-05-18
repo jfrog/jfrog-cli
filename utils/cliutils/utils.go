@@ -245,6 +245,10 @@ func IsWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
+func IsLinux() bool {
+	return runtime.GOOS == "linux"
+}
+
 // Return the path of CLI temp dir.
 // This path should be persistent, meaning - should not be cleared at the end of a CLI run.
 func GetCliPersistentTempDirPath() string {
