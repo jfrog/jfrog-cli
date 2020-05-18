@@ -261,7 +261,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	// Cleanup buildInfo with the same buildName and buildNumber
-	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
+	artifactoryCli.WithoutCredentials().Exec("build-clean", buildName, buildNumber)
 
 	// Upload different files with the same buildName and buildNumber
 	specFile, err = tests.CreateSpec(tests.SplitUploadSpecB)
@@ -276,6 +276,37 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("download", tests.Repo1, outputDir+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumber)
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(outputDir, false)
 	tests.VerifyExistLocally(tests.GetCleanBuild(), paths, t)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryBuildCollectEnv(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "12"
+
+	// Build collect env
+	os.Setenv("DONT_COLLECT", "foo")
+	os.Setenv("COLLECT", "bar")
+	artifactoryCli.WithoutCredentials().Exec("bce", buildName, buildNumber)
+
+	// Publish build info
+	artifactoryCli.Exec("bp", buildName, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+
+	// Make sure no sensitive data in build env
+	for k := range buildInfo.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+		assert.NotContains(t, k, "DONT_COLLECT")
+	}
+
+	// Make sure "COLLECT" env appear in build env
+	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)

@@ -49,7 +49,7 @@ func TestIncludePartialIgnoreCase(t *testing.T) {
 }
 
 func TestExcludePasswordsPattern(t *testing.T) {
-	excludeFilter := createExcludeFilter("*paSSword*;*seCrEt*;*kEy*;*token*")
+	excludeFilter := createExcludeFilter("*paSSword*;*PsW*;*seCrEt*;*kEy*;*token*")
 	filteredKeys, err := excludeFilter(envVars)
 	if err != nil {
 		t.Error(err)
