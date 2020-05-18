@@ -104,7 +104,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "config",
-			Flags:        getConfigFlags(),
+			Flags:        cliutils.GetCommandFlags("config"),
 			Aliases:      []string{"c"},
 			Usage:        configdocs.Description,
 			HelpName:     common.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
