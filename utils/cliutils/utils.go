@@ -3,6 +3,8 @@ package cliutils
 import (
 	"bytes"
 	"fmt"
+	artifactoryservicesUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils/responsereaderwriter"
 	"os"
 	"path"
 	"path/filepath"
@@ -118,9 +120,61 @@ func traceExit(exitCode ExitCode, err error) {
 	os.Exit(exitCode.Code)
 }
 
+type detailedSummaryRecord struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
 // Print summary report.
 // The given error will pass through and be returned as is if no other errors are raised.
-func PrintSummaryReport(success, failed int, err error) error {
+// If a resultReader is provided, we will iterate the result file and print a detailed summary including affected files array.
+// The result file will be deleted at the end by the GetRecord() iterator.
+func PrintSummaryReport(success, failed int, resultReader *responsereaderwriter.ResponseReader, rtUrl string, originalErr error) (err error) {
+	err = originalErr
+	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+	if mErr != nil {
+		log.Error(mErr)
+		return
+	}
+	// A reader wasn't provided, prints the basic summary json and return.
+	if resultReader == nil {
+		log.Output(basicSummary)
+		return
+	}
+	_, mErr = resultReader.Run()
+	if mErr != nil {
+		log.Output(basicSummary)
+		log.Error(mErr)
+		return
+	}
+	writer, mErr := responsereaderwriter.NewResponseWriter(1, "files", false, true)
+	if originalErr != nil {
+		log.Output(basicSummary)
+		log.Error(mErr)
+		return
+	}
+	// We remove the closing curly bracket in order to append the affected files array using a responseWriter to write directly to stdout.
+	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
+	log.Output(basicSummary)
+	defer log.Output("}")
+	var fileDesc artifactoryservicesUtils.FileInfo
+	writer.Run()
+	for e := resultReader.GetRecord(&fileDesc); e == nil; e = resultReader.GetRecord(&fileDesc) {
+		record := detailedSummaryRecord{
+			Source: rtUrl + fileDesc.ArtifactoryPath,
+			Target: fileDesc.LocalPath,
+		}
+		writer.AddRecord(record)
+	}
+	mErr = writer.Stop()
+	if originalErr != nil {
+		log.Error(mErr)
+		return
+	}
+	return
+}
+
+func CreateSummaryReportString(success, failed int, err error) (string, error) {
 	summaryReport := summary.New(err)
 	summaryReport.Totals.Success = success
 	summaryReport.Totals.Failure = failed
@@ -129,11 +183,9 @@ func PrintSummaryReport(success, failed int, err error) error {
 	}
 	content, mErr := summaryReport.Marshal()
 	if errorutils.CheckError(mErr) != nil {
-		log.Error(mErr)
-		return err
+		return "", mErr
 	}
-	log.Output(utils.IndentJson(content))
-	return err
+	return utils.IndentJson(content), mErr
 }
 
 func PrintHelpAndReturnError(msg string, context *cli.Context) error {

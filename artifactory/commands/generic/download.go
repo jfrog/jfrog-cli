@@ -1,7 +1,10 @@
 package generic
 
 import (
+	"encoding/json"
 	"errors"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils/responsereaderwriter"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -96,14 +99,28 @@ func (dc *DownloadCommand) Run() error {
 		downloadParamsArray = append(downloadParamsArray, downParams)
 	}
 	// Perform download.
-	filesInfo, totalExpected, err := servicesManager.DownloadFiles(downloadParamsArray...)
+	// In case of build-info collection/sync-deletes operation/a detailed summary is required, we use the download service which provides results file reader,
+	// otherwise we use the download service which provides only general counters.
+	var totalDownloaded, totalExpected int
+	var filesReader *responsereaderwriter.ResponseReader = nil
+	if isCollectBuildInfo || dc.SyncDeletesPath() != "" || dc.DetailedSummary() {
+		filesReader, totalDownloaded, totalExpected, err = servicesManager.DownloadFilesWithResultReader(downloadParamsArray...)
+	} else {
+		totalDownloaded, totalExpected, err = servicesManager.DownloadFiles(downloadParamsArray...)
+	}
 	if err != nil {
 		errorOccurred = true
 		log.Error(err)
 	}
-
-	dc.result.SetSuccessCount(len(filesInfo))
-	dc.result.SetFailCount(totalExpected - len(filesInfo))
+	dc.result.SetSuccessCount(totalDownloaded)
+	dc.result.SetFailCount(totalExpected - totalDownloaded)
+	if dc.DetailedSummary() {
+		dc.result.SetResultsReader(filesReader)
+	} else if filesReader != nil {
+		// If detailed-summary wasn't required and reader is not nil, means we created the result file reader for our own needs.
+		// We must delete the file at the end of this function.
+		defer filesReader.DeleteFile()
+	}
 	// Check for errors.
 	if errorOccurred {
 		return errors.New("Download finished with errors, please review the logs.")
@@ -118,7 +135,16 @@ func (dc *DownloadCommand) Run() error {
 			return errorutils.CheckError(err)
 		}
 		if _, err = os.Stat(absSyncDeletesPath); err == nil {
-			walkFn := createSyncDeletesWalkFunction(filesInfo)
+			// Unmarshal the local paths of the downloaded files from the results file reader
+			file, err := os.Open(filesReader.GetFilePath())
+			if err != nil {
+				return errorutils.CheckError(err)
+			}
+			byteValue, _ := ioutil.ReadAll(file)
+			file.Close()
+			var filesInfo downlodedInfo
+			err = json.Unmarshal(byteValue, &filesInfo)
+			walkFn := createSyncDeletesWalkFunction(filesInfo.DownlodedFiles)
 			err = fileutils.Walk(dc.SyncDeletesPath(), walkFn, false)
 			if err != nil {
 				return errorutils.CheckError(err)
@@ -127,11 +153,20 @@ func (dc *DownloadCommand) Run() error {
 			log.Info("Sync-deletes path", absSyncDeletesPath, "does not exists.")
 		}
 	}
-	log.Debug("Downloaded", strconv.Itoa(len(filesInfo)), "artifacts.")
+	log.Debug("Downloaded", strconv.Itoa(totalDownloaded), "artifacts.")
 
 	// Build Info
 	if isCollectBuildInfo {
-		buildDependencies := convertFileInfoToBuildDependencies(filesInfo)
+		// Unmarshal all info of the downloaded files from the results file reader
+		file, err := os.Open(filesReader.GetFilePath())
+		if err != nil {
+			return errorutils.CheckError(err)
+		}
+		byteValue, _ := ioutil.ReadAll(file)
+		file.Close()
+		var downloaded downlodedBuildInfo
+		err = json.Unmarshal(byteValue, &downloaded)
+		buildDependencies := convertFileInfoToBuildDependencies(downloaded.FilesInfo)
 		populateFunc := func(partial *buildinfo.Partial) {
 			partial.Dependencies = buildDependencies
 			partial.ModuleId = dc.buildConfiguration.Module
@@ -192,7 +227,7 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	return
 }
 
-func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileutils.WalkFunc {
+func createSyncDeletesWalkFunction(downloadedFiles []localPath) fileutils.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		// Convert path to absolute path
 		path, err = filepath.Abs(path)
@@ -225,4 +260,16 @@ func createSyncDeletesWalkFunction(downloadedFiles []clientutils.FileInfo) fileu
 
 		return errorutils.CheckError(err)
 	}
+}
+
+type downlodedBuildInfo struct {
+	FilesInfo []clientutils.FileInfo `json:"results,omitempty"`
+}
+
+type downlodedInfo struct {
+	DownlodedFiles []localPath `json:"results,omitempty"`
+}
+
+type localPath struct {
+	LocalPath string `json:"localPath,omitempty"`
 }

@@ -1072,6 +1072,7 @@ func getDownloadFlags() []cli.Flag {
 		getSyncDeletesFlag("[Optional] Specific path in the local file system, under which to sync dependencies after the download. After the download, this path will include only the dependencies downloaded during this download operation. The other files under this path will be deleted.` `"),
 		getQuiteFlag("[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `"),
 		getInsecureTlsFlag(),
+		getDetailedSummaryFlag(),
 	}...)
 }
 
@@ -1155,6 +1156,13 @@ func getFailNoOpFlag() cli.Flag {
 	return cli.BoolFlag{
 		Name:  "fail-no-op",
 		Usage: "[Default: false] Set to true if you'd like the command to return exit code 2 in case of no files are affected.` `",
+	}
+}
+
+func getDetailedSummaryFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:  "detailed-summary",
+		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
 	}
 }
 
@@ -2398,7 +2406,7 @@ func goPublishCmd(c *cli.Context) error {
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 }
 
 // This function checks whether the command received --help as a single option.
@@ -2514,7 +2522,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	goArg, err := utils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
+		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
 	}
 	targetRepo := c.Args().Get(1)
 	details, err := createArtifactoryDetailsByFlags(c, false)
@@ -2536,7 +2544,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	err = commands.Exec(goCmd)
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, err)
+		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
 	}
 	return err
 }
@@ -2674,11 +2682,11 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c))
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummaryt(c.Bool("detailed-summary"))
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.ResultsReader(), rtDetails.Url, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2723,7 +2731,7 @@ func uploadCmd(c *cli.Context) error {
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2758,7 +2766,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(moveSpec)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2794,7 +2802,7 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2835,7 +2843,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(deleteSpec)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2936,7 +2944,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2950,7 +2958,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -3001,7 +3009,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 	if err != nil {
 		return err
 	}
