@@ -1,4 +1,4 @@
-package commandargs
+package dotnet
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ const sourceName = "JFrogCli"
 
 type DotnetCommand struct {
 	toolchainType      dotnet.ToolchainType
-	args               string
-	flags              string
+	subCommand         string
+	argAndFlags        string
 	repoName           string
 	solutionPath       string
 	buildConfiguration *utils.BuildConfiguration
@@ -56,13 +56,13 @@ func (dc *DotnetCommand) SetRepoName(repoName string) *DotnetCommand {
 	return dc
 }
 
-func (dc *DotnetCommand) SetFlags(flags string) *DotnetCommand {
-	dc.flags = flags
+func (dc *DotnetCommand) SetArgAndFlags(argAndFlags string) *DotnetCommand {
+	dc.argAndFlags = argAndFlags
 	return dc
 }
 
-func (dc *DotnetCommand) SetArgs(args string) *DotnetCommand {
-	dc.args = args
+func (dc *DotnetCommand) SetBasicCommand(subCommand string) *DotnetCommand {
+	dc.subCommand = subCommand
 	return dc
 }
 
@@ -119,7 +119,7 @@ func (dc *DotnetCommand) Exec() error {
 }
 
 func (dc *DotnetCommand) updateSolutionPathAndGetFileName() (string, error) {
-	argsAndFlags := strings.Split(dc.flags, " ")
+	argsAndFlags := strings.Split(dc.argAndFlags, " ")
 	cmdFirstArg := argsAndFlags[0]
 	// The path argument wasn't provided, sln file will be searched under working directory.
 	if len(cmdFirstArg) == 0 || strings.HasPrefix(cmdFirstArg, "-") {
@@ -138,14 +138,16 @@ func (dc *DotnetCommand) updateSolutionPathAndGetFileName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// The path argument is a .sln file.
-	if exist && strings.HasSuffix(cmdFirstArg, ".sln") {
-		dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
-		return filepath.Base(cmdFirstArg), nil
-	}
-	// The path argument is a .csproj/packages.config file.
-	if exist && (strings.HasSuffix(cmdFirstArg, ".csproj") || strings.HasSuffix(cmdFirstArg, "packages.config")) {
-		dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
+	if exist {
+		// The path argument is a .sln file.
+		if strings.HasSuffix(cmdFirstArg, ".sln") {
+			dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
+			return filepath.Base(cmdFirstArg), nil
+		}
+		// The path argument is a .csproj/packages.config file.
+		if strings.HasSuffix(cmdFirstArg, ".csproj") || strings.HasSuffix(cmdFirstArg, "packages.config") {
+			dc.updateSolutionPath(filepath.Dir(cmdFirstArg))
+		}
 	}
 	return "", nil
 }
@@ -328,15 +330,15 @@ func (dc *DotnetCommand) createCmd() (*dotnet.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	if dc.args != "" {
-		c.Command, err = utils.ParseArgs(strings.Split(dc.args, " "))
+	if dc.subCommand != "" {
+		c.Command, err = utils.ParseArgs(strings.Split(dc.subCommand, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
 	}
 
-	if dc.flags != "" {
-		c.CommandFlags, err = utils.ParseArgs(strings.Split(dc.flags, " "))
+	if dc.argAndFlags != "" {
+		c.CommandFlags, err = utils.ParseArgs(strings.Split(dc.argAndFlags, " "))
 	}
 
 	return c, errorutils.CheckError(err)

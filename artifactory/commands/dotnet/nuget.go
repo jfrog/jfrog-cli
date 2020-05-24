@@ -2,7 +2,6 @@ package dotnet
 
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/solution"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -12,11 +11,11 @@ import (
 
 type NugetCommand struct {
 	configFilePath string
-	*dotnetCmd.DotnetCommand
+	*DotnetCommand
 }
 
 func NewNugetCommand() *NugetCommand {
-	nugetCmd := NugetCommand{"", &dotnetCmd.DotnetCommand{}}
+	nugetCmd := NugetCommand{"", &DotnetCommand{}}
 	nugetCmd.SetToolchainType(dotnet.Nuget)
 	return &nugetCmd
 }

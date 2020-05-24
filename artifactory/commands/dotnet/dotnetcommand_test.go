@@ -1,4 +1,4 @@
-package commandargs
+package dotnet
 
 import (
 	"encoding/xml"
@@ -143,7 +143,7 @@ func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dc := DotnetCommand{solutionPath: test.solutionPath, flags: test.flags}
+			dc := DotnetCommand{solutionPath: test.solutionPath, argAndFlags: test.flags}
 			slnFile, err := dc.updateSolutionPathAndGetFileName()
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedSlnFile, slnFile)

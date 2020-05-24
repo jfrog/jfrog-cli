@@ -4,7 +4,6 @@ import (
 	"errors"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/version"
 	"strings"
@@ -13,11 +12,11 @@ import (
 const minDotnetSdkCore = "3.0.0"
 
 type DotnetCoreCliCommand struct {
-	*dotnetCmd.DotnetCommand
+	*DotnetCommand
 }
 
 func NewDotnetCoreCliCommand() *DotnetCoreCliCommand {
-	dotnetCoreCliCmd := DotnetCoreCliCommand{&dotnetCmd.DotnetCommand{}}
+	dotnetCoreCliCmd := DotnetCoreCliCommand{&DotnetCommand{}}
 	dotnetCoreCliCmd.SetToolchainType(dotnet.DotnetCore)
 	return &dotnetCoreCliCmd
 }
@@ -41,7 +40,7 @@ func ValidateDotnetCoreSdkVersion() error {
 
 	dotNetSdkCoreVersion := version.NewVersion(output)
 	if !dotNetSdkCoreVersion.AtLeast(minDotnetSdkCore) {
-		return errorutils.CheckError(errors.New("JFrog cli dotnet command requires .NET Core SDK version " + minDotnetSdkCore + " or higher, while version " + strings.TrimSpace(output) + " in use."))
+		return errorutils.CheckError(errors.New("JFrog CLI dotnet command requires .NET Core SDK version " + minDotnetSdkCore + " or higher, while version " + strings.TrimSpace(output) + " in use."))
 	}
 	return nil
 }

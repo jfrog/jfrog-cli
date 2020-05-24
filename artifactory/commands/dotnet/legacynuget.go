@@ -2,15 +2,14 @@ package dotnet
 
 import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	dotnetCmd "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet/commandargs"
 )
 
 type NugetLegacyCommand struct {
-	*dotnetCmd.DotnetCommand
+	*DotnetCommand
 }
 
 func NewLegacyNugetCommand() *NugetLegacyCommand {
-	nugetLegacyCmd := NugetLegacyCommand{&dotnetCmd.DotnetCommand{}}
+	nugetLegacyCmd := NugetLegacyCommand{&DotnetCommand{}}
 	nugetLegacyCmd.SetToolchainType(dotnet.Nuget)
 	return &nugetLegacyCmd
 }

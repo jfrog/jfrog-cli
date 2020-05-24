@@ -2260,9 +2260,11 @@ func nugetCmd(c *cli.Context) error {
 		}
 
 		nugetCmd := dotnet.NewNugetCommand()
-		nugetCmd.SetRtDetails(rtDetails).SetRepoName(nugetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredNugetArgs[0])
+		nugetCmd.SetRtDetails(rtDetails).SetRepoName(nugetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredNugetArgs[0])
+		// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
+		// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 		if len(filteredNugetArgs) > 1 {
-			nugetCmd.SetFlags(strings.Join(filteredNugetArgs[1:], " "))
+			nugetCmd.SetArgAndFlags(strings.Join(filteredNugetArgs[1:], " "))
 		}
 		return commands.Exec(nugetCmd)
 	}
@@ -2284,7 +2286,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	nugetCmd.SetArgs(c.Args().Get(0)).SetFlags(c.String("nuget-args")).
+	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String("nuget-args")).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
 		SetSolutionPath(c.String("solution-root")).
@@ -2339,9 +2341,11 @@ func dotnetCmd(c *cli.Context) error {
 
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
-	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetArgs(filteredDotnetArgs[0])
+	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredDotnetArgs[0])
+	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
+	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
 	if len(filteredDotnetArgs) > 1 {
-		dotnetCmd.SetFlags(strings.Join(filteredDotnetArgs[1:], " "))
+		dotnetCmd.SetArgAndFlags(strings.Join(filteredDotnetArgs[1:], " "))
 	}
 	return commands.Exec(dotnetCmd)
 }
