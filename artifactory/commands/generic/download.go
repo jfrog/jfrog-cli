@@ -3,13 +3,6 @@ package generic
 import (
 	"encoding/json"
 	"errors"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils/responsereaderwriter"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -19,8 +12,13 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
 )
 
 type DownloadCommand struct {
@@ -102,9 +100,10 @@ func (dc *DownloadCommand) Run() error {
 	// In case of build-info collection/sync-deletes operation/a detailed summary is required, we use the download service which provides results file reader,
 	// otherwise we use the download service which provides only general counters.
 	var totalDownloaded, totalExpected int
-	var filesReader *responsereaderwriter.ResponseReader = nil
+	var resultsReader *content.ContentReader = nil
 	if isCollectBuildInfo || dc.SyncDeletesPath() != "" || dc.DetailedSummary() {
-		filesReader, totalDownloaded, totalExpected, err = servicesManager.DownloadFilesWithResultReader(downloadParamsArray...)
+		resultsReader, totalDownloaded, totalExpected, err = servicesManager.DownloadFilesWithResultReader(downloadParamsArray...)
+		dc.result.SetReader(resultsReader)
 	} else {
 		totalDownloaded, totalExpected, err = servicesManager.DownloadFiles(downloadParamsArray...)
 	}
@@ -114,12 +113,11 @@ func (dc *DownloadCommand) Run() error {
 	}
 	dc.result.SetSuccessCount(totalDownloaded)
 	dc.result.SetFailCount(totalExpected - totalDownloaded)
-	if dc.DetailedSummary() {
-		dc.result.SetResultsReader(filesReader)
-	} else if filesReader != nil {
-		// If detailed-summary wasn't required and reader is not nil, means we created the result file reader for our own needs.
-		// We must delete the file at the end of this function.
-		defer filesReader.DeleteFile()
+	if resultsReader != nil && !dc.DetailedSummary() {
+		defer func() {
+			resultsReader.Close()
+			dc.result.SetReader(nil)
+		}()
 	}
 	// Check for errors.
 	if errorOccurred {
@@ -136,15 +134,12 @@ func (dc *DownloadCommand) Run() error {
 		}
 		if _, err = os.Stat(absSyncDeletesPath); err == nil {
 			// Unmarshal the local paths of the downloaded files from the results file reader
-			file, err := os.Open(filesReader.GetFilePath())
+			tmpRoot, err := createDownloadResultEmptyTmpReflection(resultsReader)
+			defer os.RemoveAll(tmpRoot)
 			if err != nil {
-				return errorutils.CheckError(err)
+				return err
 			}
-			byteValue, _ := ioutil.ReadAll(file)
-			file.Close()
-			var filesInfo downlodedInfo
-			err = json.Unmarshal(byteValue, &filesInfo)
-			walkFn := createSyncDeletesWalkFunction(filesInfo.DownlodedFiles)
+			walkFn := createSyncDeletesWalkFunction(tmpRoot)
 			err = fileutils.Walk(dc.SyncDeletesPath(), walkFn, false)
 			if err != nil {
 				return errorutils.CheckError(err)
@@ -158,7 +153,7 @@ func (dc *DownloadCommand) Run() error {
 	// Build Info
 	if isCollectBuildInfo {
 		// Unmarshal all info of the downloaded files from the results file reader
-		file, err := os.Open(filesReader.GetFilePath())
+		file, err := os.Open(resultsReader.GetFilePath())
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
@@ -227,25 +222,53 @@ func getDownloadParams(f *spec.File, configuration *utils.DownloadConfiguration)
 	return
 }
 
-func createSyncDeletesWalkFunction(downloadedFiles []localPath) fileutils.WalkFunc {
+// We will create the same downloaded hierarchies under a temp dirctory with 0-size files.
+// We will use this "empty reflection" of the download operation to determine whether a file was downloded or not while walking the real filesystem from sync-deletes root.
+func createDownloadResultEmptyTmpReflection(reader *content.ContentReader) (tmpRoot string, err error) {
+	tmpRoot, err = fileutils.CreateTempDir()
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	var path localPath
+	reader.Run()
+	for e := reader.GetRecord(&path); e == nil; e = reader.GetRecord(&path) {
+		var absDownlaodPath string
+		absDownlaodPath, err = filepath.Abs(path.LocalPath)
+		if errorutils.CheckError(err) != nil {
+			return
+		}
+		tmpFilePath := filepath.Join(tmpRoot, absDownlaodPath)
+		tmpFileRoot := filepath.Dir(tmpFilePath)
+		err = os.MkdirAll(tmpFileRoot, os.ModePerm)
+		if errorutils.CheckError(err) != nil {
+			return
+		}
+		var tmpFile *os.File
+		tmpFile, err = os.Create(tmpFilePath)
+		if errorutils.CheckError(err) != nil {
+			return
+		}
+		err = tmpFile.Close()
+		if errorutils.CheckError(err) != nil {
+			return
+		}
+	}
+	return
+}
+
+func createSyncDeletesWalkFunction(tempRoot string) fileutils.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		// Convert path to absolute path
 		path, err = filepath.Abs(path)
 		if errorutils.CheckError(err) != nil {
 			return err
 		}
-		// Go over the downloaded files list
-		for _, file := range downloadedFiles {
-			// If the current path is a prefix of a downloaded file - we won't delete it.
-			fileAbsPath, err := filepath.Abs(file.LocalPath)
-			if errorutils.CheckError(err) != nil {
-				return err
-			}
-			if strings.HasPrefix(fileAbsPath, path) {
-				return nil
-			}
+		// Join the current absolute path to the temp root provided.
+		tmpFilePath := filepath.Join(tempRoot, path)
+		// If the path exists under the temp root directory, it means it's been downloaded during the last operations, and cannot be deleted.
+		if fileutils.IsPathExists(tmpFilePath, false) {
+			return nil
 		}
-		// The current path is not a prefix of any downloaded file so it should be deleted
 		log.Info("Deleting:", path)
 		if info.IsDir() {
 			// If current path is a dir - remove all content and return SkipDir to stop walking this path

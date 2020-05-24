@@ -1,11 +1,11 @@
 package utils
 
-import "github.com/jfrog/jfrog-client-go/utils/io/httputils/responsereaderwriter"
+import "github.com/jfrog/jfrog-client-go/utils/io/content"
 
 type Result struct {
-	successCount  int
-	failCount     int
-	resultsReader *responsereaderwriter.ResponseReader
+	successCount int
+	failCount    int
+	reader       *content.ContentReader
 }
 
 func (r *Result) SuccessCount() int {
@@ -16,8 +16,8 @@ func (r *Result) FailCount() int {
 	return r.failCount
 }
 
-func (r *Result) ResultsReader() *responsereaderwriter.ResponseReader {
-	return r.resultsReader
+func (r *Result) Reader() *content.ContentReader {
+	return r.reader
 }
 
 func (r *Result) SetSuccessCount(successCount int) {
@@ -28,6 +28,6 @@ func (r *Result) SetFailCount(failCount int) {
 	r.failCount = failCount
 }
 
-func (r *Result) SetResultsReader(reader *responsereaderwriter.ResponseReader) {
-	r.resultsReader = reader
+func (r *Result) SetReader(reader *content.ContentReader) {
+	r.reader = reader
 }

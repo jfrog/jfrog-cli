@@ -2686,7 +2686,7 @@ func downloadCmd(c *cli.Context) error {
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.ResultsReader(), rtDetails.Url, err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), rtDetails.Url, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }

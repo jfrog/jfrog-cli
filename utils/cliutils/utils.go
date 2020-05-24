@@ -3,8 +3,8 @@ package cliutils
 import (
 	"bytes"
 	"fmt"
-	artifactoryservicesUtils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils/responsereaderwriter"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"os"
 	"path"
 	"path/filepath"
@@ -127,9 +127,9 @@ type detailedSummaryRecord struct {
 
 // Print summary report.
 // The given error will pass through and be returned as is if no other errors are raised.
-// If a resultReader is provided, we will iterate the result file and print a detailed summary including affected files array.
+// If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
 // The result file will be deleted at the end by the GetRecord() iterator.
-func PrintSummaryReport(success, failed int, resultReader *responsereaderwriter.ResponseReader, rtUrl string, originalErr error) (err error) {
+func PrintSummaryReport(success, failed int, resultReader *content.ContentReader, rtUrl string, originalErr error) (err error) {
 	err = originalErr
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
 	if mErr != nil {
@@ -141,14 +141,10 @@ func PrintSummaryReport(success, failed int, resultReader *responsereaderwriter.
 		log.Output(basicSummary)
 		return
 	}
-	_, mErr = resultReader.Run()
+	resultReader.Run()
+	defer resultReader.Close()
+	writer, mErr := content.NewContentWriter(1, "files", false, true)
 	if mErr != nil {
-		log.Output(basicSummary)
-		log.Error(mErr)
-		return
-	}
-	writer, mErr := responsereaderwriter.NewResponseWriter(1, "files", false, true)
-	if originalErr != nil {
 		log.Output(basicSummary)
 		log.Error(mErr)
 		return
@@ -157,16 +153,16 @@ func PrintSummaryReport(success, failed int, resultReader *responsereaderwriter.
 	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
 	log.Output(basicSummary)
 	defer log.Output("}")
-	var fileDesc artifactoryservicesUtils.FileInfo
+	var file serviceutils.FileInfo
 	writer.Run()
-	for e := resultReader.GetRecord(&fileDesc); e == nil; e = resultReader.GetRecord(&fileDesc) {
+	for e := resultReader.GetRecord(&file); e == nil; e = resultReader.GetRecord(&file) {
 		record := detailedSummaryRecord{
-			Source: rtUrl + fileDesc.ArtifactoryPath,
-			Target: fileDesc.LocalPath,
+			Source: rtUrl + file.ArtifactoryPath,
+			Target: file.LocalPath,
 		}
-		writer.AddRecord(record)
+		writer.Write(record)
 	}
-	mErr = writer.Stop()
+	mErr = writer.Done()
 	if originalErr != nil {
 		log.Error(mErr)
 		return
