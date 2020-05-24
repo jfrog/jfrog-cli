@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +25,6 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/commands/gradle"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/mvn"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/nuget"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/pip"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/repository"
@@ -30,7 +32,6 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli/artifactory/utils/npm"
-	piputils "github.com/jfrog/jfrog-cli/artifactory/utils/pip"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
@@ -436,7 +437,7 @@ func GetCommands() []cli.Command {
 			Name:         "npm-config",
 			Flags:        getCommonBuildToolsConfigFlags(),
 			Aliases:      []string{"npmc"},
-			Usage:        goconfig.Description,
+			Usage:        npmconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -485,9 +486,9 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
-			Flags:        getCommonBuildToolsConfigFlags(),
+			Flags:        getResolverOnlyConfigFlags(),
 			Aliases:      []string{"nugetc"},
-			Usage:        goconfig.Description,
+			Usage:        nugetconfig.Description,
 			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -518,6 +519,31 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return nugetDepsTreeCmd(c)
+			},
+		},
+		{
+			Name:         "dotnet-config",
+			Flags:        getResolverOnlyConfigFlags(),
+			Aliases:      []string{"dotnetc"},
+			Usage:        dotnetconfig.Description,
+			HelpName:     common.CreateUsage("rt dotnet-config", dotnetconfig.Description, dotnetconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createDotnetConfigCmd(c)
+			},
+		},
+		{
+			Name:            "dotnet",
+			Flags:           getBuildAndModuleFlags(),
+			Usage:           dotnetdocs.Description,
+			HelpName:        common.CreateUsage("rt dotnet", dotnetdocs.Description, dotnetdocs.Usage),
+			UsageText:       dotnetdocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return dotnetCmd(c)
 			},
 		},
 		{
@@ -600,7 +626,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        getCommonBuildToolsConfigFlags(),
+			Flags:        getResolverOnlyConfigFlags(),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
@@ -809,6 +835,23 @@ func getBaseBuildToolsConfigFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  commandUtils.DeploymentServerId,
 			Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
+		},
+	}
+}
+
+func getResolverOnlyConfigFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.BoolFlag{
+			Name:  commandUtils.Global,
+			Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionServerId,
+			Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
+		},
+		cli.StringFlag{
+			Name:  commandUtils.ResolutionRepo,
+			Usage: "[Optional] Repository for dependencies resolution.` `",
 		},
 	}
 }
@@ -2186,11 +2229,21 @@ func nugetCmd(c *cli.Context) error {
 		return err
 	}
 
+	// A config file was found.
 	if exists {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		// Found a config file.
+		nugetConfig, err := utils.ReadResolutionOnlyConfiguration(configFilePath)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
+		}
+		// Set arg values.
+		rtDetails, err := nugetConfig.RtDetails()
+		if err != nil {
+			return err
+		}
+
 		args, err := utils.ParseArgs(extractCommand(c))
 		if err != nil {
 			return errorutils.CheckError(err)
@@ -2200,12 +2253,19 @@ func nugetCmd(c *cli.Context) error {
 		if err := validateCommand(args, getNugetCommonFlags()); err != nil {
 			return err
 		}
+
 		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
-		nugetCmd := nuget.NewNugetCommand()
-		nugetCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetArgs(strings.Join(filteredNugetArgs, " "))
+
+		nugetCmd := dotnet.NewNugetCommand()
+		nugetCmd.SetRtDetails(rtDetails).SetRepoName(nugetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredNugetArgs[0])
+		// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
+		// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
+		if len(filteredNugetArgs) > 1 {
+			nugetCmd.SetArgAndFlags(strings.Join(filteredNugetArgs[1:], " "))
+		}
 		return commands.Exec(nugetCmd)
 	}
 	// If config file not found, use nuget legacy command
@@ -2217,7 +2277,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	nugetCmd := nuget.NewLegacyNugetCommand()
+	nugetCmd := dotnet.NewLegacyNugetCommand()
 	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
@@ -2226,7 +2286,7 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	nugetCmd.SetArgs(c.Args().Get(0)).SetFlags(c.String("nuget-args")).
+	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String("nuget-args")).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
 		SetSolutionPath(c.String("solution-root")).
@@ -2240,7 +2300,54 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	return nuget.DependencyTreeCmd()
+	return dotnet.DependencyTreeCmd()
+}
+
+func dotnetCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	if err := dotnet.ValidateDotnetCoreSdkVersion(); err != nil {
+		return err
+	}
+
+	// Get dotnet configuration.
+	dotnetConfig, err := utils.GetResolutionOnlyConfiguration(utils.Dotnet)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file: %s\n"+
+			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
+	}
+
+	// Set arg values.
+	rtDetails, err := dotnetConfig.RtDetails()
+	if err != nil {
+		return err
+	}
+
+	args, err := utils.ParseArgs(extractCommand(c))
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
+	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredDotnetArgs[0])
+	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
+	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
+	if len(filteredDotnetArgs) > 1 {
+		dotnetCmd.SetArgAndFlags(strings.Join(filteredDotnetArgs[1:], " "))
+	}
+	return commands.Exec(dotnetCmd)
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
@@ -2609,6 +2716,13 @@ func createNugetConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commandUtils.CreateBuildConfig(c, utils.Nuget)
+}
+
+func createDotnetConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Dotnet)
 }
 
 func createPipConfigCmd(c *cli.Context) error {
@@ -3315,7 +3429,7 @@ func pipInstallCmd(c *cli.Context) error {
 	}
 
 	// Get pip configuration.
-	pipConfig, err := piputils.GetPipConfiguration()
+	pipConfig, err := utils.GetResolutionOnlyConfiguration(utils.Pip)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read pip-configuration file: %s\n"+
 			"Please run 'jfrog rt pip-config' command prior to running 'jfrog rt %s'.", err.Error(), "pip-install"))

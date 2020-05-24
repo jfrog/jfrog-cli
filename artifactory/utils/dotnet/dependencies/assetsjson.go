@@ -15,6 +15,8 @@ import (
 
 var assetsFilePath = filepath.Join("obj", "project.assets.json")
 
+const AssetFileName = "project.assets.json"
+
 // Register project.assets.json extractor
 func init() {
 	register(&assetsExtractor{})
@@ -25,14 +27,12 @@ type assetsExtractor struct {
 	assets *assets
 }
 
-func (extractor *assetsExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
-	assetsFilePath := filepath.Join(projectRoot, assetsFilePath)
-	exists, err := fileutils.IsFileExists(assetsFilePath, false)
-	if exists {
-		log.Debug("Found", assetsFilePath, "file for project:", projectName)
-		return true, err
+func (extractor *assetsExtractor) IsCompatible(projectName, dependenciesSource string) bool {
+	if strings.HasSuffix(dependenciesSource, AssetFileName) {
+		log.Debug("Found", dependenciesSource, "file for project:", projectName)
+		return true
 	}
-	return false, err
+	return false
 }
 
 func (extractor *assetsExtractor) DirectDependencies() ([]string, error) {
@@ -48,10 +48,9 @@ func (extractor *assetsExtractor) ChildrenMap() (map[string][]string, error) {
 }
 
 // Create new assets json extractor.
-func (extractor *assetsExtractor) new(projectName, projectRoot string) (Extractor, error) {
+func (extractor *assetsExtractor) new(dependenciesSource string) (Extractor, error) {
 	newExtractor := &assetsExtractor{}
-	assetsFilePath := filepath.Join(projectRoot, assetsFilePath)
-	content, err := ioutil.ReadFile(assetsFilePath)
+	content, err := ioutil.ReadFile(dependenciesSource)
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
@@ -108,7 +107,7 @@ func (assets *assets) getAllDependencies() (map[string]*buildinfo.Dependency, er
 		}
 		if !exists {
 			if assets.isPackagePartOfTargetDependencies(library.Path) {
-				log.Warn("The file", nupkgFilePath, "doesn't exist in the NuGet cache directory but it does exist as a target in the assets files. Skipping adding this file to the build info.")
+				log.Warn("The file", nupkgFilePath, "doesn't exist in the NuGet cache directory but it does exist as a target in the assets files."+absentNupkgWarnMsg)
 				continue
 			}
 			return nil, errorutils.CheckError(errors.New("The file " + nupkgFilePath + " doesn't exist in the NuGet cache directory."))

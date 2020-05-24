@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
@@ -25,48 +26,68 @@ func initNugetTest(t *testing.T) {
 	createJfrogHomeConfig(t)
 }
 
+type testDescriptor struct {
+	name                 string
+	project              string
+	args                 []string
+	expectedModules      []string
+	expectedDependencies []int
+}
+
 func TestNugetResolve(t *testing.T) {
 	initNugetTest(t)
-	projects := []struct {
-		name                 string
-		project              string
-		moduleId             string
-		args                 []string
-		expectedDependencies int
-	}{
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName}, 6},
-		{"packagesconfigwithmodulechnage", "packagesconfig", ModuleNameJFrogTest, []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
-		{"referencewithoutmodulechnage", "reference", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName}, 6},
-		{"referencewithmodulechnage", "reference", ModuleNameJFrogTest, []string{"nuget", "restore", tests.NugetRemoteRepo, "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
+	projects := []testDescriptor{
+		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithmodulechnage", "packagesconfig", []string{"nuget", "restore", tests.NugetRemoteRepo, "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"referencewithoutmodulechnage", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo}, []string{"reference"}, []int{6}},
+		{"referencewithmodulechnage", "reference", []string{"nuget", "restore", tests.NugetRemoteRepo, "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 	}
 	for buildNumber, test := range projects {
 		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, createNugetProject(t, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args, false)
+			testNugetCmd(t, createNugetProject(t, test.project), tests.DotnetBuildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, false)
 		})
 	}
 	cleanBuildToolsTest()
 }
 
 func TestNativeNugetResolve(t *testing.T) {
-	initNugetTest(t)
-	projects := []struct {
-		name                 string
-		project              string
-		moduleId             string
-		args                 []string
-		expectedDependencies int
-	}{
-		{"packagesconfigwithoutmodulechnage", "packagesconfig", "packagesconfig", []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, 6},
-		{"packagesconfigwithmodulechnage", "packagesconfig", ModuleNameJFrogTest, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
-		{"referencewithoutmodulechnage", "reference", "reference", []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, 6},
-		{"referencewithmodulechnage", "reference", ModuleNameJFrogTest, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName, "--module=" + ModuleNameJFrogTest}, 6},
+	uniqueNugetTests := []testDescriptor{
+		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnet.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
+		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnet.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnet.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
+		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnet.Nuget.String(), "restore"}, []string{"proj1", "proj2"}, []int{4, 3}},
+		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnet.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnet.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2"}, []int{4, 3}},
+		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnet.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
+		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnet.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
-	for buildNumber, test := range projects {
+	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NugetBuildName, utils.Nuget)
+}
+
+func TestDotnetResolve(t *testing.T) {
+	uniqueDotnetTests := []testDescriptor{
+		{"multireferencesingleprojectdir", "multireference", []string{dotnet.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
+	}
+	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, utils.Dotnet)
+}
+
+func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, buildName string, projectType utils.ProjectType) {
+	initNugetTest(t)
+	testDescriptors := append(uniqueTests, []testDescriptor{
+		{"referencewithoutmodulechnage", "reference", []string{projectType.String(), "restore"}, []string{"reference"}, []int{6}},
+		{"referencewithmodulechnage", "reference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"multireferencewithoutmodulechnage", "multireference", []string{projectType.String(), "restore"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"multireferencewithmodulechnage", "multireference", []string{projectType.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
+		{"multireferencewithslnpath", "multireference", []string{projectType.String(), "restore", "src/multireference.sln"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"multireferencewithslndir", "multireference", []string{projectType.String(), "restore", "src/"}, []string{"proj1", "proj2"}, []int{5, 3}},
+		{"multireferencesingleprojectcsproj", "multireference", []string{projectType.String(), "restore", "src/multireference.proj2/proj2.csproj"}, []string{"proj2"}, []int{3}},
+	}...)
+	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
-		err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, utils.Nuget, false)
+		err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, projectType, false)
 		assert.NoError(t, err)
-		t.Run(test.project, func(t *testing.T) {
-			testNugetCmd(t, projectPath, strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args, true)
+		t.Run(test.name, func(t *testing.T) {
+			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, true)
 		})
 	}
 	cleanBuildToolsTest()
@@ -78,13 +99,8 @@ func createNugetProject(t *testing.T, projectName string) string {
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
 
-	files, err := fileutils.ListFiles(projectSrc, false)
+	err = fileutils.CopyDir(projectSrc, projectTarget, true)
 	assert.NoError(t, err)
-
-	for _, v := range files {
-		err = fileutils.CopyFile(projectTarget, v)
-		assert.NoError(t, err)
-	}
 	return projectTarget
 }
 
@@ -95,32 +111,34 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, "1", "packagesconfig", 6, []string{"nuget", "restore", "--build-name=" + tests.NugetBuildName}, true)
+	testNugetCmd(t, projectPath, tests.NugetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
 
 	cleanBuildToolsTest()
 }
 
-func testNugetCmd(t *testing.T, projectPath, buildNumber, module string, expectedDependencies int, args []string, native bool) {
+func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expectedModule, args []string, expectedDependencies []int, native bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	err = os.Chdir(projectPath)
 	assert.NoError(t, err)
-	args = append(args, "--build-number="+buildNumber)
+	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 	if native {
 		runNuGet(t, args...)
 	} else {
 		artifactoryCli.Exec(args...)
 	}
-	artifactoryCli.Exec("bp", tests.NugetBuildName, buildNumber)
+	artifactoryCli.Exec("bp", buildName, buildNumber)
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NugetBuildName, buildNumber, t, artHttpDetails)
-	require.NotEmpty(t, buildInfo.Modules, "Nuget build info was not generated correctly, no modules were created.")
-	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
-	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	require.NotEmpty(t, buildInfo.Modules, buildName+" build info was not generated correctly, no modules were created.")
+	for i, module := range buildInfo.Modules {
+		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")
+		assert.Len(t, module.Dependencies, expectedDependencies[i], "Incorrect number of artifacts found in the build-info")
+	}
 	assert.NoError(t, os.Chdir(wd))
 
 	// cleanup
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NugetBuildName, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 }
 
 func runNuGet(t *testing.T, args ...string) {
