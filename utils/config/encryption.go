@@ -60,10 +60,6 @@ func handleCurrentEncryptionStatus(config *ConfigV1) error {
 		if err != nil {
 			return err
 		}
-		// Save the decrypted config to file if disabling is required.
-		if disableEncryption {
-			return saveConfig(config)
-		}
 	}
 
 	// No encryption needed.

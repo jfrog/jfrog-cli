@@ -131,10 +131,6 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
                 sh "mv ${jfrogCliRepoDir}sign/$fileName $jfrogCliRepoDir"
             }
         }
-
-        if (goos == 'linux' && goatch == '386') {
-            sh "./$fileName diagnostics"
-        }
     }
 
     //uploadToBintray(pkg, fileName)
