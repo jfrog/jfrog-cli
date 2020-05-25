@@ -126,34 +126,39 @@ type detailedSummaryRecord struct {
 }
 
 // Print summary report.
-// The given error will pass through and be returned as is if no other errors are raised.
+// a given non-nil error will pass through and be returned as is if no other errors are raised.
+// In case of a nil error, the current function error will be returned.
+func summaryPrintError(summaryError, originalError error) error {
+	if originalError != nil {
+		log.Error(summaryError)
+		return originalError
+	}
+	return summaryError
+}
+
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintSummaryReport(success, failed int, resultReader *content.ContentReader, rtUrl string, originalErr error) (err error) {
-	err = originalErr
+func PrintSummaryReport(success, failed int, resultReader *content.ContentReader, rtUrl string, originalErr error) error {
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
 	if mErr != nil {
-		log.Error(mErr)
-		return
+		return summaryPrintError(mErr, originalErr)
 	}
 	// A reader wasn't provided, prints the basic summary json and return.
 	if resultReader == nil {
 		log.Output(basicSummary)
-		return
+		return summaryPrintError(mErr, originalErr)
 	}
-	resultReader.Run()
+	resultReader.Reset()
 	defer resultReader.Close()
-	writer, mErr := content.NewContentWriter(1, "files", false, true)
+	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
 		log.Output(basicSummary)
-		log.Error(mErr)
-		return
+		return summaryPrintError(mErr, originalErr)
 	}
 	// We remove the closing curly bracket in order to append the affected files array using a responseWriter to write directly to stdout.
 	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
 	log.Output(basicSummary)
 	defer log.Output("}")
 	var file serviceutils.FileInfo
-	writer.Run()
 	for e := resultReader.NextRecord(&file); e == nil; e = resultReader.NextRecord(&file) {
 		record := detailedSummaryRecord{
 			Source: rtUrl + file.ArtifactoryPath,
@@ -161,12 +166,8 @@ func PrintSummaryReport(success, failed int, resultReader *content.ContentReader
 		}
 		writer.Write(record)
 	}
-	mErr = writer.Done()
-	if originalErr != nil {
-		log.Error(mErr)
-		return
-	}
-	return
+	mErr = writer.Close()
+	return summaryPrintError(mErr, originalErr)
 }
 
 func CreateSummaryReportString(success, failed int, err error) (string, error) {
