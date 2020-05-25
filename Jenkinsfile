@@ -132,7 +132,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
             }
         }
 
-        if (goos == 'linux') {
+        if (goos == 'linux' && goatch == '386') {
             sh "./$fileName diagnostics"
         }
     }
