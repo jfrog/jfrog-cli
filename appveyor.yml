@@ -52,6 +52,7 @@ environment:
   matrix:
   - VET:
     TEST_SUIT:
+      go clean -modcache
       go vet github.com\jfrog\jfrog-cli
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
