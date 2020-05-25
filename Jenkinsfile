@@ -1,7 +1,7 @@
 node {
     cleanWs()
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
+            //[pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
@@ -133,7 +133,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
         }
     }
 
-    uploadToBintray(pkg, fileName)
+    //uploadToBintray(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 
