@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/ioutils"
@@ -29,7 +28,6 @@ type ConfigCommand struct {
 	details             *config.ArtifactoryDetails
 	defaultDetails      *config.ArtifactoryDetails
 	interactive         bool
-	encPassword         bool
 	useRefreshableToken bool
 	serverId            string
 }
@@ -40,11 +38,6 @@ func NewConfigCommand() *ConfigCommand {
 
 func (cc *ConfigCommand) SetServerId(serverId string) *ConfigCommand {
 	cc.serverId = serverId
-	return cc
-}
-
-func (cc *ConfigCommand) SetEncPassword(encPassword bool) *ConfigCommand {
-	cc.encPassword = encPassword
 	return cc
 }
 
@@ -116,13 +109,6 @@ func (cc *ConfigCommand) Config() error {
 	err = checkSingleAuthMethod(cc.details)
 	if err != nil {
 		return err
-	}
-
-	if cc.encPassword {
-		err = cc.encryptPassword()
-		if err != nil {
-			return err
-		}
 	}
 
 	if cc.useRefreshableToken {
@@ -469,25 +455,6 @@ func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
 	return config.GetArtifactorySpecificConfig(serverId)
 }
 
-func (cc *ConfigCommand) encryptPassword() error {
-	if cc.details.Password == "" {
-		return nil
-	}
-
-	log.Info("Encrypting password...")
-
-	artAuth, err := cc.details.CreateArtAuthConfig()
-	if err != nil {
-		return err
-	}
-	encPassword, err := utils.GetEncryptedPasswordFromArtifactory(artAuth, cc.details.InsecureTls)
-	if err != nil {
-		return err
-	}
-	cc.details.Password = encPassword
-	return err
-}
-
 func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 	boolArr := []bool{details.User != "" && details.Password != "", details.ApiKey != "", fileutils.IsSshUrl(details.Url),
 		details.AccessToken != "" && details.TokenRefreshInterval == cliutils.TokenRefreshDisabled}
@@ -500,7 +467,6 @@ func checkSingleAuthMethod(details *config.ArtifactoryDetails) error {
 type ConfigCommandConfiguration struct {
 	ArtDetails           *config.ArtifactoryDetails
 	Interactive          bool
-	EncPassword          bool
 	TokenRefreshInterval int
 }
 

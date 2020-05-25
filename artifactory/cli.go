@@ -1677,7 +1677,8 @@ func getConfigFlags() []cli.Flag {
 		},
 		cli.BoolTFlag{
 			Name:  "enc-password",
-			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
+			Hidden: true,
+			Usage: "[Deprecated] The --enc-password option has no effect as the config is now fully encrypted in an unmodifiable manner. Remove it to avoid future breaking` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
@@ -2009,7 +2010,7 @@ func configCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
+	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId)
 	return configCmd.Config()
 }
 
@@ -3524,8 +3525,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	if err != nil {
 		return nil, err
 	}
-	encPassword := c.BoolT("enc-password")
-	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(encPassword)
+	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true)
 	err = configCmd.Config()
 	if err != nil {
 		return nil, err
@@ -4028,7 +4028,9 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 	if err != nil {
 		return
 	}
-	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
+	if c.IsSet("enc-password") {
+		log.Warn("[Deprecated] The --enc-password option has no effect as the config is now fully encrypted in an unmodifiable manner. Remove it to avoid future breaking` `")
+	}
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	return
 }

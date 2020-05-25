@@ -4,9 +4,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-client-go/utils/io"
 	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -38,44 +36,6 @@ func getConfigDir(global bool) (string, error) {
 		return filepath.Join(wd, ".jfrog"), nil
 	}
 	return cliutils.GetJfrogHomeDir()
-}
-
-func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ServiceDetails, insecureTls bool) (string, error) {
-	u, err := url.Parse(artifactoryAuth.GetUrl())
-	if err != nil {
-		return "", err
-	}
-	u.Path = path.Join(u.Path, "api/security/encryptedPassword")
-	httpClientsDetails := artifactoryAuth.CreateHttpClientDetails()
-	securityDir, err := cliutils.GetJfrogSecurityDir()
-	if err != nil {
-		return "", err
-	}
-	client, err := httpclient.ClientBuilder().
-		SetCertificatesPath(securityDir).
-		SetInsecureTls(insecureTls).
-		SetClientCertPath(artifactoryAuth.GetClientCertPath()).
-		SetClientCertKeyPath(artifactoryAuth.GetClientCertKeyPath()).
-		Build()
-	if err != nil {
-		return "", err
-	}
-	resp, body, _, err := client.SendGet(u.String(), true, httpClientsDetails)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode == http.StatusOK {
-		return string(body), nil
-	}
-
-	if resp.StatusCode == http.StatusConflict {
-		message := "\nYour Artifactory server is not configured to encrypt passwords.\n" +
-			"You may use \"art config --enc-password=false\""
-		return "", errorutils.CheckError(errors.New(message))
-	}
-
-	return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status))
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {

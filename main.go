@@ -8,9 +8,11 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
+	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 	"os"
 )
 
@@ -73,6 +75,7 @@ func main() {
 }
 
 func execMain() error {
+	execDiagnostics()
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
 	utils.SetUserAgent(cliutils.GetUserAgent())
 
@@ -118,4 +121,16 @@ func getCommands() []cli.Command {
 			Subcommands: completion.GetCommands(),
 		},
 	}
+}
+
+func execDiagnostics() {
+	if os.Args[1] != "diagnostics" {
+		return
+	}
+	if len(config.EncryptionFile) == 0 {
+		clientLog.Error("CLI encryption was not initialized")
+		os.Exit(1)
+	}
+	clientLog.Info("CLI encryption was successfully initialized")
+	os.Exit(0)
 }

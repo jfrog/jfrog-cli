@@ -1,10 +1,28 @@
 #!/bin/bash
 
-if [ $# -eq 0 ]
+exe_name="jfrog"
+flags="-w -extldflags \"-static\""
+
+# Executable name provided
+if [ $# -ge 1 ]
   then
-	exe_name="jfrog"
-  else
 	exe_name="$1"
 fi
 
-CGO_ENABLED=0 go build -o $exe_name -ldflags '-w -extldflags "-static"' main.go
+# Encryption file provided as well
+if [ $# -gt 1 ]
+  then
+  # Read encryption file, remove new lines and spaces
+  encryptionFileContent=$(<"$2")
+  encryptionFileContent="${encryptionFileContent//$'\n'/ }"
+  encryptionFileContent="${encryptionFileContent//$' '/}"
+  flags="-X 'github.com/jfrog/jfrog-cli/utils/config.EncryptionFile=${encryptionFileContent}' ${flags}"
+fi
+
+CGO_ENABLED=0 go build -o $exe_name -ldflags "${flags}" main.go
+
+# If encryption, verify CLI initialized successfully
+if [ $# -eq 2 ]
+  then
+  ./$exe_name diagnostics
+fi

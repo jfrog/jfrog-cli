@@ -191,6 +191,10 @@ func SaveBintrayConf(details *BintrayDetails) error {
 
 func saveConfig(config *ConfigV1) error {
 	config.Version = cliutils.GetConfigVersion()
+	err := config.encrypt()
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
 	b, err := json.Marshal(&config)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -235,6 +239,11 @@ func readConf() (*ConfigV1, error) {
 	}
 	content, err = convertIfNecessary(content)
 	err = json.Unmarshal(content, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = handleCurrentEncryptionStatus(config, content)
 	return config, err
 }
 
@@ -285,10 +294,11 @@ func getConfFilePath() (string, error) {
 }
 
 type ConfigV1 struct {
-	Artifactory    []*ArtifactoryDetails  `json:"artifactory"`
-	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
-	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
-	Version        string                 `json:"Version,omitempty"`
+	Artifactory     []*ArtifactoryDetails  `json:"artifactory"`
+	Bintray         *BintrayDetails        `json:"bintray,omitempty"`
+	MissionControl  *MissionControlDetails `json:"MissionControl,omitempty"`
+	Version         string                 `json:"Version,omitempty"`
+	EncryptionIndex string                 `json:"EncryptionIndex,omitempty"`
 }
 
 type ConfigV0 struct {
@@ -310,21 +320,21 @@ func (o *ConfigV0) Convert() *ConfigV1 {
 }
 
 type ArtifactoryDetails struct {
-	Url                  string            `json:"url,omitempty"`
-	SshUrl               string            `json:"-"`
-	DistributionUrl      string            `json:"distributionUrl,omitempty"`
-	User                 string            `json:"user,omitempty"`
-	Password             string            `json:"password,omitempty"`
-	SshKeyPath           string            `json:"sshKeyPath,omitempty"`
-	SshPassphrase        string            `json:"SshPassphrase,omitempty"`
-	AccessToken          string            `json:"accessToken,omitempty"`
-	RefreshToken         string            `json:"refreshToken,omitempty"`
-	TokenRefreshInterval int               `json:"tokenRefreshInterval,omitempty"`
-	ClientCertPath       string            `json:"clientCertPath,omitempty"`
-	ClientCertKeyPath    string            `json:"clientCertKeyPath,omitempty"`
-	ServerId             string            `json:"serverId,omitempty"`
-	IsDefault            bool              `json:"isDefault,omitempty"`
-	InsecureTls          bool              `json:"-"`
+	Url                  string `json:"url,omitempty"`
+	SshUrl               string `json:"-"`
+	DistributionUrl      string `json:"distributionUrl,omitempty"`
+	User                 string `json:"user,omitempty"`
+	Password             string `json:"password,omitempty"`
+	SshKeyPath           string `json:"sshKeyPath,omitempty"`
+	SshPassphrase        string `json:"SshPassphrase,omitempty"`
+	AccessToken          string `json:"accessToken,omitempty"`
+	RefreshToken         string `json:"refreshToken,omitempty"`
+	TokenRefreshInterval int    `json:"tokenRefreshInterval,omitempty"`
+	ClientCertPath       string `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath    string `json:"clientCertKeyPath,omitempty"`
+	ServerId             string `json:"serverId,omitempty"`
+	IsDefault            bool   `json:"isDefault,omitempty"`
+	InsecureTls          bool   `json:"-"`
 	// Deprecated, use password option instead.
 	ApiKey string `json:"apiKey,omitempty"`
 }
