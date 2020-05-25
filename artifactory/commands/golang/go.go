@@ -100,6 +100,7 @@ func (gc *GoCommand) Run() error {
 	resolverParams.SetRepo(gc.resolverParams.TargetRepo()).SetServiceManager(resolverServiceManager)
 	goInfo := &params.ResolverDeployer{}
 	goInfo.SetResolver(resolverParams)
+	var targetRepo string
 	var deployerServiceManager *artifactory.ArtifactoryServicesManager
 	if gc.publishDeps {
 		deployerDetails, err := gc.deployerParams.RtDetails()
@@ -110,8 +111,9 @@ func (gc *GoCommand) Run() error {
 		if err != nil {
 			return err
 		}
+		targetRepo = gc.deployerParams.TargetRepo()
 		deployerParams := &params.Params{}
-		deployerParams.SetRepo(gc.deployerParams.TargetRepo()).SetServiceManager(deployerServiceManager)
+		deployerParams.SetRepo(targetRepo).SetServiceManager(deployerServiceManager)
 		goInfo.SetDeployer(deployerParams)
 	}
 
@@ -132,7 +134,7 @@ func (gc *GoCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(false, gc.buildConfiguration.Module))
+		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(false, gc.buildConfiguration.Module, targetRepo))
 	}
 
 	return err

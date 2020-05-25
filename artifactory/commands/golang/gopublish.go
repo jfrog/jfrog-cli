@@ -134,7 +134,7 @@ func (gpc *GoPublishCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true, gpc.buildConfiguration.Module))
+		err = utils.SaveBuildInfo(buildName, buildNumber, goProject.BuildInfo(true, gpc.buildConfiguration.Module, gpc.RepositoryConfig.TargetRepo()))
 	}
 
 	return err

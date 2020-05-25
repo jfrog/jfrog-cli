@@ -34,7 +34,7 @@ type Go interface {
 	CreateBuildInfoDependencies(includeInfoFiles bool) error
 	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
 	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
-	BuildInfo(includeArtifacts bool, module string) *buildinfo.BuildInfo
+	BuildInfo(includeArtifacts bool, module, targetRepository string) *buildinfo.BuildInfo
 	LoadDependencies() error
 }
 
@@ -207,7 +207,7 @@ func (project *goProject) PublishDependencies(targetRepo string, servicesManager
 }
 
 // Get the build info of the go project
-func (project *goProject) BuildInfo(includeArtifacts bool, module string) *buildinfo.BuildInfo {
+func (project *goProject) BuildInfo(includeArtifacts bool, module, targetRepository string) *buildinfo.BuildInfo {
 	buildInfoDependencies := []buildinfo.Dependency{}
 	for _, dep := range project.dependencies {
 		buildInfoDependencies = append(buildInfoDependencies, dep.Dependencies()...)
@@ -215,6 +215,14 @@ func (project *goProject) BuildInfo(includeArtifacts bool, module string) *build
 	var artifacts []buildinfo.Artifact
 	if includeArtifacts {
 		artifacts = project.artifacts
+		// Add artifacts target-path.
+		moduleId := strings.Split(project.moduleName, ":")
+		for i := range artifacts {
+			artifact := &artifacts[i]
+			targetPath := targetRepository
+			_ = _go.CreateUrlPath(moduleId[0], project.version, "", "."+artifact.Type, &targetPath)
+			artifact.Path = targetPath
+		}
 	}
 	buildInfoModule := buildinfo.Module{Id: module, Artifacts: artifacts, Dependencies: buildInfoDependencies}
 	if module == "" {
