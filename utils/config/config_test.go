@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -222,5 +223,52 @@ func assertionHelper(configV1 *ConfigV1, t *testing.T) {
 	}
 	if rtConverted[0].Password != "password" {
 		t.Error(errors.New("Password shouldn't change."))
+	}
+}
+
+func TestEncryption(t *testing.T) {
+	EncryptionFile = "{\"Keys\":[\"randomkeywithlengthofexactly32!!\",\"anotherkeywithlengthofexactly32!\"],\"Version\":\"1\"}"
+	details := map[string]string{
+		"password": "password",
+		"accessToken": "accessToken",
+		"refreshToken": "refreshToken",
+		"apiKEY": "apiKEY",
+		"sshPass": "sshPass",
+		"bintrayKey": "bintrayKey",
+		"mcToken": "mcToken",
+	}
+
+	config := new(ConfigV1)
+	config.Artifactory = []*ArtifactoryDetails{{User: "user", Password: details["password"], Url: "http://localhost:8080/artifactory/", AccessToken: details["accessToken"],
+		RefreshToken: details["refreshToken"], ApiKey: details["apiKEY"], SshPassphrase: details["sshPass"]}}
+	config.Bintray = &BintrayDetails{ApiUrl: "APIurl", Key: details["bintrayKey"]}
+	config.MissionControl = &MissionControlDetails{Url: "url", AccessToken: details["mcToken"]}
+
+	// Encrypt decrypted
+	assert.NoError(t, handleSecrets(config, encryptSecret, 0))
+	verifyAllEncrypted(t, config, details, true)
+
+	// Decrypt encrypted
+	assert.NoError(t, handleSecrets(config, decryptSecret, 0))
+	verifyAllEncrypted(t, config, details, false)
+}
+
+func verifyAllEncrypted(t *testing.T, config *ConfigV1, originalValues map[string]string, checkEncrypted bool) {
+	equals := []bool{
+		config.Artifactory[0].Password==originalValues["password"],
+		config.Artifactory[0].AccessToken==originalValues["accessToken"],
+		config.Artifactory[0].RefreshToken==originalValues["refreshToken"],
+		config.Artifactory[0].ApiKey==originalValues["apiKEY"],
+		config.Artifactory[0].SshPassphrase==originalValues["sshPass"],
+		config.Bintray.Key==originalValues["bintrayKey"],
+		config.MissionControl.AccessToken==originalValues["mcToken"],
+	}
+
+	if checkEncrypted {
+		// Verify non match.
+		assert.Zero(t, cliutils.SumTrueValues(equals))
+	} else {
+		// Verify all match.
+		assert.Equal(t, cliutils.SumTrueValues(equals), len(equals))
 	}
 }

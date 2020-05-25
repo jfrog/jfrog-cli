@@ -26,7 +26,7 @@ type secretHandler func(string, int) (string, error)
 func (config *ConfigV1) encrypt() error {
 	// Not encrypting when explicitly instructed so, or encryption was not initialized.
 	disableEncryption, err := utils.GetBoolEnvValue(cliutils.DisableEncryption, false)
-	if err != nil || EncryptionFile == "" || disableEncryption {
+	if err != nil || !isEncryptionInitialized() || disableEncryption {
 		config.EncryptionIndex = ""
 		return err
 	}
@@ -42,10 +42,10 @@ func (config *ConfigV1) decrypt() error {
 	return handleSecrets(config, decryptSecret, encIndex)
 }
 
-// Decrypts the config struct or encrypts the config file, if needed.
-func handleCurrentEncryptionStatus(config *ConfigV1, content []byte) error {
+// Decrypts the config struct and encrypts the config file, if needed.
+func handleCurrentEncryptionStatus(config *ConfigV1) error {
 	// Return if encryption was not initialized.
-	if EncryptionFile == "" {
+	if !isEncryptionInitialized() {
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func handleCurrentEncryptionStatus(config *ConfigV1, content []byte) error {
 		return err
 	}
 
-	// Already encrypted. Decrypt if necessary.
+	// If already encrypted - decrypt.
 	if config.EncryptionIndex != "" {
 		err = config.decrypt()
 		if err != nil {
@@ -64,27 +64,47 @@ func handleCurrentEncryptionStatus(config *ConfigV1, content []byte) error {
 		if disableEncryption {
 			return saveConfig(config)
 		}
+	}
+
+	// No encryption needed.
+	if disableEncryption {
 		return nil
 	}
 
-	// Encrypt the config file if necessary.
-	if !disableEncryption {
-		// Unmarshalling the content again to avoid modifying the config used in the rest of the command.
-		tmpEncConfig := new(ConfigV1)
-		err = json.Unmarshal(content, &tmpEncConfig)
+	// Encrypt the config file if it isn't already encrypted, or if config's encryption index is different than that the latest
+	if config.EncryptionIndex != "" {
+		encIndex, err := strconv.Atoi(config.EncryptionIndex)
 		if err != nil {
 			return err
 		}
-		return saveConfig(tmpEncConfig)
+		if encIndex == latestEncryptionIndex {
+			return nil
+		}
 	}
-	return nil
+
+	// Encrypting the config file.
+	// Marshalling and unmarshalling to get a config that will not modify the rest of the command.
+	decryptedContent, err := config.getContent()
+	if err != nil {
+		return err
+	}
+	tmpEncConfig := new(ConfigV1)
+	err = json.Unmarshal(decryptedContent, &tmpEncConfig)
+	if err != nil {
+		return err
+	}
+	return saveConfig(tmpEncConfig)
+}
+
+func isEncryptionInitialized() bool {
+	return EncryptionFile != ""
 }
 
 func handleSecrets(config *ConfigV1, handler secretHandler, encryptionIndex int) error {
-	if encryptionIndex > latestEncryptionIndex {
-		return errors.New("invalid encryption index in config")
+	err := initEncryptionKeys()
+	if encryptionIndex > len(encryptionKeys) -1 {
+		return errors.New("encryption index out of range")
 	}
-	err := getEncryptionKeys()
 	if err != nil {
 		return err
 	}
@@ -126,7 +146,7 @@ func handleSecrets(config *ConfigV1, handler secretHandler, encryptionIndex int)
 }
 
 // Getting encryption keys from the encryption file if it wasn't done yet.
-func getEncryptionKeys() error {
+func initEncryptionKeys() error {
 	// Already Unmarshalled.
 	if len(encryptionKeys) > 0 {
 		return nil

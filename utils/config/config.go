@@ -195,26 +195,36 @@ func saveConfig(config *ConfigV1) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	b, err := json.Marshal(&config)
+
+	content, err := config.getContent()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return err
 	}
-	var content bytes.Buffer
-	err = json.Indent(&content, b, "", "  ")
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
+
 	path, err := getConfFilePath()
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, []byte(content.String()), 0600)
+	err = ioutil.WriteFile(path, content, 0600)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 
 	return nil
+}
+
+func (config *ConfigV1) getContent() ([]byte, error) {
+	b, err := json.Marshal(&config)
+	if err != nil {
+		return []byte{}, errorutils.CheckError(err)
+	}
+	var content bytes.Buffer
+	err = json.Indent(&content, b, "", "  ")
+	if err != nil {
+		return []byte{}, errorutils.CheckError(err)
+	}
+	return []byte(content.String()), nil
 }
 
 func readConf() (*ConfigV1, error) {
@@ -243,7 +253,7 @@ func readConf() (*ConfigV1, error) {
 		return nil, err
 	}
 
-	err = handleCurrentEncryptionStatus(config, content)
+	err = handleCurrentEncryptionStatus(config)
 	return config, err
 }
 

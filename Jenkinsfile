@@ -23,7 +23,7 @@ node {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
+            sh 'git clone https://github.com/RobiNino/jfrog-cli.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
@@ -57,6 +57,15 @@ node {
                 """
 
             sh 'tar xvzf jfrogltd_signingcer_full.tar.gz'
+        }
+
+        stage('Download encryption file') {
+            sh """#!/bin/bash
+               builder/jfrog rt dl ci-files-local/jfrog-cli/jfrog-cli-enc.json --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
+                """
+            nowIn = pwd()
+            sh "echo nowIn=$nowIn"
+            sh "mv ./jfrog-cli-enc.json $jfrogCliRepoDir"
         }
 
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
@@ -106,7 +115,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
         env.GOARCH="$goarch"
-        sh "./build.sh $fileName"
+        sh "./build.sh $fileName ./jfrog-cli-enc.json"
 
         if (goos == 'windows') {
             dir("${cliWorkspace}/certs-dir") {
