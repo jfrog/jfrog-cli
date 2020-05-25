@@ -10,7 +10,7 @@ node {
     ]
 
     subject = 'jfrog'
-    repo = 'jfrog-cli'
+    repo = 'jfrog-cli-go'
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.14'
@@ -23,7 +23,7 @@ node {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/RobiNino/jfrog-cli.git'
+            sh 'git clone https://github.com/RobiNino/jfrog-cli-go.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
