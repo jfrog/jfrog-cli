@@ -20,9 +20,3 @@ if [ $# -gt 1 ]
 fi
 
 CGO_ENABLED=0 go build -o $exe_name -ldflags "${flags}" main.go
-
-# If encryption, verify CLI initialized successfully
-if [ $# -eq 2 ]
-  then
-  ./$exe_name diagnostics
-fi

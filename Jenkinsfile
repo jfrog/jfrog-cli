@@ -1,7 +1,7 @@
 node {
     cleanWs()
     def architectures = [
-            //[pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
@@ -130,6 +130,10 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
                 sh "mv ${jfrogCliRepoDir}sign/$fileName $jfrogCliRepoDir"
             }
+        }
+
+        if (goos == 'linux') {
+            sh "./$fileName diagnostics"
         }
     }
 
