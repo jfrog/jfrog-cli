@@ -1,3 +1,14 @@
+## 1.36.0 (May 25, 2020)
+- "jfrog rt download" - New --details-summary option
+- New "jfrog rt dotnet" command supporting .net core CLI support
+- "jfrog rt nuget" - support for Linux and MacOS
+- New "jfrog rt access-token-create" command
+- "jfrog rt download" - Added support for validateSymlinks via file spec
+- "jfrog rt search" now also returns SHA1 and MD5
+
+- Add deployment path to the build-info
+- Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
+
 ## 1.35.5 (May 13, 2020)
 - Bug fix - Out of range for docker duplicate layers.
 - Bug fix - 'jfrog rt bpr' fails with build params as env vars
