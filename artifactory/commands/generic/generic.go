@@ -11,6 +11,7 @@ type GenericCommand struct {
 	spec            *spec.SpecFiles
 	result          *commandsutils.Result
 	dryRun          bool
+	detailedSummary bool
 	syncDeletesPath string
 	quiet           bool
 }
@@ -65,5 +66,14 @@ func (gc *GenericCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 
 func (gc *GenericCommand) SetRtDetails(rtDetails *config.ArtifactoryDetails) *GenericCommand {
 	gc.rtDetails = rtDetails
+	return gc
+}
+
+func (gc *GenericCommand) DetailedSummary() bool {
+	return gc.detailedSummary
+}
+
+func (gc *GenericCommand) SetDetailedSummaryt(detailedSummary bool) *GenericCommand {
+	gc.detailedSummary = detailedSummary
 	return gc
 }

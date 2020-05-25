@@ -25,6 +25,7 @@ import (
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	cliutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -334,7 +335,7 @@ func (nca *NpmCommandArgs) collectDependenciesChecksums() error {
 	}
 
 	producerConsumer := parallel.NewBounedRunner(nca.threads, false)
-	errorsQueue := serviceutils.NewErrorsQueue(1)
+	errorsQueue := clientutils.NewErrorsQueue(1)
 	handlerFunc := nca.createGetDependencyInfoFunc(servicesManager)
 	go func() {
 		defer producerConsumer.Done()
