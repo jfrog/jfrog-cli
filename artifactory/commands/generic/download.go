@@ -113,6 +113,8 @@ func (dc *DownloadCommand) Run() error {
 	}
 	dc.result.SetSuccessCount(totalDownloaded)
 	dc.result.SetFailCount(totalExpected - totalDownloaded)
+	// If the 'details summary' was requested, then the reader should not be closed now.
+	// It will be closed after it will be used to generate the summary.
 	if resultsReader != nil && !dc.DetailedSummary() {
 		defer func() {
 			resultsReader.Close()
@@ -231,7 +233,7 @@ func createDownloadResultEmptyTmpReflection(reader *content.ContentReader) (tmpR
 	}
 	var path localPath
 	reader.Run()
-	for e := reader.GetRecord(&path); e == nil; e = reader.GetRecord(&path) {
+	for e := reader.NextRecord(&path); e == nil; e = reader.NextRecord(&path) {
 		var absDownlaodPath string
 		absDownlaodPath, err = filepath.Abs(path.LocalPath)
 		if errorutils.CheckError(err) != nil {

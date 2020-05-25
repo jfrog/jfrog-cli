@@ -128,7 +128,6 @@ type detailedSummaryRecord struct {
 // Print summary report.
 // The given error will pass through and be returned as is if no other errors are raised.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-// The result file will be deleted at the end by the GetRecord() iterator.
 func PrintSummaryReport(success, failed int, resultReader *content.ContentReader, rtUrl string, originalErr error) (err error) {
 	err = originalErr
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
@@ -155,7 +154,7 @@ func PrintSummaryReport(success, failed int, resultReader *content.ContentReader
 	defer log.Output("}")
 	var file serviceutils.FileInfo
 	writer.Run()
-	for e := resultReader.GetRecord(&file); e == nil; e = resultReader.GetRecord(&file) {
+	for e := resultReader.NextRecord(&file); e == nil; e = resultReader.NextRecord(&file) {
 		record := detailedSummaryRecord{
 			Source: rtUrl + file.ArtifactoryPath,
 			Target: file.LocalPath,
