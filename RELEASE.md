@@ -5,7 +5,6 @@
 - New "jfrog rt access-token-create" command
 - "jfrog rt download" - Added support for validateSymlinks via file spec
 - "jfrog rt search" now also returns SHA1 and MD5
-
 - Add deployment path to the build-info
 - Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
 
