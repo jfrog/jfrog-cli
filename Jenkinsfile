@@ -10,7 +10,7 @@ node {
     ]
 
     subject = 'jfrog'
-    repo = 'jfrog-cli-go'
+    repo = 'jfrog-cli'
     sh 'rm -rf temp'
     sh 'mkdir temp'
     def goRoot = tool 'go-1.14'
@@ -23,7 +23,7 @@ node {
         cliWorkspace = pwd()
         sh "echo cliWorkspace=$cliWorkspace"
         stage('Clone JFrog CLI sources') {
-            sh 'git clone https://github.com/RobiNino/jfrog-cli-go.git'
+            sh 'git clone https://github.com/jfrog/jfrog-cli.git'
             dir("$repo") {
                 if (BRANCH?.trim()) {
                     sh "git checkout $BRANCH"
@@ -131,9 +131,13 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
                 sh "mv ${jfrogCliRepoDir}sign/$fileName $jfrogCliRepoDir"
             }
         }
+
+        if (goos == 'linux' && goatch == '386') {
+            sh "./$fileName diagnostics"
+        }
     }
 
-    //uploadToBintray(pkg, fileName)
+    uploadToBintray(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 

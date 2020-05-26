@@ -9,6 +9,7 @@ import (
 	"errors"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"io"
 	"strconv"
 )
@@ -24,54 +25,49 @@ type Encryption struct {
 type secretHandler func(string, int) (string, error)
 
 func (config *ConfigV1) encrypt() error {
-	// Not encrypting when explicitly instructed so, or encryption was not initialized.
-	disableEncryption, err := utils.GetBoolEnvValue(cliutils.DisableEncryption, false)
-	if err != nil || !isEncryptionInitialized() || disableEncryption {
-		config.EncryptionIndex = ""
+	shouldEncrypt, err := shouldEncrypt(config)
+	if err != nil || !shouldEncrypt {
 		return err
 	}
 	config.EncryptionIndex = strconv.Itoa(latestEncryptionIndex)
-	return handleSecrets(config, encryptSecret, latestEncryptionIndex)
+	return handleSecrets(config, encrypt, latestEncryptionIndex)
 }
 
 func (config *ConfigV1) decrypt() error {
+	// Return if encryption was not initialized, or if config is not encrypted.
+	if !isEncryptionInitialized() || config.EncryptionIndex == "" {
+		return nil
+	}
 	encIndex, err := strconv.Atoi(config.EncryptionIndex)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
-	return handleSecrets(config, decryptSecret, encIndex)
+	return handleSecrets(config, decrypt, encIndex)
 }
 
-// Decrypts the config struct and encrypts the config file, if needed.
-func handleCurrentEncryptionStatus(config *ConfigV1) error {
-	// Return if encryption was not initialized.
+func shouldEncrypt(config *ConfigV1) (bool, error) {
+	// Cannot encrypt if encryption was not initialized.
 	if !isEncryptionInitialized() {
-		return nil
+		return false, nil
 	}
 
 	disableEncryption, err := utils.GetBoolEnvValue(cliutils.DisableEncryption, false)
-	if err != nil {
+	// Encryption is disabled if instructed by env var and the config file was not encrypted yet.
+	return !(disableEncryption && config.EncryptionIndex == ""), errorutils.CheckError(err)
+}
+
+// Encrypts the config file if needed (if not encrypted, or if encrypted with old key) and saves it.
+func updateConfigFileEncryption(config *ConfigV1) error {
+	shouldEncrypt, err := shouldEncrypt(config)
+	if err != nil || !shouldEncrypt {
 		return err
 	}
 
-	// If already encrypted - decrypt.
-	if config.EncryptionIndex != "" {
-		err = config.decrypt()
-		if err != nil {
-			return err
-		}
-	}
-
-	// No encryption needed.
-	if disableEncryption {
-		return nil
-	}
-
-	// Encrypt the config file if it isn't already encrypted, or if config's encryption index is different than that the latest
+	// If config file is encrypted with the latest index, no action required.
 	if config.EncryptionIndex != "" {
 		encIndex, err := strconv.Atoi(config.EncryptionIndex)
 		if err != nil {
-			return err
+			return errorutils.CheckError(err)
 		}
 		if encIndex == latestEncryptionIndex {
 			return nil
@@ -79,7 +75,7 @@ func handleCurrentEncryptionStatus(config *ConfigV1) error {
 	}
 
 	// Encrypting the config file.
-	// Marshalling and unmarshalling to get a config that will not modify the rest of the command.
+	// Marshalling and unmarshalling to get a new separate config struct, to prevent modifying the rest of the command.
 	decryptedContent, err := config.getContent()
 	if err != nil {
 		return err
@@ -87,7 +83,7 @@ func handleCurrentEncryptionStatus(config *ConfigV1) error {
 	tmpEncConfig := new(ConfigV1)
 	err = json.Unmarshal(decryptedContent, &tmpEncConfig)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	return saveConfig(tmpEncConfig)
 }
@@ -96,10 +92,11 @@ func isEncryptionInitialized() bool {
 	return EncryptionFile != ""
 }
 
+// Encrypt/Decrypt all secrets in the provided config, with the encryption key in the requested index.
 func handleSecrets(config *ConfigV1, handler secretHandler, encryptionIndex int) error {
 	err := initEncryptionKeys()
 	if encryptionIndex > len(encryptionKeys) -1 {
-		return errors.New("encryption index out of range")
+		return errorutils.CheckError(errors.New("encryption index out of range"))
 	}
 	if err != nil {
 		return err
@@ -141,7 +138,7 @@ func handleSecrets(config *ConfigV1, handler secretHandler, encryptionIndex int)
 	return nil
 }
 
-// Getting encryption keys from the encryption file if it wasn't done yet.
+// Reading encryption keys from the provided file, if not read already.
 func initEncryptionKeys() error {
 	// Already Unmarshalled.
 	if len(encryptionKeys) > 0 {
@@ -152,13 +149,13 @@ func initEncryptionKeys() error {
 	content := []byte(EncryptionFile)
 	err := json.Unmarshal(content, &encryption)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	encryptionKeys = encryption.Keys
 	return nil
 }
 
-func encryptSecret(secret string, encryptionIndex int) (string, error) {
+func encrypt(secret string, encryptionIndex int) (string, error) {
 	if secret == "" {
 		return "", nil
 	}
@@ -166,49 +163,49 @@ func encryptSecret(secret string, encryptionIndex int) (string, error) {
 	key := []byte(*encryptionKeys[encryptionIndex])
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	sealed := gcm.Seal(nonce, nonce, []byte(secret), nil)
 	return base64.StdEncoding.EncodeToString(sealed), nil
 }
 
-func decryptSecret(encryptedSecret string, encryptionIndex int) (string, error) {
+func decrypt(encryptedSecret string, encryptionIndex int) (string, error) {
 	key := []byte(*encryptionKeys[encryptionIndex])
 	cipherText, err := base64.StdEncoding.DecodeString(encryptedSecret)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(cipherText) < nonceSize {
-		return "", err
+		return "", errorutils.CheckError(errors.New("unexpected cipher text size"))
 	}
 
 	nonce, cipherText := cipherText[:nonceSize], cipherText[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 	return string(plaintext), nil
 }

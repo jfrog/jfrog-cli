@@ -245,11 +245,11 @@ func TestEncryption(t *testing.T) {
 	config.MissionControl = &MissionControlDetails{Url: "url", AccessToken: details["mcToken"]}
 
 	// Encrypt decrypted
-	assert.NoError(t, handleSecrets(config, encryptSecret, 0))
+	assert.NoError(t, handleSecrets(config, encrypt, 0))
 	verifyAllEncrypted(t, config, details, true)
 
 	// Decrypt encrypted
-	assert.NoError(t, handleSecrets(config, decryptSecret, 0))
+	assert.NoError(t, handleSecrets(config, decrypt, 0))
 	verifyAllEncrypted(t, config, details, false)
 }
 

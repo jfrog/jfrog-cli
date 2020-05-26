@@ -193,7 +193,7 @@ func saveConfig(config *ConfigV1) error {
 	config.Version = cliutils.GetConfigVersion()
 	err := config.encrypt()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return err
 	}
 
 	content, err := config.getContent()
@@ -250,10 +250,15 @@ func readConf() (*ConfigV1, error) {
 	content, err = convertIfNecessary(content)
 	err = json.Unmarshal(content, &config)
 	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+
+	err = config.decrypt()
+	if err != nil {
 		return nil, err
 	}
 
-	err = handleCurrentEncryptionStatus(config)
+	err = updateConfigFileEncryption(config)
 	return config, err
 }
 

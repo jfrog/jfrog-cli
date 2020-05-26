@@ -1678,7 +1678,7 @@ func getConfigFlags() []cli.Flag {
 		cli.BoolTFlag{
 			Name:  "enc-password",
 			Hidden: true,
-			Usage: "[Deprecated] The --enc-password option has no effect as the config is now fully encrypted in an unmodifiable manner. Remove it to avoid future breaking` `",
+			Usage: "[Deprecated] This option is ignored and will be removed in the future.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)
