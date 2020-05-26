@@ -229,13 +229,13 @@ func assertionHelper(configV1 *ConfigV1, t *testing.T) {
 func TestEncryption(t *testing.T) {
 	EncryptionFile = "{\"Keys\":[\"randomkeywithlengthofexactly32!!\",\"anotherkeywithlengthofexactly32!\"],\"Version\":\"1\"}"
 	details := map[string]string{
-		"password": "password",
-		"accessToken": "accessToken",
+		"password":     "password",
+		"accessToken":  "accessToken",
 		"refreshToken": "refreshToken",
-		"apiKEY": "apiKEY",
-		"sshPass": "sshPass",
-		"bintrayKey": "bintrayKey",
-		"mcToken": "mcToken",
+		"apiKEY":       "apiKEY",
+		"sshPass":      "sshPass",
+		"bintrayKey":   "bintrayKey",
+		"mcToken":      "mcToken",
 	}
 
 	config := new(ConfigV1)
@@ -255,13 +255,13 @@ func TestEncryption(t *testing.T) {
 
 func verifyAllEncrypted(t *testing.T, config *ConfigV1, originalValues map[string]string, checkEncrypted bool) {
 	equals := []bool{
-		config.Artifactory[0].Password==originalValues["password"],
-		config.Artifactory[0].AccessToken==originalValues["accessToken"],
-		config.Artifactory[0].RefreshToken==originalValues["refreshToken"],
-		config.Artifactory[0].ApiKey==originalValues["apiKEY"],
-		config.Artifactory[0].SshPassphrase==originalValues["sshPass"],
-		config.Bintray.Key==originalValues["bintrayKey"],
-		config.MissionControl.AccessToken==originalValues["mcToken"],
+		config.Artifactory[0].Password == originalValues["password"],
+		config.Artifactory[0].AccessToken == originalValues["accessToken"],
+		config.Artifactory[0].RefreshToken == originalValues["refreshToken"],
+		config.Artifactory[0].ApiKey == originalValues["apiKEY"],
+		config.Artifactory[0].SshPassphrase == originalValues["sshPass"],
+		config.Bintray.Key == originalValues["bintrayKey"],
+		config.MissionControl.AccessToken == originalValues["mcToken"],
 	}
 
 	if checkEncrypted {

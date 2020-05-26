@@ -1676,9 +1676,9 @@ func getConfigFlags() []cli.Flag {
 			Usage: "[Default: true, unless $CI is true] Set to false if you do not want the config command to be interactive. If true, the --url option becomes optional.` `",
 		},
 		cli.BoolTFlag{
-			Name:  "enc-password",
+			Name:   "enc-password",
 			Hidden: true,
-			Usage: "[Deprecated] This option is ignored and will be removed in the future.` `",
+			Usage:  "[Deprecated] This option is ignored and will be removed in the future.` `",
 		},
 	}
 	flags = append(flags, getBaseFlags()...)

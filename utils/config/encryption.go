@@ -13,8 +13,10 @@ import (
 	"io"
 	"strconv"
 )
+
 var EncryptionFile string
 var encryptionKeys []*string
+
 const latestEncryptionIndex = 0
 
 type Encryption struct {
@@ -95,7 +97,7 @@ func isEncryptionInitialized() bool {
 // Encrypt/Decrypt all secrets in the provided config, with the encryption key in the requested index.
 func handleSecrets(config *ConfigV1, handler secretHandler, encryptionIndex int) error {
 	err := initEncryptionKeys()
-	if encryptionIndex > len(encryptionKeys) -1 {
+	if encryptionIndex > len(encryptionKeys)-1 {
 		return errorutils.CheckError(errors.New("encryption index out of range"))
 	}
 	if err != nil {
