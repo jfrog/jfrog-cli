@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -62,6 +63,9 @@ func TestGetFlagValueExists(t *testing.T) {
 
 func TestInitNewConfig(t *testing.T) {
 	log.SetDefaultLogger()
+	if !*tests.TestNuget {
+		t.Skip("Skipping nuget configuration tests")
+	}
 
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
