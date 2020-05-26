@@ -234,8 +234,12 @@ func (cc *ConfigCommand) getConfigurationFromUser() error {
 		}
 	}
 
+	err := cc.readRefreshableTokenFromConsole()
+	if err != nil {
+		return err
+	}
 	cc.readClientCertInfoFromConsole()
-	return cc.readRefreshableTokenFromConsole()
+	return nil
 }
 
 func (cc *ConfigCommand) readClientCertInfoFromConsole() {

@@ -4167,7 +4167,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	}
 	// Validate the option is not used along with an access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ArtDetails.AccessToken != "" {
-		return errors.New("the --basic-auth-only option is only supported with basic authentication options")
+		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
 	return nil
 }
