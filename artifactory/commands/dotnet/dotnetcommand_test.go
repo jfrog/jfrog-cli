@@ -1,14 +1,9 @@
 package dotnet
 
 import (
-	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -60,64 +55,6 @@ func TestGetFlagValueExists(t *testing.T) {
 	}
 }
 
-func TestInitNewConfig(t *testing.T) {
-	log.SetDefaultLogger()
-
-	tempDirPath, err := fileutils.CreateTempDir()
-	if err != nil {
-		t.Error(err)
-	}
-	defer fileutils.RemoveTempDir(tempDirPath)
-
-	c := &dotnet.Cmd{}
-	params := &DotnetCommand{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
-	configFile, err := writeToTempConfigFile(c, tempDirPath)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// Prepare the config file with NuGet authentication
-	err = params.addNugetAuthToConfig(dotnet.Nuget, configFile)
-	if err != nil {
-		t.Error(err)
-	}
-
-	content, err := ioutil.ReadFile(configFile.Name())
-	if err != nil {
-		t.Error(err)
-	}
-
-	nugetConfig := NugetConfig{}
-	err = xml.Unmarshal(content, &nugetConfig)
-	if err != nil {
-		t.Error("Unmarshalling failed with an error:", err.Error())
-	}
-
-	if len(nugetConfig.PackageSources) != 1 {
-		t.Error("Expected one package sources, got", len(nugetConfig.PackageSources))
-	}
-
-	source := "http://some/url/api/nuget"
-
-	for _, packageSource := range nugetConfig.PackageSources {
-		if packageSource.Key != sourceName {
-			t.Error("Expected", sourceName, ",got", packageSource.Key)
-		}
-
-		if packageSource.Value != source {
-			t.Error("Expected", source, ", got", packageSource.Value)
-		}
-	}
-
-	if len(nugetConfig.PackageSourceCredentials) != 1 {
-		t.Error("Expected one packageSourceCredentials, got", len(nugetConfig.PackageSourceCredentials))
-	}
-
-	if len(nugetConfig.PackageSourceCredentials[0].JFrogCli) != 2 {
-		t.Error("Expected two fields in the JFrogCli credentials, got", len(nugetConfig.PackageSourceCredentials[0].JFrogCli))
-	}
-}
-
 func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
 	workingDir, err := os.Getwd()
 	assert.NoError(t, err)
@@ -150,20 +87,4 @@ func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
 			assert.Equal(t, test.expectedSolutionPath, dc.solutionPath)
 		})
 	}
-}
-
-type NugetConfig struct {
-	XMLName                  xml.Name                   `xml:"configuration"`
-	PackageSources           []PackageSources           `xml:"packageSources>add"`
-	PackageSourceCredentials []PackageSourceCredentials `xml:"packageSourceCredentials"`
-	Apikeys                  []PackageSources           `xml:"apikeys>add"`
-}
-
-type PackageSources struct {
-	Key   string `xml:"key,attr"`
-	Value string `xml:"value,attr"`
-}
-
-type PackageSourceCredentials struct {
-	JFrogCli []PackageSources `xml:">add"`
 }
