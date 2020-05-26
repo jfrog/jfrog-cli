@@ -1,15 +1,16 @@
-package nuget
+package dotnet
 
 import (
 	"encoding/xml"
 	"github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -44,7 +45,7 @@ func TestGetFlagValueExists(t *testing.T) {
 				}
 				defer os.Remove(test.currentConfigPath)
 			}
-			c := &nuget.Cmd{CommandFlags: test.cmdFlags}
+			c := &dotnet.Cmd{CommandFlags: test.cmdFlags}
 			_, err := getFlagValueIfExists("-configfile", c)
 			if err != nil && !test.expectErr {
 				t.Error(err)
@@ -61,9 +62,6 @@ func TestGetFlagValueExists(t *testing.T) {
 
 func TestInitNewConfig(t *testing.T) {
 	log.SetDefaultLogger()
-	if !cliutils.IsWindows() {
-		t.Skip("Skipping nuget tests, since this is not a Windows machine.")
-	}
 
 	tempDirPath, err := fileutils.CreateTempDir()
 	if err != nil {
@@ -71,15 +69,15 @@ func TestInitNewConfig(t *testing.T) {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	c := &nuget.Cmd{}
-	params := &NugetCommandArgs{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
+	c := &dotnet.Cmd{}
+	params := &DotnetCommand{rtDetails: &config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}}
 	configFile, err := writeToTempConfigFile(c, tempDirPath)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Prepare the config file with NuGet authentication
-	err = params.addNugetAuthenticationToNewConfig(configFile)
+	err = params.addNugetAuthToConfig(dotnet.Nuget, configFile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -111,24 +109,46 @@ func TestInitNewConfig(t *testing.T) {
 		}
 	}
 
-	if len(nugetConfig.Apikeys) != 1 {
-		t.Error("Expected one api key, got", len(nugetConfig.Apikeys))
-	}
-
-	apiKey := nugetConfig.Apikeys[0]
-	if apiKey.Key != source {
-		t.Error("Expected", source, ", got", apiKey.Key)
-	}
-	if apiKey.Value == "" {
-		t.Error("Expected apiKey with value, got", apiKey.Value)
-	}
-
 	if len(nugetConfig.PackageSourceCredentials) != 1 {
 		t.Error("Expected one packageSourceCredentials, got", len(nugetConfig.PackageSourceCredentials))
 	}
 
 	if len(nugetConfig.PackageSourceCredentials[0].JFrogCli) != 2 {
 		t.Error("Expected two fields in the JFrogCli credentials, got", len(nugetConfig.PackageSourceCredentials[0].JFrogCli))
+	}
+}
+
+func TestUpdateSolutionPathAndGetFileName(t *testing.T) {
+	workingDir, err := os.Getwd()
+	assert.NoError(t, err)
+	tests := []struct {
+		name                 string
+		flags                string
+		solutionPath         string
+		expectedSlnFile      string
+		expectedSolutionPath string
+	}{
+		{"emptyFlags", "", workingDir, "", workingDir},
+		{"justFlags", "-flag1 value1 -flag2 value2", workingDir, "", workingDir},
+		{"relFileArgRelPath1", filepath.Join("testdata", "slnDir", "sol.sln"), filepath.Join("rel", "path"), "sol.sln", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"relDirArgRelPath2", filepath.Join("testdata", "slnDir"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absFileArgRelPath1", filepath.Join(workingDir, "testdata", "slnDir", "sol.sln"), filepath.Join(".", "rel", "path"), "sol.sln", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"absDirArgRelPath2", filepath.Join(workingDir, "testdata", "slnDir") + " -flag value", filepath.Join(".", "rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"nonExistingFile", filepath.Join(".", "dir1", "sol.sln"), workingDir, "", workingDir},
+		{"nonExistingPath", filepath.Join(workingDir, "non", "existing", "path"), workingDir, "", workingDir},
+		{"relCsprojFile", filepath.Join("testdata", "slnDir", "proj.csproj"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absCsprojFile", filepath.Join(workingDir, "testdata", "slnDir", "proj.csproj"), filepath.Join("rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
+		{"relPackagesConfigFile", filepath.Join("testdata", "slnDir", "packages.config"), filepath.Join("rel", "path"), "", filepath.Join("rel", "path", "testdata", "slnDir")},
+		{"absPackagesConfigFile", filepath.Join(workingDir, "testdata", "slnDir", "packages.config"), filepath.Join("rel", "path"), "", filepath.Join(workingDir, "testdata", "slnDir")},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dc := DotnetCommand{solutionPath: test.solutionPath, argAndFlags: test.flags}
+			slnFile, err := dc.updateSolutionPathAndGetFileName()
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedSlnFile, slnFile)
+			assert.Equal(t, test.expectedSolutionPath, dc.solutionPath)
+		})
 	}
 }
 

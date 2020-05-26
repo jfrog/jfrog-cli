@@ -81,7 +81,7 @@ var defaultPropertiesValues = map[string]string{
 	"artifactory.publish.maven":                          "false",
 	"artifactory.publish.ivy":                            "false",
 	"buildInfoConfig.includeEnvVars":                     "false",
-	"buildInfoConfig.envVarsExcludePatterns":             "*password*,*secret*,*key*,*token*",
+	"buildInfoConfig.envVarsExcludePatterns":             "*password*,*psw*,*secret*,*key*,*token*",
 	"buildInfo.agent.name":                               cliutils.ClientAgent + "/" + cliutils.GetVersion(),
 	"buildInfo.licenseControl.autoDiscover":              "true",
 	"buildInfo.licenseControl.includePublishedArtifacts": "false",

@@ -268,8 +268,8 @@ func (cli *JfrogCli) LegacyBuildToolExec(args ...string) error {
 	return cli.main()
 }
 
-func (cli *JfrogCli) WithSuffix(suffix string) *JfrogCli {
-	return &JfrogCli{cli.main, cli.prefix, suffix}
+func (cli *JfrogCli) WithoutCredentials() *JfrogCli {
+	return &JfrogCli{cli.main, cli.prefix, ""}
 }
 
 type gitManager struct {
@@ -347,7 +347,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles()
 }
 
-var reposConfigMap = map[*string]string {
+var reposConfigMap = map[*string]string{
 	&Repo1:             Repo1RepositoryConfig,
 	&Repo2:             Repo2RepositoryConfig,
 	&VirtualRepo:       VirtualRepositoryConfig,
@@ -377,31 +377,31 @@ func getNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
 }
 
 func GetNonVirtualRepositories() map[*string]string {
-	NonVirtualReposMap := map[*bool][]*string {
-		TestArtifactory: {&Repo1, &Repo2, &LfsRepo, &DebianRepo},
+	NonVirtualReposMap := map[*bool][]*string{
+		TestArtifactory:  {&Repo1, &Repo2, &LfsRepo, &DebianRepo},
 		TestDistribution: {&Repo1, &Repo2},
-		TestDocker: {},
-		TestGo: {},
-		TestGradle: {&Repo1},
-		TestMaven: {&Repo1, &Repo2, &JcenterRemoteRepo},
-		TestNpm: {&NpmLocalRepo, &NpmRemoteRepo},
-		TestNuget: {},
-		TestPip: {&PypiRemoteRepo},
+		TestDocker:       {},
+		TestGo:           {},
+		TestGradle:       {&Repo1},
+		TestMaven:        {&Repo1, &Repo2, &JcenterRemoteRepo},
+		TestNpm:          {&NpmLocalRepo, &NpmRemoteRepo},
+		TestNuget:        {},
+		TestPip:          {&PypiRemoteRepo},
 	}
 	return getNeededRepositories(NonVirtualReposMap)
 }
 
 func GetVirtualRepositories() map[*string]string {
-	VirtualReposMap := map[*bool][]*string {
-		TestArtifactory: {&VirtualRepo},
+	VirtualReposMap := map[*bool][]*string{
+		TestArtifactory:  {&VirtualRepo},
 		TestDistribution: {},
-		TestDocker: {},
-		TestGo: {},
-		TestGradle: {},
-		TestMaven: {},
-		TestNpm: {},
-		TestNuget: {},
-		TestPip: {&PypiVirtualRepo},
+		TestDocker:       {},
+		TestGo:           {},
+		TestGradle:       {},
+		TestMaven:        {},
+		TestNpm:          {},
+		TestNuget:        {},
+		TestPip:          {&PypiVirtualRepo},
 	}
 	return getNeededRepositories(VirtualReposMap)
 }

@@ -195,7 +195,7 @@ func (builder *buildInfoBuilder) handlePush(manifestArtifact, configLayerArtifac
 	// Add layers
 	builder.layers = append(builder.layers, searchResults["manifest.json"])
 	builder.layers = append(builder.layers, searchResults[digestToLayer(builder.imageId)])
-	totalLayers := configurationLayer.getNumberLayers()
+	totalLayers := len(imageManifest.Layers)
 	totalDependencies := configurationLayer.getNumberOfDependentLayers()
 	// Add image layers as artifacts and dependencies.
 	for i := 0; i < totalLayers; i++ {
@@ -293,7 +293,7 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, errorutils.CheckError(errors.New("Found incorrect manifest.json file, expecting image ID: " + imageId))
 	}
 
-	artifact = buildinfo.Artifact{Name: "manifest.json", Type: "json", Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+	artifact = buildinfo.Artifact{Name: "manifest.json", Type: "json", Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}, Path: path.Join(item.Repo, item.Path, item.Name)}
 	dependency = buildinfo.Dependency{Id: "manifest.json", Type: "json", Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 	return
 }
@@ -321,7 +321,7 @@ func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, s
 		return nil, buildinfo.Artifact{}, buildinfo.Dependency{}, err
 	}
 
-	artifact = buildinfo.Artifact{Name: digestToLayer(imageId), Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
+	artifact = buildinfo.Artifact{Name: digestToLayer(imageId), Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}, Path: path.Join(item.Repo, item.Path, item.Name)}
 	dependency = buildinfo.Dependency{Id: digestToLayer(imageId), Checksum: &buildinfo.Checksum{Sha1: item.Actual_Sha1, Md5: item.Actual_Md5}}
 	return
 }
@@ -399,21 +399,6 @@ func performSearch(imagePathPattern string, serviceManager *artifactory.Artifact
 // sha256__30daa5c11544632449b01f450bebfef6b89644e9e683258ed05797abe7c32a6e
 func digestToLayer(digest string) string {
 	return strings.Replace(digest, ":", "__", 1)
-}
-
-// Get the total number of layers from the config.
-func (configLayer *configLayer) getNumberLayers() int {
-	layersNum := len(configLayer.History)
-	// The image ID appears to be associated with the uppermost layer, which is not part of the overall layers in the manifest or RootFS.
-	if !configLayer.History[layersNum-1].EmptyLayer {
-		layersNum--
-	}
-	for i := layersNum - 1; i >= 0; i-- {
-		if configLayer.History[i].EmptyLayer {
-			layersNum--
-		}
-	}
-	return layersNum
 }
 
 // Get the number of dependencies layers from the config.

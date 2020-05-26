@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+const buildInfoPrefix = "buildInfo.env."
+
 type BuildPublishCommand struct {
 	buildConfiguration *utils.BuildConfiguration
 	rtDetails          *config.ArtifactoryDetails
@@ -253,7 +255,7 @@ func createIncludeFilter(pattern string) filterFunc {
 		result := make(map[string]string)
 		for k, v := range tempMap {
 			for _, filterPattern := range includePattern {
-				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
+				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(strings.TrimPrefix(k, buildInfoPrefix)))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}
@@ -274,7 +276,7 @@ func createExcludeFilter(pattern string) filterFunc {
 		for k, v := range tempMap {
 			include := true
 			for _, filterPattern := range excludePattern {
-				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(k))
+				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(strings.TrimPrefix(k, buildInfoPrefix)))
 				if errorutils.CheckError(err) != nil {
 					return nil, err
 				}

@@ -1,7 +1,22 @@
+## 1.36.0 (May 25, 2020)
+- "jfrog rt download" - New --details-summary option
+- New "jfrog rt dotnet" command supporting .net core CLI support
+- "jfrog rt nuget" - support for Linux and MacOS
+- New "jfrog rt access-token-create" command
+- "jfrog rt download" - Added support for validateSymlinks via file spec
+- "jfrog rt search" now also returns SHA1 and MD5
+- Add deployment path to the build-info
+- Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
+
+## 1.35.5 (May 13, 2020)
+- Bug fix - Out of range for docker duplicate layers.
+- Bug fix - 'jfrog rt bpr' fails with build params as env vars
+
 ## 1.35.4 (May 12, 2020)
 - Bug fix - The “jfrog rt docker-push” command may duplicate artifacts added to the build-info, which can cause build-promotion to fail.
 - Bug fix - The “jfrog rt docker-pull” command cannot collect build-info when pulling from a remote repo.
 - Bug fix - VCS props are not added when uploading only one file.
+- Bug fix - add retries to download/upload params
 
 ## 1.35.3 (Mar 30, 2020)
 - Bug fix - Command arguments and options wrapped with quotes are not parsed properly.

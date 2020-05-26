@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/nuget"
+	"github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-var packagesFilePath = "packages.config"
+const PackagesFileName = "packages.config"
 
 // Register packages.config extractor
 func init() {
@@ -28,14 +28,12 @@ type packagesExtractor struct {
 	rootDependencies []string
 }
 
-func (extractor *packagesExtractor) IsCompatible(projectName, projectRoot string) (bool, error) {
-	packagesConfigPath := filepath.Join(projectRoot, packagesFilePath)
-	exists, err := fileutils.IsFileExists(packagesConfigPath, false)
-	if exists {
-		log.Debug("Found", packagesConfigPath, "file for project:", projectName)
-		return true, err
+func (extractor *packagesExtractor) IsCompatible(projectName, dependenciesSource string) bool {
+	if strings.HasSuffix(dependenciesSource, PackagesFileName) {
+		log.Debug("Found", dependenciesSource, "file for project:", projectName)
+		return true
 	}
-	return false, err
+	return false
 }
 
 func (extractor *packagesExtractor) DirectDependencies() ([]string, error) {
@@ -51,9 +49,9 @@ func (extractor *packagesExtractor) ChildrenMap() (map[string][]string, error) {
 }
 
 // Create new packages.config extractor
-func (extractor *packagesExtractor) new(projectName, projectRoot string) (Extractor, error) {
+func (extractor *packagesExtractor) new(dependenciesSource string) (Extractor, error) {
 	newExtractor := &packagesExtractor{allDependencies: map[string]*buildinfo.Dependency{}, childrenMap: map[string][]string{}}
-	packagesConfig, err := newExtractor.loadPackagesConfig(projectRoot)
+	packagesConfig, err := newExtractor.loadPackagesConfig(dependenciesSource)
 	if err != nil {
 		return nil, err
 	}
@@ -95,9 +93,7 @@ func (extractor *packagesExtractor) extract(packagesConfig *packagesConfig, glob
 			extractor.allDependencies[id] = pack.dependency
 			extractor.childrenMap[id] = pack.getDependencies()
 		} else {
-			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s and therefore not"+
-				" added to the dependecy tree. This might be because the package already exists in a different NuGet cache,"+
-				" possibly the SDK cache. Removing the package from this cache may resolve the issue", nuget.Id, nuget.Version, globalPackagesCache))
+			log.Warn(fmt.Sprintf("The following NuGet package %s with version %s was not found in the NuGet cache %s."+absentNupkgWarnMsg, nuget.Id, nuget.Version, globalPackagesCache))
 		}
 	}
 	return nil
@@ -132,9 +128,8 @@ func createAlternativeVersionForms(originalVersion string) []string {
 	return alternativeVersions
 }
 
-func (extractor *packagesExtractor) loadPackagesConfig(rootPath string) (*packagesConfig, error) {
-	packagesFilePath := filepath.Join(rootPath, packagesFilePath)
-	content, err := ioutil.ReadFile(packagesFilePath)
+func (extractor *packagesExtractor) loadPackagesConfig(dependenciesSource string) (*packagesConfig, error) {
+	content, err := ioutil.ReadFile(dependenciesSource)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +259,7 @@ func (nugetPackage *nugetPackage) getDependencies() []string {
 }
 
 func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
-	localsCmd, err := nuget.NewNugetCmd()
+	localsCmd, err := dotnet.NewToolchainCmd(dotnet.Nuget)
 	if err != nil {
 		return "", err
 	}

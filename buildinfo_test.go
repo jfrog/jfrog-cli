@@ -3,6 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -17,12 +24,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const ModuleNameJFrogTest = "jfrog-test"
@@ -58,9 +59,22 @@ func TestBuildPromote(t *testing.T) {
 	value1 := "v1,v2"
 	key2 := "another"
 	value2 := "property"
-	artifactoryCli.Exec("build-promote", buildName, buildNumberA, tests.Repo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
+
+	// Promote build to Repo1 using build name and build number as args.
+	artifactoryCli.Exec("build-promote", buildName, buildNumberA, tests.Repo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumberA, t, artHttpDetails)
-	resultItems := getResultItemsFromArtifactory(tests.SearchRepo2, t)
+	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
+
+	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
+
+	// Promote the same build to Repo2 using build name and build number as env vars.
+	os.Setenv(cliutils.BuildName, buildName)
+	os.Setenv(cliutils.BuildNumber, buildNumberA)
+	defer os.Unsetenv(cliutils.BuildName)
+	defer os.Unsetenv(cliutils.BuildNumber)
+	artifactoryCli.Exec("build-promote", tests.Repo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
+	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumberA, t, artHttpDetails)
+	resultItems = getResultItemsFromArtifactory(tests.SearchRepo2, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
@@ -247,7 +261,7 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+buildName, "--build-number="+buildNumber)
 
 	// Cleanup buildInfo with the same buildName and buildNumber
-	artifactoryCli.WithSuffix("").Exec("build-clean", buildName, buildNumber)
+	artifactoryCli.WithoutCredentials().Exec("build-clean", buildName, buildNumber)
 
 	// Upload different files with the same buildName and buildNumber
 	specFile, err = tests.CreateSpec(tests.SplitUploadSpecB)
@@ -262,6 +276,37 @@ func TestArtifactoryCleanBuildInfo(t *testing.T) {
 	artifactoryCli.Exec("download", tests.Repo1, outputDir+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumber)
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(outputDir, false)
 	tests.VerifyExistLocally(tests.GetCleanBuild(), paths, t)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryBuildCollectEnv(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName, buildNumber := "cli-test-build", "12"
+
+	// Build collect env
+	os.Setenv("DONT_COLLECT", "foo")
+	os.Setenv("COLLECT", "bar")
+	artifactoryCli.WithoutCredentials().Exec("bce", buildName, buildNumber)
+
+	// Publish build info
+	artifactoryCli.Exec("bp", buildName, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+
+	// Make sure no sensitive data in build env
+	for k := range buildInfo.Properties {
+		assert.NotContains(t, k, "password")
+		assert.NotContains(t, k, "psw")
+		assert.NotContains(t, k, "secret")
+		assert.NotContains(t, k, "key")
+		assert.NotContains(t, k, "token")
+		assert.NotContains(t, k, "DONT_COLLECT")
+	}
+
+	// Make sure "COLLECT" env appear in build env
+	assert.Contains(t, buildInfo.Properties, "buildInfo.env.COLLECT")
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)

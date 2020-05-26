@@ -304,7 +304,7 @@ func (ic *IssuesConfiguration) populateIssuesConfigsFromSpec(configFilePath stri
 	}
 
 	// Get server-id.
-	if vConfig.IsSet(ConfigIssuesPrefix+"serverID") {
+	if vConfig.IsSet(ConfigIssuesPrefix + "serverID") {
 		ic.ServerID = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 	}
 
