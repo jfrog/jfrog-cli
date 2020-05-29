@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const sourceName = "JFrogCli"
+const SourceName = "JFrogCli"
 
 type DotnetCommand struct {
 	toolchainType      dotnet.ToolchainType
@@ -242,16 +242,16 @@ func getFlagValueIfExists(cmdFlag string, cmd *dotnet.Cmd) (string, error) {
 // Initializing a new NuGet config file that NuGet will use into a temp file
 func (dc *DotnetCommand) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
 	// Got to here, means that neither of the flags provided and we need to init our own config.
-	configFile, err := writeToTempConfigFile(cmd, configDirPath)
+	configFile, err := WriteToTempConfigFile(cmd, configDirPath)
 	if err != nil {
 		return err
 	}
 
-	return dc.addNugetAuthToConfig(cmd.GetToolchain(), configFile)
+	return dc.AddNugetAuthToConfig(cmd.GetToolchain(), configFile)
 }
 
 // Runs nuget add sources command to authenticate with Artifactory.
-func (dc *DotnetCommand) addNugetAuthToConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
+func (dc *DotnetCommand) AddNugetAuthToConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
 	sourceUrl, user, password, err := dc.getSourceDetails()
 	if err != nil {
 		return err
@@ -261,7 +261,7 @@ func (dc *DotnetCommand) addNugetAuthToConfig(cmdType dotnet.ToolchainType, conf
 }
 
 // Creates the temp file and writes the config template into the file for NuGet can use it.
-func writeToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error) {
+func WriteToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error) {
 	configFile, err := ioutil.TempFile(tempDirPath, "jfrog.cli.nuget.")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -290,7 +290,7 @@ func addSourceToNugetConfig(cmdType dotnet.ToolchainType, configFileName, source
 
 	flagPrefix := cmdType.GetTypeFlagPrefix()
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"configfile", configFileName)
-	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", sourceName)
+	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"name", SourceName)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"username", user)
 	cmd.CommandFlags = append(cmd.CommandFlags, flagPrefix+"password", password)
 	output, err := io.RunCmdOutput(cmd)
