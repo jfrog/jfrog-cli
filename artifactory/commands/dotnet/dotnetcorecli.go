@@ -7,7 +7,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/version"
 )
 
-const minDotnetSdkCoreVersionForAddSource = "3.0.0"
+const minDotnetSdkCoreVersionForAddSource = "3.1.200"
 
 type DotnetCoreCliCommand struct {
 	*DotnetCommand
