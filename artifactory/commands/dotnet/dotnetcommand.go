@@ -331,10 +331,11 @@ func (dc *DotnetCommand) createCmd() (*dotnet.Cmd, error) {
 		return nil, err
 	}
 	if dc.subCommand != "" {
-		c.Command, err = utils.ParseArgs(strings.Split(dc.subCommand, " "))
+		subCommand, err := utils.ParseArgs(strings.Split(dc.subCommand, " "))
 		if err != nil {
 			return nil, errorutils.CheckError(err)
 		}
+		c.Command = append(c.Command, subCommand...)
 	}
 
 	if dc.argAndFlags != "" {
