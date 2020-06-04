@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -60,8 +61,9 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem, err error) {
+func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultCr *content.ContentReader, err error) {
 	var errorOccurred = false
+	cw, err := content.NewContentWriter("results", true, false)
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
@@ -69,24 +71,32 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			log.Error(err)
 			continue
 		}
-
-		currentResultItems, err := servicesManager.SearchFiles(searchParams)
+		cr, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
-		resultItems = append(resultItems, currentResultItems...)
+		for searchResult := new(clientutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(clientutils.ResultItem) {
+			cw.Write(*searchResult)
+		}
+		if err = cr.GetError(); err != nil {
+			errorOccurred = true
+			log.Error(err)
+			continue
+		}
 	}
+	cw.Close()
+	resultCr = content.NewContentReader((cw.GetFilePath()), "results")
 	if errorOccurred {
 		err = errors.New("Operation finished with errors, please review the logs.")
 	}
 	return
 }
 
-func GetPropsParams(resultItems []clientutils.ResultItem, properties string) (propsParams services.PropsParams) {
+func GetPropsParams(resultItems *content.ContentReader, properties string) (propsParams services.PropsParams) {
 	propsParams = services.NewPropsParams()
-	propsParams.Items = resultItems
+	propsParams.ItemsReader = resultItems
 	propsParams.Props = properties
 	return
 }

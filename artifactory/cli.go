@@ -1,7 +1,6 @@
 package artifactory
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -3010,17 +3009,18 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	result, err := json.Marshal(searchCmd.SearchResult())
-	err = cliutils.GetCliError(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	err = cliutils.GetCliError(err, searchCmd.SearchResult().Length(), 0, isFailNoOp(c))
 	if err != nil {
 		return err
 	}
 	if c.Bool("count") {
-		log.Output(len(searchCmd.SearchResult()))
+		log.Output(searchCmd.SearchResult().Length)
 	} else {
-		log.Output(clientutils.IndentJson(result))
+		for searchResult := new(generic.SearchResult); searchCmd.ContentReadearchResult.NextRecord(searchResult) == nil; searchResult = new(generic.SearchResult) {
+			log.Output(searchResult)
+		}
+		err = searchCmd.ContentReadearchResult.GetError()
 	}
-
 	return err
 }
 

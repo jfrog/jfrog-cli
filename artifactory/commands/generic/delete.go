@@ -4,12 +4,12 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 )
 
 type DeleteCommand struct {
-	deleteItems []clientutils.ResultItem
+	deleteItems *content.ContentReader
 	GenericCommand
 	quiet   bool
 	threads int
@@ -37,11 +37,11 @@ func (dc *DeleteCommand) SetQuiet(quiet bool) *DeleteCommand {
 	return dc
 }
 
-func (dc *DeleteCommand) DeleteItems() []clientutils.ResultItem {
+func (dc *DeleteCommand) DeleteItems() *content.ContentReader {
 	return dc.deleteItems
 }
 
-func (dc *DeleteCommand) SetDeleteItems(deleteItems []clientutils.ResultItem) *DeleteCommand {
+func (dc *DeleteCommand) SetDeleteItems(deleteItems *content.ContentReader) *DeleteCommand {
 	dc.deleteItems = deleteItems
 	return dc
 }
@@ -55,7 +55,14 @@ func (dc *DeleteCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	if dc.quiet || utils.ConfirmDelete(dc.deleteItems) {
+	allowDelete := true
+	if !dc.quiet {
+		allowDelete, err = utils.ConfirmDelete(dc.deleteItems)
+		if err != nil {
+			return err
+		}
+	}
+	if allowDelete {
 		success, failed, err := dc.DeleteFiles()
 		result := dc.Result()
 		result.SetFailCount(failed)
@@ -74,17 +81,24 @@ func (dc *DeleteCommand) GetPathsToDelete() error {
 	if err != nil {
 		return err
 	}
+	temp := []*content.ContentReader{}
 	for i := 0; i < len(dc.Spec().Files); i++ {
 		deleteParams, err := getDeleteParams(dc.Spec().Get(i))
 		if err != nil {
 			return err
 		}
 
-		currentResultItems, err := servicesManager.GetPathsToDelete(deleteParams)
+		currentResultsReader, err := servicesManager.GetPathsToDelete(deleteParams)
 		if err != nil {
 			return err
 		}
-		dc.deleteItems = append(dc.deleteItems, currentResultItems...)
+		if currentResultsReader.Length() > 0 {
+			temp = append(temp, currentResultsReader)
+		}
+	}
+	dc.deleteItems, err = content.MergeReaders(temp, "results")
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -99,7 +113,7 @@ func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error
 		return 0, 0, err
 	}
 	deletedCount, err := servicesManager.DeleteFiles(dc.deleteItems)
-	return deletedCount, len(dc.deleteItems) - deletedCount, err
+	return deletedCount, dc.deleteItems.Length() - deletedCount, err
 }
 
 func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err error) {

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/bintray"
@@ -11,7 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
-	"os"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -68,7 +70,12 @@ Environment Variables:
 
 func main() {
 	log.SetDefaultLogger()
-	err := execMain()
+	err := fileutils.CreateReaderWriterTempDir()
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
+	defer fileutils.CleanupReaderWriterTempFilesAndDirs()
+	err = execMain()
 	cliutils.ExitOnErr(err)
 }
 

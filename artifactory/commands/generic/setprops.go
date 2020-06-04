@@ -34,11 +34,11 @@ func (setProps *SetPropsCommand) Run() error {
 	resultItems, searchErr := searchItems(setProps.Spec(), servicesManager)
 
 	propsParams := GetPropsParams(resultItems, setProps.props)
-	success, err := servicesManager.SetProps(propsParams)
+	success, fails, err := servicesManager.SetProps(propsParams)
 
 	result := setProps.Result()
 	result.SetSuccessCount(success)
-	result.SetFailCount(len(resultItems) - success)
+	result.SetFailCount(fails)
 	if err == nil {
 		return searchErr
 	}

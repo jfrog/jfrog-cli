@@ -13,9 +13,12 @@ import (
 	artifactoryUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/log"
+	clientlog "github.com/jfrog/jfrog-client-go/utils/log"
+
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,8 +33,14 @@ func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
 	os.Setenv(cliutils.CI, "true")
+
 	flag.Parse()
 	log.SetDefaultLogger()
+	err := fileutils.CreateReaderWriterTempDir()
+	if err != nil {
+		clientlog.Error(("Creating temp folder failed: " + err.Error()))
+		os.Exit(1)
+	}
 
 	if *tests.TestBintray {
 		InitBintrayTests()
@@ -62,6 +71,11 @@ func tearDownIntegrationTests() {
 	}
 	if *tests.TestDistribution {
 		CleanDistributionTests()
+	}
+	err := fileutils.CleanupReaderWriterTempFilesAndDirs()
+	if err != nil {
+		clientlog.Error(("Creating temp folder failed: " + err.Error()))
+		os.Exit(1)
 	}
 }
 

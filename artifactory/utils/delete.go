@@ -2,18 +2,23 @@ package utils
 
 import (
 	"fmt"
+
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	rtclientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 )
 
-func ConfirmDelete(pathsToDelete []rtclientutils.ResultItem) bool {
-	if len(pathsToDelete) < 1 {
-		return false
+func ConfirmDelete(pathsToDelete *content.ContentReader) (bool, error) {
+	if pathsToDelete.Length() < 1 {
+		return false, nil
 	}
-	for _, v := range pathsToDelete {
-		fmt.Println("  " + v.GetItemRelativePath())
+	for resultItem := new(rtclientutils.ResultItem); pathsToDelete.NextRecord(resultItem) == nil; resultItem = new(rtclientutils.ResultItem) {
+		fmt.Println("  " + resultItem.GetItemRelativePath())
+	}
+	if err := pathsToDelete.GetError(); err != nil {
+		return false, err
 	}
 	return cliutils.AskYesNo("Are you sure you want to delete the above paths?", false)
 }

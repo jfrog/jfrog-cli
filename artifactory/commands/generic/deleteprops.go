@@ -31,13 +31,12 @@ func (deleteProps *DeletePropsCommand) Run() error {
 		return err
 	}
 
-	resultItems, searchErr := searchItems(deleteProps.Spec(), servicesManager)
-
-	propsParams := GetPropsParams(resultItems, deleteProps.props)
-	success, err := servicesManager.DeleteProps(propsParams)
+	resultCr, searchErr := searchItems(deleteProps.Spec(), servicesManager)
+	propsParams := GetPropsParams(resultCr, deleteProps.props)
+	success, fail, err := servicesManager.DeleteProps(propsParams)
 	result := deleteProps.Result()
 	result.SetSuccessCount(success)
-	result.SetFailCount(len(resultItems) - success)
+	result.SetFailCount(fail)
 	if err == nil {
 		return searchErr
 	}

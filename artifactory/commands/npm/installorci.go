@@ -26,7 +26,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
-	cliutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
@@ -521,7 +520,7 @@ func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifact
 		return func(threadId int) error {
 			name := nca.dependencies[dependencyIndex].name
 			ver := nca.dependencies[dependencyIndex].version
-			log.Debug(cliutils.GetLogMsgPrefix(threadId, false), "Fetching checksums for", name, "-", ver)
+			log.Debug(clientutils.GetLogMsgPrefix(threadId, false), "Fetching checksums for", name, "-", ver)
 			result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForNpm(name, ver))
 			if err != nil {
 				return err
@@ -532,13 +531,13 @@ func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifact
 				return errorutils.CheckError(err)
 			}
 			if len(parsedResult.Results) == 0 {
-				log.Debug(cliutils.GetLogMsgPrefix(threadId, false), name, "-", ver, "could not be found in Artifactory.")
+				log.Debug(clientutils.GetLogMsgPrefix(threadId, false), name, "-", ver, "could not be found in Artifactory.")
 				return nil
 			}
 			nca.dependencies[dependencyIndex].artifactName = parsedResult.Results[0].Name
 			nca.dependencies[dependencyIndex].checksum =
 				&buildinfo.Checksum{Sha1: parsedResult.Results[0].Actual_sha1, Md5: parsedResult.Results[0].Actual_md5}
-			log.Debug(cliutils.GetLogMsgPrefix(threadId, false), "Found", parsedResult.Results[0].Name,
+			log.Debug(clientutils.GetLogMsgPrefix(threadId, false), "Found", parsedResult.Results[0].Name,
 				"sha1:", parsedResult.Results[0].Actual_sha1,
 				"md5", parsedResult.Results[0].Actual_md5)
 			return nil
@@ -666,7 +665,7 @@ func getDetailsUsingBasicAuth(artDetails auth.ServiceDetails) (npmAuth string, e
 		return "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + cliutils.IndentJson(body)))
+		return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
 	}
 
 	return string(body), nil

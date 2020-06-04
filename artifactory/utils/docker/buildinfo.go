@@ -15,6 +15,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -77,7 +78,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 
 	// Set build properties only when pushing image.
 	if builder.commandType == Push {
-		_, err = builder.setBuildProperties()
+		_, _, err = builder.setBuildProperties()
 		if err != nil {
 			return nil, err
 		}
@@ -226,12 +227,21 @@ func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileNam
 }
 
 // Set build properties on docker image layers in Artifactory.
-func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
+func (builder *buildInfoBuilder) setBuildProperties() (int, int, error) {
 	props, err := buildutils.CreateBuildProperties(builder.buildName, builder.buildNumber)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return builder.serviceManager.SetProps(services.PropsParams{Items: builder.layers, Props: props})
+	cw, err := content.NewContentWriter("results", true, false)
+	if err != nil {
+		log.Error("Fail to create new content writer for docker layer")
+		return 0, 0, err
+	}
+	for item := range builder.layers {
+		cw.Write(item)
+	}
+	cw.Close()
+	return builder.serviceManager.SetProps(services.PropsParams{ItemsReader: content.NewContentReader(cw.GetFilePath(), "results"), Props: props})
 }
 
 // Create docker build info
@@ -381,15 +391,19 @@ func performSearch(imagePathPattern string, serviceManager *artifactory.Artifact
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern
-	results, err := serviceManager.SearchFiles(searchParams)
+	cr, err := serviceManager.SearchFiles(searchParams)
 	if err != nil {
 		return nil, err
 	}
 	resultMap := map[string]utils.ResultItem{}
-	for _, v := range results {
-		resultMap[v.Name] = v
+	for resultItem := new(utils.ResultItem); cr.NextRecord(resultItem) == nil; resultItem = new(utils.ResultItem) {
+		if err != nil {
+			return nil, err
+		}
+		resultMap[resultItem.Name] = *resultItem
+
 	}
-	return resultMap, nil
+	return resultMap, cr.GetError()
 }
 
 // Digest of type sha256:30daa5c11544632449b01f450bebfef6b89644e9e683258ed05797abe7c32a6e to

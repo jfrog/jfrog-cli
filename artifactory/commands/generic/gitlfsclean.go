@@ -2,11 +2,13 @@ package generic
 
 import (
 	"fmt"
+
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -63,7 +65,16 @@ func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems []clientutil
 	if err != nil {
 		return err
 	}
-	_, err = servicesManager.DeleteFiles(deleteItems)
+	// TODO: adjust 'GetUnreferencedGitLfsFiles' service to use files. We use this workaround till then (transfer memory to file)
+	cw, err := content.NewContentWriter("results", true, false)
+	if err != nil {
+		return err
+	}
+	for _, item := range deleteItems {
+		cw.Write(item)
+	}
+	cw.Close()
+	_, err = servicesManager.DeleteFiles(content.NewContentReader(cw.GetFilePath(), cw.GetArrayKey()))
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
