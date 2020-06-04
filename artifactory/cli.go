@@ -3014,7 +3014,7 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	if c.Bool("count") {
-		log.Output(searchCmd.SearchResult().Length)
+		log.Output(searchCmd.SearchResult().Length())
 	} else {
 		for searchResult := new(generic.SearchResult); searchCmd.ContentReadearchResult.NextRecord(searchResult) == nil; searchResult = new(generic.SearchResult) {
 			log.Output(searchResult)
