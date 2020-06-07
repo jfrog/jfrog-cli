@@ -262,6 +262,9 @@ func (dc *DotnetCommand) InitNewConfig(configDirPath string) (configFile *os.Fil
 	if err != nil {
 		return
 	}
+	// We will prefer to write the NuGet configuration using the `nuget add source` command if we can.
+	// The command isn't available in all toolchain's versions.
+	// Therefore if the useNugetAddSource flag is set we'll use the command, otherwise we will write the configuration using a formatted string.
 	if dc.useNugetAddSource {
 		err = dc.AddNugetAuthToConfig(dc.toolchainType, configFile, sourceUrl, user, password)
 	} else {

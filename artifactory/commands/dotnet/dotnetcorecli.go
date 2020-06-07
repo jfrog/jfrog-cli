@@ -19,12 +19,11 @@ func NewDotnetCoreCliCommand() *DotnetCoreCliCommand {
 	return &dotnetCoreCliCmd
 }
 
-func (dccc *DotnetCoreCliCommand) Run() error {
-	useNugetAddSource, err := isDotnetVersionAboveMin()
+func (dccc *DotnetCoreCliCommand) Run() (err error) {
+	dccc.useNugetAddSource, err = isDotnetVersionAboveMin()
 	if err != nil {
 		return err
 	}
-	dccc.useNugetAddSource = useNugetAddSource
 	return dccc.Exec()
 }
 
