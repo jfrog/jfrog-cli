@@ -26,6 +26,7 @@ func (nc *NugetCommand) SetConfigFilePath(configFilePath string) *NugetCommand {
 }
 
 func (nc *NugetCommand) Run() error {
+	nc.useNugetAddSource = true
 	return nc.Exec()
 }
 

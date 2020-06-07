@@ -27,6 +27,7 @@ type DotnetCommand struct {
 	argAndFlags        string
 	repoName           string
 	solutionPath       string
+	useNugetAddSource  bool
 	buildConfiguration *utils.BuildConfiguration
 	rtDetails          *config.ArtifactoryDetails
 }
@@ -63,6 +64,11 @@ func (dc *DotnetCommand) SetArgAndFlags(argAndFlags string) *DotnetCommand {
 
 func (dc *DotnetCommand) SetBasicCommand(subCommand string) *DotnetCommand {
 	dc.subCommand = subCommand
+	return dc
+}
+
+func (dc *DotnetCommand) SetUseNugetAddSource(useNugetAddSource bool) *DotnetCommand {
+	dc.useNugetAddSource = useNugetAddSource
 	return dc
 }
 
@@ -220,7 +226,10 @@ func (dc *DotnetCommand) prepareConfigFile(cmd *dotnet.Cmd, configDirPath string
 		return nil
 	}
 
-	err = dc.initNewConfig(cmd, configDirPath)
+	configFile, err := dc.InitNewConfig(configDirPath)
+	if err == nil {
+		cmd.CommandFlags = append(cmd.CommandFlags, cmd.GetToolchain().GetTypeFlagPrefix()+"configfile", configFile.Name())
+	}
 	return err
 }
 
@@ -239,46 +248,41 @@ func getFlagValueIfExists(cmdFlag string, cmd *dotnet.Cmd) (string, error) {
 	return "", nil
 }
 
-// Initializing a new NuGet config file that NuGet will use into a temp file
-func (dc *DotnetCommand) initNewConfig(cmd *dotnet.Cmd, configDirPath string) error {
-	// Got to here, means that neither of the flags provided and we need to init our own config.
-	configFile, err := WriteToTempConfigFile(cmd, configDirPath)
-	if err != nil {
-		return err
-	}
-
-	return dc.AddNugetAuthToConfig(cmd.GetToolchain(), configFile)
-}
-
-// Runs nuget add sources command to authenticate with Artifactory.
-func (dc *DotnetCommand) AddNugetAuthToConfig(cmdType dotnet.ToolchainType, configFile *os.File) error {
-	sourceUrl, user, password, err := dc.getSourceDetails()
-	if err != nil {
-		return err
-	}
-
-	return addSourceToNugetConfig(cmdType, configFile.Name(), sourceUrl, user, password)
-}
-
-// Creates the temp file and writes the config template into the file for NuGet can use it.
-func WriteToTempConfigFile(cmd *dotnet.Cmd, tempDirPath string) (*os.File, error) {
-	configFile, err := ioutil.TempFile(tempDirPath, "jfrog.cli.nuget.")
-	if err != nil {
-		return nil, errorutils.CheckError(err)
+// Got to here, means that neither of the flags provided and we need to init our own config.
+func (dc *DotnetCommand) InitNewConfig(configDirPath string) (configFile *os.File, err error) {
+	// Initializing a new NuGet config file that NuGet will use into a temp file
+	configFile, err = ioutil.TempFile(configDirPath, "jfrog.cli.nuget.")
+	if errorutils.CheckError(err) != nil {
+		return
 	}
 	log.Debug("Nuget config file created at:", configFile.Name())
-
 	defer configFile.Close()
 
-	cmd.CommandFlags = append(cmd.CommandFlags, cmd.GetToolchain().GetTypeFlagPrefix()+"configfile", configFile.Name())
-
-	// Set Artifactory repo as source
-	content := dotnet.ConfigFileTemplate
-	_, err = configFile.WriteString(content)
+	sourceUrl, user, password, err := dc.getSourceDetails()
 	if err != nil {
-		return nil, errorutils.CheckError(err)
+		return
 	}
-	return configFile, nil
+	// We will prefer to write the NuGet configuration using the `nuget add source` command if we can.
+	// The command isn't available in all toolchain's versions.
+	// Therefore if the useNugetAddSource flag is set we'll use the command, otherwise we will write the configuration using a formatted string.
+	if dc.useNugetAddSource {
+		err = dc.AddNugetAuthToConfig(dc.toolchainType, configFile, sourceUrl, user, password)
+	} else {
+		_, err = fmt.Fprintf(configFile, dotnet.ConfigFileFormat, sourceUrl, user, password)
+	}
+	return
+}
+
+// Set Artifactory repo as source using the toolchain's `add source` command
+func (dc *DotnetCommand) AddNugetAuthToConfig(cmdType dotnet.ToolchainType, configFile *os.File, sourceUrl, user, password string) error {
+	content := dotnet.ConfigFileTemplate
+	_, err := configFile.WriteString(content)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	// We need to close the config file to let the toolchain modify it.
+	configFile.Close()
+	return addSourceToNugetConfig(cmdType, configFile.Name(), sourceUrl, user, password)
 }
 
 // Runs nuget sources add command
