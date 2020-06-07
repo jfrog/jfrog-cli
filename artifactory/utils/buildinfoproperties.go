@@ -2,8 +2,10 @@ package utils
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -20,6 +22,7 @@ import (
 
 const (
 	HttpProxy = "HTTP_PROXY"
+	NoProxy   = "NO_PROXY"
 )
 
 type BuildConfigMapping map[ProjectType][]*map[string]string
@@ -235,6 +238,9 @@ func CreateBuildInfoPropertiesFile(buildName, buildNumber string, config *viper.
 func setProxyIfDefined(config *viper.Viper) error {
 	// Add HTTP_PROXY if exists
 	proxy := os.Getenv(HttpProxy)
+	noProxy := os.Getenv(NoProxy)
+	log.Debug("Proxy:" + proxy)
+	log.Debug("No Proxy:" + noProxy)
 	if proxy != "" {
 		url, err := url.Parse(proxy)
 		if err != nil {
@@ -244,8 +250,29 @@ func setProxyIfDefined(config *viper.Viper) error {
 		if err != nil {
 			return errorutils.CheckError(err)
 		}
-		config.Set(PROXY+HOST, host)
-		config.Set(PROXY+PORT, port)
+		if noProxy != "" {
+			//TODO: This is for the Deployer as proxy properties are set only once (clientConfig). Proxy for dependency resolution can be set via the gradle client
+			deployRequest, err := http.NewRequest("HEAD", config.GetString(DEPLOYER_PREFIX+URL), nil)
+			if err != nil {
+				return errorutils.CheckError(err)
+			}
+			deployProxyURL, err := http.ProxyFromEnvironment(deployRequest)
+			log.Debug("Deploy URL:" + config.GetString(DEPLOYER_PREFIX+URL))
+			if err != nil {
+				return errorutils.CheckError(err)
+			}
+			if deployProxyURL != nil {
+				log.Debug("Resolved Deploy Proxy:" + deployProxyURL.String())
+				config.Set(PROXY+HOST, host)
+				config.Set(PROXY+PORT, port)
+			} else {
+				log.Debug("Deploy URL is within no_proxy")
+			}
+		} else {
+			config.Set(PROXY+HOST, host)
+			config.Set(PROXY+PORT, port)
+		}
+
 	}
 	return nil
 }

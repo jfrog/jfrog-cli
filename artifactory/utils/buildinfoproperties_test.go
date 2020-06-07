@@ -9,19 +9,24 @@ import (
 )
 
 const (
-	host  = "localhost"
-	port  = "8888"
-	proxy = "http://" + host + ":" + port
+	host         = "localhost"
+	port         = "8888"
+	proxy        = "http://" + host + ":" + port
+	noproxy      = "some.other.url.com"
+	othernoproxy = "some.different.url.com"
 )
 
 func TestCreateDefaultPropertiesFile(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
+	noproxyOrg := getOriginalNoProxyValue()
 	setProxy("", t)
+	setNoProxy("", t)
 
 	for index := range ProjectTypes {
 		testCreateDefaultPropertiesFile(ProjectType(index), t)
 	}
 	setProxy(proxyOrg, t)
+	setNoProxy(noproxyOrg, t)
 }
 
 func testCreateDefaultPropertiesFile(projectType ProjectType, t *testing.T) {
@@ -51,9 +56,11 @@ func testCreateDefaultPropertiesFile(projectType ProjectType, t *testing.T) {
 	compareViperConfigs(t, actualConfig, expectedConfig, projectType)
 }
 
-func TestCreateSimplePropertiesFileWithProxy(t *testing.T) {
+func TestCreateSimplePropertiesFileWithProxyAndWithoutNoProxy(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
+	noproxyOrg := getOriginalNoProxyValue()
 	setProxy(proxy, t)
+	setNoProxy("", t)
 	var propertiesFileConfig = map[string]string{
 		"artifactory.resolve.contextUrl": "http://some.url.com",
 		"artifactory.publish.contextUrl": "http://some.other.url.com",
@@ -63,11 +70,14 @@ func TestCreateSimplePropertiesFileWithProxy(t *testing.T) {
 	}
 	createSimplePropertiesFile(t, propertiesFileConfig)
 	setProxy(proxyOrg, t)
+	setNoProxy(noproxyOrg, t)
 }
 
-func TestCreateSimplePropertiesFileWithoutProxy(t *testing.T) {
+func TestCreateSimplePropertiesFileWithoutProxyAndNoProxy(t *testing.T) {
 	proxyOrg := getOriginalProxyValue()
+	noproxyOrg := getOriginalNoProxyValue()
 	setProxy("", t)
+	setNoProxy("", t)
 	var propertiesFileConfig = map[string]string{
 		"artifactory.resolve.contextUrl": "http://some.url.com",
 		"artifactory.publish.contextUrl": "http://some.other.url.com",
@@ -75,7 +85,38 @@ func TestCreateSimplePropertiesFileWithoutProxy(t *testing.T) {
 	}
 	createSimplePropertiesFile(t, propertiesFileConfig)
 	setProxy(proxyOrg, t)
+	setNoProxy(noproxyOrg, t)
 
+}
+
+func TestCreateSimplePropertiesFileWithProxyAndNoProxy(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	noproxyOrg := getOriginalNoProxyValue()
+	setProxy(proxy, t)
+	setNoProxy(noproxy, t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+	setNoProxy(noproxyOrg, t)
+}
+
+func TestCreateSimplePropertiesFileWithProxyAndDifferentNoProxy(t *testing.T) {
+	proxyOrg := getOriginalProxyValue()
+	noproxyOrg := getOriginalNoProxyValue()
+	setProxy(proxy, t)
+	setNoProxy(othernoproxy, t)
+	var propertiesFileConfig = map[string]string{
+		"artifactory.resolve.contextUrl": "http://some.url.com",
+		"artifactory.publish.contextUrl": "http://some.other.url.com",
+		"artifactory.deploy.build.name":  "buildName",
+	}
+	createSimplePropertiesFile(t, propertiesFileConfig)
+	setProxy(proxyOrg, t)
+	setNoProxy(noproxyOrg, t)
 }
 
 func createSimplePropertiesFile(t *testing.T, propertiesFileConfig map[string]string) {
@@ -191,8 +232,19 @@ func getOriginalProxyValue() string {
 	return os.Getenv(HttpProxy)
 }
 
+func getOriginalNoProxyValue() string {
+	return os.Getenv(NoProxy)
+}
+
 func setProxy(proxy string, t *testing.T) {
 	err := os.Setenv(HttpProxy, proxy)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func setNoProxy(noproxy string, t *testing.T) {
+	err := os.Setenv(NoProxy, noproxy)
 	if err != nil {
 		t.Error(err)
 	}
