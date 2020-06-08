@@ -369,10 +369,10 @@ func GetJfrogCertsDir() (string, error) {
 	return filepath.Join(securityDir, JfrogCertsDirName), nil
 }
 
-func GetJfrogSecurityFilePath() (string, error) {
+func GetJfrogSecurityConfFilePath() (string, error) {
 	securityDir, err := GetJfrogSecurityDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(securityDir, JfrogSecurityFile), nil
+	return filepath.Join(securityDir, JfrogSecurityConfFile), nil
 }

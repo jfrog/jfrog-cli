@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-const certsConversionResources = "../../testsdata/config/configConversion"
+const certsConversionResources = "../../testsdata/config/configconversion"
 const encryptionResources = "../../testsdata/config/encryption"
 
 func TestCovertConfigV0ToV1(t *testing.T) {
@@ -75,11 +75,12 @@ func TestConvertConfigV1ToV2(t *testing.T) {
 		}
 	`
 
-	tempDirPath := createTempEnv(t)
+	tempDirPath, oldHomeDir := createTempEnv(t)
 	defer os.RemoveAll(tempDirPath)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	copyResources(t, certsConversionResources, tempDirPath)
 
-	content, err := convertIfNecessary([]byte(config))
+	content, err := convertIfNeeded([]byte(config))
 	assert.NoError(t, err)
 	configV2 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV2))
@@ -103,11 +104,12 @@ func TestConvertConfigV0ToV2(t *testing.T) {
 		}
 	`
 
-	tempDirPath := createTempEnv(t)
+	tempDirPath, oldHomeDir := createTempEnv(t)
 	defer os.RemoveAll(tempDirPath)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	copyResources(t, certsConversionResources, tempDirPath)
 
-	content, err := convertIfNecessary([]byte(configV0))
+	content, err := convertIfNeeded([]byte(configV0))
 	assert.NoError(t, err)
 	configV2 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV2))
@@ -116,8 +118,9 @@ func TestConvertConfigV0ToV2(t *testing.T) {
 }
 
 func TestConfigEncryption(t *testing.T) {
-	tempDirPath := createTempEnv(t)
+	tempDirPath, oldHomeDir := createTempEnv(t)
 	defer os.RemoveAll(tempDirPath)
+	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
 	copyResources(t, encryptionResources, tempDirPath)
 
 	// Original decrypted config, read directly from file
@@ -129,16 +132,16 @@ func TestConfigEncryption(t *testing.T) {
 
 	// Config file encryption should be updated, so Enc=true. Secrets should be decrypted to be used in the rest of the execution.
 	assert.True(t, readConfig.Enc)
-	verifyAllEncrypted(t, originalConfig, readConfig, false)
+	verifyEncryptionStatus(t, originalConfig, readConfig, false)
 	// Config file should be encrypted.
 	encryptedConfig := readConfFromFile(t)
-	verifyAllEncrypted(t, originalConfig, encryptedConfig, true)
+	verifyEncryptionStatus(t, originalConfig, encryptedConfig, true)
 
 	// Verify successfully decrypting.
 	readConfig, err = readConf()
 	assert.NoError(t, err)
 	assert.True(t, readConfig.Enc)
-	verifyAllEncrypted(t, originalConfig, readConfig, false)
+	verifyEncryptionStatus(t, originalConfig, readConfig, false)
 }
 
 func readConfFromFile(t *testing.T) *ConfigV2 {
@@ -153,11 +156,12 @@ func readConfFromFile(t *testing.T) *ConfigV2 {
 }
 
 // Set JFROG_CLI_HOME_DIR environment variable to be a new temp directory
-func createTempEnv(t *testing.T) string {
+func createTempEnv(t *testing.T) (newHomeDir, oldHomeDir string) {
 	tmpDir, err := ioutil.TempDir("", "config_test")
 	assert.NoError(t, err)
+	oldHome := os.Getenv(cliutils.HomeDir)
 	assert.NoError(t, os.Setenv(cliutils.HomeDir, tmpDir))
-	return tmpDir
+	return tmpDir, oldHome
 }
 
 func TestGetArtifactoriesFromConfig(t *testing.T) {
@@ -186,7 +190,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 		  "Version": "2"
 		}
 	`
-	content, err := convertIfNecessary([]byte(config))
+	content, err := convertIfNeeded([]byte(config))
 	assert.NoError(t, err)
 	configV1 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV1))
@@ -250,11 +254,11 @@ func TestHandleSecrets(t *testing.T) {
 
 	// Encrypt decrypted
 	assert.NoError(t, handleSecrets(original, encrypt, masterKey))
-	verifyAllEncrypted(t, original, newConf, true)
+	verifyEncryptionStatus(t, original, newConf, true)
 
 	// Decrypt encrypted
 	assert.NoError(t, handleSecrets(original, decrypt, masterKey))
-	verifyAllEncrypted(t, original, newConf, false)
+	verifyEncryptionStatus(t, original, newConf, false)
 }
 
 func copyConfig(t *testing.T, original *ConfigV2) *ConfigV2 {
@@ -266,7 +270,7 @@ func copyConfig(t *testing.T, original *ConfigV2) *ConfigV2 {
 	return newConf
 }
 
-func verifyAllEncrypted(t *testing.T, original, actual *ConfigV2, encryptionExpected bool) {
+func verifyEncryptionStatus(t *testing.T, original, actual *ConfigV2, encryptionExpected bool) {
 	var equals []bool
 	for i := range actual.Artifactory {
 		if original.Artifactory[i].Password != "" {
@@ -306,7 +310,7 @@ func verifyCertsConversion(t *testing.T) {
 	certsDir, err := cliutils.GetJfrogCertsDir()
 	assert.NoError(t, err)
 	assert.DirExists(t, certsDir)
-	secFile, err := cliutils.GetJfrogSecurityFilePath()
+	secFile, err := cliutils.GetJfrogSecurityConfFilePath()
 	assert.NoError(t, err)
 	assert.FileExists(t, secFile)
 	files, err := ioutil.ReadDir(certsDir)

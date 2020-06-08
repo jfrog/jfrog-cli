@@ -19,21 +19,21 @@ import (
 	"syscall"
 )
 
-type SecurityFile struct {
-	Version   string `yaml:"Version,omitempty"`
-	MasterKey string `yaml:"MasterKey,omitempty"`
+type SecurityConf struct {
+	Version   string `yaml:"version,omitempty"`
+	MasterKey string `yaml:"masterKey,omitempty"`
 }
 
-const masterKeyField = "MasterKey"
+const masterKeyField = "masterKey"
 const masterKeyLength = 32
 const encryptErrorPrefix = "cannot encrypt config: "
 const decryptErrorPrefix = "cannot decrypt config: "
 
 type secretHandler func(string, string) (string, error)
 
-// Encrypt config file if security file exists and contains master key.
+// Encrypt config file if security configuration file exists and contains master key.
 func (config *ConfigV2) encrypt() error {
-	key, _, err := getMasterKeyFromSecurityFile()
+	key, _, err := getMasterKeyFromSecurityConfFile()
 	if err != nil || key == "" {
 		return err
 	}
@@ -47,22 +47,22 @@ func (config *ConfigV2) decrypt() error {
 	if !config.Enc {
 		return updateEncryptionIfNeeded(config)
 	}
-	key, secFileExists, err := getMasterKeyFromSecurityFile()
+	key, secFileExists, err := getMasterKeyFromSecurityConfFile()
 	if err != nil {
 		return err
 	}
 	if !secFileExists {
-		return errorutils.CheckError(errors.New(decryptErrorPrefix + "security file was not found"))
+		return errorutils.CheckError(errors.New(decryptErrorPrefix + "security configuration file was not found"))
 	}
 	if key == "" {
-		return errorutils.CheckError(errors.New(decryptErrorPrefix + "security file does not contain a master key"))
+		return errorutils.CheckError(errors.New(decryptErrorPrefix + "security configuration file does not contain a master key"))
 	}
 	return handleSecrets(config, decrypt, key)
 }
 
-// Encrypt the config file if it is decrypted while security file exists and contains a master key.
+// Encrypt the config file if it is decrypted while security configuration file exists and contains a master key.
 func updateEncryptionIfNeeded(originalConfig *ConfigV2) error {
-	masterKey, _, err := getMasterKeyFromSecurityFile()
+	masterKey, _, err := getMasterKeyFromSecurityConfFile()
 	if err != nil || masterKey == "" {
 		return err
 	}
@@ -126,8 +126,8 @@ func handleSecrets(config *ConfigV2, handler secretHandler, key string) error {
 	return nil
 }
 
-func getMasterKeyFromSecurityFile() (key string, secFileExists bool, err error) {
-	secFile, err := cliutils.GetJfrogSecurityFilePath()
+func getMasterKeyFromSecurityConfFile() (key string, secFileExists bool, err error) {
+	secFile, err := cliutils.GetJfrogSecurityConfFilePath()
 	if err != nil {
 		return "", false, err
 	}
@@ -151,7 +151,7 @@ func getMasterKeyFromSecurityFile() (key string, secFileExists bool, err error) 
 }
 
 func readMasterKeyFromConsole() (string, error) {
-	print("Please enter your master key to obtain the config token: ")
+	print("Please enter the master key: ")
 	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return "", errorutils.CheckError(err)

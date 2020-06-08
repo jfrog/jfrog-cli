@@ -229,7 +229,7 @@ func readConf() (*ConfigV2, error) {
 	if len(content) == 0 {
 		return new(ConfigV2), nil
 	}
-	content, err = convertIfNecessary(content)
+	content, err = convertIfNeeded(content)
 	if err != nil {
 		return nil, err
 	}
@@ -262,12 +262,9 @@ func convertCertsDir() error {
 		return err
 	}
 	exists, err := fileutils.IsDirExists(securityDir, false)
-	if err != nil {
-		return err
-	}
 	// Security dir doesn't exist, no conversion needed.
-	if !exists {
-		return nil
+	if err != nil || !exists {
+		return err
 	}
 
 	certsDir, err := cliutils.GetJfrogCertsDir()
@@ -275,12 +272,9 @@ func convertCertsDir() error {
 		return err
 	}
 	exists, err = fileutils.IsDirExists(certsDir, false)
-	if err != nil {
-		return err
-	}
 	// Certs dir already exists, no conversion needed.
-	if exists {
-		return nil
+	if err != nil || exists {
+		return err
 	}
 
 	// Move certs to the new location.
@@ -290,8 +284,8 @@ func convertCertsDir() error {
 	}
 
 	for _, f := range files {
-		// Skip directories and the security file
-		if !f.IsDir() && f.Name() != cliutils.JfrogSecurityFile {
+		// Skip directories and the security configuration file
+		if !f.IsDir() && f.Name() != cliutils.JfrogSecurityConfFile {
 			err = fileutils.CreateDirIfNotExist(certsDir)
 			if err != nil {
 				return err
@@ -306,20 +300,24 @@ func convertCertsDir() error {
 }
 
 // The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
-func convertIfNecessary(content []byte) ([]byte, error) {
-	version, err := jsonparser.GetString(content, "Version")
+func convertIfNeeded(content []byte) ([]byte, error) {
+	version, exists, err := getKeyFromConfig(content, "version")
+	// If lower case version exists, version is 2 or higher
+	if err != nil || exists {
+		return content, err
+	}
+
+	version, exists, err = getKeyFromConfig(content, "Version")
 	if err != nil {
-		if err.Error() == "Key path not found" {
-			version = "0"
-		} else {
-			return nil, errorutils.CheckError(err)
-		}
+		return nil, err
+	}
+	// Config version 0 is before introducing the Version field
+	if !exists {
+		version = "0"
 	}
 
 	// Switch contains FALLTHROUGH to convert from a certain version to the latest.
 	switch version {
-	case "2":
-		return content, nil
 	case "0":
 		content, err = convertConfigV0toV1(content)
 		if err != nil {
@@ -350,6 +348,18 @@ func convertIfNecessary(content []byte) ([]byte, error) {
 	return content, err
 }
 
+func getKeyFromConfig(content []byte, key string) (value string, exists bool, err error) {
+	value, err = jsonparser.GetString(content, key)
+	if err != nil {
+		if err.Error() == "Key path not found" {
+			return "", false, nil
+		} else {
+			return "", false, errorutils.CheckError(err)
+		}
+	}
+	return value, true, nil
+}
+
 func convertConfigV0toV1(content []byte) ([]byte, error) {
 	result := new(ConfigV2)
 	configV0 := new(ConfigV0)
@@ -360,10 +370,7 @@ func convertConfigV0toV1(content []byte) ([]byte, error) {
 	result = configV0.Convert()
 	result.Version = "1"
 	content, err = json.Marshal(&result)
-	if err != nil {
-		return nil, errorutils.CheckError(err)
-	}
-	return content, err
+	return content, errorutils.CheckError(err)
 }
 
 func GetJfrogDependenciesPath() (string, error) {
@@ -391,9 +398,9 @@ func getConfFilePath() (string, error) {
 type ConfigV2 struct {
 	Artifactory    []*ArtifactoryDetails  `json:"artifactory"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
-	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
-	Version        string                 `json:"Version,omitempty"`
-	Enc            bool                   `json:"Enc,omitempty"`
+	MissionControl *MissionControlDetails `json:"missionControl,omitempty"`
+	Version        string                 `json:"version,omitempty"`
+	Enc            bool                   `json:"enc,omitempty"`
 }
 
 // This struct was created before the version property was added to the config.

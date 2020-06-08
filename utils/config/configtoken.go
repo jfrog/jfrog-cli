@@ -70,7 +70,7 @@ func Export(details *ArtifactoryDetails) (string, error) {
 	}
 	// If config is encrypted, ask for master key.
 	if conf.Enc {
-		masterKeyFromFile, _, err := getMasterKeyFromSecurityFile()
+		masterKeyFromFile, _, err := getMasterKeyFromSecurityConfFile()
 		if err != nil {
 			return "", err
 		}
