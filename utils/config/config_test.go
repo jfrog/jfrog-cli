@@ -183,10 +183,10 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 			"key": "api-key",
 			"defPackageLicense": "Apache-2.0"
 		  },
-		  "Version": "1"
+		  "Version": "2"
 		}
 	`
-	content, err := convertConfigV0toV1([]byte(config))
+	content, err := convertIfNecessary([]byte(config))
 	assert.NoError(t, err)
 	configV1 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV1))
