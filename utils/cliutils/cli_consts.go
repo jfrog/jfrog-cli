@@ -24,6 +24,13 @@ const (
 	TokenRefreshDefaultInterval = 60
 	TokenExpiry                 = 3600
 
+	// Home Dir
+	JfrogCertsDirName        = "certs"
+	JfrogConfigFile          = "jfrog-cli.conf"
+	JfrogDependenciesDirName = "dependencies"
+	JfrogSecurityDirName     = "security"
+	JfrogSecurityConfFile    = "security.yaml"
+
 	// Env
 	ReportUsage     = "JFROG_CLI_REPORT_USAGE"
 	LogLevel        = "JFROG_CLI_LOG_LEVEL"
