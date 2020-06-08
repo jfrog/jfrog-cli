@@ -104,7 +104,7 @@ func GetRepoConfigByPrefix(configFilePath, prefix string, vConfig *viper.Viper) 
 	if serverId == "" {
 		return nil, fmt.Errorf("Missing server ID for %s within %s", prefix, configFilePath)
 	}
-	rtDetails, err := config.GetArtifactoryConf(serverId)
+	rtDetails, err := config.GetArtifactorySpecificConfig(serverId, false, true)
 	if err != nil {
 		return nil, err
 	}

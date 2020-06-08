@@ -54,7 +54,7 @@ func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 		return "", err
 	}
 
-	serverConfiguration, err := GetArtifactoryConf(tokenRefreshServerId)
+	serverConfiguration, err := GetArtifactorySpecificConfig(tokenRefreshServerId, false, false)
 	if err != nil {
 		return "", nil
 	}

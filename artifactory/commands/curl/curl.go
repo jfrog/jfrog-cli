@@ -134,7 +134,7 @@ func (curlCmd *CurlCommand) GetArtifactoryDetails() (*config.ArtifactoryDetails,
 		return nil, err
 	}
 	utils.RemoveFlagFromCommand(&curlCmd.arguments, flagIndex, valueIndex)
-	return config.GetArtifactorySpecificConfig(serverIdValue)
+	return config.GetArtifactorySpecificConfig(serverIdValue, true, true)
 }
 
 // Find the URL argument in the Curl Command.

@@ -428,7 +428,7 @@ func getServersIdAndDefault() ([]string, string, error) {
 }
 
 func getRepositories(serverId string, repoTypes ...utils.RepoType) ([]string, error) {
-	artDetails, err := config.GetArtifactoryConf(serverId)
+	artDetails, err := config.GetArtifactorySpecificConfig(serverId, false, true)
 	if err != nil {
 		return nil, err
 	}

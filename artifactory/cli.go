@@ -2022,7 +2022,7 @@ func configCmd(c *cli.Context) error {
 		if err := validateServerId(serverId); err != nil {
 			return err
 		}
-		artDetails, err := config.GetArtifactorySpecificConfig(serverId)
+		artDetails, err := config.GetArtifactorySpecificConfig(serverId, true, false)
 		if err != nil {
 			return err
 		}

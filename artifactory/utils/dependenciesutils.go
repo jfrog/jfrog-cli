@@ -65,7 +65,7 @@ func GetJcenterRemoteDetails(downloadPath string) (artDetails *config.Artifactor
 	// Download through a remote repository in Artifactory, if configured to do so.
 	serverId := os.Getenv(JCenterRemoteServerEnv)
 	if serverId != "" {
-		artDetails, err = config.GetArtifactoryConf(serverId)
+		artDetails, err = config.GetArtifactorySpecificConfig(serverId, false, true)
 		if err != nil {
 			return
 		}
