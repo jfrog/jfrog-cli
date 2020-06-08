@@ -302,22 +302,26 @@ func convertCertsDir() error {
 // The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
 func convertIfNeeded(content []byte) ([]byte, error) {
 	version, exists, err := getKeyFromConfig(content, "version")
-	// If lower case version exists, version is 2 or higher
-	if err != nil || exists {
-		return content, err
-	}
-
-	version, exists, err = getKeyFromConfig(content, "Version")
 	if err != nil {
 		return nil, err
 	}
-	// Config version 0 is before introducing the Version field
+
+	// If lower case "version" exists, version is 2 or higher
 	if !exists {
-		version = "0"
+		version, exists, err = getKeyFromConfig(content, "Version")
+		if err != nil {
+			return nil, err
+		}
+		// Config version 0 is before introducing the "Version" field
+		if !exists {
+			version = "0"
+		}
 	}
 
 	// Switch contains FALLTHROUGH to convert from a certain version to the latest.
 	switch version {
+	case "2":
+		return content, nil
 	case "0":
 		content, err = convertConfigV0toV1(content)
 		if err != nil {
