@@ -253,6 +253,28 @@ func TestArtifactoryDownloadWildcardInRepo(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadPlaceholderInRepo(t *testing.T) {
+	initArtifactoryTest(t)
+	var filePath = getSpecialCharFilePath()
+
+	// Upload a file to repo1 and another one to repo2
+	artifactoryCli.Exec("upload", filePath, tests.Repo1+"/path/a1.in")
+	artifactoryCli.Exec("upload", filePath, tests.Repo2+"/path/a2.in")
+
+	specFile, err := tests.CreateSpec(tests.DownloadWildcardRepo)
+	assert.NoError(t, err)
+
+	// Verify the 2 files exist
+	verifyExistInArtifactory(tests.GetDownloadWildcardRepo(), specFile, t)
+
+	// Download the 2 files with placeholders in the repository name
+	artifactoryCli.Exec("dl", tests.Repo1And2Placeholder, tests.Out+"/a/{1}/", "--flat=true")
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a", "1", "a1.in"), filepath.Join(tests.Out, "a", "2", "a2.in")}, paths, t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
@@ -3345,6 +3367,7 @@ func createRandomReposName() {
 	tests.Repo1 += "-" + timestamp
 	tests.Repo2 += "-" + timestamp
 	tests.Repo1And2 += "-" + timestamp
+	tests.Repo1And2Placeholder += "-" + timestamp
 	tests.VirtualRepo += "-" + timestamp
 	tests.LfsRepo += "-" + timestamp
 	tests.DebianRepo += "-" + timestamp

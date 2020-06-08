@@ -100,6 +100,7 @@ const (
 var Repo1 = "jfrog-cli-tests-repo1"
 var Repo2 = "jfrog-cli-tests-repo2"
 var Repo1And2 = "jfrog-cli-tests-repo*"
+var Repo1And2Placeholder = "jfrog-cli-tests-repo(*)"
 var VirtualRepo = "jfrog-cli-tests-virtual-repo"
 var JcenterRemoteRepo = "jfrog-cli-tests-jcenter-remote"
 var LfsRepo = "jfrog-cli-tests-lfs-repo"
