@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 )
 
 const tokenVersion = 1
@@ -62,6 +64,24 @@ func toArtifactoryDetails(detailsSerialization *configToken) *ArtifactoryDetails
 }
 
 func Export(details *ArtifactoryDetails) (string, error) {
+	conf, err := readConf()
+	if err != nil {
+		return "", err
+	}
+	// If config is encrypted, ask for master key.
+	if conf.Enc {
+		masterKeyFromFile, _, err := getMasterKeyFromSecurityFile()
+		if err != nil {
+			return "", err
+		}
+		masterKeyFromConsole, err := readMasterKeyFromConsole()
+		if err != nil {
+			return "", err
+		}
+		if masterKeyFromConsole != masterKeyFromFile {
+			return "", errorutils.CheckError(errors.New("could not generate config token: config is encrypted, and wrong master key was provided"))
+		}
+	}
 	buffer, err := json.Marshal(fromArtifactoryDetails(details))
 	if err != nil {
 		return "", err

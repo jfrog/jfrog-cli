@@ -10,7 +10,6 @@ import (
 	commandUtils "github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -76,7 +75,7 @@ func CleanBuildToolsTests() {
 }
 
 func createJfrogHomeConfig(t *testing.T) {
-	templateConfigPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "configtemplate", config.JfrogConfigFile)
+	templateConfigPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "configtemplate", cliutils.JfrogConfigFile)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	err = os.Setenv(cliutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))

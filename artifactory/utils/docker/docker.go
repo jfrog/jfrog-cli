@@ -306,7 +306,7 @@ func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
 }
 
 func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*
 
 	configBuilder := clientConfig.NewConfigBuilder().
 		SetServiceDetails(artAuth).
-		SetCertificatesPath(certPath).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(threads)
 

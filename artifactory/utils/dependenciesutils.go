@@ -104,13 +104,13 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 	if err != nil {
 		return err
 	}
-	securityDir, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return err
 	}
 
 	client, err := rthttpclient.ArtifactoryClientBuilder().
-		SetCertificatesPath(securityDir).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetServiceDetails(&auth).
 		Build()

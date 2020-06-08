@@ -185,7 +185,7 @@ func refreshExpiredToken(artifactoryDetails *ArtifactoryDetails, currentAccessTo
 }
 
 func createTokensServiceManager(artDetails *ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func createTokensServiceManager(artDetails *ArtifactoryDetails) (*artifactory.Ar
 	}
 	serviceConfig, err := config.NewConfigBuilder().
 		SetServiceDetails(artAuth).
-		SetCertificatesPath(certPath).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(false).
 		Build()

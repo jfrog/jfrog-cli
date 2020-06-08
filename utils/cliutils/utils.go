@@ -241,7 +241,7 @@ func GetVersion() string {
 }
 
 func GetConfigVersion() string {
-	return "1"
+	return "2"
 }
 
 func GetDocumentationMessage() string {
@@ -358,5 +358,21 @@ func GetJfrogSecurityDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(homeDir, "security"), nil
+	return filepath.Join(homeDir, JfrogSecurityDirName), nil
+}
+
+func GetJfrogCertsDir() (string, error) {
+	securityDir, err := GetJfrogSecurityDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(securityDir, JfrogCertsDirName), nil
+}
+
+func GetJfrogSecurityFilePath() (string, error) {
+	securityDir, err := GetJfrogSecurityDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(securityDir, JfrogSecurityFile), nil
 }

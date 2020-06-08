@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"flag"
-	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,10 +17,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -152,32 +151,7 @@ func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
 }
 
 func CompareExpectedVsActual(expected []string, actual []generic.SearchResult, t *testing.T) {
-	if len(actual) != len(expected) {
-		t.Error(fmt.Sprintf("Unexpected behavior, expected: %s, \n%s\nfound: %s \n%s", strconv.Itoa(len(expected)), expected, strconv.Itoa(len(actual)), getPathsFromSearchResults(actual)))
-	}
-	for _, v := range expected {
-		for i, r := range actual {
-			if v == r.Path {
-				break
-			}
-			if i == len(actual)-1 {
-				t.Error("Missing file: " + v)
-			}
-		}
-	}
-
-	for _, r := range actual {
-		found := false
-		for _, v := range expected {
-			if v == r.Path {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Error("Unexpected file: " + r.Path)
-		}
-	}
+	assert.ElementsMatch(t, expected, getPathsFromSearchResults(actual))
 }
 
 func GetTestResourcesPath() string {
