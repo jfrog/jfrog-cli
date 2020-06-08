@@ -187,7 +187,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 			"key": "api-key",
 			"defPackageLicense": "Apache-2.0"
 		  },
-		  "Version": "2"
+		  "version": "2"
 		}
 	`
 	content, err := convertIfNeeded([]byte(config))
