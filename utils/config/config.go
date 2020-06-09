@@ -332,7 +332,7 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 		}
 		fallthrough
 	case "1":
-		log.Debug("Converting JFrog config to the latest version...")
+		log.Debug("Converting JFrog CLI's config to the latest version...")
 		err = createHomeDirBackup()
 		if err != nil {
 			return nil, err
