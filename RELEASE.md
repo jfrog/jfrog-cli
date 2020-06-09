@@ -1,3 +1,12 @@
+## 1.37.0 (June 9, 2020)
+New sensetive data encryption functionality
+"jfrog rt dotnet" - Support .Net Framework versions prior to 3.1.200
+Add curl and disable interactive prompts in the Docerfile
+Bug fix - JFrog CLI should use "mono" automatically when running NuGet on Linux.
+Bug fix - The changing tokens functionality should be disabled for external tools.
+Bug fix - Support downloading files which use non-ASCII characters in their name.
+Bug fix - Support placeholders use in repository name for download, move and copy.
+
 ## 1.36.0 (May 25, 2020)
 - "jfrog rt download" - New --details-summary option
 - New "jfrog rt dotnet" command supporting .net core CLI support
@@ -5,6 +14,7 @@
 - New "jfrog rt access-token-create" command
 - "jfrog rt download" - Added support for validateSymlinks via file spec
 - "jfrog rt search" now also returns SHA1 and MD5
+- "jfrog rt build-publish" - The default value of the --env-include option was extended to also include '***psw***' 
 - Add deployment path to the build-info
 - Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
 

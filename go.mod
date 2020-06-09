@@ -8,7 +8,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gocmd v0.1.15
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-client-go v0.11.0
+	github.com/jfrog/jfrog-client-go v0.11.1
 	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
@@ -25,7 +25,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.11.1-0.20200609085901-ce10ec75d9d0
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.15-0.20200525160901-de2df438f4c2
 
