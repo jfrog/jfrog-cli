@@ -17,6 +17,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -283,6 +285,7 @@ func convertCertsDir() error {
 		return errorutils.CheckError(err)
 	}
 
+	log.Debug("Migrating SSL certificates to the new location at: " + certsDir)
 	for _, f := range files {
 		// Skip directories and the security configuration file
 		if !f.IsDir() && f.Name() != cliutils.JfrogSecurityConfFile {
@@ -329,6 +332,11 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 		}
 		fallthrough
 	case "1":
+		log.Debug("Converting JFrog config to the latest version...")
+		err = createHomeDirBackup()
+		if err != nil {
+			return nil, err
+		}
 		err = convertCertsDir()
 		if err != nil {
 			return nil, err
@@ -350,6 +358,35 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 		return nil, errorutils.CheckError(err)
 	}
 	return content, err
+}
+
+// Creating a homedir backup prior to converting.
+func createHomeDirBackup() error {
+	homeDir, err := cliutils.GetJfrogHomeDir()
+	if err != nil {
+		return err
+	}
+	backupDir, err := cliutils.GetJfrogBackupDir()
+	if err != nil {
+		return err
+	}
+
+	// Copy to temp dir before creating back up dir
+	tempDirPath, err := fileutils.CreateTempDir()
+	if err != nil {
+		return err
+	}
+	defer fileutils.RemoveTempDir(tempDirPath)
+	err = fileutils.CopyDir(homeDir, tempDirPath, true)
+	if err != nil {
+		return err
+	}
+
+	// Create backup dir and copy contents from temp dir
+	backupName := ".jfrog-" + strconv.FormatInt(time.Now().Unix(), 10)
+	curBackupPath := filepath.Join(backupDir, backupName)
+	log.Debug("Creating a homedir backup at: " + curBackupPath)
+	return fileutils.CopyDir(tempDirPath, curBackupPath, true)
 }
 
 func getKeyFromConfig(content []byte, key string) (value string, exists bool, err error) {

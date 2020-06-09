@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -12,6 +13,10 @@ import (
 	"strconv"
 	"testing"
 )
+
+func init() {
+	log.SetDefaultLogger()
+}
 
 const certsConversionResources = "../../testsdata/config/configconversion"
 const encryptionResources = "../../testsdata/config/encryption"
@@ -85,7 +90,15 @@ func TestConvertConfigV1ToV2(t *testing.T) {
 	configV2 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV2))
 	assertionHelper(t, configV2, 2, false)
-	verifyCertsConversion(t)
+
+	assertCertsMigrationAndBackupCreation(t)
+}
+
+func assertCertsMigrationAndBackupCreation(t *testing.T) {
+	assertCertsMigration(t)
+	backupDir, err := cliutils.GetJfrogBackupDir()
+	assert.NoError(t, err)
+	assert.DirExists(t, backupDir)
 }
 
 func TestConvertConfigV0ToV2(t *testing.T) {
@@ -114,7 +127,7 @@ func TestConvertConfigV0ToV2(t *testing.T) {
 	configV2 := new(ConfigV2)
 	assert.NoError(t, json.Unmarshal(content, &configV2))
 	assertionHelper(t, configV2, 2, false)
-	verifyCertsConversion(t)
+	assertCertsMigrationAndBackupCreation(t)
 }
 
 func TestConfigEncryption(t *testing.T) {
@@ -306,7 +319,7 @@ func copyResources(t *testing.T, sourcePath string, destPath string) {
 	assert.NoError(t, fileutils.CopyDir(sourcePath, destPath, true))
 }
 
-func verifyCertsConversion(t *testing.T) {
+func assertCertsMigration(t *testing.T) {
 	certsDir, err := cliutils.GetJfrogCertsDir()
 	assert.NoError(t, err)
 	assert.DirExists(t, certsDir)
