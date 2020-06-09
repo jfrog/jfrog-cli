@@ -509,6 +509,14 @@ func GetDownloadWildcardRepo() []string {
 	}
 }
 
+func GetDownloadUnicode() []string {
+	return []string{
+		Repo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
+		Repo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
+		Repo1 + "/testsdata/unicode/Ԙחלص⩥.in",
+	}
+}
+
 func GetBuildDownload() []string {
 	return []string{
 		Out,

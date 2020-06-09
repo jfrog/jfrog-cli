@@ -202,6 +202,29 @@ func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "testsdata/unicode/", tests.Repo1, "--flat=false")
+
+	// Verify files exist
+	specFile, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetDownloadUnicode(), specFile, t)
+
+	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/unicode/(dirλrec၇tory)/", tests.Out+fileutils.GetFileSeparator()+"{1}"+fileutils.GetFileSeparator(), "--flat=true")
+
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical([]string{
+		tests.Out,
+		tests.Out + fileutils.GetFileSeparator() + "dirλrec၇tory",
+		tests.Out + fileutils.GetFileSeparator() + "dirλrec၇tory" + fileutils.GetFileSeparator() + "文件.in",
+		tests.Out + fileutils.GetFileSeparator() + "dirλrec၇tory" + fileutils.GetFileSeparator() + "aȩ.ȥ1",
+	}, paths)
+	assert.NoError(t, err)
+
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryConcurrentDownload(t *testing.T) {
 	testArtifactoryDownload(cliutils.DownloadMinSplitKb*1000, t)
 }
