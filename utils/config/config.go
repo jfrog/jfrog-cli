@@ -48,20 +48,36 @@ func IsBintrayConfExists() (bool, error) {
 	return conf.Bintray != nil, nil
 }
 
-func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) {
-	conf, err := readConf()
+// Returns the configured server or error if the server id was not found.
+// If defaultOrEmpty: return empty details if no configurations found, or default conf for empty serverId.
+// Exclude refreshable tokens when working with external tools (build tools, curl, etc) or when sending requests not via ArtifactoryHttpClient.
+func GetArtifactorySpecificConfig(serverId string, defaultOrEmpty bool, excludeRefreshableTokens bool) (*ArtifactoryDetails, error) {
+	configs, err := GetAllArtifactoryConfigs()
 	if err != nil {
 		return nil, err
 	}
-	details := conf.Artifactory
-	if details == nil || len(details) == 0 {
-		return new(ArtifactoryDetails), nil
+	if defaultOrEmpty {
+		if len(configs) == 0 {
+			return new(ArtifactoryDetails), nil
+		}
+		if len(serverId) == 0 {
+			details, err := GetDefaultConfiguredArtifactoryConf(configs)
+			return details, errorutils.CheckError(err)
+		}
 	}
-	if len(serverId) == 0 {
-		details, err := GetDefaultConfiguredArtifactoryConf(details)
-		return details, errorutils.CheckError(err)
+
+	details, err := getArtifactoryConfByServerId(serverId, configs)
+	if err != nil {
+		return nil, err
 	}
-	return getArtifactoryConfByServerId(serverId, details)
+	if excludeRefreshableTokens {
+		if details.AccessToken != "" && details.RefreshToken != "" {
+			details.AccessToken = ""
+			details.RefreshToken = ""
+		}
+		details.TokenRefreshInterval = cliutils.TokenRefreshDisabled
+	}
+	return details, nil
 }
 
 // Returns the default server configuration or error if not found.
@@ -93,15 +109,6 @@ func GetDefaultArtifactoryConf() (*ArtifactoryDetails, error) {
 	}
 
 	return GetDefaultConfiguredArtifactoryConf(configurations)
-}
-
-// Returns the configured server or error if the server id not found
-func GetArtifactoryConf(serverId string) (*ArtifactoryDetails, error) {
-	configs, err := GetAllArtifactoryConfigs()
-	if err != nil {
-		return nil, err
-	}
-	return getArtifactoryConfByServerId(serverId, configs)
 }
 
 // Returns the configured server or error if the server id not found

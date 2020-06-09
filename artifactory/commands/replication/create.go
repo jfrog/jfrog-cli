@@ -102,7 +102,7 @@ func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
 }
 
 func updateArtifactoryInfo(param *services.CreateReplicationParams, serverId string) error {
-	singleConfig, err := config.GetArtifactorySpecificConfig(serverId)
+	singleConfig, err := config.GetArtifactorySpecificConfig(serverId, true, false)
 	if err != nil {
 		return err
 	}
