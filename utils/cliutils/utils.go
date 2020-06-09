@@ -376,3 +376,11 @@ func GetJfrogSecurityConfFilePath() (string, error) {
 	}
 	return filepath.Join(securityDir, JfrogSecurityConfFile), nil
 }
+
+func GetJfrogBackupDir() (string, error) {
+	homeDir, err := GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(homeDir, JfrogBackupDirName), nil
+}
