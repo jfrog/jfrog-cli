@@ -47,14 +47,14 @@ func IsBintrayConfExists() (bool, error) {
 }
 
 // Returns the configured server or error if the server id was not found.
-// If soft: return empty details if no configurations found, or default conf for empty serverId.
+// If defaultOrEmpty: return empty details if no configurations found, or default conf for empty serverId.
 // Exclude refreshable tokens when working with external tools (build tools, curl, etc) or when sending requests not via ArtifactoryHttpClient.
-func GetArtifactorySpecificConfig(serverId string, soft bool, excludeRefreshableTokens bool) (*ArtifactoryDetails, error) {
+func GetArtifactorySpecificConfig(serverId string, defaultOrEmpty bool, excludeRefreshableTokens bool) (*ArtifactoryDetails, error) {
 	configs, err := GetAllArtifactoryConfigs()
 	if err != nil {
 		return nil, err
 	}
-	if soft {
+	if defaultOrEmpty {
 		if len(configs) == 0 {
 			return new(ArtifactoryDetails), nil
 		}
