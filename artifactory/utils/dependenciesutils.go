@@ -65,7 +65,7 @@ func GetJcenterRemoteDetails(downloadPath string) (artDetails *config.Artifactor
 	// Download through a remote repository in Artifactory, if configured to do so.
 	serverId := os.Getenv(JCenterRemoteServerEnv)
 	if serverId != "" {
-		artDetails, err = config.GetArtifactoryConf(serverId)
+		artDetails, err = config.GetArtifactorySpecificConfig(serverId, false, true)
 		if err != nil {
 			return
 		}
@@ -104,13 +104,13 @@ func downloadFileFromArtifactory(artDetails *config.ArtifactoryDetails, download
 	if err != nil {
 		return err
 	}
-	securityDir, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return err
 	}
 
 	client, err := rthttpclient.ArtifactoryClientBuilder().
-		SetCertificatesPath(securityDir).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetServiceDetails(&auth).
 		Build()

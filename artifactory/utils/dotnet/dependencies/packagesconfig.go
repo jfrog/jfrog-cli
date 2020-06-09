@@ -264,7 +264,7 @@ func (extractor *packagesExtractor) getGlobalPackagesCache() (string, error) {
 		return "", err
 	}
 	//nuget locals global-packages -list
-	localsCmd.Command = []string{"locals", "global-packages"}
+	localsCmd.Command = append(localsCmd.Command, []string{"locals", "global-packages"}...)
 	localsCmd.CommandFlags = []string{"-list"}
 
 	output, err := gofrogcmd.RunCmdOutput(localsCmd)

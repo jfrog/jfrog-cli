@@ -15,5 +15,6 @@ func NewLegacyNugetCommand() *NugetLegacyCommand {
 }
 
 func (nlc *NugetLegacyCommand) Run() error {
+	nlc.useNugetAddSource = true
 	return nlc.Exec()
 }

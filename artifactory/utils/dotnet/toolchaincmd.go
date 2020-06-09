@@ -46,6 +46,10 @@ func (toolchainType ToolchainType) GetAddSourceArgs() []string {
 }
 
 func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
+	// On Linux OS, NuGet can run only using mono.
+	if cmdType == Nuget && cliutils.IsLinux() {
+		return NewMonoCmd()
+	}
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
 		return nil, errorutils.CheckError(err)
@@ -53,12 +57,25 @@ func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
 	return &Cmd{toolchain: cmdType, execPath: execPath}, nil
 }
 
-func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, error) {
-	execPath, err := exec.LookPath(cmdType.String())
+// Mono's first argument exec is nuget.exe's path, so we look for both mono and nuget.exe in PATH.
+func NewMonoCmd() (*Cmd, error) {
+	monoPath, err := exec.LookPath("mono")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
 	}
-	addSourceCmd := Cmd{toolchain: cmdType, execPath: execPath, Command: cmdType.GetAddSourceArgs()}
+	nugetExePath, err := exec.LookPath("nuget.exe")
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	return &Cmd{toolchain: Nuget, execPath: monoPath, Command: []string{nugetExePath}}, nil
+}
+
+func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, error) {
+	addSourceCmd, err := NewToolchainCmd(cmdType)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+	addSourceCmd.Command = append(addSourceCmd.Command, cmdType.GetAddSourceArgs()...)
 	switch cmdType {
 	case Nuget:
 		addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "-source", sourceUrl)
@@ -69,7 +86,7 @@ func CreateDotnetAddSourceCmd(cmdType ToolchainType, sourceUrl string) (*Cmd, er
 			addSourceCmd.CommandFlags = append(addSourceCmd.CommandFlags, "--store-password-in-clear-text")
 		}
 	}
-	return &addSourceCmd, nil
+	return addSourceCmd, nil
 }
 
 func (config *Cmd) GetCmd() *exec.Cmd {

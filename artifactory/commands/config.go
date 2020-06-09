@@ -317,7 +317,7 @@ func getSshKeyPath(details *config.ArtifactoryDetails) error {
 func ShowConfig(serverName string) error {
 	var configuration []*config.ArtifactoryDetails
 	if serverName != "" {
-		singleConfig, err := config.GetArtifactorySpecificConfig(serverName)
+		singleConfig, err := config.GetArtifactorySpecificConfig(serverName, true, false)
 		if err != nil {
 			return err
 		}
@@ -347,7 +347,7 @@ func Import(serverToken string) error {
 }
 
 func Export(serverName string) error {
-	artifactoryDetails, err := config.GetArtifactorySpecificConfig(serverName)
+	artifactoryDetails, err := config.GetArtifactorySpecificConfig(serverName, true, false)
 	if err != nil {
 		return err
 	}
@@ -466,7 +466,7 @@ func ClearConfig(interactive bool) {
 }
 
 func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
-	return config.GetArtifactorySpecificConfig(serverId)
+	return config.GetArtifactorySpecificConfig(serverId, true, false)
 }
 
 func (cc *ConfigCommand) encryptPassword() error {

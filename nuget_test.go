@@ -2,17 +2,18 @@ package main
 
 import (
 	"encoding/xml"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
 	dotnetutils "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -152,6 +153,15 @@ func runNuGet(t *testing.T, args ...string) {
 }
 
 func TestInitNewConfig(t *testing.T) {
+	t.Run("useNugetAddSource", func(t *testing.T) {
+		runInitNewConfig(t, true)
+	})
+	t.Run("DoNotUseNugetAddSource", func(t *testing.T) {
+		runInitNewConfig(t, false)
+	})
+}
+
+func runInitNewConfig(t *testing.T, useNugetAddSource bool) {
 	initNugetTest(t)
 
 	tempDirPath, err := fileutils.CreateTempDir()
@@ -160,16 +170,10 @@ func TestInitNewConfig(t *testing.T) {
 	}
 	defer fileutils.RemoveTempDir(tempDirPath)
 
-	c := &dotnetutils.Cmd{}
 	params := &dotnet.DotnetCommand{}
-	params.SetRtDetails(&config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"})
-	configFile, err := dotnet.WriteToTempConfigFile(c, tempDirPath)
-	if err != nil {
-		t.Error(err)
-	}
-
+	params.SetRtDetails(&config.ArtifactoryDetails{Url: "http://some/url", User: "user", Password: "password"}).SetUseNugetAddSource(useNugetAddSource)
 	// Prepare the config file with NuGet authentication
-	err = params.AddNugetAuthToConfig(dotnetutils.Nuget, configFile)
+	configFile, err := params.InitNewConfig(tempDirPath)
 	if err != nil {
 		t.Error(err)
 	}

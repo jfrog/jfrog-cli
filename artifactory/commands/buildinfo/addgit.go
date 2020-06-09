@@ -141,7 +141,7 @@ func (config *BuildAddGitCommand) RtDetails() (*utilsconfig.ArtifactoryDetails, 
 		}
 		serverId = vConfig.GetString(ConfigIssuesPrefix + "serverID")
 	}
-	return utilsconfig.GetArtifactorySpecificConfig(serverId)
+	return utilsconfig.GetArtifactorySpecificConfig(serverId, true, false)
 }
 
 func (config *BuildAddGitCommand) CommandName() string {
@@ -365,7 +365,7 @@ func (ic *IssuesConfiguration) populateIssuesConfigsFromSpec(configFilePath stri
 
 func (ic *IssuesConfiguration) setArtifactoryDetails() error {
 	// If no server-id provided, use default server.
-	artDetails, err := utilsconfig.GetArtifactorySpecificConfig(ic.ServerID)
+	artDetails, err := utilsconfig.GetArtifactorySpecificConfig(ic.ServerID, true, false)
 	if err != nil {
 		return err
 	}

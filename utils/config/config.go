@@ -17,14 +17,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
-const (
-	DefaultServerId   = "Default-Server"
-	JfrogConfigFile   = "jfrog-cli.conf"
-	JfrogDependencies = "dependencies"
-)
+const DefaultServerId = "Default-Server"
 
 func IsArtifactoryConfExists() (bool, error) {
 	conf, err := readConf()
@@ -50,20 +48,36 @@ func IsBintrayConfExists() (bool, error) {
 	return conf.Bintray != nil, nil
 }
 
-func GetArtifactorySpecificConfig(serverId string) (*ArtifactoryDetails, error) {
-	conf, err := readConf()
+// Returns the configured server or error if the server id was not found.
+// If defaultOrEmpty: return empty details if no configurations found, or default conf for empty serverId.
+// Exclude refreshable tokens when working with external tools (build tools, curl, etc) or when sending requests not via ArtifactoryHttpClient.
+func GetArtifactorySpecificConfig(serverId string, defaultOrEmpty bool, excludeRefreshableTokens bool) (*ArtifactoryDetails, error) {
+	configs, err := GetAllArtifactoryConfigs()
 	if err != nil {
 		return nil, err
 	}
-	details := conf.Artifactory
-	if details == nil || len(details) == 0 {
-		return new(ArtifactoryDetails), nil
+	if defaultOrEmpty {
+		if len(configs) == 0 {
+			return new(ArtifactoryDetails), nil
+		}
+		if len(serverId) == 0 {
+			details, err := GetDefaultConfiguredArtifactoryConf(configs)
+			return details, errorutils.CheckError(err)
+		}
 	}
-	if len(serverId) == 0 {
-		details, err := GetDefaultConfiguredArtifactoryConf(details)
-		return details, errorutils.CheckError(err)
+
+	details, err := getArtifactoryConfByServerId(serverId, configs)
+	if err != nil {
+		return nil, err
 	}
-	return getArtifactoryConfByServerId(serverId, details)
+	if excludeRefreshableTokens {
+		if details.AccessToken != "" && details.RefreshToken != "" {
+			details.AccessToken = ""
+			details.RefreshToken = ""
+		}
+		details.TokenRefreshInterval = cliutils.TokenRefreshDisabled
+	}
+	return details, nil
 }
 
 // Returns the default server configuration or error if not found.
@@ -95,15 +109,6 @@ func GetDefaultArtifactoryConf() (*ArtifactoryDetails, error) {
 	}
 
 	return GetDefaultConfiguredArtifactoryConf(configurations)
-}
-
-// Returns the configured server or error if the server id not found
-func GetArtifactoryConf(serverId string) (*ArtifactoryDetails, error) {
-	configs, err := GetAllArtifactoryConfigs()
-	if err != nil {
-		return nil, err
-	}
-	return getArtifactoryConfByServerId(serverId, configs)
 }
 
 // Returns the configured server or error if the server id not found
@@ -189,36 +194,36 @@ func SaveBintrayConf(details *BintrayDetails) error {
 	return saveConfig(config)
 }
 
-func saveConfig(config *ConfigV1) error {
+func saveConfig(config *ConfigV2) error {
 	config.Version = cliutils.GetConfigVersion()
-	b, err := json.Marshal(&config)
+	err := config.encrypt()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return err
 	}
-	var content bytes.Buffer
-	err = json.Indent(&content, b, "", "  ")
+
+	content, err := config.getContent()
 	if err != nil {
-		return errorutils.CheckError(err)
+		return err
 	}
+
 	path, err := getConfFilePath()
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, []byte(content.String()), 0600)
+	err = ioutil.WriteFile(path, content, 0600)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-
 	return nil
 }
 
-func readConf() (*ConfigV1, error) {
+func readConf() (*ConfigV2, error) {
 	confFilePath, err := getConfFilePath()
 	if err != nil {
 		return nil, err
 	}
-	config := new(ConfigV1)
+	config := new(ConfigV2)
 	exists, err := fileutils.IsFileExists(confFilePath, false)
 	if err != nil {
 		return nil, err
@@ -231,36 +236,189 @@ func readConf() (*ConfigV1, error) {
 		return nil, err
 	}
 	if len(content) == 0 {
-		return new(ConfigV1), nil
+		return new(ConfigV2), nil
 	}
-	content, err = convertIfNecessary(content)
+	content, err = convertIfNeeded(content)
+	if err != nil {
+		return nil, err
+	}
 	err = json.Unmarshal(content, &config)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
+	}
+
+	err = config.decrypt()
 	return config, err
 }
 
-// The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
-func convertIfNecessary(content []byte) ([]byte, error) {
-	version, err := jsonparser.GetString(content, "Version")
+func (config *ConfigV2) getContent() ([]byte, error) {
+	b, err := json.Marshal(&config)
 	if err != nil {
-		if err.Error() == "Key path not found" {
-			version = "0"
-		} else {
-			return nil, errorutils.CheckError(err)
+		return []byte{}, errorutils.CheckError(err)
+	}
+	var content bytes.Buffer
+	err = json.Indent(&content, b, "", "  ")
+	if err != nil {
+		return []byte{}, errorutils.CheckError(err)
+	}
+	return []byte(content.String()), nil
+}
+
+// Move SSL certificates from the old location in security dir to certs dir.
+func convertCertsDir() error {
+	securityDir, err := cliutils.GetJfrogSecurityDir()
+	if err != nil {
+		return err
+	}
+	exists, err := fileutils.IsDirExists(securityDir, false)
+	// Security dir doesn't exist, no conversion needed.
+	if err != nil || !exists {
+		return err
+	}
+
+	certsDir, err := cliutils.GetJfrogCertsDir()
+	if err != nil {
+		return err
+	}
+	exists, err = fileutils.IsDirExists(certsDir, false)
+	// Certs dir already exists, no conversion needed.
+	if err != nil || exists {
+		return err
+	}
+
+	// Move certs to the new location.
+	files, err := ioutil.ReadDir(securityDir)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+
+	log.Debug("Migrating SSL certificates to the new location at: " + certsDir)
+	for _, f := range files {
+		// Skip directories and the security configuration file
+		if !f.IsDir() && f.Name() != cliutils.JfrogSecurityConfFile {
+			err = fileutils.CreateDirIfNotExist(certsDir)
+			if err != nil {
+				return err
+			}
+			err = os.Rename(filepath.Join(securityDir, f.Name()), filepath.Join(certsDir, f.Name()))
+			if err != nil {
+				return errorutils.CheckError(err)
+			}
 		}
 	}
-	switch version {
-	case "0":
-		result := new(ConfigV1)
-		configV0 := new(ConfigV0)
-		err = json.Unmarshal(content, &configV0)
-		if errorutils.CheckError(err) != nil {
+	return nil
+}
+
+// The configuration schema can change between versions, therefore we need to convert old versions to the new schema.
+func convertIfNeeded(content []byte) ([]byte, error) {
+	version, exists, err := getKeyFromConfig(content, "version")
+	if err != nil {
+		return nil, err
+	}
+
+	// If lower case "version" exists, version is 2 or higher
+	if !exists {
+		version, exists, err = getKeyFromConfig(content, "Version")
+		if err != nil {
 			return nil, err
 		}
-		result = configV0.Convert()
-		err = saveConfig(result)
-		content, err = json.Marshal(&result)
+		// Config version 0 is before introducing the "Version" field
+		if !exists {
+			version = "0"
+		}
+	}
+
+	// Switch contains FALLTHROUGH to convert from a certain version to the latest.
+	switch version {
+	case "2":
+		return content, nil
+	case "0":
+		content, err = convertConfigV0toV1(content)
+		if err != nil {
+			return nil, err
+		}
+		fallthrough
+	case "1":
+		log.Debug("Converting JFrog CLI's config to the latest version...")
+		err = createHomeDirBackup()
+		if err != nil {
+			return nil, err
+		}
+		err = convertCertsDir()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Save config after all conversions (also updates version).
+	result := new(ConfigV2)
+	err = json.Unmarshal(content, &result)
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
+	err = saveConfig(result)
+	if err != nil {
+		return nil, err
+	}
+	content, err = json.Marshal(&result)
+	if err != nil {
+		return nil, errorutils.CheckError(err)
 	}
 	return content, err
+}
+
+// Creating a homedir backup prior to converting.
+func createHomeDirBackup() error {
+	homeDir, err := cliutils.GetJfrogHomeDir()
+	if err != nil {
+		return err
+	}
+	backupDir, err := cliutils.GetJfrogBackupDir()
+	if err != nil {
+		return err
+	}
+
+	// Copy to temp dir before creating back up dir
+	tempDirPath, err := fileutils.CreateTempDir()
+	if err != nil {
+		return err
+	}
+	defer fileutils.RemoveTempDir(tempDirPath)
+	err = fileutils.CopyDir(homeDir, tempDirPath, true)
+	if err != nil {
+		return err
+	}
+
+	// Create backup dir and copy contents from temp dir
+	backupName := ".jfrog-" + strconv.FormatInt(time.Now().Unix(), 10)
+	curBackupPath := filepath.Join(backupDir, backupName)
+	log.Debug("Creating a homedir backup at: " + curBackupPath)
+	return fileutils.CopyDir(tempDirPath, curBackupPath, true)
+}
+
+func getKeyFromConfig(content []byte, key string) (value string, exists bool, err error) {
+	value, err = jsonparser.GetString(content, key)
+	if err != nil {
+		if err.Error() == "Key path not found" {
+			return "", false, nil
+		} else {
+			return "", false, errorutils.CheckError(err)
+		}
+	}
+	return value, true, nil
+}
+
+func convertConfigV0toV1(content []byte) ([]byte, error) {
+	result := new(ConfigV2)
+	configV0 := new(ConfigV0)
+	err := json.Unmarshal(content, &configV0)
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
+	result = configV0.Convert()
+	result.Version = "1"
+	content, err = json.Marshal(&result)
+	return content, errorutils.CheckError(err)
 }
 
 func GetJfrogDependenciesPath() (string, error) {
@@ -272,7 +430,7 @@ func GetJfrogDependenciesPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(jfrogHome, JfrogDependencies), nil
+	return filepath.Join(jfrogHome, cliutils.JfrogDependenciesDirName), nil
 }
 
 func getConfFilePath() (string, error) {
@@ -281,24 +439,27 @@ func getConfFilePath() (string, error) {
 		return "", err
 	}
 	os.MkdirAll(confPath, 0777)
-	return filepath.Join(confPath, JfrogConfigFile), nil
+	return filepath.Join(confPath, cliutils.JfrogConfigFile), nil
 }
 
-type ConfigV1 struct {
+// This struct is suitable for both version 1 and 2.
+type ConfigV2 struct {
 	Artifactory    []*ArtifactoryDetails  `json:"artifactory"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
-	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
-	Version        string                 `json:"Version,omitempty"`
+	MissionControl *MissionControlDetails `json:"missionControl,omitempty"`
+	Version        string                 `json:"version,omitempty"`
+	Enc            bool                   `json:"enc,omitempty"`
 }
 
+// This struct was created before the version property was added to the config.
 type ConfigV0 struct {
 	Artifactory    *ArtifactoryDetails    `json:"artifactory,omitempty"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
 	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
 }
 
-func (o *ConfigV0) Convert() *ConfigV1 {
-	config := new(ConfigV1)
+func (o *ConfigV0) Convert() *ConfigV2 {
+	config := new(ConfigV2)
 	config.Bintray = o.Bintray
 	config.MissionControl = o.MissionControl
 	if o.Artifactory != nil {

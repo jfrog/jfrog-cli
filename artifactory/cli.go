@@ -2022,7 +2022,7 @@ func configCmd(c *cli.Context) error {
 		if err := validateServerId(serverId); err != nil {
 			return err
 		}
-		artDetails, err := config.GetArtifactorySpecificConfig(serverId)
+		artDetails, err := config.GetArtifactorySpecificConfig(serverId, true, false)
 		if err != nil {
 			return err
 		}
@@ -2318,10 +2318,6 @@ func dotnetCmd(c *cli.Context) error {
 
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	if err := dotnet.ValidateDotnetCoreSdkVersion(); err != nil {
-		return err
 	}
 
 	// Get dotnet configuration.

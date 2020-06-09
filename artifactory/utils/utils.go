@@ -47,12 +47,12 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ServiceDetails, in
 	}
 	u.Path = path.Join(u.Path, "api/security/encryptedPassword")
 	httpClientsDetails := artifactoryAuth.CreateHttpClientDetails()
-	securityDir, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return "", err
 	}
 	client, err := httpclient.ClientBuilder().
-		SetCertificatesPath(securityDir).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(insecureTls).
 		SetClientCertPath(artifactoryAuth.GetClientCertPath()).
 		SetClientCertKeyPath(artifactoryAuth.GetClientCertKeyPath()).
@@ -83,7 +83,7 @@ func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) 
 }
 
 func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDr
 	}
 	config := clientConfig.NewConfigBuilder().
 		SetServiceDetails(artAuth).
-		SetCertificatesPath(certPath).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun)
 	if threads > 0 {
@@ -107,7 +107,7 @@ func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDr
 }
 
 func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
-	certPath, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, 
 	servicesConfig, err := clientConfig.NewConfigBuilder().
 		SetServiceDetails(artAuth).
 		SetDryRun(dryRun).
-		SetCertificatesPath(certPath).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetThreads(threads).
 		Build()
@@ -130,7 +130,7 @@ func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, 
 }
 
 func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*distribution.DistributionServicesManager, error) {
-	certPath, err := cliutils.GetJfrogSecurityDir()
+	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func CreateDistributionServiceManager(artDetails *config.ArtifactoryDetails, isD
 	}
 	serviceConfig, err := clientConfig.NewConfigBuilder().
 		SetServiceDetails(distAuth).
-		SetCertificatesPath(certPath).
+		SetCertificatesPath(certsPath).
 		SetInsecureTls(artDetails.InsecureTls).
 		SetDryRun(isDryRun).
 		Build()

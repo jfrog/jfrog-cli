@@ -161,12 +161,12 @@ func ReadConfigFile(configPath string, configType ConfigType) (*viper.Viper, err
 func GetRtDetails(vConfig *viper.Viper) (*config.ArtifactoryDetails, error) {
 	if vConfig.IsSet(DEPLOYER_PREFIX + SERVER_ID) {
 		serverId := vConfig.GetString(DEPLOYER_PREFIX + SERVER_ID)
-		return config.GetArtifactorySpecificConfig(serverId)
+		return config.GetArtifactorySpecificConfig(serverId, true, true)
 	}
 
 	if vConfig.IsSet(RESOLVER_PREFIX + SERVER_ID) {
 		serverId := vConfig.GetString(RESOLVER_PREFIX + SERVER_ID)
-		return config.GetArtifactorySpecificConfig(serverId)
+		return config.GetArtifactorySpecificConfig(serverId, true, true)
 	}
 	return nil, nil
 }
@@ -256,7 +256,7 @@ func setServerDetailsToConfig(contextPrefix string, vConfig *viper.Viper) error 
 	}
 
 	serverId := vConfig.GetString(contextPrefix + SERVER_ID)
-	artDetails, err := config.GetArtifactorySpecificConfig(serverId)
+	artDetails, err := config.GetArtifactorySpecificConfig(serverId, true, true)
 	if err != nil {
 		return err
 	}
