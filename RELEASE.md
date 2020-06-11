@@ -17,6 +17,7 @@
 - "jfrog rt build-publish" - The default value of the --env-include option was extended to also include '***psw***' 
 - Add deployment path to the build-info
 - Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
+- Breaking change - "pip-config", "nuget-config" - remove redundant flags: --server-id-deploy, --repo-deploy.
 
 ## 1.35.5 (May 13, 2020)
 - Bug fix - Out of range for docker duplicate layers.
