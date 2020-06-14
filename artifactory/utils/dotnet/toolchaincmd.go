@@ -46,9 +46,9 @@ func (toolchainType ToolchainType) GetAddSourceArgs() []string {
 }
 
 func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
-	// On Linux OS, NuGet can run only using mono.
+	// On non Windows OS, NuGet may be run using mono.
 	if cmdType == Nuget && cliutils.IsLinux() {
-		return NewMonoCmd()
+		return newNonWindowsNugetCmd()
 	}
 	execPath, err := exec.LookPath(cmdType.String())
 	if err != nil {
@@ -57,8 +57,17 @@ func NewToolchainCmd(cmdType ToolchainType) (*Cmd, error) {
 	return &Cmd{toolchain: cmdType, execPath: execPath}, nil
 }
 
-// Mono's first argument exec is nuget.exe's path, so we look for both mono and nuget.exe in PATH.
-func NewMonoCmd() (*Cmd, error) {
+// NuGet can be run on non Windows OS in one of the following ways:
+//  1. using nuget client
+//  2. using Mono
+func newNonWindowsNugetCmd() (*Cmd, error) {
+	// First we will try lo look for 'nuget' in PATH.
+	nugetPath, err := exec.LookPath("nuget")
+	if err == nil {
+		return &Cmd{toolchain: Nuget, execPath: nugetPath}, nil
+	}
+	// If 'nuget' wasn't found, we Will try to run nuget using mono.
+	// Mono's first argument is nuget.exe's path, so we will look for both mono and nuget.exe in PATH.
 	monoPath, err := exec.LookPath("mono")
 	if err != nil {
 		return nil, errorutils.CheckError(err)
