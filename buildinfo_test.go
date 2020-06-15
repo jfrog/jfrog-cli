@@ -152,7 +152,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 func TestBuildPublishDryRun(t *testing.T) {
 	initArtifactoryTest(t)
-	buildNumber:="11"
+	buildNumber := "11"
 	// Clean old build tests if exists.
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.BuildPublishBuildName, artHttpDetails)
 	assert.NoError(t, utils.RemoveBuildDir(tests.BuildPublishBuildName, buildNumber))
