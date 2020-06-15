@@ -138,7 +138,7 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadTempWildcard)
 	assert.NoError(t, err)
-	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
 	assert.NoError(t, err)
 	// Upload
 	artifactoryCli.Exec("upload", "--spec="+specFile)
@@ -3657,7 +3657,7 @@ func TestVcsProps(t *testing.T) {
 func initVcsTestDir(t *testing.T) string {
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "vcs")
 	testsdataTarget := tests.Temp
-	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, true)
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil)
 	assert.NoError(t, err)
 	if found, err := fileutils.IsDirExists(filepath.Join(testsdataTarget, "gitdata"), false); found {
 		assert.NoError(t, err)

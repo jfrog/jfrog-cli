@@ -103,7 +103,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
 
-	err = fileutils.CopyDir(projectSrc, projectTarget, true)
+	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 	return projectTarget
 }
