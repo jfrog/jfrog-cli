@@ -44,7 +44,7 @@ func (glc *GitLfsCommand) Run() error {
 
 	filesToDelete, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
 
-	if err != nil || len(filesToDelete) < 1 {
+	if err != nil || filesToDelete.Length() < 1 {
 		return err
 	}
 
@@ -59,22 +59,13 @@ func (glc *GitLfsCommand) CommandName() string {
 	return "rt_git_lfs_clean"
 }
 
-func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem) error {
-	log.Info("Deleting", len(deleteItems), "files from", glc.configuration.Repo, "...")
+func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems *content.ContentReader) error {
+	log.Info("Deleting", deleteItems.Length, "files from", glc.configuration.Repo, "...")
 	servicesManager, err := utils.CreateServiceManager(glc.rtDetails, glc.DryRun())
 	if err != nil {
 		return err
 	}
-	// TODO: adjust 'GetUnreferencedGitLfsFiles' service to use files. We use this workaround till then (transfer memory to file)
-	cw, err := content.NewContentWriter("results", true, false)
-	if err != nil {
-		return err
-	}
-	for _, item := range deleteItems {
-		cw.Write(item)
-	}
-	cw.Close()
-	_, err = servicesManager.DeleteFiles(content.NewContentReader(cw.GetFilePath(), cw.GetArrayKey()))
+	_, err = servicesManager.DeleteFiles(deleteItems)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
@@ -96,9 +87,9 @@ func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanP
 	return
 }
 
-func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete []clientutils.ResultItem) error {
-	for _, v := range filesToDelete {
-		fmt.Println("  " + v.Name)
+func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete *content.ContentReader) error {
+	for resultItem := new(clientutils.ResultItem); filesToDelete.NextRecord(resultItem) == nil; resultItem = new(clientutils.ResultItem) {
+		fmt.Println("  " + resultItem.Name)
 	}
 	confirmed := cliutils.AskYesNo("Are you sure you want to delete the above files?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false)
