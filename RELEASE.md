@@ -1,3 +1,7 @@
+## 1.37.1 (June 15, 2020)
+- "jfrog rt nuget" - Support running NuGet on Ubuntu. even if used without mono.
+- New "jfrog bt maven-central-sync" command.
+
 ## 1.37.0 (June 9, 2020)
 - New sensetive data encryption functionality
 - "jfrog rt dotnet" - Support .Net Framework versions prior to 3.1.200
