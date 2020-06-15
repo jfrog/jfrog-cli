@@ -24,7 +24,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 
 	cleanBuildToolsTest()
@@ -49,7 +49,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.Repo1+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanBuildToolsTest()
 }
@@ -66,7 +66,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanBuildToolsTest()
 }
@@ -87,7 +87,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanBuildToolsTest()
 }

@@ -96,7 +96,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 
 	artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber)
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.PipBuildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.PipBuildName, buildNumber, t, artHttpDetails)
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
 	if (cliutils.IsLinux()) {
 		expectedDependencies++

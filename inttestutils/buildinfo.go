@@ -10,23 +10,25 @@ import (
 	"testing"
 )
 
-func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) buildinfo.BuildInfo {
+func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) (buildInfo buildinfo.BuildInfo, found bool) {
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		t.Error(err)
 	}
-	_, body, _, err := client.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
+	resp, body, _, err := client.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
 	if err != nil {
 		t.Error(err)
 	}
-
+	if resp.StatusCode == http.StatusNotFound {
+		return buildinfo.BuildInfo{}, false
+	}
 	var buildInfoJson struct {
 		BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"`
 	}
 	if err := json.Unmarshal(body, &buildInfoJson); err != nil {
 		t.Error(err)
 	}
-	return buildInfoJson.BuildInfo
+	return buildInfoJson.BuildInfo, true
 }
 
 func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.HttpClientDetails) {

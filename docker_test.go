@@ -188,7 +188,7 @@ func validateDockerBuild(buildName, buildNumber, imagePath, module string, expec
 	assert.NoError(t, searchCmd.Search())
 	assert.Len(t, searchCmd.SearchResult(), expectedItemsInArtifactory, "Docker build info was not pushed correctly")
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 }
 
@@ -234,7 +234,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumber)
 
 	//Validate
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
 
 	dockerTestCleanup(imageName, buildName)
