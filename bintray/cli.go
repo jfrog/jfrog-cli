@@ -2,7 +2,6 @@ package bintray
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/bintray/gpgsignfile"
 	"github.com/jfrog/jfrog-cli/docs/bintray/gpgsignver"
 	logsdocs "github.com/jfrog/jfrog-cli/docs/bintray/logs"
+	msdocs "github.com/jfrog/jfrog-cli/docs/bintray/mavensync"
 	"github.com/jfrog/jfrog-cli/docs/bintray/packagecreate"
 	"github.com/jfrog/jfrog-cli/docs/bintray/packagedelete"
 	"github.com/jfrog/jfrog-cli/docs/bintray/packageshow"
@@ -32,11 +32,13 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
+	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
 	"github.com/jfrog/jfrog-client-go/bintray/services/accesskeys"
 	"github.com/jfrog/jfrog-client-go/bintray/services/entitlements"
+	"github.com/jfrog/jfrog-client-go/bintray/services/mavensync"
 	"github.com/jfrog/jfrog-client-go/bintray/services/packages"
 	"github.com/jfrog/jfrog-client-go/bintray/services/url"
 	"github.com/jfrog/jfrog-client-go/bintray/services/utils"
@@ -303,6 +305,19 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return stream(c)
+			},
+		},
+		{
+			Name:         "maven-central-sync",
+			Flags:        getMavenCentralSyncFlags(),
+			Aliases:      []string{"mcs"},
+			Usage:        msdocs.Description,
+			HelpName:     common.CreateUsage("bt maven-central-sync", msdocs.Description, msdocs.Usage),
+			UsageText:    msdocs.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return mavenCentralSync(c)
 			},
 		},
 	}
@@ -627,6 +642,18 @@ func getGpgSigningFlags() []cli.Flag {
 	})
 }
 
+func getMavenCentralSyncFlags() []cli.Flag {
+	return append(getFlags(), cli.StringFlag{
+		Name:  "sonatype-username",
+		Usage: "[Optional] Sonatype OSS username` `",
+	}, cli.StringFlag{
+		Name:  "sonatype-password",
+		Usage: "[Optional] Sonatype OSS user password` `",
+	}, cli.BoolFlag{
+		Name:  "dont-close",
+		Usage: "[Default: false] By default the staging repository is closed and artifacts are released to Maven Central.` `",
+	})
+}
 func configure(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1444,4 +1471,41 @@ func getSplitCountFlag(c *cli.Context) (int, error) {
 		return 0, errors.New("The '--split-count' option cannot have a negative value.")
 	}
 	return splitCount, nil
+}
+
+func mavenCentralSync(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	versionPath, err := versions.CreatePath(c.Args().Get(0))
+	if err != nil {
+		return err
+	}
+
+	if anyEmpty(versionPath.Package, versionPath.Repo, versionPath.Subject, versionPath.Version) {
+		return cliutils.PrintHelpAndReturnError("Invalid version path, expected format: subject/repository/package/version", c)
+	}
+
+	btConfig, err := newBintrayConfig(c)
+	if err != nil {
+		return err
+	}
+
+	params := mavensync.NewParams(
+		c.String("sonatype-username"),
+		c.String("sonatype-password"),
+		c.Bool("dont-close"),
+	)
+
+	return commands.MavenCentralSync(btConfig, params, versionPath)
+}
+
+func anyEmpty(strs ...string) bool {
+	for _, str := range strs {
+		if str == "" {
+			return true
+		}
+	}
+	return false
 }
