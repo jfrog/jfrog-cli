@@ -197,7 +197,7 @@ func TestArtifactoryDownloadPathWithSpecialChars(t *testing.T) {
 	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/c#/a#1.in", tests.Out+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.VerifyExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a1.in", tests.Out + fileutils.GetFileSeparator() + "a#1.in"}, paths, t)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a1.in"), filepath.Join(tests.Out, "a#1.in")}, paths, t)
 
 	cleanArtifactoryTest()
 }
@@ -211,7 +211,7 @@ func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDownloadUnicode(), specFile, t)
 
-	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/unicode/(dirλrec၇tory)/", filepath.Join(tests.Out, "{1}/") + fileutils.GetFileSeparator(), "--flat=true")
+	artifactoryCli.Exec("dl", tests.Repo1+"/testsdata/unicode/(dirλrec၇tory)/", filepath.Join(tests.Out, "{1}")+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical([]string{
@@ -249,8 +249,8 @@ func testArtifactoryDownload(fileSize int, t *testing.T) {
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
-	tests.VerifyExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "randFile"}, paths, t)
-	tests.ValidateChecksums(tests.Out+fileutils.GetFileSeparator()+"randFile", localFileDetails.Checksum, t)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "randFile")}, paths, t)
+	tests.ValidateChecksums(filepath.Join(tests.Out, "randFile"), localFileDetails.Checksum, t)
 	cleanArtifactoryTest()
 }
 
@@ -1874,7 +1874,7 @@ func TestArtifactorySimplePlaceHolders(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + filepath.Join("inner", "folder")
 	canonicalPath := tests.Out + dirInnerPath
 
 	err := os.MkdirAll(canonicalPath, 0777)
@@ -1883,15 +1883,14 @@ func TestArtifactoryFolderUploadRecursiveNonFlat(t *testing.T) {
 	err = os.RemoveAll(tests.Out)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("download", tests.Repo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
-	expectedPath := []string{tests.Out, "inner", "folder", "out", "inner", "folder"}
-	assert.True(t, fileutils.IsPathExists(strings.Join(expectedPath, fileutils.GetFileSeparator()), false), "Failed to download folders from Artifactory")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(tests.Out, "inner", "folder", "out", "inner", "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
 }
 
 func TestArtifactoryFlatFolderUpload(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + filepath.Join("inner", "folder")
 	canonicalPath := tests.Out + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
@@ -1900,7 +1899,7 @@ func TestArtifactoryFlatFolderUpload(t *testing.T) {
 	assert.NoError(t, err)
 	// Non flat download
 	artifactoryCli.Exec("download", tests.Repo1, tests.Out+"/", "--include-dirs=true", "--recursive=true")
-	assert.True(t, fileutils.IsPathExists(canonicalPath+fileutils.GetFileSeparator()+"folder", false), "Failed to download folders from Artifactory")
+	assert.True(t, fileutils.IsPathExists(filepath.Join(canonicalPath, "folder"), false), "Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
 }
@@ -2004,7 +2003,7 @@ func TestArtifactoryUploadFlatFolderWithFileAndInnerEmptyMatchingPatternWithPlac
 
 func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
+	dirInnerPath := fileutils.GetFileSeparator() + filepath.Join("inner", "folder")
 	canonicalPath := tests.Out + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
@@ -2014,8 +2013,8 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 	assert.NoError(t, err)
 	// Only the inner folder should be downland e.g 'folder'
 	artifactoryCli.Exec("download", tests.Repo1, tests.Out+"/", "--include-dirs=true", "--flat=true")
-	assert.False(t, !fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"folder", false) &&
-		fileutils.IsPathExists(tests.Out+fileutils.GetFileSeparator()+"inner", false),
+	assert.False(t, !fileutils.IsPathExists(filepath.Join(tests.Out, "folder"), false) &&
+		fileutils.IsPathExists(filepath.Join(tests.Out, "inner"), false),
 		"Failed to download folders from Artifactory")
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2023,7 +2022,7 @@ func TestArtifactoryFlatFolderDownload1(t *testing.T) {
 
 func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 	initArtifactoryTest(t)
-	dirInnerPath := "empty" + fileutils.GetFileSeparator() + "folder"
+	dirInnerPath := filepath.Join("empty", "folder")
 	canonicalPath := tests.GetTestResourcesPath() + dirInnerPath
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
@@ -2041,7 +2040,7 @@ func TestArtifactoryFolderUploadRecursiveUsingSpec(t *testing.T) {
 
 func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
 	initArtifactoryTest(t)
-	canonicalPath := tests.Out + fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
+	canonicalPath := filepath.Join(tests.Out, "inner", "folder")
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", tests.Out+"/", tests.Repo1, "--recursive=true", "--include-dirs=true")
@@ -2056,7 +2055,7 @@ func TestArtifactoryFolderUploadNonRecursive(t *testing.T) {
 
 func TestArtifactoryFolderDownloadNonRecursive(t *testing.T) {
 	initArtifactoryTest(t)
-	canonicalPath := tests.Out + fileutils.GetFileSeparator() + "inner" + fileutils.GetFileSeparator() + "folder"
+	canonicalPath := filepath.Join(tests.Out, "inner", "folder")
 	err := os.MkdirAll(canonicalPath, 0777)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("upload", tests.Out+"/", tests.Repo1, "--recursive=true", "--include-dirs=true", "--flat=false")
@@ -2316,8 +2315,8 @@ func TestArtifactoryDownloadByBuildUsingSimpleDownload(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download "+tests.Repo1+"/data/a1.in "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName)
-	artifactoryCli.Exec("download "+tests.Repo1+"/data/b1.in "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName)
+	artifactoryCli.Exec("download "+tests.Repo1+"/data/a1.in "+filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+buildName)
+	artifactoryCli.Exec("download "+tests.Repo1+"/data/b1.in "+filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+buildName)
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -2348,7 +2347,7 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSimpleDownload(t *testing.T) {
 	artifactoryCli.Exec("build-publish", buildName, buildNumberB)
 
 	// Download by build number, a1 should not be downloaded, b1 should
-	artifactoryCli.Exec("download * "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumberA)
+	artifactoryCli.Exec("download * "+filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+buildName+"/"+buildNumberA)
 
 	// Validate files are downloaded by build number
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -2766,17 +2765,17 @@ func TestArtifactoryOffset(t *testing.T) {
 	// Download only the first file, expecting to download a1.in
 	artifactoryCli.Exec("download", tests.Repo1+"/offset_test/", tests.Out+"/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=0")
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.VerifyExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a1.in"}, paths, t)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a1.in")}, paths, t)
 
 	// Download the second file, expecting to download a2.in
 	artifactoryCli.Exec("download", tests.Repo1+"/offset_test/", tests.Out+"/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=1")
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.VerifyExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a2.in"}, paths, t)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a2.in")}, paths, t)
 
 	// Download the third file, expecting to download a3.in
 	artifactoryCli.Exec("download", tests.Repo1+"/offset_test/", tests.Out+"/", "--flat=true", "--sort-by=name", "--limit=1", "--offset=2")
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	tests.VerifyExistLocally([]string{tests.Out + fileutils.GetFileSeparator() + "a3.in"}, paths, t)
+	tests.VerifyExistLocally([]string{filepath.Join(tests.Out, "a3.in")}, paths, t)
 
 	// Cleanup
 	cleanArtifactoryTest()
@@ -2990,7 +2989,7 @@ func TestGitLfsCleanup(t *testing.T) {
 	var filePath = "testsdata/gitlfs/(4b)(*)"
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/{2}{1}")
 	artifactoryCli.Exec("upload", filePath, tests.LfsRepo+"/objects/4b/f4/")
-	refs := strings.Join([]string{"refs", "heads", "*"}, fileutils.GetFileSeparator())
+	refs := filepath.Join("refs", "heads", "*")
 	dotGitPath := getCliDotGitPath(t)
 	artifactoryCli.Exec("glc", dotGitPath, "--repo="+tests.LfsRepo, "--refs=HEAD,"+refs)
 	gitlfsSpecFile, err := tests.CreateSpec(tests.GitLfsAssertSpec)
