@@ -3,6 +3,7 @@ package dependencies
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -76,6 +77,10 @@ func getDependencyInfo(depName, repository string, dependenciesCache *Dependenci
 // If the file isn't found, or md5 or sha1 are missing, return nil.
 func getDependencyChecksumFromArtifactory(servicesManager *artifactory.ArtifactoryServicesManager, repository, dependencyFile string) (*buildinfo.Checksum, error) {
 	log.Debug(fmt.Sprintf("Fetching checksums for: %s", dependencyFile))
+	repository, err := utils.GetRepoNameForDependenciesSearch(repository, servicesManager)
+	if err != nil {
+		return nil, err
+	}
 	result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForPypi(repository, dependencyFile))
 	if err != nil {
 		return nil, err
