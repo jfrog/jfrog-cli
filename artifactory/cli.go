@@ -3009,7 +3009,11 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = cliutils.GetCliError(err, searchCmd.SearchResult().Length(), 0, isFailNoOp(c))
+	length, err := searchCmd.SearchResult().Length()
+	if err != nil {
+		return err
+	}
+	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
 	if err != nil {
 		return err
 	}

@@ -92,7 +92,11 @@ func (dc *DeleteCommand) GetPathsToDelete() error {
 		if err != nil {
 			return err
 		}
-		if currentResultsReader.Length() > 0 {
+		length, err := currentResultsReader.Length()
+		if err != nil {
+			return err
+		}
+		if length > 0 {
 			temp = append(temp, currentResultsReader)
 		}
 	}
@@ -113,7 +117,11 @@ func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error
 		return 0, 0, err
 	}
 	deletedCount, err := servicesManager.DeleteFiles(dc.deleteItems)
-	return deletedCount, dc.deleteItems.Length() - deletedCount, err
+	length, err := dc.deleteItems.Length()
+	if err != nil {
+		return 0, 0, err
+	}
+	return deletedCount, length - deletedCount, err
 }
 
 func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err error) {

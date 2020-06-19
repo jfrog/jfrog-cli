@@ -43,8 +43,11 @@ func (glc *GitLfsCommand) Run() error {
 	gitLfsCleanParams := getGitLfsCleanParams(glc.configuration)
 
 	filesToDelete, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
-
-	if err != nil || filesToDelete.Length() < 1 {
+	length, err := filesToDelete.Length()
+	if err != nil {
+		return err
+	}
+	if err != nil || length < 1 {
 		return err
 	}
 

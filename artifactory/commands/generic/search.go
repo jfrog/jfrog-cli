@@ -97,7 +97,11 @@ func (sc *SearchCommand) Search() error {
 	}
 
 	sc.ContentReadearchResult, err = aqlResultToSearchResult(searchResults)
-	clientutils.LogSearchResults(sc.ContentReadearchResult.Length())
+	length, err := sc.ContentReadearchResult.Length()
+	if err != nil {
+		return err
+	}
+	clientutils.LogSearchResults(length)
 	return err
 }
 

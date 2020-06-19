@@ -521,11 +521,14 @@ func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifact
 			name := nca.dependencies[dependencyIndex].name
 			ver := nca.dependencies[dependencyIndex].version
 			log.Debug(clientutils.GetLogMsgPrefix(threadId, false), "Fetching checksums for", name, "-", ver)
-			result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForNpm(name, ver))
+			stream, err := servicesManager.Aql(serviceutils.CreateAqlQueryForNpm(name, ver))
 			if err != nil {
 				return err
 			}
-
+			result, err := ioutil.ReadAll(stream)
+			if err != nil {
+				return err
+			}
 			parsedResult := new(aqlResult)
 			if err = json.Unmarshal(result, parsedResult); err != nil {
 				return errorutils.CheckError(err)

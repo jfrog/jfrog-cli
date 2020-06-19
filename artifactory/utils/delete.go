@@ -11,7 +11,11 @@ import (
 )
 
 func ConfirmDelete(pathsToDelete *content.ContentReader) (bool, error) {
-	if pathsToDelete.Length() < 1 {
+	length, err := pathsToDelete.Length()
+	if err != nil {
+		return false, nil
+	}
+	if length < 1 {
 		return false, nil
 	}
 	for resultItem := new(rtclientutils.ResultItem); pathsToDelete.NextRecord(resultItem) == nil; resultItem = new(rtclientutils.ResultItem) {
