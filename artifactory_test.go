@@ -1826,6 +1826,34 @@ func TestArtifactoryDeleteExclusionsBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Deleting files which one file name is a prefix to another in the same dir
+func TestArtifactoryDeletePrefixFiles(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.UploadPrefixFiles)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+
+	// Delete by pattern
+	artifactoryCli.Exec("delete", tests.Repo1+"/*")
+
+	// Validate files are deleted
+	assert.NoError(t, searchCmd.Search())
+	length, err := searchCmd.SearchResult().Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, length)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDeleteByProps(t *testing.T) {
 	initArtifactoryTest(t)
 
