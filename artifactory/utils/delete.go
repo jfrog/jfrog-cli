@@ -21,6 +21,7 @@ func ConfirmDelete(pathsToDelete *content.ContentReader) (bool, error) {
 	for resultItem := new(rtclientutils.ResultItem); pathsToDelete.NextRecord(resultItem) == nil; resultItem = new(rtclientutils.ResultItem) {
 		fmt.Println("  " + resultItem.GetItemRelativePath())
 	}
+	pathsToDelete.Reset()
 	if err := pathsToDelete.GetError(); err != nil {
 		return false, err
 	}
