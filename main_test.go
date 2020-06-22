@@ -41,7 +41,7 @@ func setupIntegrationTests() {
 		InitBuildToolsTests()
 	}
 	if *tests.TestDocker {
-		initArtifactoryCli()
+		InitDockerTests()
 	}
 	if *tests.TestDistribution {
 		InitDistributionTests()
@@ -65,7 +65,10 @@ func tearDownIntegrationTests() {
 
 func InitBuildToolsTests() {
 	initArtifactoryCli()
-	createReposIfNeeded()
+	cleanUpOldBuilds()
+	cleanUpOldRepositories()
+	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
 	cleanBuildToolsTest()
 }
 
@@ -98,7 +101,6 @@ func prepareHomeDir(t *testing.T) (string, string) {
 func cleanBuildToolsTest() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
 		os.Unsetenv(cliutils.HomeDir)
-		cleanArtifactory()
 		tests.CleanFileSystem()
 	}
 }

@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/ioutils"
@@ -31,6 +33,13 @@ type npmTestParams struct {
 
 const npmFlagName = "npm"
 
+func cleanNpmTest() {
+	os.Unsetenv(cliutils.HomeDir)
+	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.CleanFileSystem()
+}
+
 func TestLegacyNpm(t *testing.T) {
 	initNpmTest(t)
 	npmi := "npm-install"
@@ -47,8 +56,8 @@ func TestLegacyNpm(t *testing.T) {
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
 		{command: npmi, repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "-only=dev"},
 		{command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
-		{command: "npmp", repo: tests.NpmLocalRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
-		{command: "npm-publish", repo: tests.NpmLocalRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
+		{command: "npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
+		{command: "npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
 	}
 
 	for i, npmTest := range npmTests {
@@ -75,7 +84,7 @@ func TestLegacyNpm(t *testing.T) {
 
 	err = os.Chdir(wd)
 	assert.NoError(t, err)
-	cleanBuildToolsTest()
+	cleanNpmTest()
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
@@ -123,7 +132,7 @@ func TestNativeNpm(t *testing.T) {
 
 	err = os.Chdir(wd)
 	assert.NoError(t, err)
-	cleanBuildToolsTest()
+	cleanNpmTest()
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
 }
 
@@ -134,10 +143,10 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
-	runNpm(t, "npm-install", "--build-name=npmtest", "--build-number=1", "--module="+ModuleNameJFrogTest)
+	runNpm(t, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	err = os.Chdir(wd)
 	assert.NoError(t, err)
-	cleanBuildToolsTest()
+	cleanNpmTest()
 
 }
 
@@ -145,7 +154,7 @@ func validateNpmrcFileInfo(t *testing.T, npmTest npmTestParams, npmrcFileInfo, p
 	if postTestFileInfoErr != nil && !os.IsNotExist(postTestFileInfoErr) {
 		assert.Fail(t, postTestFileInfoErr.Error())
 	}
-	assert.False(t, err == nil && postTestFileInfoErr != nil, ".npmrc file existed and was not resored at the end of the install command.")
+	assert.False(t, err == nil && postTestFileInfoErr != nil, ".npmrc file existed and was not restored at the end of the install command.")
 	assert.False(t, err != nil && postTestFileInfoErr == nil, ".npmrc file was not deleted at the end of the install command.")
 	assert.False(t, err == nil && postTestFileInfoErr == nil && (npmrcFileInfo.Mode() != postTestNpmrcFileInfo.Mode() || npmrcFileInfo.Size() != postTestNpmrcFileInfo.Size()),
 		".npmrc file was changed after running npm command! it was:\n%v\nnow it is:\n%v\nTest arguments are:\n%v", npmrcFileInfo, postTestNpmrcFileInfo, npmTest)
@@ -170,7 +179,7 @@ func initNpmFilesTest(t *testing.T, nativeMode bool) (npmProjectPath, npmScopedP
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectCi))
 	if nativeMode {
 		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
-			filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, false)
+			filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 		assert.NoError(t, err)
 	}
 	return
@@ -183,7 +192,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
 	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
-	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmLocalRepo, t, utils.Npm, true)
+	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, true)
 	assert.NoError(t, err)
 
 	return
@@ -261,14 +270,14 @@ func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
 
 func validateNpmPublish(t *testing.T, npmTestParams npmTestParams) {
 	verifyExistInArtifactoryByProps(tests.GetNpmDeployedArtifacts(),
-		tests.NpmLocalRepo+"/*",
+		tests.NpmRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
 }
 
 func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 	verifyExistInArtifactoryByProps(tests.GetNpmDeployedScopedArtifacts(),
-		tests.NpmLocalRepo+"/*",
+		tests.NpmRepo+"/*",
 		fmt.Sprintf("build.name=%v;build.number=%v;build.timestamp=*", tests.NpmBuildName, npmTestParams.buildNumber), t)
 	validateNpmCommonPublish(t, npmTestParams)
 }

@@ -2,12 +2,12 @@ version: 1
 type: gradle
 
 resolver:
-    repo: ${JCENTER_REMOTE_REPO}
+    repo: ${GRADLE_REMOTE_REPO}
     username: ${RT_USERNAME}
     password: ${RT_PASSWORD}
     url: ${RT_URL}
 deployer:
-    repo: ${REPO1}
+    repo: ${GRADLE_REPO}
     username: ${RT_USERNAME}
     password: ${RT_PASSWORD}
     url: ${RT_URL}

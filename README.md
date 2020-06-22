@@ -101,7 +101,8 @@ The types are:
 | `-test.pip` | Pip tests |
 | `-test.nuget` | Nuget tests |
 
-* Running the tests will create two repositories: `jfrog-cli-tests-repo` and `jfrog-cli-tests-repo1`.<br/>
+* Running the tests will create builds and repositories with timestamps, 
+for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
 Once the tests are completed, the content of these repositories will be deleted.
 
 #### Artifactory tests
@@ -224,7 +225,7 @@ Flags:
 | `-bt.key` | [Mandatory if not configured] Bintray API key. |
 | `-bt.org` | [Optional] Bintray organization. If not configured, *-bt.user* is used as the organization name. |
 
-* Running the tests will create a repository `jfrog-cli-tests-repo1` in bintray.<br/>
+* Running the tests will create a repository `cli-tests-bintray-<timestamp>` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
 ### Distribution tests

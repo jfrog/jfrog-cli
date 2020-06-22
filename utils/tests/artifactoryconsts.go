@@ -10,7 +10,6 @@ import (
 const (
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
-	BuildAddDepsBuildName                  = "cli-bad-test-build"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
 	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
@@ -22,6 +21,7 @@ const (
 	CopyByBuildPatternAllSpec              = "move_copy_delete_by_build_pattern_all_spec.json"
 	CopyByBuildSpec                        = "move_copy_delete_by_build_spec.json"
 	CopyByBundleSpec                       = "copy_by_bundle_spec.json"
+	CopyByBundleAssertSpec                 = "copy_by_bundle_assert_spec.json"
 	CopyItemsSpec                          = "copy_items_spec.json"
 	CopyMoveSimpleSpec                     = "copy_move_simple.json"
 	CpMvDlByBuildAssertSpec                = "copy_by_build_assert_spec.json"
@@ -32,7 +32,12 @@ const (
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
+	DistributionRepoConfig1                = "dist_repository_config1.json"
+	DistributionRepoConfig2                = "dist_repository_config2.json"
 	DistributionRules                      = "distribution_rules.json"
+	DistributionSetDeletePropsSpec         = "dist_set_delete_props_spec.json"
+	DistributionUploadSpecA                = "dist_upload_spec_a.json"
+	DistributionUploadSpecB                = "dist_upload_spec_b.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
@@ -44,31 +49,34 @@ const (
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
 	GradleConfig                           = "gradle.yaml"
+	GradleRemoteRepositoryConfig           = "gradle_remote_repository_config.json"
+	GradleRepositoryConfig                 = "gradle_repository_config.json"
 	GradleServerIDConfig                   = "gradle_server_id.yaml"
 	GradleServerIDUsesPluginConfig         = "gradle_server_id_uses_plugin.yaml"
 	GradleUsernamePasswordTemplate         = "gradle_user_pass_template.yaml"
 	HttpsProxyEnvVar                       = "PROXY_HTTPS_PORT"
-	JcenterRemoteRepositoryConfig          = "jcenter_remote_repository_config.json"
 	MavenConfig                            = "maven.yaml"
+	MavenRemoteRepositoryConfig            = "maven_remote_repository_config.json"
+	MavenRepositoryConfig1                 = "maven_repository_config1.json"
+	MavenRepositoryConfig2                 = "maven_repository_config2.json"
 	MavenServerIDConfig                    = "maven_server_id.yaml"
 	MavenUsernamePasswordTemplate          = "maven_user_pass_template.yaml"
 	MoveCopySpecExclude                    = "move_copy_spec_exclude.json"
 	MoveCopySpecExclusions                 = "move_copy_spec_exclusions.json"
 	Repo2RepositoryConfig                  = "repo2_repository_config.json"
-	NpmBuildName                           = "cli-npm-test-build"
 	NpmLocalRepositoryConfig               = "npm_local_repository_config.json"
 	NpmRemoteRepositoryConfig              = "npm_remote_repository_config.json"
-	NugetBuildName                         = "cli-nuget-test-build"
-	DotnetBuildName                        = "cli-dotnet-test-build"
 	NugetRemoteRepo                        = "jfrog-cli-tests-nuget-remote-repo"
 	Out                                    = "out"
-	PipBuildName                           = "cli-pip-test-build"
 	PypiRemoteRepositoryConfig             = "pypi_remote_repository_config.json"
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	RtServerId                             = "rtTestServerId"
+	SearchAllGradle                        = "search_all_gradle.json"
+	SearchAllMaven                         = "search_all_maven.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
 	SearchGo                               = "search_go.json"
+	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
@@ -97,229 +105,250 @@ const (
 	ReplicationTempCreate                  = "replication_push_create.json"
 )
 
-var Repo1 = "jfrog-cli-tests-repo1"
-var Repo2 = "jfrog-cli-tests-repo2"
-var VirtualRepo = "jfrog-cli-tests-virtual-repo"
-var JcenterRemoteRepo = "jfrog-cli-tests-jcenter-remote"
-var LfsRepo = "jfrog-cli-tests-lfs-repo"
-var DebianRepo = "jfrog-cli-tests-debian-repo"
-var NpmLocalRepo = "jfrog-cli-tests-npm-local-repo"
-var NpmRemoteRepo = "jfrog-cli-tests-npm-remote-repo"
-var GoLocalRepo = "jfrog-cli-tests-go-local-repo"
-var PypiRemoteRepo = "jfrog-cli-tests-pypi-remote-repo"
-var PypiVirtualRepo = "jfrog-cli-tests-pypi-virtual-repo"
-// These are not an actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
-var Repo1And2 = "jfrog-cli-tests-repo*"
-var Repo1And2Placeholder = "jfrog-cli-tests-repo(*)"
+var (
+	// Repositories
+	DistRepo1        = "cli-tests-dist1"
+	DistRepo2        = "cli-tests-dist2"
+	GoRepo           = "cli-tests-go"
+	GradleRepo       = "cli-tests-gradle"
+	MvnRemoteRepo    = "cli-tests-mvn-remote"
+	GradleRemoteRepo = "cli-tests-gradle-remote"
+	MvnRepo1         = "cli-tests-mvn1"
+	MvnRepo2         = "cli-tests-mvn2"
+	NpmRepo          = "cli-tests-npm"
+	NpmRemoteRepo    = "cli-tests-npm-remote"
+	PypiRemoteRepo   = "cli-tests-pypi-remote"
+	PypiVirtualRepo  = "cli-tests-pypi-virtual"
+	RtDebianRepo     = "cli-tests-debian"
+	RtLfsRepo        = "cli-tests-lfs"
+	RtRepo1          = "cli-tests-rt1"
+	RtRepo2          = "cli-tests-rt2"
+	RtVirtualRepo    = "cli-tests-rt-virtual"
+	// These are not an actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
+	RtRepo1And2            = "cli-tests-rt*"
+	RtRepo1And2Placeholder = "cli-tests-rt(*)"
+
+	BundleName      = "cli-tests-dist-bundle"
+	DockerBuildName = "cli-tests-docker-build"
+	DockerImageName = "cli-tests-docker-image"
+	DotnetBuildName = "cli-tests-dotnet-build"
+	GoBuildName     = "cli-tests-go-build"
+	GradleBuildName = "cli-tests-gradle-build"
+	NpmBuildName    = "cli-tests-npm-build"
+	NuGetBuildName  = "cli-tests-nuget-build"
+	PipBuildName    = "cli-tests-pip-build"
+	RtBuildName1    = "cli-tests-rt-build1"
+	RtBuildName2    = "cli-tests-rt-build2"
+)
 
 func GetTxtUploadExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/cliTestFile.txt",
+		RtRepo1 + "/cliTestFile.txt",
 	}
 }
 
 func GetSimpleUploadExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/test_resources/a3.in",
-		Repo1 + "/test_resources/a1.in",
-		Repo1 + "/test_resources/a2.in",
-		Repo1 + "/test_resources/b2.in",
-		Repo1 + "/test_resources/b3.in",
-		Repo1 + "/test_resources/b1.in",
-		Repo1 + "/test_resources/c2.in",
-		Repo1 + "/test_resources/c1.in",
-		Repo1 + "/test_resources/c3.in",
+		RtRepo1 + "/test_resources/a3.in",
+		RtRepo1 + "/test_resources/a1.in",
+		RtRepo1 + "/test_resources/a2.in",
+		RtRepo1 + "/test_resources/b2.in",
+		RtRepo1 + "/test_resources/b3.in",
+		RtRepo1 + "/test_resources/b1.in",
+		RtRepo1 + "/test_resources/c2.in",
+		RtRepo1 + "/test_resources/c1.in",
+		RtRepo1 + "/test_resources/c3.in",
 	}
 }
 
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/upload_simple_wildcard/github.com/github.in",
+		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
 	}
 }
 
 func GetSimpleUploadSpecialCharNoRegexExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/a1.in",
+		RtRepo1 + "/a1.in",
 	}
 }
 
 func GetSimpleUploadSpecialCharNoRegexExpectedRepo2() []string {
 	return []string{
-		Repo2 + "/a1.in",
+		RtRepo2 + "/a1.in",
 	}
 }
 
 func GetSimpleUploadSpecialCharNoRegexExpected2filesRepo1() []string {
 	return []string{
-		Repo1 + "/a1.in",
-		Repo1 + "/a2.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/a2.in",
 	}
 }
 
 func GetSimpleUploadSpecialCharNoRegexExpected2filesRepo2() []string {
 	return []string{
-		Repo2 + "/a1.in",
-		Repo2 + "/a2.in",
+		RtRepo2 + "/a1.in",
+		RtRepo2 + "/a2.in",
 	}
 }
 
 func GetUploadSpecExcludeRepo1() []string {
 	return []string{
-		Repo1 + "/a1.in",
-		Repo1 + "/b1.in",
-		Repo1 + "/c2.in",
-		Repo1 + "/c3.in",
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/b1.in",
+		RtRepo1 + "/c2.in",
+		RtRepo1 + "/c3.in",
 	}
 }
 
 func GetUploadDebianExpected() []string {
 	return []string{
-		DebianRepo + "/data/a1.in",
-		DebianRepo + "/data/a2.in",
-		DebianRepo + "/data/a3.in",
+		RtDebianRepo + "/data/a1.in",
+		RtDebianRepo + "/data/a2.in",
+		RtDebianRepo + "/data/a3.in",
 	}
 }
 
 func GetSingleFileCopy() []string {
 	return []string{
-		Repo2 + "/path/a1.in",
+		RtRepo2 + "/path/a1.in",
 	}
 }
 
 func GetSingleFileCopyFullPath() []string {
 	return []string{
-		Repo2 + "/path/inner/a1.in",
+		RtRepo2 + "/path/inner/a1.in",
 	}
 }
 
 func GetSingleInnerFileCopyFullPath() []string {
 	return []string{
-		Repo2 + "/path/path/inner/a1.in",
+		RtRepo2 + "/path/path/inner/a1.in",
 	}
 }
 
 func GetFolderCopyTwice() []string {
 	return []string{
-		Repo2 + "/path/inner/a1.in",
-		Repo2 + "/path/path/inner/a1.in",
+		RtRepo2 + "/path/inner/a1.in",
+		RtRepo2 + "/path/path/inner/a1.in",
 	}
 }
 
 func GetFolderCopyIntoFolder() []string {
 	return []string{
-		Repo2 + "/path/path/inner/a1.in",
+		RtRepo2 + "/path/path/inner/a1.in",
 	}
 }
 
 func GetSingleDirectoryCopyFlat() []string {
 	return []string{
-		Repo2 + "/inner/a1.in",
+		RtRepo2 + "/inner/a1.in",
 	}
 }
 
 func GetAnyItemCopy() []string {
 	return []string{
-		Repo2 + "/path/inner/a1.in",
-		Repo2 + "/someFile",
+		RtRepo2 + "/path/inner/a1.in",
+		RtRepo2 + "/someFile",
 	}
 }
 
 func GetAnyItemCopyRecursive() []string {
 	return []string{
-		Repo2 + "/a/b/a1.in",
-		Repo2 + "/aFile",
+		RtRepo2 + "/a/b/a1.in",
+		RtRepo2 + "/aFile",
 	}
 }
 
 func GetCopyFolderRename() []string {
 	return []string{
-		Repo2 + "/newPath/inner/a1.in",
+		RtRepo2 + "/newPath/inner/a1.in",
 	}
 }
 
 func GetAnyItemCopyUsingSpec() []string {
 	return []string{
-		Repo2 + "/a1.in",
+		RtRepo2 + "/a1.in",
 	}
 }
 
 func GetExplodeUploadExpectedRepo1() []string {
 	return []string{
-		Repo1 + "/a/a3.in",
-		Repo1 + "/a/a1.in",
-		Repo1 + "/a/a2.in",
-		Repo1 + "/a/b/b1.in",
-		Repo1 + "/a/b/b2.in",
-		Repo1 + "/a/b/b3.in",
-		Repo1 + "/a/b/c/c1.in",
-		Repo1 + "/a/b/c/c2.in",
-		Repo1 + "/a/b/c/c3.in",
+		RtRepo1 + "/a/a3.in",
+		RtRepo1 + "/a/a1.in",
+		RtRepo1 + "/a/a2.in",
+		RtRepo1 + "/a/b/b1.in",
+		RtRepo1 + "/a/b/b2.in",
+		RtRepo1 + "/a/b/b3.in",
+		RtRepo1 + "/a/b/c/c1.in",
+		RtRepo1 + "/a/b/c/c2.in",
+		RtRepo1 + "/a/b/c/c3.in",
 	}
 }
 
 func GetCopyFileNameWithParentheses() []string {
 	return []string{
-		Repo2 + "/testsdata/b/(/(.in",
-		Repo2 + "/testsdata/b/(b/(b.in",
-		Repo2 + "/testsdata/b/)b/)b.in",
-		Repo2 + "/testsdata/b/b(/b(.in",
-		Repo2 + "/testsdata/b/b)/b).in",
-		Repo2 + "/testsdata/b/(b)/(b).in",
-		Repo2 + "/testsdata/b/)b)/)b).in",
-		Repo2 + "/(/b(.in",
-		Repo2 + "/()/(b.in",
-		Repo2 + "/()/testsdata/b/(b)/(b).in",
-		Repo2 + "/(/testsdata/b/(/(.in.zip",
-		Repo2 + "/(/in-b(",
-		Repo2 + "/(/b(.in-up",
-		Repo2 + "/c/(.in.zip",
+		RtRepo2 + "/testsdata/b/(/(.in",
+		RtRepo2 + "/testsdata/b/(b/(b.in",
+		RtRepo2 + "/testsdata/b/)b/)b.in",
+		RtRepo2 + "/testsdata/b/b(/b(.in",
+		RtRepo2 + "/testsdata/b/b)/b).in",
+		RtRepo2 + "/testsdata/b/(b)/(b).in",
+		RtRepo2 + "/testsdata/b/)b)/)b).in",
+		RtRepo2 + "/(/b(.in",
+		RtRepo2 + "/()/(b.in",
+		RtRepo2 + "/()/testsdata/b/(b)/(b).in",
+		RtRepo2 + "/(/testsdata/b/(/(.in.zip",
+		RtRepo2 + "/(/in-b(",
+		RtRepo2 + "/(/b(.in-up",
+		RtRepo2 + "/c/(.in.zip",
 	}
 }
 func GetUploadFileNameWithParentheses() []string {
 	return []string{
-		Repo1 + "/(.in",
-		Repo1 + "/(b.in",
-		Repo1 + "/)b.in",
-		Repo1 + "/b(.in",
-		Repo1 + "/b).in",
-		Repo1 + "/(b).in",
-		Repo1 + "/)b).in",
-		Repo1 + "/(new)/testsdata/b/(/(.in",
-		Repo1 + "/(new)/testsdata/b/(b/(b.in",
-		Repo1 + "/(new)/testsdata/b/b(/b(.in",
-		Repo1 + "/new)/testsdata/b/b)/b).in",
-		Repo1 + "/new)/testsdata/b/(b)/(b).in",
-		Repo1 + "/(new/testsdata/b/)b)/)b).in",
-		Repo1 + "/(new/testsdata/b/)b/)b.in",
+		RtRepo1 + "/(.in",
+		RtRepo1 + "/(b.in",
+		RtRepo1 + "/)b.in",
+		RtRepo1 + "/b(.in",
+		RtRepo1 + "/b).in",
+		RtRepo1 + "/(b).in",
+		RtRepo1 + "/)b).in",
+		RtRepo1 + "/(new)/testsdata/b/(/(.in",
+		RtRepo1 + "/(new)/testsdata/b/(b/(b.in",
+		RtRepo1 + "/(new)/testsdata/b/b(/b(.in",
+		RtRepo1 + "/new)/testsdata/b/b)/b).in",
+		RtRepo1 + "/new)/testsdata/b/(b)/(b).in",
+		RtRepo1 + "/(new/testsdata/b/)b)/)b).in",
+		RtRepo1 + "/(new/testsdata/b/)b/)b.in",
 	}
 }
 
 func GetMoveCopySpecExpected() []string {
 	return []string{
-		Repo2 + "/copy_move_target/a1.in",
-		Repo2 + "/copy_move_target/a2.in",
-		Repo2 + "/copy_move_target/a3.in",
-		Repo2 + "/copy_move_target/b/b1.in",
-		Repo2 + "/copy_move_target/b/b2.in",
-		Repo2 + "/copy_move_target/b/b3.in",
-		Repo2 + "/copy_move_target/b/c/c1.in",
-		Repo2 + "/copy_move_target/b/c/c2.in",
-		Repo2 + "/copy_move_target/b/c/c3.in",
+		RtRepo2 + "/copy_move_target/a1.in",
+		RtRepo2 + "/copy_move_target/a2.in",
+		RtRepo2 + "/copy_move_target/a3.in",
+		RtRepo2 + "/copy_move_target/b/b1.in",
+		RtRepo2 + "/copy_move_target/b/b2.in",
+		RtRepo2 + "/copy_move_target/b/b3.in",
+		RtRepo2 + "/copy_move_target/b/c/c1.in",
+		RtRepo2 + "/copy_move_target/b/c/c2.in",
+		RtRepo2 + "/copy_move_target/b/c/c3.in",
 	}
 }
 
 func GetRepo1TestResourcesExpected() []string {
 	return []string{
-		Repo1 + "/test_resources/a1.in",
-		Repo1 + "/test_resources/a2.in",
-		Repo1 + "/test_resources/a3.in",
-		Repo1 + "/test_resources/b/b1.in",
-		Repo1 + "/test_resources/b/b2.in",
-		Repo1 + "/test_resources/b/b3.in",
-		Repo1 + "/test_resources/b/c/c1.in",
-		Repo1 + "/test_resources/b/c/c2.in",
-		Repo1 + "/test_resources/b/c/c3.in",
+		RtRepo1 + "/test_resources/a1.in",
+		RtRepo1 + "/test_resources/a2.in",
+		RtRepo1 + "/test_resources/a3.in",
+		RtRepo1 + "/test_resources/b/b1.in",
+		RtRepo1 + "/test_resources/b/b2.in",
+		RtRepo1 + "/test_resources/b/b3.in",
+		RtRepo1 + "/test_resources/b/c/c1.in",
+		RtRepo1 + "/test_resources/b/c/c2.in",
+		RtRepo1 + "/test_resources/b/c/c3.in",
 	}
 }
 
@@ -329,65 +358,79 @@ func GetBuildBeforeCopyExpected() []string {
 
 func GetBuildCopyExpected() []string {
 	return []string{
-		Repo1 + "/data/a1.in",
-		Repo1 + "/data/a2.in",
-		Repo1 + "/data/a3.in",
-		Repo1 + "/data/b1.in",
-		Repo1 + "/data/b2.in",
-		Repo1 + "/data/b3.in",
-		Repo2 + "/data/a1.in",
-		Repo2 + "/data/a2.in",
-		Repo2 + "/data/a3.in",
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
+		RtRepo1 + "/data/b1.in",
+		RtRepo1 + "/data/b2.in",
+		RtRepo1 + "/data/b3.in",
+		RtRepo2 + "/data/a1.in",
+		RtRepo2 + "/data/a2.in",
+		RtRepo2 + "/data/a3.in",
+	}
+}
+
+func GetBundleCopyExpected() []string {
+	return []string{
+		DistRepo1 + "/data/a1.in",
+		DistRepo1 + "/data/a2.in",
+		DistRepo1 + "/data/a3.in",
+		DistRepo1 + "/data/b1.in",
+		DistRepo1 + "/data/b2.in",
+		DistRepo1 + "/data/b3.in",
+		DistRepo2 + "/data/a1.in",
+		DistRepo2 + "/data/a2.in",
+		DistRepo2 + "/data/a3.in",
 	}
 }
 
 func GetGitLfsExpected() []string {
 	return []string{
-		LfsRepo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
+		RtLfsRepo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
 	}
 }
 
 func GetBuildBeforeMoveExpected() []string {
 	return []string{
-		Repo1 + "/data/b1.in",
-		Repo1 + "/data/b2.in",
-		Repo1 + "/data/b3.in",
-		Repo1 + "/data/a1.in",
-		Repo1 + "/data/a2.in",
-		Repo1 + "/data/a3.in",
+		RtRepo1 + "/data/b1.in",
+		RtRepo1 + "/data/b2.in",
+		RtRepo1 + "/data/b3.in",
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
 	}
 }
 
 func GetBuildMoveExpected() []string {
 	return []string{
-		Repo1 + "/data/b1.in",
-		Repo1 + "/data/b2.in",
-		Repo1 + "/data/b3.in",
-		Repo2 + "/data/a1.in",
-		Repo2 + "/data/a2.in",
-		Repo2 + "/data/a3.in",
+		RtRepo1 + "/data/b1.in",
+		RtRepo1 + "/data/b2.in",
+		RtRepo1 + "/data/b3.in",
+		RtRepo2 + "/data/a1.in",
+		RtRepo2 + "/data/a2.in",
+		RtRepo2 + "/data/a3.in",
 	}
 }
 
 func GetBuildCopyExclude() []string {
 	return []string{
-		Repo1 + "/data/a1.in",
-		Repo1 + "/data/a2.in",
-		Repo1 + "/data/a3.in",
-		Repo1 + "/data/b1.in",
-		Repo1 + "/data/b2.in",
-		Repo1 + "/data/b3.in",
-		Repo2 + "/data/a1.in",
-		Repo2 + "/data/a2.in",
-		Repo2 + "/data/a3.in",
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
+		RtRepo1 + "/data/b1.in",
+		RtRepo1 + "/data/b2.in",
+		RtRepo1 + "/data/b3.in",
+		RtRepo2 + "/data/a1.in",
+		RtRepo2 + "/data/a2.in",
+		RtRepo2 + "/data/a3.in",
 	}
 }
 
 func GetBuildDeleteExpected() []string {
 	return []string{
-		Repo1 + "/data/b1.in",
-		Repo1 + "/data/b2.in",
-		Repo1 + "/data/b3.in",
+		RtRepo1 + "/data/b1.in",
+		RtRepo1 + "/data/b2.in",
+		RtRepo1 + "/data/b3.in",
 	}
 }
 
@@ -485,10 +528,10 @@ func GetSyncExpectedDeletesDownloadStep5() []string {
 func GetSyncExpectedDeletesDownloadStep6() []string {
 	localPathPrefix := "/syncDir/testsdata/archives/"
 	return []string{
-		Repo1 + localPathPrefix + "a.zip",
-		Repo1 + localPathPrefix + "b.zip",
-		Repo1 + localPathPrefix + "c.zip",
-		Repo1 + localPathPrefix + "d.zip",
+		RtRepo1 + localPathPrefix + "a.zip",
+		RtRepo1 + localPathPrefix + "b.zip",
+		RtRepo1 + localPathPrefix + "c.zip",
+		RtRepo1 + localPathPrefix + "d.zip",
 	}
 }
 
@@ -504,16 +547,16 @@ func GetSyncExpectedDeletesDownloadStep7() []string {
 
 func GetDownloadWildcardRepo() []string {
 	return []string{
-		Repo1 + "/path/a1.in",
-		Repo2 + "/path/a2.in",
+		RtRepo1 + "/path/a1.in",
+		RtRepo2 + "/path/a2.in",
 	}
 }
 
 func GetDownloadUnicode() []string {
 	return []string{
-		Repo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
-		Repo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
-		Repo1 + "/testsdata/unicode/Ԙחלص⩥.in",
+		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
+		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
+		RtRepo1 + "/testsdata/unicode/Ԙחלص⩥.in",
 	}
 }
 
@@ -619,66 +662,66 @@ func GetCleanBuild() []string {
 
 func GetMultipleFileSpecs() []string {
 	return []string{
-		Repo1 + "/multiple/a1.out",
-		Repo1 + "/multiple/properties/testsdata/a/b/b2.in",
+		RtRepo1 + "/multiple/a1.out",
+		RtRepo1 + "/multiple/properties/testsdata/a/b/b2.in",
 	}
 }
 
 func GetSimplePlaceholders() []string {
 	return []string{
-		Repo1 + "/simple_placeholders/a-in.out",
-		Repo1 + "/simple_placeholders/b/b-in.out",
-		Repo1 + "/simple_placeholders/b/c/c-in.out",
+		RtRepo1 + "/simple_placeholders/a-in.out",
+		RtRepo1 + "/simple_placeholders/b/b-in.out",
+		RtRepo1 + "/simple_placeholders/b/c/c-in.out",
 	}
 }
 
 func GetSimpleDelete() []string {
 	return []string{
-		Repo1 + "/test_resources/a1.in",
-		Repo1 + "/test_resources/a2.in",
-		Repo1 + "/test_resources/a3.in",
+		RtRepo1 + "/test_resources/a1.in",
+		RtRepo1 + "/test_resources/a2.in",
+		RtRepo1 + "/test_resources/a3.in",
 	}
 }
 
 func GetDeleteFolderWithWildcard() []string {
 	return []string{
-		Repo1 + "/test_resources/a1.in",
-		Repo1 + "/test_resources/a2.in",
-		Repo1 + "/test_resources/a3.in",
-		Repo1 + "/test_resources/b/b1.in",
-		Repo1 + "/test_resources/b/b2.in",
-		Repo1 + "/test_resources/b/b3.in",
+		RtRepo1 + "/test_resources/a1.in",
+		RtRepo1 + "/test_resources/a2.in",
+		RtRepo1 + "/test_resources/a3.in",
+		RtRepo1 + "/test_resources/b/b1.in",
+		RtRepo1 + "/test_resources/b/b2.in",
+		RtRepo1 + "/test_resources/b/b3.in",
 	}
 }
 
 func GetSearchIncludeDirsFiles() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path:  Repo1 + "/",
+			Path:  RtRepo1 + "/",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data",
+			Path:  RtRepo1 + "/data",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data/testsdata",
+			Path:  RtRepo1 + "/data/testsdata",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a",
+			Path:  RtRepo1 + "/data/testsdata/a",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/a1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -686,7 +729,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/a2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -694,7 +737,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/a3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -702,13 +745,13 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b",
+			Path:  RtRepo1 + "/data/testsdata/a/b",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -716,7 +759,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -724,7 +767,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -732,13 +775,13 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c",
 			Type:  "folder",
 			Props: make(map[string][]string, 0),
 			Size:  0,
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -746,7 +789,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -754,7 +797,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -767,7 +810,7 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path:  Repo1 + "/data/testsdata/a/a1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -775,7 +818,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/a2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -783,7 +826,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/a3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  7,
@@ -791,7 +834,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -799,7 +842,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -807,7 +850,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/b3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  9,
@@ -815,7 +858,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c1.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -823,7 +866,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c2.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -831,7 +874,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  Repo1 + "/data/testsdata/a/b/c/c3.in",
+			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
 			Type:  "file",
 			Props: make(map[string][]string, 0),
 			Size:  11,
@@ -844,7 +887,7 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 func GetSearchPropsStep1() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -856,7 +899,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b2.in",
+			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
@@ -867,7 +910,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b3.in",
+			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
@@ -879,7 +922,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c2.in",
+			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
@@ -889,7 +932,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c3.in",
+			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
@@ -904,7 +947,7 @@ func GetSearchPropsStep1() []generic.SearchResult {
 func GetSearchPropsStep2() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a1.in",
+			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
@@ -915,7 +958,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a2.in",
+			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
@@ -925,7 +968,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b1.in",
+			Path: RtRepo1 + "/a/b/b1.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
@@ -936,7 +979,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c1.in",
+			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
@@ -951,7 +994,7 @@ func GetSearchPropsStep2() []generic.SearchResult {
 func GetSearchPropsStep3() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a1.in",
+			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
@@ -962,7 +1005,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a2.in",
+			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
@@ -972,7 +1015,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -984,7 +1027,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b1.in",
+			Path: RtRepo1 + "/a/b/b1.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
@@ -995,7 +1038,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b2.in",
+			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
@@ -1006,7 +1049,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c1.in",
+			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
@@ -1016,7 +1059,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c2.in",
+			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
@@ -1026,7 +1069,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c3.in",
+			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
@@ -1041,7 +1084,7 @@ func GetSearchPropsStep3() []generic.SearchResult {
 func GetSearchPropsStep4() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -1053,7 +1096,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b2.in",
+			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
@@ -1064,7 +1107,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c2.in",
+			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
@@ -1074,7 +1117,7 @@ func GetSearchPropsStep4() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c3.in",
+			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
@@ -1093,7 +1136,7 @@ func GetSearchPropsStep5() []generic.SearchResult {
 func GetSearchPropsStep6() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/b/c/c1.in",
+			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
@@ -1108,7 +1151,7 @@ func GetSearchPropsStep6() []generic.SearchResult {
 func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a1.in",
+			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
@@ -1119,7 +1162,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a2.in",
+			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
@@ -1129,7 +1172,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -1141,7 +1184,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b2.in",
+			Path: RtRepo1 + "/a/b/b2.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
@@ -1153,7 +1196,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b3.in",
+			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
@@ -1166,7 +1209,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c2.in",
+			Path: RtRepo1 + "/a/b/c/c2.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
@@ -1177,7 +1220,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/c/c3.in",
+			Path: RtRepo1 + "/a/b/c/c3.in",
 			Type: "file",
 			Size: 11,
 			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
@@ -1193,7 +1236,7 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a1.in",
+			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
@@ -1204,7 +1247,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a2.in",
+			Path: RtRepo1 + "/a/a2.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
@@ -1214,7 +1257,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -1226,7 +1269,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/b/b3.in",
+			Path: RtRepo1 + "/a/b/b3.in",
 			Type: "file",
 			Size: 9,
 			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
@@ -1244,7 +1287,7 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 	return []generic.SearchResult{
 		{
-			Path: Repo1 + "/a/a1.in",
+			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
@@ -1255,7 +1298,7 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 			},
 		},
 		{
-			Path: Repo1 + "/a/a3.in",
+			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
 			Size: 7,
 			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
@@ -1271,25 +1314,26 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 
 func GetMavenDeployedArtifacts() []string {
 	return []string{
-		Repo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
-		Repo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
+		MvnRepo1 + "/org/jfrog/cli-test/maven-metadata.xml",
+		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
+		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
 	}
 }
 
 func GetGradleDeployedArtifacts() []string {
 	return []string{
-		Repo1 + "/minimal-example/1.0/minimal-example-1.0.jar",
+		GradleRepo + "/minimal-example/1.0/minimal-example-1.0.jar",
 	}
 }
 
 func GetNpmDeployedScopedArtifacts() []string {
 	return []string{
-		NpmLocalRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		NpmRepo + "/@jscope/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
 	}
 }
 func GetNpmDeployedArtifacts() []string {
 	return []string{
-		NpmLocalRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
+		NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz",
 	}
 }
 
@@ -1351,34 +1395,34 @@ func GetWinCompatibility() []string {
 
 func GetUploadExpectedRepo1SyncDeleteStep1() []string {
 	return []string{
-		Repo1 + "/syncDir/testsdata/a/a3.in",
-		Repo1 + "/syncDir/testsdata/a/a1.in",
-		Repo1 + "/syncDir/testsdata/a/a2.in",
-		Repo1 + "/syncDir/testsdata/a/b/b1.in",
-		Repo1 + "/syncDir/testsdata/a/b/b2.in",
-		Repo1 + "/syncDir/testsdata/a/b/b3.in",
-		Repo1 + "/syncDir/testsdata/a/b/c/c1.in",
-		Repo1 + "/syncDir/testsdata/a/b/c/c2.in",
-		Repo1 + "/syncDir/testsdata/a/b/c/c3.in",
+		RtRepo1 + "/syncDir/testsdata/a/a3.in",
+		RtRepo1 + "/syncDir/testsdata/a/a1.in",
+		RtRepo1 + "/syncDir/testsdata/a/a2.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/b1.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/b2.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/b3.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/c/c1.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/c/c2.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/c/c3.in",
 	}
 }
 
 func GetUploadExpectedRepo1SyncDeleteStep2() []string {
 	return []string{
-		Repo1 + "/syncDir/testsdata/a/a3.in",
-		Repo1 + "/syncDir/testsdata/a/a1.in",
-		Repo1 + "/syncDir/testsdata/a/a2.in",
-		Repo1 + "/syncDir/testsdata/a/b/b1.in",
-		Repo1 + "/syncDir/testsdata/a/b/c/c1.in",
+		RtRepo1 + "/syncDir/testsdata/a/a3.in",
+		RtRepo1 + "/syncDir/testsdata/a/a1.in",
+		RtRepo1 + "/syncDir/testsdata/a/a2.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/b1.in",
+		RtRepo1 + "/syncDir/testsdata/a/b/c/c1.in",
 	}
 }
 
 func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 	return []string{
-		Repo1 + "/syncDir/a.zip",
-		Repo1 + "/syncDir/b.zip",
-		Repo1 + "/syncDir/c.zip",
-		Repo1 + "/syncDir/d.zip",
+		RtRepo1 + "/syncDir/a.zip",
+		RtRepo1 + "/syncDir/b.zip",
+		RtRepo1 + "/syncDir/c.zip",
+		RtRepo1 + "/syncDir/d.zip",
 	}
 }
 
@@ -1389,7 +1433,7 @@ func GetReplicationConfig() []clientutils.ReplicationParams {
 			Username:               *RtUser,
 			Password:               "",
 			CronExp:                "0 0 12 * * ?",
-			RepoKey:                Repo1,
+			RepoKey:                RtRepo1,
 			EnableEventReplication: false,
 			SocketTimeoutMillis:    15000,
 			Enabled:                true,
