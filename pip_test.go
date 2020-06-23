@@ -98,7 +98,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 
 	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.PipBuildName, buildNumber, t, artHttpDetails)
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
-	if (cliutils.IsLinux()) {
+	if cliutils.IsLinux() {
 		expectedDependencies++
 	}
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")

@@ -152,6 +152,7 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
 	passphrase := createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
@@ -160,7 +161,6 @@ func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleUploadExpectedRepo1(), searchFilePath, t)
-	deleteServerConfig()
 	cleanArtifactoryTest()
 }
 
@@ -3592,6 +3592,7 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 func TestGetJcenterRemoteDetails(t *testing.T) {
 	initArtifactoryTest(t)
 	createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
 
 	unsetEnvVars := func() {
 		err := os.Unsetenv(utils.JCenterRemoteServerEnv)
@@ -3758,4 +3759,96 @@ func TestAccessTokenCreate(t *testing.T) {
 
 	// Cleanup
 	cleanArtifactoryTest()
+}
+
+func TestRefreshableTokens(t *testing.T) {
+	initArtifactoryTest(t)
+
+	if *tests.RtAccessToken != "" {
+		t.Skip("Test only with admin and password / APIkey, skipping...")
+	}
+
+	// Create server with initialized refreshable tokens.
+	_ = createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
+
+	// Upload a file and assert the refreshable tokens were generated.
+	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	uploadedFiles := 1
+	uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testsdata/a/a1.in", uploadedFiles)
+	curAccessToken, curRefreshToken := getTokensFromConfig(t, tests.RtServerId)
+	assert.NotEmpty(t, curAccessToken)
+	assert.NotEmpty(t, curRefreshToken)
+
+	// Make the token always refresh.
+	auth.RefreshBeforeExpiryMinutes = 60
+
+	// Upload a file and assert tokens were refreshed.
+	uploadedFiles++
+	uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testsdata/a/a2.in", uploadedFiles)
+	curAccessToken, curRefreshToken = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+
+	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
+	setRefreshTokenInConfig(t, tests.RtServerId, "invalid-token")
+	uploadedFiles++
+	uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testsdata/a/a3.in", uploadedFiles)
+	curAccessToken, curRefreshToken = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+
+	// Make password invalid. Refreshing should succeed, and new token should be obtained.
+	setPasswordInConfig(t, tests.RtServerId, "invalid-pass")
+	uploadedFiles++
+	uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testsdata/a/b/b1.in", uploadedFiles)
+	curAccessToken, curRefreshToken = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
+
+	// Make the token not refresh. Verify Tokens did not refresh.
+	auth.RefreshBeforeExpiryMinutes = 0
+	uploadedFiles++
+	uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testsdata/a/b/b2.in", uploadedFiles)
+	newAccessToken, newRefreshToken := getTokensFromConfig(t, tests.RtServerId)
+	assert.Equal(t, curAccessToken, newAccessToken)
+	assert.Equal(t, curRefreshToken, newRefreshToken)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func setRefreshTokenInConfig(t *testing.T, serverId, token string) {
+	details, err := config.GetAllArtifactoryConfigs()
+	assert.NoError(t, err)
+	for _, server := range details {
+		if server.ServerId == serverId {
+			server.SetRefreshToken(token)
+		}
+	}
+	assert.NoError(t, config.SaveArtifactoryConf(details))
+}
+
+func setPasswordInConfig(t *testing.T, serverId, password string) {
+	details, err := config.GetAllArtifactoryConfigs()
+	assert.NoError(t, err)
+	for _, server := range details {
+		if server.ServerId == serverId {
+			server.SetPassword(password)
+		}
+	}
+	assert.NoError(t, config.SaveArtifactoryConf(details))
+}
+
+func getTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string) {
+	details, err := config.GetArtifactorySpecificConfig(serverId, false, false)
+	assert.NoError(t, err)
+	return details.AccessToken, details.RefreshToken
+}
+
+func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string) {
+	newAccessToken, newRefreshToken = getTokensFromConfig(t, serverId)
+	assert.NotEqual(t, curAccessToken, newAccessToken)
+	assert.NotEqual(t, curRefreshToken, newRefreshToken)
+	return newAccessToken, newRefreshToken
+}
+
+func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, serverId string, source string, expectedResults int) {
+	err := cli.Exec("upload", source, tests.Repo1, "--server-id="+serverId)
+	assert.NoError(t, err)
+	assert.Len(t, searchItemsInArtifactory(t), expectedResults)
 }

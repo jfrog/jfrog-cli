@@ -55,11 +55,11 @@ func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 	}
 
 	serverConfiguration, err := GetArtifactorySpecificConfig(tokenRefreshServerId, true, false)
-	if tokenRefreshServerId == "" && serverConfiguration != nil {
-		tokenRefreshServerId = serverConfiguration.ServerId
-	}
 	if err != nil {
 		return "", err
+	}
+	if tokenRefreshServerId == "" && serverConfiguration != nil {
+		tokenRefreshServerId = serverConfiguration.ServerId
 	}
 	// If token already refreshed, get new token from config
 	if serverConfiguration.AccessToken != "" && serverConfiguration.AccessToken != currentAccessToken {
