@@ -3017,15 +3017,11 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if c.Bool("count") {
-		log.Output(searchCmd.SearchResult().Length())
-	} else {
-		for searchResult := new(generic.SearchResult); searchCmd.ContentReadearchResult.NextRecord(searchResult) == nil; searchResult = new(generic.SearchResult) {
-			log.Output(searchResult)
-		}
-		err = searchCmd.ContentReadearchResult.GetError()
+	if !c.Bool("count") {
+		return searchCmd.PrintSearchResults()
 	}
-	return err
+	log.Output(searchCmd.SearchResult().Length())
+	return nil
 }
 
 func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {

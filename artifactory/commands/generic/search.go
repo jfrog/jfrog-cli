@@ -1,10 +1,13 @@
 package generic
 
 import (
+	"encoding/json"
+
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientartutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -49,7 +52,7 @@ func (sc *SearchCommand) SearchResultNoDate() (*content.ContentReader, error) {
 		resultItem.Modified = ""
 		delete(resultItem.Props, "vcs.url")
 		delete(resultItem.Props, "vcs.revision")
-		cw.Write(resultItem)
+		cw.Write(*resultItem)
 	}
 	if err := cr.GetError(); err != nil {
 		return nil, err
@@ -101,7 +104,7 @@ func (sc *SearchCommand) Search() error {
 	if err != nil {
 		return err
 	}
-	clientutils.LogSearchResults(length)
+	clientartutils.LogSearchResults(length)
 	return err
 }
 
@@ -111,7 +114,7 @@ func aqlResultToSearchResult(crs []*content.ContentReader) (*content.ContentRead
 		return nil, err
 	}
 	for _, cr := range crs {
-		for searchResult := new(clientutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(clientutils.ResultItem) {
+		for searchResult := new(clientartutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(clientartutils.ResultItem) {
 			if err != nil {
 				return nil, err
 			}
@@ -134,13 +137,11 @@ func aqlResultToSearchResult(crs []*content.ContentReader) (*content.ContentRead
 			for _, prop := range searchResult.Properties {
 				tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)
 			}
-			cw.Write(tempResult)
+			cw.Write(*tempResult)
 		}
 		if err := cr.GetError(); err != nil {
 			return nil, err
 		}
-		// TODO: Remove this
-		// cr.Close()
 	}
 	cw.Close()
 	return content.NewContentReader(cw.GetFilePath(), "results"), nil
@@ -156,4 +157,36 @@ func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err erro
 
 	searchParams.IncludeDirs, err = f.IsIncludeDirs(false)
 	return
+}
+
+func (sc *SearchCommand) PrintSearchResults() error {
+	length, err := sc.ContentReadearchResult.Length()
+	if length == 0 {
+		log.Output("[]")
+		return err
+	}
+	log.Output("[")
+	var prevSearchResult *SearchResult
+	for searchResult := new(SearchResult); sc.ContentReadearchResult.NextRecord(searchResult) == nil; searchResult = new(SearchResult) {
+		if prevSearchResult == nil {
+			prevSearchResult = searchResult
+			continue
+		}
+		performPrintSearchResults(*prevSearchResult, ",")
+		prevSearchResult = searchResult
+	}
+	if prevSearchResult != nil {
+		performPrintSearchResults(*prevSearchResult, "")
+	}
+	log.Output("]")
+	return sc.ContentReadearchResult.GetError()
+}
+
+func performPrintSearchResults(toPrint SearchResult, suffix string) error {
+	data, err := json.Marshal(toPrint)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	log.Output("  " + clientutils.IndentJsonArray(data) + suffix)
+	return nil
 }
