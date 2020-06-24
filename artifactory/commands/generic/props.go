@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -86,10 +87,12 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			continue
 		}
 	}
-	cw.Close()
+	if err = cw.Close(); err != nil {
+		return
+	}
 	resultCr = content.NewContentReader((cw.GetFilePath()), "results")
 	if errorOccurred {
-		err = errors.New("Operation finished with errors, please review the logs.")
+		err = errorutils.CheckError(errors.New("Operation finished with errors, please review the logs."))
 	}
 	return
 }

@@ -78,7 +78,7 @@ func (builder *buildInfoBuilder) Build(module string) (*buildinfo.BuildInfo, err
 
 	// Set build properties only when pushing image.
 	if builder.commandType == Push {
-		_, _, err = builder.setBuildProperties()
+		_, err = builder.setBuildProperties()
 		if err != nil {
 			return nil, err
 		}
@@ -227,15 +227,15 @@ func (builder *buildInfoBuilder) handleMissingLayer(layerMediaType, layerFileNam
 }
 
 // Set build properties on docker image layers in Artifactory.
-func (builder *buildInfoBuilder) setBuildProperties() (int, int, error) {
+func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 	props, err := buildutils.CreateBuildProperties(builder.buildName, builder.buildNumber)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 	cw, err := content.NewContentWriter("results", true, false)
 	if err != nil {
 		log.Error("Fail to create new content writer for docker layer")
-		return 0, 0, err
+		return 0, err
 	}
 	for item := range builder.layers {
 		cw.Write(item)

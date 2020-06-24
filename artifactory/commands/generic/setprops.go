@@ -34,13 +34,17 @@ func (setProps *SetPropsCommand) Run() error {
 	resultItems, searchErr := searchItems(setProps.Spec(), servicesManager)
 
 	propsParams := GetPropsParams(resultItems, setProps.props)
-	success, fails, err := servicesManager.SetProps(propsParams)
+	success, err := servicesManager.SetProps(propsParams)
 
 	result := setProps.Result()
 	result.SetSuccessCount(success)
-	result.SetFailCount(fails)
+	totalLength, totalLengthErr := resultItems.Length()
+	result.SetFailCount(totalLength - success)
 	if err == nil {
 		return searchErr
+	}
+	if totalLengthErr != nil {
+		return totalLengthErr
 	}
 	return err
 }
