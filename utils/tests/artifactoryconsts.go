@@ -98,6 +98,7 @@ const (
 	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
 	UploadTempWildcard                     = "upload_temp_wildcard.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	UploadWithPropsSpecdeleteExcludeProps  = "upload_with_props_spec_delete_exclude_props.json"
 	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
@@ -857,6 +858,31 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 			Size: 11,
 			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
 			Md5:  "d8020b86244956f647cf1beff5acdb90",
+		},
+	}
+}
+
+func GetSearchAfterDeleteWithExcludeProps() []generic.SearchResult {
+	return []generic.SearchResult{
+		{
+			Path: Repo1 + "/a/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
+		},
+		{
+			Path: Repo1 + "/e/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
 		},
 	}
 }

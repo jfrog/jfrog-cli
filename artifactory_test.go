@@ -3380,6 +3380,38 @@ func TestArtifactorySearchProps(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+// Remove not to be deleted dirs from delete command from path to delete.
+func TestArtifactoryDeleteExcludeProps(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.UploadWithPropsSpecdeleteExcludeProps)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFile, "--recursive")
+
+	// Prepare search command
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+
+	// Delete all artifacts without c=1 but keep dirs that has at least one artifact with c=1 props
+	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--exclude-props=c=1")
+
+	// Search artifacts with c=1
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+	assert.NoError(t, searchCmd.Search())
+	resultItems := []generic.SearchResult{}
+	cr, err := searchCmd.SearchResultNoDate()
+	assert.NoError(t, err)
+	for resultItem := new(generic.SearchResult); cr.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+	}
+	assert.NoError(t, cr.GetError())
+	assert.ElementsMatch(t, resultItems, tests.GetSearchAfterDeleteWithExcludeProps())
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
 func getAllBuildsByBuildName(client *httpclient.HttpClient, buildName string, t *testing.T, expectedHttpStatusCode int) buildsApiResponseStruct {
 	resp, body, _, _ := client.SendGet(artifactoryDetails.Url+"api/build/"+buildName, true, artHttpDetails)
 	assert.Equal(t, expectedHttpStatusCode, resp.StatusCode, "Failed retrieving build information from artifactory.")
