@@ -2,17 +2,14 @@ package buildinfo
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"path/filepath"
-	"sort"
-	"strings"
 )
-
-const buildInfoPrefix = "buildInfo.env."
 
 type BuildPublishCommand struct {
 	buildConfiguration *utils.BuildConfiguration
@@ -98,7 +95,7 @@ func (bpc *BuildPublishCommand) createBuildInfoFromPartials() (*buildinfo.BuildI
 		return nil, err
 	}
 	buildInfo.Started = buildGeneralDetails.Timestamp.Format("2006-01-02T15:04:05.000-0700")
-	modules, env, vcs, issues, err := extractBuildInfoData(partials, createIncludeFilter(bpc.config.EnvInclude), createExcludeFilter(bpc.config.EnvExclude))
+	modules, env, vcs, issues, err := extractBuildInfoData(partials, bpc.config.IncludeFilter(), bpc.config.ExcludeFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +121,7 @@ func (bpc *BuildPublishCommand) createBuildInfoFromPartials() (*buildinfo.BuildI
 	return buildInfo, nil
 }
 
-func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter filterFunc) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, buildinfo.Issues, error) {
+func extractBuildInfoData(partials buildinfo.Partials, includeFilter, excludeFilter buildinfo.Filter) ([]buildinfo.Module, buildinfo.Env, buildinfo.Vcs, buildinfo.Issues, error) {
 	var vcs buildinfo.Vcs
 	var issues buildinfo.Issues
 	env := make(map[string]string)
@@ -244,52 +241,6 @@ func createDefaultModule(moduleId string) *buildinfo.Module {
 		Properties:   map[string][]string{},
 		Artifacts:    []buildinfo.Artifact{},
 		Dependencies: []buildinfo.Dependency{},
-	}
-}
-
-type filterFunc func(map[string]string) (map[string]string, error)
-
-func createIncludeFilter(pattern string) filterFunc {
-	includePattern := strings.Split(pattern, ";")
-	return func(tempMap map[string]string) (map[string]string, error) {
-		result := make(map[string]string)
-		for k, v := range tempMap {
-			for _, filterPattern := range includePattern {
-				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(strings.TrimPrefix(k, buildInfoPrefix)))
-				if errorutils.CheckError(err) != nil {
-					return nil, err
-				}
-				if matched {
-					result[k] = v
-					break
-				}
-			}
-		}
-		return result, nil
-	}
-}
-
-func createExcludeFilter(pattern string) filterFunc {
-	excludePattern := strings.Split(pattern, ";")
-	return func(tempMap map[string]string) (map[string]string, error) {
-		result := make(map[string]string)
-		for k, v := range tempMap {
-			include := true
-			for _, filterPattern := range excludePattern {
-				matched, err := filepath.Match(strings.ToLower(filterPattern), strings.ToLower(strings.TrimPrefix(k, buildInfoPrefix)))
-				if errorutils.CheckError(err) != nil {
-					return nil, err
-				}
-				if matched {
-					include = false
-					break
-				}
-			}
-			if include {
-				result[k] = v
-			}
-		}
-		return result, nil
 	}
 }
 
