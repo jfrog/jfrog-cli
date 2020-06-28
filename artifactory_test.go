@@ -1100,6 +1100,32 @@ func TestArtifactorySetProperties(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
+	initArtifactoryTest(t)
+	targetPath := path.Join(tests.Repo1, "a$+~&^a#")
+	// Upload a file with special chars.
+	artifactoryCli.Exec("upload", "testsdata/a/a1.in", targetPath)
+	// Set the 'prop=red' property to the file.
+	artifactoryCli.Exec("sp", targetPath, "prop=red")
+
+	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	resultItems, err := searchInArtifactory(searchSpec)
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(resultItems), 1)
+	for _, item := range resultItems {
+		properties := item.Props
+		assert.Equal(t, len(properties), 1)
+		for k, v := range properties {
+			assert.Equal(t, "prop", k, "Wrong property key")
+			assert.Len(t, v, 1)
+			assert.Equal(t, "red", v[0], "Wrong property value")
+		}
+	}
+	cleanArtifactoryTest()
+}
+
 func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testsdata/a/a*.in", tests.Repo1+"/")
