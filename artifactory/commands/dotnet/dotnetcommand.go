@@ -131,7 +131,7 @@ func (dc *DotnetCommand) updateSolutionPathAndGetFileName() (string, error) {
 	if len(cmdFirstArg) == 0 || strings.HasPrefix(cmdFirstArg, "-") {
 		return "", nil
 	}
-	exist, err := fileutils.IsDirExists(cmdFirstArg, true)
+	exist, err := fileutils.IsDirExists(cmdFirstArg, false)
 	if err != nil {
 		return "", err
 	}
@@ -140,7 +140,7 @@ func (dc *DotnetCommand) updateSolutionPathAndGetFileName() (string, error) {
 		dc.updateSolutionPath(cmdFirstArg)
 		return "", err
 	}
-	exist, err = fileutils.IsFileExists(cmdFirstArg, true)
+	exist, err = fileutils.IsFileExists(cmdFirstArg, false)
 	if err != nil {
 		return "", err
 	}
