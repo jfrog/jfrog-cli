@@ -31,7 +31,7 @@ func TestGoBuildInfo(t *testing.T) {
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -181,7 +181,7 @@ func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
 	project1Path := createGoProject(t, "project1", copyDirs)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs)
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
 	if configDestDir == "" {
 		configDestDir = filepath.Join(project1Path, ".jfrog")
@@ -268,7 +268,7 @@ func TestGoRecursivePublish(t *testing.T) {
 
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	project1Path := createGoProject(t, "dependency", false)
 	projectMissingDependency := createGoProject(t, "projectmissingdependency", false)
 	projectBuild := createGoProject(t, "projectbuild", false)
@@ -321,7 +321,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -381,7 +381,7 @@ func cleanGoCache(t *testing.T) {
 func createGoProject(t *testing.T, projectName string, includeDirs bool) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
-	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs)
+	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs, nil)
 	assert.NoError(t, err)
 	projectTarget, err = filepath.Abs(projectTarget)
 	assert.NoError(t, err)
