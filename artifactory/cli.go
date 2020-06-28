@@ -1608,7 +1608,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+			Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "env-include",

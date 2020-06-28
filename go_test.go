@@ -49,7 +49,7 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 	module := "github.com/jfrog/dependency"
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	artifactoryVersion, err := artAuth.GetVersion()
 	assert.NoError(t, err)
 
@@ -77,7 +77,7 @@ func TestGoBuildInfo(t *testing.T) {
 	cleanGoCache(t)
 
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
 
 	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
@@ -159,7 +159,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	assert.NoError(t, artifactoryGoCli.Exec(args...))
 	cleanGoCache(t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	if module == "" {
 		module = "github.com/jfrog/dependency"
 	}

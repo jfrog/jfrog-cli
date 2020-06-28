@@ -11,6 +11,7 @@ const (
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsBuildName                  = "cli-bad-test-build"
+	BuildPublishBuildName                  = "cli-bp-test-build"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
 	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"

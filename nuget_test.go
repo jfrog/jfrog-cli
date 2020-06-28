@@ -133,7 +133,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	}
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	require.NotEmpty(t, buildInfo.Modules, buildName+" build info was not generated correctly, no modules were created.")
 	for i, module := range buildInfo.Modules {
 		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")
