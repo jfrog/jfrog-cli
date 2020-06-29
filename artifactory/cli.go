@@ -1844,6 +1844,14 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "country-codes",
 			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
 		},
+		cli.BoolFlag{
+			Name:  "sync",
+			Usage: "[Defailt: false] Set to true to enable sync distribution. ` `",
+		},
+		cli.StringFlag{
+			Name:  "max-wait",
+			Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
+		},
 	}...)
 }
 
@@ -3340,6 +3348,9 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	if c.IsSet("max-wait") && !c.IsSet("sync") {
+		return cliutils.PrintHelpAndReturnError("flag --max-wait can't be used without --sync", c)
+	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {
 		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
@@ -3360,7 +3371,11 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	maxWait, err := cliutils.GetIntFlagValue(c, "max-wait", 0)
+	if err != nil {
+		return err
+	}
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWait(maxWait)
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }
