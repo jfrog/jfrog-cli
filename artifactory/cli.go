@@ -3,6 +3,13 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -761,7 +768,7 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"rdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.RepoDelete),
 			Usage:        repodelete.Description,
-			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
+			HelpName:     common.CreateUsage("rt rdel", repodelete.Description, repodelete.Usage),
 			UsageText:    repodelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -806,6 +813,45 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return replicationDeleteCmd(c)
+			},
+		},
+		{
+			Name:            "permission-target-template",
+			Aliases:         []string{"ptt"},
+			Usage:           permissiontargettemplate.Description,
+			HelpName:        common.CreateUsage("rt ptt", permissiontargettemplate.Description, permissiontargettemplate.Usage),
+			UsageText:       permissiontargettemplate.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return nil
+			},
+		},
+		{
+			Name:         "permission-target-create",
+			Aliases:      []string{"ptc"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        permissiontargetcreate.Description,
+			HelpName:     common.CreateUsage("rt ptc", permissiontargetcreate.Description, permissiontargetcreate.Usage),
+			UsageText:    permissiontargetcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return nil
+			},
+		},
+		{
+			Name:         "permission-target-delete",
+			Aliases:      []string{"ptdel"},
+			Flags:        getCommonDeleteFlags(),
+			Usage:        permissiontargetdelete.Description,
+			HelpName:     common.CreateUsage("rt ptdel", permissiontargetdelete.Description, permissiontargetdelete.Usage),
+			UsageText:    permissiontargetdelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return nil
 			},
 		},
 		{
