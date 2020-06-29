@@ -5,14 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -478,21 +476,10 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	exists, err := fileutils.IsDirExists(rtc.path, false)
+	err = utils.ValidateTemlatePath(rtc.path)
 	if err != nil {
-		return errorutils.CheckError(err)
+		return
 	}
-	if exists || strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
-		return errorutils.CheckError(errors.New("path cannot be a directory," + PathErrorSuffixMsg))
-	}
-	exists, err = fileutils.IsFileExists(rtc.path, false)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	if exists {
-		return errorutils.CheckError(errors.New("file already exists," + PathErrorSuffixMsg))
-	}
-
 	repoTemplateQuestionnaire := &utils.InteractiveQuestionnaire{
 		MandatoryQuestionsKeys: []string{TemplateType, Key, Rclass},
 		QuestionsMap:           questionMap,

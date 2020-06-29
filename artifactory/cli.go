@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
@@ -825,7 +826,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: true,
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return nil
+				return permissionTargrtTemplateCmd(c)
 			},
 		},
 		{
@@ -2563,6 +2564,21 @@ func replicationDeleteCmd(c *cli.Context) error {
 	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
 	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(replicationDeleteCmd)
+}
+
+func permissionTargrtTemplateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Run command.
+	permissionTargetTemplateCmd := permissiontarget.NewPermissionTargetTemplateCommand()
+	permissionTargetTemplateCmd.SetTemplatePath(c.Args().Get(0))
+	return commands.Exec(permissionTargetTemplateCmd)
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {
