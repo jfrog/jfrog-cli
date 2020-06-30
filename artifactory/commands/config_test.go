@@ -104,7 +104,7 @@ func configAndTest(t *testing.T, inputDetails *config.ArtifactoryDetails) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	outputConfig, err := GetConfig("test")
+	outputConfig, err := GetConfig("test", false)
 	if err != nil {
 		t.Error(err.Error())
 	}

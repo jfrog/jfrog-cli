@@ -1890,7 +1890,7 @@ func getPipInstallFlags() []cli.Flag {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, true)
+	artDetails, err := createArtifactoryDetails(c, true, distribution)
 	if err != nil {
 		return nil, err
 	}
@@ -3642,7 +3642,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil
 	}
-	details, err := createArtifactoryDetails(c, false)
+	details, err := createArtifactoryDetails(c, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -3656,7 +3656,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	return configCmd.RtDetails()
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails, err error) {
+func createArtifactoryDetails(c *cli.Context, includeConfig bool, distribution bool) (details *config.ArtifactoryDetails, err error) {
 	if includeConfig {
 		details, err := offerConfig(c)
 		if err != nil {
@@ -3686,7 +3686,7 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 	}
 
 	if includeConfig && !credentialsChanged(details) {
-		confDetails, err := commands.GetConfig(details.ServerId)
+		confDetails, err := commands.GetConfig(details.ServerId, distribution)
 		if err != nil {
 			return nil, err
 		}
@@ -4146,7 +4146,7 @@ func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 
 func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ArtDetails, err = createArtifactoryDetails(c, false)
+	configCommandConfiguration.ArtDetails, err = createArtifactoryDetails(c, false, false)
 	if err != nil {
 		return
 	}

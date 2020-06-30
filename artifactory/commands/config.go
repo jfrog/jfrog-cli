@@ -465,8 +465,8 @@ func ClearConfig(interactive bool) {
 	config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 }
 
-func GetConfig(serverId string) (*config.ArtifactoryDetails, error) {
-	return config.GetArtifactorySpecificConfig(serverId, true, false)
+func GetConfig(serverId string, distribution bool) (*config.ArtifactoryDetails, error) {
+	return config.GetArtifactorySpecificConfig(serverId, true, distribution)
 }
 
 func (cc *ConfigCommand) encryptPassword() error {
