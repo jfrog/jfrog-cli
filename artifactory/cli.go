@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
-	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory/commands"
@@ -1741,8 +1742,8 @@ func getConfigFlags() []cli.Flag {
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getClientCertsFlags()...)
-	return append(flags,
-		getSshKeyPathFlag()...)
+	flags = append(flags, getSshKeyPathFlag()...)
+	return append(flags, getInsecureTlsFlag())
 }
 
 func getSshKeyPathFlag() []cli.Flag {
