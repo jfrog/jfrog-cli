@@ -148,7 +148,7 @@ func createTokensForConfig(artifactoryDetails *ArtifactoryDetails, expirySeconds
 	return newToken, nil
 }
 
-func CreateInitialRefreshTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) (err error) {
+func CreateInitialRefreshableTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) (err error) {
 	if !(artifactoryDetails.TokenRefreshInterval > 0 && artifactoryDetails.RefreshToken == "" && artifactoryDetails.AccessToken == "") {
 		return nil
 	}
@@ -164,7 +164,7 @@ func CreateInitialRefreshTokensIfNeeded(artifactoryDetails *ArtifactoryDetails) 
 	if err != nil {
 		return err
 	}
-	// remove initializing value
+	// Remove initializing value.
 	artifactoryDetails.TokenRefreshInterval = 0
 	return writeNewTokens(artifactoryDetails, artifactoryDetails.ServerId, newToken.AccessToken, newToken.RefreshToken)
 }

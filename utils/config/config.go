@@ -576,8 +576,9 @@ func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.Servi
 func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.ServiceDetails) (auth.ServiceDetails, error) {
 	details.SetSshUrl(artifactoryDetails.SshUrl)
 	details.SetAccessToken(artifactoryDetails.AccessToken)
-	// If refresh token is not empty, set a refresh handler and skip other credentials
+	// If refresh token is not empty, set a refresh handler and skip other credentials.
 	if artifactoryDetails.RefreshToken != "" {
+		// Save serverId for refreshing if needed. If empty serverId is saved, default will be used.
 		tokenRefreshServerId = artifactoryDetails.ServerId
 		details.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
 	} else {
