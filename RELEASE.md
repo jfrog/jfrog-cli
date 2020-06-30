@@ -1,3 +1,13 @@
+## 1.38.0 (June 30, 2020)
+- "jfrog rt release-bundle-distribute" - New --sync and --max-wait-minutes command options.
+- "Changing access tokens hourly" is now enabled by default.
+- Distribution commands - new --insecure-tls option.
+- "jfrog rt pip" - support for remote repositories.
+- Bug fix - "jfrog rt npm-ci" - Fix command help and logging.  
+- Bug fix - Reintroduce --insecure-tls option to the "jfrog rt c" command.
+- Bug fix - "jfrog rt build-publish --dry-run" deletes the locak build-info.
+- Bug fix - "jfrog rt set-props" does not support path with special characters.
+
 ## 1.37.1 (June 15, 2020)
 - "jfrog rt nuget" - Support running NuGet on Ubuntu. even if used without mono.
 - New "jfrog bt maven-central-sync" command.
