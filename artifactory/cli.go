@@ -1847,6 +1847,14 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "country-codes",
 			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
 		},
+		cli.BoolFlag{
+			Name:  "sync",
+			Usage: "[Defailt: false] Set to true to enable sync distribution (the command execution will end when the distribution process ends).` `",
+		},
+		cli.StringFlag{
+			Name:  "max-wait-minutes",
+			Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
+		},
 		getInsecureTlsFlag(),
 	}...)
 }
@@ -3344,10 +3352,13 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
+		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
+	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {
 		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+			return cliutils.PrintHelpAndReturnError("The --dist-rules option can't be used with --site, --city or --country-code", c)
 		}
 		var err error
 		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
@@ -3364,7 +3375,11 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	if err != nil {
+		return err
+	}
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }

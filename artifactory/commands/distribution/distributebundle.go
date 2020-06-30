@@ -11,6 +11,8 @@ type DistributeReleaseBundleCommand struct {
 	rtDetails               *config.ArtifactoryDetails
 	distributeBundlesParams services.DistributionParams
 	distributionRules       *spec.DistributionRules
+	sync                    bool
+	maxWaitMinutes          int
 	dryRun                  bool
 }
 
@@ -33,6 +35,16 @@ func (db *DistributeReleaseBundleCommand) SetDistributionRules(distributionRules
 	return db
 }
 
+func (db *DistributeReleaseBundleCommand) SetSync(sync bool) *DistributeReleaseBundleCommand {
+	db.sync = sync
+	return db
+}
+
+func (db *DistributeReleaseBundleCommand) SetMaxWaitMinutes(maxWaitMinutes int) *DistributeReleaseBundleCommand {
+	db.maxWaitMinutes = maxWaitMinutes
+	return db
+}
+
 func (db *DistributeReleaseBundleCommand) SetDryRun(dryRun bool) *DistributeReleaseBundleCommand {
 	db.dryRun = dryRun
 	return db
@@ -48,6 +60,9 @@ func (db *DistributeReleaseBundleCommand) Run() error {
 		db.distributeBundlesParams.DistributionRules = append(db.distributeBundlesParams.DistributionRules, rule.ToDistributionCommonParams())
 	}
 
+	if db.sync {
+		return servicesManager.DistributeReleaseBundleSync(db.distributeBundlesParams, db.maxWaitMinutes)
+	}
 	return servicesManager.DistributeReleaseBundle(db.distributeBundlesParams)
 }
 
