@@ -451,11 +451,12 @@ func GetCommands() []cli.Command {
 			Aliases:         []string{"npmi"},
 			Usage:           npminstall.Description,
 			HelpName:        common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
+			UsageText:       npminstall.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
+				return npmInstallOrCiCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
 			},
 		},
 		{
@@ -463,12 +464,13 @@ func GetCommands() []cli.Command {
 			Flags:           getNpmFlags(),
 			Aliases:         []string{"npmci"},
 			Usage:           npmci.Description,
-			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
+			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npmci.Usage),
+			UsageText:       npmci.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
+				return npmInstallOrCiCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
 			},
 		},
 		{
@@ -1608,7 +1610,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+			Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "env-include",
@@ -1730,6 +1732,12 @@ func getConfigFlags() []cli.Flag {
 			Name:  "enc-password",
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 		},
+		cli.BoolFlag{
+			Name: "basic-auth-only",
+			Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
+				"Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. " +
+				"Can only be passed along with username and password/API key options.` `",
+		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getClientCertsFlags()...)
@@ -1801,11 +1809,12 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 		},
 		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
+	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag(), getInsecureTlsFlag())
 }
 
 func getDistributionPassphraseFlag() cli.Flag {
@@ -1844,6 +1853,15 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "country-codes",
 			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
 		},
+		cli.BoolFlag{
+			Name:  "sync",
+			Usage: "[Default: false] Set to true to enable sync distribution (the command execution will end when the distribution process ends).` `",
+		},
+		cli.StringFlag{
+			Name:  "max-wait-minutes",
+			Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
+		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -1886,7 +1904,7 @@ func getPipInstallFlags() []cli.Flag {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, true)
+	artDetails, err := createArtifactoryDetailsWithConfigOffer(c, distribution)
 	if err != nil {
 		return nil, err
 	}
@@ -2060,7 +2078,8 @@ func configCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
+	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).
+		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
 	return configCmd.Config()
 }
 
@@ -2381,7 +2400,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	return commands.Exec(npmCmd)
 }
 
-func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
+func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLegacyCommand func(*cli.Context) error) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
@@ -3340,10 +3359,13 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
+		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
+	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {
 		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+			return cliutils.PrintHelpAndReturnError("The --dist-rules option can't be used with --site, --city or --country-code", c)
 		}
 		var err error
 		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
@@ -3360,7 +3382,11 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	if err != nil {
+		return err
+	}
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }
@@ -3638,12 +3664,8 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil
 	}
-	details, err := createArtifactoryDetails(c, false)
-	if err != nil {
-		return nil, err
-	}
-	encPassword := c.BoolT("enc-password")
-	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(encPassword)
+	details := createArtifactoryDetailsFromOptions(c)
+	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
 	err = configCmd.Config()
 	if err != nil {
 		return nil, err
@@ -3652,16 +3674,44 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	return configCmd.RtDetails()
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails, err error) {
-	if includeConfig {
-		details, err := offerConfig(c)
+func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*config.ArtifactoryDetails, error) {
+	createdDetails, err := offerConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	if createdDetails != nil {
+		return createdDetails, err
+	}
+
+	details := createArtifactoryDetailsFromOptions(c)
+	// If urls or credentials were passed as options, use options as they are.
+	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
+	// Either use command options only or config only.
+	if credentialsChanged(details) {
+		return details, nil
+	}
+
+	// Else, use details from config for requested serverId, or for default server if empty.
+	confDetails, err := commands.GetConfig(details.ServerId, excludeRefreshableTokens)
+	if err != nil {
+		return nil, err
+	}
+
+	if !excludeRefreshableTokens {
+		err = config.CreateInitialRefreshableTokensIfNeeded(confDetails)
 		if err != nil {
 			return nil, err
 		}
-		if details != nil {
-			return details, err
-		}
 	}
+
+	// Take InsecureTls value from options since it is not saved in config.
+	confDetails.InsecureTls = details.InsecureTls
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+	return confDetails, nil
+}
+
+func createArtifactoryDetailsFromOptions(c *cli.Context) (details *config.ArtifactoryDetails) {
 	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
 	details.DistributionUrl = c.String("dist-url")
@@ -3680,64 +3730,15 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 		details.Password = details.ApiKey
 		details.ApiKey = ""
 	}
-
-	if includeConfig && !credentialsChanged(details) {
-		confDetails, err := commands.GetConfig(details.ServerId)
-		if err != nil {
-			return nil, err
-		}
-
-		if details.Url == "" {
-			details.Url = confDetails.Url
-		}
-		if details.DistributionUrl == "" {
-			details.DistributionUrl = confDetails.DistributionUrl
-		}
-
-		if !isAuthMethodSet(details) {
-			if details.ApiKey == "" {
-				details.ApiKey = confDetails.ApiKey
-			}
-			if details.User == "" {
-				details.User = confDetails.User
-			}
-			if details.Password == "" {
-				details.Password = confDetails.Password
-			}
-			if details.SshKeyPath == "" {
-				details.SshKeyPath = confDetails.SshKeyPath
-			}
-			if details.AccessToken == "" {
-				details.AccessToken = confDetails.AccessToken
-			}
-			if details.RefreshToken == "" {
-				details.RefreshToken = confDetails.RefreshToken
-			}
-			if details.TokenRefreshInterval == cliutils.TokenRefreshDisabled {
-				details.TokenRefreshInterval = confDetails.TokenRefreshInterval
-			}
-			if details.ClientCertPath == "" {
-				details.ClientCertPath = confDetails.ClientCertPath
-			}
-			if details.ClientCertKeyPath == "" {
-				details.ClientCertKeyPath = confDetails.ClientCertKeyPath
-			}
-		}
-	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
-
-	err = config.CreateInitialRefreshTokensIfNeeded(details)
 	return
 }
 
 func credentialsChanged(details *config.ArtifactoryDetails) bool {
-	return details.Url != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.AccessToken != ""
-}
-
-func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
-	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != "" || details.AccessToken != ""
+	return details.Url != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
@@ -4142,18 +4143,20 @@ func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 
 func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ArtDetails, err = createArtifactoryDetails(c, false)
-	if err != nil {
-		return
-	}
+	configCommandConfiguration.ArtDetails = createArtifactoryDetailsFromOptions(c)
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
+	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")
 	return
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
 		return errors.New("the --url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
+	}
+	// Validate the option is not used along an access token
+	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ArtDetails.AccessToken != "" {
+		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
 	return nil
 }

@@ -68,8 +68,8 @@ func (bpc *BuildPublishCommand) Run() error {
 		return err
 	}
 
-	if err = utils.RemoveBuildDir(bpc.buildConfiguration.BuildName, bpc.buildConfiguration.BuildNumber); err != nil {
-		return err
+	if !bpc.config.DryRun {
+		return utils.RemoveBuildDir(bpc.buildConfiguration.BuildName, bpc.buildConfiguration.BuildNumber)
 	}
 	return nil
 }

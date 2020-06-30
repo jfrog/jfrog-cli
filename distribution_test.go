@@ -43,7 +43,7 @@ func cleanDistributionTest(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestBundleDownload(t *testing.T) {
+func TestBundleAsyncDistDownload(t *testing.T) {
 	initDistributionTest(t)
 
 	// Upload files
@@ -81,8 +81,7 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign")
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--dist-rules="+distributionRules)
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
@@ -108,8 +107,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 
 	// Create release bundle
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign")
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl", "*", "out/download/simple_by_build/data/", "--bundle="+bundleName+"/"+bundleVersion, "--flat")
@@ -143,8 +141,7 @@ func TestBundleExclusions(t *testing.T) {
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion, "--exclusions=*b2.in")
@@ -171,8 +168,7 @@ func TestBundleCopy(t *testing.T) {
 
 	// Create release bundle
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/data/a*", "--sign")
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*", "--sync")
 
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
@@ -196,8 +192,7 @@ func TestBundleSetProperties(t *testing.T) {
 
 	// Create release bundle
 	artifactoryCli.Exec("rbc", bundleName, bundleVersion, tests.Repo1+"/a.in", "--sign")
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*", "--sync")
 
 	// Set the 'prop=red' property to the file.
 	artifactoryCli.Exec("sp", tests.Repo1+"/a.*", "prop=red", "--bundle="+bundleName+"/"+bundleVersion)
@@ -282,8 +277,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	artifactoryCli.Exec("rbu", bundleName, bundleVersion, tests.Repo1+"/data/b1.in", "--sign")
 
 	// Distribute release bundle
-	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*")
-	inttestutils.WaitForDistribution(t, bundleName, bundleVersion, artHttpDetails)
+	artifactoryCli.Exec("rbd", bundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	artifactoryCli.Exec("dl "+tests.Repo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+bundleName+"/"+bundleVersion)
