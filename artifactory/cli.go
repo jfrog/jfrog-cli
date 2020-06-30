@@ -1803,11 +1803,12 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 		},
 		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
+	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag(), getInsecureTlsFlag())
 }
 
 func getDistributionPassphraseFlag() cli.Flag {
@@ -1846,6 +1847,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "country-codes",
 			Usage: "[Default: '*'] Semicolon-separated list of wildcard filters for site country codes. ` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
