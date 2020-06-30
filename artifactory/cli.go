@@ -451,11 +451,12 @@ func GetCommands() []cli.Command {
 			Aliases:         []string{"npmi"},
 			Usage:           npminstall.Description,
 			HelpName:        common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
+			UsageText:       npminstall.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
+				return npmInstallOrCiCmd(c, npm.NewNpmInstallCommand(), npmLegacyInstallCmd)
 			},
 		},
 		{
@@ -463,12 +464,13 @@ func GetCommands() []cli.Command {
 			Flags:           getNpmFlags(),
 			Aliases:         []string{"npmci"},
 			Usage:           npmci.Description,
-			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npminstall.Usage),
+			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npmci.Usage),
+			UsageText:       npmci.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
 			SkipFlagParsing: shouldSkipNpmFlagParsing(),
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return npmInstallCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
+				return npmInstallOrCiCmd(c, npm.NewNpmCiCommand(), npmLegacyCiCmd)
 			},
 		},
 		{
@@ -1608,7 +1610,7 @@ func getBuildPublishFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "dry-run",
-			Usage: "[Default: false] Set to true to disable communication with Artifactory.` `",
+			Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
 		},
 		cli.StringFlag{
 			Name:  "env-include",
@@ -1801,11 +1803,12 @@ func getReleaseBundleCreateUpdateFlags() []cli.Flag {
 		},
 		getDistributionPassphraseFlag(),
 		getStoringRepositoryFlag(),
+		getInsecureTlsFlag(),
 	}...)
 }
 
 func getReleaseBundleSignFlags() []cli.Flag {
-	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag())
+	return append(getServerFlags(), getDistributionPassphraseFlag(), getStoringRepositoryFlag(), getInsecureTlsFlag())
 }
 
 func getDistributionPassphraseFlag() cli.Flag {
@@ -1852,6 +1855,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Name:  "max-wait-minutes",
 			Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
 		},
+		getInsecureTlsFlag(),
 	}...)
 }
 
@@ -2389,7 +2393,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	return commands.Exec(npmCmd)
 }
 
-func npmInstallCmd(c *cli.Context, npmCmd *npm.NpmInstallCommand, npmLegacyCommand func(*cli.Context) error) error {
+func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLegacyCommand func(*cli.Context) error) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}

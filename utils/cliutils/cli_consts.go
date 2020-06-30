@@ -31,6 +31,8 @@ const (
 	JfrogSecurityDirName     = "security"
 	JfrogSecurityConfFile    = "security.yaml"
 	JfrogBackupDirName       = "backup"
+	JfrogLogsDirName         = "logs"
+	JfrogLockDirName         = "lock"
 
 	// Env
 	ReportUsage     = "JFROG_CLI_REPORT_USAGE"

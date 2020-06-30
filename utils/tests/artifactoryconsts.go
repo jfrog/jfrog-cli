@@ -11,6 +11,7 @@ const (
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsBuildName                  = "cli-bad-test-build"
+	BuildPublishBuildName                  = "cli-bp-test-build"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
 	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
@@ -506,6 +507,14 @@ func GetDownloadWildcardRepo() []string {
 	return []string{
 		Repo1 + "/path/a1.in",
 		Repo2 + "/path/a2.in",
+	}
+}
+
+func GetDownloadUnicode() []string {
+	return []string{
+		Repo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
+		Repo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
+		Repo1 + "/testsdata/unicode/Ԙחלص⩥.in",
 	}
 }
 
