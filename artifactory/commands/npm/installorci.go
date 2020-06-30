@@ -54,42 +54,42 @@ type NpmCommandArgs struct {
 	NpmCommand
 }
 
-type NpmInstallCommand struct {
-	configFilePath string
-	commandName    string
+type NpmInstallOrCiCommand struct {
+	configFilePath      string
+	internalCommandName string
 	*NpmCommandArgs
 }
 
-func NewNpmInstallCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("install"), commandName: "rt_npm_install"}
+func NewNpmInstallCommand() *NpmInstallOrCiCommand {
+	return &NpmInstallOrCiCommand{NpmCommandArgs: NewNpmCommandArgs("install"), internalCommandName: "rt_npm_install"}
 }
 
-func NewNpmCiCommand() *NpmInstallCommand {
-	return &NpmInstallCommand{NpmCommandArgs: NewNpmCommandArgs("ci"), commandName: "rt_npm_ci"}
+func NewNpmCiCommand() *NpmInstallOrCiCommand {
+	return &NpmInstallOrCiCommand{NpmCommandArgs: NewNpmCommandArgs("ci"), internalCommandName: "rt_npm_ci"}
 }
 
-func (nic *NpmInstallCommand) CommandName() string {
-	return nic.commandName
+func (nic *NpmInstallOrCiCommand) CommandName() string {
+	return nic.internalCommandName
 }
 
-func (nic *NpmInstallCommand) SetConfigFilePath(configFilePath string) *NpmInstallCommand {
+func (nic *NpmInstallOrCiCommand) SetConfigFilePath(configFilePath string) *NpmInstallOrCiCommand {
 	nic.configFilePath = configFilePath
 	return nic
 }
 
-func (nic *NpmInstallCommand) SetArgs(args []string) *NpmInstallCommand {
+func (nic *NpmInstallOrCiCommand) SetArgs(args []string) *NpmInstallOrCiCommand {
 	nic.NpmCommandArgs.npmArgs = args
 	return nic
 }
 
-func (nic *NpmInstallCommand) SetRepoConfig(conf *utils.RepositoryConfig) *NpmInstallCommand {
+func (nic *NpmInstallOrCiCommand) SetRepoConfig(conf *utils.RepositoryConfig) *NpmInstallOrCiCommand {
 	rtDetails, _ := conf.RtDetails()
 	nic.NpmCommandArgs.SetRepo(conf.TargetRepo()).SetRtDetails(rtDetails)
 	return nic
 }
 
-func (nic *NpmInstallCommand) Run() error {
-	log.Info("Running npm Install.")
+func (nic *NpmInstallOrCiCommand) Run() error {
+	log.Info(fmt.Sprintf("Running npm %s.", nic.command))
 	// Read config file.
 	log.Debug("Preparing to read the config file", nic.configFilePath)
 	vConfig, err := utils.ReadConfigFile(nic.configFilePath, utils.YAML)
@@ -136,7 +136,7 @@ func (nca *NpmCommandArgs) run() error {
 		return nca.restoreNpmrcAndError(err)
 	}
 
-	if err := nca.runInstall(); err != nil {
+	if err := nca.runInstallOrCi(); err != nil {
 		return nca.restoreNpmrcAndError(err)
 	}
 
@@ -145,7 +145,7 @@ func (nca *NpmCommandArgs) run() error {
 	}
 
 	if !nca.collectBuildInfo {
-		log.Info("npm install finished successfully.")
+		log.Info(fmt.Sprintf("npm %s finished successfully.", nca.command))
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (nca *NpmCommandArgs) run() error {
 		return err
 	}
 
-	log.Info("npm install finished successfully.")
+	log.Info(fmt.Sprintf("npm %s finished successfully.", nca.command))
 	return nil
 }
 
@@ -238,7 +238,7 @@ func (nca *NpmCommandArgs) setWorkingDirectory() error {
 	return nil
 }
 
-// In order to make sure the install downloads the dependencies from Artifactory, we are creating a.npmrc file in the project's root directory.
+// In order to make sure the install/ci downloads the dependencies from Artifactory, we are creating a.npmrc file in the project's root directory.
 // If such a file already exists, we are copying it aside.
 // This method restores the backed up file and deletes the one created by the command.
 func (nca *NpmCommandArgs) restoreNpmrc() (err error) {
@@ -277,7 +277,7 @@ func createRestoreErrorPrefix(workingDirectory string) string {
 		filepath.Join(workingDirectory, npmrcFileName))
 }
 
-// In order to make sure the install downloads the artifacts from Artifactory we create a .npmrc file in the project dir.
+// In order to make sure the install/ci downloads the artifacts from Artifactory we create a .npmrc file in the project dir.
 // If such a file exists we back it up as npmrcBackupFileName.
 func (nca *NpmCommandArgs) createTempNpmrc() error {
 	log.Debug("Creating project .npmrc file.")
@@ -294,10 +294,10 @@ func (nca *NpmCommandArgs) createTempNpmrc() error {
 	return errorutils.CheckError(ioutil.WriteFile(filepath.Join(nca.workingDirectory, npmrcFileName), configData, nca.npmrcFileMode))
 }
 
-func (nca *NpmCommandArgs) runInstall() error {
+func (nca *NpmCommandArgs) runInstallOrCi() error {
 	log.Debug(fmt.Sprintf("Running npm %s command.", nca.command))
 	filteredArgs := filterFlags(nca.npmArgs)
-	installCmdConfig := &npm.NpmConfig{
+	npmCmdConfig := &npm.NpmConfig{
 		Npm:          nca.executablePath,
 		Command:      append([]string{nca.command}, filteredArgs...),
 		CommandFlags: nil,
@@ -310,7 +310,7 @@ func (nca *NpmCommandArgs) runInstall() error {
 		nca.collectBuildInfo = false
 	}
 
-	return errorutils.CheckError(gofrogcmd.RunCmd(installCmdConfig))
+	return errorutils.CheckError(gofrogcmd.RunCmd(npmCmdConfig))
 }
 
 func (nca *NpmCommandArgs) setDependenciesList() (err error) {
@@ -382,7 +382,8 @@ func (nca *NpmCommandArgs) validateNpmVersion() error {
 	}
 	rtVersion := version.NewVersion(string(npmVersion))
 	if rtVersion.Compare(minSupportedNpmVersion) > 0 {
-		return errorutils.CheckError(errors.New("JFrog cli npm-install command requires npm client version " + minSupportedNpmVersion + " or higher."))
+		return errorutils.CheckError(errors.New(fmt.Sprintf(
+			"JFrog CLI npm %s command requires npm client version "+minSupportedNpmVersion+" or higher", nca.command)))
 	}
 	return nil
 }
@@ -433,7 +434,7 @@ func (nca *NpmCommandArgs) prepareConfigData(data []byte) ([]byte, error) {
 	return []byte(strings.Join(filteredConf, "")), nil
 }
 
-// npm install type restriction can be set by "--production" or "-only={prod[uction]|dev[elopment]}" flags
+// npm install/ci type restriction can be set by "--production" or "-only={prod[uction]|dev[elopment]}" flags
 func (nca *NpmCommandArgs) setTypeRestriction(key string, val interface{}) {
 	if key == "production" && val != nil && (val == true || val == "true") {
 		nca.typeRestriction = "production"
@@ -575,7 +576,7 @@ func (nca *NpmCommandArgs) setArtifactoryAuth() error {
 		return err
 	}
 	if authArtDetails.GetSshAuthHeaders() != nil {
-		return errorutils.CheckError(errors.New("SSH authentication is not supported in this command."))
+		return errorutils.CheckError(errors.New("SSH authentication is not supported in this command"))
 	}
 	nca.artDetails = authArtDetails
 	return nil
@@ -600,7 +601,7 @@ func (nca *NpmCommandArgs) setNpmExecutable() error {
 	}
 
 	if npmExecPath == "" {
-		return errorutils.CheckError(errors.New("Could not find 'npm' executable"))
+		return errorutils.CheckError(errors.New("could not find 'npm' executable"))
 	}
 	nca.executablePath = npmExecPath
 	log.Debug("Found npm executable at:", nca.executablePath)
@@ -614,7 +615,7 @@ func getArtifactoryDetails(artDetails auth.ServiceDetails) (npmAuth string, err 
 		return "", err
 	}
 
-	// Get npm tokem from Artifactory.
+	// Get npm token from Artifactory.
 	if artDetails.GetAccessToken() == "" {
 		return getDetailsUsingBasicAuth(artDetails)
 	}
@@ -631,7 +632,7 @@ func validateArtifactoryVersion(artDetails auth.ServiceDetails) error {
 	// Validate version.
 	rtVersion := version.NewVersion(versionStr)
 	if !rtVersion.AtLeast(minSupportedArtifactoryVersion) {
-		return errorutils.CheckError(errors.New("This operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher."))
+		return errorutils.CheckError(errors.New("this operation requires Artifactory version " + minSupportedArtifactoryVersion + " or higher"))
 	}
 
 	return nil

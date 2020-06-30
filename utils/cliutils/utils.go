@@ -131,7 +131,9 @@ type detailedSummaryRecord struct {
 // In case of a nil error, the current function error will be returned.
 func summaryPrintError(summaryError, originalError error) error {
 	if originalError != nil {
-		log.Error(summaryError)
+		if summaryError != nil {
+			log.Error(summaryError)
+		}
 		return originalError
 	}
 	return summaryError

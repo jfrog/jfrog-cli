@@ -260,7 +260,9 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 func (cc *ConfigCommand) readRefreshableTokenFromConsole() error {
 	if !cc.useBasicAuthOnly && ((cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "") {
 		useRefreshableToken, err := cliutils.AskYesNo(
-			"Replace username and password/API key with automatically created access token that's refreshed hourly? (y/n) [${default}]? ", "y", "useRefreshableToken")
+			"For commands which don't use external tools or the JFrog Distribution service, "+
+				"JFrog CLI supports replacing the configured username and password/API key with automatically created access token that's refreshed hourly. "+
+				"Enable this setting? (y/n) [${default}]? ", "y", "useRefreshableToken")
 		if err != nil {
 			return err
 		}

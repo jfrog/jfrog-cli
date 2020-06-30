@@ -15,6 +15,8 @@ import (
 
 // Internal golang locking for the same process.
 var mutex sync.Mutex
+
+// The serverId used for authentication. Use for reading and writing tokens from/to the config file, and for reading the credentials if needed.
 var tokenRefreshServerId string
 
 func AccessTokenRefreshPreRequestInterceptor(fields *auth.CommonConfigFields, httpClientDetails *httputils.HttpClientDetails) (err error) {

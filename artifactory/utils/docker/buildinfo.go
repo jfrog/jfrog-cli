@@ -33,21 +33,18 @@ type Builder interface {
 
 // Create instance of docker build info builder.
 func NewBuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) (Builder, error) {
+	var err error
 	builder := &buildInfoBuilder{}
+	builder.repository, err = buildutils.GetRepoNameForDependenciesSearch(repository, serviceManager)
+	if err != nil {
+		return nil, err
+	}
 	builder.image = image
 	builder.repository = repository
 	builder.buildName = buildName
 	builder.buildNumber = buildNumber
 	builder.serviceManager = serviceManager
 	builder.commandType = commandType
-	builder.repository = repository
-	repoDetails, err := serviceManager.GetRepository(repository)
-	if err != nil {
-		return nil, err
-	}
-	if repoDetails.Rclass == "remote" {
-		builder.repository += "-cache"
-	}
 	return builder, nil
 }
 
