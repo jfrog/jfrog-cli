@@ -1849,7 +1849,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "sync",
-			Usage: "[Defailt: false] Set to true to enable sync distribution. ` `",
+			Usage: "[Defailt: false] Set to true to enable sync distribution (the command execution will end when the distribution process ends).` `",
 		},
 		cli.StringFlag{
 			Name:  "max-wait-minutes",
@@ -3353,12 +3353,12 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
-		return cliutils.PrintHelpAndReturnError("flag --max-wait-minutes can't be used without --sync", c)
+		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
 	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {
 		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
-			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+			return cliutils.PrintHelpAndReturnError("The --dist-rules option can't be used with --site, --city or --country-code", c)
 		}
 		var err error
 		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
