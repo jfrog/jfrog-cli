@@ -478,14 +478,14 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	exists, err := fileutils.IsDirExists(rtc.path, true)
+	exists, err := fileutils.IsDirExists(rtc.path, false)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 	if exists || strings.HasSuffix(rtc.path, string(os.PathSeparator)) {
 		return errorutils.CheckError(errors.New("path cannot be a directory," + PathErrorSuffixMsg))
 	}
-	exists, err = fileutils.IsFileExists(rtc.path, true)
+	exists, err = fileutils.IsFileExists(rtc.path, false)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}

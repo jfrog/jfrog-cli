@@ -316,7 +316,7 @@ func verifyEncryptionStatus(t *testing.T, original, actual *ConfigV2, encryption
 }
 
 func copyResources(t *testing.T, sourcePath string, destPath string) {
-	assert.NoError(t, fileutils.CopyDir(sourcePath, destPath, true))
+	assert.NoError(t, fileutils.CopyDir(sourcePath, destPath, true, nil))
 }
 
 func assertCertsMigration(t *testing.T) {

@@ -104,7 +104,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 	err := fileutils.CreateDirIfNotExist(projectTarget)
 	assert.NoError(t, err)
 
-	err = fileutils.CopyDir(projectSrc, projectTarget, true)
+	err = fileutils.CopyDir(projectSrc, projectTarget, true, nil)
 	assert.NoError(t, err)
 	return projectTarget
 }
@@ -134,7 +134,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	}
 	artifactoryCli.Exec("bp", buildName, buildNumber)
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	require.NotEmpty(t, buildInfo.Modules, buildName+" build info was not generated correctly, no modules were created.")
 	for i, module := range buildInfo.Modules {
 		assert.Equal(t, expectedModule[i], buildInfo.Modules[i].Id, "Unexpected module name")

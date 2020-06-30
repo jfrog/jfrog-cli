@@ -29,7 +29,7 @@ func SetDefaultLogger() {
 }
 
 func CreateLogFile() (*os.File, error) {
-	logDir, err := cliutils.CreateDirInJfrogHome("logs")
+	logDir, err := cliutils.CreateDirInJfrogHome(cliutils.JfrogLogsDirName)
 	if err != nil {
 		return nil, err
 	}

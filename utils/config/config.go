@@ -378,22 +378,12 @@ func createHomeDirBackup() error {
 		return err
 	}
 
-	// Copy to temp dir before creating back up dir
-	tempDirPath, err := fileutils.CreateTempDir()
-	if err != nil {
-		return err
-	}
-	defer fileutils.RemoveTempDir(tempDirPath)
-	err = fileutils.CopyDir(homeDir, tempDirPath, true)
-	if err != nil {
-		return err
-	}
-
-	// Create backup dir and copy contents from temp dir
+	// Copy homedir contents to backup dir, excluding redundant dirs and the backup dir itself.
 	backupName := ".jfrog-" + strconv.FormatInt(time.Now().Unix(), 10)
 	curBackupPath := filepath.Join(backupDir, backupName)
 	log.Debug("Creating a homedir backup at: " + curBackupPath)
-	return fileutils.CopyDir(tempDirPath, curBackupPath, true)
+	exclude := []string{cliutils.JfrogBackupDirName, cliutils.JfrogDependenciesDirName, cliutils.JfrogLockDirName, cliutils.JfrogLogsDirName}
+	return fileutils.CopyDir(homeDir, curBackupPath, true, exclude)
 }
 
 func getKeyFromConfig(content []byte, key string) (value string, exists bool, err error) {
@@ -586,8 +576,9 @@ func (artifactoryDetails *ArtifactoryDetails) CreateDistAuthConfig() (auth.Servi
 func (artifactoryDetails *ArtifactoryDetails) createArtAuthConfig(details auth.ServiceDetails) (auth.ServiceDetails, error) {
 	details.SetSshUrl(artifactoryDetails.SshUrl)
 	details.SetAccessToken(artifactoryDetails.AccessToken)
-	// If refresh token is not empty, set a refresh handler and skip other credentials
+	// If refresh token is not empty, set a refresh handler and skip other credentials.
 	if artifactoryDetails.RefreshToken != "" {
+		// Save serverId for refreshing if needed. If empty serverId is saved, default will be used.
 		tokenRefreshServerId = artifactoryDetails.ServerId
 		details.AppendPreRequestInterceptor(AccessTokenRefreshPreRequestInterceptor)
 	} else {
