@@ -1849,7 +1849,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "sync",
-			Usage: "[Defailt: false] Set to true to enable sync distribution (the command execution will end when the distribution process ends).` `",
+			Usage: "[Default: false] Set to true to enable sync distribution (the command execution will end when the distribution process ends).` `",
 		},
 		cli.StringFlag{
 			Name:  "max-wait-minutes",
