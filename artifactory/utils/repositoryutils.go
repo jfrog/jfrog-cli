@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -68,4 +69,17 @@ func execGetRepositories(artDetails auth.ServiceDetails, repoType RepoType) ([]s
 		}
 	})
 	return repos, nil
+}
+
+// Since we can't search dependencies in a remote repository, we will turn the search to the repository's cache.
+// Local/Virtual repository name will be returned as is.
+func GetRepoNameForDependenciesSearch(repoName string, serviceManager *artifactory.ArtifactoryServicesManager) (string, error) {
+	repoDetails, err := serviceManager.GetRepository(repoName)
+	if err != nil {
+		return "", err
+	}
+	if repoDetails.Rclass == "remote" {
+		repoName += "-cache"
+	}
+	return repoName, err
 }
