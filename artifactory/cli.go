@@ -3684,7 +3684,9 @@ func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableT
 	}
 
 	details := createArtifactoryDetailsFromOptions(c)
-	// If urls or credentials were passed in options, use options as they are.
+	// If urls or credentials were passed as options, use options as they are.
+	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
+	// Either use command options only or config only.
 	if credentialsChanged(details) {
 		return details, nil
 	}
