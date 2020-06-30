@@ -1904,7 +1904,7 @@ func getPipInstallFlags() []cli.Flag {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*config.ArtifactoryDetails, error) {
-	artDetails, err := createArtifactoryDetails(c, true)
+	artDetails, err := createArtifactoryDetailsWithConfigOffer(c, distribution)
 	if err != nil {
 		return nil, err
 	}
@@ -3664,10 +3664,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil
 	}
-	details, err := createArtifactoryDetails(c, false)
-	if err != nil {
-		return nil, err
-	}
+	details := createArtifactoryDetailsFromOptions(c)
 	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
 	err = configCmd.Config()
 	if err != nil {
@@ -3677,16 +3674,42 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	return configCmd.RtDetails()
 }
 
-func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *config.ArtifactoryDetails, err error) {
-	if includeConfig {
-		details, err := offerConfig(c)
+func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*config.ArtifactoryDetails, error) {
+	createdDetails, err := offerConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	if createdDetails != nil {
+		return createdDetails, err
+	}
+
+	details := createArtifactoryDetailsFromOptions(c)
+	// If urls or credentials were passed in options, use options as they are.
+	if credentialsChanged(details) {
+		return details, nil
+	}
+
+	// Else, use details from config for requested serverId, or for default server if empty.
+	confDetails, err := commands.GetConfig(details.ServerId, excludeRefreshableTokens)
+	if err != nil {
+		return nil, err
+	}
+
+	if !excludeRefreshableTokens {
+		err = config.CreateInitialRefreshableTokensIfNeeded(confDetails)
 		if err != nil {
 			return nil, err
 		}
-		if details != nil {
-			return details, err
-		}
 	}
+
+	// Take InsecureTls value from options since it is not saved in config.
+	confDetails.InsecureTls = details.InsecureTls
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+	return confDetails, nil
+}
+
+func createArtifactoryDetailsFromOptions(c *cli.Context) (details *config.ArtifactoryDetails) {
 	details = new(config.ArtifactoryDetails)
 	details.Url = c.String("url")
 	details.DistributionUrl = c.String("dist-url")
@@ -3705,64 +3728,15 @@ func createArtifactoryDetails(c *cli.Context, includeConfig bool) (details *conf
 		details.Password = details.ApiKey
 		details.ApiKey = ""
 	}
-
-	if includeConfig && !credentialsChanged(details) {
-		confDetails, err := commands.GetConfig(details.ServerId)
-		if err != nil {
-			return nil, err
-		}
-
-		if details.Url == "" {
-			details.Url = confDetails.Url
-		}
-		if details.DistributionUrl == "" {
-			details.DistributionUrl = confDetails.DistributionUrl
-		}
-
-		if !isAuthMethodSet(details) {
-			if details.ApiKey == "" {
-				details.ApiKey = confDetails.ApiKey
-			}
-			if details.User == "" {
-				details.User = confDetails.User
-			}
-			if details.Password == "" {
-				details.Password = confDetails.Password
-			}
-			if details.SshKeyPath == "" {
-				details.SshKeyPath = confDetails.SshKeyPath
-			}
-			if details.AccessToken == "" {
-				details.AccessToken = confDetails.AccessToken
-			}
-			if details.RefreshToken == "" {
-				details.RefreshToken = confDetails.RefreshToken
-			}
-			if details.TokenRefreshInterval == cliutils.TokenRefreshDisabled {
-				details.TokenRefreshInterval = confDetails.TokenRefreshInterval
-			}
-			if details.ClientCertPath == "" {
-				details.ClientCertPath = confDetails.ClientCertPath
-			}
-			if details.ClientCertKeyPath == "" {
-				details.ClientCertKeyPath = confDetails.ClientCertKeyPath
-			}
-		}
-	}
 	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
 	details.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(details.DistributionUrl)
-
-	err = config.CreateInitialRefreshTokensIfNeeded(details)
 	return
 }
 
 func credentialsChanged(details *config.ArtifactoryDetails) bool {
-	return details.Url != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.AccessToken != ""
-}
-
-func isAuthMethodSet(details *config.ArtifactoryDetails) bool {
-	return (details.User != "" && details.Password != "") || details.SshKeyPath != "" || details.ApiKey != "" || details.AccessToken != ""
+	return details.Url != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
+		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {
@@ -4167,10 +4141,7 @@ func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 
 func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
-	configCommandConfiguration.ArtDetails, err = createArtifactoryDetails(c, false)
-	if err != nil {
-		return
-	}
+	configCommandConfiguration.ArtDetails = createArtifactoryDetailsFromOptions(c)
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
 	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")

@@ -111,7 +111,7 @@ func configAndTest(t *testing.T, inputDetails *config.ArtifactoryDetails) {
 func configAndGetTestServer(t *testing.T, inputDetails *config.ArtifactoryDetails, basicAuthOnly bool) (*config.ArtifactoryDetails, error) {
 	configCmd := NewConfigCommand().SetDetails(inputDetails).SetServerId("test").SetUseBasicAuthOnly(basicAuthOnly)
 	assert.NoError(t, configCmd.Config())
-	return GetConfig("test")
+	return GetConfig("test", false)
 }
 
 func configStructToString(artConfig *config.ArtifactoryDetails) string {
