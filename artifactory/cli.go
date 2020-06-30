@@ -2050,7 +2050,7 @@ func configCmd(c *cli.Context) error {
 		}
 		if c.Args()[0] == "delete" {
 			if configCommandConfiguration.Interactive {
-				if !cliutils.InteractiveConfirm("Are you sure you want to delete \"" + serverId + "\" configuration?") {
+				if !cliutils.InteractiveConfirm("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
 					return nil
 				}
 			}
@@ -3659,7 +3659,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
 		"You can also configure these parameters later using the 'jfrog rt c' command.\n"+
 		"Configure now?", cliutils.OfferConfig)
-	confirmed := cliutils.InteractiveConfirm(msg)
+	confirmed := cliutils.InteractiveConfirm(msg, false)
 	if !confirmed {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil

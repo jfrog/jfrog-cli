@@ -227,15 +227,22 @@ func getCiValue() bool {
 	return ci
 }
 
-func InteractiveConfirm(message string) bool {
+func InteractiveConfirm(message string, defaultValue bool) bool {
 	var confirm string
-	fmt.Print(message + " (y/n): ")
+	defStr := "[n]"
+	if defaultValue {
+		defStr = "[y]"
+	}
+	fmt.Print(message + " (y/n) " + defStr + ": ")
 	fmt.Scanln(&confirm)
-	return confirmAnswer(confirm)
+	return confirmAnswer(confirm, defaultValue)
 }
 
-func confirmAnswer(answer string) bool {
-	answer = strings.ToLower(answer)
+func confirmAnswer(answer string, defaultValue bool) bool {
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	if answer == "" {
+		return defaultValue
+	}
 	return answer == "y" || answer == "yes"
 }
 
