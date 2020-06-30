@@ -12,7 +12,7 @@ type DistributeReleaseBundleCommand struct {
 	distributeBundlesParams services.DistributionParams
 	distributionRules       *spec.DistributionRules
 	sync                    bool
-	maxWait                 int
+	maxWaitMinutes          int
 	dryRun                  bool
 }
 
@@ -40,8 +40,8 @@ func (db *DistributeReleaseBundleCommand) SetSync(sync bool) *DistributeReleaseB
 	return db
 }
 
-func (db *DistributeReleaseBundleCommand) SetMaxWait(maxWait int) *DistributeReleaseBundleCommand {
-	db.maxWait = maxWait
+func (db *DistributeReleaseBundleCommand) SetMaxWaitMinutes(maxWaitMinutes int) *DistributeReleaseBundleCommand {
+	db.maxWaitMinutes = maxWaitMinutes
 	return db
 }
 
@@ -61,7 +61,7 @@ func (db *DistributeReleaseBundleCommand) Run() error {
 	}
 
 	if db.sync {
-		return servicesManager.DistributeReleaseBundleSync(db.distributeBundlesParams, db.maxWait)
+		return servicesManager.DistributeReleaseBundleSync(db.distributeBundlesParams, db.maxWaitMinutes)
 	}
 	return servicesManager.DistributeReleaseBundle(db.distributeBundlesParams)
 }

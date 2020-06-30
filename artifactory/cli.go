@@ -1849,7 +1849,7 @@ func getReleaseBundleDistributeFlags() []cli.Flag {
 			Usage: "[Defailt: false] Set to true to enable sync distribution. ` `",
 		},
 		cli.StringFlag{
-			Name:  "max-wait",
+			Name:  "max-wait-minutes",
 			Usage: "[Default: 60] Max minutes to wait for sync distribution. ` `",
 		},
 	}...)
@@ -3348,8 +3348,8 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	if c.IsSet("max-wait") && !c.IsSet("sync") {
-		return cliutils.PrintHelpAndReturnError("flag --max-wait can't be used without --sync", c)
+	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
+		return cliutils.PrintHelpAndReturnError("flag --max-wait-minutes can't be used without --sync", c)
 	}
 	var distributionRules *spec.DistributionRules
 	if c.IsSet("dist-rules") {
@@ -3371,11 +3371,11 @@ func releaseBundleDistributeCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	maxWait, err := cliutils.GetIntFlagValue(c, "max-wait", 0)
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
 	if err != nil {
 		return err
 	}
-	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWait(maxWait)
+	releaseBundleDistributeCmd.SetRtDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
 
 	return commands.Exec(releaseBundleDistributeCmd)
 }
