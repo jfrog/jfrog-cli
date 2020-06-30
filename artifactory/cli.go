@@ -1732,6 +1732,12 @@ func getConfigFlags() []cli.Flag {
 			Name:  "enc-password",
 			Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 		},
+		cli.BoolFlag{
+			Name: "basic-auth-only",
+			Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
+				"Username and password/API key will still be used with commands which use external tools or the JFrog Distribution service. " +
+				"Can only be passed along with username and password/API key options.` `",
+		},
 	}
 	flags = append(flags, getBaseFlags()...)
 	flags = append(flags, getClientCertsFlags()...)
@@ -2072,7 +2078,8 @@ func configCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword)
+	configCmd := commands.NewConfigCommand().SetDetails(configCommandConfiguration.ArtDetails).SetInteractive(configCommandConfiguration.Interactive).
+		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
 	return configCmd.Config()
 }
 
@@ -3661,8 +3668,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	if err != nil {
 		return nil, err
 	}
-	encPassword := c.BoolT("enc-password")
-	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(encPassword)
+	configCmd := commands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
 	err = configCmd.Config()
 	if err != nil {
 		return nil, err
@@ -4167,12 +4173,17 @@ func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguratio
 	}
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
 	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
+	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")
 	return
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ArtDetails.Url == "" {
 		return errors.New("the --url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
+	}
+	// Validate the option is not used along an access token
+	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ArtDetails.AccessToken != "" {
+		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
 	return nil
 }

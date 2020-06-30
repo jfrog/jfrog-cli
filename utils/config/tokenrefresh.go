@@ -15,6 +15,8 @@ import (
 
 // Internal golang locking for the same process.
 var mutex sync.Mutex
+
+// The serverId used for authentication. Use for reading and writing tokens from/to the config file, and for reading the credentials if needed.
 var tokenRefreshServerId string
 
 func AccessTokenRefreshPreRequestInterceptor(fields *auth.CommonConfigFields, httpClientDetails *httputils.HttpClientDetails) (err error) {
@@ -55,11 +57,11 @@ func tokenRefreshHandler(currentAccessToken string) (newAccessToken string, err 
 	}
 
 	serverConfiguration, err := GetArtifactorySpecificConfig(tokenRefreshServerId, true, false)
-	if tokenRefreshServerId == "" && serverConfiguration != nil {
-		tokenRefreshServerId = serverConfiguration.ServerId
-	}
 	if err != nil {
 		return "", err
+	}
+	if tokenRefreshServerId == "" && serverConfiguration != nil {
+		tokenRefreshServerId = serverConfiguration.ServerId
 	}
 	// If token already refreshed, get new token from config
 	if serverConfiguration.AccessToken != "" && serverConfiguration.AccessToken != currentAccessToken {

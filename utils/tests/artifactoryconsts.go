@@ -109,6 +109,7 @@ var NpmRemoteRepo = "jfrog-cli-tests-npm-remote-repo"
 var GoLocalRepo = "jfrog-cli-tests-go-local-repo"
 var PypiRemoteRepo = "jfrog-cli-tests-pypi-remote-repo"
 var PypiVirtualRepo = "jfrog-cli-tests-pypi-virtual-repo"
+
 // These are not an actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 var Repo1And2 = "jfrog-cli-tests-repo*"
 var Repo1And2Placeholder = "jfrog-cli-tests-repo(*)"
