@@ -839,7 +839,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return nil
+				return permissionTargetCreateCmd(c)
 			},
 		},
 		{
@@ -2579,6 +2579,26 @@ func permissionTargrtTemplateCmd(c *cli.Context) error {
 	permissionTargetTemplateCmd := permissiontarget.NewPermissionTargetTemplateCommand()
 	permissionTargetTemplateCmd.SetTemplatePath(c.Args().Get(0))
 	return commands.Exec(permissionTargetTemplateCmd)
+}
+
+func permissionTargetCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
+	permissionTargetCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(permissionTargetCreateCmd)
 }
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
