@@ -18,11 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
-	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
-
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory/commands"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/buildinfo"

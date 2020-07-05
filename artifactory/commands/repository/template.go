@@ -476,7 +476,7 @@ func (rtc *RepoTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) 
 }
 
 func (rtc *RepoTemplateCommand) Run() (err error) {
-	err = utils.ValidateTemlatePath(rtc.path)
+	err = utils.ValidateTemplatePath(rtc.path)
 	if err != nil {
 		return
 	}

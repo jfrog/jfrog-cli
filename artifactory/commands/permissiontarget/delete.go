@@ -40,7 +40,7 @@ func (ptdc *PermissionTargetDeleteCommand) CommandName() string {
 }
 
 func (ptdc *PermissionTargetDeleteCommand) Run() (err error) {
-	if !ptdc.quiet && !cliutils.InteractiveConfirm("Are you sure you want to permanently delete the permission target "+ptdc.permissionTargetName+"?") {
+	if !ptdc.quiet && !cliutils.InteractiveConfirm("Are you sure you want to permanently delete the permission target "+ptdc.permissionTargetName+"?", true) {
 		return nil
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(ptdc.rtDetails, false)

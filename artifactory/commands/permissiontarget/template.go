@@ -49,7 +49,7 @@ func (pttc *PermissionTargetTemplateCommand) RtDetails() (*config.ArtifactoryDet
 }
 
 func (pttc *PermissionTargetTemplateCommand) Run() (err error) {
-	err = utils.ValidateTemlatePath(pttc.path)
+	err = utils.ValidateTemplatePath(pttc.path)
 	if err != nil {
 		return
 	}

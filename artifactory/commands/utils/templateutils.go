@@ -47,7 +47,7 @@ func ValidateMapEntry(key string, value interface{}, writersMap map[string]Answe
 	return nil
 }
 
-func ValidateTemlatePath(templatePath string) error {
+func ValidateTemplatePath(templatePath string) error {
 	exists, err := fileutils.IsDirExists(templatePath, false)
 	if err != nil {
 		return errorutils.CheckError(err)
