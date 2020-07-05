@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "${DIST_REPO1}/*.in"
+    }
+  ]
+}

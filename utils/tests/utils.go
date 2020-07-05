@@ -4,16 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"flag"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/utils/config"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/utils/config"
 
 	"github.com/stretchr/testify/assert"
 
@@ -322,17 +325,23 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 }
 
 var reposConfigMap = map[*string]string{
-	&Repo1:             Repo1RepositoryConfig,
-	&Repo2:             Repo2RepositoryConfig,
-	&VirtualRepo:       VirtualRepositoryConfig,
-	&JcenterRemoteRepo: JcenterRemoteRepositoryConfig,
-	&LfsRepo:           GitLfsTestRepositoryConfig,
-	&DebianRepo:        DebianTestRepositoryConfig,
-	&NpmLocalRepo:      NpmLocalRepositoryConfig,
-	&NpmRemoteRepo:     NpmRemoteRepositoryConfig,
-	&GoLocalRepo:       GoLocalRepositoryConfig,
-	&PypiRemoteRepo:    PypiRemoteRepositoryConfig,
-	&PypiVirtualRepo:   PypiVirtualRepositoryConfig,
+	&DistRepo1:        DistributionRepoConfig1,
+	&DistRepo2:        DistributionRepoConfig2,
+	&GoRepo:           GoLocalRepositoryConfig,
+	&GradleRepo:       GradleRepositoryConfig,
+	&MvnRepo1:         MavenRepositoryConfig1,
+	&MvnRepo2:         MavenRepositoryConfig2,
+	&MvnRemoteRepo:    MavenRemoteRepositoryConfig,
+	&GradleRemoteRepo: GradleRemoteRepositoryConfig,
+	&NpmRepo:          NpmLocalRepositoryConfig,
+	&NpmRemoteRepo:    NpmRemoteRepositoryConfig,
+	&PypiRemoteRepo:   PypiRemoteRepositoryConfig,
+	&PypiVirtualRepo:  PypiVirtualRepositoryConfig,
+	&RtDebianRepo:     DebianTestRepositoryConfig,
+	&RtLfsRepo:        GitLfsTestRepositoryConfig,
+	&RtRepo1:          Repo1RepositoryConfig,
+	&RtRepo2:          Repo2RepositoryConfig,
+	&RtVirtualRepo:    VirtualRepositoryConfig,
 }
 
 var CreatedNonVirtualRepositories map[*string]string
@@ -350,24 +359,38 @@ func getNeededRepositories(reposMap map[*bool][]*string) map[*string]string {
 	return reposToCreate
 }
 
+func getNeededBuildNames(buildNamesMap map[*bool][]*string) []string {
+	var neededBuildNames []string
+	for needed, buildNames := range buildNamesMap {
+		if *needed {
+			for _, buildName := range buildNames {
+				neededBuildNames = append(neededBuildNames, *buildName)
+			}
+		}
+	}
+	return neededBuildNames
+}
+
+// Return local and remote repositories for the test suites, respectfully
 func GetNonVirtualRepositories() map[*string]string {
-	NonVirtualReposMap := map[*bool][]*string{
-		TestArtifactory:  {&Repo1, &Repo2, &LfsRepo, &DebianRepo},
-		TestDistribution: {&Repo1, &Repo2},
+	nonVirtualReposMap := map[*bool][]*string{
+		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
+		TestDistribution: {&DistRepo1, &DistRepo2},
 		TestDocker:       {},
 		TestGo:           {},
-		TestGradle:       {&Repo1},
-		TestMaven:        {&Repo1, &Repo2, &JcenterRemoteRepo},
-		TestNpm:          {&NpmLocalRepo, &NpmRemoteRepo},
+		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
+		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
+		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:        {},
 		TestPip:          {&PypiRemoteRepo},
 	}
-	return getNeededRepositories(NonVirtualReposMap)
+	return getNeededRepositories(nonVirtualReposMap)
 }
 
+// Return virtual repositories for the test suites, respectfully
 func GetVirtualRepositories() map[*string]string {
-	VirtualReposMap := map[*bool][]*string{
-		TestArtifactory:  {&VirtualRepo},
+	virtualReposMap := map[*bool][]*string{
+		TestArtifactory:  {&RtVirtualRepo},
 		TestDistribution: {},
 		TestDocker:       {},
 		TestGo:           {},
@@ -377,30 +400,106 @@ func GetVirtualRepositories() map[*string]string {
 		TestNuget:        {},
 		TestPip:          {&PypiVirtualRepo},
 	}
-	return getNeededRepositories(VirtualReposMap)
+	return getNeededRepositories(virtualReposMap)
 }
 
-func getRepositoriesNameMap() map[string]string {
-	return map[string]string{
-		"${REPO1}":               Repo1,
-		"${REPO2}":               Repo2,
-		"${REPO_1_AND_2}":        Repo1And2,
-		"${VIRTUAL_REPO}":        VirtualRepo,
-		"${LFS_REPO}":            LfsRepo,
-		"${DEBIAN_REPO}":         DebianRepo,
-		"${JCENTER_REMOTE_REPO}": JcenterRemoteRepo,
-		"${NPM_LOCAL_REPO}":      NpmLocalRepo,
-		"${NPM_REMOTE_REPO}":     NpmRemoteRepo,
-		"${GO_REPO}":             GoLocalRepo,
-		"${RT_SERVER_ID}":        RtServerId,
-		"${RT_URL}":              *RtUrl,
-		"${RT_API_KEY}":          *RtApiKey,
-		"${RT_USERNAME}":         *RtUser,
-		"${RT_PASSWORD}":         *RtPassword,
-		"${RT_ACCESS_TOKEN}":     *RtAccessToken,
-		"${PYPI_REMOTE_REPO}":    PypiRemoteRepo,
-		"${PYPI_VIRTUAL_REPO}":   PypiVirtualRepo,
+func GetAllRepositoriesNames() []string {
+	var baseRepoNames []string
+	for repoName := range GetNonVirtualRepositories() {
+		baseRepoNames = append(baseRepoNames, *repoName)
 	}
+	for repoName := range GetVirtualRepositories() {
+		baseRepoNames = append(baseRepoNames, *repoName)
+	}
+	return baseRepoNames
+}
+
+func GetBuildNames() []string {
+	buildNamesMap := map[*bool][]*string{
+		TestArtifactory:  {&RtBuildName1, &RtBuildName2},
+		TestDistribution: {},
+		TestDocker:       {&DockerBuildName},
+		TestGo:           {&GoBuildName},
+		TestGradle:       {&GradleBuildName},
+		TestMaven:        {},
+		TestNpm:          {&NpmBuildName},
+		TestNuget:        {&NuGetBuildName},
+		TestPip:          {&PipBuildName},
+	}
+	return getNeededBuildNames(buildNamesMap)
+}
+
+// Builds and repositories names to replace in the test files.
+// We use substitution map to set repositories and builds with timestamp.
+func getSubstitutionMap() map[string]string {
+	return map[string]string{
+		"${REPO1}":              RtRepo1,
+		"${REPO2}":              RtRepo2,
+		"${REPO_1_AND_2}":       RtRepo1And2,
+		"${VIRTUAL_REPO}":       RtVirtualRepo,
+		"${LFS_REPO}":           RtLfsRepo,
+		"${DEBIAN_REPO}":        RtDebianRepo,
+		"${MAVEN_REPO1}":        MvnRepo1,
+		"${MAVEN_REPO2}":        MvnRepo2,
+		"${MAVEN_REMOTE_REPO}":  MvnRemoteRepo,
+		"${GRADLE_REMOTE_REPO}": GradleRemoteRepo,
+		"${GRADLE_REPO}":        GradleRepo,
+		"${NPM_REPO}":           NpmRepo,
+		"${NPM_REMOTE_REPO}":    NpmRemoteRepo,
+		"${GO_REPO}":            GoRepo,
+		"${RT_SERVER_ID}":       RtServerId,
+		"${RT_URL}":             *RtUrl,
+		"${RT_API_KEY}":         *RtApiKey,
+		"${RT_USERNAME}":        *RtUser,
+		"${RT_PASSWORD}":        *RtPassword,
+		"${RT_ACCESS_TOKEN}":    *RtAccessToken,
+		"${PYPI_REMOTE_REPO}":   PypiRemoteRepo,
+		"${PYPI_VIRTUAL_REPO}":  PypiVirtualRepo,
+		"${BUILD_NAME1}":        RtBuildName1,
+		"${BUILD_NAME2}":        RtBuildName2,
+		"${BINTRAY_REPO}":       BintrayRepo,
+		"${BUNDLE_NAME}":        BundleName,
+		"${DIST_REPO1}":         DistRepo1,
+		"${DIST_REPO2}":         DistRepo2,
+	}
+}
+
+// Add timestamp to builds and repositories names
+func AddTimestampToGlobalVars() {
+	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	// Repositories
+	BintrayRepo += timestampSuffix
+	DistRepo1 += timestampSuffix
+	DistRepo2 += timestampSuffix
+	GoRepo += timestampSuffix
+	GradleRemoteRepo += timestampSuffix
+	GradleRepo += timestampSuffix
+	MvnRemoteRepo += timestampSuffix
+	MvnRepo1 += timestampSuffix
+	MvnRepo2 += timestampSuffix
+	NpmRepo += timestampSuffix
+	NpmRemoteRepo += timestampSuffix
+	PypiRemoteRepo += timestampSuffix
+	PypiVirtualRepo += timestampSuffix
+	RtDebianRepo += timestampSuffix
+	RtLfsRepo += timestampSuffix
+	RtRepo1 += timestampSuffix
+	RtRepo1And2 += timestampSuffix
+	RtRepo1And2Placeholder += timestampSuffix
+	RtRepo2 += timestampSuffix
+	RtVirtualRepo += timestampSuffix
+
+	// Builds/bundles/images
+	BundleName += timestampSuffix
+	DockerImageName += timestampSuffix
+	DotnetBuildName += timestampSuffix
+	GoBuildName += timestampSuffix
+	GradleBuildName += timestampSuffix
+	NpmBuildName += timestampSuffix
+	NuGetBuildName += timestampSuffix
+	PipBuildName += timestampSuffix
+	RtBuildName1 += timestampSuffix
+	RtBuildName2 += timestampSuffix
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
@@ -409,9 +508,8 @@ func ReplaceTemplateVariables(path, destPath string) (string, error) {
 		return "", errorutils.CheckError(err)
 	}
 
-	repos := getRepositoriesNameMap()
-	for repoName, repoValue := range repos {
-		content = bytes.Replace(content, []byte(repoName), []byte(repoValue), -1)
+	for name, value := range getSubstitutionMap() {
+		content = bytes.Replace(content, []byte(name), []byte(value), -1)
 	}
 	if destPath == "" {
 		destPath, err = os.Getwd()
@@ -446,4 +544,38 @@ func ConvertSliceToMap(props []utils.Property) map[string]string {
 		propsMap[item.Key] = item.Value
 	}
 	return propsMap
+}
+
+// Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
+// baseItemNames - The items to delete without timestamp, i.e. [cli-tests-rt1, cli-tests-rt2, ...]
+// getActualItems - Function that returns all actual items in the remote server, i.e. [cli-tests-rt1-1592990748, cli-tests-rt2-1592990748, ...]
+// deleteItem - Function that deletes the item by name
+func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, error), deleteItem func(string)) {
+	actualItems, err := getActualItems()
+	if err != nil {
+		log.Warn("Couldn't retrieve items", err)
+		return
+	}
+	now := time.Now()
+	for _, baseItemName := range baseItemNames {
+		itemPattern := regexp.MustCompile(`^` + baseItemName + `-(\d*)$`)
+		for _, item := range actualItems {
+			regexGroups := itemPattern.FindStringSubmatch(item)
+			if regexGroups == nil {
+				// Item does not match
+				continue
+			}
+
+			repoTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
+			if err != nil {
+				log.Warn("Error while parsing timestamp of ", item, err)
+				continue
+			}
+
+			repoTime := time.Unix(repoTimestamp, 0)
+			if now.Sub(repoTime).Hours() > 24 {
+				deleteItem(item)
+			}
+		}
+	}
 }

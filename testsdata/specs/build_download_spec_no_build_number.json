@@ -33,7 +33,7 @@
         }
       },
       "target": "out/download/aql_by_build/",
-      "build": "cli-test-build2"
+      "build": "${BUILD_NAME2}"
     }
   ]
 }
