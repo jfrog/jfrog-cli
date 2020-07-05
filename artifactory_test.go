@@ -63,11 +63,8 @@ func InitArtifactoryTests() {
 }
 
 func authenticate() string {
-	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
+	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if *tests.RtDistributionUrl != "" {
-		cred += " --dist-url=" + *tests.RtDistributionUrl
-	}
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
@@ -932,7 +929,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase}
+	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -3723,8 +3720,10 @@ func initVcsTestDir(t *testing.T) string {
 
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
-	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--apikey="+*tests.RtApiKey, "--access-token="+*tests.RtAccessToken, "--interactive=false")
+	// Configure server with dummy credentials
+	err := tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user=admin", "--password=password", "--interactive=false", "--enc-password=false")
 	defer deleteServerConfig()
+	assert.NoError(t, err)
 
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
@@ -3773,14 +3772,13 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Write the command output to the origin
 	content := buffer.Bytes()
 	buffer.Reset()
-	previousLog.Output(string(content))
 
 	// Extract the the token from the output
 	token, err := jsonparser.GetString(content, "access_token")
 	assert.NoError(t, err)
 
 	// Try ping with the new token
-	err = artifactoryCli.Exec("ping", "--access-token="+token)
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.RtUrl+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
 
 	// Cleanup

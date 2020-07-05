@@ -116,5 +116,5 @@ func initGradleTest(t *testing.T) {
 	if !*tests.TestGradle {
 		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
 	}
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 }

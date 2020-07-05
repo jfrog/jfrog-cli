@@ -81,7 +81,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	tests.RtUrl = &proxyUrl
 
-	assert.NoError(t, createHomeConfigAndLocalRepo(t))
+	assert.NoError(t, createHomeConfigAndLocalRepo(t, false))
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	pomPath := createMavenProject(t)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenConfig)
@@ -130,13 +130,13 @@ func initMavenTest(t *testing.T, disableConfig bool) {
 		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
 	}
 	if !disableConfig {
-		err := createHomeConfigAndLocalRepo(t)
+		err := createHomeConfigAndLocalRepo(t, true)
 		assert.NoError(t, err)
 	}
 }
 
-func createHomeConfigAndLocalRepo(t *testing.T) (err error) {
-	createJfrogHomeConfig(t)
+func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error) {
+	createJfrogHomeConfig(t, encryptPassword)
 	// To make sure we download the dependencies from  Artifactory, we will run with customize .m2 directory.
 	// The directory wil be deleted on the test cleanup as part as the out dir.
 	localRepoDir, err = ioutil.TempDir(os.Getenv(cliutils.HomeDir), "tmp.m2")

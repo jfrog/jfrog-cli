@@ -64,7 +64,7 @@ type ReceivedResponses struct {
 }
 
 // Send GPG keys to Distribution and Artifactory to allow signing of release bundles
-func SendGpgKeys(artHttpDetails httputils.HttpClientDetails) {
+func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails httputils.HttpClientDetails) {
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
 	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
@@ -78,7 +78,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails) {
 
 	// Send public and private keys to Distribution
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
-	resp, body, err := client.SendPut(*tests.RtDistributionUrl+"api/v1/keys/pgp", []byte(content), artHttpDetails)
+	resp, body, err := client.SendPut(*tests.RtDistributionUrl+"api/v1/keys/pgp", []byte(content), distHttpDetails)
 	cliutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusOK {
 		log.Error(resp.Status)
