@@ -660,17 +660,17 @@ func contentSynchronisationCallBack(iq *utils.InteractiveQuestionnaire, answer s
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for statistic.enable >", false, utils.GetBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for statistic.enable >", false, utils.GetBoolSuggests(), "")
 	//cs.Statistics.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for properties.enable >", false, utils.GetBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for properties.enable >", false, utils.GetBoolSuggests(), "")
 	//cs.Properties.Enabled, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil
 	}
-	answer += "," + utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, utils.GetBoolSuggests())
+	answer += "," + utils.AskFromList("", "Insert the value for source.originAbsenceDetection >", false, utils.GetBoolSuggests(), "")
 	//cs.Source.OriginAbsenceDetection, err = strconv.ParseBool(enabled)
 	if err != nil {
 		return "", nil

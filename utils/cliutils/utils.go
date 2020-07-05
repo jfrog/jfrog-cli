@@ -5,10 +5,10 @@ import (
 	"fmt"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
-	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -227,25 +227,6 @@ func getCiValue() bool {
 	return ci
 }
 
-func InteractiveConfirm(message string, defaultValue bool) bool {
-	var confirm string
-	defStr := "[n]"
-	if defaultValue {
-		defStr = "[y]"
-	}
-	fmt.Print(message + " (y/n) " + defStr + ": ")
-	fmt.Scanln(&confirm)
-	return confirmAnswer(confirm, defaultValue)
-}
-
-func confirmAnswer(answer string, defaultValue bool) bool {
-	answer = strings.ToLower(strings.TrimSpace(answer))
-	if answer == "" {
-		return defaultValue
-	}
-	return answer == "y" || answer == "yes"
-}
-
 func GetVersion() string {
 	return CliVersion
 }
@@ -395,14 +376,45 @@ func GetJfrogBackupDir() (string, error) {
 	return filepath.Join(homeDir, JfrogBackupDirName), nil
 }
 
-func AskYesNo(message string, defaultStr string, label string) (bool, error) {
-	question := &prompt.YesNo{
-		Msg:     message,
-		Default: defaultStr,
-		Label:   label,
+// Ask a yes or no question, with a default answer.
+func AskYesNo(promptPrefix string, defaultValue bool) bool {
+	defStr := "[n]"
+	if defaultValue {
+		defStr = "[y]"
 	}
-	if err := question.Read(); err != nil {
-		return false, errorutils.CheckError(err)
+	promptPrefix += " (y/n) " + defStr + "? "
+	var answer string
+	for {
+		fmt.Print(promptPrefix)
+		_, _ = fmt.Scanln(&answer)
+		parsed, valid := parseYesNo(answer, defaultValue)
+		if valid {
+			return parsed
+		}
+		fmt.Println("Please enter a valid option.")
 	}
-	return question.Result.GetBool(label), nil
+}
+
+func parseYesNo(s string, def bool) (ans, valid bool) {
+	if s == "" {
+		return def, true
+	}
+	matchedYes, err := regexp.MatchString("^yes$|^y$", strings.ToLower(s))
+	if errorutils.CheckError(err) != nil {
+		log.Error(err)
+		return matchedYes, false
+	}
+	if matchedYes {
+		return true, true
+	}
+
+	matchedNo, err := regexp.MatchString("^no$|^n$", strings.ToLower(s))
+	if errorutils.CheckError(err) != nil {
+		log.Error(err)
+		return matchedNo, false
+	}
+	if matchedNo {
+		return false, true
+	}
+	return false, false
 }

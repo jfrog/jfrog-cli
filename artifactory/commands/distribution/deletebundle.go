@@ -103,7 +103,7 @@ func (db *DeleteReleaseBundleCommand) distributionRulesEmpty() bool {
 func (db *DeleteReleaseBundleCommand) confirmDelete(distributionRulesEmpty bool) (bool, error) {
 	message := fmt.Sprintf("Are you sure you want to delete the release bundle \"%s\"/\"%s\" ", db.deleteBundlesParams.Name, db.deleteBundlesParams.Version)
 	if distributionRulesEmpty && db.deleteBundlesParams.DeleteFromDistribution {
-		return cliutils.InteractiveConfirm(message+"locally from distribution?\n"+
+		return cliutils.AskYesNo(message+"locally from distribution?\n"+
 			"You can avoid this confirmation message by adding --quiet to the command.", false), nil
 	}
 
@@ -124,6 +124,6 @@ func (db *DeleteReleaseBundleCommand) confirmDelete(distributionRulesEmpty bool)
 	if db.deleteBundlesParams.DeleteFromDistribution {
 		fmt.Println("This command will also delete the release bundle locally from distribution.")
 	}
-	return cliutils.InteractiveConfirm(message+"with the above distribution rules?\n"+
+	return cliutils.AskYesNo(message+"with the above distribution rules?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false), nil
 }

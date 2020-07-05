@@ -15,7 +15,7 @@ func ConfirmDelete(pathsToDelete []rtclientutils.ResultItem) bool {
 	for _, v := range pathsToDelete {
 		fmt.Println("  " + v.GetItemRelativePath())
 	}
-	return cliutils.InteractiveConfirm("Are you sure you want to delete the above paths?", false)
+	return cliutils.AskYesNo("Are you sure you want to delete the above paths?", false)
 }
 
 func CreateDeleteServiceManager(artDetails *config.ArtifactoryDetails, threads int, dryRun bool) (*artifactory.ArtifactoryServicesManager, error) {

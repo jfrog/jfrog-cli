@@ -212,7 +212,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
 		"You can also configure these parameters later using the 'jfrog mc c' command.\n"+
 		"Configure now?", cliutils.OfferConfig)
-	confirmed := cliutils.InteractiveConfirm(msg, false)
+	confirmed := cliutils.AskYesNo(msg, false)
 	if !confirmed {
 		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil
