@@ -225,7 +225,7 @@ Flags:
 | `-bt.key` | [Mandatory if not configured] Bintray API key. |
 | `-bt.org` | [Optional] Bintray organization. If not configured, *-bt.user* is used as the organization name. |
 
-* Running the tests will create a repository `cli-tests-bintray-<timestamp>` in bintray.<br/>
+* Running the tests will create a repository named `cli-tests-bintray-<timestamp>` in bintray.<br/>
   Once the tests are completed, the repository will be deleted.
 
 ### Distribution tests

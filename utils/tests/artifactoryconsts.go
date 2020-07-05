@@ -124,7 +124,7 @@ var (
 	RtRepo1          = "cli-tests-rt1"
 	RtRepo2          = "cli-tests-rt2"
 	RtVirtualRepo    = "cli-tests-rt-virtual"
-	// These are not an actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
+	// These are not actual repositories. These patterns are meant to be used in both Repo1 and Repo2.
 	RtRepo1And2            = "cli-tests-rt*"
 	RtRepo1And2Placeholder = "cli-tests-rt(*)"
 
