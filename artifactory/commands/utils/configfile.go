@@ -171,7 +171,7 @@ func (configFile *ConfigFile) VerifyConfigFile(configFilePath string) error {
 		if !configFile.Interactive {
 			return nil
 		}
-		override, err := askYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
+		override, err := cliutils.AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
 		if err != nil {
 			return err
 		}
@@ -247,11 +247,11 @@ func (configFile *ConfigFile) configGradle(c *cli.Context) error {
 
 func (configFile *ConfigFile) readGradleGlobalConfig(c *cli.Context) error {
 	var err error
-	configFile.UsePlugin, err = askYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
+	configFile.UsePlugin, err = cliutils.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
 	if err != nil {
 		return err
 	}
-	configFile.UseWrapper, err = askYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
+	configFile.UseWrapper, err = cliutils.AskYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
 	return err
 }
 
@@ -311,12 +311,12 @@ func (configFile *ConfigFile) setRepo(repo *string, message string, serverId str
 
 func (configFile *ConfigFile) setMavenIvyDescriptors(c *cli.Context) error {
 	var err error
-	configFile.Deployer.DeployMavenDesc, err = askYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
+	configFile.Deployer.DeployMavenDesc, err = cliutils.AskYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
 	if err != nil {
 		return err
 	}
 
-	configFile.Deployer.DeployIvyDesc, err = askYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
+	configFile.Deployer.DeployIvyDesc, err = cliutils.AskYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
 	if err != nil {
 		return err
 	}
@@ -379,7 +379,7 @@ func readArtifactoryServer(useArtifactoryQuestion string) (string, error) {
 
 	// Ask whether to use artifactory
 	if useArtifactoryQuestion != "" {
-		useArtifactory, err := askYesNo(useArtifactoryQuestion, "y", "useArtifactory")
+		useArtifactory, err := cliutils.AskYesNo(useArtifactoryQuestion, "y", "useArtifactory")
 		if err != nil || !useArtifactory {
 			return "", err
 		}
@@ -439,18 +439,6 @@ func getRepositories(serverId string, repoTypes ...utils.RepoType) ([]string, er
 	}
 
 	return utils.GetRepositories(artAuth, repoTypes...)
-}
-
-func askYesNo(message string, defaultStr string, label string) (bool, error) {
-	question := &prompt.YesNo{
-		Msg:     message,
-		Default: defaultStr,
-		Label:   label,
-	}
-	if err := question.Read(); err != nil {
-		return false, errorutils.CheckError(err)
-	}
-	return question.Result.GetBool(label), nil
 }
 
 func askString(message string, defaultStr string, label string) (string, error) {

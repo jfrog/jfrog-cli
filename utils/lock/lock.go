@@ -54,7 +54,7 @@ func (lock *Lock) CreateNewLockFile() error {
 }
 
 func CreateLockDir() (string, error) {
-	return cliutils.CreateDirInJfrogHome("lock")
+	return cliutils.CreateDirInJfrogHome(cliutils.JfrogLockDirName)
 }
 
 func (lock *Lock) CreateFile(folderName string, pid int) error {

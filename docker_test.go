@@ -107,6 +107,12 @@ func TestDockerPull(t *testing.T) {
 	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
 }
 
+func dockerTestCleanup(imageName, buildName string) {
+	// Remove build from Artifactory
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+}
+
 func TestDockerClientApiVersionCmd(t *testing.T) {
 	initDockerTest(t)
 
@@ -135,7 +141,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	// Validate
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.DockerBuildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.DockerBuildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
 
 	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
@@ -149,6 +155,6 @@ func validateDockerBuild(buildName, buildNumber, imagePath, module string, expec
 	assert.NoError(t, searchCmd.Search())
 	assert.Len(t, searchCmd.SearchResult(), expectedItemsInArtifactory, "Docker build info was not pushed correctly")
 
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 }

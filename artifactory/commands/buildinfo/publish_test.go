@@ -3,12 +3,15 @@ package buildinfo
 import (
 	"reflect"
 	"testing"
+
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 )
 
 var envVars = map[string]string{"KeY": "key_val", "INClUdEd_VaR": "included_var", "EXCLUDED_pASSwoRd_var": "excluded_var"}
 
 func TestIncludeAllPattern(t *testing.T) {
-	includeFilter := createIncludeFilter("*")
+	conf := buildinfo.Configuration{EnvInclude: "*"}
+	includeFilter := conf.IncludeFilter()
 	filteredKeys, err := includeFilter(envVars)
 	if err != nil {
 		t.Error(err)
@@ -21,7 +24,8 @@ func TestIncludeAllPattern(t *testing.T) {
 }
 
 func TestIncludePartial(t *testing.T) {
-	includeFilter := createIncludeFilter("*ED_V*;EXC*SwoRd_var")
+	conf := buildinfo.Configuration{EnvInclude: "*ED_V*;EXC*SwoRd_var"}
+	includeFilter := conf.IncludeFilter()
 	filteredKeys, err := includeFilter(envVars)
 	if err != nil {
 		t.Error(err)
@@ -35,7 +39,8 @@ func TestIncludePartial(t *testing.T) {
 }
 
 func TestIncludePartialIgnoreCase(t *testing.T) {
-	includeFilter := createIncludeFilter("*Ed_v*")
+	conf := buildinfo.Configuration{EnvInclude: "*Ed_v*"}
+	includeFilter := conf.IncludeFilter()
 	filteredKeys, err := includeFilter(envVars)
 	if err != nil {
 		t.Error(err)
@@ -49,7 +54,8 @@ func TestIncludePartialIgnoreCase(t *testing.T) {
 }
 
 func TestExcludePasswordsPattern(t *testing.T) {
-	excludeFilter := createExcludeFilter("*paSSword*;*PsW*;*seCrEt*;*kEy*;*token*")
+	conf := buildinfo.Configuration{EnvExclude: "*paSSword*;*PsW*;*seCrEt*;*kEy*;*token*"}
+	excludeFilter := conf.ExcludeFilter()
 	filteredKeys, err := excludeFilter(envVars)
 	if err != nil {
 		t.Error(err)

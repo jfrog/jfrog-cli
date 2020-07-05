@@ -63,7 +63,7 @@ func (uc *UploadCommand) upload() error {
 	syncDeletesProp := ""
 	if !uc.DryRun() && uc.SyncDeletesPath() != "" {
 		if !uc.Quiet() && !cliutils.InteractiveConfirm("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
-			"You can avoid this confirmation message by adding --quiet to the command.") {
+			"You can avoid this confirmation message by adding --quiet to the command.", false) {
 			return nil
 		}
 		timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)

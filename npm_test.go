@@ -227,7 +227,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json-9.0.6.tgz", scopes: []string{"development"}})
 	}
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
 		assert.Fail(t, "npm install test with the arguments: \n%v \nexpected to have module with the following dependencies: \n%v \nbut has no modules: \n%v",
@@ -253,7 +253,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules")
 
 	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
@@ -283,7 +283,7 @@ func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
 	expectedArtifactName := "jfrog-cli-tests-1.0.0.tgz"
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created

@@ -31,7 +31,7 @@ func TestGoBuildInfo(t *testing.T) {
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -47,7 +47,7 @@ func TestGoBuildInfo(t *testing.T) {
 
 	artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
 	module := "github.com/jfrog/dependency"
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
 	artifactoryVersion, err := artAuth.GetVersion()
 	assert.NoError(t, err)
 
@@ -75,7 +75,7 @@ func TestGoBuildInfo(t *testing.T) {
 	cleanGoCache(t)
 
 	artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
-	buildInfo = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
 
 	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
@@ -154,7 +154,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	assert.NoError(t, artifactoryGoCli.Exec(args...))
 	cleanGoCache(t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	if module == "" {
 		module = "github.com/jfrog/dependency"
 	}
@@ -176,7 +176,7 @@ func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
 	project1Path := createGoProject(t, "project1", copyDirs)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs)
+	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
 	if configDestDir == "" {
 		configDestDir = filepath.Join(project1Path, ".jfrog")
@@ -263,7 +263,7 @@ func TestGoRecursivePublish(t *testing.T) {
 
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	project1Path := createGoProject(t, "dependency", false)
 	projectMissingDependency := createGoProject(t, "projectmissingdependency", false)
 	projectBuild := createGoProject(t, "projectbuild", false)
@@ -316,7 +316,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	project1Path := createGoProject(t, "project1", false)
 	testsdataTarget := filepath.Join(tests.Out, "testsdata")
 	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true))
+	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -376,7 +376,7 @@ func cleanGoCache(t *testing.T) {
 func createGoProject(t *testing.T, projectName string, includeDirs bool) string {
 	projectSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName)
 	projectTarget := filepath.Join(tests.Out, projectName)
-	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs)
+	err := fileutils.CopyDir(projectSrc, projectTarget, includeDirs, nil)
 	assert.NoError(t, err)
 	projectTarget, err = filepath.Abs(projectTarget)
 	assert.NoError(t, err)

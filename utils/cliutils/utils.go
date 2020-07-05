@@ -5,6 +5,7 @@ import (
 	"fmt"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
+	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"os"
 	"path"
 	"path/filepath"
@@ -130,7 +131,9 @@ type detailedSummaryRecord struct {
 // In case of a nil error, the current function error will be returned.
 func summaryPrintError(summaryError, originalError error) error {
 	if originalError != nil {
-		log.Error(summaryError)
+		if summaryError != nil {
+			log.Error(summaryError)
+		}
 		return originalError
 	}
 	return summaryError
@@ -224,15 +227,22 @@ func getCiValue() bool {
 	return ci
 }
 
-func InteractiveConfirm(message string) bool {
+func InteractiveConfirm(message string, defaultValue bool) bool {
 	var confirm string
-	fmt.Print(message + " (y/n): ")
+	defStr := "[n]"
+	if defaultValue {
+		defStr = "[y]"
+	}
+	fmt.Print(message + " (y/n) " + defStr + ": ")
 	fmt.Scanln(&confirm)
-	return confirmAnswer(confirm)
+	return confirmAnswer(confirm, defaultValue)
 }
 
-func confirmAnswer(answer string) bool {
-	answer = strings.ToLower(answer)
+func confirmAnswer(answer string, defaultValue bool) bool {
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	if answer == "" {
+		return defaultValue
+	}
 	return answer == "y" || answer == "yes"
 }
 
@@ -383,4 +393,16 @@ func GetJfrogBackupDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(homeDir, JfrogBackupDirName), nil
+}
+
+func AskYesNo(message string, defaultStr string, label string) (bool, error) {
+	question := &prompt.YesNo{
+		Msg:     message,
+		Default: defaultStr,
+		Label:   label,
+	}
+	if err := question.Read(); err != nil {
+		return false, errorutils.CheckError(err)
+	}
+	return question.Result.GetBool(label), nil
 }
