@@ -1104,7 +1104,7 @@ func TestArtifactorySetProperties(t *testing.T) {
 
 func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 	initArtifactoryTest(t)
-	targetPath := path.Join(tests.Repo1, "a$+~&^a#")
+	targetPath := path.Join(tests.RtRepo1, "a$+~&^a#")
 	// Upload a file with special chars.
 	artifactoryCli.Exec("upload", "testsdata/a/a1.in", targetPath)
 	// Set the 'prop=red' property to the file.
@@ -3881,7 +3881,7 @@ func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken
 }
 
 func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, serverId string, source string, expectedResults int) {
-	err := cli.Exec("upload", source, tests.Repo1, "--server-id="+serverId)
+	err := cli.Exec("upload", source, tests.RtRepo1, "--server-id="+serverId)
 	assert.NoError(t, err)
-	assert.Len(t, searchItemsInArtifactory(t), expectedResults)
+	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
 }
