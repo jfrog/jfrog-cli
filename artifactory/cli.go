@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -840,6 +841,19 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargetCreateCmd(c)
+			},
+		},
+		{
+			Name:         "permission-target-update",
+			Aliases:      []string{"ptu"},
+			Flags:        getTemplateUsersFlags(),
+			Usage:        permissiontargetupdate.Description,
+			HelpName:     common.CreateUsage("rt ptu", permissiontargetupdate.Description, permissiontargetupdate.Usage),
+			UsageText:    permissiontargetupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return permissionTargetUpdateCmd(c)
 			},
 		},
 		{
@@ -2599,6 +2613,26 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
 	permissionTargetCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
 	return commands.Exec(permissionTargetCreateCmd)
+}
+
+func permissionTargetUpdateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	permissionTargetUpdateCmd := permissiontarget.NewPermissionTargetUpdateCommand()
+	permissionTargetUpdateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(permissionTargetUpdateCmd)
 }
 
 func permissionTargetDeleteCmd(c *cli.Context) error {

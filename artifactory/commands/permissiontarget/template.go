@@ -18,11 +18,11 @@ type PermissionTargetTemplateCommand struct {
 const (
 	// Strings for prompt questions
 	SelectPermissionTargetSectionMsg = "Select the permission target section to configure" + utils.PressTabMsg
-	LeaveEmptyForDefault             = " (press enter for default) >"
+	LeaveEmptyForDefault             = "(press enter for default) >"
 
 	// Yes,No answers
-	Yes = "Yes"
-	No  = "No"
+	Yes = "yes"
+	No  = "no"
 
 	// Main permission target configuration JSON keys
 	Name          = "name"
@@ -30,7 +30,8 @@ const (
 	Build         = "build"
 	ReleaseBundle = "releaseBundle"
 
-	BuildInfoRepo = "artifactory-build-info"
+	IncludePatternsDefault = "**"
+	ExcludePatternsDefault = ""
 )
 
 func NewPermissionTargetTemplateCommand() *PermissionTargetTemplateCommand {
@@ -155,12 +156,12 @@ var reposQuestionInfo = utils.QuestionInfo{
 
 var includePatternsQuestionInfo = utils.QuestionInfo{
 	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for include-patterns" + LeaveEmptyForDefault,
+	PromptPrefix: "Insert value for include-patterns [\"" + IncludePatternsDefault + "\"] " + LeaveEmptyForDefault,
 }
 
 var excludePatternsQuestionInfo = utils.QuestionInfo{
 	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for exclude-patterns" + LeaveEmptyForDefault,
+	PromptPrefix: "Insert value for exclude-patterns [\"" + ExcludePatternsDefault + "\"] " + LeaveEmptyForDefault,
 }
 
 var configureActionsQuestionInfo = utils.QuestionInfo{

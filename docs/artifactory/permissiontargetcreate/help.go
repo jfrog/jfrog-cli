@@ -1,6 +1,6 @@
 package permissiontargetcreate
 
-const Description = "Create a new permission target in the JFrog Unified Platform or replace an existing permission target."
+const Description = "Create a new permission target in the JFrog Unified Platform."
 
 var Usage = []string{`jfrog rt ptc <template path>`}
 
