@@ -396,6 +396,7 @@ func AskYesNo(promptPrefix string, defaultValue bool) bool {
 }
 
 func parseYesNo(s string, def bool) (ans, valid bool) {
+	s = strings.TrimSpace(s)
 	if s == "" {
 		return def, true
 	}
