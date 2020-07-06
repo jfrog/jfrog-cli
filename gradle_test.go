@@ -80,7 +80,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 }
 
 func TestGradleBuildWithCredentials(t *testing.T) {
-	if *tests.RtUser == "" || *tests.RtPassword == "" {
+	if *tests.RtAccessToken != "" {
 		t.SkipNow()
 	}
 

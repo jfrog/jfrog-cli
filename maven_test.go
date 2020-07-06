@@ -63,7 +63,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 }
 
 func TestMavenBuildWithCredentials(t *testing.T) {
-	if *tests.RtUser == "" || *tests.RtPassword == "" {
+	if *tests.RtAccessToken != "" {
 		t.SkipNow()
 	}
 	initMavenTest(t, false)
