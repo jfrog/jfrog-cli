@@ -3745,7 +3745,6 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
-	result[0].Password = ""
 	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
 
 	// Delete replication
