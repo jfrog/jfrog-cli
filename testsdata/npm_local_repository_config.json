@@ -1,5 +1,5 @@
 {
-  "key": "${NPM_LOCAL_REPO}",
+  "key": "${NPM_REPO}",
   "packageType": "npm",
   "repoLayoutRef": "npm-default",
   "enableNpmSupport": true,

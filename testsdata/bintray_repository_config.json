@@ -1,5 +1,5 @@
 {
-  "name": "jfrog-cli-tests-repo1",
+  "name": "${BINTRAY_REPO}",
   "type": "generic",
   "desc": "Testing repository for Jfrog Cli",
   "gpg_sign_metadata": false,

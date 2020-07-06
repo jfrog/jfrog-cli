@@ -1,15 +1,17 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
@@ -21,6 +23,15 @@ const localRepoSystemProperty = "-Dmaven.repo.local="
 
 var localRepoDir string
 
+func cleanMavenTest() {
+	os.Unsetenv(cliutils.HomeDir)
+	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	deleteSpec = spec.NewBuilder().Pattern(tests.MvnRepo2).BuildSpec()
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.CleanFileSystem()
+}
+
 func TestMavenBuildWithServerID(t *testing.T) {
 	initMavenTest(t, false)
 
@@ -29,7 +40,7 @@ func TestMavenBuildWithServerID(t *testing.T) {
 	configFilePath, err := tests.ReplaceTemplateVariables(configFilePath, "")
 	assert.NoError(t, err)
 	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanBuildToolsTest()
+	cleanMavenTest()
 }
 
 func TestNativeMavenBuildWithServerID(t *testing.T) {
@@ -45,10 +56,10 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	err := os.Chdir(oldHomeDir)
 	assert.NoError(t, err)
 	// Validate
-	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
-	cleanBuildToolsTest()
+	cleanMavenTest()
 }
 
 func TestMavenBuildWithCredentials(t *testing.T) {
@@ -62,7 +73,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 	assert.NoError(t, err)
 
 	runAndValidateMaven(pomPath, configFilePath, t)
-	cleanBuildToolsTest()
+	cleanMavenTest()
 }
 
 func TestInsecureTlsMavenBuild(t *testing.T) {
@@ -101,18 +112,18 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate Successful deployment
-	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)
 
 	tests.RtUrl = oldRtUrl
-	cleanBuildToolsTest()
+	cleanMavenTest()
 }
 
 func runAndValidateMaven(pomPath, configFilePath string, t *testing.T) {
 	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
 	runCliWithLegacyBuildtoolsCmd(t, "mvn", "clean install -f "+pomPath+" "+repoLocalSystemProp, configFilePath)
-	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
+	searchSpec, err := tests.CreateSpec(tests.SearchAllMaven)
 	assert.NoError(t, err)
 
 	verifyExistInArtifactory(tests.GetMavenDeployedArtifacts(), searchSpec, t)

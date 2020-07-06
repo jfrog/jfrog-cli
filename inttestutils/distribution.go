@@ -2,6 +2,7 @@ package inttestutils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/buger/jsonparser"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/httpclient"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
@@ -97,25 +102,9 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	}
 }
 
-// Delete GPG key from Artifactory to clean up the test environment
-func DeleteGpgKeys(artHttpDetails httputils.HttpClientDetails) {
-	// Create http client
-	client, err := httpclient.ClientBuilder().Build()
-	cliutils.ExitOnErr(err)
-
-	// Delete public key from Artifactory
-	resp, body, err := client.SendDelete(*tests.RtUrl+"api/security/keys/trusted/"+gpgKeyId, nil, artHttpDetails)
-	cliutils.ExitOnErr(err)
-	if resp.StatusCode != http.StatusNoContent {
-		log.Error(resp.Status)
-		log.Error(string(body))
-		os.Exit(1)
-	}
-}
-
 // Get a local release bundle
-func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) *distributableResponse {
-	resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) *distributableResponse {
+	resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
 	if resp.StatusCode != http.StatusOK {
 		t.Error(resp.Status)
 		t.Error(string(body))
@@ -131,9 +120,9 @@ func GetLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetai
 }
 
 // Return true if the release bundle exists locally on distribution
-func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, artHttpDetails httputils.HttpClientDetails) {
+func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, expectExist bool, distHttpDetails httputils.HttpClientDetails) {
 	for i := 0; i < 120; i++ {
-		resp, body := getLocalBundle(t, bundleName, bundleVersion, artHttpDetails)
+		resp, body := getLocalBundle(t, bundleName, bundleVersion, distHttpDetails)
 		switch resp.StatusCode {
 		case http.StatusOK:
 			if expectExist {
@@ -155,12 +144,12 @@ func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, 
 }
 
 // Wait for distribution of a release bundle
-func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
 	for i := 0; i < 120; i++ {
-		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
+		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails)
 		assert.NoError(t, err)
 		if resp.StatusCode != http.StatusOK {
 			t.Error(resp.Status)
@@ -194,12 +183,12 @@ func WaitForDistribution(t *testing.T, bundleName, bundleVersion string, artHttp
 }
 
 // Wait for deletion of a release bundle
-func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) {
+func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
 	for i := 0; i < 120; i++ {
-		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, artHttpDetails)
+		resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion+"/distribution", true, distHttpDetails)
 		assert.NoError(t, err)
 		if resp.StatusCode == http.StatusNotFound {
 			return
@@ -215,11 +204,66 @@ func WaitForDeletion(t *testing.T, bundleName, bundleVersion string, artHttpDeta
 	t.Error("Timeout for release bundle deletion " + bundleName + "/" + bundleVersion)
 }
 
-func getLocalBundle(t *testing.T, bundleName, bundleVersion string, artHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
+func getLocalBundle(t *testing.T, bundleName, bundleVersion string, distHttpDetails httputils.HttpClientDetails) (*http.Response, []byte) {
 	client, err := httpclient.ClientBuilder().Build()
 	assert.NoError(t, err)
 
-	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, artHttpDetails)
+	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle/"+bundleName+"/"+bundleVersion, true, distHttpDetails)
 	assert.NoError(t, err)
 	return resp, body
+}
+
+func CleanUpOldBundles(distHttpDetails httputils.HttpClientDetails, bundleVersion string, distributionCli *tests.JfrogCli) {
+	getActualItems := func() ([]string, error) { return ListAllBundlesNames(distHttpDetails) }
+	deleteItem := func(bundleName string) {
+		distributionCli.Exec("rbdel", bundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
+		log.Info("Bundle", bundleName, "deleted.")
+	}
+	tests.CleanUpOldItems([]string{tests.BundleName}, getActualItems, deleteItem)
+}
+
+func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string, error) {
+	var bundlesNames []string
+
+	// Build http client
+	client, err := httpclient.ClientBuilder().Build()
+	if err != nil {
+		return nil, err
+	}
+
+	// Send get request
+	resp, body, _, err := client.SendGet(*tests.RtDistributionUrl+"api/v1/release_bundle", true, distHttpDetails)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	}
+
+	// Extract release bundle names from the json response
+	var keyError error
+	_, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if err != nil || keyError != nil {
+			return
+		}
+		bundleName, err := jsonparser.GetString(value, "name")
+		if err != nil {
+			keyError = err
+			return
+		}
+		bundlesNames = append(bundlesNames, bundleName)
+	})
+	if keyError != nil {
+		return nil, err
+	}
+
+	return bundlesNames, err
+}
+
+// Clean up 'cli-tests-dist1-<timestamp>' and 'cli-tests-dist2-<timestamp>' after running a distribution test
+func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ArtifactoryDetails) {
+	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
+	tests.DeleteFiles(deleteSpec, distributionDetails)
+	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
+	tests.DeleteFiles(deleteSpec, distributionDetails)
 }

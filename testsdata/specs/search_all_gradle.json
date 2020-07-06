@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "${GRADLE_REPO}/*"
+    }
+  ]
+}

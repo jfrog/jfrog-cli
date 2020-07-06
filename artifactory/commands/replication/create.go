@@ -86,8 +86,13 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 		return
 	}
 	servicesManager, err := rtUtils.CreateServiceManager(rcc.rtDetails, false)
+	if err != nil {
+		return err
+	}
 	if serverId != "" {
-		updateArtifactoryInfo(&params, serverId)
+		if err = updateArtifactoryInfo(&params, serverId); err != nil {
+			return err
+		}
 	}
 	return servicesManager.CreateReplication(params)
 }

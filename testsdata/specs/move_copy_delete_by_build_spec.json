@@ -5,7 +5,7 @@
       "target": "${REPO2}/",
       "flat": "false",
       "recursive": "true",
-      "build": "cli-test-build/10"
+      "build": "${BUILD_NAME1}/10"
     }
   ]
 }

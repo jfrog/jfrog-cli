@@ -2,17 +2,18 @@ package main
 
 import (
 	"encoding/xml"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
 	dotnetutils "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"testing"
 
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -65,7 +66,7 @@ func TestNativeNugetResolve(t *testing.T) {
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
-	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NugetBuildName, utils.Nuget)
+	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, utils.Nuget)
 }
 
 func TestDotnetResolve(t *testing.T) {
@@ -115,7 +116,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, tests.NugetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
 
 	cleanBuildToolsTest()
 }
