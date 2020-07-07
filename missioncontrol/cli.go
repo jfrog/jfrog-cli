@@ -23,7 +23,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "config",
-			Flags:        getConfigFlags(),
+			Flags:        cliutils.GetCommandFlags("mc-config"),
 			Usage:        configdocs.Description,
 			HelpName:     common.CreateUsage("mc config", configdocs.Description, configdocs.Usage),
 			UsageText:    configdocs.Arguments,
@@ -36,7 +36,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-acquire",
-			Flags:        getMcAuthenticationFlags(),
+			Flags:        cliutils.GetCommandFlags("license-acquire"),
 			Usage:        licenseacquire.Description,
 			HelpName:     common.CreateUsage("mc license-acquire", licenseacquire.Description, licenseacquire.Usage),
 			UsageText:    licenseacquire.Arguments,
@@ -49,7 +49,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-deploy",
-			Flags:        getLicenseDeployFlags(),
+			Flags:        cliutils.GetCommandFlags("license-deploy"),
 			Usage:        licensedeploy.Description,
 			HelpName:     common.CreateUsage("mc license-deploy", licensedeploy.Description, licensedeploy.Usage),
 			UsageText:    licensedeploy.Arguments,
@@ -62,7 +62,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-release",
-			Flags:        getMcAuthenticationFlags(),
+			Flags:        cliutils.GetCommandFlags("license-release"),
 			Usage:        licenserelease.Description,
 			HelpName:     common.CreateUsage("mc license-release", licenserelease.Description, licenserelease.Usage),
 			UsageText:    licenserelease.Arguments,
@@ -75,7 +75,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "jpd-add",
-			Flags:        getMcAuthenticationFlags(),
+			Flags:        cliutils.GetCommandFlags("jpd-add"),
 			Usage:        jpdadd.Description,
 			HelpName:     common.CreateUsage("mc jpd-add", jpdadd.Description, jpdadd.Usage),
 			UsageText:    jpdadd.Arguments,
@@ -88,7 +88,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "jpd-delete",
-			Flags:        getMcAuthenticationFlags(),
+			Flags:        cliutils.GetCommandFlags("jpd-delete"),
 			Usage:        jpddelete.Description,
 			HelpName:     common.CreateUsage("mc jpd-delete", jpddelete.Description, jpddelete.Usage),
 			UsageText:    jpddelete.Arguments,
@@ -100,39 +100,6 @@ func GetCommands() []cli.Command {
 			},
 		},
 	}
-}
-
-func getMcAuthenticationFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:  "url",
-			Usage: "[Optional] Mission Control URL.` `",
-		},
-		cli.StringFlag{
-			Name:  "access-token",
-			Usage: "[Optional] Mission Control Admin token.` `",
-		},
-	}
-}
-
-func getLicenseDeployFlags() []cli.Flag {
-	return append(getMcAuthenticationFlags(), []cli.Flag{
-		cli.StringFlag{
-			Name:  "license-count",
-			Value: "",
-			Usage: "[Default: " + strconv.Itoa(commands.DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
-		},
-	}...)
-}
-
-func getConfigFlags() []cli.Flag {
-	flags := []cli.Flag{
-		cli.BoolTFlag{
-			Name:  "interactive",
-			Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the other command options become optional.",
-		},
-	}
-	return append(flags, getMcAuthenticationFlags()...)
 }
 
 func jpdAdd(c *cli.Context) error {
@@ -252,14 +219,14 @@ func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlag
 	if err != nil {
 		return
 	}
-	flags.LicenseCount = commands.DefaultLicenseCount
+	flags.LicenseCount = cliutils.DefaultLicenseCount
 	if c.String("license-count") != "" {
 		flags.LicenseCount, err = strconv.Atoi(c.String("license-count"))
 		if err != nil {
 			return nil, cliutils.PrintHelpAndReturnError("The '--license-count' option must have a numeric value. ", c)
 		}
 		if flags.LicenseCount < 1 {
-			return nil, cliutils.PrintHelpAndReturnError("The --license-count option must be at least "+strconv.Itoa(commands.DefaultLicenseCount), c)
+			return nil, cliutils.PrintHelpAndReturnError("The --license-count option must be at least "+strconv.Itoa(cliutils.DefaultLicenseCount), c)
 		}
 	}
 	return

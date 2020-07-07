@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
 	distUrl     = "dist-url"
@@ -259,9 +260,31 @@ const (
 	expiry      = "expiry"
 	refreshable = "refreshable"
 	audience    = "audience"
+
+	// *** Xray Commands' flags ***
+	// Uniqe offline-update flags
+	licenseId = "license-id"
+	from      = "from"
+	to        = "to"
+	version   = "version"
+	target    = "target"
+
+	// *** Mission Control Commands' flags ***
+	missionControlPrefix = "mc-"
+
+	// Authentication flags
+	mcUrl         = missionControlPrefix + url
+	mcAccessToken = missionControlPrefix + accessToken
+
+	// Unique config flags
+	mcInteractive = missionControlPrefix + interactive
+
+	// Unique license-deploy flags
+	licenseCount = "license-count"
 )
 
 var flagsMap = map[string]cli.Flag{
+	// Artifactory's commands Flags
 	url: cli.StringFlag{
 		Name:  url,
 		Usage: "[Optional] Artifactory URL.` `",
@@ -908,6 +931,45 @@ var flagsMap = map[string]cli.Flag{
 		Name:  audience,
 		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 	},
+	// Xray's commands Flags
+	licenseId: cli.StringFlag{
+		Name:  licenseId,
+		Usage: "[Mandatory] Xray license ID` `",
+	},
+	from: cli.StringFlag{
+		Name:  from,
+		Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
+	},
+	to: cli.StringFlag{
+		Name:  to,
+		Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
+	},
+	version: cli.StringFlag{
+		Name:  version,
+		Usage: "[Optional] Xray API version.` `",
+	},
+	target: cli.StringFlag{
+		Name:  target,
+		Usage: "[Default: ./] Path for downloaded update files.` `",
+	},
+	// Mission Control's commands Flags
+	mcUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] Mission Control URL.` `",
+	},
+	mcAccessToken: cli.StringFlag{
+		Name:  accessToken,
+		Usage: "[Optional] Mission Control Admin token.` `",
+	},
+	mcInteractive: cli.BoolTFlag{
+		Name:  interactive,
+		Usage: "[Default: true] Set to false if you do not want the config command to be interactive. If true, the other command options become optional.",
+	},
+	licenseCount: cli.StringFlag{
+		Name:  licenseCount,
+		Value: "",
+		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1091,6 +1153,29 @@ var commandFlags = map[string][]string{
 	"access-token-create": {
 		url, distUrl, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
+	},
+	// Xray's commands
+	"offline-update": {
+		licenseId, from, to, version, target,
+	},
+	// Mission Control's commands
+	"mc-config": {
+		mcUrl, mcAccessToken, mcInteractive,
+	},
+	"license-acquire": {
+		mcUrl, mcAccessToken,
+	},
+	"license-deploy": {
+		mcUrl, mcAccessToken, licenseCount,
+	},
+	"license-release": {
+		mcUrl, mcAccessToken,
+	},
+	"jpd-add": {
+		mcUrl, mcAccessToken,
+	},
+	"jpd-delete": {
+		mcUrl, mcAccessToken,
 	},
 }
 

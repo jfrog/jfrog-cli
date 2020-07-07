@@ -23,6 +23,7 @@ const (
 	TokenRefreshDisabled        = 0
 	TokenRefreshDefaultInterval = 60
 	TokenExpiry                 = 3600
+	DefaultLicenseCount         = 1
 
 	// Home Dir
 	JfrogCertsDirName        = "certs"

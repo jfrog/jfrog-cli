@@ -5,6 +5,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/xray/commands"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
@@ -19,35 +20,10 @@ func GetCommands() []cli.Command {
 			Usage:        offlineupdate.Description,
 			HelpName:     common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
-			Flags:        offlineUpdateFlags(),
+			Flags:        cliutils.GetCommandFlags("offline-update"),
 			Aliases:      []string{"ou"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,
-		},
-	}
-}
-
-func offlineUpdateFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:  "license-id",
-			Usage: "[Mandatory] Xray license ID` `",
-		},
-		cli.StringFlag{
-			Name:  "from",
-			Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
-		},
-		cli.StringFlag{
-			Name:  "to",
-			Usage: "[Optional] To update date in YYYY-MM-DD format.` `",
-		},
-		cli.StringFlag{
-			Name:  "version",
-			Usage: "[Optional] Xray API version.` `",
-		},
-		cli.StringFlag{
-			Name:  "target",
-			Usage: "[Default: ./] Path for downloaded update files.` `",
 		},
 	}
 }
