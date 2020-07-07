@@ -316,7 +316,7 @@ func initNpmTest(t *testing.T) {
 	if !*tests.TestNpm {
 		t.Skip("Skipping Npm test. To run Npm test add the '-test.npm=true' option.")
 	}
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 }
 
 func runNpm(t *testing.T, args ...string) {

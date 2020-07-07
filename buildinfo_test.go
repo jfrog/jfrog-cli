@@ -369,7 +369,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 
 	// Populate cli config with 'default' server
 	oldHomeDir := os.Getenv(cliutils.HomeDir)
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 
 	// Create .git folder for this test
 	originalFolder := "buildaddgit_.git_suffix"

@@ -229,11 +229,12 @@ Flags:
   Once the tests are completed, the repository will be deleted.
 
 ### Distribution tests
-In addition to [general optional flags](#Usage) you *must* use the following flag:
+In addition to [general optional flags](#Usage) you can use the following flags:
 
 | Flag | Description |
 | --- | --- |
-| `-rt.distUrl` | JFrog Distribution URL. |
+| `-rt.distUrl` | [Mandatory] JFrog Distribution URL. |
+| `-rt.distAccessToken` | [Optional] Distribution access token. |
 
 To run distribution tests run the following command:
 ```
