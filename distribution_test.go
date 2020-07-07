@@ -113,7 +113,6 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("u", "--spec="+specFile)
-	inttestutils.WaitForDeletion(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Create release bundle
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)

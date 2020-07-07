@@ -63,10 +63,16 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 }
 
 func TestMavenBuildWithCredentials(t *testing.T) {
-	if *tests.RtAccessToken != "" {
-		t.SkipNow()
-	}
 	initMavenTest(t, false)
+
+	if *tests.RtAccessToken != "" {
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		defer func() {
+			*tests.RtUser = origUsername
+			*tests.RtPassword = origPassword
+		}()
+	}
+	
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")

@@ -22,6 +22,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -546,6 +547,19 @@ func ConvertSliceToMap(props []utils.Property) map[string]string {
 		propsMap[item.Key] = item.Value
 	}
 	return propsMap
+}
+
+// Set user and password from access token.
+// Return the original user and password to allow restoring them in the end of the test.
+func SetBasicAuthFromAccessToken(t *testing.T) (string, string) {
+	var err error
+	origUser := *RtUser
+	origPassword := *RtPassword
+
+	*RtUser, err = auth.ExtractUsernameFromAccessToken(*RtAccessToken)
+	assert.NoError(t, err)
+	*RtPassword = *RtAccessToken
+	return origUser, origPassword
 }
 
 // Clean items with timestamp older than 24 hours. Used to delete old repositories, builds, release bundles and Docker images.
