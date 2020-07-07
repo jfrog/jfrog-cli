@@ -79,6 +79,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	cleanGradleTest()
 }
 
+// This test check legacy behavior whereby the Gradle config yml contains the username, url and password.
 func TestGradleBuildWithCredentials(t *testing.T) {
 	initGradleTest(t)
 

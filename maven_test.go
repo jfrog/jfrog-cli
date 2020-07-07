@@ -62,6 +62,7 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
+// This test check legacy behavior whereby the Maven config yml contains the username, url and password.
 func TestMavenBuildWithCredentials(t *testing.T) {
 	initMavenTest(t, false)
 
