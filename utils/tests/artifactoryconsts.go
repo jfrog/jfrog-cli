@@ -1314,7 +1314,6 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 
 func GetMavenDeployedArtifacts() []string {
 	return []string{
-		MvnRepo1 + "/org/jfrog/cli-test/maven-metadata.xml",
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
 	}
