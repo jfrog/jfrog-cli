@@ -63,12 +63,12 @@ Build the project by navigating to the jfrog folder and executing the following 
 On Unix based systems run:
 ````
 cd jfrog-cli
-./build.sh
+build/build.sh
 ````
 On Windows run:
 ````
 cd jfrog-cli
-build.bat
+build\build.bat
 ````
 Once completed, you will find the JFrog CLI executable at your current directory.
 
