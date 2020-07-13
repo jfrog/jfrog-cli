@@ -1,0 +1,173 @@
+# Set common JFrog integration and GitHub input source
+commonConfiguration: &COMMON_CONFIGURATION
+  integrations:
+    - name: jfrog
+  inputResources:
+    - name: jfrogCliGit
+
+# Create artifactory access token and save it in './rtToken'
+createRtAccessToken: &CREATE_RT_ACCESS_TOKEN ./build/build.sh && ./jfrog rt atc $int_jfrog_rt_user --url=$int_jfrog_rt_url --user=$int_jfrog_rt_user --password=$int_jfrog_rt_password --grant-admin --expiry 1800 | jq '.access_token' -r > rtToken
+
+# Update commit status in GitHub
+updateCommitStatus: &UPDATE_COMMIT_STATUS
+  onStart:
+    - update_commit_status jfrogCliGit --context "$step_name"
+  onComplete:
+    - update_commit_status jfrogCliGit --context "$step_name"
+
+resources:
+  - name: jfrogCliGit
+    type: GitRepo
+    configuration:
+      path: jfrog/jfrog-cli
+      gitProvider: github
+      buildOn:
+        pullRequestCreate: true
+
+pipelines:
+  # Global configuration
+  - name: test_cli
+    configuration:
+      runtime:
+        type: image
+        image:
+          custom:
+            name: releases-docker.jfrog.io/jfrog-ecosystem-integration-env
+            tag: 1.0.0
+      environmentVariables:
+        readOnly:
+          GOPROXY: https://gocenter.io
+          JFROG_CLI_OFFER_CONFIG: "false"
+
+    steps:
+      # Repository creators tests - should be running in serial
+      - name: Artifactory
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.artifactory -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Npm
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Artifactory
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - npm --version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.npm -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Maven
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Npm
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - mvn --version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.maven -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Gradle
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Maven
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - gradle --version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.gradle -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Pip
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Gradle
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - pip --version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.pip -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Go
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Pip
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - go version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.go -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Distribution
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+          inputSteps:
+            - name: Go
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - *CREATE_RT_ACCESS_TOKEN
+            - curl -X POST -u $int_jfrog_rt_user:$int_jfrog_rt_password $int_jfrog_dist_url/api/v1/security/token -d "username=$int_jfrog_rt_user" -d 'expires_in=1800' | jq '.access_token' -r > distToken
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -rt.url=$int_jfrog_rt_url -rt.distUrl=$int_jfrog_dist_url -rt.accessToken=$(< rtToken) -rt.distAccessToken=$(< distToken)
+
+      # Parallel tests
+      - name: NuGet
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - nuget help 2>&1 | head -1
+            - apt install -yq dotnet-sdk-2.1
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.nuget -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
+
+      - name: Docker
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - docker version
+            - *CREATE_RT_ACCESS_TOKEN
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerTargetRepo=docker-virtual
+
+      - name: Bintray
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.bintray -bt.user=$int_jfrog_bintray_user -bt.key=$int_jfrog_bintray_apikey
