@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -157,7 +158,8 @@ func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
 }
 
 func CompareExpectedVsActual(expected []string, actual []generic.SearchResult, t *testing.T) {
-	assert.ElementsMatch(t, expected, getPathsFromSearchResults(actual))
+	actualPaths := getPathsFromSearchResults(actual)
+	assert.ElementsMatch(t, expected, actualPaths, fmt.Sprintf("Expected: %v \nActual: %v", expected, actualPaths))
 }
 
 func GetTestResourcesPath() string {
