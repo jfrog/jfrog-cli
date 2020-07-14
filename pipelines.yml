@@ -37,14 +37,15 @@ pipelines:
       environmentVariables:
         readOnly:
           GOPROXY: https://gocenter.io
-          JFROG_CLI_OFFER_CONFIG: "false"
+          CI: "true"
 
     steps:
-      # Repository creators tests - should be running in serial
+      # Repositories creators tests - should be running in serial
       - name: Artifactory
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -56,8 +57,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Artifactory
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -70,8 +70,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Npm
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -84,8 +83,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Maven
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -98,8 +96,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Gradle
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -112,8 +109,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Pip
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -126,8 +122,7 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          inputSteps:
-            - name: Go
+          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
