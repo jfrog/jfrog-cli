@@ -73,7 +73,7 @@ func TestMavenBuildWithCredentials(t *testing.T) {
 			*tests.RtPassword = origPassword
 		}()
 	}
-	
+
 	pomPath := createMavenProject(t)
 	srcConfigTemplate := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", tests.MavenUsernamePasswordTemplate)
 	configFilePath, err := tests.ReplaceTemplateVariables(srcConfigTemplate, "")
