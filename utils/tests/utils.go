@@ -382,7 +382,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
 		TestDocker:       {},
-		TestGo:           {},
+		TestGo:           {&GoRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
