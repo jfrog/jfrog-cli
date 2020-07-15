@@ -142,7 +142,7 @@ def uploadToBintray(pkg, fileName) {
 def build(goos, goarch, pkg, fileName) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
-        env.GOARCH="$goarch"    
+        env.GOARCH="$goarch"
         sh "build/build.sh $fileName"
 
         if (goos == 'windows') {
