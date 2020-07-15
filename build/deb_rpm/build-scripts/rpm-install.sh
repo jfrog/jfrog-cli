@@ -4,4 +4,4 @@ echo "baseurl=https://releases.jfrog.io/artifactory/jfrog-rpms" >> jfrog-cli.rep
 echo "enabled=1" >> jfrog-cli.repo;
 echo "gpgcheck=0" >> jfrog-cli.repo;
 sudo mv jfrog-cli.repo /etc/yum.repos.d/;
-yum install jfrog-cli;
+yum install -y jfrog-cli;
