@@ -28,7 +28,7 @@ func initNugetTest(t *testing.T) {
 
 	// This is due to Artifactory bug, we cant create remote repository with REST API.
 	require.True(t, isRepoExist(tests.NugetRemoteRepo), "Create nuget remote repository:", tests.NugetRemoteRepo, "in order to run nuget tests")
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 }
 
 type testDescriptor struct {
@@ -66,7 +66,7 @@ func TestNativeNugetResolve(t *testing.T) {
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
-	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NugetBuildName, utils.Nuget)
+	testNativeNugetDotnetResolve(t, uniqueNugetTests, tests.NuGetBuildName, utils.Nuget)
 }
 
 func TestDotnetResolve(t *testing.T) {
@@ -116,7 +116,7 @@ func TestNuGetWithGlobalConfig(t *testing.T) {
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)
-	testNugetCmd(t, projectPath, tests.NugetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
+	testNugetCmd(t, projectPath, tests.NuGetBuildName, "1", []string{"packagesconfig"}, []string{"nuget", "restore"}, []int{6}, true)
 
 	cleanBuildToolsTest()
 }

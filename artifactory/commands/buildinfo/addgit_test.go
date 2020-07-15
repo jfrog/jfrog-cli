@@ -149,7 +149,7 @@ func TestAddGitDoCollect(t *testing.T) {
 			Regexp:            `(.+-[0-9]+)\s-\s(.+)`,
 			TrackerName:       "test",
 		},
-		buildConfiguration: &utils.BuildConfiguration{BuildNumber: "1", BuildName: "cli-test-build-issues"},
+		buildConfiguration: &utils.BuildConfiguration{BuildNumber: "1", BuildName: tests.RtBuildName1},
 		configFilePath:     "",
 		dotGitPath:         dotGitPath,
 	}

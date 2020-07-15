@@ -1,9 +1,9 @@
 {
     "files": [
       {
-        "pattern": "${REPO1}/data/*",
+        "pattern": "${DIST_REPO1}/data/*",
         "target": "out/download/simple_by_build/",
-        "bundle": "cli-test-bundle/10"
+        "bundle": "${BUNDLE_NAME}/10"
       }
     ]
   }

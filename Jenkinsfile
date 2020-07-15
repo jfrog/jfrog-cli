@@ -38,7 +38,7 @@ node {
 
             sh 'go version'
             dir("$jfrogCliRepoDir") {
-                sh './build.sh'
+                sh 'build/build.sh'
             }
 
             sh 'mkdir builder'
@@ -106,20 +106,20 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
         env.GOARCH="$goarch"
-        sh "./build.sh $fileName"
+        sh "build/build.sh $fileName"
 
         if (goos == 'windows') {
             dir("${cliWorkspace}/certs-dir") {
                 // Move the jfrog executable into the 'sign' directory, so that it is signed there.
-                sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}sign/${fileName}.unsigned"
+                sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}build/sign/${fileName}.unsigned"
                 // Copy all the certificate files into the 'sign' directory.
-                sh "cp * ${jfrogCliRepoDir}sign/"
+                sh "cp * ${jfrogCliRepoDir}build/sign/"
                 // Build and run the docker container, which signs the JFrog CLI binary.
-                sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}sign/"
+                sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
-                sh "docker run -v ${jfrogCliRepoDir}sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
+                sh "docker run -v ${jfrogCliRepoDir}build/sign/:/workspace --rm jfrog-cli-sign-tool $signCmd"
                 // Move the JFrog CLI binary from the 'sign' directory, back to its original location.
-                sh "mv ${jfrogCliRepoDir}sign/$fileName $jfrogCliRepoDir"
+                sh "mv ${jfrogCliRepoDir}build/sign/$fileName $jfrogCliRepoDir"
             }
         }
     }
@@ -129,7 +129,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 }
 
 def publishNpmPackage(jfrogCliRepoDir) {
-    dir(jfrogCliRepoDir+'npm/') {
+    dir(jfrogCliRepoDir+'build/npm/') {
         sh '''#!/bin/bash
             echo "Downloading npm..."
             wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz

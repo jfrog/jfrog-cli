@@ -1,0 +1,7 @@
+{
+  "key": "${GRADLE_REPO}",
+  "packageType": "gradle",
+  "repoLayoutRef": "gradle-default",
+  "enableNpmSupport": true,
+  "rclass": "local"
+}

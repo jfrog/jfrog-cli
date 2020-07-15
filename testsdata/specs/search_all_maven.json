@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "${MAVEN_REPO1}/*",
+      "exclusions": ["${MAVEN_REPO1}/org/jfrog/cli-test/maven-metadata.xml"]
+    }
+  ]
+}

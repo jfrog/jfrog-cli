@@ -2,7 +2,7 @@
     "files": [
       {
         "target": "out/download/simple_by_build/data/",
-        "bundle": "cli-test-bundle/10"
+        "bundle": "${BUNDLE_NAME}/10"
       }
     ]
   }

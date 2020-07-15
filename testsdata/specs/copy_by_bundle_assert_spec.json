@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "pattern": "${DIST_REPO1}/data/*",
+      "flat": "false",
+      "recursive": "true"
+    },
+    {
+      "pattern": "${DIST_REPO2}/data/*",
+      "flat": "false",
+      "recursive": "true"
+    }
+  ]
+}
