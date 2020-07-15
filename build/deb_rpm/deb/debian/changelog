@@ -1,0 +1,5 @@
+jfrog-cli (__VERSION__) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Jfrog <dev@jfrog.com>  Wed, 14 May 2020 09:59:32 +0000
