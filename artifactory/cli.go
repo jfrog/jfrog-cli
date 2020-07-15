@@ -3009,7 +3009,9 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	length, err := searchCmd.SearchResult().Length()
+	reader := searchCmd.Result().Reader()
+	defer reader.Close()
+	length, err := reader.Length()
 	if err != nil {
 		return err
 	}
@@ -3018,9 +3020,9 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	if !c.Bool("count") {
-		return searchCmd.PrintSearchResults()
+		return generic.PrintSearchResults(reader)
 	}
-	log.Output(searchCmd.SearchResult().Length())
+	log.Output(length)
 	return nil
 }
 

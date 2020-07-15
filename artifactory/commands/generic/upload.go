@@ -248,6 +248,7 @@ func (uc *UploadCommand) handleSyncDeletes(syncDeletesProp string) error {
 	if err != nil {
 		return err
 	}
+	defer resultItems.Close()
 	_, err = servicesManager.DeleteFiles(resultItems)
 	return err
 }

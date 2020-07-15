@@ -10,21 +10,21 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 )
 
-func ConfirmDelete(pathsToDelete *content.ContentReader) (bool, error) {
-	length, err := pathsToDelete.Length()
+func ConfirmDelete(pathsToDeleteReader *content.ContentReader) (bool, error) {
+	length, err := pathsToDeleteReader.Length()
 	if err != nil {
 		return false, nil
 	}
 	if length < 1 {
 		return false, nil
 	}
-	for resultItem := new(rtclientutils.ResultItem); pathsToDelete.NextRecord(resultItem) == nil; resultItem = new(rtclientutils.ResultItem) {
+	for resultItem := new(rtclientutils.ResultItem); pathsToDeleteReader.NextRecord(resultItem) == nil; resultItem = new(rtclientutils.ResultItem) {
 		fmt.Println("  " + resultItem.GetItemRelativePath())
 	}
-	pathsToDelete.Reset()
-	if err := pathsToDelete.GetError(); err != nil {
+	if err := pathsToDeleteReader.GetError(); err != nil {
 		return false, err
 	}
+	pathsToDeleteReader.Reset()
 	return cliutils.AskYesNo("Are you sure you want to delete the above paths?", false)
 }
 

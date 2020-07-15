@@ -62,9 +62,13 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultCr *content.ContentReader, err error) {
+func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultReader *content.ContentReader, err error) {
 	var errorOccurred = false
-	cw, err := content.NewContentWriter("results", true, false)
+	writer, err := content.NewContentWriter("results", true, false)
+	if err != nil {
+		return
+	}
+	defer writer.Close()
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
@@ -72,25 +76,22 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			log.Error(err)
 			continue
 		}
-		cr, err := servicesManager.SearchFiles(searchParams)
+		reader, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
-		for searchResult := new(clientutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(clientutils.ResultItem) {
-			cw.Write(*searchResult)
+		for searchResult := new(clientutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(clientutils.ResultItem) {
+			writer.Write(*searchResult)
 		}
-		if err = cr.GetError(); err != nil {
+		if err = reader.GetError(); err != nil {
 			errorOccurred = true
 			log.Error(err)
-			continue
 		}
+		reader.Close()
 	}
-	if err = cw.Close(); err != nil {
-		return
-	}
-	resultCr = content.NewContentReader((cw.GetFilePath()), "results")
+	resultReader = content.NewContentReader((writer.GetFilePath()), content.DefaultKey)
 	if errorOccurred {
 		err = errorutils.CheckError(errors.New("Operation finished with errors, please review the logs."))
 	}

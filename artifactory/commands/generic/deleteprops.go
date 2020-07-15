@@ -31,18 +31,19 @@ func (deleteProps *DeletePropsCommand) Run() error {
 		return err
 	}
 
-	resultCr, searchErr := searchItems(deleteProps.Spec(), servicesManager)
-	propsParams := GetPropsParams(resultCr, deleteProps.props)
+	reader, searchErr := searchItems(deleteProps.Spec(), servicesManager)
+	if searchErr != nil {
+		return searchErr
+	}
+	defer reader.Close()
+	propsParams := GetPropsParams(reader, deleteProps.props)
 	success, err := servicesManager.DeleteProps(propsParams)
 	result := deleteProps.Result()
 	result.SetSuccessCount(success)
-	totalLength, totalLengthErr := resultCr.Length()
-	result.SetFailCount(totalLength)
-	if err == nil {
-		return searchErr
-	}
+	totalLength, totalLengthErr := reader.Length()
 	if totalLengthErr != nil {
 		return totalLengthErr
 	}
+	result.SetFailCount(totalLength)
 	return err
 }

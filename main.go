@@ -14,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -70,12 +71,10 @@ Environment Variables:
 
 func main() {
 	log.SetDefaultLogger()
-	err := fileutils.CreateReaderWriterTempDir()
-	if err != nil {
-		cliutils.ExitOnErr(err)
+	err := execMain()
+	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
+		clientLog.Warn(cleanupErr)
 	}
-	defer fileutils.CleanupReaderWriterTempFilesAndDirs()
-	err = execMain()
 	cliutils.ExitOnErr(err)
 }
 

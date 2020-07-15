@@ -31,14 +31,14 @@ func (setProps *SetPropsCommand) Run() error {
 		return err
 	}
 
-	resultItems, searchErr := searchItems(setProps.Spec(), servicesManager)
-
-	propsParams := GetPropsParams(resultItems, setProps.props)
+	reader, searchErr := searchItems(setProps.Spec(), servicesManager)
+	defer reader.Close()
+	propsParams := GetPropsParams(reader, setProps.props)
 	success, err := servicesManager.SetProps(propsParams)
 
 	result := setProps.Result()
 	result.SetSuccessCount(success)
-	totalLength, totalLengthErr := resultItems.Length()
+	totalLength, totalLengthErr := reader.Length()
 	result.SetFailCount(totalLength - success)
 	if err == nil {
 		return searchErr

@@ -42,20 +42,20 @@ func (glc *GitLfsCommand) Run() error {
 
 	gitLfsCleanParams := getGitLfsCleanParams(glc.configuration)
 
-	filesToDelete, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
-	length, err := filesToDelete.Length()
+	filesToDeleteReader, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
 	if err != nil {
 		return err
 	}
+	defer filesToDeleteReader.Close()
+	length, err := filesToDeleteReader.Length()
 	if err != nil || length < 1 {
 		return err
 	}
 
 	if glc.configuration.Quiet {
-		err = glc.deleteLfsFilesFromArtifactory(filesToDelete)
-		return err
+		return glc.deleteLfsFilesFromArtifactory(filesToDeleteReader)
 	}
-	return glc.interactiveDeleteLfsFiles(filesToDelete)
+	return glc.interactiveDeleteLfsFiles(filesToDeleteReader)
 }
 
 func (glc *GitLfsCommand) CommandName() string {
@@ -94,6 +94,10 @@ func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete *content.Conte
 	for resultItem := new(clientutils.ResultItem); filesToDelete.NextRecord(resultItem) == nil; resultItem = new(clientutils.ResultItem) {
 		fmt.Println("  " + resultItem.Name)
 	}
+	if err := filesToDelete.GetError(); err != nil {
+		return err
+	}
+	filesToDelete.Reset()
 	confirmed := cliutils.AskYesNo("Are you sure you want to delete the above files?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false)
 	if confirmed {

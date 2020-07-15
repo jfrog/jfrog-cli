@@ -98,12 +98,13 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := generic.GetSearchParams(spec.Get(i))
 		assert.NoError(t, err)
-		cr, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
+		reader, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		assert.NoError(t, err, "Failed Searching files")
-		for searchResult := new(rtutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(rtutils.ResultItem) {
+		for searchResult := new(rtutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(rtutils.ResultItem) {
 			resultItems = append(resultItems, *searchResult)
 		}
-		assert.NoError(t, cr.GetError())
+		assert.NoError(t, reader.GetError())
+		assert.NoError(t, reader.Close())
 	}
 	return resultItems
 }

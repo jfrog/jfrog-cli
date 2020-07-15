@@ -2,7 +2,6 @@ package utils
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -223,7 +223,7 @@ func TestValidateConfigDeployer(t *testing.T) {
 
 // Set JFROG_CLI_HOME_DIR environment variable to be a new temp directory
 func createTempEnv(t *testing.T) string {
-	tmpDir, err := ioutil.TempDir("", "configfile_test")
+	tmpDir, err := fileutils.CreateTempDir()
 	assert.NoError(t, err)
 	err = os.Setenv(cliutils.HomeDir, tmpDir)
 	assert.NoError(t, err)

@@ -107,6 +107,20 @@ func TestDockerPull(t *testing.T) {
 	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
 }
 
+func validateDockerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
+	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	length, err := reader.Length()
+	assert.NoError(t, err)
+	assert.Len(t, length, expectedItemsInArtifactory, "Docker build info was not pushed correctly")
+	buildInfo := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
+	assert.NoError(t, reader.Close())
+}
+
 func dockerTestCleanup(imageName, buildName string) {
 	// Remove build from Artifactory
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)

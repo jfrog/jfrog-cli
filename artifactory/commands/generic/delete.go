@@ -9,7 +9,6 @@ import (
 )
 
 type DeleteCommand struct {
-	deleteItems *content.ContentReader
 	GenericCommand
 	quiet   bool
 	threads int
@@ -37,33 +36,25 @@ func (dc *DeleteCommand) SetQuiet(quiet bool) *DeleteCommand {
 	return dc
 }
 
-func (dc *DeleteCommand) DeleteItems() *content.ContentReader {
-	return dc.deleteItems
-}
-
-func (dc *DeleteCommand) SetDeleteItems(deleteItems *content.ContentReader) *DeleteCommand {
-	dc.deleteItems = deleteItems
-	return dc
-}
-
 func (dc *DeleteCommand) CommandName() string {
 	return "rt_delete"
 }
 
 func (dc *DeleteCommand) Run() error {
-	err := dc.GetPathsToDelete()
+	reader, err := dc.GetPathsToDelete()
 	if err != nil {
 		return err
 	}
+	defer reader.Close()
 	allowDelete := true
 	if !dc.quiet {
-		allowDelete, err = utils.ConfirmDelete(dc.deleteItems)
+		allowDelete, err = utils.ConfirmDelete(reader)
 		if err != nil {
 			return err
 		}
 	}
 	if allowDelete {
-		success, failed, err := dc.DeleteFiles()
+		success, failed, err := dc.DeleteFiles(reader)
 		result := dc.Result()
 		result.SetFailCount(failed)
 		result.SetSuccessCount(success)
@@ -72,42 +63,45 @@ func (dc *DeleteCommand) Run() error {
 	return nil
 }
 
-func (dc *DeleteCommand) GetPathsToDelete() error {
+func (dc *DeleteCommand) GetPathsToDelete() (*content.ContentReader, error) {
 	rtDetails, err := dc.RtDetails()
 	if errorutils.CheckError(err) != nil {
-		return err
+		return nil, err
 	}
 	servicesManager, err := utils.CreateServiceManager(rtDetails, dc.DryRun())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	temp := []*content.ContentReader{}
 	for i := 0; i < len(dc.Spec().Files); i++ {
 		deleteParams, err := getDeleteParams(dc.Spec().Get(i))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		currentResultsReader, err := servicesManager.GetPathsToDelete(deleteParams)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		length, err := currentResultsReader.Length()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if length > 0 {
 			temp = append(temp, currentResultsReader)
+		} else {
+			currentResultsReader.Close()
 		}
 	}
-	dc.deleteItems, err = content.MergeReaders(temp, "results")
-	if err != nil {
-		return err
-	}
-	return nil
+	defer func() {
+		for _, reader := range temp {
+			reader.Close()
+		}
+	}()
+	return content.MergeReaders(temp, content.DefaultKey)
 }
 
-func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error) {
+func (dc *DeleteCommand) DeleteFiles(reader *content.ContentReader) (successCount, failedCount int, err error) {
 	rtDetails, err := dc.RtDetails()
 	if errorutils.CheckError(err) != nil {
 		return 0, 0, err
@@ -116,8 +110,8 @@ func (dc *DeleteCommand) DeleteFiles() (successCount, failedCount int, err error
 	if err != nil {
 		return 0, 0, err
 	}
-	deletedCount, err := servicesManager.DeleteFiles(dc.deleteItems)
-	length, err := dc.deleteItems.Length()
+	deletedCount, err := servicesManager.DeleteFiles(reader)
+	length, err := reader.Length()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -128,8 +122,5 @@ func getDeleteParams(f *spec.File) (deleteParams services.DeleteParams, err erro
 	deleteParams = services.NewDeleteParams()
 	deleteParams.ArtifactoryCommonParams = f.ToArtifactoryCommonParams()
 	deleteParams.Recursive, err = f.IsRecursive(true)
-	if err != nil {
-		return
-	}
 	return
 }

@@ -26,25 +26,19 @@ type SearchResult struct {
 
 type SearchCommand struct {
 	GenericCommand
-	ContentReadearchResult *content.ContentReader
 }
 
 func NewSearchCommand() *SearchCommand {
 	return &SearchCommand{GenericCommand: *NewGenericCommand()}
 }
 
-func (sc *SearchCommand) SearchResult() *content.ContentReader {
-	sc.ContentReadearchResult.Reset()
-	return sc.ContentReadearchResult
-}
-
-func (sc *SearchCommand) SearchResultNoDate() (*content.ContentReader, error) {
-	cw, err := content.NewContentWriter("results", true, false)
+func SearchResultNoDate(reader *content.ContentReader) (*content.ContentReader, error) {
+	writer, err := content.NewContentWriter("results", true, false)
 	if err != nil {
 		return nil, err
 	}
-	cr := sc.SearchResult()
-	for resultItem := new(SearchResult); cr.NextRecord(resultItem) == nil; resultItem = new(SearchResult) {
+	defer writer.Close()
+	for resultItem := new(SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(SearchResult) {
 		if err != nil {
 			return nil, err
 		}
@@ -52,15 +46,13 @@ func (sc *SearchCommand) SearchResultNoDate() (*content.ContentReader, error) {
 		resultItem.Modified = ""
 		delete(resultItem.Props, "vcs.url")
 		delete(resultItem.Props, "vcs.revision")
-		cw.Write(*resultItem)
+		writer.Write(*resultItem)
 	}
-	if err := cr.GetError(); err != nil {
+	if err := reader.GetError(); err != nil {
 		return nil, err
 	}
-	cw.Close()
-	cr.SetFilePath(cw.GetFilePath())
-	cr.Reset()
-	return cr, nil
+	reader.Reset()
+	return content.NewContentReader(writer.GetFilePath(), writer.GetArrayKey()), nil
 }
 
 func (sc *SearchCommand) CommandName() string {
@@ -68,18 +60,20 @@ func (sc *SearchCommand) CommandName() string {
 }
 
 func (sc *SearchCommand) Run() error {
-	return sc.Search()
+	reader, err := sc.Search()
+	sc.Result().SetReader(reader)
+	return err
 }
 
-func (sc *SearchCommand) Search() error {
+func (sc *SearchCommand) Search() (*content.ContentReader, error) {
 	// Service Manager
 	rtDetails, err := sc.RtDetails()
 	if errorutils.CheckError(err) != nil {
-		return err
+		return nil, err
 	}
 	servicesManager, err := utils.CreateServiceManager(rtDetails, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Search Loop
@@ -89,32 +83,38 @@ func (sc *SearchCommand) Search() error {
 		searchParams, err := GetSearchParams(sc.Spec().Get(i))
 		if err != nil {
 			log.Error(err)
-			return err
+			return nil, err
 		}
 
-		currentsearchResults, err := servicesManager.SearchFiles(searchParams)
+		currentReader, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
-			return err
+			log.Error(err)
+			return nil, err
 		}
-		searchResults = append(searchResults, currentsearchResults)
+		searchResults = append(searchResults, currentReader)
 	}
-
-	sc.ContentReadearchResult, err = aqlResultToSearchResult(searchResults)
-	length, err := sc.ContentReadearchResult.Length()
-	if err != nil {
-		return err
-	}
-	clientartutils.LogSearchResults(length)
-	return err
-}
-
-func aqlResultToSearchResult(crs []*content.ContentReader) (*content.ContentReader, error) {
-	cw, err := content.NewContentWriter("results", true, false)
+	defer func() {
+		for _, reader := range searchResults {
+			reader.Close()
+		}
+	}()
+	reader, err := aqlResultToSearchResult(searchResults)
 	if err != nil {
 		return nil, err
 	}
-	for _, cr := range crs {
-		for searchResult := new(clientartutils.ResultItem); cr.NextRecord(searchResult) == nil; searchResult = new(clientartutils.ResultItem) {
+	length, err := reader.Length()
+	clientartutils.LogSearchResults(length)
+	return reader, err
+}
+
+func aqlResultToSearchResult(readers []*content.ContentReader) (*content.ContentReader, error) {
+	writer, err := content.NewContentWriter("results", true, false)
+	if err != nil {
+		return nil, err
+	}
+	defer writer.Close()
+	for _, reader := range readers {
+		for searchResult := new(clientartutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(clientartutils.ResultItem) {
 			if err != nil {
 				return nil, err
 			}
@@ -137,14 +137,14 @@ func aqlResultToSearchResult(crs []*content.ContentReader) (*content.ContentRead
 			for _, prop := range searchResult.Properties {
 				tempResult.Props[prop.Key] = append(tempResult.Props[prop.Key], prop.Value)
 			}
-			cw.Write(*tempResult)
+			writer.Write(*tempResult)
 		}
-		if err := cr.GetError(); err != nil {
+		if err := reader.GetError(); err != nil {
 			return nil, err
 		}
+		reader.Reset()
 	}
-	cw.Close()
-	return content.NewContentReader(cw.GetFilePath(), "results"), nil
+	return content.NewContentReader(writer.GetFilePath(), content.DefaultKey), nil
 }
 
 func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err error) {
@@ -159,15 +159,15 @@ func GetSearchParams(f *spec.File) (searchParams services.SearchParams, err erro
 	return
 }
 
-func (sc *SearchCommand) PrintSearchResults() error {
-	length, err := sc.ContentReadearchResult.Length()
+func PrintSearchResults(reader *content.ContentReader) error {
+	length, err := reader.Length()
 	if length == 0 {
 		log.Output("[]")
 		return err
 	}
 	log.Output("[")
 	var prevSearchResult *SearchResult
-	for searchResult := new(SearchResult); sc.ContentReadearchResult.NextRecord(searchResult) == nil; searchResult = new(SearchResult) {
+	for searchResult := new(SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(SearchResult) {
 		if prevSearchResult == nil {
 			prevSearchResult = searchResult
 			continue
@@ -179,7 +179,8 @@ func (sc *SearchCommand) PrintSearchResults() error {
 		performPrintSearchResults(*prevSearchResult, "")
 	}
 	log.Output("]")
-	return sc.ContentReadearchResult.GetError()
+	reader.Reset()
+	return reader.GetError()
 }
 
 func performPrintSearchResults(toPrint SearchResult, suffix string) error {

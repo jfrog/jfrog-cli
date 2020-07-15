@@ -321,12 +321,12 @@ func RenamePath(oldPath, newPath string, t *testing.T) {
 func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
 	deleteCommand := generic.NewDeleteCommand()
 	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
-	err = deleteCommand.GetPathsToDelete()
+	reader, err := deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
 	}
-
-	return deleteCommand.DeleteFiles()
+	defer reader.Close()
+	return deleteCommand.DeleteFiles(reader)
 }
 
 var reposConfigMap = map[*string]string{
