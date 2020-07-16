@@ -3746,6 +3746,7 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
+	// The Replicator may encrypt the password internally, therefore we should only check that the password is not empty
 	assert.NotEmpty(t, result[0].Password)
 
 	// Delete replication
