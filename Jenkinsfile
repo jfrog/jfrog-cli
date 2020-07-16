@@ -86,7 +86,7 @@ def buildRpmAndDeb(version, architectures) {
             stage("Build debian ${currentBuild.pkg}") {
                 build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
                 dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage"
+                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f deb --deb-arch $currentBuild.debianArch --deb-build-image $currentBuild.debianImage -t --deb-test-image $currentBuild.debianImage"
                     built = true
                 }
             }
@@ -95,7 +95,7 @@ def buildRpmAndDeb(version, architectures) {
             stage("Build rpm ${currentBuild.pkg}") {
                 build(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, 'jfrog')
                 dir("$jfrogCliRepoDir") {
-                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage"
+                    sh "build/deb_rpm/build-scripts/pack.sh -b jfrog -v $version -f rpm --rpm-build-image $currentBuild.rpmImage -t --rpm-test-image $currentBuild.rpmImage"
                     built = true
                 }
             }
@@ -107,7 +107,7 @@ def buildRpmAndDeb(version, architectures) {
             options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$DEB_RPM_DEPLOY_ACCESS_TOKEN"
             sh """#!/bin/bash
                 builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan/contrib/amd64 $options
+                builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
                 builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
                 """
         }
