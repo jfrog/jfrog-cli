@@ -1430,7 +1430,6 @@ func GetReplicationConfig() []clientutils.ReplicationParams {
 		{
 			Url:                    *RtUrl,
 			Username:               "admin",
-			Password:               "password",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,
 			EnableEventReplication: false,
