@@ -2,12 +2,13 @@ package commands
 
 import (
 	"encoding/json"
+	"strings"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func init() {
@@ -22,6 +23,22 @@ func TestBasicAuth(t *testing.T) {
 		ApiKey: "", SshKeyPath: "", AccessToken: "",
 		ServerId:  "test",
 		IsDefault: false}
+	configAndTest(t, &inputDetails)
+}
+
+func TestUsernameSavedLowercase(t *testing.T) {
+	inputDetails := config.ArtifactoryDetails{
+		Url:             "http://localhost:8080/artifactory",
+		DistributionUrl: "http://localhost:8080/distribution",
+		User:            "ADMIN", Password: "password",
+		ApiKey: "", SshKeyPath: "", AccessToken: "",
+		ServerId:  "test",
+		IsDefault: false}
+
+	outputConfig, err := configAndGetTestServer(t, &inputDetails, false)
+	assert.NoError(t, err)
+	outputConfig.User = strings.ToLower(outputConfig.User)
+
 	configAndTest(t, &inputDetails)
 }
 
