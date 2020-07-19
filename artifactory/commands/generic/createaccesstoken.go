@@ -95,7 +95,6 @@ func (atcc *AccessTokenCreateCommand) Run() error {
 
 func (atcc *AccessTokenCreateCommand) getTokenParams() (tokenParams services.CreateTokenParams, err error) {
 	tokenParams = services.NewCreateTokenParams()
-	tokenParams.Username = atcc.userName
 	tokenParams.ExpiresIn = atcc.expiry
 	tokenParams.Refreshable = atcc.refreshable
 	tokenParams.Audience = atcc.audience
