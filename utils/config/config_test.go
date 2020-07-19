@@ -93,8 +93,7 @@ func TestConvertConfigV1ToV3(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(content, &configV3))
 	assertionHelper(t, configV3, cliutils.GetConfigVersion(), false)
 
-	// The conversion to version 3, turns the Artifactory usernames to lowercase.
-	assert.Equal(t, configV3.Artifactory[0].User, "user")
+	assert.Equal(t, "user", configV3.Artifactory[0].User, "The config conversion to version 3 is supposed to save the username as lowercase")
 
 	assertCertsMigrationAndBackupCreation(t)
 }
