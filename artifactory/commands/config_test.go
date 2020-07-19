@@ -37,9 +37,7 @@ func TestUsernameSavedLowercase(t *testing.T) {
 
 	outputConfig, err := configAndGetTestServer(t, &inputDetails, false)
 	assert.NoError(t, err)
-	outputConfig.User = strings.ToLower(outputConfig.User)
-
-	configAndTest(t, &inputDetails)
+	assert.Equal(t, outputConfig.User, "admin", "The config command is supposed to save username as lowercase")
 }
 
 func TestApiKey(t *testing.T) {
