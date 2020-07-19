@@ -1,5 +1,6 @@
 ## 1.38.1 (July 19, 2020)
 - Bug fix - Username must be lowercase since version 1.38.0
+- JFrog CLI build dir restructure
 
 ## 1.38.0 (June 30, 2020)
 - "jfrog rt release-bundle-distribute" - New --sync and --max-wait-minutes command options.
