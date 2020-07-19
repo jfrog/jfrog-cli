@@ -2,16 +2,16 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -38,9 +38,9 @@ func TestCovertConfigV0ToV1(t *testing.T) {
 	`
 	content, err := convertConfigV0toV1([]byte(configV0))
 	assert.NoError(t, err)
-	configV1 := new(ConfigV2)
+	configV1 := new(ConfigV3)
 	assert.NoError(t, json.Unmarshal(content, &configV1))
-	assertionHelper(t, configV1, 1, false)
+	assertionHelper(t, configV1, "1", false)
 }
 
 func TestCovertConfigV0ToV1EmptyArtifactory(t *testing.T) {
@@ -55,17 +55,19 @@ func TestCovertConfigV0ToV1EmptyArtifactory(t *testing.T) {
 	`
 	content, err := convertConfigV0toV1([]byte(configV0))
 	assert.NoError(t, err)
-	configV1 := new(ConfigV2)
+	configV1 := new(ConfigV3)
 	assert.NoError(t, json.Unmarshal(content, &configV1))
 }
 
-func TestConvertConfigV1ToV2(t *testing.T) {
+func TestConvertConfigV1ToV3(t *testing.T) {
+	// The Artifactory username is uppercase intentionally,
+	// to test the lowercase conversion to version 3.
 	config := `
 		{
 		  "artifactory": [
 			{
 			  "url": "http://localhost:8080/artifactory/",
-			  "user": "user",
+			  "user": "USER",
 			  "password": "password",
 			  "serverId": "` + DefaultServerId + `",
 			  "isDefault": true
@@ -87,9 +89,11 @@ func TestConvertConfigV1ToV2(t *testing.T) {
 
 	content, err := convertIfNeeded([]byte(config))
 	assert.NoError(t, err)
-	configV2 := new(ConfigV2)
-	assert.NoError(t, json.Unmarshal(content, &configV2))
-	assertionHelper(t, configV2, 2, false)
+	configV3 := new(ConfigV3)
+	assert.NoError(t, json.Unmarshal(content, &configV3))
+	assertionHelper(t, configV3, cliutils.GetConfigVersion(), false)
+
+	assert.Equal(t, "user", configV3.Artifactory[0].User, "The config conversion to version 3 is supposed to save the username as lowercase")
 
 	assertCertsMigrationAndBackupCreation(t)
 }
@@ -124,9 +128,9 @@ func TestConvertConfigV0ToV2(t *testing.T) {
 
 	content, err := convertIfNeeded([]byte(configV0))
 	assert.NoError(t, err)
-	configV2 := new(ConfigV2)
-	assert.NoError(t, json.Unmarshal(content, &configV2))
-	assertionHelper(t, configV2, 2, false)
+	ConfigV3 := new(ConfigV3)
+	assert.NoError(t, json.Unmarshal(content, &ConfigV3))
+	assertionHelper(t, ConfigV3, cliutils.GetConfigVersion(), false)
 	assertCertsMigrationAndBackupCreation(t)
 }
 
@@ -157,10 +161,10 @@ func TestConfigEncryption(t *testing.T) {
 	verifyEncryptionStatus(t, originalConfig, readConfig, false)
 }
 
-func readConfFromFile(t *testing.T) *ConfigV2 {
+func readConfFromFile(t *testing.T) *ConfigV3 {
 	confFilePath, err := getConfFilePath()
 	assert.NoError(t, err)
-	config := new(ConfigV2)
+	config := new(ConfigV3)
 	assert.FileExists(t, confFilePath)
 	content, err := fileutils.ReadFile(confFilePath)
 	assert.NoError(t, err)
@@ -205,7 +209,7 @@ func TestGetArtifactoriesFromConfig(t *testing.T) {
 	`
 	content, err := convertIfNeeded([]byte(config))
 	assert.NoError(t, err)
-	configV1 := new(ConfigV2)
+	configV1 := new(ConfigV3)
 	assert.NoError(t, json.Unmarshal(content, &configV1))
 	serverDetails, err := GetDefaultConfiguredArtifactoryConf(configV1.Artifactory)
 	assert.NoError(t, err)
@@ -235,8 +239,8 @@ func TestGetJfrogDependenciesPath(t *testing.T) {
 	assert.Equal(t, expectedDependenciesPath, dependenciesPath)
 }
 
-func assertionHelper(t *testing.T, convertedConfig *ConfigV2, expectedVersion int, expectedEnc bool) {
-	assert.Equal(t, strconv.Itoa(expectedVersion), convertedConfig.Version)
+func assertionHelper(t *testing.T, convertedConfig *ConfigV3, expectedVersion string, expectedEnc bool) {
+	assert.Equal(t, expectedVersion, convertedConfig.Version)
 	assert.Equal(t, expectedEnc, convertedConfig.Enc)
 
 	rtConverted := convertedConfig.Artifactory
@@ -257,7 +261,7 @@ func assertionHelper(t *testing.T, convertedConfig *ConfigV2, expectedVersion in
 func TestHandleSecrets(t *testing.T) {
 	masterKey := "randomkeywithlengthofexactly32!!"
 
-	original := new(ConfigV2)
+	original := new(ConfigV3)
 	original.Artifactory = []*ArtifactoryDetails{{User: "user", Password: "password", Url: "http://localhost:8080/artifactory/", AccessToken: "accessToken",
 		RefreshToken: "refreshToken", ApiKey: "apiKEY", SshPassphrase: "sshPass"}}
 	original.Bintray = &BintrayDetails{ApiUrl: "APIurl", Key: "bintrayKey"}
@@ -274,16 +278,16 @@ func TestHandleSecrets(t *testing.T) {
 	verifyEncryptionStatus(t, original, newConf, false)
 }
 
-func copyConfig(t *testing.T, original *ConfigV2) *ConfigV2 {
+func copyConfig(t *testing.T, original *ConfigV3) *ConfigV3 {
 	b, err := json.Marshal(&original)
 	assert.NoError(t, err)
-	newConf := new(ConfigV2)
+	newConf := new(ConfigV3)
 	err = json.Unmarshal(b, &newConf)
 	assert.NoError(t, err)
 	return newConf
 }
 
-func verifyEncryptionStatus(t *testing.T, original, actual *ConfigV2, encryptionExpected bool) {
+func verifyEncryptionStatus(t *testing.T, original, actual *ConfigV3, encryptionExpected bool) {
 	var equals []bool
 	for i := range actual.Artifactory {
 		if original.Artifactory[i].Password != "" {

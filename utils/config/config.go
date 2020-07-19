@@ -5,6 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
@@ -14,11 +21,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"time"
 )
 
 // This is the default server id. It is used when adding a server config without providing a server ID
@@ -194,7 +196,7 @@ func SaveBintrayConf(details *BintrayDetails) error {
 	return saveConfig(config)
 }
 
-func saveConfig(config *ConfigV2) error {
+func saveConfig(config *ConfigV3) error {
 	config.Version = cliutils.GetConfigVersion()
 	err := config.encrypt()
 	if err != nil {
@@ -218,12 +220,12 @@ func saveConfig(config *ConfigV2) error {
 	return nil
 }
 
-func readConf() (*ConfigV2, error) {
+func readConf() (*ConfigV3, error) {
 	confFilePath, err := getConfFilePath()
 	if err != nil {
 		return nil, err
 	}
-	config := new(ConfigV2)
+	config := new(ConfigV3)
 	exists, err := fileutils.IsFileExists(confFilePath, false)
 	if err != nil {
 		return nil, err
@@ -236,7 +238,7 @@ func readConf() (*ConfigV2, error) {
 		return nil, err
 	}
 	if len(content) == 0 {
-		return new(ConfigV2), nil
+		return new(ConfigV3), nil
 	}
 	content, err = convertIfNeeded(content)
 	if err != nil {
@@ -251,7 +253,7 @@ func readConf() (*ConfigV2, error) {
 	return config, err
 }
 
-func (config *ConfigV2) getContent() ([]byte, error) {
+func (config *ConfigV3) getContent() ([]byte, error) {
 	b, err := json.Marshal(&config)
 	if err != nil {
 		return []byte{}, errorutils.CheckError(err)
@@ -330,7 +332,7 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 
 	// Switch contains FALLTHROUGH to convert from a certain version to the latest.
 	switch version {
-	case "2":
+	case cliutils.GetConfigVersion():
 		return content, nil
 	case "0":
 		content, err = convertConfigV0toV1(content)
@@ -339,7 +341,6 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 		}
 		fallthrough
 	case "1":
-		log.Debug("Converting JFrog CLI's config to the latest version...")
 		err = createHomeDirBackup()
 		if err != nil {
 			return nil, err
@@ -348,10 +349,17 @@ func convertIfNeeded(content []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		fallthrough
+	case "2":
+		log.Debug("Converting JFrog CLI's config to the latest version...")
+		content, err = convertConfigV2toV3(content)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Save config after all conversions (also updates version).
-	result := new(ConfigV2)
+	result := new(ConfigV3)
 	err = json.Unmarshal(content, &result)
 	if errorutils.CheckError(err) != nil {
 		return nil, err
@@ -399,7 +407,7 @@ func getKeyFromConfig(content []byte, key string) (value string, exists bool, er
 }
 
 func convertConfigV0toV1(content []byte) ([]byte, error) {
-	result := new(ConfigV2)
+	result := new(ConfigV3)
 	configV0 := new(ConfigV0)
 	err := json.Unmarshal(content, &configV0)
 	if errorutils.CheckError(err) != nil {
@@ -408,6 +416,19 @@ func convertConfigV0toV1(content []byte) ([]byte, error) {
 	result = configV0.Convert()
 	result.Version = "1"
 	content, err = json.Marshal(&result)
+	return content, errorutils.CheckError(err)
+}
+
+func convertConfigV2toV3(content []byte) ([]byte, error) {
+	config := new(ConfigV3)
+	err := json.Unmarshal(content, &config)
+	if errorutils.CheckError(err) != nil {
+		return nil, err
+	}
+	for _, rtConfig := range config.Artifactory {
+		rtConfig.User = strings.ToLower(rtConfig.User)
+	}
+	content, err = json.Marshal(&config)
 	return content, errorutils.CheckError(err)
 }
 
@@ -432,8 +453,8 @@ func getConfFilePath() (string, error) {
 	return filepath.Join(confPath, cliutils.JfrogConfigFile), nil
 }
 
-// This struct is suitable for both version 1 and 2.
-type ConfigV2 struct {
+// This struct is suitable for versions 1, 2 and 3.
+type ConfigV3 struct {
 	Artifactory    []*ArtifactoryDetails  `json:"artifactory"`
 	Bintray        *BintrayDetails        `json:"bintray,omitempty"`
 	MissionControl *MissionControlDetails `json:"missionControl,omitempty"`
@@ -448,8 +469,8 @@ type ConfigV0 struct {
 	MissionControl *MissionControlDetails `json:"MissionControl,omitempty"`
 }
 
-func (o *ConfigV0) Convert() *ConfigV2 {
-	config := new(ConfigV2)
+func (o *ConfigV0) Convert() *ConfigV3 {
+	config := new(ConfigV3)
 	config.Bintray = o.Bintray
 	config.MissionControl = o.MissionControl
 	if o.Artifactory != nil {

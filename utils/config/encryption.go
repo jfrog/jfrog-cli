@@ -8,15 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"syscall"
+
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
-	"io"
-	"os"
-	"strconv"
-	"syscall"
 )
 
 type SecurityConf struct {
@@ -32,7 +33,7 @@ const decryptErrorPrefix = "cannot decrypt config: "
 type secretHandler func(string, string) (string, error)
 
 // Encrypt config file if security configuration file exists and contains master key.
-func (config *ConfigV2) encrypt() error {
+func (config *ConfigV3) encrypt() error {
 	key, _, err := getMasterKeyFromSecurityConfFile()
 	if err != nil || key == "" {
 		return err
@@ -43,7 +44,7 @@ func (config *ConfigV2) encrypt() error {
 }
 
 // Decrypt config if encrypted and master key exists.
-func (config *ConfigV2) decrypt() error {
+func (config *ConfigV3) decrypt() error {
 	if !config.Enc {
 		return updateEncryptionIfNeeded(config)
 	}
@@ -61,7 +62,7 @@ func (config *ConfigV2) decrypt() error {
 }
 
 // Encrypt the config file if it is decrypted while security configuration file exists and contains a master key.
-func updateEncryptionIfNeeded(originalConfig *ConfigV2) error {
+func updateEncryptionIfNeeded(originalConfig *ConfigV3) error {
 	masterKey, _, err := getMasterKeyFromSecurityConfFile()
 	if err != nil || masterKey == "" {
 		return err
@@ -72,7 +73,7 @@ func updateEncryptionIfNeeded(originalConfig *ConfigV2) error {
 	if err != nil {
 		return err
 	}
-	tmpEncConfig := new(ConfigV2)
+	tmpEncConfig := new(ConfigV3)
 	err = json.Unmarshal(decryptedContent, &tmpEncConfig)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -87,7 +88,7 @@ func updateEncryptionIfNeeded(originalConfig *ConfigV2) error {
 }
 
 // Encrypt/Decrypt all secrets in the provided config, with the provided master key.
-func handleSecrets(config *ConfigV2, handler secretHandler, key string) error {
+func handleSecrets(config *ConfigV3, handler secretHandler, key string) error {
 	var err error
 	for _, rtDetails := range config.Artifactory {
 		rtDetails.Password, err = handler(rtDetails.Password, key)
