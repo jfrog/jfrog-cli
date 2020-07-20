@@ -1,3 +1,6 @@
+## 1.38.2 (July 20, 2020)
+- Bug fix - Fix an issue with JFrog CLI's npm installer
+
 ## 1.38.1 (July 19, 2020)
 - Bug fix - Username must be lowercase since version 1.38.0
 - JFrog CLI build dir restructure
