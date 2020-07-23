@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/magiconair/properties/assert"
 	"reflect"
 	"testing"
 )
@@ -104,5 +105,53 @@ func TestReplaceSpecVars(t *testing.T) {
 func assertVariablesMap(expected, actual []byte, t *testing.T) {
 	if 0 != bytes.Compare(expected, actual) {
 		t.Error("Wrong matching expected: `" + string(expected) + "` Got `" + string(actual) + "`")
+	}
+}
+
+type yesNoCases struct {
+	ans string
+	def bool
+	expectedParsed bool
+	expectedValid bool
+	testName string
+}
+func TestParseYesNo(t *testing.T) {
+	cases := []yesNoCases{
+		// Positive answer.
+		{"yes", true, true, true, "yes"},
+		{"y", true, true, true, "y"},
+		{"Y", true, true, true, "y capital"},
+		{"YES", true, true, true, "yes capital"},
+		{"y", false, true, true, "positive with different default"},
+
+		// Negative answer.
+		{"no", true, false, true, "no"},
+		{"n", true, false, true, "n"},
+		{"N", true, false, true, "n capital"},
+		{"NO", true, false, true, "no capital"},
+		{"n", false, false, true, "negative with different default"},
+
+		// Default answer.
+		{"", true, true, true, "empty with positive default"},
+		{"", false, false, true, "empty with negative default"},
+		{" ", false, false, true, "empty with space"},
+
+		// Spaces.
+		{" y", false, true, true, "space before"},
+		{"yes ", true, true, true, "space after"},
+
+		// Invalid answer.
+		{"notvalid", false, false, false, "invalid all lower"},
+		{"yNOVALIDyes", false, false, false, "invalid changing"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.testName, func(t *testing.T) {
+			actualParsed, actualValid := parseYesNo(c.ans, c.def)
+			assert.Equal(t, actualValid, c.expectedValid)
+			if actualValid {
+				assert.Equal(t, actualParsed, c.expectedParsed)
+			}
+		})
 	}
 }

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"regexp"
 	"strconv"
 	"strings"
@@ -85,24 +86,33 @@ func interruptKeyBind() prompt.Option {
 	return prompt.OptionAddKeyBind(interrupt)
 }
 
-// Ask question with free string answer, answer cannot be empty.
-// Variable aren't check and can be part of the answer
-func AskString(msg, promptPrefix string) string {
+// Ask question with free string answer.
+// If answer is empty and defaultValue isn't, return defaultValue.
+// Otherwise, answer cannot be empty.
+// Variable aren't checked and can be part of the answer.
+func AskString(msg, promptPrefix, defaultValue string) string {
 	if msg != "" {
 		fmt.Println(msg + ":")
 	}
+	promptPrefix = addDefaultValueToPrompt(promptPrefix, defaultValue)
 	for {
-		answer := prompt.Input(promptPrefix+" ", prefixCompleter(nil), interruptKeyBind())
+		answer := prompt.Input(promptPrefix, prefixCompleter(nil), interruptKeyBind())
+		answer = strings.TrimSpace(answer)
 		if answer != "" {
 			return answer
+		}
+		// Empty answer, default value isn't.
+		if defaultValue != "" {
+			return defaultValue
 		}
 		fmt.Println(EmptyValueMsg)
 	}
 }
 
 // Ask question with list of possible answers.
-// The answer must be chosen from the list, but can be a variable if allowVars set to true.
-func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Suggest) string {
+// If answer is empty and defaultValue isn't, return defaultValue.
+// Otherwise, the answer must be chosen from the list, but can be a variable if allowVars set to true.
+func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Suggest, defaultValue string) string {
 	if msg != "" {
 		fmt.Println(msg + PressTabMsg)
 	}
@@ -110,13 +120,25 @@ func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Sugg
 	if allowVars {
 		errMsg += VariableUseMsg
 	}
+	promptPrefix = addDefaultValueToPrompt(promptPrefix, defaultValue)
 	for {
-		answer := prompt.Input(promptPrefix+" ", prefixCompleter(options), interruptKeyBind())
+		answer := prompt.Input(promptPrefix, prefixCompleter(options), interruptKeyBind())
+		answer = strings.TrimSpace(answer)
+		if answer == "" && defaultValue != "" {
+			return defaultValue
+		}
 		if validateAnswer(answer, options, allowVars) {
 			return answer
 		}
 		fmt.Println(errMsg)
 	}
+}
+
+func addDefaultValueToPrompt(promptPrefix, defaultValue string) string {
+	if defaultValue != "" {
+		return promptPrefix + " [" + defaultValue + "]: "
+	}
+	return promptPrefix + " "
 }
 
 func validateAnswer(answer string, options []prompt.Suggest, allowVars bool) bool {
@@ -133,17 +155,35 @@ func validateAnswer(answer string, options []prompt.Suggest, allowVars bool) boo
 	return false
 }
 
+// Ask question with list of possible answers.
+// If the provided answer does not appear in list, confirm the choice.
+func AskFromListWithMismatchConfirmation(promptPrefix, misMatchMsg string, options []prompt.Suggest) string {
+	for {
+		answer := prompt.Input(promptPrefix+" ", prefixCompleter(options), interruptKeyBind())
+		if answer == "" {
+			fmt.Println(EmptyValueMsg)
+		}
+		for _, option := range options {
+			if answer == option.Text {
+				return answer
+			}
+		}
+		if cliutils.AskYesNo(misMatchMsg+" continue anyway?", false) {
+			return answer
+		}
+	}
+}
+
 // Ask question steps:
 // 		1. Ask for string/from list
 //		2. Write the answer to answersMap (if writer provided)
-// 		3. Run callback (if provided)q
+// 		3. Run callback (if provided)
 func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value string, err error) {
-
 	var answer string
 	if question.Options != nil {
-		answer = AskFromList(question.Msg, question.PromptPrefix, question.AllowVars, question.Options)
+		answer = AskFromList(question.Msg, question.PromptPrefix, question.AllowVars, question.Options, "")
 	} else {
-		answer = AskString(question.Msg, question.PromptPrefix)
+		answer = AskString(question.Msg, question.PromptPrefix, "")
 	}
 	if question.Writer != nil {
 		err = question.Writer(&iq.AnswersMap, question.MapKey, answer)
@@ -257,6 +297,14 @@ func GetSuggestsFromKeys(keys []string, SuggestionMap map[string]prompt.Suggest)
 	var suggests []prompt.Suggest
 	for _, key := range keys {
 		suggests = append(suggests, SuggestionMap[key])
+	}
+	return suggests
+}
+
+func ConvertToSuggests(options []string) []prompt.Suggest {
+	var suggests []prompt.Suggest
+	for _, opt := range options {
+		suggests = append(suggests, prompt.Suggest{Text: opt})
 	}
 	return suggests
 }
