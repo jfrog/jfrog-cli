@@ -3,14 +3,15 @@ package cliutils
 import (
 	"bytes"
 	"fmt"
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/utils/summary"
@@ -232,7 +233,7 @@ func GetVersion() string {
 }
 
 func GetConfigVersion() string {
-	return "2"
+	return "3"
 }
 
 func GetDocumentationMessage() string {

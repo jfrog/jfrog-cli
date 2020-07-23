@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	commandUtils "github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -77,22 +79,25 @@ func CleanBuildToolsTests() {
 	deleteCreatedRepos()
 }
 
-func createJfrogHomeConfig(t *testing.T) {
-	templateConfigPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "configtemplate", cliutils.JfrogConfigFile)
+func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	err = os.Setenv(cliutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	assert.NoError(t, err)
-	jfrogHomePath, err := cliutils.GetJfrogHomeDir()
-	assert.NoError(t, err)
-	_, err = tests.ReplaceTemplateVariables(templateConfigPath, jfrogHomePath)
+	var credentials string
+	if *tests.RtAccessToken != "" {
+		credentials = "--access-token=" + *tests.RtAccessToken
+	} else {
+		credentials = "--user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+	}
+	err = tests.NewJfrogCli(execMain, "jfrog rt", credentials).Exec("c", "default", "--interactive=false", "--url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
 func prepareHomeDir(t *testing.T) (string, string) {
 	oldHomeDir := os.Getenv(cliutils.HomeDir)
 	// Populate cli config with 'default' server
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 	newHomeDir, err := cliutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	return oldHomeDir, newHomeDir

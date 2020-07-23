@@ -554,9 +554,9 @@ func GetDownloadWildcardRepo() []string {
 
 func GetDownloadUnicode() []string {
 	return []string{
-		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
-		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
-		RtRepo1 + "/testsdata/unicode/Ԙחלص⩥.in",
+		RtRepo1 + "/testsdata/unicode/dirλrectory/文件.in",
+		RtRepo1 + "/testsdata/unicode/dirλrectory/aȩ.ȥ1",
+		RtRepo1 + "/testsdata/unicode/Ԙחלص.in",
 	}
 }
 
@@ -1314,7 +1314,6 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 
 func GetMavenDeployedArtifacts() []string {
 	return []string{
-		MvnRepo1 + "/org/jfrog/cli-test/maven-metadata.xml",
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.jar",
 		MvnRepo1 + "/org/jfrog/cli-test/1.0/cli-test-1.0.pom",
 	}
@@ -1430,8 +1429,7 @@ func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{
 			Url:                    *RtUrl,
-			Username:               *RtUser,
-			Password:               "",
+			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,
 			EnableEventReplication: false,

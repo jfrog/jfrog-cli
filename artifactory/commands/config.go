@@ -3,11 +3,13 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/auth"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/jfrog/jfrog-client-go/auth"
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -108,6 +110,11 @@ func (cc *ConfigCommand) Config() error {
 			return err
 		}
 	}
+
+	// Artifactory expects the username to be lower-cased. In case it is not,
+	// Artifactory will silently save it lower-cased, but the token creation
+	// REST API will fail with a non lower-cased username.
+	cc.details.User = strings.ToLower(cc.details.User)
 
 	if len(configurations) == 1 {
 		cc.details.IsDefault = true

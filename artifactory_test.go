@@ -65,11 +65,8 @@ func InitArtifactoryTests() {
 }
 
 func authenticate() string {
-	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase, AccessToken: *tests.RtAccessToken}
+	artifactoryDetails = &config.ArtifactoryDetails{Url: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
 	cred := "--url=" + *tests.RtUrl
-	if *tests.RtDistributionUrl != "" {
-		cred += " --dist-url=" + *tests.RtDistributionUrl
-	}
 	if !fileutils.IsSshUrl(artifactoryDetails.Url) {
 		if *tests.RtApiKey != "" {
 			artifactoryDetails.ApiKey = *tests.RtApiKey
@@ -213,14 +210,14 @@ func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDownloadUnicode(), specFile, t)
 
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/testsdata/unicode/(dirλrec၇tory)/", filepath.Join(tests.Out, "{1}")+fileutils.GetFileSeparator(), "--flat=true")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/testsdata/unicode/(dirλrectory)/", filepath.Join(tests.Out, "{1}")+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical([]string{
 		tests.Out,
-		filepath.Join(tests.Out, "dirλrec၇tory"),
-		filepath.Join(tests.Out, "dirλrec၇tory", "文件.in"),
-		filepath.Join(tests.Out, "dirλrec၇tory", "aȩ.ȥ1"),
+		filepath.Join(tests.Out, "dirλrectory"),
+		filepath.Join(tests.Out, "dirλrectory", "文件.in"),
+		filepath.Join(tests.Out, "dirλrectory", "aȩ.ȥ1"),
 	}, paths)
 	assert.NoError(t, err)
 
@@ -934,7 +931,7 @@ func TestArtifactoryProxy(t *testing.T) {
 	assert.NoError(t, err)
 	var proxyTestArgs []string
 	var httpProxyEnv string
-	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase}
+	testArgs := []string{"-test.artifactoryProxy=true", "-rt.url=" + *tests.RtUrl, "-rt.user=" + *tests.RtUser, "-rt.password=" + *tests.RtPassword, "-rt.apikey=" + *tests.RtApiKey, "-rt.sshKeyPath=" + *tests.RtSshKeyPath, "-rt.sshPassphrase=" + *tests.RtSshPassphrase, "-rt.accessToken=" + *tests.RtAccessToken}
 	if rtUrl.Scheme == "https" {
 		os.Setenv(tests.HttpsProxyEnvVar, "1026")
 		proxyTestArgs = append([]string{"test", "-run=TestArtifactoryHttpsProxyEnvironmentVariableDelegator"}, testArgs...)
@@ -3730,8 +3727,10 @@ func initVcsTestDir(t *testing.T) string {
 
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
-	configArtifactoryCli.Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user="+*tests.RtUser, "--password="+*tests.RtPassword, "--apikey="+*tests.RtApiKey, "--access-token="+*tests.RtAccessToken, "--interactive=false")
+	// Configure server with dummy credentials
+	err := tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user=admin", "--password=password", "--interactive=false", "--enc-password=false")
 	defer deleteServerConfig()
+	assert.NoError(t, err)
 
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.ReplicationTempCreate)
@@ -3746,6 +3745,8 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 	assert.NoError(t, err)
 	result, err := servicesManager.GetReplication(tests.RtRepo1)
 	assert.NoError(t, err)
+	// The Replicator may encrypt the password internally, therefore we should only check that the password is not empty
+	assert.NotEmpty(t, result[0].Password)
 	result[0].Password = ""
 	assert.ElementsMatch(t, result, tests.GetReplicationConfig())
 
@@ -3780,14 +3781,13 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Write the command output to the origin
 	content := buffer.Bytes()
 	buffer.Reset()
-	previousLog.Output(string(content))
 
 	// Extract the the token from the output
 	token, err := jsonparser.GetString(content, "access_token")
 	assert.NoError(t, err)
 
 	// Try ping with the new token
-	err = artifactoryCli.Exec("ping", "--access-token="+token)
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.RtUrl+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
 
 	// Cleanup

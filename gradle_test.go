@@ -79,12 +79,17 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	cleanGradleTest()
 }
 
+// This test check legacy behavior whereby the Gradle config yml contains the username, url and password.
 func TestGradleBuildWithCredentials(t *testing.T) {
-	if *tests.RtUser == "" || *tests.RtPassword == "" {
-		t.SkipNow()
-	}
-
 	initGradleTest(t)
+
+	if *tests.RtAccessToken != "" {
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		defer func() {
+			*tests.RtUser = origUsername
+			*tests.RtPassword = origPassword
+		}()
+	}
 
 	buildNumber := "1"
 	buildGradlePath := createGradleProject(t, "gradleproject")
@@ -123,5 +128,5 @@ func initGradleTest(t *testing.T) {
 	if !*tests.TestGradle {
 		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
 	}
-	createJfrogHomeConfig(t)
+	createJfrogHomeConfig(t, true)
 }

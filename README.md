@@ -1,7 +1,7 @@
 |Branch|Status|
 |:---:|:---:|
-|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master)
-|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev)|
+|master|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/master?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/master) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/master?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=master)
+|dev|[![Build status](https://ci.appveyor.com/api/projects/status/iqxooj0a4aepv1n1/branch/dev?svg=true)](https://ci.appveyor.com/project/jfrog-ecosystem/jfrog-cli-go/branch/dev) [![JFrog Pipelines](https://badgen.net/github/status/jfrog/jfrog-cli/dev?label=JFrog%20Pipelines)](https://ecosysjfrog.jfrog.io/ui/pipelines/myPipelines/test_cli?branch=dev)|
 
 # Table of Contents
 - [Overview](#overview)
@@ -63,12 +63,12 @@ Build the project by navigating to the jfrog folder and executing the following 
 On Unix based systems run:
 ````
 cd jfrog-cli
-./build.sh
+build/build.sh
 ````
 On Windows run:
 ````
 cd jfrog-cli
-build.bat
+build\build.bat
 ````
 Once completed, you will find the JFrog CLI executable at your current directory.
 
@@ -229,11 +229,12 @@ Flags:
   Once the tests are completed, the repository will be deleted.
 
 ### Distribution tests
-In addition to [general optional flags](#Usage) you *must* use the following flag:
+In addition to [general optional flags](#Usage) you can use the following flags:
 
 | Flag | Description |
 | --- | --- |
-| `-rt.distUrl` | JFrog Distribution URL. |
+| `-rt.distUrl` | [Mandatory] JFrog Distribution URL. |
+| `-rt.distAccessToken` | [Optional] Distribution access token. |
 
 To run distribution tests run the following command:
 ```

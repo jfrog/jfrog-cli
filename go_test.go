@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/jfrog/gocmd/executers"
+	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -338,24 +339,13 @@ func initGoTest(t *testing.T) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
-
 	os.Setenv("GONOSUMDB", "github.com/jfrog")
-
-	// Move when go will be supported and check Artifactory version.
-	if !isRepoExist(tests.GoRepo) {
-		repoConfig := filepath.FromSlash(tests.GetTestResourcesPath()) + tests.GoLocalRepositoryConfig
-		repoConfig, err := tests.ReplaceTemplateVariables(repoConfig, "")
-		require.NoError(t, err)
-		execCreateRepoRest(repoConfig, tests.GoRepo)
-	}
-	authenticate()
 }
 
 func cleanGoTest() {
 	os.Unsetenv("GONOSUMDB")
-	if isRepoExist(tests.GoRepo) {
-		execDeleteRepoRest(tests.GoRepo)
-	}
+	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
+	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 	cleanBuildToolsTest()
 }
 

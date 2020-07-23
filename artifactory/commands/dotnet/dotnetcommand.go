@@ -2,6 +2,13 @@ package dotnet
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	dotnet "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
@@ -11,12 +18,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 const SourceName = "JFrogCli"
