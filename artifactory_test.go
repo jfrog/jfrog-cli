@@ -210,14 +210,14 @@ func TestArtifactoryDownloadPatternWithUnicodeChars(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDownloadUnicode(), specFile, t)
 
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/testsdata/unicode/(dirλrec၇tory)/", filepath.Join(tests.Out, "{1}")+fileutils.GetFileSeparator(), "--flat=true")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/testsdata/unicode/(dirλrectory)/", filepath.Join(tests.Out, "{1}")+fileutils.GetFileSeparator(), "--flat=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical([]string{
 		tests.Out,
-		filepath.Join(tests.Out, "dirλrec၇tory"),
-		filepath.Join(tests.Out, "dirλrec၇tory", "文件.in"),
-		filepath.Join(tests.Out, "dirλrec၇tory", "aȩ.ȥ1"),
+		filepath.Join(tests.Out, "dirλrectory"),
+		filepath.Join(tests.Out, "dirλrectory", "文件.in"),
+		filepath.Join(tests.Out, "dirλrectory", "aȩ.ȥ1"),
 	}, paths)
 	assert.NoError(t, err)
 
