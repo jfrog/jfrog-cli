@@ -237,13 +237,13 @@ func (builder *buildInfoBuilder) setBuildProperties() (int, error) {
 		log.Error("Fail to create new content writer for docker layer")
 		return 0, err
 	}
+	defer writer.Close()
 	for _, item := range builder.layers {
 		writer.Write(item)
 	}
-	writer.Close()
 	reader := content.NewContentReader(writer.GetFilePath(), content.DefaultKey)
 	defer reader.Close()
-	return builder.serviceManager.SetProps(services.PropsParams{ItemsReader: reader, Props: props})
+	return builder.serviceManager.SetProps(services.PropsParams{Reader: reader, Props: props})
 }
 
 // Create docker build info
@@ -397,12 +397,11 @@ func performSearch(imagePathPattern string, serviceManager *artifactory.Artifact
 	if err != nil {
 		return nil, err
 	}
+	defer reader.Close()
 	resultMap := map[string]utils.ResultItem{}
 	for resultItem := new(utils.ResultItem); reader.NextRecord(resultItem) == nil; resultItem = new(utils.ResultItem) {
 		resultMap[resultItem.Name] = *resultItem
-
 	}
-	defer reader.Close()
 	return resultMap, reader.GetError()
 }
 

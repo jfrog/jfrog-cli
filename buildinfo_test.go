@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -96,7 +95,7 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
-		searchParams, err := generic.GetSearchParams(spec.Get(i))
+		searchParams, err := utils.GetSearchParams(spec.Get(i))
 		assert.NoError(t, err)
 		reader, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		assert.NoError(t, err, "Failed Searching files")

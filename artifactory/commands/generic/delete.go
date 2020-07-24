@@ -78,26 +78,19 @@ func (dc *DeleteCommand) GetPathsToDelete() (*content.ContentReader, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		currentResultsReader, err := servicesManager.GetPathsToDelete(deleteParams)
+		reader, err := servicesManager.GetPathsToDelete(deleteParams)
 		if err != nil {
 			return nil, err
 		}
-		length, err := currentResultsReader.Length()
-		if err != nil {
-			return nil, err
-		}
-		if length > 0 {
-			temp = append(temp, currentResultsReader)
-		} else {
-			currentResultsReader.Close()
+		temp = append(temp, reader)
+		if i == 0 {
+			defer func() {
+				for _, reader := range temp {
+					reader.Close()
+				}
+			}()
 		}
 	}
-	defer func() {
-		for _, reader := range temp {
-			reader.Close()
-		}
-	}()
 	return content.MergeReaders(temp, content.DefaultKey)
 }
 

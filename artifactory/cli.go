@@ -3020,7 +3020,7 @@ func searchCmd(c *cli.Context) error {
 		return err
 	}
 	if !c.Bool("count") {
-		return generic.PrintSearchResults(reader)
+		return utils.PrintSearchResults(reader)
 	}
 	log.Output(length)
 	return nil

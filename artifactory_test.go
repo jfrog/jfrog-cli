@@ -23,6 +23,7 @@ import (
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/artifactory/types"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -786,7 +787,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDirPath)
+	defer fileutils.RemoveTempDir(tempDirPath)
 	os.Setenv(cliutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, false)
@@ -807,7 +808,10 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	// Without loading the certificates (or skipping verification) we expect all actions to fail due to error: "x509: certificate signed by unknown authority"
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
-	_, err = searchCmd.Search()
+	reader, err := searchCmd.Search()
+	if reader != nil {
+		assert.NoError(t, reader.Close())
+	}
 	_, isUrlErr := err.(*url.Error)
 	assert.True(t, isUrlErr, "Expected a connection failure, since reverse proxy didn't load self-signed-certs. Connection however is successful", err)
 
@@ -815,7 +819,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	artifactoryDetails.InsecureTls = true
 	searchCmd = generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(fileSpec)
-	reader, err := searchCmd.Search()
+	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 	assert.NoError(t, reader.Close())
 
@@ -844,7 +848,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	tempDirPath, err := fileutils.CreateTempDir()
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDirPath)
+	defer fileutils.RemoveTempDir(tempDirPath)
 	os.Setenv(cliutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, true)
@@ -1294,7 +1298,7 @@ func TestArtifactoryUploadExcludeByCli2Wildcard(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer os.Remove(absDirPath)
+	defer fileutils.RemoveTempDir(absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
@@ -1322,7 +1326,7 @@ func TestArtifactoryUploadExcludeByCli2Regex(t *testing.T) {
 	// Create temp dir
 	absDirPath, err := fileutils.CreateTempDir()
 	assert.NoError(t, err, "Couldn't create dir")
-	defer os.Remove(absDirPath)
+	defer fileutils.RemoveTempDir(absDirPath)
 
 	// Create temp files
 	d1 := []byte("test file")
@@ -1840,7 +1844,7 @@ func TestArtifactoryDeleteExclusionsBySpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-// Deleting files which one file name is a prefix to another in the same dir
+// Deleting files when one file name is a prefix to another in the same dir
 func TestArtifactoryDeletePrefixFiles(t *testing.T) {
 	initArtifactoryTest(t)
 
@@ -1897,16 +1901,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []generic.SearchResult
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	var resultItems []types.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -1920,16 +1924,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -1943,16 +1947,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3234,16 +3238,16 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Search without IncludeDirs
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []generic.SearchResult
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	var resultItems []types.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3256,16 +3260,16 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3294,16 +3298,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []generic.SearchResult
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	var resultItems []types.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3316,16 +3320,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3338,16 +3342,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3360,16 +3364,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3382,16 +3386,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3407,16 +3411,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(generic.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []generic.SearchResult{}
-	readerNoDate, err = generic.SearchResultNoDate(reader)
+	resultItems = []types.SearchResult{}
+	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3449,10 +3453,10 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	resultItems := []generic.SearchResult{}
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	resultItems := []types.SearchResult{}
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3713,16 +3717,16 @@ func cleanArtifactory() {
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
-func searchInArtifactory(specFile string, t *testing.T) ([]generic.SearchResult, error) {
+func searchInArtifactory(specFile string, t *testing.T) ([]types.SearchResult, error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	var resultItems []generic.SearchResult
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	var resultItems []types.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for searchResult := new(generic.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(generic.SearchResult) {
+	for searchResult := new(types.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(types.SearchResult) {
 		resultItems = append(resultItems, *searchResult)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3752,10 +3756,10 @@ func verifyExistInArtifactoryByProps(expected []string, pattern, props string, t
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	var resultItems []generic.SearchResult
-	readerNoDate, err := generic.SearchResultNoDate(reader)
+	var resultItems []types.SearchResult
+	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(generic.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(generic.SearchResult) {
+	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3842,7 +3846,7 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
-		searchParams, err := generic.GetSearchParams(spec.Get(i))
+		searchParams, err := utils.GetSearchParams(spec.Get(i))
 		assert.NoError(t, err, "Failed Searching files")
 		reader, err := services.SearchBySpecFiles(searchParams, flags, rtutils.ALL)
 		assert.NoError(t, err, "Failed Searching files")
@@ -3855,7 +3859,7 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 	return resultItems
 }
 
-func assertDateInSearchResult(searchResult generic.SearchResult) error {
+func assertDateInSearchResult(searchResult types.SearchResult) error {
 	if searchResult.Created == "" || searchResult.Modified == "" {
 		message, err := json.Marshal(&searchResult)
 		if err != nil {

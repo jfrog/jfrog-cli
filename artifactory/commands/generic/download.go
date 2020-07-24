@@ -3,6 +3,11 @@ package generic
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -15,10 +20,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
 )
 
 type DownloadCommand struct {
@@ -137,7 +138,7 @@ func (dc *DownloadCommand) Run() error {
 		if _, err = os.Stat(absSyncDeletesPath); err == nil {
 			// Unmarshal the local paths of the downloaded files from the results file reader
 			tmpRoot, err := createDownloadResultEmptyTmpReflection(resultsReader)
-			defer os.RemoveAll(tmpRoot)
+			defer fileutils.RemoveTempDir(tmpRoot)
 			if err != nil {
 				return err
 			}

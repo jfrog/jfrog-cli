@@ -3,7 +3,7 @@ package tests
 import (
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/types"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
@@ -696,8 +696,8 @@ func GetDeleteFolderWithWildcard() []string {
 	}
 }
 
-func GetSearchIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchIncludeDirsFiles() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: Repo1 + "/",
 			Type: "folder",
@@ -794,8 +794,8 @@ func GetSearchIncludeDirsFiles() []generic.SearchResult {
 	}
 }
 
-func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchNotIncludeDirsFiles() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: Repo1 + "/data/testsdata/a/a1.in",
 			Type: "file",
@@ -862,8 +862,8 @@ func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
 	}
 }
 
-func GetSearchAfterDeleteWithExcludeProps() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchAfterDeleteWithExcludeProps() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: Repo1 + "/a/c1.in",
 			Type: "file",
@@ -887,8 +887,8 @@ func GetSearchAfterDeleteWithExcludeProps() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep1() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -947,8 +947,8 @@ func GetSearchPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep2() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -994,8 +994,8 @@ func GetSearchPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep3() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1084,8 +1084,8 @@ func GetSearchPropsStep3() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep4() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep4() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -1132,12 +1132,12 @@ func GetSearchPropsStep4() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep5() []generic.SearchResult {
-	return make([]generic.SearchResult, 0)
+func GetSearchPropsStep5() []types.SearchResult {
+	return make([]types.SearchResult, 0)
 }
 
-func GetSearchPropsStep6() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep6() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
@@ -1151,8 +1151,8 @@ func GetSearchPropsStep6() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep1() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1236,8 +1236,8 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep2() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1287,8 +1287,8 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep3() []types.SearchResult {
+	return []types.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",

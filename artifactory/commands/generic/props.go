@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
@@ -64,6 +63,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 
 func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultReader *content.ContentReader, err error) {
 	var errorOccurred = false
+	temp := []*content.ContentReader{}
 	writer, err := content.NewContentWriter("results", true, false)
 	if err != nil {
 		return
@@ -82,25 +82,28 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			log.Error(err)
 			continue
 		}
-		for searchResult := new(clientutils.ResultItem); reader.NextRecord(searchResult) == nil; searchResult = new(clientutils.ResultItem) {
-			writer.Write(*searchResult)
+		temp = append(temp, reader)
+		if i == 0 {
+			defer func() {
+				for _, reader := range temp {
+					reader.Close()
+				}
+			}()
 		}
-		if err = reader.GetError(); err != nil {
-			errorOccurred = true
-			log.Error(err)
-		}
-		reader.Close()
 	}
-	resultReader = content.NewContentReader((writer.GetFilePath()), content.DefaultKey)
+	resultReader, err = content.MergeReaders(temp, content.DefaultKey)
+	if err != nil {
+		return
+	}
 	if errorOccurred {
 		err = errorutils.CheckError(errors.New("Operation finished with errors, please review the logs."))
 	}
 	return
 }
 
-func GetPropsParams(resultItems *content.ContentReader, properties string) (propsParams services.PropsParams) {
+func GetPropsParams(reader *content.ContentReader, properties string) (propsParams services.PropsParams) {
 	propsParams = services.NewPropsParams()
-	propsParams.ItemsReader = resultItems
+	propsParams.Reader = reader
 	propsParams.Props = properties
 	return
 }
