@@ -1127,7 +1127,7 @@ func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
-	resultItems, err := searchInArtifactory(searchSpec)
+	resultItems, err := searchInArtifactory(searchSpec,t)
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(resultItems), 1)
@@ -1849,7 +1849,7 @@ func TestArtifactoryDeletePrefixFiles(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Prepare search command
-	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1).Recursive(true)
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails)
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
@@ -1860,7 +1860,7 @@ func TestArtifactoryDeletePrefixFiles(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Delete by pattern
-	artifactoryCli.Exec("delete", tests.Repo1+"/*")
+	artifactoryCli.Exec("delete", tests.RtRepo1+"/*")
 
 	// Validate files are deleted
 	reader, err := searchCmd.Search()
@@ -1885,7 +1885,7 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Set properties to the directories as well (and their content)
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b", "D=5", "--include-dirs")
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/c", "D=2", "--include-dirs")
-	
+
 	//  Set the property D=5 to c1.in, which is a different value then its directory c/
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/c/c1.in", "D=5")
 
@@ -3442,12 +3442,12 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile, "--recursive")
 
 	// Prepare search command
-	searchSpecBuilder := spec.NewBuilder().Pattern(tests.Repo1).Recursive(true)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1).Recursive(true)
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails)
 
 	// Delete all artifacts without c=1 but keep dirs that has at least one artifact with c=1 props
-	artifactoryCli.Exec("delete", tests.Repo1+"/*", "--exclude-props=c=1")
+	artifactoryCli.Exec("delete", tests.RtRepo1+"/*", "--exclude-props=c=1")
 
 	// Search artifacts with c=1
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())

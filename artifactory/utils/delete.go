@@ -22,7 +22,7 @@ func ConfirmDelete(pathsToDeleteReader *content.ContentReader) (bool, error) {
 		return false, err
 	}
 	pathsToDeleteReader.Reset()
-	return cliutils.AskYesNo("Are you sure you want to delete the above paths?", false)
+	return cliutils.AskYesNo("Are you sure you want to delete the above paths?", false), nil
 }
 
 func CreateDeleteServiceManager(artDetails *config.ArtifactoryDetails, threads int, dryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
