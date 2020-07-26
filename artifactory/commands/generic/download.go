@@ -232,8 +232,7 @@ func createDownloadResultEmptyTmpReflection(reader *content.ContentReader) (tmpR
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	var path localPath
-	for e := reader.NextRecord(&path); e == nil; e = reader.NextRecord(&path) {
+	for path := new(localPath); reader.NextRecord(path) == nil; path = new(localPath) {
 		var absDownlaodPath string
 		absDownlaodPath, err = filepath.Abs(path.LocalPath)
 		if errorutils.CheckError(err) != nil {
