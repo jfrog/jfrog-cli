@@ -47,6 +47,7 @@ import (
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/deleteprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/download"
@@ -406,6 +407,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return gradleCmd(c)
+			},
+		},
+		{
+			Name:         "docker-promote",
+			Flags:        getDockerPromoteFlags(),
+			Aliases:      []string{"dpr"},
+			Usage:        dockerpromote.Description,
+			HelpName:     common.CreateUsage("rt docker-promote", dockerpromote.Description, dockerpromote.Usage),
+			UsageText:    dockerpromote.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return dockerPromoteCmd(c)
 			},
 		},
 		{
@@ -1271,6 +1285,28 @@ func getDockerPushFlags() []cli.Flag {
 
 func getDockerPullFlags() []cli.Flag {
 	return getDockerFlags()
+}
+
+func getDockerPromoteFlags() []cli.Flag {
+	flags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "target-docker-image",
+			Usage: "[Optional] Docker target image name.` `",
+		},
+		cli.StringFlag{
+			Name:  "source-tag",
+			Usage: "[Optional] The tag name to promote.` `",
+		},
+		cli.StringFlag{
+			Name:  "target-tag",
+			Usage: "[Optional] The target tag to assign the image after promotion.` `",
+		},
+		cli.BoolFlag{
+			Name:  "copy",
+			Usage: "[Default: false] If set true, the Docker image is copied to the target repository, otherwise it is moved.` `",
+		},
+	}
+	return append(getServerFlags(), flags...)
 }
 
 func getDockerFlags() []cli.Flag {
@@ -2198,6 +2234,25 @@ func gradleLegacyCmd(c *cli.Context) error {
 	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1)).SetThreads(threads)
 
 	return commands.Exec(gradleCmd)
+}
+
+func dockerPromoteCmd(c *cli.Context) error {
+	if c.NArg() != 3 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	params := services.NewDockerPromoteParams(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2))
+	params.TargetDockerRepository = c.String("target-docker-image")
+	params.Tag = c.String("source-tag")
+	params.TargetTag = c.String("target-tag")
+	params.Copy = c.Bool("copy")
+	dockerPromoteCommand := docker.NewDockerPromoteCommand()
+	dockerPromoteCommand.SetParams(params).SetRtDetails(artDetails)
+
+	return commands.Exec(dockerPromoteCommand)
 }
 
 func dockerPushCmd(c *cli.Context) error {

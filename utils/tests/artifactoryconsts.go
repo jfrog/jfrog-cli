@@ -38,6 +38,7 @@ const (
 	DistributionSetDeletePropsSpec         = "dist_set_delete_props_spec.json"
 	DistributionUploadSpecA                = "dist_upload_spec_a.json"
 	DistributionUploadSpecB                = "dist_upload_spec_b.json"
+	DockerRepoConfig                       = "docker_repository_config.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
@@ -72,6 +73,7 @@ const (
 	PypiVirtualRepositoryConfig            = "pypi_virtual_repository_config.json"
 	RepoDetailsUrl                         = "api/repositories/"
 	RtServerId                             = "rtTestServerId"
+	SearchAllDocker                        = "search_all_docker.json"
 	SearchAllGradle                        = "search_all_gradle.json"
 	SearchAllMaven                         = "search_all_maven.json"
 	SearchAllRepo1                         = "search_all_repo1.json"
@@ -109,6 +111,7 @@ var (
 	// Repositories
 	DistRepo1        = "cli-tests-dist1"
 	DistRepo2        = "cli-tests-dist2"
+	DockerRepo       = "cli-tests-docker"
 	GoRepo           = "cli-tests-go"
 	GradleRepo       = "cli-tests-gradle"
 	MvnRemoteRepo    = "cli-tests-mvn-remote"
@@ -1309,6 +1312,18 @@ func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
 				"c": {"3"},
 			},
 		},
+	}
+}
+
+func GetDockerSourceManifest() []string {
+	return []string{
+		*DockerTargetRepo + "/" + DockerImageName + "/1/manifest.json",
+	}
+}
+
+func GetDockerDeployedManifest() []string {
+	return []string{
+		DockerRepo + "/docker-target-image/2/manifest.json",
 	}
 }
 

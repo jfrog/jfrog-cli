@@ -332,6 +332,7 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
+	&DockerRepo:       DockerRepoConfig,
 	&GoRepo:           GoLocalRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
 	&MvnRepo1:         MavenRepositoryConfig1,
@@ -381,7 +382,7 @@ func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
-		TestDocker:       {},
+		TestDocker:       {&DockerRepo},
 		TestGo:           {&GoRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -444,6 +445,7 @@ func getSubstitutionMap() map[string]string {
 		"${VIRTUAL_REPO}":       RtVirtualRepo,
 		"${LFS_REPO}":           RtLfsRepo,
 		"${DEBIAN_REPO}":        RtDebianRepo,
+		"${DOCKER_REPO}":        DockerRepo,
 		"${MAVEN_REPO1}":        MvnRepo1,
 		"${MAVEN_REPO2}":        MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":  MvnRemoteRepo,
@@ -474,6 +476,7 @@ func AddTimestampToGlobalVars() {
 	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	// Repositories
 	BintrayRepo += timestampSuffix
+	DockerRepo += timestampSuffix
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
 	GoRepo += timestampSuffix

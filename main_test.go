@@ -57,7 +57,7 @@ func tearDownIntegrationTests() {
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
 		CleanArtifactoryTests()
 	}
-	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
+	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip || *tests.TestDocker {
 		CleanBuildToolsTests()
 	}
 	if *tests.TestDistribution {

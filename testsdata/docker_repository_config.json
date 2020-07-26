@@ -1,0 +1,5 @@
+{
+  "key": "${DOCKER_REPO}",
+  "packageType": "docker",
+  "rclass": "local"
+}
