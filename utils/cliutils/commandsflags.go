@@ -2,12 +2,62 @@ package cliutils
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"sort"
 	"strconv"
 )
 
 const (
 	// *** Artifactory Commands' flags ***
+
+	// Valid commands
+	Config                  = "config"
+	Upload                  = "upload"
+	Download                = "download"
+	Move                    = "move"
+	Copy                    = "copy"
+	Delete                  = "delete"
+	Properties              = "properties"
+	Search                  = "search"
+	BuildPublish            = "build-publish"
+	BuildScan               = "build-scan"
+	BuildPromote            = "build-promote"
+	BuildDistribute         = "build-distribute"
+	BuildDiscard            = "build-discard"
+	BuildAddDependencies    = "build-add-dependencies"
+	BuildAddGit             = "build-add-git"
+	GitLfsClean             = "git-lfs-clean"
+	Mvn                     = "mvn"
+	MvnConfig               = "mvn-config"
+	Gradle                  = "gradle"
+	GradleConfig            = "gradle-config"
+	DockerPull              = "docker-pull"
+	DockerPush              = "docker-push"
+	NpmConfig               = "npm-config"
+	Npm                     = "npm"
+	NpmPublish              = "npmPublish"
+	NugetConfig             = "nuget-config"
+	Nuget                   = "nuget"
+	Dotnet                  = "dotnet"
+	DotnetConfig            = "dotnet-config"
+	Go                      = "go"
+	GoConfig                = "go-config"
+	GoPublish               = "go-publish"
+	GoRecursivePublish      = "go-recursive-publish"
+	PipInstall              = "pip-install"
+	PipConfig               = "pip-config"
+	Ping                    = "ping"
+	Curl                    = "curl"
+	ReleaseBundleCreate     = "release-bundle-create"
+	ReleaseBundleUpdate     = "release-bundle-update"
+	ReleaseBundleSign       = "release-bundle-sign"
+	ReleaseBundleDistribute = "release-bundle-distribute"
+	ReleaseBundleDelete     = "release-bundle-delete"
+	TemplateConsumer        = "template-consumer"
+	RepoDelete              = "repo-delete"
+	ReplicationDelete       = "replication-delete"
+	AccessTokenCreate       = "access-token-create"
+
 	// Base flags
 	url         = "url"
 	distUrl     = "dist-url"
@@ -55,7 +105,7 @@ const (
 	recursive        = "recursive"
 	flat             = "flat"
 	build            = "build"
-	regexp           = "regexp"
+	regexpFlag       = "regexp"
 	retries          = "retries"
 	dryRun           = "dry-run"
 	explode          = "explode"
@@ -82,7 +132,7 @@ const (
 	uploadExclusions      = uploadPrefix + exclusions
 	uploadRecursive       = uploadPrefix + recursive
 	uploadFlat            = uploadPrefix + flat
-	uploadRegexp          = uploadPrefix + regexp
+	uploadRegexp          = uploadPrefix + regexpFlag
 	uploadRetries         = uploadPrefix + retries
 	uploadExplode         = uploadPrefix + explode
 	uploadProps           = uploadPrefix + props
@@ -148,10 +198,10 @@ const (
 	badPrefix    = "bad-"
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
-	badRegexp    = badPrefix + regexp
+	badRegexp    = badPrefix + regexpFlag
 
 	// Unique build-add-git flags
-	config = "config"
+	configFlag = "config"
 
 	// Unique build-scan flags
 	fail = "fail"
@@ -164,7 +214,7 @@ const (
 	comment             = "comment"
 	sourceRepo          = "source-repo"
 	includeDependencies = "include-dependencies"
-	copy                = "copy"
+	copyFlag            = "copy"
 
 	async = "async"
 
@@ -468,7 +518,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: true] If set to false, files are uploaded according to their file system hierarchy.` `",
 	},
 	uploadRegexp: cli.BoolFlag{
-		Name:  regexp,
+		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 	},
 	uploadRetries: cli.StringFlag{
@@ -638,15 +688,15 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: true] Set to false if you do not wish to collect artifacts in sub-folders to be added to the build info.` `",
 	},
 	badRegexp: cli.BoolFlag{
-		Name:  regexp,
+		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
 	},
-	config: cli.StringFlag{
-		Name:  config,
+	configFlag: cli.StringFlag{
+		Name:  configFlag,
 		Usage: "[Optional] Path to a configuration file.` `",
 	},
 	fail: cli.BoolTFlag{
@@ -669,8 +719,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  includeDependencies,
 		Usage: "[Default: false] If set to true, the build dependencies are also promoted.` `",
 	},
-	copy: cli.BoolFlag{
-		Name:  copy,
+	copyFlag: cli.BoolFlag{
+		Name:  copyFlag,
 		Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
 	},
 	bprDryRun: cli.BoolFlag{
@@ -973,184 +1023,184 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
-	"config": {
+	Config: {
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
-	"upload": {
+	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls,
 	},
-	"download": {
+	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, excludePatterns, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, minSplit, splitCount, downloadRetries, dryRun,
 		downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps, failNoOp, threads,
 		archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
 	},
-	"move": {
+	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, moveProps, moveExcludeProps, failNoOp, archiveEntries, insecureTls,
 	},
-	"copy": {
+	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, bundle, copyProps, copyExcludeProps, failNoOp, archiveEntries, insecureTls,
 	},
-	"delete": {
+	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls,
 	},
-	"search": {
+	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		insecureTls,
 	},
-	"properties": {
+	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		insecureTls,
 	},
-	"build-publish": {
+	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
 		envInclude, envExclude, insecureTls,
 	},
-	"build-add-dependencies": {
+	BuildAddDependencies: {
 		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
 	},
-	"build-add-git": {
-		config, serverId,
+	BuildAddGit: {
+		configFlag, serverId,
 	},
-	"build-scan": {
+	BuildScan: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
 	},
-	"build-promote": {
+	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copy, bprDryRun, bprProps, insecureTls,
+		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls,
 	},
-	"build-distribute": {
+	BuildDistribute: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, sourceRepos, passphrase,
 		publish, override, bdAsync, bdDryRun, insecureTls,
 	},
-	"build-discard": {
+	BuildDiscard: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
 		excludeBuilds, deleteArtifacts, bdiAsync, insecureTls,
 	},
-	"git-lfs-clean": {
+	GitLfsClean: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
 		glcQuiet, insecureTls,
 	},
-	"mvn-config": {
+	MvnConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
 	},
-	"gradle-config": {
+	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
-	"mvn": {
+	Mvn: {
 		buildName, buildNumber, deploymentThreads, insecureTls,
 	},
-	"gradle": {
+	Gradle: {
 		buildName, buildNumber, deploymentThreads,
 	},
-	"docker-push": {
+	DockerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, threads,
 	},
-	"docker-pull": {
+	DockerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin,
 	},
-	"npm-config": {
+	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
-	"npm": {
+	Npm: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
 		buildNumber, module, npmThreads,
 	},
-	"npm-publish": {
+	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
 		buildNumber, module,
 	},
-	"nuget-config": {
+	NugetConfig: {
 		global, serverIdResolve, repoResolve,
 	},
-	"nuget": {
+	Nuget: {
 		nugetArgs, solutionRoot, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module,
 	},
-	"dotnet-config": {
+	DotnetConfig: {
 		global, serverIdResolve, repoResolve,
 	},
-	"dotnet": {
+	Dotnet: {
 		buildName, buildNumber, module,
 	},
-	"go-config": {
+	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
-	"go-publish": {
+	GoPublish: {
 		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module,
 	},
-	"go": {
+	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module,
 	},
-	"go-recursive-publish": {
+	GoRecursivePublish: {
 		url, user, password, apikey, accessToken, serverId,
 	},
-	"ping": {
+	Ping: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, insecureTls,
 	},
-	"curl": {
+	Curl: {
 		serverId,
 	},
-	"pip-config": {
+	PipConfig: {
 		global, serverIdResolve, repoResolve,
 	},
-	"pip-install": {
+	PipInstall: {
 		buildName, buildNumber, module,
 	},
-	"release-bundle-create": {
+	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
-	"release-bundle-update": {
+	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
-	"release-bundle-sign": {
+	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
 		insecureTls,
 	},
-	"release-bundle-distribute": {
+	ReleaseBundleDistribute: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, insecureTls,
 	},
-	"release-bundle-delete": {
+	ReleaseBundleDelete: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
 		site, city, countryCodes, sync, maxWaitMinutes, insecureTls, deleteFromDist, deleteQuiet,
 	},
-	"template-consumer": {
+	TemplateConsumer: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, vars,
 	},
-	"repo-delete": {
+	RepoDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
-	"replication-delete": {
+	ReplicationDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},
-	"access-token-create": {
+	AccessTokenCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
 	},
@@ -1182,11 +1232,13 @@ var commandFlags = map[string][]string{
 func GetCommandFlags(cmd string) []cli.Flag {
 	flagList, ok := commandFlags[cmd]
 	if !ok {
+		log.Error("The command \"", cmd, "\" does not found in commands flags map.")
 		return nil
 	}
-	return buildAndSortFlagsFromKeys(flagList)
+	return buildAndSortFlags(flagList)
 }
-func buildAndSortFlagsFromKeys(keys []string) (flags []cli.Flag) {
+
+func buildAndSortFlags(keys []string) (flags []cli.Flag) {
 	for _, flag := range keys {
 		flags = append(flags, flagsMap[flag])
 	}
@@ -1194,30 +1246,30 @@ func buildAndSortFlagsFromKeys(keys []string) (flags []cli.Flag) {
 	return
 }
 
-// This is function is used for mvn anf gradle command validation
+// This function is used for mvn and gradle command validation
 func GetBasicBuildToolsFlags() (flags []cli.Flag) {
 	basicBuildToolsFlags := []string{url, distUrl, user, password, apikey, accessToken, serverId}
-	return buildAndSortFlagsFromKeys(basicBuildToolsFlags)
+	return buildAndSortFlags(basicBuildToolsFlags)
 }
 
 var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken}
 
-// This is function is used for native nuget command validation
+// This function is used for legacy (deprecated) nuget command validation
 func GetLegacyNugetFlags() (flags []cli.Flag) {
 	legacyNugetFlags := []string{nugetArgs, solutionRoot}
 	legacyNugetFlags = append(legacyNugetFlags, deprecatedFlags...)
-	return buildAndSortFlagsFromKeys(legacyNugetFlags)
+	return buildAndSortFlags(legacyNugetFlags)
 }
 
-// This is function is used for native npm command validation
+// This function is used for legacy (deprecated) npm command validation
 func GetLegacyNpmFlags() (flags []cli.Flag) {
 	legacyNpmFlags := append(deprecatedFlags, npmArgs)
-	return buildAndSortFlagsFromKeys(legacyNpmFlags)
+	return buildAndSortFlags(legacyNpmFlags)
 }
 
-// This is function is used for native go command validation
+// This function is used for legacy (deprecated) go command validation
 func GetLegacyGoFlags() (flags []cli.Flag) {
 	legacyGoFlags := []string{noRegistry, publishDeps}
 	legacyGoFlags = append(legacyGoFlags, deprecatedFlags...)
-	return buildAndSortFlagsFromKeys(legacyGoFlags)
+	return buildAndSortFlags(legacyGoFlags)
 }

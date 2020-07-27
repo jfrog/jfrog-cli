@@ -104,7 +104,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "config",
-			Flags:        cliutils.GetCommandFlags("config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Config),
 			Aliases:      []string{"c"},
 			Usage:        configdocs.Description,
 			HelpName:     common.CreateUsage("rt config", configdocs.Description, configdocs.Usage),
@@ -128,7 +128,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "upload",
-			Flags:        cliutils.GetCommandFlags("upload"),
+			Flags:        cliutils.GetCommandFlags("upload"), //(cliutils.Upload),
 			Aliases:      []string{"u"},
 			Usage:        upload.Description,
 			HelpName:     common.CreateUsage("rt upload", upload.Description, upload.Usage),
@@ -141,7 +141,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "download",
-			Flags:        cliutils.GetCommandFlags("download"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Download),
 			Aliases:      []string{"dl"},
 			Usage:        download.Description,
 			HelpName:     common.CreateUsage("rt download", download.Description, download.Usage),
@@ -154,7 +154,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "move",
-			Flags:        cliutils.GetCommandFlags("move"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Move),
 			Aliases:      []string{"mv"},
 			Usage:        move.Description,
 			HelpName:     common.CreateUsage("rt move", move.Description, move.Usage),
@@ -167,7 +167,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "copy",
-			Flags:        cliutils.GetCommandFlags("copy"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Copy),
 			Aliases:      []string{"cp"},
 			Usage:        copydocs.Description,
 			HelpName:     common.CreateUsage("rt copy", copydocs.Description, copydocs.Usage),
@@ -180,7 +180,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "delete",
-			Flags:        cliutils.GetCommandFlags("delete"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Delete),
 			Aliases:      []string{"del"},
 			Usage:        delete.Description,
 			HelpName:     common.CreateUsage("rt delete", delete.Description, delete.Usage),
@@ -193,7 +193,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "search",
-			Flags:        cliutils.GetCommandFlags("search"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Search),
 			Aliases:      []string{"s"},
 			Usage:        search.Description,
 			HelpName:     common.CreateUsage("rt search", search.Description, search.Usage),
@@ -206,7 +206,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "set-props",
-			Flags:        cliutils.GetCommandFlags("properties"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
 			Aliases:      []string{"sp"},
 			Usage:        setprops.Description,
 			HelpName:     common.CreateUsage("rt set-props", setprops.Description, setprops.Usage),
@@ -219,7 +219,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "delete-props",
-			Flags:        cliutils.GetCommandFlags("properties"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Properties),
 			Aliases:      []string{"delp"},
 			Usage:        deleteprops.Description,
 			HelpName:     common.CreateUsage("rt delete-props", deleteprops.Description, deleteprops.Usage),
@@ -232,7 +232,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-publish",
-			Flags:        cliutils.GetCommandFlags("build-publish"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildPublish),
 			Aliases:      []string{"bp"},
 			Usage:        buildpublish.Description,
 			HelpName:     common.CreateUsage("rt build-publish", buildpublish.Description, buildpublish.Usage),
@@ -257,7 +257,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-add-dependencies",
-			Flags:        cliutils.GetCommandFlags("build-add-dependencies"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddDependencies),
 			Aliases:      []string{"bad"},
 			Usage:        buildadddependencies.Description,
 			HelpName:     common.CreateUsage("rt build-add-dependencies", buildadddependencies.Description, buildadddependencies.Usage),
@@ -270,7 +270,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-add-git",
-			Flags:        cliutils.GetCommandFlags("build-add-git"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildAddGit),
 			Aliases:      []string{"bag"},
 			Usage:        buildaddgit.Description,
 			HelpName:     common.CreateUsage("rt build-add-git", buildaddgit.Description, buildaddgit.Usage),
@@ -283,7 +283,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-scan",
-			Flags:        cliutils.GetCommandFlags("build-scan"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildScan),
 			Aliases:      []string{"bs"},
 			Usage:        buildscan.Description,
 			HelpName:     common.CreateUsage("rt build-scan", buildscan.Description, buildscan.Usage),
@@ -308,7 +308,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-promote",
-			Flags:        cliutils.GetCommandFlags("build-promote"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildPromote),
 			Aliases:      []string{"bpr"},
 			Usage:        buildpromote.Description,
 			HelpName:     common.CreateUsage("rt build-promote", buildpromote.Description, buildpromote.Usage),
@@ -321,7 +321,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-distribute",
-			Flags:        cliutils.GetCommandFlags("build-distribute"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildDistribute),
 			Aliases:      []string{"bd"},
 			Usage:        builddistribute.Description,
 			HelpName:     common.CreateUsage("rt build-distribute", builddistribute.Description, builddistribute.Usage),
@@ -334,7 +334,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "build-discard",
-			Flags:        cliutils.GetCommandFlags("build-discard"),
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildDiscard),
 			Aliases:      []string{"bdi"},
 			Usage:        builddiscard.Description,
 			HelpName:     common.CreateUsage("rt build-discard", builddiscard.Description, builddiscard.Usage),
@@ -347,7 +347,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "git-lfs-clean",
-			Flags:        cliutils.GetCommandFlags("git-lfs-clean"),
+			Flags:        cliutils.GetCommandFlags(cliutils.GitLfsClean),
 			Aliases:      []string{"glc"},
 			Usage:        gitlfsclean.Description,
 			HelpName:     common.CreateUsage("rt git-lfs-clean", gitlfsclean.Description, gitlfsclean.Usage),
@@ -361,7 +361,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "mvn-config",
 			Aliases:      []string{"mvnc"},
-			Flags:        cliutils.GetCommandFlags("mvn-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.MvnConfig),
 			Usage:        mvnconfig.Description,
 			HelpName:     common.CreateUsage("rt mvn-config", mvnconfig.Description, mvnconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -372,7 +372,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "mvn",
-			Flags:           cliutils.GetCommandFlags("mvn"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Mvn),
 			Usage:           mvndoc.Description,
 			HelpName:        common.CreateUsage("rt mvn", mvndoc.Description, mvndoc.Usage),
 			UsageText:       mvndoc.Arguments,
@@ -386,7 +386,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "gradle-config",
 			Aliases:      []string{"gradlec"},
-			Flags:        cliutils.GetCommandFlags("gradle-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.GradleConfig),
 			Usage:        gradleconfig.Description,
 			HelpName:     common.CreateUsage("rt gradle-config", gradleconfig.Description, gradleconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -397,7 +397,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "gradle",
-			Flags:           cliutils.GetCommandFlags("gradle"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Gradle),
 			Usage:           gradledoc.Description,
 			HelpName:        common.CreateUsage("rt gradle", gradledoc.Description, gradledoc.Usage),
 			UsageText:       gradledoc.Arguments,
@@ -410,7 +410,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "docker-push",
-			Flags:        cliutils.GetCommandFlags("docker-push"),
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerPush),
 			Aliases:      []string{"dp"},
 			Usage:        dockerpush.Description,
 			HelpName:     common.CreateUsage("rt docker-push", dockerpush.Description, dockerpush.Usage),
@@ -423,7 +423,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "docker-pull",
-			Flags:        cliutils.GetCommandFlags("docker-pull"),
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerPull),
 			Aliases:      []string{"dpl"},
 			Usage:        dockerpull.Description,
 			HelpName:     common.CreateUsage("rt docker-pull", dockerpull.Description, dockerpull.Usage),
@@ -436,7 +436,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "npm-config",
-			Flags:        cliutils.GetCommandFlags("npm-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.NpmConfig),
 			Aliases:      []string{"npmc"},
 			Usage:        npmconfig.Description,
 			HelpName:     common.CreateUsage("rt npm-config", npmconfig.Description, npmconfig.Usage),
@@ -448,7 +448,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-install",
-			Flags:           cliutils.GetCommandFlags("npm"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
 			Aliases:         []string{"npmi"},
 			Usage:           npminstall.Description,
 			HelpName:        common.CreateUsage("rt npm-install", npminstall.Description, npminstall.Usage),
@@ -462,7 +462,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-ci",
-			Flags:           cliutils.GetCommandFlags("npm"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Npm),
 			Aliases:         []string{"npmci"},
 			Usage:           npmci.Description,
 			HelpName:        common.CreateUsage("rt npm-ci", npmci.Description, npmci.Usage),
@@ -476,7 +476,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "npm-publish",
-			Flags:           cliutils.GetCommandFlags("npm-publish"),
+			Flags:           cliutils.GetCommandFlags(cliutils.NpmPublish),
 			Aliases:         []string{"npmp"},
 			Usage:           npmpublish.Description,
 			HelpName:        common.CreateUsage("rt npm-publish", npmpublish.Description, npmpublish.Usage),
@@ -489,7 +489,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "nuget-config",
-			Flags:        cliutils.GetCommandFlags("nuget-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.NugetConfig),
 			Aliases:      []string{"nugetc"},
 			Usage:        nugetconfig.Description,
 			HelpName:     common.CreateUsage("rt nuget-config", nugetconfig.Description, nugetconfig.Usage),
@@ -501,7 +501,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "nuget",
-			Flags:           cliutils.GetCommandFlags("nuget"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Nuget),
 			Usage:           nugetdocs.Description,
 			HelpName:        common.CreateUsage("rt nuget", nugetdocs.Description, nugetdocs.Usage),
 			UsageText:       nugetdocs.Arguments,
@@ -526,7 +526,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "dotnet-config",
-			Flags:        cliutils.GetCommandFlags("dotnet-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.DotnetConfig),
 			Aliases:      []string{"dotnetc"},
 			Usage:        dotnetconfig.Description,
 			HelpName:     common.CreateUsage("rt dotnet-config", dotnetconfig.Description, dotnetconfig.Usage),
@@ -538,7 +538,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "dotnet",
-			Flags:           cliutils.GetCommandFlags("dotnet"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Dotnet),
 			Usage:           dotnetdocs.Description,
 			HelpName:        common.CreateUsage("rt dotnet", dotnetdocs.Description, dotnetdocs.Usage),
 			UsageText:       dotnetdocs.Arguments,
@@ -551,7 +551,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "go-config",
-			Flags:        cliutils.GetCommandFlags("go-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.GoConfig),
 			Usage:        goconfig.Description,
 			HelpName:     common.CreateUsage("rt go-config", goconfig.Description, goconfig.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
@@ -562,7 +562,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "go-publish",
-			Flags:        cliutils.GetCommandFlags("go-publish"),
+			Flags:        cliutils.GetCommandFlags(cliutils.GoPublish),
 			Aliases:      []string{"gp"},
 			Usage:        gopublish.Description,
 			HelpName:     common.CreateUsage("rt go-publish", gopublish.Description, gopublish.Usage),
@@ -575,7 +575,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "go",
-			Flags:           cliutils.GetCommandFlags("go"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Go),
 			Aliases:         []string{"go"},
 			Usage:           gocommand.Description,
 			HelpName:        common.CreateUsage("rt go", gocommand.Description, gocommand.Usage),
@@ -589,7 +589,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "go-recursive-publish",
-			Flags:        cliutils.GetCommandFlags("go-recursive-publish"),
+			Flags:        cliutils.GetCommandFlags(cliutils.GoRecursivePublish),
 			Aliases:      []string{"grp"},
 			Usage:        gorecursivepublish.Description,
 			HelpName:     common.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
@@ -602,7 +602,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "ping",
-			Flags:        cliutils.GetCommandFlags("ping"),
+			Flags:        cliutils.GetCommandFlags(cliutils.Ping),
 			Aliases:      []string{"p"},
 			Usage:        ping.Description,
 			HelpName:     common.CreateUsage("rt ping", ping.Description, ping.Usage),
@@ -615,7 +615,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "curl",
-			Flags:           cliutils.GetCommandFlags("curl"),
+			Flags:           cliutils.GetCommandFlags(cliutils.Curl),
 			Aliases:         []string{"cl"},
 			Usage:           curldocs.Description,
 			HelpName:        common.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
@@ -629,7 +629,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "pip-config",
-			Flags:        cliutils.GetCommandFlags("pip-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.PipConfig),
 			Aliases:      []string{"pipc"},
 			Usage:        pipconfig.Description,
 			HelpName:     common.CreateUsage("rt pipc", pipconfig.Description, pipconfig.Usage),
@@ -641,7 +641,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "pip-install",
-			Flags:           cliutils.GetCommandFlags("pip-install"),
+			Flags:           cliutils.GetCommandFlags(cliutils.PipInstall),
 			Aliases:         []string{"pipi"},
 			Usage:           pipinstall.Description,
 			HelpName:        common.CreateUsage("rt pipi", pipinstall.Description, pipinstall.Usage),
@@ -655,7 +655,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-create",
-			Flags:        cliutils.GetCommandFlags("release-bundle-create"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleCreate),
 			Aliases:      []string{"rbc"},
 			Usage:        releasebundlecreate.Description,
 			HelpName:     common.CreateUsage("rt rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
@@ -668,7 +668,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-update",
-			Flags:        cliutils.GetCommandFlags("release-bundle-update"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleUpdate),
 			Aliases:      []string{"rbu"},
 			Usage:        releasebundleupdate.Description,
 			HelpName:     common.CreateUsage("rt rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
@@ -681,7 +681,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-sign",
-			Flags:        cliutils.GetCommandFlags("release-bundle-sign"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleSign),
 			Aliases:      []string{"rbs"},
 			Usage:        releasebundlesign.Description,
 			HelpName:     common.CreateUsage("rt rbs", releasebundlesign.Description, releasebundlesign.Usage),
@@ -694,7 +694,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-distribute",
-			Flags:        cliutils.GetCommandFlags("release-bundle-distribute"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
 			Aliases:      []string{"rbd"},
 			Usage:        releasebundledistribute.Description,
 			HelpName:     common.CreateUsage("rt rbd", releasebundledistribute.Description, releasebundledistribute.Usage),
@@ -707,7 +707,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "release-bundle-delete",
-			Flags:        cliutils.GetCommandFlags("release-bundle-delete"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDelete),
 			Aliases:      []string{"rbdel"},
 			Usage:        releasebundledelete.Description,
 			HelpName:     common.CreateUsage("rt rbdel", releasebundledelete.Description, releasebundledelete.Usage),
@@ -734,7 +734,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "repo-create",
 			Aliases:      []string{"rc"},
-			Flags:        cliutils.GetCommandFlags("template-consumer"),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        repocreate.Description,
 			HelpName:     common.CreateUsage("rt rc", repocreate.Description, repocreate.Usage),
 			UsageText:    repocreate.Arguments,
@@ -747,7 +747,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "repo-update",
 			Aliases:      []string{"ru"},
-			Flags:        cliutils.GetCommandFlags("template-consumer"),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        repoupdate.Description,
 			HelpName:     common.CreateUsage("rt ru", repoupdate.Description, repoupdate.Usage),
 			UsageText:    repoupdate.Arguments,
@@ -760,7 +760,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "repo-delete",
 			Aliases:      []string{"rdel"},
-			Flags:        cliutils.GetCommandFlags("repo-delete"),
+			Flags:        cliutils.GetCommandFlags(cliutils.RepoDelete),
 			Usage:        repodelete.Description,
 			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
 			UsageText:    repodelete.Arguments,
@@ -773,7 +773,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "replication-template",
 			Aliases:      []string{"rplt"},
-			Flags:        cliutils.GetCommandFlags("template-consumer"),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        replicationtemplate.Description,
 			HelpName:     common.CreateUsage("rt rplt", replicationtemplate.Description, replicationtemplate.Usage),
 			UsageText:    replicationtemplate.Arguments,
@@ -786,7 +786,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "replication-create",
 			Aliases:      []string{"rplc"},
-			Flags:        cliutils.GetCommandFlags("template-consumer"),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        replicationcreate.Description,
 			HelpName:     common.CreateUsage("rt rplc", replicationcreate.Description, replicationcreate.Usage),
 			UsageText:    replicationcreate.Arguments,
@@ -799,7 +799,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "replication-delete",
 			Aliases:      []string{"rpldel"},
-			Flags:        cliutils.GetCommandFlags("replication-delete"),
+			Flags:        cliutils.GetCommandFlags(cliutils.ReplicationDelete),
 			Usage:        replicationdelete.Description,
 			HelpName:     common.CreateUsage("rt rpldel", replicationdelete.Description, replicationdelete.Usage),
 			UsageText:    replicationdelete.Arguments,
@@ -812,7 +812,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "access-token-create",
 			Aliases:      []string{"atc"},
-			Flags:        cliutils.GetCommandFlags("access-token-create"),
+			Flags:        cliutils.GetCommandFlags(cliutils.AccessTokenCreate),
 			Usage:        accesstokencreate.Description,
 			HelpName:     common.CreateUsage("rt atc", accesstokencreate.Description, accesstokencreate.Usage),
 			UsageText:    accesstokencreate.Arguments,
