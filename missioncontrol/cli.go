@@ -23,7 +23,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "config",
-			Flags:        cliutils.GetCommandFlags("mc-config"),
+			Flags:        cliutils.GetCommandFlags(cliutils.McConfig),
 			Usage:        configdocs.Description,
 			HelpName:     common.CreateUsage("mc config", configdocs.Description, configdocs.Usage),
 			UsageText:    configdocs.Arguments,
@@ -36,7 +36,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-acquire",
-			Flags:        cliutils.GetCommandFlags("license-acquire"),
+			Flags:        cliutils.GetCommandFlags(cliutils.LicenseAcquire),
 			Usage:        licenseacquire.Description,
 			HelpName:     common.CreateUsage("mc license-acquire", licenseacquire.Description, licenseacquire.Usage),
 			UsageText:    licenseacquire.Arguments,
@@ -49,7 +49,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-deploy",
-			Flags:        cliutils.GetCommandFlags("license-deploy"),
+			Flags:        cliutils.GetCommandFlags(cliutils.LicenseDeploy),
 			Usage:        licensedeploy.Description,
 			HelpName:     common.CreateUsage("mc license-deploy", licensedeploy.Description, licensedeploy.Usage),
 			UsageText:    licensedeploy.Arguments,
@@ -62,7 +62,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "license-release",
-			Flags:        cliutils.GetCommandFlags("license-release"),
+			Flags:        cliutils.GetCommandFlags(cliutils.LicenseRelease),
 			Usage:        licenserelease.Description,
 			HelpName:     common.CreateUsage("mc license-release", licenserelease.Description, licenserelease.Usage),
 			UsageText:    licenserelease.Arguments,
@@ -75,7 +75,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "jpd-add",
-			Flags:        cliutils.GetCommandFlags("jpd-add"),
+			Flags:        cliutils.GetCommandFlags(cliutils.JpdAdd),
 			Usage:        jpdadd.Description,
 			HelpName:     common.CreateUsage("mc jpd-add", jpdadd.Description, jpdadd.Usage),
 			UsageText:    jpdadd.Arguments,
@@ -88,7 +88,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "jpd-delete",
-			Flags:        cliutils.GetCommandFlags("jpd-delete"),
+			Flags:        cliutils.GetCommandFlags(cliutils.JpdDelete),
 			Usage:        jpddelete.Description,
 			HelpName:     common.CreateUsage("mc jpd-delete", jpddelete.Description, jpddelete.Usage),
 			UsageText:    jpddelete.Arguments,

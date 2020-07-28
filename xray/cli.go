@@ -20,7 +20,7 @@ func GetCommands() []cli.Command {
 			Usage:        offlineupdate.Description,
 			HelpName:     common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
-			Flags:        cliutils.GetCommandFlags("offline-update"),
+			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),
 			Aliases:      []string{"ou"},
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,

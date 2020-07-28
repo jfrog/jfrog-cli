@@ -8,9 +8,7 @@ import (
 )
 
 const (
-	// *** Artifactory Commands' flags ***
-
-	// Valid commands
+	// Artifactory's Commands Keys
 	Config                  = "config"
 	Upload                  = "upload"
 	Download                = "download"
@@ -57,7 +55,17 @@ const (
 	RepoDelete              = "repo-delete"
 	ReplicationDelete       = "replication-delete"
 	AccessTokenCreate       = "access-token-create"
+	// MC's Commands Keys
+	McConfig       = "mc-config"
+	LicenseAcquire = "license-acquire"
+	LicenseDeploy  = "license-deploy"
+	LicenseRelease = "license-release"
+	JpdAdd         = "jpd-add"
+	JpdDelete      = "jpd-delete"
+	// XRay's Commands Keys
+	OfflineUpdate = "offline-update"
 
+	// *** Artifactory Commands' flags ***
 	// Base flags
 	url         = "url"
 	distUrl     = "dist-url"
@@ -312,7 +320,7 @@ const (
 	audience    = "audience"
 
 	// *** Xray Commands' flags ***
-	// Uniqe offline-update flags
+	// Unique offline-update flags
 	licenseId = "license-id"
 	from      = "from"
 	to        = "to"
@@ -1205,26 +1213,26 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
 	},
 	// Xray's commands
-	"offline-update": {
+	OfflineUpdate: {
 		licenseId, from, to, version, target,
 	},
 	// Mission Control's commands
-	"mc-config": {
+	McConfig: {
 		mcUrl, mcAccessToken, mcInteractive,
 	},
-	"license-acquire": {
+	LicenseAcquire: {
 		mcUrl, mcAccessToken,
 	},
-	"license-deploy": {
+	LicenseDeploy: {
 		mcUrl, mcAccessToken, licenseCount,
 	},
-	"license-release": {
+	LicenseRelease: {
 		mcUrl, mcAccessToken,
 	},
-	"jpd-add": {
+	JpdAdd: {
 		mcUrl, mcAccessToken,
 	},
-	"jpd-delete": {
+	JpdDelete: {
 		mcUrl, mcAccessToken,
 	},
 }
