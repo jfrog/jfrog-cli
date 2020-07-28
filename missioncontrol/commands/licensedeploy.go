@@ -39,10 +39,6 @@ func LicenseDeploy(bucketId, jpdId string, flags *LicenseDeployFlags) error {
 	return nil
 }
 
-const (
-	DefaultLicenseCount = 1
-)
-
 type LicenseDeployRequestContent struct {
 	JpdId        string `json:"jpd_id,omitempty"`
 	LicenseCount int    `json:"license_count,omitempty"`

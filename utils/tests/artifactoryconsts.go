@@ -557,9 +557,9 @@ func GetDownloadWildcardRepo() []string {
 
 func GetDownloadUnicode() []string {
 	return []string{
-		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/文件.in",
-		RtRepo1 + "/testsdata/unicode/dirλrec၇tory/aȩ.ȥ1",
-		RtRepo1 + "/testsdata/unicode/Ԙחלص⩥.in",
+		RtRepo1 + "/testsdata/unicode/dirλrectory/文件.in",
+		RtRepo1 + "/testsdata/unicode/dirλrectory/aȩ.ȥ1",
+		RtRepo1 + "/testsdata/unicode/Ԙחלص.in",
 	}
 }
 

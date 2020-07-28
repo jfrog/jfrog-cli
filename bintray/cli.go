@@ -806,7 +806,7 @@ func deletePackage(c *cli.Context) error {
 		return err
 	}
 	if !cliutils.GetQuietValue(c) {
-		confirmed := cliutils.InteractiveConfirm("Delete package "+packagePath.Package+"?", false)
+		confirmed := cliutils.AskYesNo("Delete package "+packagePath.Package+"?", false)
 		if !confirmed {
 			return nil
 		}
@@ -828,7 +828,7 @@ func deleteVersion(c *cli.Context) error {
 		return err
 	}
 	if !cliutils.GetQuietValue(c) {
-		confirmed := cliutils.InteractiveConfirm("Delete version "+versionPath.Version+
+		confirmed := cliutils.AskYesNo("Delete version "+versionPath.Version+
 			" of package "+versionPath.Package+"?", false)
 		if !confirmed {
 			return nil
@@ -1365,7 +1365,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 		"You can also configure these parameters later using the 'jfrog bt c' command.\n" +
 		"Configure now?"
-	confirmed := cliutils.InteractiveConfirm(msg, false)
+	confirmed := cliutils.AskYesNo(msg, false)
 	if !confirmed {
 		config.SaveBintrayConf(new(config.BintrayDetails))
 		return nil, nil

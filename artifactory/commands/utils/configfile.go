@@ -14,7 +14,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/utils/prompt"
 	"gopkg.in/yaml.v2"
 )
 
@@ -94,9 +93,9 @@ func CreateBuildConfig(c *cli.Context, confType utils.ProjectType) (err error) {
 		case utils.Nuget:
 			err = configFile.configDotnet()
 		case utils.Maven:
-			err = configFile.configMaven(c)
+			err = configFile.configMaven()
 		case utils.Gradle:
-			err = configFile.configGradle(c)
+			err = configFile.configGradle()
 		}
 		if err != nil {
 			return errorutils.CheckError(err)
@@ -171,12 +170,9 @@ func (configFile *ConfigFile) VerifyConfigFile(configFilePath string) error {
 		if !configFile.Interactive {
 			return nil
 		}
-		override, err := cliutils.AskYesNo("Configuration file already exists at "+configFilePath+". Override it (y/n) [${default}]? ", "n", "override")
-		if err != nil {
-			return err
-		}
+		override := cliutils.AskYesNo("Configuration file already exists at "+configFilePath+". Override it?", false)
 		if !override {
-			return errorutils.CheckError(errors.New("Operation canceled."))
+			return errorutils.CheckError(errors.New("operation canceled"))
 		}
 		return nil
 	}
@@ -207,7 +203,7 @@ func (configFile *ConfigFile) configDotnet() error {
 	return configFile.setResolver()
 }
 
-func (configFile *ConfigFile) configMaven(c *cli.Context) error {
+func (configFile *ConfigFile) configMaven() error {
 	// Set resolution repositories
 	if err := configFile.setResolverId(); err != nil {
 		return err
@@ -233,26 +229,20 @@ func (configFile *ConfigFile) configMaven(c *cli.Context) error {
 	return nil
 }
 
-func (configFile *ConfigFile) configGradle(c *cli.Context) error {
+func (configFile *ConfigFile) configGradle() error {
 	if err := configFile.setDeployerResolver(); err != nil {
 		return err
 	}
 	if configFile.Deployer.ServerId != "" {
-		if err := configFile.setMavenIvyDescriptors(c); err != nil {
-			return err
-		}
+		configFile.setMavenIvyDescriptors()
 	}
-	return configFile.readGradleGlobalConfig(c)
+	configFile.readGradleGlobalConfig()
+	return nil
 }
 
-func (configFile *ConfigFile) readGradleGlobalConfig(c *cli.Context) error {
-	var err error
-	configFile.UsePlugin, err = cliutils.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script (y/n) [${default}]? ", "n", utils.USE_GRADLE_PLUGIN)
-	if err != nil {
-		return err
-	}
-	configFile.UseWrapper, err = cliutils.AskYesNo("Use Gradle wrapper (y/n) [${default}]? ", "n", utils.USE_GRADLE_WRAPPER)
-	return err
+func (configFile *ConfigFile) readGradleGlobalConfig() {
+	configFile.UsePlugin = cliutils.AskYesNo("Is the Gradle Artifactory Plugin already applied in the build script?", false)
+	configFile.UseWrapper = cliutils.AskYesNo("Use Gradle wrapper?", false)
 }
 
 func (configFile *ConfigFile) setDeployer() error {
@@ -288,47 +278,35 @@ func (configFile *ConfigFile) setDeployerResolver() error {
 }
 
 func (configFile *ConfigFile) setResolverId() error {
-	return configFile.setServerId(&configFile.Resolver.ServerId, "Resolve dependencies from Artifactory")
+	return configFile.setServerId(&configFile.Resolver.ServerId, "Resolve dependencies from Artifactory?")
 }
 
 func (configFile *ConfigFile) setDeployerId() error {
-	return configFile.setServerId(&configFile.Deployer.ServerId, "Deploy project artifacts to Artifactory")
+	return configFile.setServerId(&configFile.Deployer.ServerId, "Deploy project artifacts to Artifactory?")
 }
 
 func (configFile *ConfigFile) setServerId(serverId *string, useArtifactoryQuestion string) error {
 	var err error
-	*serverId, err = readArtifactoryServer(useArtifactoryQuestion + " (y/n) [${default}]? ")
+	*serverId, err = readArtifactoryServer(useArtifactoryQuestion)
 	return err
 }
 
 func (configFile *ConfigFile) setRepo(repo *string, message string, serverId string, repoType utils.RepoType) error {
 	var err error
 	if *repo == "" {
-		*repo, err = readRepo(message+" (press Tab for options): ", serverId, repoType, utils.VIRTUAL)
+		*repo, err = readRepo(message+PressTabMsg, serverId, repoType, utils.VIRTUAL)
 	}
 	return err
 }
 
-func (configFile *ConfigFile) setMavenIvyDescriptors(c *cli.Context) error {
-	var err error
-	configFile.Deployer.DeployMavenDesc, err = cliutils.AskYesNo("Deploy Maven descriptors (y/n) [${default}]? ", "n", utils.MAVEN_DESCRIPTOR)
-	if err != nil {
-		return err
-	}
-
-	configFile.Deployer.DeployIvyDesc, err = cliutils.AskYesNo("Deploy Ivy descriptors (y/n) [${default}]? ", "n", utils.IVY_DESCRIPTOR)
-	if err != nil {
-		return err
-	}
+func (configFile *ConfigFile) setMavenIvyDescriptors() {
+	configFile.Deployer.DeployMavenDesc = cliutils.AskYesNo("Deploy Maven descriptors?", false)
+	configFile.Deployer.DeployIvyDesc = cliutils.AskYesNo("Deploy Ivy descriptors?", false)
 
 	if configFile.Deployer.DeployIvyDesc {
-		configFile.Deployer.IvyPattern, err = askString("Set Ivy descriptor pattern [${default}]:", "[organization]/[module]/ivy-[revision].xml", utils.IVY_PATTERN)
-		if err != nil {
-			return err
-		}
-		configFile.Deployer.ArtifactsPattern, err = askString("Set Ivy artifact pattern [${default}]:", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]", utils.ARTIFACT_PATTERN)
+		configFile.Deployer.IvyPattern = AskString("", "Set Ivy descriptor pattern", "[organization]/[module]/ivy-[revision].xml")
+		configFile.Deployer.ArtifactsPattern = AskString("", "Set Ivy artifact pattern", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")
 	}
-	return err
 }
 
 // Check correctness of spec file configuration
@@ -374,41 +352,31 @@ func readArtifactoryServer(useArtifactoryQuestion string) (string, error) {
 		return "", err
 	}
 	if len(serversIds) == 0 {
-		return "", errorutils.CheckError(errors.New("No Artifactory servers configured. Use the 'jfrog rt c' command to set the Artifactory server details."))
+		return "", errorutils.CheckError(errors.New("no Artifactory servers configured. Use the 'jfrog rt c' command to set the Artifactory server details"))
 	}
 
 	// Ask whether to use artifactory
 	if useArtifactoryQuestion != "" {
-		useArtifactory, err := cliutils.AskYesNo(useArtifactoryQuestion, "y", "useArtifactory")
-		if err != nil || !useArtifactory {
-			return "", err
+		useArtifactory := cliutils.AskYesNo(useArtifactoryQuestion, true)
+		if !useArtifactory {
+			return "", nil
 		}
 	}
 
-	return askAutocomplete("Set Artifactory server ID (press Tab for options) [${default}]: ", "Server does not exist. Please set a valid server ID.", serversIds, defaultServer, utils.SERVER_ID)
+	return AskFromList("", "Set Artifactory server ID", false, ConvertToSuggests(serversIds), defaultServer), nil
 }
 
-func readRepo(msg string, serverId string, repoTypes ...utils.RepoType) (string, error) {
+func readRepo(promptPrefix string, serverId string, repoTypes ...utils.RepoType) (string, error) {
 	availableRepos, err := getRepositories(serverId, repoTypes...)
 	if err != nil {
-		// If there are no available repos pass empty array.
+		log.Error("failed getting repositories list: " + err.Error())
+		// Continue without auto complete.
 		availableRepos = []string{}
 	}
-	repo := &prompt.Autocomplete{
-		Msg:     msg,
-		Options: availableRepos,
-		Label:   utils.ProjectConfigRepo,
-	}
 	if len(availableRepos) > 0 {
-		repo.ConfirmationMsg = "No such repository, continue anyway (y/n) [${default}]? "
-		repo.ConfirmationDefault = "n"
-	} else {
-		repo.ErrMsg = "Repository name cannot be empty."
+		return AskFromListWithMismatchConfirmation(promptPrefix, "Repository not found.", ConvertToSuggests(availableRepos)), nil
 	}
-	if err = repo.Read(); err != nil {
-		return "", err
-	}
-	return repo.GetResults().GetString(utils.ProjectConfigRepo), nil
+	return AskString("", promptPrefix, ""), nil
 }
 
 func getServersIdAndDefault() ([]string, string, error) {
@@ -439,32 +407,6 @@ func getRepositories(serverId string, repoTypes ...utils.RepoType) ([]string, er
 	}
 
 	return utils.GetRepositories(artAuth, repoTypes...)
-}
-
-func askString(message string, defaultStr string, label string) (string, error) {
-	question := &prompt.Simple{
-		Msg:     message,
-		Default: defaultStr,
-		Label:   label,
-	}
-	if err := question.Read(); err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	return question.Result.GetString(label), nil
-}
-
-func askAutocomplete(msg string, errMsg string, options []string, defaultStr string, label string) (string, error) {
-	question := &prompt.Autocomplete{
-		Msg:     msg,
-		ErrMsg:  errMsg,
-		Options: options,
-		Default: defaultStr,
-		Label:   label,
-	}
-	if err := question.Read(); err != nil {
-		return "", errorutils.CheckError(err)
-	}
-	return question.Result.GetString(label), nil
 }
 
 func defaultIfNotSet(c *cli.Context, flagName string, defaultValue string) string {

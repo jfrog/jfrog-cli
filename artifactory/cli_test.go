@@ -1,6 +1,7 @@
 package artifactory
 
 import (
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestValidateGoNativeCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := validateCommand(test.args, getGoFlags())
+			result := validateCommand(test.args, cliutils.GetLegacyGoFlags())
 			if result != nil && !test.expected {
 				t.Errorf("Expected error nil, got the following error %s", result)
 			}

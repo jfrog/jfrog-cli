@@ -251,7 +251,7 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 	if cc.details.ClientCertPath != "" && cc.details.ClientCertKeyPath != "" {
 		return
 	}
-	if cliutils.InteractiveConfirm("Is the Artifactory reverse proxy configured to accept a client certificate?", false) {
+	if cliutils.AskYesNo("Is the Artifactory reverse proxy configured to accept a client certificate?", false) {
 		if cc.details.ClientCertPath == "" {
 			ioutils.ScanFromConsole("Client certificate file path", &cc.details.ClientCertPath, cc.defaultDetails.ClientCertPath)
 		}
@@ -263,7 +263,7 @@ func (cc *ConfigCommand) readClientCertInfoFromConsole() {
 
 func (cc *ConfigCommand) readRefreshableTokenFromConsole() {
 	if !cc.useBasicAuthOnly && ((cc.details.ApiKey != "" || cc.details.Password != "") && cc.details.AccessToken == "") {
-		useRefreshableToken := cliutils.InteractiveConfirm("For commands which don't use external tools or the JFrog Distribution service, "+
+		useRefreshableToken := cliutils.AskYesNo("For commands which don't use external tools or the JFrog Distribution service, "+
 			"JFrog CLI supports replacing the configured username and password/API key with automatically created access token that's refreshed hourly. "+
 			"Enable this setting?", true)
 		cc.useBasicAuthOnly = !useRefreshableToken
@@ -468,7 +468,7 @@ func Use(serverId string) error {
 
 func ClearConfig(interactive bool) {
 	if interactive {
-		confirmed := cliutils.InteractiveConfirm("Are you sure you want to delete all the configurations?", false)
+		confirmed := cliutils.AskYesNo("Are you sure you want to delete all the configurations?", false)
 		if !confirmed {
 			return
 		}
