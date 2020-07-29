@@ -156,7 +156,7 @@ func validateDockerBuild(buildName, buildNumber, imagePath, module string, expec
 	assert.NoError(t, err)
 	length, err := reader.Length()
 	assert.NoError(t, err)
-	assert.Len(t, length, expectedItemsInArtifactory, "Docker build info was not pushed correctly")
+	assert.Equal(t, expectedItemsInArtifactory, length, "Docker build info was not pushed correctly")
 	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 	assert.NoError(t, reader.Close())
