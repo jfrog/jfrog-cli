@@ -51,7 +51,7 @@ func reportUsage(command Command, channel chan<- bool) {
 			}
 			err = usage.SendReportUsage(cliutils.GetUserAgent(), command.CommandName(), serviceManager)
 			if err != nil {
-				log.Debug(usage.ReportUsagePrefix + err.Error())
+				log.Debug(err.Error())
 				return
 			}
 		}

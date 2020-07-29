@@ -1,28 +1,28 @@
 {
   "files": [
     {
-      "pattern": "testsdata/a/b/*",
+      "pattern": "testdata/a/b/*",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/a/b/*",
+      "pattern": "testdata/a/b/*",
       "target": "${REPO1}/c/"
     },
     {
-      "pattern": "testsdata/a/b/*",
+      "pattern": "testdata/a/b/*",
       "target": "${REPO1}/a/"
     },
     {
-      "pattern": "testsdata/a/b/c/c1.in",
+      "pattern": "testdata/a/b/c/c1.in",
       "target": "${REPO1}/a/",
       "props": "c=1"
     },
     {
-      "pattern": "testsdata/a/b/*",
+      "pattern": "testdata/a/b/*",
       "target": "${REPO1}/e/"
     },
     {
-      "pattern": "testsdata/a/b/c/c1.in",
+      "pattern": "testdata/a/b/c/c1.in",
       "target": "${REPO1}/e/",
       "props": "c=1"
     }

@@ -43,7 +43,7 @@ func getTestDataPath() (string, error) {
 	if err != nil {
 		return "", errorutils.CheckError(err)
 	}
-	return filepath.Join(dir, "testsdata"), nil
+	return filepath.Join(dir, "testdata"), nil
 }
 
 const expectedLogOutput = `[

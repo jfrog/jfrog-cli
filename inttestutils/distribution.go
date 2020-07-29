@@ -58,7 +58,7 @@ type releaseNotesResponse struct {
 }
 
 // Get api/v1/release_bundle/:name/:version/distribution
-// Retreive the status of a release bundle after distribution.
+// Retrieve the status of a release bundle after distribution.
 type receivedResponse struct {
 	Id     string                     `json:"id,omitempty"`
 	Status receivedDistributionStatus `json:"status,omitempty"`

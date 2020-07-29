@@ -18,8 +18,8 @@ func init() {
 	log.SetDefaultLogger()
 }
 
-const certsConversionResources = "../../testsdata/config/configconversion"
-const encryptionResources = "../../testsdata/config/encryption"
+const certsConversionResources = "../../testdata/config/configconversion"
+const encryptionResources = "../../testdata/config/encryption"
 
 func TestCovertConfigV0ToV1(t *testing.T) {
 	configV0 := `
