@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/bintray"
@@ -11,7 +13,8 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/xray"
 	"github.com/jfrog/jfrog-client-go/utils"
-	"os"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const commandHelpTemplate string = `{{.HelpName}}{{if .UsageText}}
@@ -69,6 +72,9 @@ Environment Variables:
 func main() {
 	log.SetDefaultLogger()
 	err := execMain()
+	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
+		clientLog.Warn(cleanupErr)
+	}
 	cliutils.ExitOnErr(err)
 }
 

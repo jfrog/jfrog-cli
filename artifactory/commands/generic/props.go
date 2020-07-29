@@ -8,8 +8,9 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -60,8 +61,14 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultItems []clientutils.ResultItem, err error) {
+func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultReader *content.ContentReader, err error) {
 	var errorOccurred = false
+	temp := []*content.ContentReader{}
+	writer, err := content.NewContentWriter("results", true, false)
+	if err != nil {
+		return
+	}
+	defer writer.Close()
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := getSearchParamsForProps(spec.Get(i))
 		if err != nil {
@@ -69,24 +76,34 @@ func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryS
 			log.Error(err)
 			continue
 		}
-
-		currentResultItems, err := servicesManager.SearchFiles(searchParams)
+		reader, err := servicesManager.SearchFiles(searchParams)
 		if err != nil {
 			errorOccurred = true
 			log.Error(err)
 			continue
 		}
-		resultItems = append(resultItems, currentResultItems...)
+		temp = append(temp, reader)
+		if i == 0 {
+			defer func() {
+				for _, reader := range temp {
+					reader.Close()
+				}
+			}()
+		}
+	}
+	resultReader, err = content.MergeReaders(temp, content.DefaultKey)
+	if err != nil {
+		return
 	}
 	if errorOccurred {
-		err = errors.New("Operation finished with errors, please review the logs.")
+		err = errorutils.CheckError(errors.New("Operation finished with errors, please review the logs."))
 	}
 	return
 }
 
-func GetPropsParams(resultItems []clientutils.ResultItem, properties string) (propsParams services.PropsParams) {
+func GetPropsParams(reader *content.ContentReader, properties string) (propsParams services.PropsParams) {
 	propsParams = services.NewPropsParams()
-	propsParams.Items = resultItems
+	propsParams.Reader = reader
 	propsParams.Props = properties
 	return
 }

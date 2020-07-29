@@ -17,11 +17,12 @@ import (
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	artUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -149,7 +150,7 @@ func compare(expected, actual []string) error {
 	return nil
 }
 
-func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
+func getPathsFromSearchResults(searchResults []artUtils.SearchResult) []string {
 	var paths []string
 	for _, result := range searchResults {
 		paths = append(paths, result.Path)
@@ -157,7 +158,7 @@ func getPathsFromSearchResults(searchResults []generic.SearchResult) []string {
 	return paths
 }
 
-func CompareExpectedVsActual(expected []string, actual []generic.SearchResult, t *testing.T) {
+func CompareExpectedVsActual(expected []string, actual []artUtils.SearchResult, t *testing.T) {
 	actualPaths := getPathsFromSearchResults(actual)
 	assert.ElementsMatch(t, expected, actualPaths, fmt.Sprintf("Expected: %v \nActual: %v", expected, actualPaths))
 }
@@ -321,12 +322,12 @@ func RenamePath(oldPath, newPath string, t *testing.T) {
 func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
 	deleteCommand := generic.NewDeleteCommand()
 	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
-	err = deleteCommand.GetPathsToDelete()
+	reader, err := deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
 	}
-
-	return deleteCommand.DeleteFiles()
+	defer reader.Close()
+	return deleteCommand.DeleteFiles(reader)
 }
 
 var reposConfigMap = map[*string]string{

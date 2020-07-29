@@ -3,13 +3,15 @@ package dependencies
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"strings"
 )
 
 // Populate project's dependencies with checksums and file names.
@@ -81,11 +83,14 @@ func getDependencyChecksumFromArtifactory(servicesManager *artifactory.Artifacto
 	if err != nil {
 		return nil, err
 	}
-	result, err := servicesManager.Aql(serviceutils.CreateAqlQueryForPypi(repository, dependencyFile))
+	stream, err := servicesManager.Aql(serviceutils.CreateAqlQueryForPypi(repository, dependencyFile))
 	if err != nil {
 		return nil, err
 	}
-
+	result, err := ioutil.ReadAll(stream)
+	if err != nil {
+		return nil, err
+	}
 	parsedResult := new(aqlResult)
 	err = json.Unmarshal(result, parsedResult)
 	if err = errorutils.CheckError(err); err != nil {

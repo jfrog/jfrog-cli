@@ -3,7 +3,7 @@ package tests
 import (
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
@@ -98,11 +98,13 @@ const (
 	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
 	UploadTempWildcard                     = "upload_temp_wildcard.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	UploadWithPropsSpecdeleteExcludeProps  = "upload_with_props_spec_delete_exclude_props.json"
 	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	ReplicationTempCreate                  = "replication_push_create.json"
+	UploadPrefixFiles                      = "upload_prefix_files.json"
 )
 
 var (
@@ -694,198 +696,199 @@ func GetDeleteFolderWithWildcard() []string {
 	}
 }
 
-func GetSearchIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchIncludeDirsFiles() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
-			Path:  RtRepo1 + "/",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testsdata",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testsdata/a",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
+			Path: RtRepo1 + "/data/testsdata/a/a1.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
+			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:   "28f9732cb82a2d11760e38614246ad6d",
+			Path: RtRepo1 + "/data/testsdata/a/a2.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
+			Md5:  "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:   "73c046196302ff7218d47046cf3c0501",
+			Path: RtRepo1 + "/data/testsdata/a/a3.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
+			Md5:  "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testsdata/a/b",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:   "4f5561d29422374e40bd97d28b12cf35",
+			Path: RtRepo1 + "/data/testsdata/a/b/b1.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
+			Md5:  "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:   "6931271be1e5f98e36bdc7a05097407b",
+			Path: RtRepo1 + "/data/testsdata/a/b/b2.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
+			Md5:  "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
+			Path: RtRepo1 + "/data/testsdata/a/b/b3.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
+			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testsdata/a/b/c",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c2.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
+			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:   "d8020b86244956f647cf1beff5acdb90",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c3.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
+			Md5:  "d8020b86244956f647cf1beff5acdb90",
 		},
 	}
 }
 
-func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchNotIncludeDirsFiles() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
+			Path: RtRepo1 + "/data/testsdata/a/a1.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
+			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:   "28f9732cb82a2d11760e38614246ad6d",
+			Path: RtRepo1 + "/data/testsdata/a/a2.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
+			Md5:  "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:   "73c046196302ff7218d47046cf3c0501",
+			Path: RtRepo1 + "/data/testsdata/a/a3.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
+			Md5:  "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:   "4f5561d29422374e40bd97d28b12cf35",
+			Path: RtRepo1 + "/data/testsdata/a/b/b1.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
+			Md5:  "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:   "6931271be1e5f98e36bdc7a05097407b",
+			Path: RtRepo1 + "/data/testsdata/a/b/b2.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
+			Md5:  "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
+			Path: RtRepo1 + "/data/testsdata/a/b/b3.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
+			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c2.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
+			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:   "d8020b86244956f647cf1beff5acdb90",
+			Path: RtRepo1 + "/data/testsdata/a/b/c/c3.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
+			Md5:  "d8020b86244956f647cf1beff5acdb90",
 		},
 	}
 }
 
-func GetSearchPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
+	return []utils.SearchResult{
+		{
+			Path: RtRepo1 + "/a/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
+		},
+		{
+			Path: RtRepo1 + "/e/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep1() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -944,8 +947,8 @@ func GetSearchPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep2() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -991,8 +994,8 @@ func GetSearchPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep3() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1081,8 +1084,8 @@ func GetSearchPropsStep3() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep4() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep4() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -1129,12 +1132,12 @@ func GetSearchPropsStep4() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep5() []generic.SearchResult {
-	return make([]generic.SearchResult, 0)
+func GetSearchPropsStep5() []utils.SearchResult {
+	return make([]utils.SearchResult, 0)
 }
 
-func GetSearchPropsStep6() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep6() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
@@ -1148,8 +1151,8 @@ func GetSearchPropsStep6() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1233,8 +1236,8 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1284,8 +1287,8 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",

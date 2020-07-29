@@ -1,7 +1,6 @@
 package artifactory
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -1931,18 +1930,21 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	result, err := json.Marshal(searchCmd.SearchResult())
-	err = cliutils.GetCliError(err, len(searchCmd.SearchResult()), 0, isFailNoOp(c))
+	reader := searchCmd.Result().Reader()
+	defer reader.Close()
+	length, err := reader.Length()
 	if err != nil {
 		return err
 	}
-	if c.Bool("count") {
-		log.Output(len(searchCmd.SearchResult()))
-	} else {
-		log.Output(clientutils.IndentJson(result))
+	err = cliutils.GetCliError(err, length, 0, isFailNoOp(c))
+	if err != nil {
+		return err
 	}
-
-	return err
+	if !c.Bool("count") {
+		return utils.PrintSearchResults(reader)
+	}
+	log.Output(length)
+	return nil
 }
 
 func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {

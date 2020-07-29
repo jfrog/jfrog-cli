@@ -30,16 +30,19 @@ func (deleteProps *DeletePropsCommand) Run() error {
 	if err != nil {
 		return err
 	}
-
-	resultItems, searchErr := searchItems(deleteProps.Spec(), servicesManager)
-
-	propsParams := GetPropsParams(resultItems, deleteProps.props)
+	reader, searchErr := searchItems(deleteProps.Spec(), servicesManager)
+	if searchErr != nil {
+		return searchErr
+	}
+	defer reader.Close()
+	propsParams := GetPropsParams(reader, deleteProps.props)
 	success, err := servicesManager.DeleteProps(propsParams)
 	result := deleteProps.Result()
 	result.SetSuccessCount(success)
-	result.SetFailCount(len(resultItems) - success)
-	if err == nil {
-		return searchErr
+	totalLength, totalLengthErr := reader.Length()
+	if totalLengthErr != nil {
+		return totalLengthErr
 	}
+	result.SetFailCount(totalLength)
 	return err
 }
