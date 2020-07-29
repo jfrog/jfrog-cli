@@ -1,70 +1,70 @@
 {
   "files": [
     {
-      "pattern": "testsdata/b/(/(.in",
+      "pattern": "testdata/b/(/(.in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/(b/(b.in",
+      "pattern": "testdata/b/(b/(b.in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/b(/b(.in",
+      "pattern": "testdata/b/b(/b(.in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/b)/b).in",
+      "pattern": "testdata/b/b)/b).in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/(b)/(b).in",
+      "pattern": "testdata/b/(b)/(b).in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/)b/)b.in",
+      "pattern": "testdata/b/)b/)b.in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/)b)/)b).in",
+      "pattern": "testdata/b/)b)/)b).in",
       "target": "${REPO1}/"
     },
     {
-      "pattern": "testsdata/b/(/(.in",
+      "pattern": "testdata/b/(/(.in",
       "target": "${REPO1}/(new)/",
       "flat": "false"
     },
     {
-      "pattern": "testsdata/b/(b/(b.in",
-      "target": "${REPO1}/(new)/",
-      "flat": "false"
-
-    },
-    {
-      "pattern": "testsdata/b/b(/b(.in",
+      "pattern": "testdata/b/(b/(b.in",
       "target": "${REPO1}/(new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testsdata/b/b)/b).in",
+      "pattern": "testdata/b/b(/b(.in",
+      "target": "${REPO1}/(new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/b)/b).in",
       "target": "${REPO1}/new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testsdata/b/(b)/(b).in",
+      "pattern": "testdata/b/(b)/(b).in",
       "target": "${REPO1}/new)/",
       "flat": "false"
 
     },
     {
-      "pattern": "testsdata/b/)b/)b.in",
+      "pattern": "testdata/b/)b/)b.in",
       "target": "${REPO1}/(new/",
       "flat": "false"
 
     },
     {
-      "pattern": "testsdata/b/)b)/)b).in",
+      "pattern": "testdata/b/)b)/)b).in",
       "target": "${REPO1}/(new/",
       "flat": "false"
     }

@@ -165,7 +165,7 @@ func CompareExpectedVsActual(expected []string, actual []artUtils.SearchResult, 
 
 func GetTestResourcesPath() string {
 	dir, _ := os.Getwd()
-	return filepath.ToSlash(dir + "/testsdata/")
+	return filepath.ToSlash(dir + "/testdata/")
 }
 
 func GetFilePathForBintray(filename, path string, a ...string) string {

@@ -1,23 +1,23 @@
 {
   "files": [
     {
-      "pattern": "testsdata/archives/a.zip",
+      "pattern": "testdata/archives/a.zip",
       "target": "${REPO1}/archives/"
     },
     {
-      "pattern": "testsdata/archives/b.zip",
+      "pattern": "testdata/archives/b.zip",
       "target": "${REPO1}/archives/"
     },
     {
-      "pattern": "testsdata/archives/c.zip",
+      "pattern": "testdata/archives/c.zip",
       "target": "${REPO1}/zips/"
     },
     {
-      "pattern": "testsdata/archives/d.zip",
+      "pattern": "testdata/archives/d.zip",
       "target": "${REPO1}/archives/"
     },
     {
-      "pattern": "testsdata/a/*",
+      "pattern": "testdata/a/*",
       "target": "${REPO1}/archives/",
       "flat": "true"
     }

@@ -4,8 +4,8 @@
 *.iml
 
 # Test files
-testsdata/go/project1/go.sum
-testsdata/go/tmp
+testdata/go/project1/go.sum
+testdata/go/tmp
 tmp
 out
 

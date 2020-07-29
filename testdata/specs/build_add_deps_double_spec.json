@@ -1,11 +1,11 @@
 {
   "files": [
     {
-      "pattern": "testsdata/a/*",
+      "pattern": "testdata/a/*",
       "recursive": "false"
     },
     {
-      "pattern": "testsdata/a/b/*",
+      "pattern": "testdata/a/b/*",
       "recursive": "false"
     }
   ]

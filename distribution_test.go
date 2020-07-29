@@ -225,7 +225,7 @@ func TestBundleSetProperties(t *testing.T) {
 	initDistributionTest(t)
 
 	// Upload a file.
-	artifactoryCli.Exec("u", "testsdata/a/a1.in", tests.DistRepo1+"/a.in")
+	artifactoryCli.Exec("u", "testdata/a/a1.in", tests.DistRepo1+"/a.in")
 
 	// Create release bundle
 	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
