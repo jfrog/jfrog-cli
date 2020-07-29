@@ -17,7 +17,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/types"
+	artUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 
@@ -150,7 +150,7 @@ func compare(expected, actual []string) error {
 	return nil
 }
 
-func getPathsFromSearchResults(searchResults []types.SearchResult) []string {
+func getPathsFromSearchResults(searchResults []artUtils.SearchResult) []string {
 	var paths []string
 	for _, result := range searchResults {
 		paths = append(paths, result.Path)
@@ -158,7 +158,7 @@ func getPathsFromSearchResults(searchResults []types.SearchResult) []string {
 	return paths
 }
 
-func CompareExpectedVsActual(expected []string, actual []types.SearchResult, t *testing.T) {
+func CompareExpectedVsActual(expected []string, actual []artUtils.SearchResult, t *testing.T) {
 	actualPaths := getPathsFromSearchResults(actual)
 	assert.ElementsMatch(t, expected, actualPaths, fmt.Sprintf("Expected: %v \nActual: %v", expected, actualPaths))
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/types"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -12,6 +11,17 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
+
+type SearchResult struct {
+	Path     string              `json:"path,omitempty"`
+	Type     string              `json:"type,omitempty"`
+	Size     int64               `json:"size,omitempty"`
+	Created  string              `json:"created,omitempty"`
+	Modified string              `json:"modified,omitempty"`
+	Sha1     string              `json:"sha1,omitempty"`
+	Md5      string              `json:"md5,omitempty"`
+	Props    map[string][]string `json:"props,omitempty"`
+}
 
 func PrintSearchResults(reader *content.ContentReader) error {
 	length, err := reader.Length()
@@ -21,7 +31,7 @@ func PrintSearchResults(reader *content.ContentReader) error {
 	}
 	log.Output("[")
 	suffix := ","
-	for searchResult := new(types.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(types.SearchResult) {
+	for searchResult := new(SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(SearchResult) {
 		if length == 1 {
 			suffix = ""
 		}
@@ -33,7 +43,7 @@ func PrintSearchResults(reader *content.ContentReader) error {
 	return reader.GetError()
 }
 
-func printSearchResult(toPrint types.SearchResult, suffix string) error {
+func printSearchResult(toPrint SearchResult, suffix string) error {
 	data, err := json.Marshal(toPrint)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -53,7 +63,7 @@ func AqlResultToSearchResult(readers []*content.ContentReader) (*content.Content
 			if err != nil {
 				return nil, err
 			}
-			tempResult := new(types.SearchResult)
+			tempResult := new(SearchResult)
 			tempResult.Path = searchResult.Repo + "/"
 			if searchResult.Path != "." {
 				tempResult.Path += searchResult.Path + "/"
@@ -99,7 +109,7 @@ func SearchResultNoDate(reader *content.ContentReader) (*content.ContentReader, 
 		return nil, err
 	}
 	defer writer.Close()
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(SearchResult) {
 		if err != nil {
 			return nil, err
 		}

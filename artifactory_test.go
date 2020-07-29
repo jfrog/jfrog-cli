@@ -23,7 +23,6 @@ import (
 	gofrogio "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/types"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -1127,7 +1126,7 @@ func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 
 	searchSpec, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
-	resultItems, err := searchInArtifactory(searchSpec,t)
+	resultItems, err := searchInArtifactory(searchSpec, t)
 	assert.NoError(t, err)
 
 	assert.Equal(t, len(resultItems), 1)
@@ -1901,16 +1900,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []types.SearchResult
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -1924,16 +1923,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -1947,16 +1946,16 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	// Search all artifacts in repo1
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3238,16 +3237,16 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Search without IncludeDirs
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []types.SearchResult
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3260,16 +3259,16 @@ func TestArtifactorySearchIncludeDir(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3298,16 +3297,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.Props("c=3").BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	var resultItems []types.SearchResult
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3320,16 +3319,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3342,16 +3341,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3364,16 +3363,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3386,16 +3385,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3411,16 +3410,16 @@ func TestArtifactorySearchProps(t *testing.T) {
 	reader, err = searchCmd.Search()
 	assert.NoError(t, err)
 
-	for resultItem := new(types.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		assert.NoError(t, assertDateInSearchResult(*resultItem))
 	}
 	assert.NoError(t, reader.GetError())
 	reader.Reset()
 
-	resultItems = []types.SearchResult{}
+	resultItems = []utils.SearchResult{}
 	readerNoDate, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3453,10 +3452,10 @@ func TestArtifactoryDeleteExcludeProps(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	resultItems := []types.SearchResult{}
+	resultItems := []utils.SearchResult{}
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3717,16 +3716,16 @@ func cleanArtifactory() {
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 }
 
-func searchInArtifactory(specFile string, t *testing.T) ([]types.SearchResult, error) {
+func searchInArtifactory(specFile string, t *testing.T) ([]utils.SearchResult, error) {
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	var resultItems []types.SearchResult
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for searchResult := new(types.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(types.SearchResult) {
+	for searchResult := new(utils.SearchResult); readerNoDate.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 		resultItems = append(resultItems, *searchResult)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3756,10 +3755,10 @@ func verifyExistInArtifactoryByProps(expected []string, pattern, props string, t
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(searchSpec)
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
-	var resultItems []types.SearchResult
+	var resultItems []utils.SearchResult
 	readerNoDate, err := utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
-	for resultItem := new(types.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(types.SearchResult) {
+	for resultItem := new(utils.SearchResult); readerNoDate.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.NoError(t, readerNoDate.GetError())
@@ -3859,7 +3858,7 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 	return resultItems
 }
 
-func assertDateInSearchResult(searchResult types.SearchResult) error {
+func assertDateInSearchResult(searchResult utils.SearchResult) error {
 	if searchResult.Created == "" || searchResult.Modified == "" {
 		message, err := json.Marshal(&searchResult)
 		if err != nil {

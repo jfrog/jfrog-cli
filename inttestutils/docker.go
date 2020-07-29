@@ -10,7 +10,7 @@ import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/types"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
@@ -102,7 +102,7 @@ func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string,
 		return nil, err
 	}
 	defer reader.Close()
-	for searchResult := new(types.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(types.SearchResult) {
+	for searchResult := new(utils.SearchResult); reader.NextRecord(searchResult) == nil; searchResult = new(utils.SearchResult) {
 		imageNames = append(imageNames, strings.TrimPrefix(searchResult.Path, prefix))
 	}
 	return imageNames, err
