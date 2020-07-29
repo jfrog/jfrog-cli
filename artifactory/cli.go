@@ -826,7 +826,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-create",
 			Aliases:      []string{"ptc"},
-			Flags:        getTemplateUsersFlags(),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        permissiontargetcreate.Description,
 			HelpName:     common.CreateUsage("rt ptc", permissiontargetcreate.Description, permissiontargetcreate.Usage),
 			UsageText:    permissiontargetcreate.Arguments,
@@ -839,7 +839,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-update",
 			Aliases:      []string{"ptu"},
-			Flags:        getTemplateUsersFlags(),
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
 			Usage:        permissiontargetupdate.Description,
 			HelpName:     common.CreateUsage("rt ptu", permissiontargetupdate.Description, permissiontargetupdate.Usage),
 			UsageText:    permissiontargetupdate.Arguments,
@@ -852,7 +852,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "permission-target-delete",
 			Aliases:      []string{"ptdel"},
-			Flags:        getCommonDeleteFlags(),
+			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetDelete),
 			Usage:        permissiontargetdelete.Description,
 			HelpName:     common.CreateUsage("rt ptdel", permissiontargetdelete.Description, permissiontargetdelete.Usage),
 			UsageText:    permissiontargetdelete.Arguments,
