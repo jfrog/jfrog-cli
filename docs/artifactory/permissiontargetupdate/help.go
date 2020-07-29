@@ -1,6 +1,6 @@
 package permissiontargetupdate
 
-const Description = "Update a permission target in the JFrog Unified Platform."
+const Description = "Update a permission target in the JFrog Platform."
 
 var Usage = []string{`jfrog rt ptu <template path>`}
 

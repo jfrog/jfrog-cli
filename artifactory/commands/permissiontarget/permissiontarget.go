@@ -72,7 +72,7 @@ func (ptc *PermissionTargetCommand) PerformPermissionTargetCmd(isUpdate bool) (e
 	return servicesManager.CreatePermissionTarget(params)
 }
 
-// Each section is map of string->interface{}. We need to convert each value to its correct type
+// Each section is a map of string->interface{}. We need to convert each value to its correct type
 func covertPermissionSection(value interface{}, isBuildSection bool) (*services.PermissionTargetSection, error) {
 	content, err := json.Marshal(value)
 	if errorutils.CheckError(err) != nil {
@@ -90,7 +90,7 @@ func covertPermissionSection(value interface{}, isBuildSection bool) (*services.
 	if len(answer.ExcludePatterns) > 0 {
 		pts.ExcludePatterns = strings.Split(answer.ExcludePatterns, ",")
 	}
-	// 'build' permission target must contains repositories with a default value that cannot be changed.
+	// 'build' permission target must include repositories with a default value that cannot be changed.
 	if isBuildSection {
 		answer.Repositories = DefaultBuildRepositoriesValue
 	}

@@ -722,14 +722,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "repo-template",
-			Aliases:         []string{"rpt"},
-			Usage:           repotemplate.Description,
-			HelpName:        common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
-			UsageText:       repotemplate.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
+			Name:         "repo-template",
+			Aliases:      []string{"rpt"},
+			Usage:        repotemplate.Description,
+			HelpName:     common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
+			UsageText:    repotemplate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return repoTemplateCmd(c)
 			},
@@ -813,14 +812,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "permission-target-template",
-			Aliases:         []string{"ptt"},
-			Usage:           permissiontargettemplate.Description,
-			HelpName:        common.CreateUsage("rt ptt", permissiontargettemplate.Description, permissiontargettemplate.Usage),
-			UsageText:       permissiontargettemplate.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
+			Name:         "permission-target-template",
+			Aliases:      []string{"ptt"},
+			Usage:        permissiontargettemplate.Description,
+			HelpName:     common.CreateUsage("rt ptt", permissiontargettemplate.Description, permissiontargettemplate.Usage),
+			UsageText:    permissiontargettemplate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargrtTemplateCmd(c)
 			},

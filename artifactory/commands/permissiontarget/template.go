@@ -9,6 +9,8 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
+	"sort"
+	"strings"
 )
 
 type PermissionTargetTemplateCommand struct {
@@ -18,7 +20,7 @@ type PermissionTargetTemplateCommand struct {
 const (
 	// Strings for prompt questions
 	SelectPermissionTargetSectionMsg = "Select the permission target section to configure" + utils.PressTabMsg
-	LeaveEmptyForDefault             = "(press enter for default) >"
+	LeaveEmptyForDefault             = "(press enter for default)"
 
 	// Yes,No answers
 	Yes = "yes"
@@ -32,6 +34,17 @@ const (
 
 	IncludePatternsDefault = "**"
 	ExcludePatternsDefault = ""
+
+	// Possible permissions
+	read            = "read"
+	write           = "write"
+	annotate        = "annotate"
+	delete          = "delete"
+	manage          = "manage"
+	managedXrayMeta = "managedXrayMeta"
+	distribute      = "distribute"
+
+	permissionSelectEnd = "-"
 )
 
 func NewPermissionTargetTemplateCommand() *PermissionTargetTemplateCommand {
@@ -97,14 +110,14 @@ func permissionSectionCallBack(iq *utils.InteractiveQuestionnaire, section strin
 	if section != Build {
 		sectionAnswer.Repositories = utils.AskString(reposQuestionInfo.Msg, reposQuestionInfo.PromptPrefix, false)
 	}
-	sectionAnswer.IncludePatterns = utils.AskString(includePatternsQuestionInfo.Msg, includePatternsQuestionInfo.PromptPrefix, true)
+	sectionAnswer.IncludePatterns = utils.AskStringWithDefault(includePatternsQuestionInfo.Msg, includePatternsQuestionInfo.PromptPrefix, IncludePatternsDefault)
 	sectionAnswer.ExcludePatterns = utils.AskString(excludePatternsQuestionInfo.Msg, excludePatternsQuestionInfo.PromptPrefix, true)
-	configureActions := utils.AskFromList("", configureActionsQuestionInfo.PromptPrefix+"users?"+utils.PressTabMsg, false, configureActionsQuestionInfo.Options)
+	configureActions := utils.AskFromList("", configureActionsQuestionInfo.PromptPrefix+"users?"+utils.PressTabMsg, false, configureActionsQuestionInfo.Options, Yes)
 	if configureActions == Yes {
 		sectionAnswer.ActionsUsers = make(map[string]string)
 		readActionsMap("user", sectionAnswer.ActionsUsers)
 	}
-	configureActions = utils.AskFromList("", configureActionsQuestionInfo.PromptPrefix+"groups?", false, configureActionsQuestionInfo.Options)
+	configureActions = utils.AskFromList("", configureActionsQuestionInfo.PromptPrefix+"groups?", false, configureActionsQuestionInfo.Options, Yes)
 	if configureActions == Yes {
 		sectionAnswer.ActionsGroups = make(map[string]string)
 		readActionsMap("group", sectionAnswer.ActionsGroups)
@@ -115,16 +128,59 @@ func permissionSectionCallBack(iq *utils.InteractiveQuestionnaire, section strin
 
 // We will read (user/group name, permissions) pairs until empty name is read.
 func readActionsMap(actionsType string, actionsMap map[string]string) {
-	fmt.Println("Permissions value is a comma separated list of values from read, write, annotate, delete, manage, managedXrayMeta, distribute")
-	keyPromptPrefix := "Insert " + actionsType + " name (press enter to finish) >"
+	//fmt.Println("Permissions value is a comma separated list, which can include the following values: read, write, annotate, delete, manage, managedXrayMeta, distribute")
+	customKeyPrompt := "Insert " + actionsType + " name (press enter to finish) >"
 	for {
-		key := utils.AskString("", keyPromptPrefix, true)
+		key := utils.AskString("", customKeyPrompt, true)
 		if key == "" {
 			return
 		}
-		value := utils.AskString("", "Insert permission value for \""+key+"\" >", false)
+		value := strings.Join(readPermissionList(key), ",")
 		actionsMap[key] = value
 	}
+}
+
+func readPermissionList(permissionsOwner string) (permissions []string) {
+	var permissionsMap = map[string]bool{
+		read:            false,
+		write:           false,
+		annotate:        false,
+		delete:          false,
+		manage:          false,
+		managedXrayMeta: false,
+		distribute:      false,
+	}
+	for {
+		answer := utils.AskFromList("", "Select permission value for "+permissionsOwner+" (press tab for options or enter to finish)", true, buildPermissionSuggestArray(permissionsMap), permissionSelectEnd)
+		if answer == permissionSelectEnd {
+			break
+		}
+		// if answer is a valid key we will mark it with false to remove it from the suggestion list
+		if _, ok := permissionsMap[answer]; ok {
+			permissionsMap[answer] = true
+		} else {
+			// answer is a var, we will add it to the final permissions slice result
+			permissions = append(permissions, answer)
+		}
+	}
+	for key, value := range permissionsMap {
+		if value {
+			permissions = append(permissions, key)
+		}
+	}
+	return
+}
+
+func buildPermissionSuggestArray(permissionMap map[string]bool) (permissions []prompt.Suggest) {
+	for key, value := range permissionMap {
+		if !value {
+			permissions = append(permissions, prompt.Suggest{Text: key})
+		}
+	}
+	sort.Slice(permissions, func(i, j int) bool {
+		return permissions[i].Text < permissions[j].Text
+	})
+	return
 }
 
 var questionMap = map[string]utils.QuestionInfo{
@@ -150,18 +206,18 @@ var questionMap = map[string]utils.QuestionInfo{
 }
 
 var reposQuestionInfo = utils.QuestionInfo{
-	Msg:          "You can specify the name \"ANY\" in order to apply to all repositories, \"ANY REMOTE\" for all remote repositories and \"ANY LOCAL\" for all local repositories.\n" + utils.CommaSeparatedListMsg,
+	Msg:          "You can specify the name \"ANY\" to apply to all repositories, \"ANY REMOTE\" for all remote repositories or \"ANY LOCAL\" for all local repositories.\n" + utils.CommaSeparatedListMsg,
 	PromptPrefix: "Insert the section's repositories value >",
 }
 
 var includePatternsQuestionInfo = utils.QuestionInfo{
 	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for include-patterns [\"" + IncludePatternsDefault + "\"] " + LeaveEmptyForDefault,
+	PromptPrefix: "Insert value for include-patterns " + LeaveEmptyForDefault,
 }
 
 var excludePatternsQuestionInfo = utils.QuestionInfo{
 	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for exclude-patterns [\"" + ExcludePatternsDefault + "\"] " + LeaveEmptyForDefault,
+	PromptPrefix: "Insert value for exclude-patterns " + LeaveEmptyForDefault + " []:",
 }
 
 var configureActionsQuestionInfo = utils.QuestionInfo{
