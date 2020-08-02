@@ -3,16 +3,20 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
-	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory/commands"
@@ -718,14 +722,13 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:            "repo-template",
-			Aliases:         []string{"rpt"},
-			Usage:           repotemplate.Description,
-			HelpName:        common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
-			UsageText:       repotemplate.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			SkipFlagParsing: true,
-			BashComplete:    common.CreateBashCompletionFunc(),
+			Name:         "repo-template",
+			Aliases:      []string{"rpt"},
+			Usage:        repotemplate.Description,
+			HelpName:     common.CreateUsage("rt rpt", repotemplate.Description, repotemplate.Usage),
+			UsageText:    repotemplate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return repoTemplateCmd(c)
 			},
@@ -761,7 +764,7 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"rdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.RepoDelete),
 			Usage:        repodelete.Description,
-			HelpName:     common.CreateUsage("rt rd", repodelete.Description, repodelete.Usage),
+			HelpName:     common.CreateUsage("rt rdel", repodelete.Description, repodelete.Usage),
 			UsageText:    repodelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: common.CreateBashCompletionFunc(),
@@ -806,6 +809,57 @@ func GetCommands() []cli.Command {
 			BashComplete: common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return replicationDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "permission-target-template",
+			Aliases:      []string{"ptt"},
+			Usage:        permissiontargettemplate.Description,
+			HelpName:     common.CreateUsage("rt ptt", permissiontargettemplate.Description, permissiontargettemplate.Usage),
+			UsageText:    permissiontargettemplate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return permissionTargrtTemplateCmd(c)
+			},
+		},
+		{
+			Name:         "permission-target-create",
+			Aliases:      []string{"ptc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
+			Usage:        permissiontargetcreate.Description,
+			HelpName:     common.CreateUsage("rt ptc", permissiontargetcreate.Description, permissiontargetcreate.Usage),
+			UsageText:    permissiontargetcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return permissionTargetCreateCmd(c)
+			},
+		},
+		{
+			Name:         "permission-target-update",
+			Aliases:      []string{"ptu"},
+			Flags:        cliutils.GetCommandFlags(cliutils.TemplateConsumer),
+			Usage:        permissiontargetupdate.Description,
+			HelpName:     common.CreateUsage("rt ptu", permissiontargetupdate.Description, permissiontargetupdate.Usage),
+			UsageText:    permissiontargetupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return permissionTargetUpdateCmd(c)
+			},
+		},
+		{
+			Name:         "permission-target-delete",
+			Aliases:      []string{"ptdel"},
+			Flags:        cliutils.GetCommandFlags(cliutils.PermissionTargetDelete),
+			Usage:        permissiontargetdelete.Description,
+			HelpName:     common.CreateUsage("rt ptdel", permissiontargetdelete.Description, permissiontargetdelete.Usage),
+			UsageText:    permissiontargetdelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return permissionTargetDeleteCmd(c)
 			},
 		},
 		{
@@ -2517,6 +2571,80 @@ func replicationDeleteCmd(c *cli.Context) error {
 	replicationDeleteCmd := replication.NewReplicationDeleteCommand()
 	replicationDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(replicationDeleteCmd)
+}
+
+func permissionTargrtTemplateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	// Run command.
+	permissionTargetTemplateCmd := permissiontarget.NewPermissionTargetTemplateCommand()
+	permissionTargetTemplateCmd.SetTemplatePath(c.Args().Get(0))
+	return commands.Exec(permissionTargetTemplateCmd)
+}
+
+func permissionTargetCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
+	permissionTargetCreateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(permissionTargetCreateCmd)
+}
+
+func permissionTargetUpdateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	permissionTargetUpdateCmd := permissiontarget.NewPermissionTargetUpdateCommand()
+	permissionTargetUpdateCmd.SetTemplatePath(c.Args().Get(0)).SetRtDetails(rtDetails).SetVars(c.String("vars"))
+	return commands.Exec(permissionTargetUpdateCmd)
+}
+
+func permissionTargetDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	permissionTargetDeleteCmd := permissiontarget.NewPermissionTargetDeleteCommand()
+	permissionTargetDeleteCmd.SetPermissionTargetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
+	return commands.Exec(permissionTargetDeleteCmd)
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {

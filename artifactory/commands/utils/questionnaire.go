@@ -12,6 +12,7 @@ import (
 
 const (
 	InsertValuePromptMsg = "Insert the value for "
+	DummyDefaultAnswer   = "-"
 )
 
 // The interactive questionnaire works as follows:
@@ -90,7 +91,19 @@ func interruptKeyBind() prompt.Option {
 // If answer is empty and defaultValue isn't, return defaultValue.
 // Otherwise, answer cannot be empty.
 // Variable aren't checked and can be part of the answer.
-func AskString(msg, promptPrefix, defaultValue string) string {
+func AskStringWithDefault(msg, promptPrefix, defaultValue string) string {
+	return askString(msg, promptPrefix, defaultValue, false)
+}
+
+// Ask question with free string answer, allow an empty string as an answer
+func AskString(msg, promptPrefix string, allowEmpty bool) string {
+	return askString(msg, promptPrefix, "", allowEmpty)
+}
+
+// Ask question with free string answer.
+// If an empty answer is allowed, the answer returned as is,
+// if not and a default value was provided, the default value is returned.
+func askString(msg, promptPrefix, defaultValue string, allowEmpty bool) string {
 	if msg != "" {
 		fmt.Println(msg + ":")
 	}
@@ -98,10 +111,10 @@ func AskString(msg, promptPrefix, defaultValue string) string {
 	for {
 		answer := prompt.Input(promptPrefix, prefixCompleter(nil), interruptKeyBind())
 		answer = strings.TrimSpace(answer)
-		if answer != "" {
+		if allowEmpty || answer != "" {
 			return answer
 		}
-		// Empty answer, default value isn't.
+		// An empty answer wan given, default value wad provided.
 		if defaultValue != "" {
 			return defaultValue
 		}
@@ -135,7 +148,7 @@ func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Sugg
 }
 
 func addDefaultValueToPrompt(promptPrefix, defaultValue string) string {
-	if defaultValue != "" {
+	if defaultValue != "" && defaultValue != DummyDefaultAnswer {
 		return promptPrefix + " [" + defaultValue + "]: "
 	}
 	return promptPrefix + " "
@@ -183,7 +196,7 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 	if question.Options != nil {
 		answer = AskFromList(question.Msg, question.PromptPrefix, question.AllowVars, question.Options, "")
 	} else {
-		answer = AskString(question.Msg, question.PromptPrefix, "")
+		answer = AskString(question.Msg, question.PromptPrefix, false)
 	}
 	if question.Writer != nil {
 		err = question.Writer(&iq.AnswersMap, question.MapKey, answer)
