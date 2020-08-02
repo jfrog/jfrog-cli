@@ -12,6 +12,7 @@ import (
 
 const (
 	InsertValuePromptMsg = "Insert the value for "
+	DummyDefaultAnswer   = "-"
 )
 
 // The interactive questionnaire works as follows:
@@ -113,7 +114,7 @@ func askString(msg, promptPrefix, defaultValue string, allowEmpty bool) string {
 		if allowEmpty || answer != "" {
 			return answer
 		}
-		// Empty answer, default value isn't.
+		// An empty answer wan given, default value wad provided.
 		if defaultValue != "" {
 			return defaultValue
 		}
@@ -147,7 +148,7 @@ func AskFromList(msg, promptPrefix string, allowVars bool, options []prompt.Sugg
 }
 
 func addDefaultValueToPrompt(promptPrefix, defaultValue string) string {
-	if defaultValue != "" {
+	if defaultValue != "" && defaultValue != DummyDefaultAnswer {
 		return promptPrefix + " [" + defaultValue + "]: "
 	}
 	return promptPrefix + " "

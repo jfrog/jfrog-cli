@@ -44,7 +44,7 @@ const (
 	managedXrayMeta = "managedXrayMeta"
 	distribute      = "distribute"
 
-	permissionSelectEnd = "-"
+	permissionSelectEnd = utils.DummyDefaultAnswer
 )
 
 func NewPermissionTargetTemplateCommand() *PermissionTargetTemplateCommand {
@@ -128,7 +128,6 @@ func permissionSectionCallBack(iq *utils.InteractiveQuestionnaire, section strin
 
 // We will read (user/group name, permissions) pairs until empty name is read.
 func readActionsMap(actionsType string, actionsMap map[string]string) {
-	//fmt.Println("Permissions value is a comma separated list, which can include the following values: read, write, annotate, delete, manage, managedXrayMeta, distribute")
 	customKeyPrompt := "Insert " + actionsType + " name (press enter to finish) >"
 	for {
 		key := utils.AskString("", customKeyPrompt, true)
@@ -151,11 +150,11 @@ func readPermissionList(permissionsOwner string) (permissions []string) {
 		distribute:      false,
 	}
 	for {
-		answer := utils.AskFromList("", "Select permission value for "+permissionsOwner+" (press tab for options or enter to finish)", true, buildPermissionSuggestArray(permissionsMap), permissionSelectEnd)
+		answer := utils.AskFromList("", "Select permission value for "+permissionsOwner+" (press tab for options or enter to finish) >", true, buildPermissionSuggestArray(permissionsMap), permissionSelectEnd)
 		if answer == permissionSelectEnd {
 			break
 		}
-		// if answer is a valid key we will mark it with false to remove it from the suggestion list
+		// If the answer is a valid key, we will mark it with true to remove it from the suggestion list
 		if _, ok := permissionsMap[answer]; ok {
 			permissionsMap[answer] = true
 		} else {
@@ -206,18 +205,18 @@ var questionMap = map[string]utils.QuestionInfo{
 }
 
 var reposQuestionInfo = utils.QuestionInfo{
-	Msg:          "You can specify the name \"ANY\" to apply to all repositories, \"ANY REMOTE\" for all remote repositories or \"ANY LOCAL\" for all local repositories.\n" + utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert the section's repositories value >",
+	Msg:          "Insert the section's repositories value.\nYou can specify the name \"ANY\" to apply to all repositories, \"ANY REMOTE\" for all remote repositories or \"ANY LOCAL\" for all local repositories",
+	PromptPrefix: utils.CommaSeparatedListMsg + " >",
 }
 
 var includePatternsQuestionInfo = utils.QuestionInfo{
-	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for include-patterns " + LeaveEmptyForDefault,
+	Msg:          "Insert a value for include-patterns",
+	PromptPrefix: utils.CommaSeparatedListMsg + " " + LeaveEmptyForDefault,
 }
 
 var excludePatternsQuestionInfo = utils.QuestionInfo{
-	Msg:          utils.CommaSeparatedListMsg,
-	PromptPrefix: "Insert value for exclude-patterns " + LeaveEmptyForDefault + " []:",
+	Msg:          "Insert value for exclude-patterns",
+	PromptPrefix: utils.CommaSeparatedListMsg + " " + LeaveEmptyForDefault + " []:",
 }
 
 var configureActionsQuestionInfo = utils.QuestionInfo{
