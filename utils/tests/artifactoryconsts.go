@@ -1428,7 +1428,7 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{
-			Url:                    *RtUrl,
+			Url:                    *RtUrl+"targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,
