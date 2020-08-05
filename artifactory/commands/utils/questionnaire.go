@@ -54,7 +54,7 @@ const (
 	PressTabMsg      = " (press Tab for options):"
 	InvalidAnswerMsg = "Invalid answer. Please select value from the suggestions list."
 	VariableUseMsg   = " You may use dynamic variable in the form of ${key}."
-	EmptyValueMsg    = "The value cannot be empty. Please enter a valid value:"
+	EmptyValueMsg    = "The value cannot be empty. Please enter a valid value."
 	OptionalKey      = "OptionalKey"
 	SaveAndExit      = ":x"
 
@@ -87,16 +87,20 @@ func interruptKeyBind() prompt.Option {
 
 // Ask question with free string answer, answer cannot be empty.
 // Variable aren't check and can be part of the answer
-func AskString(msg, promptPrefix string) string {
+func AskString(msg, promptPrefix string, allowVars bool) string {
 	if msg != "" {
 		fmt.Println(msg + ":")
+	}
+	errMsg := EmptyValueMsg
+	if allowVars {
+		errMsg += VariableUseMsg
 	}
 	for {
 		answer := prompt.Input(promptPrefix+" ", prefixCompleter(nil), interruptKeyBind())
 		if answer != "" {
 			return answer
 		}
-		fmt.Println(EmptyValueMsg)
+		fmt.Println(errMsg)
 	}
 }
 
@@ -143,7 +147,7 @@ func (iq *InteractiveQuestionnaire) AskQuestion(question QuestionInfo) (value st
 	if question.Options != nil {
 		answer = AskFromList(question.Msg, question.PromptPrefix, question.AllowVars, question.Options)
 	} else {
-		answer = AskString(question.Msg, question.PromptPrefix)
+		answer = AskString(question.Msg, question.PromptPrefix, question.AllowVars)
 	}
 	if question.Writer != nil {
 		err = question.Writer(&iq.AnswersMap, question.MapKey, answer)

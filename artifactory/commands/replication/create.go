@@ -2,6 +2,7 @@ package replication
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
@@ -90,11 +91,14 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 	if err != nil {
 		return err
 	}
+	// In case 'serverId' is not found, pull replication will be assumed.
 	if serverId != "" {
 		if targetRepo, ok := replicationConfigMap["targetRepoKey"]; ok {
 			if err = updateArtifactoryInfo(&params, serverId, targetRepo.(string)); err != nil {
 				return err
 			}
+		} else {
+			return errorutils.CheckError(errors.New("expected 'targetRepoKey' field in the json template file."))
 		}
 	}
 	return servicesManager.CreateReplication(params)

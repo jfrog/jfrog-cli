@@ -60,7 +60,6 @@ func (rtc *ReplicationTemplateCommand) RtDetails() (*config.ArtifactoryDetails, 
 }
 
 func getArtifactoryServerIds() []prompt.Suggest {
-	// Since it's a local command, usage won't be reported.
 	suggest := make([]prompt.Suggest, 0)
 	if configurations, _ := config.GetAllArtifactoryConfigs(); configurations != nil {
 		for _, conf := range configurations {
@@ -105,7 +104,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		},
 		Msg:          "",
 		PromptPrefix: "Select the template type >",
-		AllowVars:    true,
+		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
 		Callback:     nil,
@@ -116,8 +115,8 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Push, Description: "Push replication"},
 		},
 		Msg:          "",
-		PromptPrefix: "Select job type " + utils.PressTabMsg,
-		AllowVars:    true,
+		PromptPrefix: "Select replication job type" + utils.PressTabMsg,
+		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
 		Callback:     jobTypeCallback,
@@ -141,7 +140,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	ServerId: {
 		Options:      getArtifactoryServerIds(),
 		Msg:          "",
-		PromptPrefix: "Enter target server id " + utils.PressTabMsg,
+		PromptPrefix: "Enter target server id" + utils.PressTabMsg,
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       ServerId,
