@@ -1,3 +1,6 @@
+## 1.38.3 (August 5, 2020)
+- Bug fix - The "jfrog rt replication-template" command creates a template with a wrong target URL.
+
 ## 1.38.2 (July 20, 2020)
 - Bug fix - Fix an issue with JFrog CLI's npm installer
 
