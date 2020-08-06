@@ -70,9 +70,11 @@ node {
 def downloadToolsCert() {
     stage('Download tools cert') {
         // Download the certificate file and key file, used for signing the JFrog CLI binary.
+        withCredentials([string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
             builder/jfrog rt dl installation-files/certificates/jfrog/ --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
             """
+        }
 
         sh 'tar xvzf jfrogltd_signingcer_full.tar.gz'
     }
@@ -104,12 +106,14 @@ def buildRpmAndDeb(version, architectures) {
 
     if (built) {
         stage("Deploy deb and rpm") {
-            options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$DEB_RPM_DEPLOY_ACCESS_TOKEN"
-            sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
-                builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
-                builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
-                """
+            withCredentials([string(credentialsId: 'deb-rpm-deploy-access-token', variable: 'DEB_RPM_DEPLOY_ACCESS_TOKEN')]) {
+                options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$DEB_RPM_DEPLOY_ACCESS_TOKEN"
+                sh """#!/bin/bash
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
+                    builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.rpm jfrog-rpms/jfrog-cli/ $options
+                    """
+            }
         }
     } 
 }
@@ -125,18 +129,22 @@ def uploadCli(architectures) {
 
 def buildPublishDockerImage(version, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
-        docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
-        sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
-        sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
-        sh "docker tag jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
-        sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
+        withCredentials([usernamePassword(credentialsId: 'bintray-jfrog', usernameVariable: '$USER_NAME', passwordVariable: '$KEY')]) {
+            docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
+            sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
+            sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
+            sh "docker tag jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
+            sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
+        }
     }
 }
 
 def uploadToBintray(pkg, fileName) {
-    sh """#!/bin/bash
-           builder/jfrog bt u $jfrogCliRepoDir/$fileName $subject/jfrog-cli-go/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
+    withCredentials([usernamePassword(credentialsId: 'bintray-jfrog', usernameVariable: '$USER_NAME', passwordVariable: '$KEY')]) {
+        sh """#!/bin/bash
+                builder/jfrog bt u $jfrogCliRepoDir/$fileName $subject/jfrog-cli-go/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
         """
+    }
 }
 
 def build(goos, goarch, pkg, fileName) {
@@ -173,14 +181,16 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 
 def publishNpmPackage(jfrogCliRepoDir) {
     dir(jfrogCliRepoDir+'build/npm/') {
-        sh '''#!/bin/bash
-            echo "Downloading npm..."
-            wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
-            tar -xvf node-v8.11.1-linux-x64.tar.xz
-            export PATH=$PATH:$PWD/node-v8.11.1-linux-x64/bin/
-            echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > .npmrc
-            echo "registry=https://registry.npmjs.org" >> .npmrc
-            ./node-v8.11.1-linux-x64/bin/npm publish
-        '''
+        withCredentials([string(credentialsId: 'npm-authorization', variable: 'NPM_AUTH_TOKEN')]) {
+            sh '''#!/bin/bash
+                echo "Downloading npm..."
+                wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
+                tar -xvf node-v8.11.1-linux-x64.tar.xz
+                export PATH=$PATH:$PWD/node-v8.11.1-linux-x64/bin/
+                echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" > .npmrc
+                echo "registry=https://registry.npmjs.org" >> .npmrc
+                ./node-v8.11.1-linux-x64/bin/npm publish
+            '''
+        }
     }
 }
