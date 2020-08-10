@@ -1,3 +1,6 @@
+## 1.38.4 (August 10, 2020)
+- Bug fix - "panic: Logger not initialized" error can be thrown when the config is empty.
+
 ## 1.38.3 (August 5, 2020)
 - Bug fix - The "jfrog rt replication-template" command creates a template with a wrong target URL.
 
