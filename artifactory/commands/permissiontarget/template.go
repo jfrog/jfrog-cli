@@ -3,14 +3,15 @@ package permissiontarget
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"sort"
+	"strings"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io/ioutil"
-	"sort"
-	"strings"
 )
 
 type PermissionTargetTemplateCommand struct {
@@ -108,10 +109,10 @@ func permissionSectionCallBack(iq *utils.InteractiveQuestionnaire, section strin
 	}
 	var sectionAnswer PermissionSectionAnswer
 	if section != Build {
-		sectionAnswer.Repositories = utils.AskString(reposQuestionInfo.Msg, reposQuestionInfo.PromptPrefix, false)
+		sectionAnswer.Repositories = utils.AskString(reposQuestionInfo.Msg, reposQuestionInfo.PromptPrefix, false, reposQuestionInfo.AllowVars)
 	}
 	sectionAnswer.IncludePatterns = utils.AskStringWithDefault(includePatternsQuestionInfo.Msg, includePatternsQuestionInfo.PromptPrefix, IncludePatternsDefault)
-	sectionAnswer.ExcludePatterns = utils.AskString(excludePatternsQuestionInfo.Msg, excludePatternsQuestionInfo.PromptPrefix, true)
+	sectionAnswer.ExcludePatterns = utils.AskString(excludePatternsQuestionInfo.Msg, excludePatternsQuestionInfo.PromptPrefix, true, excludePatternsQuestionInfo.AllowVars)
 	configureActions := utils.AskFromList("", configureActionsQuestionInfo.PromptPrefix+"users?"+utils.PressTabMsg, false, configureActionsQuestionInfo.Options, Yes)
 	if configureActions == Yes {
 		sectionAnswer.ActionsUsers = make(map[string]string)
@@ -130,7 +131,7 @@ func permissionSectionCallBack(iq *utils.InteractiveQuestionnaire, section strin
 func readActionsMap(actionsType string, actionsMap map[string]string) {
 	customKeyPrompt := "Insert " + actionsType + " name (press enter to finish) >"
 	for {
-		key := utils.AskString("", customKeyPrompt, true)
+		key := utils.AskString("", customKeyPrompt, true, false)
 		if key == "" {
 			return
 		}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	cliLog "github.com/jfrog/jfrog-cli/utils/log"
 	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/auth"
 	distributionAuth "github.com/jfrog/jfrog-client-go/distribution/auth"
@@ -22,6 +23,10 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
+
+func init() {
+	cliLog.SetDefaultLogger()
+}
 
 // This is the default server id. It is used when adding a server config without providing a server ID
 const DefaultServerId = "Default-Server"

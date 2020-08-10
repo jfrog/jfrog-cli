@@ -2,11 +2,12 @@ package utils
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -376,7 +377,7 @@ func readRepo(promptPrefix string, serverId string, repoTypes ...utils.RepoType)
 	if len(availableRepos) > 0 {
 		return AskFromListWithMismatchConfirmation(promptPrefix, "Repository not found.", ConvertToSuggests(availableRepos)), nil
 	}
-	return AskString("", promptPrefix, false), nil
+	return AskString("", promptPrefix, false, false), nil
 }
 
 func getServersIdAndDefault() ([]string, string, error) {
