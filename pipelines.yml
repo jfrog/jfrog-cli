@@ -142,7 +142,7 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - docker version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerTargetRepo=docker-virtual
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerSourceRepo=docker-virtual -rt.dockerTargetRepo=docker-local
 
       # Parallel tests
       - name: NuGet

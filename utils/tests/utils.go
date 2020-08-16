@@ -52,6 +52,7 @@ var TestNpm *bool
 var TestGradle *bool
 var TestMaven *bool
 var DockerRepoDomain *string
+var DockerVirtualRepo *string
 var DockerTargetRepo *string
 var TestNuget *bool
 var HideUnitTestLog *bool
@@ -81,7 +82,8 @@ func init() {
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
-	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker repository domain")
+	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
+	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker local repo")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
@@ -334,6 +336,7 @@ var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
 	&DockerRepo:       DockerRepoConfig,
+	&DockerRemoteRepo: DockerRemoteRepoConfig,
 	&GoRepo:           GoLocalRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
 	&MvnRepo1:         MavenRepositoryConfig1,
@@ -383,7 +386,7 @@ func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
-		TestDocker:       {&DockerRepo},
+		TestDocker:       {&DockerRepo, &DockerRemoteRepo},
 		TestGo:           {&GoRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -447,6 +450,7 @@ func getSubstitutionMap() map[string]string {
 		"${LFS_REPO}":           RtLfsRepo,
 		"${DEBIAN_REPO}":        RtDebianRepo,
 		"${DOCKER_REPO}":        DockerRepo,
+		"${DOCKER_REMOTE}":      DockerRemoteRepo,
 		"${MAVEN_REPO1}":        MvnRepo1,
 		"${MAVEN_REPO2}":        MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":  MvnRemoteRepo,
@@ -478,6 +482,7 @@ func AddTimestampToGlobalVars() {
 	// Repositories
 	BintrayRepo += timestampSuffix
 	DockerRepo += timestampSuffix
+	DockerRemoteRepo += timestampSuffix
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
 	GoRepo += timestampSuffix

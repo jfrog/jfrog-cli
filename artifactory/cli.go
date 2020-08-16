@@ -1197,8 +1197,8 @@ func dockerPromoteCmd(c *cli.Context) error {
 		return err
 	}
 	params := services.NewDockerPromoteParams(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2))
-	params.TargetDockerRepository = c.String("target-docker-image")
-	params.Tag = c.String("source-tag")
+	params.TargetDockerImage = c.String("target-docker-image")
+	params.SourceTag = c.String("source-tag")
 	params.TargetTag = c.String("target-tag")
 	params.Copy = c.Bool("copy")
 	dockerPromoteCommand := docker.NewDockerPromoteCommand()

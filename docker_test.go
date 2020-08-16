@@ -139,7 +139,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 	buildNumber := "1"
 
 	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerVirtualRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	// Validate
