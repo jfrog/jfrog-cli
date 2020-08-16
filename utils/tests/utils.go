@@ -336,7 +336,6 @@ var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
 	&DockerRepo:       DockerRepoConfig,
-	&DockerRemoteRepo: DockerRemoteRepoConfig,
 	&GoRepo:           GoLocalRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
 	&MvnRepo1:         MavenRepositoryConfig1,
@@ -386,7 +385,7 @@ func GetNonVirtualRepositories() map[*string]string {
 	nonVirtualReposMap := map[*bool][]*string{
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
-		TestDocker:       {&DockerRepo, &DockerRemoteRepo},
+		TestDocker:       {&DockerRepo},
 		TestGo:           {&GoRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
@@ -450,7 +449,6 @@ func getSubstitutionMap() map[string]string {
 		"${LFS_REPO}":           RtLfsRepo,
 		"${DEBIAN_REPO}":        RtDebianRepo,
 		"${DOCKER_REPO}":        DockerRepo,
-		"${DOCKER_REMOTE}":      DockerRemoteRepo,
 		"${MAVEN_REPO1}":        MvnRepo1,
 		"${MAVEN_REPO2}":        MvnRepo2,
 		"${MAVEN_REMOTE_REPO}":  MvnRemoteRepo,
@@ -482,7 +480,6 @@ func AddTimestampToGlobalVars() {
 	// Repositories
 	BintrayRepo += timestampSuffix
 	DockerRepo += timestampSuffix
-	DockerRemoteRepo += timestampSuffix
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
 	GoRepo += timestampSuffix
