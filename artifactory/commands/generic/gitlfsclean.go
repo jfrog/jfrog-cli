@@ -2,11 +2,13 @@ package generic
 
 import (
 	"fmt"
+
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
@@ -40,25 +42,28 @@ func (glc *GitLfsCommand) Run() error {
 
 	gitLfsCleanParams := getGitLfsCleanParams(glc.configuration)
 
-	filesToDelete, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
-
-	if err != nil || len(filesToDelete) < 1 {
+	filesToDeleteReader, err := servicesManager.GetUnreferencedGitLfsFiles(gitLfsCleanParams)
+	if err != nil {
+		return err
+	}
+	defer filesToDeleteReader.Close()
+	length, err := filesToDeleteReader.Length()
+	if err != nil || length < 1 {
 		return err
 	}
 
 	if glc.configuration.Quiet {
-		err = glc.deleteLfsFilesFromArtifactory(filesToDelete)
-		return err
+		return glc.deleteLfsFilesFromArtifactory(filesToDeleteReader)
 	}
-	return glc.interactiveDeleteLfsFiles(filesToDelete)
+	return glc.interactiveDeleteLfsFiles(filesToDeleteReader)
 }
 
 func (glc *GitLfsCommand) CommandName() string {
 	return "rt_git_lfs_clean"
 }
 
-func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems []clientutils.ResultItem) error {
-	log.Info("Deleting", len(deleteItems), "files from", glc.configuration.Repo, "...")
+func (glc *GitLfsCommand) deleteLfsFilesFromArtifactory(deleteItems *content.ContentReader) error {
+	log.Info("Deleting", deleteItems.Length, "files from", glc.configuration.Repo, "...")
 	servicesManager, err := utils.CreateServiceManager(glc.rtDetails, glc.DryRun())
 	if err != nil {
 		return err
@@ -85,10 +90,14 @@ func getGitLfsCleanParams(configuration *GitLfsCleanConfiguration) (gitLfsCleanP
 	return
 }
 
-func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete []clientutils.ResultItem) error {
-	for _, v := range filesToDelete {
-		fmt.Println("  " + v.Name)
+func (glc *GitLfsCommand) interactiveDeleteLfsFiles(filesToDelete *content.ContentReader) error {
+	for resultItem := new(clientutils.ResultItem); filesToDelete.NextRecord(resultItem) == nil; resultItem = new(clientutils.ResultItem) {
+		fmt.Println("  " + resultItem.Name)
 	}
+	if err := filesToDelete.GetError(); err != nil {
+		return err
+	}
+	filesToDelete.Reset()
 	confirmed := cliutils.AskYesNo("Are you sure you want to delete the above files?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false)
 	if confirmed {

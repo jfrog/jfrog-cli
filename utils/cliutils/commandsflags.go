@@ -55,6 +55,7 @@ const (
 	TemplateConsumer        = "template-consumer"
 	RepoDelete              = "repo-delete"
 	ReplicationDelete       = "replication-delete"
+	PermissionTargetDelete  = "permission-target-delete"
 	AccessTokenCreate       = "access-token-create"
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -1233,6 +1234,10 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, deleteQuiet,
 	},
 	ReplicationDelete: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		clientCertKeyPath, deleteQuiet,
+	},
+	PermissionTargetDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, deleteQuiet,
 	},

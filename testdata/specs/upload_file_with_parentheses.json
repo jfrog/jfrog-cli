@@ -1,0 +1,72 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/b/(/(.in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/(b/(b.in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/b(/b(.in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/b)/b).in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/(b)/(b).in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/)b/)b.in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/)b)/)b).in",
+      "target": "${REPO1}/"
+    },
+    {
+      "pattern": "testdata/b/(/(.in",
+      "target": "${REPO1}/(new)/",
+      "flat": "false"
+    },
+    {
+      "pattern": "testdata/b/(b/(b.in",
+      "target": "${REPO1}/(new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/b(/b(.in",
+      "target": "${REPO1}/(new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/b)/b).in",
+      "target": "${REPO1}/new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/(b)/(b).in",
+      "target": "${REPO1}/new)/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/)b/)b.in",
+      "target": "${REPO1}/(new/",
+      "flat": "false"
+
+    },
+    {
+      "pattern": "testdata/b/)b)/)b).in",
+      "target": "${REPO1}/(new/",
+      "flat": "false"
+    }
+  ]
+}

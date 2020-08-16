@@ -13,6 +13,7 @@ import (
 	artifactoryUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/log"
+
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -30,9 +31,9 @@ func setupIntegrationTests() {
 	os.Setenv(cliutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
 	os.Setenv(cliutils.CI, "true")
+
 	flag.Parse()
 	log.SetDefaultLogger()
-
 	if *tests.TestBintray {
 		InitBintrayTests()
 	}

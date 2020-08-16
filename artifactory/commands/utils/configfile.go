@@ -2,11 +2,12 @@ package utils
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -304,8 +305,8 @@ func (configFile *ConfigFile) setMavenIvyDescriptors() {
 	configFile.Deployer.DeployIvyDesc = cliutils.AskYesNo("Deploy Ivy descriptors?", false)
 
 	if configFile.Deployer.DeployIvyDesc {
-		configFile.Deployer.IvyPattern = AskString("", "Set Ivy descriptor pattern", "[organization]/[module]/ivy-[revision].xml")
-		configFile.Deployer.ArtifactsPattern = AskString("", "Set Ivy artifact pattern", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")
+		configFile.Deployer.IvyPattern = AskStringWithDefault("", "Set Ivy descriptor pattern", "[organization]/[module]/ivy-[revision].xml")
+		configFile.Deployer.ArtifactsPattern = AskStringWithDefault("", "Set Ivy artifact pattern", "[organization]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]")
 	}
 }
 
@@ -376,7 +377,7 @@ func readRepo(promptPrefix string, serverId string, repoTypes ...utils.RepoType)
 	if len(availableRepos) > 0 {
 		return AskFromListWithMismatchConfirmation(promptPrefix, "Repository not found.", ConvertToSuggests(availableRepos)), nil
 	}
-	return AskString("", promptPrefix, ""), nil
+	return AskString("", promptPrefix, false, false), nil
 }
 
 func getServersIdAndDefault() ([]string, string, error) {

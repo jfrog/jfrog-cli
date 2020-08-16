@@ -30,9 +30,9 @@ func TestGoBuildInfo(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	project1Path := createGoProject(t, "project1", false)
-	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	assert.NoError(t, fileutils.CopyDir(testdataSrc, testdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -79,7 +79,7 @@ func TestGoBuildInfo(t *testing.T) {
 	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
 
-	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
+	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
 
 	resultItems := getResultItemsFromArtifactory(tests.SearchGo, t)
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
@@ -175,9 +175,9 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 
 func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
 	project1Path := createGoProject(t, "project1", copyDirs)
-	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	err := fileutils.CopyDir(testsdataSrc, testsdataTarget, copyDirs, nil)
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
 	if configDestDir == "" {
 		configDestDir = filepath.Join(project1Path, ".jfrog")
@@ -262,9 +262,9 @@ func TestGoRecursivePublish(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 
-	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	assert.NoError(t, fileutils.CopyDir(testdataSrc, testdataTarget, true, nil))
 	project1Path := createGoProject(t, "dependency", false)
 	projectMissingDependency := createGoProject(t, "projectmissingdependency", false)
 	projectBuild := createGoProject(t, "projectbuild", false)
@@ -283,7 +283,7 @@ func TestGoRecursivePublish(t *testing.T) {
 	}
 	cleanGoCache(t)
 
-	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
+	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
 
 	// Need to check the mod file within Artifactory of the gofrog dependency.
 	content := downloadModFile(tests.DownloadModFileGo, wd, "gofrog", t)
@@ -293,7 +293,7 @@ func TestGoRecursivePublish(t *testing.T) {
 	// Check that the mod file was populated with the dependency
 	assert.NotContains(t, string(content), "require github.com/pkg/errors", "Expected to get empty mod file")
 
-	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
+	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
 
 	// Need to check the mod file within Artifactory of the dependency of gofrog => pkg/errors.
 	content = downloadModFile(tests.DownloadModOfDependencyGo, wd, "errors", t)
@@ -315,9 +315,9 @@ func TestGoWithPublishDeps(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	project1Path := createGoProject(t, "project1", false)
-	testsdataTarget := filepath.Join(tests.Out, "testsdata")
-	testsdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testsdata")
-	assert.NoError(t, fileutils.CopyDir(testsdataSrc, testsdataTarget, true, nil))
+	testdataTarget := filepath.Join(tests.Out, "testdata")
+	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
+	assert.NoError(t, fileutils.CopyDir(testdataSrc, testdataTarget, true, nil))
 	assert.NoError(t, os.Chdir(project1Path))
 	defer os.Chdir(wd)
 
@@ -325,7 +325,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	artifactoryCli.Exec("go", "build", tests.GoRepo, "--publish-deps=true")
 	cleanGoCache(t)
 
-	assert.NoError(t, os.Chdir(filepath.Join(wd, "testsdata", "go")))
+	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
 
 	content := downloadModFile(tests.DownloadModOfDependencyGo, wd, "errors", t)
 	assert.NotContains(t, string(content), " module github.com/pkg/errors", "Wrong mod content was downloaded")

@@ -141,18 +141,18 @@ func summaryPrintError(summaryError, originalError error) error {
 }
 
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintSummaryReport(success, failed int, resultReader *content.ContentReader, rtUrl string, originalErr error) error {
+func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUrl string, originalErr error) error {
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
 	// A reader wasn't provided, prints the basic summary json and return.
-	if resultReader == nil {
+	if reader == nil {
 		log.Output(basicSummary)
 		return summaryPrintError(mErr, originalErr)
 	}
-	resultReader.Reset()
-	defer resultReader.Close()
+	reader.Reset()
+	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
 		log.Output(basicSummary)
@@ -162,8 +162,7 @@ func PrintSummaryReport(success, failed int, resultReader *content.ContentReader
 	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
 	log.Output(basicSummary)
 	defer log.Output("}")
-	var file serviceutils.FileInfo
-	for e := resultReader.NextRecord(&file); e == nil; e = resultReader.NextRecord(&file) {
+	for file := new(serviceutils.FileInfo); reader.NextRecord(file) == nil; file = new(serviceutils.FileInfo) {
 		record := detailedSummaryRecord{
 			Source: rtUrl + file.ArtifactoryPath,
 			Target: file.LocalPath,

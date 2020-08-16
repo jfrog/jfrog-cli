@@ -3,7 +3,7 @@ package tests
 import (
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 )
 
@@ -100,11 +100,13 @@ const (
 	UploadSpecExcludeRegex                 = "upload_spec_exclude_regex.json"
 	UploadTempWildcard                     = "upload_temp_wildcard.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
+	UploadWithPropsSpecdeleteExcludeProps  = "upload_with_props_spec_delete_exclude_props.json"
 	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
 	WinSimpleUploadSpec                    = "win_simple_upload_spec.json"
 	ReplicationTempCreate                  = "replication_push_create.json"
+	UploadPrefixFiles                      = "upload_prefix_files.json"
 )
 
 var (
@@ -292,17 +294,17 @@ func GetExplodeUploadExpectedRepo1() []string {
 
 func GetCopyFileNameWithParentheses() []string {
 	return []string{
-		RtRepo2 + "/testsdata/b/(/(.in",
-		RtRepo2 + "/testsdata/b/(b/(b.in",
-		RtRepo2 + "/testsdata/b/)b/)b.in",
-		RtRepo2 + "/testsdata/b/b(/b(.in",
-		RtRepo2 + "/testsdata/b/b)/b).in",
-		RtRepo2 + "/testsdata/b/(b)/(b).in",
-		RtRepo2 + "/testsdata/b/)b)/)b).in",
+		RtRepo2 + "/testdata/b/(/(.in",
+		RtRepo2 + "/testdata/b/(b/(b.in",
+		RtRepo2 + "/testdata/b/)b/)b.in",
+		RtRepo2 + "/testdata/b/b(/b(.in",
+		RtRepo2 + "/testdata/b/b)/b).in",
+		RtRepo2 + "/testdata/b/(b)/(b).in",
+		RtRepo2 + "/testdata/b/)b)/)b).in",
 		RtRepo2 + "/(/b(.in",
 		RtRepo2 + "/()/(b.in",
-		RtRepo2 + "/()/testsdata/b/(b)/(b).in",
-		RtRepo2 + "/(/testsdata/b/(/(.in.zip",
+		RtRepo2 + "/()/testdata/b/(b)/(b).in",
+		RtRepo2 + "/(/testdata/b/(/(.in.zip",
 		RtRepo2 + "/(/in-b(",
 		RtRepo2 + "/(/b(.in-up",
 		RtRepo2 + "/c/(.in.zip",
@@ -317,13 +319,13 @@ func GetUploadFileNameWithParentheses() []string {
 		RtRepo1 + "/b).in",
 		RtRepo1 + "/(b).in",
 		RtRepo1 + "/)b).in",
-		RtRepo1 + "/(new)/testsdata/b/(/(.in",
-		RtRepo1 + "/(new)/testsdata/b/(b/(b.in",
-		RtRepo1 + "/(new)/testsdata/b/b(/b(.in",
-		RtRepo1 + "/new)/testsdata/b/b)/b).in",
-		RtRepo1 + "/new)/testsdata/b/(b)/(b).in",
-		RtRepo1 + "/(new/testsdata/b/)b)/)b).in",
-		RtRepo1 + "/(new/testsdata/b/)b/)b.in",
+		RtRepo1 + "/(new)/testdata/b/(/(.in",
+		RtRepo1 + "/(new)/testdata/b/(b/(b.in",
+		RtRepo1 + "/(new)/testdata/b/b(/b(.in",
+		RtRepo1 + "/new)/testdata/b/b)/b).in",
+		RtRepo1 + "/new)/testdata/b/(b)/(b).in",
+		RtRepo1 + "/(new/testdata/b/)b)/)b).in",
+		RtRepo1 + "/(new/testdata/b/)b/)b.in",
 	}
 }
 
@@ -446,22 +448,22 @@ func GetExtractedDownload() []string {
 
 func GetFileWithParenthesesDownload() []string {
 	return []string{
-		filepath.Join(Out, "testsdata"),
-		filepath.Join(Out, "testsdata/b"),
-		filepath.Join(Out, "testsdata/b/("),
-		filepath.Join(Out, "testsdata/b/(/(.in"),
-		filepath.Join(Out, "testsdata/b/(b"),
-		filepath.Join(Out, "testsdata/b/(b/(b.in"),
-		filepath.Join(Out, "testsdata/b/(b)"),
-		filepath.Join(Out, "testsdata/b/(b)/(b).in"),
-		filepath.Join(Out, "testsdata/b/)b"),
-		filepath.Join(Out, "testsdata/b/)b/)b.in"),
-		filepath.Join(Out, "testsdata/b/)b)"),
-		filepath.Join(Out, "testsdata/b/)b)/)b).in"),
-		filepath.Join(Out, "testsdata/b/b("),
-		filepath.Join(Out, "testsdata/b/b(/b(.in"),
-		filepath.Join(Out, "testsdata/b/b)"),
-		filepath.Join(Out, "testsdata/b/b)/b).in"),
+		filepath.Join(Out, "testdata"),
+		filepath.Join(Out, "testdata/b"),
+		filepath.Join(Out, "testdata/b/("),
+		filepath.Join(Out, "testdata/b/(/(.in"),
+		filepath.Join(Out, "testdata/b/(b"),
+		filepath.Join(Out, "testdata/b/(b/(b.in"),
+		filepath.Join(Out, "testdata/b/(b)"),
+		filepath.Join(Out, "testdata/b/(b)/(b).in"),
+		filepath.Join(Out, "testdata/b/)b"),
+		filepath.Join(Out, "testdata/b/)b/)b.in"),
+		filepath.Join(Out, "testdata/b/)b)"),
+		filepath.Join(Out, "testdata/b/)b)/)b).in"),
+		filepath.Join(Out, "testdata/b/b("),
+		filepath.Join(Out, "testdata/b/b(/b(.in"),
+		filepath.Join(Out, "testdata/b/b)"),
+		filepath.Join(Out, "testdata/b/b)/b).in"),
 	}
 }
 
@@ -480,7 +482,7 @@ func GetVirtualDownloadExpected() []string {
 }
 
 func GetExpectedSyncDeletesDownloadStep2() []string {
-	localPathPrefix := filepath.Join("syncDir", "testsdata", "a")
+	localPathPrefix := filepath.Join("syncDir", "testdata", "a")
 	return []string{
 		filepath.Join(Out, localPathPrefix, "a1.in"),
 		filepath.Join(Out, localPathPrefix, "a2.in"),
@@ -517,7 +519,7 @@ func GetExpectedSyncDeletesDownloadStep4() []string {
 }
 
 func GetSyncExpectedDeletesDownloadStep5() []string {
-	localPathPrefix := filepath.Join("syncDir", "testsdata", "a")
+	localPathPrefix := filepath.Join("syncDir", "testdata", "a")
 	return []string{
 		filepath.Join(Out, localPathPrefix, "a1.in"),
 		filepath.Join(Out, localPathPrefix, "a2.in"),
@@ -529,7 +531,7 @@ func GetSyncExpectedDeletesDownloadStep5() []string {
 }
 
 func GetSyncExpectedDeletesDownloadStep6() []string {
-	localPathPrefix := "/syncDir/testsdata/archives/"
+	localPathPrefix := "/syncDir/testdata/archives/"
 	return []string{
 		RtRepo1 + localPathPrefix + "a.zip",
 		RtRepo1 + localPathPrefix + "b.zip",
@@ -539,7 +541,7 @@ func GetSyncExpectedDeletesDownloadStep6() []string {
 }
 
 func GetSyncExpectedDeletesDownloadStep7() []string {
-	localPathPrefix := filepath.Join("syncDir", "testsdata", "archives")
+	localPathPrefix := filepath.Join("syncDir", "testdata", "archives")
 	return []string{
 		filepath.Join(Out, localPathPrefix, "a.zip"),
 		filepath.Join(Out, localPathPrefix, "b.zip"),
@@ -557,9 +559,9 @@ func GetDownloadWildcardRepo() []string {
 
 func GetDownloadUnicode() []string {
 	return []string{
-		RtRepo1 + "/testsdata/unicode/dirλrectory/文件.in",
-		RtRepo1 + "/testsdata/unicode/dirλrectory/aȩ.ȥ1",
-		RtRepo1 + "/testsdata/unicode/Ԙחלص.in",
+		RtRepo1 + "/testdata/unicode/dirλrectory/文件.in",
+		RtRepo1 + "/testdata/unicode/dirλrectory/aȩ.ȥ1",
+		RtRepo1 + "/testdata/unicode/Ԙחלص.in",
 	}
 }
 
@@ -666,7 +668,7 @@ func GetCleanBuild() []string {
 func GetMultipleFileSpecs() []string {
 	return []string{
 		RtRepo1 + "/multiple/a1.out",
-		RtRepo1 + "/multiple/properties/testsdata/a/b/b2.in",
+		RtRepo1 + "/multiple/properties/testdata/a/b/b2.in",
 	}
 }
 
@@ -697,198 +699,199 @@ func GetDeleteFolderWithWildcard() []string {
 	}
 }
 
-func GetSearchIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchIncludeDirsFiles() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
-			Path:  RtRepo1 + "/",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testdata",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testdata/a",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
+			Path: RtRepo1 + "/data/testdata/a/a1.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
+			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:   "28f9732cb82a2d11760e38614246ad6d",
+			Path: RtRepo1 + "/data/testdata/a/a2.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
+			Md5:  "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:   "73c046196302ff7218d47046cf3c0501",
+			Path: RtRepo1 + "/data/testdata/a/a3.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
+			Md5:  "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testdata/a/b",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:   "4f5561d29422374e40bd97d28b12cf35",
+			Path: RtRepo1 + "/data/testdata/a/b/b1.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
+			Md5:  "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:   "6931271be1e5f98e36bdc7a05097407b",
+			Path: RtRepo1 + "/data/testdata/a/b/b2.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
+			Md5:  "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
+			Path: RtRepo1 + "/data/testdata/a/b/b3.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
+			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c",
-			Type:  "folder",
-			Props: make(map[string][]string, 0),
-			Size:  0,
+			Path: RtRepo1 + "/data/testdata/a/b/c",
+			Type: "folder",
+			Size: 0,
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c2.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
+			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:   "d8020b86244956f647cf1beff5acdb90",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c3.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
+			Md5:  "d8020b86244956f647cf1beff5acdb90",
 		},
 	}
 }
 
-func GetSearchNotIncludeDirsFiles() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchNotIncludeDirsFiles() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
-			Md5:   "65298e78fe5883eee82056bc6d0d7f4c",
+			Path: RtRepo1 + "/data/testdata/a/a1.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "507ac63c6b0f650fb6f36b5621e70ebca3b0965c",
+			Md5:  "65298e78fe5883eee82056bc6d0d7f4c",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
-			Md5:   "28f9732cb82a2d11760e38614246ad6d",
+			Path: RtRepo1 + "/data/testdata/a/a2.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "de2f31d77e2c2b1039a806f21b0c5f3243e45588",
+			Md5:  "28f9732cb82a2d11760e38614246ad6d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/a3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  7,
-			Sha1:  "29d38faccfe74dee60d0142a716e8ea6fad67b49",
-			Md5:   "73c046196302ff7218d47046cf3c0501",
+			Path: RtRepo1 + "/data/testdata/a/a3.in",
+			Type: "file",
+			Size: 7,
+			Sha1: "29d38faccfe74dee60d0142a716e8ea6fad67b49",
+			Md5:  "73c046196302ff7218d47046cf3c0501",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "954cf8f3f75c41f18540bb38460910b4f0074e6f",
-			Md5:   "4f5561d29422374e40bd97d28b12cf35",
+			Path: RtRepo1 + "/data/testdata/a/b/b1.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "954cf8f3f75c41f18540bb38460910b4f0074e6f",
+			Md5:  "4f5561d29422374e40bd97d28b12cf35",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "3b60b837e037568856bedc1dd4952d17b3f06972",
-			Md5:   "6931271be1e5f98e36bdc7a05097407b",
+			Path: RtRepo1 + "/data/testdata/a/b/b2.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "3b60b837e037568856bedc1dd4952d17b3f06972",
+			Md5:  "6931271be1e5f98e36bdc7a05097407b",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/b3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  9,
-			Sha1:  "ec6420d2b5f708283619b25e68f9ddd351f555fe",
-			Md5:   "305b21db102cf3a3d2d8c3f7e9584dba",
+			Path: RtRepo1 + "/data/testdata/a/b/b3.in",
+			Type: "file",
+			Size: 9,
+			Sha1: "ec6420d2b5f708283619b25e68f9ddd351f555fe",
+			Md5:  "305b21db102cf3a3d2d8c3f7e9584dba",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c1.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "063041114949bf19f6fe7508aef639640e7edaac",
-			Md5:   "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c2.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "a4f912be11e7d1d346e34c300e6d4b90e136896e",
-			Md5:   "82b6d565393a3fd1cc4778b1d53c0664",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c2.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "a4f912be11e7d1d346e34c300e6d4b90e136896e",
+			Md5:  "82b6d565393a3fd1cc4778b1d53c0664",
 		},
 		{
-			Path:  RtRepo1 + "/data/testsdata/a/b/c/c3.in",
-			Type:  "file",
-			Props: make(map[string][]string, 0),
-			Size:  11,
-			Sha1:  "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
-			Md5:   "d8020b86244956f647cf1beff5acdb90",
+			Path: RtRepo1 + "/data/testdata/a/b/c/c3.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "2d6ee506188db9b816a6bfb79c5df562fc1d8658",
+			Md5:  "d8020b86244956f647cf1beff5acdb90",
 		},
 	}
 }
 
-func GetSearchPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchAfterDeleteWithExcludeProps() []utils.SearchResult {
+	return []utils.SearchResult{
+		{
+			Path: RtRepo1 + "/a/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
+		},
+		{
+			Path: RtRepo1 + "/e/c1.in",
+			Type: "file",
+			Size: 11,
+			Sha1: "063041114949bf19f6fe7508aef639640e7edaac",
+			Md5:  "e53098d3d8ee1f5eb38c2ec3c783ef3d",
+			Props: map[string][]string{
+				"c": {"1"},
+			},
+		},
+	}
+}
+
+func GetSearchPropsStep1() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -947,8 +950,8 @@ func GetSearchPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep2() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -994,8 +997,8 @@ func GetSearchPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep3() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1084,8 +1087,8 @@ func GetSearchPropsStep3() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep4() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep4() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a3.in",
 			Type: "file",
@@ -1132,12 +1135,12 @@ func GetSearchPropsStep4() []generic.SearchResult {
 	}
 }
 
-func GetSearchPropsStep5() []generic.SearchResult {
-	return make([]generic.SearchResult, 0)
+func GetSearchPropsStep5() []utils.SearchResult {
+	return make([]utils.SearchResult, 0)
 }
 
-func GetSearchPropsStep6() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchPropsStep6() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/b/c/c1.in",
 			Type: "file",
@@ -1151,8 +1154,8 @@ func GetSearchPropsStep6() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep1() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1236,8 +1239,8 @@ func GetSearchResultAfterDeleteByPropsStep1() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep2() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1287,8 +1290,8 @@ func GetSearchResultAfterDeleteByPropsStep2() []generic.SearchResult {
 	}
 }
 
-func GetSearchResultAfterDeleteByPropsStep3() []generic.SearchResult {
-	return []generic.SearchResult{
+func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
+	return []utils.SearchResult{
 		{
 			Path: RtRepo1 + "/a/a1.in",
 			Type: "file",
@@ -1409,25 +1412,25 @@ func GetWinCompatibility() []string {
 
 func GetUploadExpectedRepo1SyncDeleteStep1() []string {
 	return []string{
-		RtRepo1 + "/syncDir/testsdata/a/a3.in",
-		RtRepo1 + "/syncDir/testsdata/a/a1.in",
-		RtRepo1 + "/syncDir/testsdata/a/a2.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/b1.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/b2.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/b3.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/c/c1.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/c/c2.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/c/c3.in",
+		RtRepo1 + "/syncDir/testdata/a/a3.in",
+		RtRepo1 + "/syncDir/testdata/a/a1.in",
+		RtRepo1 + "/syncDir/testdata/a/a2.in",
+		RtRepo1 + "/syncDir/testdata/a/b/b1.in",
+		RtRepo1 + "/syncDir/testdata/a/b/b2.in",
+		RtRepo1 + "/syncDir/testdata/a/b/b3.in",
+		RtRepo1 + "/syncDir/testdata/a/b/c/c1.in",
+		RtRepo1 + "/syncDir/testdata/a/b/c/c2.in",
+		RtRepo1 + "/syncDir/testdata/a/b/c/c3.in",
 	}
 }
 
 func GetUploadExpectedRepo1SyncDeleteStep2() []string {
 	return []string{
-		RtRepo1 + "/syncDir/testsdata/a/a3.in",
-		RtRepo1 + "/syncDir/testsdata/a/a1.in",
-		RtRepo1 + "/syncDir/testsdata/a/a2.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/b1.in",
-		RtRepo1 + "/syncDir/testsdata/a/b/c/c1.in",
+		RtRepo1 + "/syncDir/testdata/a/a3.in",
+		RtRepo1 + "/syncDir/testdata/a/a1.in",
+		RtRepo1 + "/syncDir/testdata/a/a2.in",
+		RtRepo1 + "/syncDir/testdata/a/b/b1.in",
+		RtRepo1 + "/syncDir/testdata/a/b/c/c1.in",
 	}
 }
 
@@ -1443,7 +1446,7 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{
-			Url:                    *RtUrl,
+			Url:                    *RtUrl+"targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,

@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/*",
+      "target": "${REPO1}/data/",
+      "flat": "true",
+      "recursive": "false"
+    }
+  ]
+}

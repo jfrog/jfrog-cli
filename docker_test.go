@@ -185,6 +185,10 @@ func validateDockerImage(t *testing.T, imagePath string, expectedItemsInArtifact
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
-	assert.NoError(t, searchCmd.Search())
-	assert.Len(t, searchCmd.SearchResult(), expectedItemsInArtifactory, "Docker build info was not pushed correctly")
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	length, err := reader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedItemsInArtifactory, length, "Docker build info was not pushed correctly")
+	assert.NoError(t, reader.Close())
 }

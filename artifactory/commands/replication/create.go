@@ -2,6 +2,8 @@ package replication
 
 import (
 	"encoding/json"
+	"errors"
+	"strings"
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	rtUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
@@ -89,9 +91,14 @@ func (rcc *ReplicationCreateCommand) Run() (err error) {
 	if err != nil {
 		return err
 	}
+	// In case 'serverId' is not found, pull replication will be assumed.
 	if serverId != "" {
-		if err = updateArtifactoryInfo(&params, serverId); err != nil {
-			return err
+		if targetRepo, ok := replicationConfigMap["targetRepoKey"]; ok {
+			if err = updateArtifactoryInfo(&params, serverId, targetRepo.(string)); err != nil {
+				return err
+			}
+		} else {
+			return errorutils.CheckError(errors.New("expected 'targetRepoKey' field in the json template file."))
 		}
 	}
 	return servicesManager.CreateReplication(params)
@@ -106,18 +113,19 @@ func fillMissingDefaultValue(replicationConfigMap map[string]interface{}) {
 	}
 }
 
-func updateArtifactoryInfo(param *services.CreateReplicationParams, serverId string) error {
+func updateArtifactoryInfo(param *services.CreateReplicationParams, serverId, targetRepo string) error {
 	singleConfig, err := config.GetArtifactorySpecificConfig(serverId, true, false)
 	if err != nil {
 		return err
 	}
-	param.Url, param.Password, param.Username = singleConfig.GetUrl(), singleConfig.GetPassword(), singleConfig.GetUser()
+	param.Url, param.Password, param.Username = strings.TrimSuffix(singleConfig.GetUrl(), "/")+"/"+targetRepo, singleConfig.GetPassword(), singleConfig.GetUser()
 	return nil
 }
 
 var writersMap = map[string]utils.AnswerWriter{
 	ServerId:               utils.WriteStringAnswer,
 	RepoKey:                utils.WriteStringAnswer,
+	TargetRepoKey:          utils.WriteStringAnswer,
 	CronExp:                utils.WriteStringAnswer,
 	EnableEventReplication: utils.WriteBoolAnswer,
 	Enabled:                utils.WriteBoolAnswer,

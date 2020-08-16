@@ -8,12 +8,10 @@ import (
 
 	"github.com/jfrog/jfrog-cli/artifactory/commands/utils"
 	rtUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 )
 
 type RepoCommand struct {
@@ -22,22 +20,18 @@ type RepoCommand struct {
 	vars         string
 }
 
+func (rc *RepoCommand) Vars() string {
+	return rc.vars
+}
+
+func (rc *RepoCommand) TemplatePath() string {
+	return rc.templatePath
+}
+
 func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
-	// Read the template file
-	content, err := fileutils.ReadFile(rc.templatePath)
-	if errorutils.CheckError(err) != nil {
-		return
-	}
-	// Replace vars string-by-string if needed
-	if len(rc.vars) > 0 {
-		templateVars := cliutils.SpecVarsStringToMap(rc.vars)
-		content = cliutils.ReplaceVars(content, templateVars)
-	}
-	// Unmarshal template to a map
-	var repoConfigMap map[string]interface{}
-	err = json.Unmarshal(content, &repoConfigMap)
-	if errorutils.CheckError(err) != nil {
-		return
+	repoConfigMap, err := utils.ConvertTemplateToMap(rc)
+	if err != nil {
+		return err
 	}
 	// All the values in the template are strings
 	// Go over the the confMap and write the values with the correct type using the writersMap
@@ -48,7 +42,7 @@ func (rc *RepoCommand) PerformRepoCmd(isUpdate bool) (err error) {
 		writersMap[key](&repoConfigMap, key, value.(string))
 	}
 	// Write a JSON with the correct values
-	content, err = json.Marshal(repoConfigMap)
+	content, err := json.Marshal(repoConfigMap)
 
 	servicesManager, err := rtUtils.CreateServiceManager(rc.rtDetails, false)
 	if err != nil {

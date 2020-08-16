@@ -1,9 +1,0 @@
-{
-  "files": [
-    {
-      "pattern": "testsdata/a/(*)2.(*)",
-      "target": "${REPO1}/simple_placeholders/{1}-{2}.out",
-      "flat": "true"
-    }
-  ]
-}

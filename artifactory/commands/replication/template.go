@@ -27,6 +27,7 @@ const (
 	ServerId               = "serverId"
 	CronExp                = "cronExp"
 	RepoKey                = "repoKey"
+	TargetRepoKey          = "targetRepoKey"
 	EnableEventReplication = "enableEventReplication"
 	Enabled                = "enabled"
 	SyncDeletes            = "syncDeletes"
@@ -56,6 +57,16 @@ func (rtc *ReplicationTemplateCommand) CommandName() string {
 func (rtc *ReplicationTemplateCommand) RtDetails() (*config.ArtifactoryDetails, error) {
 	// Since it's a local command, usage won't be reported.
 	return nil, nil
+}
+
+func getArtifactoryServerIds() []prompt.Suggest {
+	suggest := make([]prompt.Suggest, 0)
+	if configurations, _ := config.GetAllArtifactoryConfigs(); configurations != nil {
+		for _, conf := range configurations {
+			suggest = append(suggest, prompt.Suggest{Text: conf.ServerId})
+		}
+	}
+	return suggest
 }
 
 func (rtc *ReplicationTemplateCommand) Run() (err error) {
@@ -93,7 +104,7 @@ var questionMap = map[string]utils.QuestionInfo{
 		},
 		Msg:          "",
 		PromptPrefix: "Select the template type >",
-		AllowVars:    true,
+		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
 		Callback:     nil,
@@ -104,23 +115,32 @@ var questionMap = map[string]utils.QuestionInfo{
 			{Text: Push, Description: "Push replication"},
 		},
 		Msg:          "",
-		PromptPrefix: "Select job type >",
-		AllowVars:    true,
+		PromptPrefix: "Select replication job type" + utils.PressTabMsg,
+		AllowVars:    false,
 		Writer:       nil,
 		MapKey:       "",
 		Callback:     jobTypeCallback,
 	},
 	RepoKey: {
 		Msg:          "",
-		PromptPrefix: "Enter repo key >",
+		PromptPrefix: "Enter source repo key >",
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       RepoKey,
 		Callback:     nil,
 	},
-	ServerId: {
+	TargetRepoKey: {
 		Msg:          "",
-		PromptPrefix: "Enter server id >",
+		PromptPrefix: "Enter target repo key >",
+		AllowVars:    true,
+		Writer:       utils.WriteStringAnswer,
+		MapKey:       TargetRepoKey,
+		Callback:     nil,
+	},
+	ServerId: {
+		Options:      getArtifactoryServerIds(),
+		Msg:          "",
+		PromptPrefix: "Enter target server id" + utils.PressTabMsg,
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       ServerId,
@@ -128,7 +148,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	},
 	CronExp: {
 		Msg:          "",
-		PromptPrefix: "Enter cron expression >",
+		PromptPrefix: "Enter cron expression for frequency (for example, 0 0 12 * * ? will replicate daily) >",
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       CronExp,
@@ -142,7 +162,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	PathPrefix: {
 		Msg:          "",
 		PromptPrefix: "Enter path prefix >",
-		AllowVars:    false,
+		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       PathPrefix,
 		Callback:     nil,
@@ -150,7 +170,7 @@ var questionMap = map[string]utils.QuestionInfo{
 	SocketTimeoutMillis: {
 		Msg:          "",
 		PromptPrefix: "Enter socket timeout millis >",
-		AllowVars:    false,
+		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       SocketTimeoutMillis,
 		Callback:     nil,
@@ -158,13 +178,12 @@ var questionMap = map[string]utils.QuestionInfo{
 }
 
 func jobTypeCallback(iq *utils.InteractiveQuestionnaire, jobType string) (string, error) {
-	iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, CronExp)
 	if jobType == Pull {
-		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
+		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, CronExp)
 	} else {
-		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, ServerId)
-		iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
+		iq.MandatoryQuestionsKeys = append(iq.MandatoryQuestionsKeys, TargetRepoKey, ServerId, CronExp)
 	}
+	iq.OptionalKeysSuggests = getAllPossibleOptionalRepoConfKeys()
 	return "", nil
 }
 
@@ -187,6 +206,7 @@ var suggestionMap = map[string]prompt.Suggest{
 	utils.SaveAndExit:      {Text: utils.SaveAndExit},
 	ServerId:               {Text: ServerId},
 	RepoKey:                {Text: RepoKey},
+	TargetRepoKey:          {Text: TargetRepoKey},
 	CronExp:                {Text: CronExp},
 	EnableEventReplication: {Text: EnableEventReplication},
 	Enabled:                {Text: Enabled},

@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/a(.*)",
+      "target": "${REPO1}",
+      "flat": "true",
+      "recursive": "true",
+      "exclusions": [".*a2.*", ".*a3.in", null],
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/a/b/b(.*)",
+      "target": "${REPO1}",
+      "exclusions": [null, ".*b2.*", ".*b3.in"],
+      "regexp": "true"
+    },
+    {
+      "pattern": "testdata/a/b/c/(.*)",
+      "target": "${REPO1}",
+      "flat": "true",
+      "recursive": "true",
+      "exclusions": ["testdata/a/b/c/c1.in"],
+      "regexp": "true"
+    }
+  ]
+}

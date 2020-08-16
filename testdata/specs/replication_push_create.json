@@ -1,0 +1,9 @@
+{
+    "cronExp": "0 0 12 * * ?",
+    "enabled": "true",
+    "pathPrefix": "/my/path",
+    "repoKey": "${REPO1}",
+    "syncDeletes": "true",
+    "serverId": "${RT_SERVER_ID}",
+    "targetRepoKey":"targetRepo"
+}

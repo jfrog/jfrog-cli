@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/archives/a.zip",
+      "target": "${REPO1}/archives/"
+    },
+    {
+      "pattern": "testdata/archives/b.zip",
+      "target": "${REPO1}/archives/"
+    },
+    {
+      "pattern": "testdata/archives/c.zip",
+      "target": "${REPO1}/zips/"
+    },
+    {
+      "pattern": "testdata/archives/d.zip",
+      "target": "${REPO1}/archives/"
+    },
+    {
+      "pattern": "testdata/a/*",
+      "target": "${REPO1}/archives/",
+      "flat": "true"
+    }
+  ]
+}
