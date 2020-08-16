@@ -159,7 +159,7 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Promote image
-	err = artifactoryCli.Exec("docker-promote", *tests.DockerTargetRepo, tests.DockerRepo, tests.DockerImageName, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	err = artifactoryCli.Exec("docker-promote", tests.DockerImageName, *tests.DockerTargetRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
 	assert.NoError(t, err)
 
 	// Verify image in source
