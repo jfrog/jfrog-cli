@@ -4,10 +4,10 @@ const Description = "Promotes a Docker image from one repository to another. Sup
 
 var Usage = []string{"jfrog rt docker-promote <source repo> <target repo> <source docker image>"}
 
-const Arguments string = `	source repo
+const Arguments string = `	source docker image
+		The docker image name to promote.
+	source repo
 		Source repository in Artifactory.
 	target repo
 		Target repository in Artifactory.
-	source docker image
-		The docker image name to promote.
 `

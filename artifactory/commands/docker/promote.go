@@ -15,7 +15,6 @@ func NewDockerPromoteCommand() *DockerPromoteCommand {
 	return &DockerPromoteCommand{}
 }
 
-// Pull docker image and create build info if needed
 func (dp *DockerPromoteCommand) Run() error {
 	// Create Service Manager
 	servicesManager, err := utils.CreateServiceManager(dp.rtDetails, false)
