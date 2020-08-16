@@ -1,3 +1,9 @@
+## 1.39.0 (August 16, 2020)
+- New docker promote command.
+- Add Permission Target commands - Interactive template, create, update and delete.
+- Improved search infrastructure
+- Bug fix - Replication-template command creates a template with a wrong target URL.
+
 ## 1.38.4 (August 10, 2020)
 - Bug fix - "panic: Logger not initialized" error can be thrown when the config is empty.
 
@@ -26,7 +32,7 @@
 - New "jfrog bt maven-central-sync" command.
 
 ## 1.37.0 (June 9, 2020)
-- New sensetive data encryption functionality
+- New sensitive data encryption functionality
 - "jfrog rt dotnet" - Support .Net Framework versions prior to 3.1.200
 - Add curl and disable interactive prompts in the Docerfile
 - Bug fix - JFrog CLI should use "mono" automatically when running NuGet on Linux.
