@@ -50,6 +50,7 @@ import (
 	curldocs "github.com/jfrog/jfrog-cli/docs/artifactory/curl"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/delete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/deleteprops"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpromote"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dockerpush"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/download"
@@ -409,6 +410,19 @@ func GetCommands() []cli.Command {
 			BashComplete:    common.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return gradleCmd(c)
+			},
+		},
+		{
+			Name:         "docker-promote",
+			Flags:        cliutils.GetCommandFlags(cliutils.DockerPromote),
+			Aliases:      []string{"dpr"},
+			Usage:        dockerpromote.Description,
+			HelpName:     common.CreateUsage("rt docker-promote", dockerpromote.Description, dockerpromote.Usage),
+			UsageText:    dockerpromote.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: common.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return dockerPromoteCmd(c)
 			},
 		},
 		{
@@ -1172,6 +1186,25 @@ func gradleLegacyCmd(c *cli.Context) error {
 	gradleCmd.SetConfiguration(configuration).SetTasks(c.Args().Get(0)).SetConfigPath(c.Args().Get(1)).SetThreads(threads)
 
 	return commands.Exec(gradleCmd)
+}
+
+func dockerPromoteCmd(c *cli.Context) error {
+	if c.NArg() != 3 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	params := services.NewDockerPromoteParams(c.Args().Get(0), c.Args().Get(1), c.Args().Get(2))
+	params.TargetDockerImage = c.String("target-docker-image")
+	params.SourceTag = c.String("source-tag")
+	params.TargetTag = c.String("target-tag")
+	params.Copy = c.Bool("copy")
+	dockerPromoteCommand := docker.NewDockerPromoteCommand()
+	dockerPromoteCommand.SetParams(params).SetRtDetails(artDetails)
+
+	return commands.Exec(dockerPromoteCommand)
 }
 
 func dockerPushCmd(c *cli.Context) error {

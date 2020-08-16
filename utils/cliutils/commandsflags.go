@@ -29,6 +29,7 @@ const (
 	MvnConfig               = "mvn-config"
 	Gradle                  = "gradle"
 	GradleConfig            = "gradle-config"
+	DockerPromote           = "docker-promote"
 	DockerPull              = "docker-pull"
 	DockerPush              = "docker-push"
 	NpmConfig               = "npm-config"
@@ -277,6 +278,13 @@ const (
 	// Build tool flags
 	deploymentThreads = "deployment-threads"
 	skipLogin         = "skip-login"
+
+	// Unique docker promote flags
+	dockerPromotePrefix = "docker-promote-"
+	targetDockerImage   = "target-docker-image"
+	sourceTag           = "source-tag"
+	targetTag           = "target-tag"
+	dockerPromoteCopy   = dockerPromotePrefix + Copy
 
 	// Unique npm flags
 	npmPrefix  = "npm-"
@@ -740,6 +748,22 @@ var flagsMap = map[string]cli.Flag{
 		Name:  props,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". A list of properties to attach to the build artifacts.` `",
 	},
+	targetDockerImage: cli.StringFlag{
+		Name:  "target-docker-image",
+		Usage: "[Optional] Docker target image name.` `",
+	},
+	sourceTag: cli.StringFlag{
+		Name:  "source-tag",
+		Usage: "[Optional] The tag name to promote.` `",
+	},
+	targetTag: cli.StringFlag{
+		Name:  "target-tag",
+		Usage: "[Optional] The target tag to assign the image after promotion.` `",
+	},
+	dockerPromoteCopy: cli.BoolFlag{
+		Name:  "copy",
+		Usage: "[Default: false] If set true, the Docker image is copied to the target repository, otherwise it is moved.` `",
+	},
 	sourceRepos: cli.StringFlag{
 		Name:  sourceRepos,
 		Usage: "[Optional] List of local repositories in the form of \"repo1,repo2,...\" from which build artifacts should be deployed.` `",
@@ -1118,6 +1142,10 @@ var commandFlags = map[string][]string{
 	},
 	Gradle: {
 		buildName, buildNumber, deploymentThreads,
+	},
+	DockerPromote: {
+		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		serverId,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,

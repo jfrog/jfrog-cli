@@ -21,7 +21,9 @@ func InitDockerTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
 	inttestutils.CleanUpOldImages(artifactoryDetails, artHttpDetails)
+	cleanUpOldRepositories()
 	tests.AddTimestampToGlobalVars()
+	createRequiredRepos()
 }
 
 func initDockerTest(t *testing.T) {
@@ -137,7 +139,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 	buildNumber := "1"
 
 	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerVirtualRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	// Validate
@@ -148,7 +150,38 @@ func TestDockerFatManifestPull(t *testing.T) {
 	inttestutils.DeleteTestDockerImage(imageTag)
 }
 
+func TestDockerPromote(t *testing.T) {
+	initDockerTest(t)
+
+	// Build and push image
+	imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
+	err := artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
+	assert.NoError(t, err)
+
+	// Promote image
+	err = artifactoryCli.Exec("docker-promote", tests.DockerImageName, *tests.DockerTargetRepo, tests.DockerRepo, "--source-tag=1", "--target-tag=2", "--target-docker-image=docker-target-image", "--copy")
+	assert.NoError(t, err)
+
+	// Verify image in source
+	imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
+	validateDockerImage(t, imagePath, 7)
+
+	// Verify image promoted
+	searchSpec, err := tests.CreateSpec(tests.SearchAllDocker)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
+
+	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+	inttestutils.DeleteTestDockerImage(imageTag)
+}
+
 func validateDockerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
+	validateDockerImage(t, imagePath, expectedItemsInArtifactory)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
+}
+
+func validateDockerImage(t *testing.T, imagePath string, expectedItemsInArtifactory int) {
 	specFile := spec.NewBuilder().Pattern(imagePath + "*").BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
@@ -157,7 +190,5 @@ func validateDockerBuild(buildName, buildNumber, imagePath, module string, expec
 	length, err := reader.Length()
 	assert.NoError(t, err)
 	assert.Equal(t, expectedItemsInArtifactory, length, "Docker build info was not pushed correctly")
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 	assert.NoError(t, reader.Close())
 }
