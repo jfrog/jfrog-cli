@@ -2,7 +2,6 @@
 - New docker promote command.
 - Add Permission Target commands - Interactive template, create, update and delete.
 - Improved search infrastructure
-- Bug fix - Replication-template command creates a template with a wrong target URL.
 
 ## 1.38.4 (August 10, 2020)
 - Bug fix - "panic: Logger not initialized" error can be thrown when the config is empty.
