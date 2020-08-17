@@ -167,6 +167,7 @@ In addition to [general optional flags](#Usage) you *must* use the following doc
 | Flag | Description |
 | --- | --- |
 | `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
+| `-rt.dockerVirtualRepo` | Artifactory Docker virtual repository name. |
 | `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
 
 ##### Examples
