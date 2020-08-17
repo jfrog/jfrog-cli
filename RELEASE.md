@@ -1,7 +1,9 @@
 ## 1.39.0 (August 16, 2020)
 - New docker promote command.
-- Add Permission Target commands - Interactive template, create, update and delete.
-- Improved search infrastructure
+- New Permission Target commands - Interactive template, create, update and delete.
+- Update alpine to version 3.12.0 in docker image.
+- Show command flag names sorted.
+- Improved search infrastructure.
 
 ## 1.38.4 (August 10, 2020)
 - Bug fix - "panic: Logger not initialized" error can be thrown when the config is empty.
