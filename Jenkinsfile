@@ -1,4 +1,4 @@
-node {
+node("docker") {
     cleanWs()
     def architectures = [
             [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
@@ -72,11 +72,10 @@ def downloadToolsCert() {
         // Download the certificate file and key file, used for signing the JFrog CLI binary.
         withCredentials([string(credentialsId: 'download-signing-cert-access-token', variable: 'DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
-            builder/jfrog rt dl installation-files/certificates/jfrog/ --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
+            builder/jfrog rt dl installation-files/certificates/jfrog/jfrogltd_signingcer_full.tar.gz --url https://entplus.jfrog.io/artifactory --flat --access-token=$DOWNLOAD_SIGNING_CERT_ACCESS_TOKEN
             """
         }
-
-        sh 'tar xvzf jfrogltd_signingcer_full.tar.gz'
+        sh 'tar -xvzf jfrogltd_signingcer_full.tar.gz'
     }
 }
 
@@ -129,7 +128,7 @@ def uploadCli(architectures) {
 
 def buildPublishDockerImage(version, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
-        withCredentials([usernamePassword(credentialsId: 'bintray-jfrog', usernameVariable: '$USER_NAME', passwordVariable: '$KEY')]) {
+        withCredentials([usernamePassword(credentialsId: 'bintray-key-eco', usernameVariable: 'USER_NAME', passwordVariable: 'KEY')]) {
             docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
             sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
             sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
@@ -140,7 +139,7 @@ def buildPublishDockerImage(version, jfrogCliRepoDir) {
 }
 
 def uploadToBintray(pkg, fileName) {
-    withCredentials([usernamePassword(credentialsId: 'bintray-jfrog', usernameVariable: '$USER_NAME', passwordVariable: '$KEY')]) {
+    withCredentials([usernamePassword(credentialsId: 'bintray-key-eco', usernameVariable: 'USER_NAME', passwordVariable: 'KEY')]) {
         sh """#!/bin/bash
                 builder/jfrog bt u $jfrogCliRepoDir/$fileName $subject/jfrog-cli-go/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
         """
@@ -158,7 +157,7 @@ def build(goos, goarch, pkg, fileName) {
                 // Move the jfrog executable into the 'sign' directory, so that it is signed there.
                 sh "mv $jfrogCliRepoDir/$fileName ${jfrogCliRepoDir}build/sign/${fileName}.unsigned"
                 // Copy all the certificate files into the 'sign' directory.
-                sh "cp * ${jfrogCliRepoDir}build/sign/"
+                sh "cp -r ./ ${jfrogCliRepoDir}build/sign/"
                 // Build and run the docker container, which signs the JFrog CLI binary.
                 sh "docker build -t jfrog-cli-sign-tool ${jfrogCliRepoDir}build/sign/"
                 def signCmd = "osslsigncode sign -certs workspace/JFrog_Ltd_.crt -key workspace/jfrogltd.key  -n JFrog_CLI -i https://www.jfrog.com/confluence/display/CLI/JFrog+CLI -in workspace/${fileName}.unsigned -out workspace/$fileName"
@@ -183,6 +182,8 @@ def publishNpmPackage(jfrogCliRepoDir) {
     dir(jfrogCliRepoDir+'build/npm/') {
         withCredentials([string(credentialsId: 'npm-authorization', variable: 'NPM_AUTH_TOKEN')]) {
             sh '''#!/bin/bash
+                apt update
+                apt install wget -y
                 echo "Downloading npm..."
                 wget https://nodejs.org/dist/v8.11.1/node-v8.11.1-linux-x64.tar.xz
                 tar -xvf node-v8.11.1-linux-x64.tar.xz
