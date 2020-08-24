@@ -75,7 +75,7 @@ func initDistributionTest(t *testing.T) {
 }
 
 func cleanDistributionTest(t *testing.T) {
-	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
+	runRb(t, "rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
 	inttestutils.WaitForDeletion(t, tests.BundleName, bundleVersion, distHttpDetails)
 	inttestutils.CleanDistributionRepositories(t, artifactoryDetails)
 	tests.CleanFileSystem()
@@ -87,15 +87,15 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*")
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -112,18 +112,18 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
 	distributionRules, err := tests.CreateSpec(tests.DistributionRules)
 	assert.NoError(t, err)
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--dist-rules="+distributionRules, "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("dl", "--spec="+specFile)
+	runRt(t, "dl", "--spec="+specFile)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -140,22 +140,18 @@ func TestBundleCreateByAql(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	err = artifactoryCli.Exec("u", "--spec="+specFile)
-	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle by AQL
 	spec, err := tests.CreateSpec(tests.DistributionCreateByAql)
 	assert.NoError(t, err)
-	err = distributionCli.Exec("rbc", tests.BundleName, bundleVersion, "--spec="+spec, "--sign")
-	assert.NoError(t, err)
-	err = distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
-	assert.NoError(t, err)
+	runRb(t, "rbc", tests.BundleName, bundleVersion, "--spec="+spec, "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
 	assert.NoError(t, err)
-	err = artifactoryCli.Exec("dl", "--spec="+specFile)
-	assert.NoError(t, err)
+	runRt(t, "dl", "--spec="+specFile)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -172,14 +168,14 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle name and version with pattern "*", b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
+	runRt(t, "dl", "*", "out/download/simple_by_build/data/", "--bundle="+tests.BundleName+"/"+bundleVersion, "--flat")
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -189,7 +185,7 @@ func TestBundleDownloadNoPattern(t *testing.T) {
 	// Download by bundle name and version version without pattern, b2 and b3 should not be downloaded, b1 should
 	tests.CleanFileSystem()
 	specFile, err = tests.CreateSpec(tests.BundleDownloadSpecNoPattern)
-	artifactoryCli.Exec("dl", "--spec="+specFile, "--flat")
+	runRt(t, "dl", "--spec="+specFile, "--flat")
 
 	// Validate files are downloaded by bundle version
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -206,14 +202,14 @@ func TestBundleExclusions(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create release bundle. Include b1.in and b2.in. Exclude b3.in.
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b*.in", "--sign", "--exclusions=*b3.in")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
+	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -232,17 +228,17 @@ func TestBundleCopy(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFileA)
-	artifactoryCli.Exec("u", "--spec="+specFileB)
+	runRt(t, "u", "--spec="+specFileA)
+	runRt(t, "u", "--spec="+specFileB)
 
 	// Create release bundle
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/a*", "--sign")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/a*", "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Copy by bundle name and version
 	specFile, err := tests.CreateSpec(tests.CopyByBundleSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("cp", "--spec="+specFile)
+	runRt(t, "cp", "--spec="+specFile)
 
 	// Validate files are copied by bundle version
 	spec, err := tests.CreateSpec(tests.CopyByBundleAssertSpec)
@@ -257,18 +253,18 @@ func TestBundleSetProperties(t *testing.T) {
 	initDistributionTest(t)
 
 	// Upload a file.
-	artifactoryCli.Exec("u", "testdata/a/a1.in", tests.DistRepo1+"/a.in")
+	runRt(t, "u", "testdata/a/a1.in", tests.DistRepo1+"/a.in")
 
 	// Create release bundle
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/a.in", "--sign")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Set the 'prop=red' property to the file.
-	artifactoryCli.Exec("sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "sp", tests.DistRepo1+"/a.*", "prop=red", "--bundle="+tests.BundleName+"/"+bundleVersion)
 	// Now let's change the property value, by searching for the 'prop=red'.
 	specFile, err := tests.CreateSpec(tests.DistributionSetDeletePropsSpec)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("sp", "prop=green", "--spec="+specFile, "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "sp", "prop=green", "--spec="+specFile, "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	resultItems := searchItemsInArtifactory(t, tests.SearchDistRepoByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
@@ -292,16 +288,16 @@ func TestSignReleaseBundle(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle without --sign and make sure it is not signed
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in")
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
 	assert.NotNil(t, distributableResponse)
 	assert.Equal(t, inttestutils.Open, distributableResponse.State)
 
 	// Sign the release bundle and make sure it is signed
-	distributionCli.Exec("rbs", tests.BundleName, bundleVersion)
+	runRb(t, "rbs", tests.BundleName, bundleVersion)
 	distributableResponse = inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
 	assert.NotNil(t, distributableResponse)
 
@@ -317,14 +313,14 @@ func TestBundleDeleteLocal(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 
 	// Delete release bundle locally
-	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
+	runRb(t, "rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, false, distHttpDetails)
 
 	// Cleanup
@@ -337,20 +333,20 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle with b2.in
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 
 	// Update release bundle to have b1.in
-	distributionCli.Exec("rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
+	runRb(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign")
 
 	// Distribute release bundle
-	distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	artifactoryCli.Exec("dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -367,12 +363,12 @@ func TestCreateBundleText(t *testing.T) {
 	// Upload files
 	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", "--spec="+specFile)
+	runRt(t, "u", "--spec="+specFile)
 
 	// Create a release bundle with release notes and description
 	releaseNotesPath := filepath.Join(tests.GetTestResourcesPath(), "distribution", "releasenotes.md")
 	description := "thisIsADescription"
-	distributionCli.Exec("rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--release-notes-path="+releaseNotesPath, "--desc="+description)
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--release-notes-path="+releaseNotesPath, "--desc="+description)
 
 	// Validate release notes and description
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
@@ -385,4 +381,16 @@ func TestCreateBundleText(t *testing.T) {
 	}
 
 	cleanDistributionTest(t)
+}
+
+// Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc. 
+func runRb(t *testing.T, args ...string) {
+	err := distributionCli.Exec(args...)
+	assert.NoError(t, err)
+}
+
+// Run `jfrog rt` command
+func runRt(t *testing.T, args ...string) {
+	err := artifactoryCli.Exec(args...)
+	assert.NoError(t, err)
 }
