@@ -134,6 +134,38 @@ func TestBundleDownloadUsingSpec(t *testing.T) {
 	cleanDistributionTest(t)
 }
 
+func TestBundleCreateByAql(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("u", "--spec="+specFile)
+	assert.NoError(t, err)
+
+	// Create release bundle by AQL
+	spec, err := tests.CreateSpec(tests.DistributionCreateByAql)
+	assert.NoError(t, err)
+	err = distributionCli.Exec("rbc", tests.BundleName, bundleVersion, "--spec="+spec, "--sign")
+	assert.NoError(t, err)
+	err = distributionCli.Exec("rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+	assert.NoError(t, err)
+
+	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
+	specFile, err = tests.CreateSpec(tests.BundleDownloadSpec)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("dl", "--spec="+specFile)
+	assert.NoError(t, err)
+
+	// Validate files are downloaded by bundle version
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownload(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	cleanDistributionTest(t)
+}
+
 func TestBundleDownloadNoPattern(t *testing.T) {
 	initDistributionTest(t)
 
