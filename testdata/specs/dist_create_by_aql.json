@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "aql": {
+        "items.find": {
+          "repo": "${DIST_REPO1}",
+          "path": "data",
+          "name": "b1.in"
+        }
+      }
+    }
+  ]
+}
