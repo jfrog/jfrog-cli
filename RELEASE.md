@@ -1,3 +1,6 @@
+## 1.39.1 (August 24, 2020)
+- Bug fix - "jfrog rt release-bundle-create" and "jfrog rt release-bundle-update" fail when used with file spec which includes "aql".
+
 ## 1.39.0 (August 16, 2020)
 - New docker promote command.
 - New Permission Target commands - Interactive template, create, update and delete.

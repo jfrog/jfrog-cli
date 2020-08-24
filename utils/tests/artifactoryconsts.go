@@ -32,6 +32,7 @@ const (
 	DeleteSpecWildcardInRepo               = "delete_spec_wildcard.json"
 	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
+	DistributionCreateByAql                = "dist_create_by_aql.json"
 	DistributionRepoConfig1                = "dist_repository_config1.json"
 	DistributionRepoConfig2                = "dist_repository_config2.json"
 	DistributionRules                      = "distribution_rules.json"
@@ -1446,7 +1447,7 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{
-			Url:                    *RtUrl+"targetRepo",
+			Url:                    *RtUrl + "targetRepo",
 			Username:               "admin",
 			CronExp:                "0 0 12 * * ?",
 			RepoKey:                RtRepo1,

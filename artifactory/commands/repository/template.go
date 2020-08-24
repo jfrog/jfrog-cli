@@ -162,7 +162,7 @@ const (
 	ComposerDefaultRepoLayout = "composer-default"
 	ConanDefaultRepoLayout    = "conan-default"
 	GoDefaultRepoLayout       = "go-default"
-	GradleDefaultRepoLayout   = "gradle-default"
+	GradleDefaultRepoLayout   = "maven-2-default"
 	IvyDefaultRepoLayout      = "ivy-default"
 	Maven1DefaultRepoLayout   = "maven-1-default"
 	Maven2DefaultRepoLayout   = "maven-2-default"
