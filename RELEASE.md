@@ -1,3 +1,6 @@
+## 1.39.2 (August 29, 2020)
+- Bug fix - "jfrog rt u" with --sync-deletes deletes wrong folders.
+
 ## 1.39.1 (August 24, 2020)
 - Bug fix - "jfrog rt release-bundle-create" and "jfrog rt release-bundle-update" fail when used with file spec which includes "aql".
 
