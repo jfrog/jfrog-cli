@@ -28,9 +28,9 @@ var (
 )
 
 func InitDistributionTests() {
-	InitArtifactoryTests()
 	initDistributionCli()
 	inttestutils.CleanUpOldBundles(distHttpDetails, bundleVersion, distributionCli)
+	InitArtifactoryTests()
 	inttestutils.SendGpgKeys(artHttpDetails, distHttpDetails)
 }
 
