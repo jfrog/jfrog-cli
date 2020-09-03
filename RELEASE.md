@@ -1,3 +1,6 @@
+## 1.39.3 (September 3, 2020)
+- Bug fix - missing defer close after using AQL service.
+
 ## 1.39.2 (August 29, 2020)
 - Bug fix - "jfrog rt u" with --sync-deletes deletes wrong folders.
 
@@ -29,7 +32,7 @@
 - "Changing access tokens hourly" is now enabled by default.
 - Distribution commands - new --insecure-tls option.
 - "jfrog rt pip" - support for remote repositories.
-- Bug fix - "jfrog rt npm-ci" - Fix command help and logging.  
+- Bug fix - "jfrog rt npm-ci" - Fix command help and logging.
 - Bug fix - Reintroduce --insecure-tls option to the "jfrog rt c" command.
 - Bug fix - "jfrog rt build-publish --dry-run" deletes the locak build-info.
 - Bug fix - "jfrog rt set-props" does not support path with special characters.
@@ -54,7 +57,7 @@
 - New "jfrog rt access-token-create" command
 - "jfrog rt download" - Added support for validateSymlinks via file spec
 - "jfrog rt search" now also returns SHA1 and MD5
-- "jfrog rt build-publish" - The default value of the --env-include option was extended to also include '***psw***' 
+- "jfrog rt build-publish" - The default value of the --env-include option was extended to also include '***psw***'
 - Add deployment path to the build-info
 - Bug fix - "jfrog rt nuget" does not collect build for all .net project structures
 - Breaking change - "pip-config", "nuget-config" - remove redundant flags: --server-id-deploy, --repo-deploy.
