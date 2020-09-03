@@ -525,6 +525,7 @@ func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifact
 			if err != nil {
 				return err
 			}
+			defer stream.Close()
 			result, err := ioutil.ReadAll(stream)
 			if err != nil {
 				return err
