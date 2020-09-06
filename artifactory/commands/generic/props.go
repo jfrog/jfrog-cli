@@ -42,7 +42,7 @@ func (pc *PropsCommand) SetProps(props string) *PropsCommand {
 	return pc
 }
 
-func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {
+func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetails) (artifactory.ArtifactoryServicesManager, error) {
 	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func createPropsServiceManager(threads int, artDetails *config.ArtifactoryDetail
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func searchItems(spec *spec.SpecFiles, servicesManager *artifactory.ArtifactoryServicesManager) (resultReader *content.ContentReader, err error) {
+func searchItems(spec *spec.SpecFiles, servicesManager artifactory.ArtifactoryServicesManager) (resultReader *content.ContentReader, err error) {
 	var errorOccurred = false
 	temp := []*content.ContentReader{}
 	writer, err := content.NewContentWriter("results", true, false)

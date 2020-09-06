@@ -515,7 +515,7 @@ func (nca *NpmCommandArgs) appendDependency(key []byte, ver []byte, scope string
 }
 
 // Creates a function that fetches dependency data from Artifactory. Can be applied from a producer-consumer mechanism
-func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager *artifactory.ArtifactoryServicesManager) getDependencyInfoFunc {
+func (nca *NpmCommandArgs) createGetDependencyInfoFunc(servicesManager artifactory.ArtifactoryServicesManager) getDependencyInfoFunc {
 	return func(dependencyIndex string) parallel.TaskFunc {
 		return func(threadId int) error {
 			name := nca.dependencies[dependencyIndex].name

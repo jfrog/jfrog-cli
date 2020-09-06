@@ -101,7 +101,7 @@ func (gc *GoCommand) Run() error {
 	goInfo := &params.ResolverDeployer{}
 	goInfo.SetResolver(resolverParams)
 	var targetRepo string
-	var deployerServiceManager *artifactory.ArtifactoryServicesManager
+	var deployerServiceManager artifactory.ArtifactoryServicesManager
 	if gc.publishDeps {
 		deployerDetails, err := gc.deployerParams.RtDetails()
 		if err != nil {
@@ -141,7 +141,7 @@ func (gc *GoCommand) Run() error {
 }
 
 // Returns true/false if info files should be included in the build info.
-func shouldIncludeInfoFiles(deployerServiceManager *artifactory.ArtifactoryServicesManager, resolverServiceManager *artifactory.ArtifactoryServicesManager) (bool, error) {
+func shouldIncludeInfoFiles(deployerServiceManager artifactory.ArtifactoryServicesManager, resolverServiceManager artifactory.ArtifactoryServicesManager) (bool, error) {
 	var artifactoryVersion string
 	var err error
 	if deployerServiceManager != nil {

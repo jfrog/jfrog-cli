@@ -1,6 +1,9 @@
 package config
 
 import (
+	"sync"
+	"time"
+
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/lock"
 	"github.com/jfrog/jfrog-client-go/artifactory"
@@ -9,8 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"sync"
-	"time"
 )
 
 // Internal golang locking for the same process.
@@ -189,7 +190,7 @@ func refreshExpiredToken(artifactoryDetails *ArtifactoryDetails, currentAccessTo
 	return servicesManager.RefreshToken(refreshTokenParams)
 }
 
-func createTokensServiceManager(artDetails *ArtifactoryDetails) (*artifactory.ArtifactoryServicesManager, error) {
+func createTokensServiceManager(artDetails *ArtifactoryDetails) (artifactory.ArtifactoryServicesManager, error) {
 	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err

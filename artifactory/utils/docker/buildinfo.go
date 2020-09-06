@@ -33,7 +33,7 @@ type Builder interface {
 }
 
 // Create instance of docker build info builder.
-func NewBuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager *artifactory.ArtifactoryServicesManager, commandType CommandType) (Builder, error) {
+func NewBuildInfoBuilder(image Image, repository, buildName, buildNumber string, serviceManager artifactory.ArtifactoryServicesManager, commandType CommandType) (Builder, error) {
 	var err error
 	builder := &buildInfoBuilder{}
 	builder.repository, err = buildutils.GetRepoNameForDependenciesSearch(repository, serviceManager)
@@ -54,7 +54,7 @@ type buildInfoBuilder struct {
 	repository     string
 	buildName      string
 	buildNumber    string
-	serviceManager *artifactory.ArtifactoryServicesManager
+	serviceManager artifactory.ArtifactoryServicesManager
 
 	// internal fields
 	imageId      string
@@ -277,7 +277,7 @@ func (builder *buildInfoBuilder) createBuildInfo(module string) (*buildinfo.Buil
 // imageManifest - pointer to the manifest struct, retrieved from Artifactory.
 // artifact - manifest as buildinfo.Artifact object.
 // dependency - manifest as buildinfo.Dependency object.
-func getManifest(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (imageManifest *manifest, artifact buildinfo.Artifact, dependency buildinfo.Dependency, err error) {
+func getManifest(imageId string, searchResults map[string]utils.ResultItem, serviceManager artifactory.ArtifactoryServicesManager) (imageManifest *manifest, artifact buildinfo.Artifact, dependency buildinfo.Dependency, err error) {
 	item := searchResults["manifest.json"]
 	ioReaderCloser, err := serviceManager.ReadRemoteFile(item.GetItemRelativePath())
 	if err != nil {
@@ -312,7 +312,7 @@ func getManifest(imageId string, searchResults map[string]utils.ResultItem, serv
 // configurationLayer - pointer to the configuration layer struct, retrieved from Artifactory.
 // artifact - configuration layer as buildinfo.Artifact object.
 // dependency - configuration layer as buildinfo.Dependency object.
-func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, serviceManager *artifactory.ArtifactoryServicesManager) (configurationLayer *configLayer, artifact buildinfo.Artifact, dependency buildinfo.Dependency, err error) {
+func getConfigLayer(imageId string, searchResults map[string]utils.ResultItem, serviceManager artifactory.ArtifactoryServicesManager) (configurationLayer *configLayer, artifact buildinfo.Artifact, dependency buildinfo.Dependency, err error) {
 	item := searchResults[digestToLayer(imageId)]
 	ioReaderCloser, err := serviceManager.ReadRemoteFile(item.GetItemRelativePath())
 	if err != nil {
@@ -389,7 +389,7 @@ func searchImageHandler(imagePathPattern string, builder *buildInfoBuilder) (map
 	return performSearch(imagePathPattern, builder.serviceManager)
 }
 
-func performSearch(imagePathPattern string, serviceManager *artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
+func performSearch(imagePathPattern string, serviceManager artifactory.ArtifactoryServicesManager) (map[string]utils.ResultItem, error) {
 	searchParams := services.NewSearchParams()
 	searchParams.ArtifactoryCommonParams = &utils.ArtifactoryCommonParams{}
 	searchParams.Pattern = imagePathPattern

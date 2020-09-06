@@ -18,7 +18,7 @@ import (
 // If the dependency was downloaded in this pip-install execution, checksum will be fetched from Artifactory.
 // Otherwise, check if exists in cache.
 // Return dependency-names of all dependencies which its information could not be obtained.
-func AddDepsInfoAndReturnMissingDeps(dependenciesMap map[string]*buildinfo.Dependency, dependenciesCache *DependenciesCache, dependencyToFileMap map[string]string, servicesManager *artifactory.ArtifactoryServicesManager, repository string) ([]string, error) {
+func AddDepsInfoAndReturnMissingDeps(dependenciesMap map[string]*buildinfo.Dependency, dependenciesCache *DependenciesCache, dependencyToFileMap map[string]string, servicesManager artifactory.ArtifactoryServicesManager, repository string) ([]string, error) {
 	var missingDeps []string
 	// Iterate dependencies map to update info.
 	for depName := range dependenciesMap {
@@ -54,7 +54,7 @@ func AddDepsInfoAndReturnMissingDeps(dependenciesMap map[string]*buildinfo.Depen
 // Get dependency information.
 // If dependency was downloaded in this pip-install execution, fetch info from Artifactory.
 // Otherwise, fetch info from cache.
-func getDependencyInfo(depName, repository string, dependenciesCache *DependenciesCache, dependencyToFileMap map[string]string, servicesManager *artifactory.ArtifactoryServicesManager) (string, *buildinfo.Checksum, error) {
+func getDependencyInfo(depName, repository string, dependenciesCache *DependenciesCache, dependencyToFileMap map[string]string, servicesManager artifactory.ArtifactoryServicesManager) (string, *buildinfo.Checksum, error) {
 	// Check if this dependency was updated during this pip-install execution, and we have its file-name.
 	// If updated - fetch checksum from Artifactory, regardless of what was previously stored in cache.
 	depFileName, ok := dependencyToFileMap[depName]
@@ -77,7 +77,7 @@ func getDependencyInfo(depName, repository string, dependenciesCache *Dependenci
 
 // Fetch checksum for file from Artifactory.
 // If the file isn't found, or md5 or sha1 are missing, return nil.
-func getDependencyChecksumFromArtifactory(servicesManager *artifactory.ArtifactoryServicesManager, repository, dependencyFile string) (*buildinfo.Checksum, error) {
+func getDependencyChecksumFromArtifactory(servicesManager artifactory.ArtifactoryServicesManager, repository, dependencyFile string) (*buildinfo.Checksum, error) {
 	log.Debug(fmt.Sprintf("Fetching checksums for: %s", dependencyFile))
 	repository, err := utils.GetRepoNameForDependenciesSearch(repository, servicesManager)
 	if err != nil {

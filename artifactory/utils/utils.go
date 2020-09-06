@@ -2,12 +2,13 @@ package utils
 
 import (
 	"errors"
-	"github.com/jfrog/jfrog-client-go/utils/io"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/jfrog/jfrog-client-go/utils/io"
 
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/config"
@@ -78,11 +79,11 @@ func GetEncryptedPasswordFromArtifactory(artifactoryAuth auth.ServiceDetails, in
 	return "", errorutils.CheckError(errors.New("Artifactory response: " + resp.Status))
 }
 
-func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateServiceManager(artDetails *config.ArtifactoryDetails, isDryRun bool) (artifactory.ArtifactoryServicesManager, error) {
 	return CreateServiceManagerWithThreads(artDetails, isDryRun, 0)
 }
 
-func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDryRun bool, threads int) (artifactory.ArtifactoryServicesManager, error) {
 	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
@@ -106,7 +107,7 @@ func CreateServiceManagerWithThreads(artDetails *config.ArtifactoryDetails, isDr
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateServiceManagerWithProgressBar(artDetails *config.ArtifactoryDetails, threads int, dryRun bool, progressBar io.Progress) (artifactory.ArtifactoryServicesManager, error) {
 	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err

@@ -2,13 +2,14 @@ package utils
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"net/http"
 )
 
 type RepoType int
@@ -73,7 +74,7 @@ func execGetRepositories(artDetails auth.ServiceDetails, repoType RepoType) ([]s
 
 // Since we can't search dependencies in a remote repository, we will turn the search to the repository's cache.
 // Local/Virtual repository name will be returned as is.
-func GetRepoNameForDependenciesSearch(repoName string, serviceManager *artifactory.ArtifactoryServicesManager) (string, error) {
+func GetRepoNameForDependenciesSearch(repoName string, serviceManager artifactory.ArtifactoryServicesManager) (string, error) {
 	repoDetails, err := serviceManager.GetRepository(repoName)
 	if err != nil {
 		return "", err

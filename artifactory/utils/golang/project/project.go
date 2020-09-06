@@ -32,8 +32,8 @@ import (
 type Go interface {
 	Dependencies() []executers.Package
 	CreateBuildInfoDependencies(includeInfoFiles bool) error
-	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error
-	PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
+	PublishPackage(targetRepo, buildName, buildNumber string, servicesManager artifactory.ArtifactoryServicesManager) error
+	PublishDependencies(targetRepo string, servicesManager artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error)
 	BuildInfo(includeArtifacts bool, module, targetRepository string) *buildinfo.BuildInfo
 	LoadDependencies() error
 }
@@ -94,7 +94,7 @@ func (project *goProject) loadDependencies() ([]executers.Package, error) {
 }
 
 // Publish go project to Artifactory.
-func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, servicesManager *artifactory.ArtifactoryServicesManager) error {
+func (project *goProject) PublishPackage(targetRepo, buildName, buildNumber string, servicesManager artifactory.ArtifactoryServicesManager) error {
 	log.Info("Publishing", project.getId(), "to", targetRepo)
 
 	props, err := utils.CreateBuildProperties(buildName, buildNumber)
@@ -172,7 +172,7 @@ func (project *goProject) createInfoFile() (string, error) {
 	return path, nil
 }
 
-func (project *goProject) PublishDependencies(targetRepo string, servicesManager *artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
+func (project *goProject) PublishDependencies(targetRepo string, servicesManager artifactory.ArtifactoryServicesManager, includeDepSlice []string) (succeeded, failed int, err error) {
 	log.Info("Publishing package dependencies...")
 	includeDep := cliutils.ConvertSliceToMap(includeDepSlice)
 

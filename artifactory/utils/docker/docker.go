@@ -305,7 +305,7 @@ func (pullCmd *pullCmd) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (*artifactory.ArtifactoryServicesManager, error) {
+func CreateServiceManager(artDetails *config.ArtifactoryDetails, threads int) (artifactory.ArtifactoryServicesManager, error) {
 	certsPath, err := cliutils.GetJfrogCertsDir()
 	if err != nil {
 		return nil, err
