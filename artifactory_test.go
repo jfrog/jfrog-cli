@@ -309,6 +309,17 @@ func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryCopyPrefixFilesFlat(t *testing.T) {
+	initArtifactoryTest(t)
+
+	artifactoryCli.Exec("upload", "testdata/prefix/*", tests.RtRepo1+"/prefix/")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/prefix/*", tests.RtRepo2, "--flat")
+	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetPrefixFilesCopy(), searchPath, t)
+	cleanArtifactoryTest()
+}
+
 func TestAqlFindingItemOnRoot(t *testing.T) {
 	initArtifactoryTest(t)
 	var filePath = getSpecialCharFilePath()
