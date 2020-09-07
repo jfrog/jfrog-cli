@@ -9,7 +9,7 @@ require (
 	github.com/jfrog/gocmd v0.1.15
 	github.com/jfrog/gofrog v1.0.6
 	github.com/jfrog/jfrog-client-go v0.13.3
-	github.com/magiconair/properties v1.8.0
+	github.com/jfrog/jfrog-cli-core v1.0.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-shellwords v1.0.3 // indirect
