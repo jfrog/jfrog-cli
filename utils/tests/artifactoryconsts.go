@@ -216,6 +216,14 @@ func GetUploadDebianExpected() []string {
 	}
 }
 
+func GetPrefixFilesCopy() []string {
+	return []string{
+		RtRepo2 + "/a",
+		RtRepo2 + "/ab",
+		RtRepo2 + "/abb",
+	}
+}
+
 func GetSingleFileCopy() []string {
 	return []string{
 		RtRepo2 + "/path/a1.in",
