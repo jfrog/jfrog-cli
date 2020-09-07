@@ -158,8 +158,8 @@ func writeContentSynchronisation(resultMap *map[string]interface{}, key, value s
 
 }
 
-// repoHandler is a function that gets serviceManager, JSON configuration content and a flag indicates is the operation in an update operation
-// Each handler unmarshal the JSOn content into the jfrog-client's unique rclass-pkgType param struct, and run the operation service
+// repoHandler is a function that receives serviceManager, JSON configuration content and a flag which indicates whether this is an update operation.
+// Each handler unmarshals the JSON content into the jfrog-client-go's unique rclass-pkgType param struct, and runs the operation service.
 type repoHandler func(artifactory.ArtifactoryServicesManager, []byte, bool) error
 
 var localRepoHandlers = map[string]repoHandler{
