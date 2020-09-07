@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -23,13 +24,12 @@ import (
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
@@ -345,45 +345,45 @@ func TestExitCode(t *testing.T) {
 	initArtifactoryTest(t)
 
 	err := artifactoryCli.Exec("upload", "DummyText", tests.RtRepo1, "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeError, err)
+	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), "tests.Repo1")
-	checkExitCode(t, cliutils.ExitCodeError, err)
+	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("upload", "testdata/a/(*.dummyExt)", tests.RtRepo1+"/{1}.in", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("dl", "DummyFolder", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	//upload dummy file inorder to test move & copy
 	artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), tests.RtRepo1)
 	err = artifactoryCli.Exec("move", tests.RtRepo1, "DummyTargetPath")
-	checkExitCode(t, cliutils.ExitCodeError, err)
+	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("move", "DummyText", tests.RtRepo1, "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("copy", tests.RtRepo1, "DummyTargetPath")
-	checkExitCode(t, cliutils.ExitCodeError, err)
+	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("copy", "DummyText", tests.RtRepo1, "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("delete", "DummyText", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("s", "DummyText", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("sp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
-	checkExitCode(t, cliutils.ExitCodeFailNoOp, err)
+	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
 	cleanArtifactoryTest()
 }
 
-func checkExitCode(t *testing.T, expected cliutils.ExitCode, er error) {
+func checkExitCode(t *testing.T, expected coreutils.ExitCode, er error) {
 	switch underlyingType := er.(type) {
-	case cliutils.CliError:
+	case coreutils.CliError:
 		assert.Equal(t, expected, underlyingType.ExitCode)
 	default:
 		assert.Fail(t, "Exit code expected error code %v, got %v", expected.Code, er)
@@ -800,7 +800,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
 	defer fileutils.RemoveTempDir(tempDirPath)
-	os.Setenv(cliutils.HomeDir, tempDirPath)
+	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1024")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, false)
 
@@ -838,7 +838,7 @@ func TestArtifactorySelfSignedCert(t *testing.T) {
 	// Set insecureTls back to false.
 	// Copy the server certificates to the CLI security dir and run again. We expect the command to succeed.
 	artifactoryDetails.InsecureTls = false
-	certsPath, err := cliutils.GetJfrogCertsDir()
+	certsPath, err := coreutils.GetJfrogCertsDir()
 	assert.NoError(t, err)
 	err = fileutils.CopyFile(certsPath, certificate.KEY_FILE)
 	assert.NoError(t, err)
@@ -861,7 +861,7 @@ func TestArtifactoryClientCert(t *testing.T) {
 	err = errorutils.CheckError(err)
 	assert.NoError(t, err)
 	defer fileutils.RemoveTempDir(tempDirPath)
-	os.Setenv(cliutils.HomeDir, tempDirPath)
+	os.Setenv(coreutils.HomeDir, tempDirPath)
 	os.Setenv(tests.HttpsProxyEnvVar, "1025")
 	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, true)
 
@@ -2282,18 +2282,18 @@ func TestArtifactoryGenericBuildnameAndNumberFromEnv(t *testing.T) {
 	assert.NoError(t, err)
 	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
 	assert.NoError(t, err)
-	os.Setenv(cliutils.BuildName, tests.RtBuildName1)
-	os.Setenv(cliutils.BuildNumber, buildNumberA)
-	defer os.Unsetenv(cliutils.BuildName)
-	defer os.Unsetenv(cliutils.BuildNumber)
+	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
+	os.Setenv(coreutils.BuildNumber, buildNumberA)
+	defer os.Unsetenv(coreutils.BuildName)
+	defer os.Unsetenv(coreutils.BuildNumber)
 	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	os.Setenv(cliutils.BuildNumber, "11")
+	os.Setenv(coreutils.BuildNumber, "11")
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Publish buildInfo
-	os.Setenv(cliutils.BuildNumber, buildNumberA)
+	os.Setenv(coreutils.BuildNumber, buildNumberA)
 	artifactoryCli.Exec("build-publish")
-	os.Setenv(cliutils.BuildNumber, buildNumberB)
+	os.Setenv(coreutils.BuildNumber, buildNumberB)
 	artifactoryCli.Exec("build-publish")
 
 	// Download by build number
@@ -3583,7 +3583,7 @@ func cleanArtifactoryTest() {
 	if !*tests.TestArtifactory {
 		return
 	}
-	os.Unsetenv(cliutils.HomeDir)
+	os.Unsetenv(coreutils.HomeDir)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()
@@ -4054,11 +4054,11 @@ func initVcsTestDir(t *testing.T) string {
 	assert.NoError(t, err)
 	if found, err := fileutils.IsDirExists(filepath.Join(testdataTarget, "gitdata"), false); found {
 		assert.NoError(t, err)
-		tests.RenamePath(filepath.Join(testdataTarget, "gitdata"), filepath.Join(testdataTarget, ".git"), t)
+		coretests.RenamePath(filepath.Join(testdataTarget, "gitdata"), filepath.Join(testdataTarget, ".git"), t)
 	}
 	if found, err := fileutils.IsDirExists(filepath.Join(testdataTarget, "OtherGit", "gitdata"), false); found {
 		assert.NoError(t, err)
-		tests.RenamePath(filepath.Join(testdataTarget, "OtherGit", "gitdata"), filepath.Join(testdataTarget, "OtherGit", ".git"), t)
+		coretests.RenamePath(filepath.Join(testdataTarget, "OtherGit", "gitdata"), filepath.Join(testdataTarget, "OtherGit", ".git"), t)
 	}
 	path, err := filepath.Abs(tests.Temp)
 	assert.NoError(t, err)

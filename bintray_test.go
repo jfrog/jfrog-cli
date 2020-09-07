@@ -15,9 +15,8 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -337,7 +336,7 @@ func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 	//Upload file
 	fileName := "a1.in"
 	path := "some/path/in/bintray/"
-	uploadFilePath := coreutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
+	uploadFilePath := ioutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
 	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
 
 	//Check file uploaded

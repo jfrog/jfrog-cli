@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,15 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
 )
 
 type npmTestParams struct {
@@ -34,7 +33,7 @@ type npmTestParams struct {
 const npmFlagName = "npm"
 
 func cleanNpmTest() {
-	os.Unsetenv(cliutils.HomeDir)
+	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
 	tests.DeleteFiles(deleteSpec, artifactoryDetails)
 	tests.CleanFileSystem()
@@ -190,7 +189,7 @@ func initGlobalNpmFilesTest(t *testing.T) (npmProjectPath string) {
 	assert.NoError(t, err)
 
 	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
-	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
+	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, true)
 	assert.NoError(t, err)

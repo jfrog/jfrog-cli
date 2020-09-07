@@ -1,20 +1,18 @@
 package main
 
 import (
+	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils/docker"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/inttestutils"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-
-	gofrogcmd "github.com/jfrog/gofrog/io"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/utils/docker"
-	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/tests"
 )
 
 func InitDockerTests() {
@@ -69,10 +67,10 @@ func TestDockerPushBuildNameNumberFromEnv(t *testing.T) {
 	initDockerTest(t)
 	imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
 	buildNumber := "1"
-	os.Setenv(cliutils.BuildName, tests.DockerBuildName)
-	os.Setenv(cliutils.BuildNumber, buildNumber)
-	defer os.Unsetenv(cliutils.BuildName)
-	defer os.Unsetenv(cliutils.BuildNumber)
+	os.Setenv(coreutils.BuildName, tests.DockerBuildName)
+	os.Setenv(coreutils.BuildNumber, buildNumber)
+	defer os.Unsetenv(coreutils.BuildName)
+	defer os.Unsetenv(coreutils.BuildNumber)
 
 	// Push docker image using docker client
 	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)

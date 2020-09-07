@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -68,10 +68,10 @@ func TestBuildPromote(t *testing.T) {
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
 	// Promote the same build to Repo2 using build name and build number as env vars.
-	os.Setenv(cliutils.BuildName, tests.RtBuildName1)
-	os.Setenv(cliutils.BuildNumber, buildNumberA)
-	defer os.Unsetenv(cliutils.BuildName)
-	defer os.Unsetenv(cliutils.BuildNumber)
+	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
+	os.Setenv(coreutils.BuildNumber, buildNumberA)
+	defer os.Unsetenv(coreutils.BuildName)
+	defer os.Unsetenv(coreutils.BuildNumber)
 	artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
 	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumberA, t, artHttpDetails)
 	resultItems = getResultItemsFromArtifactory(tests.SearchRepo2, t)
@@ -372,7 +372,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	buildNumber := "13"
 
 	// Populate cli config with 'default' server
-	oldHomeDir := os.Getenv(cliutils.HomeDir)
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	createJfrogHomeConfig(t, true)
 
 	// Create .git folder for this test
@@ -386,10 +386,10 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	// Run build-add-git
 	var err error
 	if useEnvBuildNameAndNumber {
-		os.Setenv(cliutils.BuildName, tests.RtBuildName1)
-		os.Setenv(cliutils.BuildNumber, buildNumber)
-		defer os.Unsetenv(cliutils.BuildName)
-		defer os.Unsetenv(cliutils.BuildNumber)
+		os.Setenv(coreutils.BuildName, tests.RtBuildName1)
+		os.Setenv(coreutils.BuildNumber, buildNumber)
+		defer os.Unsetenv(coreutils.BuildName)
+		defer os.Unsetenv(coreutils.BuildNumber)
 		err = gitCollectCliRunner.Exec("build-add-git", baseDir, "--config="+configPath)
 	} else {
 		err = gitCollectCliRunner.Exec("build-add-git", tests.RtBuildName1, buildNumber, baseDir, "--config="+configPath)
@@ -423,7 +423,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
 	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
-	os.Setenv(cliutils.HomeDir, oldHomeDir)
+	os.Setenv(coreutils.HomeDir, oldHomeDir)
 	cleanArtifactoryTest()
 }
 
@@ -535,10 +535,10 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 
 	command := []string{"bad"}
 	if useEnvBuildNameAndNumber {
-		os.Setenv(cliutils.BuildName, badTest.buildName)
-		os.Setenv(cliutils.BuildNumber, badTest.buildNumber)
-		defer os.Unsetenv(cliutils.BuildName)
-		defer os.Unsetenv(cliutils.BuildNumber)
+		os.Setenv(coreutils.BuildName, badTest.buildName)
+		os.Setenv(coreutils.BuildNumber, badTest.buildNumber)
+		defer os.Unsetenv(coreutils.BuildName)
+		defer os.Unsetenv(coreutils.BuildNumber)
 	} else {
 		command = append(command, badTest.buildName, badTest.buildNumber)
 	}

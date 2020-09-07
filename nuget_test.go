@@ -2,23 +2,22 @@ package main
 
 import (
 	"encoding/xml"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
-	dotnetutils "github.com/jfrog/jfrog-cli/artifactory/utils/dotnet"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	dotnetutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/dotnet"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func initNugetTest(t *testing.T) {
@@ -112,7 +111,7 @@ func createNugetProject(t *testing.T, projectName string) string {
 func TestNuGetWithGlobalConfig(t *testing.T) {
 	initNugetTest(t)
 	projectPath := createNugetProject(t, "packagesconfig")
-	jfrogHomeDir, err := cliutils.GetJfrogHomeDir()
+	jfrogHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	err = createConfigFileForTest([]string{jfrogHomeDir}, tests.NugetRemoteRepo, "", t, utils.Nuget, true)
 	assert.NoError(t, err)

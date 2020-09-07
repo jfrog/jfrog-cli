@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"os"
 	"os/exec"
@@ -12,10 +10,12 @@ import (
 	"testing"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type PipCmd struct {
@@ -42,7 +42,7 @@ func TestPipInstall(t *testing.T) {
 
 	// Populate cli config with 'default' server.
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	// Create test cases.
