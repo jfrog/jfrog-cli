@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -1444,7 +1445,7 @@ func testMoveCopySpec(command string, t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum
 func TestValidateValidSymlink(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1479,7 +1480,7 @@ func TestValidateValidSymlink(t *testing.T) {
 // Unlink and delete the pointed file.
 // Download the symlink which was uploaded with validation. The command should failed.
 func TestValidateBrokenSymlink(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1518,7 +1519,7 @@ func TestValidateBrokenSymlink(t *testing.T) {
 // Testing exclude pattern with symlinks.
 // This test should not upload any files.
 func TestExcludeBrokenSymlink(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1538,7 +1539,7 @@ func TestExcludeBrokenSymlink(t *testing.T) {
 // Download the symlink which was uploaded.
 // validate the symlink content checksum.
 func TestSymlinkWildcardPathHandling(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1559,7 +1560,7 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 // Upload symlink pointing to directory to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirHandling(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1579,7 +1580,7 @@ func TestSymlinkToDirHandling(t *testing.T) {
 // Upload symlink pointing to directory using wildcard path to Artifactory.
 // Download the symlink which was uploaded.
 func TestSymlinkToDirWildcardHandling(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -1601,7 +1602,7 @@ func TestSymlinkToDirWildcardHandling(t *testing.T) {
 // Download the symlink which was uploaded.
 // The test create circular links and the test suppose to prune the circular searching.
 func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -2729,7 +2730,7 @@ func TestArtifactoryDownloadExclusionsBySpecOverride(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactoryLimitWithSymlink(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -2750,7 +2751,7 @@ func TestArtifactoryLimitWithSymlink(t *testing.T) {
 // Download the symlink which was uploaded with limit param.
 // validate the symlink content checksum.
 func TestArtifactorySortWithSymlink(t *testing.T) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		t.Skip("Running on windows, skipping...")
 	}
 	initArtifactoryTest(t)
@@ -3191,7 +3192,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -3261,7 +3262,7 @@ func TestArtifactoryBuildDiscard(t *testing.T) {
 // Verifies the upload and download commands work as expected for inputs of both arguments and spec files.
 func TestArtifactoryWinBackwardsCompatibility(t *testing.T) {
 	initArtifactoryTest(t)
-	if !cliutils.IsWindows() {
+	if !coreutils.IsWindows() {
 		t.Skip("Not running on Windows, skipping...")
 	}
 	uploadSpecFile, err := tests.CreateSpec(tests.WinSimpleUploadSpec)
@@ -3942,7 +3943,7 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleUploadSpecialCharNoRegexExpected2filesRepo1(), searchFilePath, t)
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		artifactoryCli.Exec("upload", `testdata\\a\\..\\a\\a1.*`, tests.RtRepo2)
 		artifactoryCli.Exec("upload", `testdata\\.\\\a\a1.*`, tests.RtRepo2)
 		searchFilePath, err = tests.CreateSpec(tests.SearchRepo2)
@@ -4105,7 +4106,7 @@ func TestAccessTokenCreate(t *testing.T) {
 
 	// Set new logger with output redirection to a buffer, so we can extract the token from the command output
 	previousLog := log.Logger
-	newLog := log.NewLogger(logUtils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

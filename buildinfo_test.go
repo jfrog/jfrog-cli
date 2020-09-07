@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
+	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -212,7 +214,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	}
 
 	// Tests compatibility to file paths with windows separators.
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		var compatibilityTests = []buildAddDepsBuildInfoTestParams{
 			{description: "'rt bad' win compatibility by arguments", commandArgs: []string{"testdata\\\\a\\\\a1.in"}, expectedDependencies: []string{"a1.in"}},
 			{description: "'rt bad' win compatibility by spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.WinBuildAddDepsSpec)}, expectedDependencies: allFiles},
@@ -375,7 +377,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 
 	// Create .git folder for this test
 	originalFolder := "buildaddgit_.git_suffix"
-	baseDir, dotGitPath := tests.PrepareDotGitDir(t, originalFolder, "testdata")
+	baseDir, dotGitPath := coretests.PrepareDotGitDir(t, originalFolder, "testdata")
 
 	// Get path for build-add-git config file
 	pwd, _ := os.Getwd()
@@ -419,7 +421,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
-	tests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
+	coretests.RenamePath(dotGitPath, filepath.Join(baseDir, originalFolder), t)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
 	os.Setenv(cliutils.HomeDir, oldHomeDir)
 	cleanArtifactoryTest()

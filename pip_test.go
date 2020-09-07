@@ -169,7 +169,7 @@ func setPathEnvForPipInstall(t *testing.T) string {
 	virtualEnvPath := *tests.PipVirtualEnv
 	if virtualEnvPath != "" {
 		var newPathValue string
-		if cliutils.IsWindows() {
+		if coreutils.IsWindows() {
 			newPathValue = fmt.Sprintf("%s;%s", virtualEnvPath, pathValue)
 		} else {
 			newPathValue = fmt.Sprintf("%s:%s", virtualEnvPath, pathValue)

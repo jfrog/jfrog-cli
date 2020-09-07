@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -11,25 +11,12 @@ import (
 	"time"
 )
 
-func GetCliLogLevel() log.LevelType {
-	switch os.Getenv(cliutils.LogLevel) {
-	case "ERROR":
-		return log.ERROR
-	case "WARN":
-		return log.WARN
-	case "DEBUG":
-		return log.DEBUG
-	default:
-		return log.INFO
-	}
-}
-
 func SetDefaultLogger() {
-	log.SetLogger(log.NewLogger(GetCliLogLevel(), nil))
+	log.SetLogger(log.NewLogger(coreutils.GetCliLogLevel(), nil))
 }
 
 func CreateLogFile() (*os.File, error) {
-	logDir, err := cliutils.CreateDirInJfrogHome(cliutils.JfrogLogsDirName)
+	logDir, err := coreutils.CreateDirInJfrogHome(coreutils.JfrogLogsDirName)
 	if err != nil {
 		return nil, err
 	}

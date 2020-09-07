@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -28,9 +29,9 @@ func TestMain(m *testing.M) {
 }
 
 func setupIntegrationTests() {
-	os.Setenv(cliutils.ReportUsage, "false")
+	os.Setenv(coreutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
-	os.Setenv(cliutils.CI, "true")
+	os.Setenv(coreutils.CI, "true")
 
 	flag.Parse()
 	log.SetDefaultLogger()

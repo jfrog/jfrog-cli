@@ -2,12 +2,15 @@ package bintray
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli/bintray/commands"
+	"github.com/jfrog/jfrog-cli-core/bintray/commands"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
 	accesskeysdoc "github.com/jfrog/jfrog-cli/docs/bintray/accesskeys"
 	configdocs "github.com/jfrog/jfrog-cli/docs/bintray/config"
 	"github.com/jfrog/jfrog-cli/docs/bintray/downloadfile"
@@ -31,8 +34,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/bintray/versionupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
 	"github.com/jfrog/jfrog-client-go/bintray/services"
@@ -806,7 +807,7 @@ func deletePackage(c *cli.Context) error {
 		return err
 	}
 	if !cliutils.GetQuietValue(c) {
-		confirmed := cliutils.AskYesNo("Delete package "+packagePath.Package+"?", false)
+		confirmed := coreutils.AskYesNo("Delete package "+packagePath.Package+"?", false)
 		if !confirmed {
 			return nil
 		}
@@ -828,7 +829,7 @@ func deleteVersion(c *cli.Context) error {
 		return err
 	}
 	if !cliutils.GetQuietValue(c) {
-		confirmed := cliutils.AskYesNo("Delete version "+versionPath.Version+
+		confirmed := coreutils.AskYesNo("Delete version "+versionPath.Version+
 			" of package "+versionPath.Package+"?", false)
 		if !confirmed {
 			return nil
@@ -891,7 +892,7 @@ func upload(c *cli.Context) error {
 	}
 	params := services.NewUploadParams()
 	params.Pattern = c.Args().Get(0)
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		params.Pattern = ioutils.UnixToWinPathSeparator(params.Pattern)
 	}
 
@@ -1046,7 +1047,10 @@ func stream(c *cli.Context) error {
 		Subject:        c.Args().Get(0),
 		Include:        c.String("include"),
 	}
-	commands.Stream(streamDetails, os.Stdout)
+	err = commands.Stream(streamDetails, os.Stdout)
+	if err != nil {
+		cliutils.ExitOnErr(err)
+	}
 
 	return nil
 }
@@ -1365,7 +1369,7 @@ func offerConfig(c *cli.Context) (*config.BintrayDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n" +
 		"You can also configure these parameters later using the 'jfrog bt c' command.\n" +
 		"Configure now?"
-	confirmed := cliutils.AskYesNo(msg, false)
+	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
 		config.SaveBintrayConf(new(config.BintrayDetails))
 		return nil, nil

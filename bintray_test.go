@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -323,7 +324,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 // Tests compatibility to file paths with windows separators.
 func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 	initBintrayTest(t)
-	if !cliutils.IsWindows() {
+	if !coreutils.IsWindows() {
 		t.Skip("Not running on Windows, skipping...")
 	}
 
@@ -336,7 +337,7 @@ func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 	//Upload file
 	fileName := "a1.in"
 	path := "some/path/in/bintray/"
-	uploadFilePath := ioutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
+	uploadFilePath := coreutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
 	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
 
 	//Check file uploaded

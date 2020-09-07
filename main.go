@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -12,7 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/xray"
-	"github.com/jfrog/jfrog-client-go/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	clientLog "github.com/jfrog/jfrog-client-go/utils/log"
 )
@@ -80,7 +81,7 @@ func main() {
 
 func execMain() error {
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	utils.SetUserAgent(cliutils.GetUserAgent())
+	clientutils.SetUserAgent(coreutils.GetUserAgent())
 
 	app := cli.NewApp()
 	app.Name = "jfrog"

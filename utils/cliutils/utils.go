@@ -1,13 +1,8 @@
 package cliutils
 
 import (
-	"bytes"
-	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
-	"path"
-	"path/filepath"
-	"regexp"
-	"runtime"
 	"strings"
 
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -28,7 +23,6 @@ import (
 type OnError string
 
 var cliTempDir string
-var cliUserAgent string
 
 func init() {
 	// Initialize error handling.
@@ -43,30 +37,14 @@ func init() {
 	}
 	fileutils.SetTempDirBase(cliTempDir)
 
-	// Initialize agent name and version.
-	cliUserAgent = os.Getenv(UserAgent)
+	// Initialize cli-core values.
+	cliUserAgent := os.Getenv(UserAgent)
 	if cliUserAgent == "" {
 		cliUserAgent = ClientAgent + "/" + CliVersion
 	}
-}
-
-// Exit codes:
-type ExitCode struct {
-	Code int
-}
-
-var ExitCodeNoError = ExitCode{0}
-var ExitCodeError = ExitCode{1}
-var ExitCodeFailNoOp = ExitCode{2}
-var ExitCodeVulnerableBuild = ExitCode{3}
-
-type CliError struct {
-	ExitCode
-	ErrorMsg string
-}
-
-func (err CliError) Error() string {
-	return err.ErrorMsg
+	coreutils.SetCliUserAgent(cliUserAgent)
+	coreutils.SetClientAgent(ClientAgent)
+	coreutils.SetVersion(CliVersion)
 }
 
 func PanicOnError(err error) error {
@@ -77,45 +55,32 @@ func PanicOnError(err error) error {
 }
 
 func ExitOnErr(err error) {
-	if err, ok := err.(CliError); ok {
+	if err, ok := err.(coreutils.CliError); ok {
 		traceExit(err.ExitCode, err)
 	}
-	if exitCode := GetExitCode(err, 0, 0, false); exitCode != ExitCodeNoError {
+	if exitCode := coreutils.GetExitCode(err, 0, 0, false); exitCode != coreutils.ExitCodeNoError {
 		traceExit(exitCode, err)
 	}
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {
-	switch GetExitCode(err, success, failed, failNoOp) {
-	case ExitCodeError:
+	switch coreutils.GetExitCode(err, success, failed, failNoOp) {
+	case coreutils.ExitCodeError:
 		{
 			var errorMessage string
 			if err != nil {
 				errorMessage = err.Error()
 			}
-			return CliError{ExitCodeError, errorMessage}
+			return coreutils.CliError{ExitCode: coreutils.ExitCodeError, ErrorMsg: errorMessage}
 		}
-	case ExitCodeFailNoOp:
-		return CliError{ExitCodeFailNoOp, "No errors, but also no files affected (fail-no-op flag)."}
+	case coreutils.ExitCodeFailNoOp:
+		return coreutils.CliError{ExitCode: coreutils.ExitCodeFailNoOp, ErrorMsg: "No errors, but also no files affected (fail-no-op flag)."}
 	default:
 		return nil
 	}
 }
 
-func GetExitCode(err error, success, failed int, failNoOp bool) ExitCode {
-	// Error occurred - Return 1
-	if err != nil || failed > 0 {
-		return ExitCodeError
-	}
-	// No errors, but also no files affected - Return 2 if failNoOp
-	if success == 0 && failNoOp {
-		return ExitCodeFailNoOp
-	}
-	// Otherwise - Return 0
-	return ExitCodeNoError
-}
-
-func traceExit(exitCode ExitCode, err error) {
+func traceExit(exitCode coreutils.ExitCode, err error) {
 	if err != nil && len(err.Error()) > 0 {
 		log.Error(err)
 	}
@@ -217,11 +182,11 @@ func GetInteractiveValue(c *cli.Context) bool {
 	return !getCiValue()
 }
 
-// Return the true if the CI environment variable was set to true.
+// Return true if the CI environment variable was set to true.
 func getCiValue() bool {
 	var ci bool
 	var err error
-	if ci, err = clientutils.GetBoolEnvValue(CI, false); err != nil {
+	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return false
 	}
 	return ci
@@ -231,191 +196,26 @@ func GetVersion() string {
 	return CliVersion
 }
 
-func GetConfigVersion() string {
-	return "3"
-}
-
 func GetDocumentationMessage() string {
 	return "You can read the documentation at https://www.jfrog.com/confluence/display/CLI/JFrog+CLI"
 }
 
-func SumTrueValues(boolArr []bool) int {
-	counter := 0
-	for _, val := range boolArr {
-		counter += utils.Bool2Int(val)
-	}
-	return counter
+func GetBuildName(buildName string) string {
+	return getOrDefaultEnv(buildName, coreutils.BuildName)
 }
 
-func SpecVarsStringToMap(rawVars string) map[string]string {
-	if len(rawVars) == 0 {
-		return nil
-	}
-	varCandidates := strings.Split(rawVars, ";")
-	varsList := []string{}
-	for _, v := range varCandidates {
-		if len(varsList) > 0 && isEndsWithEscapeChar(varsList[len(varsList)-1]) {
-			currentLastVar := varsList[len(varsList)-1]
-			varsList[len(varsList)-1] = strings.TrimSuffix(currentLastVar, "\\") + ";" + v
-			continue
-		}
-		varsList = append(varsList, v)
-	}
-	return varsAsMap(varsList)
+func GetBuildUrl(buildUrl string) string {
+	return getOrDefaultEnv(buildUrl, BuildUrl)
 }
 
-func isEndsWithEscapeChar(lastVar string) bool {
-	return strings.HasSuffix(lastVar, "\\")
+func GetEnvExclude(envExclude string) string {
+	return getOrDefaultEnv(envExclude, EnvExclude)
 }
 
-func varsAsMap(vars []string) map[string]string {
-	result := map[string]string{}
-	for _, v := range vars {
-		keyVal := strings.SplitN(v, "=", 2)
-		if len(keyVal) != 2 {
-			continue
-		}
-		result[keyVal[0]] = keyVal[1]
+// Return argument if not empty or retrieve from environment variable
+func getOrDefaultEnv(arg, envKey string) string {
+	if arg != "" {
+		return arg
 	}
-	return result
-}
-
-func IsWindows() bool {
-	return runtime.GOOS == "windows"
-}
-
-func IsLinux() bool {
-	return runtime.GOOS == "linux"
-}
-
-// Return the path of CLI temp dir.
-// This path should be persistent, meaning - should not be cleared at the end of a CLI run.
-func GetCliPersistentTempDirPath() string {
-	return cliTempDir
-}
-
-func GetUserAgent() string {
-	return cliUserAgent
-}
-
-type Credentials interface {
-	SetUser(string)
-	SetPassword(string)
-	GetUser() string
-	GetPassword() string
-}
-
-func ReplaceVars(content []byte, specVars map[string]string) []byte {
-	log.Debug("Replacing variables in the provided content: \n" + string(content))
-	for key, val := range specVars {
-		key = "${" + key + "}"
-		log.Debug(fmt.Sprintf("Replacing '%s' with '%s'", key, val))
-		content = bytes.Replace(content, []byte(key), []byte(val), -1)
-	}
-	log.Debug("The reformatted content is: \n" + string(content))
-	return content
-}
-
-func GetJfrogHomeDir() (string, error) {
-	// The JfrogHomeEnv environment variable has been deprecated and replaced with HomeDir
-	if os.Getenv(HomeDir) != "" {
-		return os.Getenv(HomeDir), nil
-	} else if os.Getenv(JfrogHomeEnv) != "" {
-		return path.Join(os.Getenv(JfrogHomeEnv), ".jfrog"), nil
-	}
-
-	userHomeDir := fileutils.GetHomeDir()
-	if userHomeDir == "" {
-		err := errorutils.CheckError(errors.New("couldn't find home directory. Make sure your HOME environment variable is set"))
-		if err != nil {
-			return "", err
-		}
-	}
-	return filepath.Join(userHomeDir, ".jfrog"), nil
-}
-
-func CreateDirInJfrogHome(dirName string) (string, error) {
-	homeDir, err := GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	folderName := filepath.Join(homeDir, dirName)
-	err = fileutils.CreateDirIfNotExist(folderName)
-	return folderName, err
-}
-
-func GetJfrogSecurityDir() (string, error) {
-	homeDir, err := GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, JfrogSecurityDirName), nil
-}
-
-func GetJfrogCertsDir() (string, error) {
-	securityDir, err := GetJfrogSecurityDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(securityDir, JfrogCertsDirName), nil
-}
-
-func GetJfrogSecurityConfFilePath() (string, error) {
-	securityDir, err := GetJfrogSecurityDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(securityDir, JfrogSecurityConfFile), nil
-}
-
-func GetJfrogBackupDir() (string, error) {
-	homeDir, err := GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, JfrogBackupDirName), nil
-}
-
-// Ask a yes or no question, with a default answer.
-func AskYesNo(promptPrefix string, defaultValue bool) bool {
-	defStr := "[n]"
-	if defaultValue {
-		defStr = "[y]"
-	}
-	promptPrefix += " (y/n) " + defStr + "? "
-	var answer string
-	for {
-		fmt.Print(promptPrefix)
-		_, _ = fmt.Scanln(&answer)
-		parsed, valid := parseYesNo(answer, defaultValue)
-		if valid {
-			return parsed
-		}
-		fmt.Println("Please enter a valid option.")
-	}
-}
-
-func parseYesNo(s string, def bool) (ans, valid bool) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return def, true
-	}
-	matchedYes, err := regexp.MatchString("^yes$|^y$", strings.ToLower(s))
-	if errorutils.CheckError(err) != nil {
-		log.Error(err)
-		return matchedYes, false
-	}
-	if matchedYes {
-		return true, true
-	}
-
-	matchedNo, err := regexp.MatchString("^no$|^n$", strings.ToLower(s))
-	if errorutils.CheckError(err) != nil {
-		log.Error(err)
-		return matchedNo, false
-	}
-	if matchedNo {
-		return false, true
-	}
-	return false, false
+	return os.Getenv(envKey)
 }
