@@ -40,9 +40,9 @@ func (deleteProps *DeletePropsCommand) Run() error {
 	result := deleteProps.Result()
 	result.SetSuccessCount(success)
 	totalLength, totalLengthErr := reader.Length()
+	result.SetFailCount(totalLength - success)
 	if totalLengthErr != nil {
 		return totalLengthErr
 	}
-	result.SetFailCount(totalLength - success)
 	return err
 }
