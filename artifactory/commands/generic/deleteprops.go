@@ -43,6 +43,6 @@ func (deleteProps *DeletePropsCommand) Run() error {
 	if totalLengthErr != nil {
 		return totalLengthErr
 	}
-	result.SetFailCount(totalLength)
+	result.SetFailCount(totalLength - success)
 	return err
 }
