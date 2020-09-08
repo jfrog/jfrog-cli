@@ -312,7 +312,7 @@ func TestArtifactoryCopySingleFileNonFlat(t *testing.T) {
 func TestArtifactoryCopyPrefixFilesFlat(t *testing.T) {
 	initArtifactoryTest(t)
 
-	artifactoryCli.Exec("upload", "testdata/prefix/*", tests.RtRepo1+"/prefix/")
+	artifactoryCli.Exec("upload", "testdata/prefix/(*)", tests.RtRepo1+"/prefix/prefix-{1}")
 	artifactoryCli.Exec("cp", tests.RtRepo1+"/prefix/*", tests.RtRepo2, "--flat")
 	searchPath, err := tests.CreateSpec(tests.SearchRepo2)
 	assert.NoError(t, err)

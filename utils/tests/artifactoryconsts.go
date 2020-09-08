@@ -218,9 +218,9 @@ func GetUploadDebianExpected() []string {
 
 func GetPrefixFilesCopy() []string {
 	return []string{
-		RtRepo2 + "/a",
-		RtRepo2 + "/ab",
-		RtRepo2 + "/abb",
+		RtRepo2 + "/prefix-a",
+		RtRepo2 + "/prefix-ab",
+		RtRepo2 + "/prefix-abb",
 	}
 }
 
