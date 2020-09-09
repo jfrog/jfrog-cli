@@ -2888,6 +2888,50 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySortByCreated(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files separate so cwe can sort by created.
+	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--props=k1=v1`)
+	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
+	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
+
+	// Prepare search command
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1).SortBy([]string{"created"}).SortOrder("asc").Limit(3)
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+
+	var resultItems []utils.SearchResult
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+
+	}
+	// Verify the sort by checking if the item results are order by asc.
+	assert.Equal(t, tests.RtRepo1+"/or", resultItems[0].Path)
+	assert.Equal(t, tests.RtRepo1+"/o", resultItems[1].Path)
+	assert.Equal(t, tests.RtRepo1+"/org", resultItems[2].Path)
+
+	assert.NoError(t, reader.Close())
+	searchCmd.SetSpec(searchSpecBuilder.SortOrder("desc").BuildSpec())
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	resultItems = nil
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+	}
+	assert.Len(t, resultItems, 3)
+	// Verify the sort by checking if the item results are order by desc.
+	assert.Equal(t, tests.RtRepo1+"/org", resultItems[0].Path)
+	assert.Equal(t, tests.RtRepo1+"/o", resultItems[1].Path)
+	assert.Equal(t, tests.RtRepo1+"/or", resultItems[2].Path)
+	assert.NoError(t, reader.Close())
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
 func TestArtifactoryOffset(t *testing.T) {
 	initArtifactoryTest(t)
 
