@@ -1,42 +1,25 @@
 package cliutils
 
 import (
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"strings"
 
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	"github.com/jfrog/jfrog-client-go/utils/io/content"
-
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/content"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/pkg/errors"
-
-	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
 // Error modes (how should the application behave when the CheckError function is invoked):
 type OnError string
 
-var cliTempDir string
-
 func init() {
-	// Initialize error handling.
-	if os.Getenv(ErrorHandling) == string(OnErrorPanic) {
-		errorutils.CheckError = PanicOnError
-	}
-
-	// Initialize the temp base-dir path of the CLI executions.
-	cliTempDir = os.Getenv(TempDir)
-	if cliTempDir == "" {
-		cliTempDir = os.TempDir()
-	}
-	fileutils.SetTempDirBase(cliTempDir)
-
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
 	if cliUserAgent == "" {
@@ -45,13 +28,6 @@ func init() {
 	coreutils.SetCliUserAgent(cliUserAgent)
 	coreutils.SetClientAgent(ClientAgent)
 	coreutils.SetVersion(CliVersion)
-}
-
-func PanicOnError(err error) error {
-	if err != nil {
-		panic(err)
-	}
-	return err
 }
 
 func ExitOnErr(err error) {

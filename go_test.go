@@ -1,23 +1,22 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/jfrog/gocmd/executers"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
+	"github.com/stretchr/testify/assert"
 )
 
 // Testing build info capabilities for go project.
