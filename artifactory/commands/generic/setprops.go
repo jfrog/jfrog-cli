@@ -31,9 +31,9 @@ func (setProps *SetPropsCommand) Run() error {
 		return err
 	}
 
-	reader, searchErr := searchItems(setProps.Spec(), servicesManager)
-	if searchErr != nil {
-		return searchErr
+	reader, err := searchItems(setProps.Spec(), servicesManager)
+	if err != nil {
+		return err
 	}
 	defer reader.Close()
 	propsParams := GetPropsParams(reader, setProps.props)
