@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -2888,6 +2889,55 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactorySortByCreated(t *testing.T) {
+	initArtifactoryTest(t)
+
+	// Upload files separately so we can sort by created.
+	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--props=k1=v1`)
+	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
+	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
+
+	// Prepare search command
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetRtDetails(artifactoryDetails)
+	searchSpecBuilder := spec.NewBuilder().Pattern(tests.RtRepo1).SortBy([]string{"created"}).SortOrder("asc").Limit(3)
+	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+	reader, err = utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+
+	var resultItems []utils.SearchResult
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+
+	}
+	assert.Len(t, resultItems, 3)
+	// Verify the sort by checking if the item results are ordereds by asc.
+	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetFirstSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetThirdSearchResultSortedByAsc()))
+
+	assert.NoError(t, reader.Close())
+	searchCmd.SetSpec(searchSpecBuilder.SortOrder("desc").BuildSpec())
+	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	reader, err = utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
+	resultItems = nil
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		resultItems = append(resultItems, *resultItem)
+	}
+	assert.Len(t, resultItems, 3)
+	// Verify the sort by checking if the item results are ordered by desc.
+	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetFirstSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetThirdSearchResultSortedByAsc()))
+	assert.NoError(t, reader.Close())
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
 func TestArtifactoryOffset(t *testing.T) {
 	initArtifactoryTest(t)
 
