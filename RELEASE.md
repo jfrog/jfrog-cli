@@ -1,3 +1,9 @@
+## 1.39.4 (September 10, 2020)
+- Bug fix - Set/Delete props unified errors output.
+- Bug fix - Delete props command always returns a failure.
+- Bug fix - Fail to copy files with the same prefix name.
+- Bug fix - Search ignores "order by".
+
 ## 1.39.3 (September 3, 2020)
 - Bug fix - missing defer close after using AQL service.
 
