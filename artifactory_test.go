@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -2891,7 +2892,7 @@ func TestArtifactorySortAndLimit(t *testing.T) {
 func TestArtifactorySortByCreated(t *testing.T) {
 	initArtifactoryTest(t)
 
-	// Upload files separate so cwe can sort by created.
+	// Upload files separately so we can sort by created.
 	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--props=k1=v1`)
 	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
 	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
@@ -2903,30 +2904,35 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	searchCmd.SetSpec(searchSpecBuilder.BuildSpec())
 	reader, err := searchCmd.Search()
 	assert.NoError(t, err)
+	reader, err = utils.SearchResultNoDate(reader)
+	assert.NoError(t, err)
 
 	var resultItems []utils.SearchResult
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 
 	}
-	// Verify the sort by checking if the item results are order by asc.
-	assert.Equal(t, tests.RtRepo1+"/or", resultItems[0].Path)
-	assert.Equal(t, tests.RtRepo1+"/o", resultItems[1].Path)
-	assert.Equal(t, tests.RtRepo1+"/org", resultItems[2].Path)
+	assert.Len(t, resultItems, 3)
+	// Verify the sort by checking if the item results are ordereds by asc.
+	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetFirstSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetThirdSearchResultSortedByAsc()))
 
 	assert.NoError(t, reader.Close())
 	searchCmd.SetSpec(searchSpecBuilder.SortOrder("desc").BuildSpec())
 	reader, err = searchCmd.Search()
+	assert.NoError(t, err)
+	reader, err = utils.SearchResultNoDate(reader)
 	assert.NoError(t, err)
 	resultItems = nil
 	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
 		resultItems = append(resultItems, *resultItem)
 	}
 	assert.Len(t, resultItems, 3)
-	// Verify the sort by checking if the item results are order by desc.
-	assert.Equal(t, tests.RtRepo1+"/org", resultItems[0].Path)
-	assert.Equal(t, tests.RtRepo1+"/o", resultItems[1].Path)
-	assert.Equal(t, tests.RtRepo1+"/or", resultItems[2].Path)
+	// Verify the sort by checking if the item results are ordered by desc.
+	assert.True(t, reflect.DeepEqual(resultItems[2], tests.GetFirstSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[1], tests.GetSecondSearchResultSortedByAsc()))
+	assert.True(t, reflect.DeepEqual(resultItems[0], tests.GetThirdSearchResultSortedByAsc()))
 	assert.NoError(t, reader.Close())
 
 	// Cleanup
