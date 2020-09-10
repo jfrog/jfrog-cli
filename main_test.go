@@ -2,21 +2,19 @@ package main
 
 import (
 	"flag"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	commandUtils "github.com/jfrog/jfrog-cli/artifactory/commands/utils"
-	artifactoryUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
+	artifactoryUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/utils/log"
-
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )
 
@@ -28,9 +26,9 @@ func TestMain(m *testing.M) {
 }
 
 func setupIntegrationTests() {
-	os.Setenv(cliutils.ReportUsage, "false")
+	os.Setenv(coreutils.ReportUsage, "false")
 	// Disable progress bar and confirmation messages.
-	os.Setenv(cliutils.CI, "true")
+	os.Setenv(coreutils.CI, "true")
 
 	flag.Parse()
 	log.SetDefaultLogger()
@@ -83,7 +81,7 @@ func CleanBuildToolsTests() {
 func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	err = os.Setenv(cliutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
+	err = os.Setenv(coreutils.HomeDir, filepath.Join(wd, tests.Out, "jfroghome"))
 	assert.NoError(t, err)
 	var credentials string
 	if *tests.RtAccessToken != "" {
@@ -96,17 +94,17 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 }
 
 func prepareHomeDir(t *testing.T) (string, string) {
-	oldHomeDir := os.Getenv(cliutils.HomeDir)
+	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	// Populate cli config with 'default' server
 	createJfrogHomeConfig(t, true)
-	newHomeDir, err := cliutils.GetJfrogHomeDir()
+	newHomeDir, err := coreutils.GetJfrogHomeDir()
 	assert.NoError(t, err)
 	return oldHomeDir, newHomeDir
 }
 
 func cleanBuildToolsTest() {
 	if *tests.TestNpm || *tests.TestGradle || *tests.TestMaven || *tests.TestGo || *tests.TestNuget || *tests.TestPip {
-		os.Unsetenv(cliutils.HomeDir)
+		os.Unsetenv(coreutils.HomeDir)
 		tests.CleanFileSystem()
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,9 +15,8 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -323,7 +323,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 // Tests compatibility to file paths with windows separators.
 func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 	initBintrayTest(t)
-	if !cliutils.IsWindows() {
+	if !coreutils.IsWindows() {
 		t.Skip("Not running on Windows, skipping...")
 	}
 

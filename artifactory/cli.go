@@ -3,8 +3,10 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/dotnet"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
@@ -12,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,23 +22,24 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli/artifactory/commands"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/curl"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/distribution"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/docker"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/golang"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/gradle"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/mvn"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/npm"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/pip"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/replication"
-	"github.com/jfrog/jfrog-cli/artifactory/commands/repository"
-	commandUtils "github.com/jfrog/jfrog-cli/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	"github.com/jfrog/jfrog-cli/artifactory/utils"
-	npmUtils "github.com/jfrog/jfrog-cli/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/docker"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/gradle"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/pip"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/replication"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/repository"
+	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
@@ -92,8 +96,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/ioutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
@@ -1039,7 +1041,7 @@ func configCmd(c *cli.Context) error {
 		}
 		if c.Args()[0] == "delete" {
 			if configCommandConfiguration.Interactive {
-				if !cliutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
+				if !coreutils.AskYesNo("Are you sure you want to delete \""+serverId+"\" configuration?", false) {
 					return nil
 				}
 			}
@@ -1820,6 +1822,17 @@ func downloadCmd(c *cli.Context) error {
 	}
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummaryt(c.Bool("detailed-summary"))
+
+	// Init progress bar.
+	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	if err != nil {
+		return err
+	}
+	downloadCommand.SetProgressBarComponents(progressBar, logFile)
+	if progressBar != nil {
+		defer progressBar.Quit()
+	}
+
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
@@ -1865,6 +1878,17 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c))
+
+	// Init progress bar.
+	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
+	if err != nil {
+		return err
+	}
+	uploadCmd.SetProgressBarComponents(progressBar, logFile)
+	if progressBar != nil {
+		defer progressBar.Quit()
+	}
+
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
@@ -2209,11 +2233,11 @@ func buildScanCmd(c *cli.Context) error {
 func checkBuildScanError(err error) error {
 	// If the build was found vulnerable, exit with ExitCodeVulnerableBuild.
 	if err == utils.GetBuildScanError() {
-		return cliutils.CliError{ExitCode: cliutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
+		return coreutils.CliError{ExitCode: coreutils.ExitCodeVulnerableBuild, ErrorMsg: err.Error()}
 	}
 	// If the scan operation failed, for example due to HTTP timeout, exit with ExitCodeError.
 	if err != nil {
-		return cliutils.CliError{ExitCode: cliutils.ExitCodeError, ErrorMsg: err.Error()}
+		return coreutils.CliError{ExitCode: coreutils.ExitCodeError, ErrorMsg: err.Error()}
 	}
 	return nil
 }
@@ -2727,7 +2751,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 	}
 
 	var ci bool
-	if ci, err = clientutils.GetBoolEnvValue(cliutils.CI, false); err != nil {
+	if ci, err = clientutils.GetBoolEnvValue(coreutils.CI, false); err != nil {
 		return nil, err
 	}
 	var offerConfig bool
@@ -2744,7 +2768,7 @@ func offerConfig(c *cli.Context) (*config.ArtifactoryDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
 		"You can also configure these parameters later using the 'jfrog rt c' command.\n"+
 		"Configure now?", cliutils.OfferConfig)
-	confirmed := cliutils.AskYesNo(msg, false)
+	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
 		config.SaveArtifactoryConf(make([]*config.ArtifactoryDetails, 0))
 		return nil, nil
@@ -2861,7 +2885,7 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 }
 
 func getSpec(c *cli.Context, isDownload bool) (specFiles *spec.SpecFiles, err error) {
-	specFiles, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	specFiles, err = spec.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return nil, err
 	}
@@ -2944,10 +2968,10 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 
 func createBuildInfoConfiguration(c *cli.Context) *buildinfocmd.Configuration {
 	flags := new(buildinfocmd.Configuration)
-	flags.BuildUrl = utils.GetBuildUrl(c.String("build-url"))
+	flags.BuildUrl = cliutils.GetBuildUrl(c.String("build-url"))
 	flags.DryRun = c.Bool("dry-run")
 	flags.EnvInclude = c.String("env-include")
-	flags.EnvExclude = utils.GetEnvExclude(c.String("env-exclude"))
+	flags.EnvExclude = cliutils.GetEnvExclude(c.String("env-exclude"))
 	if flags.EnvInclude == "" {
 		flags.EnvInclude = "*"
 	}
@@ -2988,7 +3012,7 @@ func createBuildDiscardConfiguration(c *cli.Context) services.DiscardBuildsParam
 	discardParamsImpl.MaxDays = c.String("max-days")
 	discardParamsImpl.ExcludeBuilds = c.String("exclude-builds")
 	discardParamsImpl.Async = c.Bool("async")
-	discardParamsImpl.BuildName = utils.GetBuildName(c.Args().Get(0))
+	discardParamsImpl.BuildName = cliutils.GetBuildName(c.Args().Get(0))
 	return discardParamsImpl
 }
 
@@ -3152,7 +3176,7 @@ func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
 }
 
 func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {
-	fsSpec, err = spec.CreateSpecFromFile(c.String("spec"), cliutils.SpecVarsStringToMap(c.String("spec-vars")))
+	fsSpec, err = spec.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
 	if err != nil {
 		return
 	}
@@ -3165,7 +3189,7 @@ func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {
 }
 
 func fixWinPathsForFileSystemSourcedCmds(uploadSpec *spec.SpecFiles, c *cli.Context) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Pattern = fixWinPathBySource(file.Pattern, c.IsSet("spec"))
 			for j, exclusion := range uploadSpec.Files[i].Exclusions {
@@ -3181,7 +3205,7 @@ func fixWinPathsForFileSystemSourcedCmds(uploadSpec *spec.SpecFiles, c *cli.Cont
 }
 
 func fixWinPathsForDownloadCmd(uploadSpec *spec.SpecFiles, c *cli.Context) {
-	if cliutils.IsWindows() {
+	if coreutils.IsWindows() {
 		for i, file := range uploadSpec.Files {
 			uploadSpec.Files[i].Target = fixWinPathBySource(file.Target, c.IsSet("spec"))
 		}

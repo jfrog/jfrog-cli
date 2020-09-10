@@ -2,9 +2,8 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion           = "1.39.4"
-	ClientAgent          = "jfrog-cli-go"
-	OnErrorPanic OnError = "panic"
+	CliVersion  = "1.39.4"
+	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
 	CmdArtifactory    = "rt"
@@ -19,36 +18,13 @@ const (
 	DownloadMaxSplitCount = 15
 
 	// Common
-	Retries                     = 3
-	TokenRefreshDisabled        = 0
-	TokenRefreshDefaultInterval = 60
-	TokenExpiry                 = 3600
-	DefaultLicenseCount         = 1
-
-	// Home Dir
-	JfrogCertsDirName        = "certs"
-	JfrogConfigFile          = "jfrog-cli.conf"
-	JfrogDependenciesDirName = "dependencies"
-	JfrogSecurityDirName     = "security"
-	JfrogSecurityConfFile    = "security.yaml"
-	JfrogBackupDirName       = "backup"
-	JfrogLogsDirName         = "logs"
-	JfrogLockDirName         = "lock"
+	Retries             = 3
+	TokenExpiry         = 3600
+	DefaultLicenseCount = 1
 
 	// Env
-	ReportUsage     = "JFROG_CLI_REPORT_USAGE"
-	LogLevel        = "JFROG_CLI_LOG_LEVEL"
-	OfferConfig     = "JFROG_CLI_OFFER_CONFIG"
-	HomeDir         = "JFROG_CLI_HOME_DIR"
-	ErrorHandling   = "JFROG_CLI_ERROR_HANDLING"
-	TempDir         = "JFROG_CLI_TEMP_DIR"
-	CI              = "CI"
-	DependenciesDir = "JFROG_CLI_DEPENDENCIES_DIR"
-	BuildName       = "JFROG_CLI_BUILD_NAME"
-	BuildNumber     = "JFROG_CLI_BUILD_NUMBER"
-	BuildUrl        = "JFROG_CLI_BUILD_URL"
-	EnvExclude      = "JFROG_CLI_ENV_EXCLUDE"
-	UserAgent       = "JFROG_CLI_USER_AGENT"
-	// Deprecated:
-	JfrogHomeEnv = "JFROG_CLI_HOME"
+	OfferConfig = "JFROG_CLI_OFFER_CONFIG"
+	BuildUrl    = "JFROG_CLI_BUILD_URL"
+	EnvExclude  = "JFROG_CLI_ENV_EXCLUDE"
+	UserAgent   = "JFROG_CLI_USER_AGENT"
 )

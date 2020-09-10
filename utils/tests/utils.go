@@ -15,12 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jfrog/jfrog-cli/artifactory/commands/generic"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
-	artUtils "github.com/jfrog/jfrog-cli/artifactory/utils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
-
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	artUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
@@ -185,7 +184,7 @@ func GetFilePathForArtifactory(fileName string) string {
 }
 
 func GetTestsLogsDir() (string, error) {
-	tempDirPath := filepath.Join(cliutils.GetCliPersistentTempDirPath(), "jfrog_tests_logs")
+	tempDirPath := filepath.Join(coreutils.GetCliPersistentTempDirPath(), "jfrog_tests_logs")
 	return tempDirPath, fileutils.CreateDirIfNotExist(tempDirPath)
 }
 
@@ -284,41 +283,6 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	err := cmd.Run()
 	errorutils.CheckError(err)
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
-}
-
-// Prepare the .git environment for the test. Takes an existing folder and making it .git dir.
-// sourceDirPath - Relative path to the source dir to change to .git
-// targetDirPath - Relative path to the target created .git dir, usually 'testdata' under the parent dir.
-func PrepareDotGitDir(t *testing.T, sourceDirPath, targetDirPath string) (string, string) {
-	// Get path to create .git folder in
-	baseDir, _ := os.Getwd()
-	baseDir = filepath.Join(baseDir, targetDirPath)
-	// Create .git path and make sure it is clean
-	dotGitPath := filepath.Join(baseDir, ".git")
-	RemovePath(dotGitPath, t)
-	// Get the path of the .git candidate path
-	dotGitPathTest := filepath.Join(baseDir, sourceDirPath)
-	// Rename the .git candidate
-	RenamePath(dotGitPathTest, dotGitPath, t)
-	return baseDir, dotGitPath
-}
-
-// Removing the provided path from the filesystem
-func RemovePath(testPath string, t *testing.T) {
-	err := fileutils.RemovePath(testPath)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-}
-
-// Renaming from old path to new path.
-func RenamePath(oldPath, newPath string, t *testing.T) {
-	err := fileutils.RenamePath(oldPath, newPath)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
 }
 
 func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {

@@ -3,6 +3,9 @@ package missioncontrol
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/missioncontrol/commands"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli/docs/missioncontrol/config"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/jpdadd"
@@ -10,9 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/licenseacquire"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/licensedeploy"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/licenserelease"
-	"github.com/jfrog/jfrog-cli/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/config"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -179,7 +180,7 @@ func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
 		"You can also configure these parameters later using the 'jfrog mc c' command.\n"+
 		"Configure now?", cliutils.OfferConfig)
-	confirmed := cliutils.AskYesNo(msg, false)
+	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {
 		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
 		return nil, nil

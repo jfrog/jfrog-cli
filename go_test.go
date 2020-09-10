@@ -7,17 +7,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/jfrog/gocmd/executers"
-	"github.com/jfrog/jfrog-cli/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/utils/version"
+	"github.com/stretchr/testify/assert"
 )
 
 // Testing build info capabilities for go project.
@@ -99,7 +98,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	initGoTest(t)
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()
@@ -117,7 +116,7 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	initGoTest(t)
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
-	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()
@@ -136,7 +135,7 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	buildNumber := "1"
 	oldHomeDir, newHomeDir := prepareHomeDir(t)
 
-	defer os.Setenv(cliutils.HomeDir, oldHomeDir)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
 	defer os.RemoveAll(newHomeDir)
 
 	wd, err := os.Getwd()

@@ -4,7 +4,7 @@ package bash
 
 import (
 	"fmt"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"path/filepath"
@@ -23,7 +23,7 @@ complete -F _jfrog -o default jfrog
 `
 
 func WriteBashCompletionScript() {
-	homeDir, err := cliutils.GetJfrogHomeDir()
+	homeDir, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		log.Error(err)
 		return
