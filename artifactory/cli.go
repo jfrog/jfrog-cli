@@ -39,6 +39,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
@@ -94,7 +95,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/setprops"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/upload"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/use"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
@@ -1563,7 +1563,7 @@ func shouldSkipGoFlagParsing() bool {
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 	return exists
 }
@@ -1577,7 +1577,7 @@ func shouldSkipNpmFlagParsing() bool {
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Npm)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 	return exists
 }
@@ -1591,7 +1591,7 @@ func shouldSkipNugetFlagParsing() bool {
 
 	_, exists, err := utils.GetProjectConfFilePath(utils.Nuget)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 	return exists
 }
@@ -1604,7 +1604,7 @@ func shouldSkipMavenFlagParsing() bool {
 	}
 	_, exists, err := utils.GetProjectConfFilePath(utils.Maven)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 	return exists
 }
@@ -1617,7 +1617,7 @@ func shouldSkipGradleFlagParsing() bool {
 	}
 	_, exists, err := utils.GetProjectConfFilePath(utils.Gradle)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 	return exists
 }

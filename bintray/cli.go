@@ -10,6 +10,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/bintray/commands"
+	"github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	accesskeysdoc "github.com/jfrog/jfrog-cli/docs/bintray/accesskeys"
 	configdocs "github.com/jfrog/jfrog-cli/docs/bintray/config"
@@ -32,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/bintray/versionpublish"
 	"github.com/jfrog/jfrog-cli/docs/bintray/versionshow"
 	"github.com/jfrog/jfrog-cli/docs/bintray/versionupdate"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/bintray"
 	"github.com/jfrog/jfrog-client-go/bintray/auth"
@@ -1049,7 +1049,7 @@ func stream(c *cli.Context) error {
 	}
 	err = commands.Stream(streamDetails, os.Stdout)
 	if err != nil {
-		cliutils.ExitOnErr(err)
+		coreutils.ExitOnErr(err)
 	}
 
 	return nil

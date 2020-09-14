@@ -3,10 +3,10 @@ package missioncontrol
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	configdocs "github.com/jfrog/jfrog-cli/docs/missioncontrol/config"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/jpdadd"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/jpddelete"

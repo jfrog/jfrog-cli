@@ -6,19 +6,20 @@ package main
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"strings"
 
+	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"github.com/jfrog/jfrog-cli/completion/shells/bash"
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/log"
 )
 
 func main() {
 	log.SetDefaultLogger()
 	dir, err := os.Getwd()
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	if strings.HasSuffix(dir, "bash") {
 		writeScript(bash.BashAutocomplete)
 	} else if strings.HasSuffix(dir, "zsh") {

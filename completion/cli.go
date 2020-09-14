@@ -2,9 +2,9 @@ package completion
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli/completion/shells/bash"
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	bash_docs "github.com/jfrog/jfrog-cli/docs/completion/bash"
 	zsh_docs "github.com/jfrog/jfrog-cli/docs/completion/zsh"
 )

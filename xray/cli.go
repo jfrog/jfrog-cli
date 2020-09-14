@@ -3,8 +3,8 @@ package xray
 import (
 	"errors"
 	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/xray/commands"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
