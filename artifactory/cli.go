@@ -2146,7 +2146,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
 
 	return commands.Exec(buildPublishCmd)
 }
