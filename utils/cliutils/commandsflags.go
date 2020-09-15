@@ -1,10 +1,11 @@
 package cliutils
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"sort"
 	"strconv"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
@@ -1103,7 +1104,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls,
+		envInclude, envExclude, insecureTls, threads,
 	},
 	BuildAddDependencies: {
 		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
