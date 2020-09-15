@@ -68,14 +68,14 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			})
 		if err != nil {
 			finalErr = err
-			log.Error("failed getting signature from plugin: %", f.Name())
+			log.Error("failed getting signature from plugin: " + f.Name())
 			continue
 		}
 		curSignature := new(components.PluginSignature)
 		err = json.Unmarshal([]byte(output), &curSignature)
 		if err != nil {
 			finalErr = err
-			log.Error("failed unmarshalling signature from plugin: %", f.Name())
+			log.Error("failed unmarshalling signature from plugin: " + f.Name())
 		}
 		curSignature.ExecutablePath = execPath
 		signatures = append(signatures, curSignature)
@@ -103,7 +103,11 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 }
 
 func GetPlugins() []cli.Command {
-	// Intentionally ignoring error to avoid failing if running other commands.
-	signatures, _ := getPluginsSignatures()
+	signatures, err := getPluginsSignatures()
+	if err != nil {
+		// Intentionally ignoring error to avoid failing if running other commands.
+		log.Error("failed adding plugins as commands: " + err.Error())
+		return []cli.Command{}
+	}
 	return signaturesToCommands(signatures)
 }
