@@ -2,13 +2,13 @@ package main
 
 import (
 	"errors"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -52,7 +52,7 @@ func authenticateDistribution() string {
 
 	var err error
 	if distAuth, err = distributionDetails.CreateDistAuthConfig(); err != nil {
-		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
+		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
 	distributionDetails.DistributionUrl = distAuth.GetUrl()
 	distHttpDetails = distAuth.CreateHttpClientDetails()
@@ -383,7 +383,7 @@ func TestCreateBundleText(t *testing.T) {
 	cleanDistributionTest(t)
 }
 
-// Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc. 
+// Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
 func runRb(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)
 	assert.NoError(t, err)

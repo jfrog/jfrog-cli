@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -73,18 +73,18 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
 	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 
 	// Create http client
 	client, err := httpclient.ClientBuilder().Build()
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 
 	// Send public and private keys to Distribution
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
 	resp, body, err := client.SendPut(*tests.RtDistributionUrl+"api/v1/keys/pgp", []byte(content), distHttpDetails)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusOK {
 		log.Error(resp.Status)
 		log.Error(string(body))
@@ -94,7 +94,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	// Send public key to Artifactory
 	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.RtUrl+"api/security/keys/trusted", []byte(content), artHttpDetails)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 		log.Error(resp.Status)
 		log.Error(string(body))

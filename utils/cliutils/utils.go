@@ -30,15 +30,6 @@ func init() {
 	coreutils.SetVersion(CliVersion)
 }
 
-func ExitOnErr(err error) {
-	if err, ok := err.(coreutils.CliError); ok {
-		traceExit(err.ExitCode, err)
-	}
-	if exitCode := coreutils.GetExitCode(err, 0, 0, false); exitCode != coreutils.ExitCodeNoError {
-		traceExit(exitCode, err)
-	}
-}
-
 func GetCliError(err error, success, failed int, failNoOp bool) error {
 	switch coreutils.GetExitCode(err, success, failed, failNoOp) {
 	case coreutils.ExitCodeError:
@@ -54,13 +45,6 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 	default:
 		return nil
 	}
-}
-
-func traceExit(exitCode coreutils.ExitCode, err error) {
-	if err != nil && len(err.Error()) > 0 {
-		log.Error(err)
-	}
-	os.Exit(exitCode.Code)
 }
 
 type detailedSummaryRecord struct {

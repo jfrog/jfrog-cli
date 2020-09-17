@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
@@ -82,7 +83,7 @@ func authenticate() string {
 	cred += getArtifactoryTestCredentials()
 	var err error
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
-		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
+		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
 	artifactoryDetails.Url = artAuth.GetUrl()
 	artifactoryDetails.SshUrl = artAuth.GetSshUrl()
@@ -3193,7 +3194,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4107,7 +4108,7 @@ func TestAccessTokenCreate(t *testing.T) {
 
 	// Set new logger with output redirection to a buffer, so we can extract the token from the command output
 	previousLog := log.Logger
-	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
