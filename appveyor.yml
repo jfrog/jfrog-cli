@@ -54,7 +54,9 @@ environment:
   matrix:
   - VET:
     TEST_SUIT:
-      go vet github.com\jfrog\jfrog-cli
+      go vet github.com\jfrog\jfrog-cli &&
+      .\\build\\build.bat &&
+      .\\jfrog.exe --version
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS%  --test.artifactory=true"
