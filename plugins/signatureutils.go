@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 )
 
-// Command used to extract a signature plugin, and to execute plugin commands.
+// Command used to extract a plugin's signature, and to execute plugin commands.
 type SignatureCmd struct {
 	execPath string
 	Command  []string
