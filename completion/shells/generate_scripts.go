@@ -13,7 +13,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"github.com/jfrog/jfrog-cli/completion/shells/bash"
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 )
 
 func main() {
@@ -25,16 +24,16 @@ func main() {
 	} else if strings.HasSuffix(dir, "zsh") {
 		writeScript(zsh.ZshAutocomplete)
 	} else {
-		cliutils.ExitOnErr(errors.New("Unexpected script to create"))
+		coreutils.ExitOnErr(errors.New("Unexpected script to create"))
 	}
 }
 
 func writeScript(script string) {
 	scriptFile, err := os.Create("jfrog")
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	defer scriptFile.Close()
 	err = os.Chmod("jfrog", os.ModePerm)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	_, err = scriptFile.WriteString(script)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 }
