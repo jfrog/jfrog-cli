@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	gpgKeyId                        = "234503"
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
 	artifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
@@ -33,13 +32,19 @@ type distributableDistributionStatus string
 type receivedDistributionStatus string
 
 const (
-	Open                 distributableDistributionStatus = "OPEN"
-	ReadyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
-	Signed               distributableDistributionStatus = "SIGNED"
-	NotDistributed       receivedDistributionStatus      = "Not distributed"
-	InProgress           receivedDistributionStatus      = "In progress"
-	Completed            receivedDistributionStatus      = "Completed"
-	Failed               receivedDistributionStatus      = "Failed"
+	// Release bundle created and open for changes:
+	open distributableDistributionStatus = "OPEN"
+	// Relese bundle is signed, but not stored:
+	signed distributableDistributionStatus = "SIGNED"
+	// Release bundle is signed and stored, but not scanned by Xray:
+	stored distributableDistributionStatus = "STORED"
+	// Release bundle is signed, stored and scanned by Xray:
+	readyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
+
+	NotDistributed receivedDistributionStatus = "Not distributed"
+	InProgress     receivedDistributionStatus = "In progress"
+	Completed      receivedDistributionStatus = "Completed"
+	Failed         receivedDistributionStatus = "Failed"
 )
 
 // GET api/v1/release_bundle/:name/:version
@@ -141,6 +146,18 @@ func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, 
 		time.Sleep(time.Second)
 	}
 	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
+}
+
+// Assert release bundle status is OPEN
+func AssertReleaseBundleOpen(t *testing.T, distributableResponse *distributableResponse) {
+	assert.NotNil(t, distributableResponse)
+	assert.Equal(t, open, distributableResponse.State)
+}
+
+// Assert release bundle status is SIGNED, STORED or READY_FOR_DISTRIBUTION
+func AssertReleaseBundleSigned(t *testing.T, distributableResponse *distributableResponse) {
+	assert.NotNil(t, distributableResponse)
+	assert.Contains(t, []distributableDistributionStatus{signed, stored, readyForDistribution}, distributableResponse.State)
 }
 
 // Wait for distribution of a release bundle
