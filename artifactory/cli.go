@@ -2807,6 +2807,12 @@ func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableT
 		return nil, err
 	}
 
+	// Take InsecureTls value from options since it is not saved in config.
+	confDetails.InsecureTls = details.InsecureTls
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
+	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
+
+	// Create initial access token if needed.
 	if !excludeRefreshableTokens {
 		err = config.CreateInitialRefreshableTokensIfNeeded(confDetails)
 		if err != nil {
@@ -2814,10 +2820,6 @@ func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableT
 		}
 	}
 
-	// Take InsecureTls value from options since it is not saved in config.
-	confDetails.InsecureTls = details.InsecureTls
-	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
 	return confDetails, nil
 }
 
