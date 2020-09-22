@@ -2,16 +2,17 @@ package main
 
 import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/utils/log"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/plugins"
 	"os"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/bintray"
 	"github.com/jfrog/jfrog-cli/completion"
-	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/missioncontrol"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/xray"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -76,7 +77,7 @@ func main() {
 	if cleanupErr := fileutils.CleanOldDirs(); cleanupErr != nil {
 		clientLog.Warn(cleanupErr)
 	}
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 }
 
 func execMain() error {
@@ -98,7 +99,7 @@ func execMain() error {
 }
 
 func getCommands() []cli.Command {
-	return []cli.Command{
+	cliNameSpaces := []cli.Command{
 		{
 			Name:        cliutils.CmdArtifactory,
 			Usage:       "Artifactory commands",
@@ -125,4 +126,5 @@ func getCommands() []cli.Command {
 			Subcommands: completion.GetCommands(),
 		},
 	}
+	return append(cliNameSpaces, plugins.GetPlugins()...)
 }

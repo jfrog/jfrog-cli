@@ -36,7 +36,7 @@ pipelines:
             tag: 1.0.0
       environmentVariables:
         readOnly:
-          GOPROXY: https://gocenter.io
+          #GOPROXY: https://gocenter.io
           CI: "true"
 
     steps:

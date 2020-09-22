@@ -3,6 +3,7 @@ package xray
 import (
 	"errors"
 	"github.com/codegangsta/cli"
+	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/xray/commands"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
@@ -18,11 +19,11 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "offline-update",
 			Usage:        offlineupdate.Description,
-			HelpName:     common.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
+			HelpName:     corecommon.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),
 			Aliases:      []string{"ou"},
-			BashComplete: common.CreateBashCompletionFunc(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,
 		},
 	}

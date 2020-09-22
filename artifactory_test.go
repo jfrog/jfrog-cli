@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
@@ -82,7 +83,7 @@ func authenticate() string {
 	cred += getArtifactoryTestCredentials()
 	var err error
 	if artAuth, err = artifactoryDetails.CreateArtAuthConfig(); err != nil {
-		cliutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
+		coreutils.ExitOnErr(errors.New("Failed while attempting to authenticate with Artifactory: " + err.Error()))
 	}
 	artifactoryDetails.Url = artAuth.GetUrl()
 	artifactoryDetails.SshUrl = artAuth.GetSshUrl()
@@ -740,7 +741,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 
 	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
 	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testdata/*c*in")
-	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"syncDir"+string(os.PathSeparator), false)
 	assert.NoError(t, err)
 	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
 
@@ -758,7 +759,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 
 	// Download repo1/syncDir/ to out/ and sync out/
 	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator))
-	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"syncDir"+string(os.PathSeparator), false)
 	assert.NoError(t, err)
 	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep7(), paths, t)
 
@@ -780,12 +781,13 @@ func checkSyncedDirContent(expected, actual []string, t *testing.T) {
 // Check if the path equals to an existing file (for a file) OR
 // if the path is a prefix of some path of an existing file (for a dir).
 func isExclusivelyExistLocally(expected, actual []string) error {
+	expectedLastIndex := len(expected) - 1
 	for _, v := range actual {
 		for i, r := range expected {
 			if strings.HasPrefix(r, v) || v == r {
 				break
 			}
-			if i == len(actual)-1 {
+			if i == expectedLastIndex {
 				return errors.New("Should not have : " + v)
 			}
 		}
@@ -3192,7 +3194,7 @@ func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
 	previousLog := log.Logger
-	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
@@ -4106,7 +4108,7 @@ func TestAccessTokenCreate(t *testing.T) {
 
 	// Set new logger with output redirection to a buffer, so we can extract the token from the command output
 	previousLog := log.Logger
-	newLog := log.NewLogger(coreutils.GetCliLogLevel(), nil)
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 

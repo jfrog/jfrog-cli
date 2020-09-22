@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	gpgKeyId                        = "234503"
 	distributionGpgKeyCreatePattern = `{"public_key":"%s","private_key":"%s"}`
 	artifactoryGpgKeyCreatePattern  = `{"alias":"cli tests distribution key","public_key":"%s"}`
 )
@@ -33,13 +32,19 @@ type distributableDistributionStatus string
 type receivedDistributionStatus string
 
 const (
-	Open                 distributableDistributionStatus = "OPEN"
-	ReadyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
-	Signed               distributableDistributionStatus = "SIGNED"
-	NotDistributed       receivedDistributionStatus      = "Not distributed"
-	InProgress           receivedDistributionStatus      = "In progress"
-	Completed            receivedDistributionStatus      = "Completed"
-	Failed               receivedDistributionStatus      = "Failed"
+	// Release bundle created and open for changes:
+	open distributableDistributionStatus = "OPEN"
+	// Relese bundle is signed, but not stored:
+	signed distributableDistributionStatus = "SIGNED"
+	// Release bundle is signed and stored, but not scanned by Xray:
+	stored distributableDistributionStatus = "STORED"
+	// Release bundle is signed, stored and scanned by Xray:
+	readyForDistribution distributableDistributionStatus = "READY_FOR_DISTRIBUTION"
+
+	NotDistributed receivedDistributionStatus = "Not distributed"
+	InProgress     receivedDistributionStatus = "In progress"
+	Completed      receivedDistributionStatus = "Completed"
+	Failed         receivedDistributionStatus = "Failed"
 )
 
 // GET api/v1/release_bundle/:name/:version
@@ -73,18 +78,18 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	// Read gpg public and private keys
 	keysDir := filepath.Join(tests.GetTestResourcesPath(), "distribution")
 	publicKey, err := ioutil.ReadFile(filepath.Join(keysDir, "public.key"))
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	privateKey, err := ioutil.ReadFile(filepath.Join(keysDir, "private.key"))
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 
 	// Create http client
 	client, err := httpclient.ClientBuilder().Build()
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 
 	// Send public and private keys to Distribution
 	content := fmt.Sprintf(distributionGpgKeyCreatePattern, publicKey, privateKey)
 	resp, body, err := client.SendPut(*tests.RtDistributionUrl+"api/v1/keys/pgp", []byte(content), distHttpDetails)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusOK {
 		log.Error(resp.Status)
 		log.Error(string(body))
@@ -94,7 +99,7 @@ func SendGpgKeys(artHttpDetails httputils.HttpClientDetails, distHttpDetails htt
 	// Send public key to Artifactory
 	content = fmt.Sprintf(artifactoryGpgKeyCreatePattern, publicKey)
 	resp, body, err = client.SendPost(*tests.RtUrl+"api/security/keys/trusted", []byte(content), artHttpDetails)
-	cliutils.ExitOnErr(err)
+	coreutils.ExitOnErr(err)
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 		log.Error(resp.Status)
 		log.Error(string(body))
@@ -141,6 +146,18 @@ func VerifyLocalBundleExistence(t *testing.T, bundleName, bundleVersion string, 
 		time.Sleep(time.Second)
 	}
 	t.Errorf("Release bundle %s/%s exist: %v unlike expected", bundleName, bundleVersion, expectExist)
+}
+
+// Assert release bundle status is OPEN
+func AssertReleaseBundleOpen(t *testing.T, distributableResponse *distributableResponse) {
+	assert.NotNil(t, distributableResponse)
+	assert.Equal(t, open, distributableResponse.State)
+}
+
+// Assert release bundle status is SIGNED, STORED or READY_FOR_DISTRIBUTION
+func AssertReleaseBundleSigned(t *testing.T, distributableResponse *distributableResponse) {
+	assert.NotNil(t, distributableResponse)
+	assert.Contains(t, []distributableDistributionStatus{signed, stored, readyForDistribution}, distributableResponse.State)
 }
 
 // Wait for distribution of a release bundle

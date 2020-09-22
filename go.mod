@@ -7,7 +7,7 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gocmd v0.1.15
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core master
+	github.com/jfrog/jfrog-cli-core dev
 	github.com/jfrog/jfrog-client-go v0.13.3
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
@@ -19,8 +19,8 @@ require (
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
 
-replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core master
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
 
-// replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.15-0.20200525160901-de2df438f4c2
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
