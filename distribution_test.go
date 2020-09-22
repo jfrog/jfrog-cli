@@ -293,15 +293,12 @@ func TestSignReleaseBundle(t *testing.T) {
 	// Create a release bundle without --sign and make sure it is not signed
 	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in")
 	distributableResponse := inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
-	assert.NotNil(t, distributableResponse)
-	assert.Equal(t, inttestutils.Open, distributableResponse.State)
+	inttestutils.AssertReleaseBundleOpen(t, distributableResponse)
 
 	// Sign the release bundle and make sure it is signed
 	runRb(t, "rbs", tests.BundleName, bundleVersion)
 	distributableResponse = inttestutils.GetLocalBundle(t, tests.BundleName, bundleVersion, distHttpDetails)
-	assert.NotNil(t, distributableResponse)
-
-	assert.True(t, distributableResponse.State == inttestutils.Signed || distributableResponse.State == inttestutils.ReadyForDistribution)
+	inttestutils.AssertReleaseBundleSigned(t, distributableResponse)
 
 	// Cleanup
 	cleanDistributionTest(t)
