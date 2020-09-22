@@ -4152,12 +4152,10 @@ func TestRefreshableTokens(t *testing.T) {
 	uploadedFiles := 1
 	err := uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a1.in", uploadedFiles)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
-	curAccessToken, curRefreshToken, err := getTokensFromConfig(tests.RtServerId)
+	curAccessToken, curRefreshToken, err := getTokensFromConfig(t, tests.RtServerId)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	assert.NotEmpty(t, curAccessToken)
@@ -4170,48 +4168,40 @@ func TestRefreshableTokens(t *testing.T) {
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a2.in", uploadedFiles)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 
 	// Make refresh token invalid. Refreshing using tokens should fail, so new tokens should be generated using credentials.
 	err = setRefreshTokenInConfig(t, tests.RtServerId, "invalid-token")
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a3.in", uploadedFiles)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 
 	// Make password invalid. Refreshing should succeed, and new token should be obtained.
 	err = setPasswordInConfig(t, tests.RtServerId, "invalid-pass")
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/b/b1.in", uploadedFiles)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	curAccessToken, curRefreshToken, err = assertTokensChanged(t, tests.RtServerId, curAccessToken, curRefreshToken)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 
@@ -4220,12 +4210,10 @@ func TestRefreshableTokens(t *testing.T) {
 	uploadedFiles++
 	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/b/b2.in", uploadedFiles)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
-	newAccessToken, newRefreshToken, err := getTokensFromConfig(tests.RtServerId)
+	newAccessToken, newRefreshToken, err := getTokensFromConfig(t, tests.RtServerId)
 	if err != nil {
-		assert.NoError(t, err)
 		return
 	}
 	assert.Equal(t, curAccessToken, newAccessToken)
@@ -4238,6 +4226,7 @@ func TestRefreshableTokens(t *testing.T) {
 func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 	details, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
+		assert.NoError(t, err)
 		return err
 	}
 	for _, server := range details {
@@ -4252,6 +4241,7 @@ func setRefreshTokenInConfig(t *testing.T, serverId, token string) error {
 func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	details, err := config.GetAllArtifactoryConfigs()
 	if err != nil {
+		assert.NoError(t, err)
 		return err
 	}
 	for _, server := range details {
@@ -4263,17 +4253,19 @@ func setPasswordInConfig(t *testing.T, serverId, password string) error {
 	return nil
 }
 
-func getTokensFromConfig(serverId string) (accessToken, refreshToken string, err error) {
+func getTokensFromConfig(t *testing.T, serverId string) (accessToken, refreshToken string, err error) {
 	details, err := config.GetArtifactorySpecificConfig(serverId, false, false)
 	if err != nil {
-		return "", "", nil
+		assert.NoError(t, err)
+		return "", "", err
 	}
 	return details.AccessToken, details.RefreshToken, nil
 }
 
 func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken string) (newAccessToken, newRefreshToken string, err error) {
-	newAccessToken, newRefreshToken, err = getTokensFromConfig(serverId)
+	newAccessToken, newRefreshToken, err = getTokensFromConfig(t, serverId)
 	if err != nil {
+		assert.NoError(t, err)
 		return "", "", err
 	}
 	assert.NotEqual(t, curAccessToken, newAccessToken)
@@ -4284,6 +4276,7 @@ func assertTokensChanged(t *testing.T, serverId, curAccessToken, curRefreshToken
 func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, serverId string, source string, expectedResults int) error {
 	err := cli.Exec("upload", source, tests.RtRepo1, "--server-id="+serverId)
 	if err != nil {
+		assert.NoError(t, err)
 		return err
 	}
 	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
