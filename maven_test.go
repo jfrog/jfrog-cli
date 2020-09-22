@@ -61,6 +61,21 @@ func TestNativeMavenBuildWithServerID(t *testing.T) {
 	cleanMavenTest()
 }
 
+func TestMavenBuildWithoutDeployer(t *testing.T) {
+	initMavenTest(t, false)
+	pomPath := createMavenProject(t)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", "maven_without_deployer", tests.MavenConfig)
+	destPath := filepath.Join(filepath.Dir(pomPath), ".jfrog", "projects")
+	createConfigFile(destPath, configFilePath, t)
+	oldHomeDir := changeWD(t, filepath.Dir(pomPath))
+	pomPath = strings.Replace(pomPath, `\`, "/", -1) // Windows compatibility.
+	repoLocalSystemProp := localRepoSystemProperty + localRepoDir
+	runCli(t, "mvn", "clean", "install", "-f", pomPath, repoLocalSystemProp)
+	err := os.Chdir(oldHomeDir)
+	assert.NoError(t, err)
+	cleanMavenTest()
+}
+
 // This test check legacy behavior whereby the Maven config yml contains the username, url and password.
 func TestMavenBuildWithCredentials(t *testing.T) {
 	initMavenTest(t, false)
