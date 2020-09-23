@@ -17,10 +17,10 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.14.0
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.14.0
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v0.1.0
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v0.1.0
 
-// replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.16-0.20200915092507-5004d59f2c22
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.16
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
