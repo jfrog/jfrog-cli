@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
-	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -23,8 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
+	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
+
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
@@ -34,6 +36,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils/tests/xray"
@@ -4281,4 +4284,42 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 	}
 	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
 	return nil
+}
+
+func TestBuildOfBuildsGenericDownload(t *testing.T) {
+	// Initialize
+	initArtifactoryTest(t)
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	fBuildNumber, sBuildNumber := "1", "2"
+
+	// Upload dependencies
+	artifactoryCli.Exec("upload", "testdata/a/a1.in", tests.RtRepo1+"/BuildOfBuildGenericDownload-1", "--build-name="+tests.RtBuildOfBuildGenericUpload, "--build-number="+fBuildNumber)
+	artifactoryCli.Exec("upload", "testdata/a/a2.in", tests.RtRepo2+"/BuildOfBuildGenericDownload-2", "--build-name="+tests.RtBuildOfBuildGenericUpload, "--build-number="+sBuildNumber)
+
+	//Download dependencies
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/*", tests.Out+"/", "--build-name="+tests.RtBuildOfBuildGenericDownload, "--build-number="+fBuildNumber)
+	artifactoryCli.Exec("dl", tests.RtRepo2+"/*", tests.Out+"/", "--build-name="+tests.RtBuildOfBuildGenericDownload, "--build-number="+fBuildNumber)
+
+	// Publish buildInfo
+	buildConfig := &utils.BuildConfiguration{BuildName: tests.RtBuildOfBuildGenericDownload, BuildNumber: fBuildNumber}
+	publishConfig := new(buildinfocmd.Configuration)
+	publishCmd := buildinfo.NewBuildPublishCommand().SetBuildConfiguration(buildConfig).SetConfig(publishConfig).SetRtDetails(artifactoryDetails)
+	buildInfo, err := publishCmd.GenerateBuildInfo(servicesManager)
+	assert.NoError(t, err)
+	for _, dep := range buildInfo.Modules[0].Dependencies {
+		if dep.Id == "BuildOfBuildGenericDownload-2" {
+			assert.True(t, strings.HasPrefix(dep.Build, tests.RtBuildOfBuildGenericUpload+"/"+sBuildNumber+"/"))
+		} else {
+			assert.True(t, strings.HasPrefix(dep.Build, tests.RtBuildOfBuildGenericUpload+"/"+fBuildNumber+"/"))
+		}
+		idx := strings.LastIndex(dep.Build, "/")
+		assert.True(t, len(dep.Build[idx:]) > 3)
+	}
+	//Cleanup
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGenericUpload, fBuildNumber))
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGenericUpload, sBuildNumber))
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGenericDownload, fBuildNumber))
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildOfBuildGenericDownload, artHttpDetails)
+	cleanArtifactoryTest()
 }
