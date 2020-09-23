@@ -8,11 +8,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -173,4 +178,57 @@ func createHomeConfigAndLocalRepo(t *testing.T, encryptPassword bool) (err error
 	// The directory wil be deleted on the test cleanup as part as the out dir.
 	localRepoDir, err = ioutil.TempDir(os.Getenv(coreutils.HomeDir), "tmp.m2")
 	return err
+}
+
+// build two maven projects named DependencyMvnProject & MavenProject. MavenProject uses DependencyMvnProject as its dependency.
+// By building & publishing MavenProject to Artifactory, one of the steps to do so is to collect its dependencies' build property.
+// This tests validate that each dependency inside the build info, update its build property by searching it in Artifactory.
+func TestBuildOfBuildsMaven(t *testing.T) {
+	// Initialize
+	initMavenTest(t, false)
+	dependencyMvnProject, mvnProject := copyMavenProjectsToOutDir(t)
+	buildNumber := "1"
+
+	//install dependency project.
+	changeWD(t, dependencyMvnProject)
+	runCli(t, "mvn", "clean", "install", "--build-name="+tests.RtBuildOfBuildMavenDependencyProject, "--build-number="+buildNumber)
+
+	// Publish maven dependency project's buildInfo.
+	runCli(t, "bp", tests.RtBuildOfBuildMavenDependencyProject, buildNumber)
+
+	// Install maven project which depends on DependencyMvnProject.
+	changeWD(t, mvnProject)
+	runCli(t, "mvn", "clean", "install", "--build-name="+tests.RtBuildOfBuildMavenProject, "--build-number="+buildNumber)
+
+	// Genarete build info for maven project.
+	buildConfig := &utils.BuildConfiguration{BuildName: tests.RtBuildOfBuildMavenProject, BuildNumber: buildNumber}
+	publishConfig := new(buildinfocmd.Configuration)
+	publishCmd := buildinfo.NewBuildPublishCommand().SetBuildConfiguration(buildConfig).SetConfig(publishConfig).SetRtDetails(artifactoryDetails)
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	buildInfo, err := publishCmd.GenerateBuildInfo(servicesManager)
+	assert.NoError(t, err)
+
+	// Validate that the dependency got the value of its build.
+	dep := buildInfo.Modules[0].Dependencies[0]
+	assert.True(t, strings.HasPrefix(dep.Build, tests.RtBuildOfBuildMavenDependencyProject+"/"+buildNumber+"/"))
+	idx := strings.LastIndex(dep.Build, "/")
+	assert.True(t, len(dep.Build[idx:]) > 3)
+
+	// Cleanup
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenDependencyProject, buildNumber))
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenProject, buildNumber))
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildOfBuildGenericDownload, artHttpDetails)
+	cleanMavenTest()
+}
+
+func copyMavenProjectsToOutDir(t *testing.T) (string, string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	mavenTestdataPath := filepath.Join(wd, "testdata", "maven")
+	assert.NoError(t, fileutils.CopyDir(mavenTestdataPath, tests.Out, true, nil), err)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", "buildofbuilds", tests.MavenConfig)
+	createConfigFile(filepath.Join(tests.Out, "dependencyproject", ".jfrog", "projects"), configFilePath, t)
+	createConfigFile(filepath.Join(tests.Out, "project", ".jfrog", "projects"), configFilePath, t)
+	return filepath.Join(wd, tests.Out, "dependencyproject"), filepath.Join(wd, tests.Out, "project")
 }

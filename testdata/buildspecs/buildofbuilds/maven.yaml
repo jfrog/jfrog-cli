@@ -1,0 +1,11 @@
+version: 1
+type: maven
+
+resolver:
+    releaseRepo: ${MAVEN_REPO1}
+    snapshotRepo: ${MAVEN_REPO1}
+    serverID: default
+deployer:
+    releaseRepo: ${MAVEN_REPO1}
+    snapshotRepo: ${MAVEN_REPO1}
+    serverID: default
