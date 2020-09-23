@@ -1,3 +1,8 @@
+## 1.39.5 (September 23, 2020)
+- Bug fix - "jfrog rt mvn install" throws `Target repository cannot be empty` even when deployment is disabled.
+- Bug fix - Download & Sync command fails in Windows environment.
+- Bug fix - Using `--insecure-tls` does not work with automatically created access token.
+
 ## 1.39.4 (September 10, 2020)
 - Bug fix - Set/Delete props unified errors output.
 - Bug fix - Delete props command always returns a failure.
