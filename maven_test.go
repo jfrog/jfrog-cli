@@ -225,7 +225,7 @@ func TestBuildOfBuildsMaven(t *testing.T) {
 func copyMavenProjectsToOutDir(t *testing.T) (string, string) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	mavenTestdataPath := filepath.Join(wd, "testdata", "maven")
+	mavenTestdataPath := filepath.Join(wd, "testdata", "mavenproject", "buildofbuildsproject")
 	assert.NoError(t, fileutils.CopyDir(mavenTestdataPath, tests.Out, true, nil), err)
 	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", "buildofbuilds", tests.MavenConfig)
 	createConfigFile(filepath.Join(tests.Out, "dependencyproject", ".jfrog", "projects"), configFilePath, t)
