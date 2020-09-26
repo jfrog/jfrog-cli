@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	cliproxy "github.com/jfrog/jfrog-cli/utils/tests/proxy/server"
 	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
@@ -218,7 +217,6 @@ func TestBuildOfBuildsMaven(t *testing.T) {
 	// Cleanup
 	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenDependencyProject, buildNumber))
 	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenProject, buildNumber))
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildOfBuildGenericDownload, artHttpDetails)
 	cleanMavenTest()
 }
 

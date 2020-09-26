@@ -1,0 +1,25 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+group = 'org.jfrog.cli'
+version = '1.0-SNAPSHOT'
+status = 'Integration'
+
+configurations {
+    published
+}
+
+manifest {
+    attributes 'provider': 'gradle'
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+artifactoryPublish {
+    dependsOn sourceJar
+}
+artifacts {
+    published sourceJar
+}

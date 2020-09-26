@@ -1,0 +1,25 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+repositories {
+    maven {
+        url "http://127.0.0.1:8081/artifactory/"+"${GRADLE_REPO}"
+        credentials {               // Optional resolver credentials (leave out to use anonymous resolution)
+            username = "${RT_USERNAME}" // Artifactory user name
+            password = "${RT_PASSWORD}" // Password or API Key
+        }
+    }
+}
+dependencies {
+    implementation('org.jfrog.cli:greeter:1.0-SNAPSHOT')
+}
+
+configurations {
+    published
+}
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    published sourceJar
+}

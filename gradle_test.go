@@ -1,15 +1,20 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+
 	"github.com/stretchr/testify/assert"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 )
@@ -129,4 +134,51 @@ func initGradleTest(t *testing.T) {
 		t.Skip("Skipping Gradle test. To run Gradle test add the '-test.gradle=true' option.")
 	}
 	createJfrogHomeConfig(t, true)
+}
+
+func TestBuildOfBuildsGradle(t *testing.T) {
+	// Initialize
+	initGradleTest(t)
+	dependencyGradleProject, gradleProject := copyGradleProjectsToOutDir(t)
+	buildNumber := "1"
+
+	//install dependency project.
+	changeWD(t, dependencyGradleProject)
+	runCli(t, "gradle", "clean", "build", "artifactoryPublish", "--build-name="+tests.RtBuildOfBuildGradleDependencyProject, "--build-number="+buildNumber)
+
+	// Install maven project which depends on DependencyGradleProject.
+	changeWD(t, gradleProject)
+	runCli(t, "gradle", "clean", "build", "artifactoryPublish", "--build-name="+tests.RtBuildOfBuildGradleProject, "--build-number="+buildNumber)
+
+	// Genarete build info for maven project.
+	buildConfig := &utils.BuildConfiguration{BuildName: tests.RtBuildOfBuildGradleProject, BuildNumber: buildNumber}
+	publishConfig := new(buildinfocmd.Configuration)
+	publishCmd := buildinfo.NewBuildPublishCommand().SetBuildConfiguration(buildConfig).SetConfig(publishConfig).SetRtDetails(artifactoryDetails)
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	assert.NoError(t, err)
+	buildInfo, err := publishCmd.GenerateBuildInfo(servicesManager)
+	assert.NoError(t, err)
+
+	// Validate that the dependency got the value of its build.
+	dep := buildInfo.Modules[0].Dependencies[0]
+	assert.True(t, strings.HasPrefix(dep.Build, tests.RtBuildOfBuildGradleDependencyProject+"/"+buildNumber+"/"))
+	idx := strings.LastIndex(dep.Build, "/")
+	assert.True(t, len(dep.Build[idx:]) > 3)
+
+	// Cleanup
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGradleDependencyProject, buildNumber))
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGradleProject, buildNumber))
+	cleanGradleTest()
+}
+
+func copyGradleProjectsToOutDir(t *testing.T) (string, string) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	gradleTestdataPath := filepath.Join(wd, "testdata", "gradle", "buildofbuildsprojects")
+	assert.NoError(t, fileutils.CopyDir(gradleTestdataPath, tests.Out, true, nil), err)
+	configFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "buildspecs", "buildofbuilds", tests.GradleConfig)
+	createConfigFile(filepath.Join(tests.Out, "greeter", ".jfrog", "projects"), configFilePath, t)
+	createConfigFile(filepath.Join(tests.Out, "hello", ".jfrog", "projects"), configFilePath, t)
+	createConfigFile(filepath.Join(tests.Out, "hello"), filepath.Join(tests.Out, "hello", "build.gradle"), t)
+	return filepath.Join(wd, tests.Out, "greeter"), filepath.Join(wd, tests.Out, "hello")
 }

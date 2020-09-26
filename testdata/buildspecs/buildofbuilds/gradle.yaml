@@ -1,0 +1,9 @@
+version: 1
+type: gradle
+
+resolver:
+    repo: ${GRADLE_REPO}
+    serverID: default
+deployer:
+    repo: ${GRADLE_REPO}
+    serverID: default
