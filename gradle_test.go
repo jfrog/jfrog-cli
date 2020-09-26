@@ -142,8 +142,11 @@ func TestBuildOfBuildsGradle(t *testing.T) {
 	dependencyGradleProject, gradleProject := copyGradleProjectsToOutDir(t)
 	buildNumber := "1"
 
+	// Clean failed runs.
+	tests.CleanLocalPartialBuildInfo(t, tests.RtBuildOfBuildGradleProject, tests.RtBuildOfBuildGradleDependencyProject, buildNumber)
+
 	//install dependency project.
-	changeWD(t, dependencyGradleProject)
+	oldHomeDir := changeWD(t, dependencyGradleProject)
 	runCli(t, "gradle", "clean", "build", "artifactoryPublish", "--build-name="+tests.RtBuildOfBuildGradleDependencyProject, "--build-number="+buildNumber)
 
 	// Install maven project which depends on DependencyGradleProject.
@@ -166,8 +169,8 @@ func TestBuildOfBuildsGradle(t *testing.T) {
 	assert.True(t, len(dep.Build[idx:]) > 3)
 
 	// Cleanup
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGradleDependencyProject, buildNumber))
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGradleProject, buildNumber))
+	assert.NoError(t, os.Chdir(oldHomeDir))
+	tests.CleanLocalPartialBuildInfo(t, tests.RtBuildOfBuildGradleProject, tests.RtBuildOfBuildGradleDependencyProject, buildNumber)
 	cleanGradleTest()
 }
 

@@ -567,3 +567,8 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 		}
 	}
 }
+
+func CleanLocalPartialBuildInfo(t *testing.T, depProject, project, buildNumber string) {
+	assert.NoError(t, artUtils.RemoveBuildDir(depProject, buildNumber))
+	assert.NoError(t, artUtils.RemoveBuildDir(project, buildNumber))
+}

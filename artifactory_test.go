@@ -4292,6 +4292,8 @@ func TestBuildOfBuildsGenericDownload(t *testing.T) {
 	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
 	assert.NoError(t, err)
 	fBuildNumber, sBuildNumber := "1", "2"
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGenericUpload, fBuildNumber))
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildGenericUpload, sBuildNumber))
 
 	// Upload dependencies
 	artifactoryCli.Exec("upload", "testdata/a/a1.in", tests.RtRepo1+"/BuildOfBuildGenericDownload-1", "--build-name="+tests.RtBuildOfBuildGenericUpload, "--build-number="+fBuildNumber)

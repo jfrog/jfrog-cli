@@ -188,8 +188,11 @@ func TestBuildOfBuildsMaven(t *testing.T) {
 	dependencyMvnProject, mvnProject := copyMavenProjectsToOutDir(t)
 	buildNumber := "1"
 
+	// Clean failed runs.
+	tests.CleanLocalPartialBuildInfo(t, tests.RtBuildOfBuildMavenDependencyProject, tests.RtBuildOfBuildMavenProject, buildNumber)
+
 	//install dependency project.
-	changeWD(t, dependencyMvnProject)
+	oldHomeDir := changeWD(t, dependencyMvnProject)
 	runCli(t, "mvn", "clean", "install", "--build-name="+tests.RtBuildOfBuildMavenDependencyProject, "--build-number="+buildNumber)
 
 	// Publish maven dependency project's buildInfo.
@@ -215,8 +218,8 @@ func TestBuildOfBuildsMaven(t *testing.T) {
 	assert.True(t, len(dep.Build[idx:]) > 3)
 
 	// Cleanup
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenDependencyProject, buildNumber))
-	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildOfBuildMavenProject, buildNumber))
+	assert.NoError(t, os.Chdir(oldHomeDir))
+	tests.CleanLocalPartialBuildInfo(t, tests.RtBuildOfBuildMavenDependencyProject, tests.RtBuildOfBuildMavenProject, buildNumber)
 	cleanMavenTest()
 }
 
