@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
@@ -3193,15 +3192,9 @@ func TestPing(t *testing.T) {
 func TestSummaryReport(t *testing.T) {
 	initArtifactoryTest(t)
 
-	previousLog := log.Logger
-	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
+	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
-
-	// Set new logger with output redirection to buffer
-	buffer := &bytes.Buffer{}
-	newLog.SetOutputWriter(buffer)
-	log.SetLogger(newLog)
 
 	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
 	assert.NoError(t, err)
@@ -4106,15 +4099,9 @@ func TestArtifactoryReplicationCreate(t *testing.T) {
 func TestAccessTokenCreate(t *testing.T) {
 	initArtifactoryTest(t)
 
-	// Set new logger with output redirection to a buffer, so we can extract the token from the command output
-	previousLog := log.Logger
-	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
+	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
-
-	buffer := &bytes.Buffer{}
-	newLog.SetOutputWriter(buffer)
-	log.SetLogger(newLog)
 
 	// Create access token for current user
 	err := artifactoryCli.Exec("atc", *tests.RtUser)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -566,4 +567,36 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 			}
 		}
 	}
+}
+
+// Set HomeDir to desired location.
+// Caller is responsible to set the old home location back.
+func SetJfrogHome(newHome string) (oldHome string, err error) {
+	homePath, err := filepath.Abs(newHome)
+	if err != nil {
+		return "", err
+	}
+
+	oldHome, err = coreutils.GetJfrogHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	err = os.Setenv(coreutils.HomeDir, homePath)
+	if err != nil {
+		return "", err
+	}
+
+	return oldHome, nil
+}
+
+// Set new logger with output redirection to a buffer.
+// Caller is responsible to set the old log back.
+func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
+	previousLog = log.Logger
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
+	buffer = &bytes.Buffer{}
+	newLog.SetOutputWriter(buffer)
+	log.SetLogger(newLog)
+	return buffer, previousLog
 }

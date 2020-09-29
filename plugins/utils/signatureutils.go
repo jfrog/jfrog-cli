@@ -1,20 +1,21 @@
-package plugins
+package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/codegangsta/cli"
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
-	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 )
+
+const pluginsErrorPrefix = "jfrog cli plugins: "
 
 // Command used to extract a plugin's signature, and to execute plugin commands.
 type SignatureCmd struct {
@@ -44,23 +45,19 @@ func (signatureCmd *SignatureCmd) GetErrWriter() io.WriteCloser {
 // Gets all the installed plugins' signatures by looping over the plugins dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
-	pluginsDir, err := coreutils.GetJfrogPluginsDir()
-	if err != nil {
-		return signatures, err
-	}
-	exists, err := fileutils.IsDirExists(pluginsDir, false)
-	if err != nil || !exists {
-		return signatures, err
-	}
-
-	files, err := ioutil.ReadDir(pluginsDir)
+	pluginsNames, err := GetAllPluginsNames()
 	if err != nil {
 		return signatures, errorutils.CheckError(err)
 	}
 
+	pluginsDir, err := coreutils.GetJfrogPluginsDir()
+	if err != nil {
+		return signatures, err
+	}
+
 	var finalErr error
-	for _, f := range files {
-		execPath := filepath.Join(pluginsDir, f.Name())
+	for _, plugin := range pluginsNames {
+		execPath := filepath.Join(pluginsDir, plugin)
 		output, err := gofrogcmd.RunCmdOutput(
 			&SignatureCmd{
 				execPath,
@@ -68,19 +65,27 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			})
 		if err != nil {
 			finalErr = err
-			log.Error("failed getting signature from plugin: " + f.Name())
+			logSkippablePluginsError("failed getting signature from plugin", plugin, err)
 			continue
 		}
 		curSignature := new(components.PluginSignature)
 		err = json.Unmarshal([]byte(output), &curSignature)
 		if err != nil {
 			finalErr = err
-			log.Error("failed unmarshalling signature from plugin: " + f.Name())
+			logSkippablePluginsError("failed unmarshalling signature from plugin", plugin, err)
+			continue
 		}
 		curSignature.ExecutablePath = execPath
 		signatures = append(signatures, curSignature)
 	}
 	return signatures, finalErr
+}
+
+func logSkippablePluginsError(msg, pluginName string, err error) {
+	log.Error(fmt.Sprintf("%s%s: '%s'. Skiping...", pluginsErrorPrefix, msg, pluginName))
+	if err != nil {
+		log.Error("Error was: " + err.Error())
+	}
 }
 
 // Converts signatures to commands to be appended to the CLI commands.
@@ -92,10 +97,14 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 			Usage:           sig.Usage,
 			SkipFlagParsing: true,
 			Action: func(c *cli.Context) error {
-				return gofrogcmd.RunCmd(
+				output, err := gofrogcmd.RunCmdOutput(
 					&SignatureCmd{
 						sig.ExecutablePath,
 						c.Args()})
+				if err == nil {
+					log.Output(output)
+				}
+				return err
 			},
 		})
 	}
@@ -106,7 +115,7 @@ func GetPlugins() []cli.Command {
 	signatures, err := getPluginsSignatures()
 	if err != nil {
 		// Intentionally ignoring error to avoid failing if running other commands.
-		log.Error("failed adding plugins as commands: " + err.Error())
+		log.Error("failed adding certain plugins as commands. Last error: " + err.Error())
 		return []cli.Command{}
 	}
 	return signaturesToCommands(signatures)
