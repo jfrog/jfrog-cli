@@ -105,8 +105,8 @@ def buildRpmAndDeb(version, architectures) {
 
     if (built) {
         stage("Deploy deb and rpm") {
-            withCredentials([string(credentialsId: 'deb-rpm-deploy-access-token', variable: 'DEB_RPM_DEPLOY_ACCESS_TOKEN')]) {
-                options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$DEB_RPM_DEPLOY_ACCESS_TOKEN"
+            withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+                options = "--url https://releases.jfrog.io/artifactory --flat --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
                 sh """#!/bin/bash
                     builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.i386.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/i386 $options
                     builder/jfrog rt u $jfrogCliRepoDir/build/deb_rpm/*.x86_64.deb jfrog-debs/pool/jfrog-cli/ --deb=xenial,bionic,eoan,focal/contrib/amd64 $options
