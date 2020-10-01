@@ -31,7 +31,7 @@ npm install jfrog-cli-go
 ````
 ## Homebrew
 ````
-brew install jfrog-cli-go
+brew install jfrog-cli
 ````
 ## Docker
 ````
