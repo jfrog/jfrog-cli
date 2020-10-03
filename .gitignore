@@ -14,6 +14,7 @@ artifactory/utils/pip/dependencies/deptreescript.go
 
 # JFrog executable
 jfrog
+jfrog.exe
 
 # Vim
 *~
@@ -21,3 +22,7 @@ jfrog
 
 # IOS
 *.DS_Store
+
+# Chocolatey build files
+build/chocolatey/tools/
+*.nupkg
