@@ -2583,7 +2583,7 @@ func repoDeleteCmd(c *cli.Context) error {
 	}
 
 	repoDeleteCmd := repository.NewRepoDeleteCommand()
-	repoDeleteCmd.SetRepoKey(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
+	repoDeleteCmd.SetRepoPattern(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(repoDeleteCmd)
 }
 
