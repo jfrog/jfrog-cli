@@ -5,6 +5,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -18,8 +19,9 @@ const jfrogPluginTestsHome = ".jfrogCliPluginsTest"
 const pluginTemplateName = "hello-frog"
 
 func TestPluginFullCycle(t *testing.T) {
+	initPluginsTest(t)
 	// Create temp jfrog home
-	oldHome, err := tests.SetJfrogHome(jfrogPluginTestsHome)
+	oldHome, err := coreTests.SetJfrogHome(jfrogPluginTestsHome)
 	if err != nil {
 		return
 	}
@@ -80,7 +82,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli, buffer *bytes
 		return err
 	}
 
-	// Write the command output to the origin
+	// Write the command output to the origin.
 	content := buffer.Bytes()
 	buffer.Reset()
 
@@ -132,4 +134,10 @@ func verifyPluginInPluginsDir(t *testing.T, shouldExist bool) error {
 	}
 	assert.Equal(t, shouldExist, actualExists)
 	return nil
+}
+
+func initPluginsTest(t *testing.T) {
+	if !*tests.TestPlugins {
+		t.Skip("Skipping Plugins test. To run Plugins test add the '-test.plugins=true' option.")
+	}
 }

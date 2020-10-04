@@ -58,6 +58,7 @@ var TestNuget *bool
 var HideUnitTestLog *bool
 var TestPip *bool
 var PipVirtualEnv *string
+var TestPlugins *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -88,6 +89,7 @@ func init() {
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
+	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 }
 
 func CleanFileSystem() {
@@ -567,27 +569,6 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 			}
 		}
 	}
-}
-
-// Set HomeDir to desired location.
-// Caller is responsible to set the old home location back.
-func SetJfrogHome(newHome string) (oldHome string, err error) {
-	homePath, err := filepath.Abs(newHome)
-	if err != nil {
-		return "", err
-	}
-
-	oldHome, err = coreutils.GetJfrogHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	err = os.Setenv(coreutils.HomeDir, homePath)
-	if err != nil {
-		return "", err
-	}
-
-	return oldHome, nil
 }
 
 // Set new logger with output redirection to a buffer.

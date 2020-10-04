@@ -1,6 +1,6 @@
 package install
 
-const Description = "Uninstall plugin."
+const Description = "Uninstall a JFrog CLI plugin."
 
 var Usage = []string{"jfrog plugin uninstall <plugin name>"}
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -22,7 +23,13 @@ func TestUnitTests(t *testing.T) {
 		os.Exit(1)
 	}
 
-	coreTests.SetJfrogHome(homePath)
+	oldHome, err := coreTests.SetJfrogHome(homePath)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	defer os.Setenv(coreutils.HomeDir, oldHome)
+
 	packages := clientTests.GetTestPackages("./...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
 	clientTests.RunTests(packages, *tests.HideUnitTestLog)

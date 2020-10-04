@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/log"
-	"github.com/jfrog/jfrog-cli/utils/tests"
+	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -20,7 +20,7 @@ const pluginMockPath = "../../testdata/plugins/plugin-mock"
 
 func TestRunUninstallCmd(t *testing.T) {
 	// Create temp jfrog home
-	oldHome, err := tests.SetJfrogHome(jfrogPluginTestsHome)
+	oldHome, err := coreTests.SetJfrogHome(jfrogPluginTestsHome)
 	if err != nil {
 		return
 	}

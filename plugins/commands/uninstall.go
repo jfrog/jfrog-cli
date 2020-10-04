@@ -4,12 +4,11 @@ import (
 	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func UninstallCmd(c *cli.Context) error {
@@ -20,35 +19,30 @@ func UninstallCmd(c *cli.Context) error {
 }
 
 func runUninstallCmd(requestedPlugin string) error {
-	plugins, err := utils.GetAllPluginsNames()
-	if err != nil {
-		return err
-	}
-
-	if len(plugins) == 0 {
-		return errors.New("no plugins found")
-	}
-
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		return err
 	}
+	pluginPath := filepath.Join(pluginsDir, requestedPlugin)
+	exists, err := fileutils.IsFileExists(pluginPath, false)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return generateNoPluginFoundError(requestedPlugin)
+	}
 
-	for _, plugin := range plugins {
-		if strings.EqualFold(plugin, requestedPlugin) {
-			ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
-			if err != nil {
-				return err
-			}
-			if !ci {
-				if !coreutils.AskYesNo("Are you sure you want to delete plugin: \""+plugin+"\"?", false) {
-					return nil
-				}
-			}
-			return os.Remove(filepath.Join(pluginsDir, plugin))
+	ci, err := clientutils.GetBoolEnvValue(coreutils.CI, false)
+	if err != nil {
+		return err
+	}
+	if !ci {
+		if !coreutils.AskYesNo("Are you sure you want to uninstall plugin: \""+requestedPlugin+"\"?", false) {
+			return nil
 		}
 	}
-	return generateNoPluginFoundError(requestedPlugin)
+	return os.Remove(filepath.Join(pluginsDir, requestedPlugin))
+
 }
 
 func generateNoPluginFoundError(pluginName string) error {

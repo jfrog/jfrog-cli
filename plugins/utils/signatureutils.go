@@ -8,7 +8,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"os/exec"
@@ -47,7 +46,7 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
 	pluginsNames, err := GetAllPluginsNames()
 	if err != nil {
-		return signatures, errorutils.CheckError(err)
+		return signatures, err
 	}
 
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
