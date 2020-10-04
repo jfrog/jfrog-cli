@@ -1,7 +1,7 @@
 node("docker") {
     cleanWs()
     def architectures = [
-            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe'],
+            [pkg: 'jfrog-cli-windows-amd64', goos: 'windows', goarch: 'amd64', fileExtention: '.exe', chocoImage: 'linuturk/mono-choco'],
             [pkg: 'jfrog-cli-linux-386', goos: 'linux', goarch: '386', fileExtention: '', debianImage: 'i386/ubuntu:19.10', debianArch: 'i386'],
             [pkg: 'jfrog-cli-linux-amd64', goos: 'linux', goarch: 'amd64', fileExtention: '', debianImage: 'ubuntu:19.10', debianArch: 'x86_64', rpmImage: 'centos:8'],
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtention: ''],
@@ -51,6 +51,10 @@ node("docker") {
 
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
+
+            stage('Build and Publish Chocolatey') {
+                publishChocoPackage(version,jfrogCliRepoDir)
+            }
 
             stage('Npm Publish') {
                 publishNpmPackage(jfrogCliRepoDir)
@@ -192,6 +196,22 @@ def publishNpmPackage(jfrogCliRepoDir) {
                 echo "registry=https://registry.npmjs.org" >> .npmrc
                 ./node-v8.11.1-linux-x64/bin/npm publish
             '''
+        }
+    }
+}
+
+def publishChocoPackage(version,jfrogCliRepoDir) {
+    downloadToolsCert()
+    def architecture = architectures.find { it.goos == "windows" && it.goarch == "adm64" }
+    build(architecture.goos, architecture.goarch, architecture.pkg, 'jfrog.exe')
+    dir(jfrogCliRepoDir+'build/chocolatey') {
+        withCredentials([string(credentialsId: 'choco-api-key', variable: 'CHOCO_API_KEY')]) {
+            sh """#!/bin/bash
+                mv $jfrogCliRepoDir/jfrog.exe $jfrogCliRepoDir/build/chocolatey/tools
+                cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/tools
+                docker run -v \$PWD:/work -w /work $architecture.chocoImage pack version=$version
+                docker run -v \$PWD:/work -w /work $architecture.chocoImage push --apiKey \$CHOCO_API_KEY jfrog-cli.$version.nupkg
+            """
         }
     }
 }
