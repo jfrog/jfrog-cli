@@ -6,6 +6,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -127,12 +128,16 @@ func verifyPluginInPluginsDir(t *testing.T, shouldExist bool) error {
 		return err
 	}
 
-	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, pluginTemplateName), false)
+	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, utils.GetPluginExecutableName(pluginTemplateName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
-	assert.Equal(t, shouldExist, actualExists)
+	if shouldExist {
+		assert.True(t, actualExists, "expected plugin executable to be preset in plugins dir after installing")
+	} else {
+		assert.False(t, actualExists, "expected plugin executable not to be preset in plugins dir after uninstalling")
+	}
 	return nil
 }
 

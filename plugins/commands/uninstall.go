@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -23,8 +24,8 @@ func runUninstallCmd(requestedPlugin string) error {
 	if err != nil {
 		return err
 	}
-	pluginPath := filepath.Join(pluginsDir, requestedPlugin)
-	exists, err := fileutils.IsFileExists(pluginPath, false)
+	pluginExePath := filepath.Join(pluginsDir, pluginsutils.GetPluginExecutableName(requestedPlugin))
+	exists, err := fileutils.IsFileExists(pluginExePath, false)
 	if err != nil {
 		return err
 	}
@@ -41,8 +42,7 @@ func runUninstallCmd(requestedPlugin string) error {
 			return nil
 		}
 	}
-	return os.Remove(filepath.Join(pluginsDir, requestedPlugin))
-
+	return os.Remove(pluginExePath)
 }
 
 func generateNoPluginFoundError(pluginName string) error {

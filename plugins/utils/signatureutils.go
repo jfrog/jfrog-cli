@@ -8,10 +8,14 @@ import (
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
+	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const pluginsErrorPrefix = "jfrog cli plugins: "
@@ -44,19 +48,28 @@ func (signatureCmd *SignatureCmd) GetErrWriter() io.WriteCloser {
 // Gets all the installed plugins' signatures by looping over the plugins dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
 	var signatures []*components.PluginSignature
-	pluginsNames, err := GetAllPluginsNames()
-	if err != nil {
-		return signatures, err
-	}
-
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		return signatures, err
 	}
+	exists, err := fileutils.IsDirExists(pluginsDir, false)
+	if err != nil || !exists {
+		return signatures, err
+	}
+
+	files, err := ioutil.ReadDir(pluginsDir)
+	if err != nil {
+		return signatures, errorutils.CheckError(err)
+	}
 
 	var finalErr error
-	for _, plugin := range pluginsNames {
-		execPath := filepath.Join(pluginsDir, plugin)
+	for _, f := range files {
+		if f.IsDir() {
+			logSkippablePluginsError("unexpected directory in plugins directory", f.Name(), nil)
+			continue
+		}
+		pluginName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
+		execPath := filepath.Join(pluginsDir, f.Name())
 		output, err := gofrogcmd.RunCmdOutput(
 			&SignatureCmd{
 				execPath,
@@ -64,14 +77,14 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 			})
 		if err != nil {
 			finalErr = err
-			logSkippablePluginsError("failed getting signature from plugin", plugin, err)
+			logSkippablePluginsError("failed getting signature from plugin", pluginName, err)
 			continue
 		}
 		curSignature := new(components.PluginSignature)
 		err = json.Unmarshal([]byte(output), &curSignature)
 		if err != nil {
 			finalErr = err
-			logSkippablePluginsError("failed unmarshalling signature from plugin", plugin, err)
+			logSkippablePluginsError("failed unmarshalling signature from plugin", pluginName, err)
 			continue
 		}
 		curSignature.ExecutablePath = execPath

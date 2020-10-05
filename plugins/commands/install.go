@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
@@ -94,7 +95,7 @@ func buildSrcPath(pluginName, version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(pluginsRegistryRepo, pluginName, version, arc, getPluginExecutableName(pluginName)), nil
+	return path.Join(pluginsRegistryRepo, pluginName, version, arc, pluginsutils.GetPluginExecutableName(pluginName)), nil
 }
 
 func createPluginsDir(pluginsDir string) error {
@@ -102,12 +103,13 @@ func createPluginsDir(pluginsDir string) error {
 }
 
 func downloadPlugin(pluginsDir, pluginName, downloadUrl string) error {
+	exeName := pluginsutils.GetPluginExecutableName(pluginName)
 	log.Debug("Downloading plugin from: ", downloadUrl)
 	downloadDetails := &httpclient.DownloadFileDetails{
 		FileName:      pluginName,
 		DownloadPath:  downloadUrl,
 		LocalPath:     pluginsDir,
-		LocalFileName: pluginName,
+		LocalFileName: exeName,
 	}
 
 	client, err := httpclient.ClientBuilder().Build()
@@ -125,7 +127,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string) error {
 		return err
 	}
 	log.Debug("Plugin downloaded successfully.")
-	return os.Chmod(filepath.Join(pluginsDir, pluginName), 0777)
+	return os.Chmod(filepath.Join(pluginsDir, exeName), 0777)
 }
 
 func getNameAndVersion(requested string) (name, version string, err error) {
@@ -137,13 +139,6 @@ func getNameAndVersion(requested string) (name, version string, err error) {
 		return "", "", errors.New("unexpected number of '@' separators in provided argument")
 	}
 	return split[0], split[1], nil
-}
-
-func getPluginExecutableName(plugin string) string {
-	if coreutils.IsWindows() {
-		return plugin + ".exe"
-	}
-	return plugin
 }
 
 // Get the architecture name corresponding to the architectures that exist in registry.
