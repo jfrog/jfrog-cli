@@ -24,7 +24,7 @@ Several features of the JFrog CLI makes your scripts more efficient and reliable
 
 # Download and Installation
 
-You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit the [JFrog CLI Download Page](https://www.jfrog.com/getcli/) for details.
+You can either install JFrog CLI using one of the supported installers or download its executable directly. Visit the [Install JFrog CLI Page](https://jfrog.com/getcli/) for details.
 
 # Building the Executable
 
