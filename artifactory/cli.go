@@ -1830,10 +1830,6 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	downloadCommand.SetProgressBarComponents(progressBar, logFile)
-	if progressBar != nil {
-		defer progressBar.Quit()
-	}
-
 	err = commands.Exec(downloadCommand)
 	defer logUtils.CloseLogFile(downloadCommand.LogFile())
 	result := downloadCommand.Result()
@@ -1886,10 +1882,6 @@ func uploadCmd(c *cli.Context) error {
 		return err
 	}
 	uploadCmd.SetProgressBarComponents(progressBar, logFile)
-	if progressBar != nil {
-		defer progressBar.Quit()
-	}
-
 	err = commands.Exec(uploadCmd)
 	defer logUtils.CloseLogFile(uploadCmd.LogFile())
 	result := uploadCmd.Result()
