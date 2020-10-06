@@ -100,6 +100,7 @@ The types are:
 | `-test.go` | Go tests |
 | `-test.pip` | Pip tests |
 | `-test.nuget` | Nuget tests |
+| `-test.plugins` | Plugins tests |
 
 * Running the tests will create builds and repositories with timestamps, 
 for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
@@ -209,6 +210,12 @@ In addition to [general optional flags](#Usage) you can use the following option
 ##### Examples
 ````
 go test -v github.com/jfrog/jfrog-cli -test.pip [flags]
+````
+
+#### Plugins tests
+* To run Plugins tests execute the following command:
+````
+go test -v github.com/jfrog/jfrog-cli -test.plugins
 ````
 
 ### Bintray tests

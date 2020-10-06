@@ -11,6 +11,7 @@ const (
 	CmdMissionControl = "mc"
 	CmdXray           = "xr"
 	CmdCompletion     = "completion"
+	CmdPlugin         = "plugin"
 
 	// Download
 	DownloadMinSplitKb    = 5120

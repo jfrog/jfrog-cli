@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -57,6 +58,7 @@ var TestNuget *bool
 var HideUnitTestLog *bool
 var TestPip *bool
 var PipVirtualEnv *string
+var TestPlugins *bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -87,6 +89,7 @@ func init() {
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
 	PipVirtualEnv = flag.String("rt.pipVirtualEnv", "", "Pip virtual-environment path")
+	TestPlugins = flag.Bool("test.plugins", false, "Test Plugins")
 }
 
 func CleanFileSystem() {
@@ -566,4 +569,15 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 			}
 		}
 	}
+}
+
+// Set new logger with output redirection to a buffer.
+// Caller is responsible to set the old log back.
+func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
+	previousLog = log.Logger
+	newLog := log.NewLogger(corelog.GetCliLogLevel(), nil)
+	buffer = &bytes.Buffer{}
+	newLog.SetOutputWriter(buffer)
+	log.SetLogger(newLog)
+	return buffer, previousLog
 }

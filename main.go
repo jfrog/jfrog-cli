@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/plugins"
+	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -125,6 +126,11 @@ func getCommands() []cli.Command {
 			Usage:       "Generate autocomplete scripts",
 			Subcommands: completion.GetCommands(),
 		},
+		{
+			Name:        cliutils.CmdPlugin,
+			Usage:       "Plugins commands",
+			Subcommands: plugins.GetCommands(),
+		},
 	}
-	return append(cliNameSpaces, plugins.GetPlugins()...)
+	return append(cliNameSpaces, utils.GetPlugins()...)
 }
