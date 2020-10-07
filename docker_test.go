@@ -1,6 +1,11 @@
 package main
 
 import (
+	"os"
+	"path"
+	"strings"
+	"testing"
+
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
@@ -9,10 +14,6 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"path"
-	"strings"
-	"testing"
 )
 
 func InitDockerTests() {
@@ -137,7 +138,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 	buildNumber := "1"
 
 	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerVirtualRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerRemoteRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	// Validate

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
@@ -53,6 +54,7 @@ var TestGradle *bool
 var TestMaven *bool
 var DockerRepoDomain *string
 var DockerVirtualRepo *string
+var DockerRemoteRepo *string
 var DockerTargetRepo *string
 var TestNuget *bool
 var HideUnitTestLog *bool
@@ -84,6 +86,7 @@ func init() {
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
+	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
 	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker local repo")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
