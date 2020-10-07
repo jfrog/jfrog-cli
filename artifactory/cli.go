@@ -14,7 +14,9 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -97,7 +99,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/use"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
@@ -1824,18 +1825,7 @@ func downloadCmd(c *cli.Context) error {
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummaryt(c.Bool("detailed-summary"))
 
-	// Init progress bar.
-	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
-	if err != nil {
-		return err
-	}
-	downloadCommand.SetProgressBarComponents(progressBar, logFile)
-	if progressBar != nil {
-		defer progressBar.Quit()
-	}
-
-	err = commands.Exec(downloadCommand)
-	defer logUtils.CloseLogFile(downloadCommand.LogFile())
+	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), rtDetails.Url, err)
 
@@ -1880,22 +1870,30 @@ func uploadCmd(c *cli.Context) error {
 	}
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c))
 
+	err = execWithProgress(uploadCmd)
+	result := uploadCmd.Result()
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+}
+
+type CommandWithProgress interface {
+	commands.Command
+	SetProgress(ioUtils.Progress)
+}
+
+func execWithProgress(cmd CommandWithProgress) error {
 	// Init progress bar.
 	progressBar, logFile, err := progressbar.InitProgressBarIfPossible()
 	if err != nil {
 		return err
 	}
-	uploadCmd.SetProgressBarComponents(progressBar, logFile)
 	if progressBar != nil {
+		cmd.SetProgress(progressBar)
+		defer logUtils.CloseLogFile(logFile)
 		defer progressBar.Quit()
 	}
-
-	err = commands.Exec(uploadCmd)
-	defer logUtils.CloseLogFile(uploadCmd.LogFile())
-	result := uploadCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
-
-	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+	return commands.Exec(cmd)
 }
 
 func moveCmd(c *cli.Context) error {
