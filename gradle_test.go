@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
 	"github.com/stretchr/testify/assert"
 
