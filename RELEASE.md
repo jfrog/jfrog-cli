@@ -1,3 +1,8 @@
+## 1.39.6 (October 11, 2020) 
+- Bug fix - docker pull fails to collect buildinfo from a remote repo
+- Bug fix - Command summary gets cut by the progress bar
+- Bug fix - Bug fix - Artifactory upload - Allow escaping slashes using back-slashes as part of the build name value
+
 ## 1.39.5 (September 23, 2020)
 - Bug fix - "jfrog rt mvn install" throws `Target repository cannot be empty` even when deployment is disabled.
 - Bug fix - Download & Sync command fails in Windows environment.
