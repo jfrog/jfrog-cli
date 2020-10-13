@@ -1,4 +1,8 @@
-## 1.39.6 (October 11, 2020) 
+## 1.39.7 (October 13, 2020)
+- Add refreshable tokens exclusion for default server
+- Bugfix - Docker push fails to update layers properties
+
+## 1.39.6 (October 11, 2020)
 - Bug fix - docker pull fails to collect buildinfo from a remote repo
 - Bug fix - Command summary gets cut by the progress bar
 - Bug fix - Bug fix - Artifactory upload - Allow escaping slashes using back-slashes as part of the build name value
