@@ -52,8 +52,10 @@ node("docker") {
         if ("$EXECUTION_MODE".toString().equals("Publish packages")) {
             buildRpmAndDeb(version, architectures)
 
+            // Download cert files, to be used for signing the Windows executable, packaged by Chocolatey.
+            downloadToolsCert()
             stage('Build and Publish Chocolatey') {
-                publishChocoPackage(version,jfrogCliRepoDir)
+                publishChocoPackage(version, jfrogCliRepoDir, architectures)
             }
 
             stage('Npm Publish') {
@@ -200,9 +202,8 @@ def publishNpmPackage(jfrogCliRepoDir) {
     }
 }
 
-def publishChocoPackage(version,jfrogCliRepoDir) {
-    downloadToolsCert()
-    def architecture = architectures.find { it.goos == "windows" && it.goarch == "adm64" }
+def publishChocoPackage(version, jfrogCliRepoDir, architectures) {
+    def architecture = architectures.find { it.goos == 'windows' && it.goarch == 'amd64' }
     build(architecture.goos, architecture.goarch, architecture.pkg, 'jfrog.exe')
     dir(jfrogCliRepoDir+'build/chocolatey') {
         withCredentials([string(credentialsId: 'choco-api-key', variable: 'CHOCO_API_KEY')]) {
@@ -210,7 +211,7 @@ def publishChocoPackage(version,jfrogCliRepoDir) {
                 mv $jfrogCliRepoDir/jfrog.exe $jfrogCliRepoDir/build/chocolatey/tools
                 cp $jfrogCliRepoDir/LICENSE $jfrogCliRepoDir/build/chocolatey/tools
                 docker run -v \$PWD:/work -w /work $architecture.chocoImage pack version=$version
-                docker run -v \$PWD:/work -w /work $architecture.chocoImage push --apiKey \$CHOCO_API_KEY jfrog-cli.$version.nupkg
+                docker run -v \$PWD:/work -w /work $architecture.chocoImage push --apiKey \$CHOCO_API_KEY jfrog-cli.${version}.nupkg
             """
         }
     }
