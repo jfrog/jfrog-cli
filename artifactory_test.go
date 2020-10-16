@@ -3591,22 +3591,12 @@ func preUploadBasicTestResources() {
 	artifactoryCli.Exec("upload", uploadPath, targetPath, flags)
 }
 
-func execDeleteRepoRest(repoName string) {
-	client, err := httpclient.ClientBuilder().Build()
+func execDeleteRepo(repoName string) {
+	err := artifactoryCli.Exec("repo-delete", repoName, "--quiet")
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
-	resp, body, err := client.SendDelete(artifactoryDetails.Url+"api/repositories/"+repoName, nil, artHttpDetails)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		log.Error(errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body)))
-		return
-	}
-	log.Info("Repository", repoName, "deleted.")
 }
 
 func execListRepoRest() ([]string, error) {
@@ -3729,7 +3719,7 @@ func cleanUpOldBuilds() {
 }
 
 func cleanUpOldRepositories() {
-	tests.CleanUpOldItems(tests.GetAllRepositoriesNames(), execListRepoRest, execDeleteRepoRest)
+	tests.CleanUpOldItems(tests.GetAllRepositoriesNames(), execListRepoRest, execDeleteRepo)
 }
 
 func createRepos(repos map[*string]string) {
@@ -3755,7 +3745,7 @@ func deleteCreatedRepos() {
 func deleteRepos(repos map[*string]string) {
 	for repoName := range repos {
 		if isRepoExist(*repoName) {
-			execDeleteRepoRest(*repoName)
+			execDeleteRepo(*repoName)
 		}
 	}
 }
