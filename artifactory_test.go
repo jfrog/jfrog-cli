@@ -4093,10 +4093,25 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
-	// Create access token for current user
-	err := artifactoryCli.Exec("atc", *tests.RtUser)
+	// Create access token for current user, implicitly
+	err := artifactoryCli.Exec("atc")
 	assert.NoError(t, err)
 
+	// Check access token
+	checkAccessToken(t, buffer)
+
+	// Create access token for current user, explicitly
+	err = artifactoryCli.Exec("atc", *tests.RtUser)
+	assert.NoError(t, err)
+
+	// Check access token
+	checkAccessToken(t, buffer)
+
+	// Cleanup
+	cleanArtifactoryTest()
+}
+
+func checkAccessToken(t *testing.T, buffer *bytes.Buffer) {
 	// Write the command output to the origin
 	content := buffer.Bytes()
 	buffer.Reset()
@@ -4108,9 +4123,6 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Try ping with the new token
 	err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+*tests.RtUrl+" --access-token="+token).Exec("ping")
 	assert.NoError(t, err)
-
-	// Cleanup
-	cleanArtifactoryTest()
 }
 
 func TestRefreshableTokens(t *testing.T) {
