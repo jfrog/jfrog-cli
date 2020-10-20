@@ -90,7 +90,7 @@ The types are:
 | `-test.nuget` | Nuget tests |
 | `-test.plugins` | Plugins tests |
 
-* Running the tests will create builds and repositories with timestamps, 
+* Running the tests will create builds and repositories with timestamps,
 for example: `cli-tests-rt1-1592990748` and `cli-tests-rt2-1592990748`.<br/>
 Once the tests are completed, the content of these repositories will be deleted.
 
@@ -157,7 +157,8 @@ In addition to [general optional flags](#Usage) you *must* use the following doc
 | --- | --- |
 | `-rt.dockerRepoDomain` | Artifactory Docker registry domain. |
 | `-rt.dockerVirtualRepo` | Artifactory Docker virtual repository name. |
-| `-rt.dockerTargetRepo` | Artifactory Docker repository name. |
+| `-rt.dockerRemoteRepo` | Artifactory Docker remote repository name. |
+| `-rt.dockerTargetRepo` | Artifactory Docker local repository name. |
 
 ##### Examples
 To run docker tests execute the following command (fill out the missing parameters as described below).

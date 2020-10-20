@@ -1,6 +1,11 @@
 package main
 
 import (
+	"os"
+	"path"
+	"strings"
+	"testing"
+
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
@@ -9,10 +14,6 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"path"
-	"strings"
-	"testing"
 )
 
 func InitDockerTests() {
@@ -131,13 +132,13 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 
 func TestDockerFatManifestPull(t *testing.T) {
 	initDockerTest(t)
-
+	for _, dockerRepo := range [...]string{*tests.DockerRemoteRepo, *tests.DockerVirtualRepo} {
 	imageName := "traefik"
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":2.2")
 	buildNumber := "1"
 
 	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerVirtualRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+	artifactoryCli.Exec("docker-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	// Validate
@@ -146,6 +147,7 @@ func TestDockerFatManifestPull(t *testing.T) {
 
 	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
 	inttestutils.DeleteTestDockerImage(imageTag)
+	}
 }
 
 func TestDockerPromote(t *testing.T) {
