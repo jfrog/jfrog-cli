@@ -160,17 +160,16 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	prepareGoProject("", t, true)
-	// Build and publish a go project
+	// Build and publish a go project.
+	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be aviable for the get command
 	runGo("", tests.GoBuildName, buildNumber, t, "go", "build", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 
-	// Act
-	// Go get one of the known pushed dependencies
+	// Go get one of the known dependencies
 	err = tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	assert.NoError(t, err)
 	artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
 	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
 
-	//Assert
 	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote")
 
 	// Cleanup
