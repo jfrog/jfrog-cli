@@ -4117,7 +4117,7 @@ func TestRefreshableTokens(t *testing.T) {
 	initArtifactoryTest(t)
 
 	if *tests.RtAccessToken != "" {
-		t.Skip("Test only with admin and password / APIkey, skipping...")
+		t.Skip("Test only with username and password / APIkey, skipping...")
 	}
 
 	// Create server with initialized refreshable tokens.
