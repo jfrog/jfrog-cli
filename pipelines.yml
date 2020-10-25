@@ -40,12 +40,10 @@ pipelines:
           CI: "true"
 
     steps:
-      # Repositories creators tests - should be running in serial
       - name: Artifactory
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -57,7 +55,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -70,7 +67,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -83,7 +79,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -96,7 +91,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -109,7 +103,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -122,7 +115,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -135,7 +127,6 @@ pipelines:
         type: Bash
         configuration:
           <<: *COMMON_CONFIGURATION
-          affinityGroup: repositoriesCreators
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
@@ -144,7 +135,6 @@ pipelines:
             - *CREATE_RT_ACCESS_TOKEN
             - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.dockerTargetRepo=docker-local -rt.dockerRemoteRepo=docker-remote
 
-      # Parallel tests
       - name: NuGet
         type: Bash
         configuration:
