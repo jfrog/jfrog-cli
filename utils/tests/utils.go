@@ -472,6 +472,7 @@ func AddTimestampToGlobalVars() {
 
 	// Builds/bundles/images
 	BundleName += timestampSuffix
+	DockerBuildName += timestampSuffix
 	DockerImageName += timestampSuffix
 	DotnetBuildName += timestampSuffix
 	GoBuildName += timestampSuffix
