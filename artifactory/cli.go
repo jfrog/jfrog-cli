@@ -2708,7 +2708,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 		return err
 	}
 
-	if c.NArg() != 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -2716,12 +2716,20 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	// If the username is provided as an argument, then it is used when creating the token. 
+	// If not, then the configured username (or the the value of the --user option) is used.
+	var userName string
+	if c.NArg() > 0 {
+		userName = c.Args().Get(0)
+	} else {
+		userName = rtDetails.GetUrl()
+	}
 	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
 	if err != nil {
 		return err
 	}
 	accessTokenCreateCmd := generic.NewAccessTokenCreateCommand()
-	accessTokenCreateCmd.SetUserName(c.Args().Get(0)).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
+	accessTokenCreateCmd.SetUserName(userName).SetRtDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
 	err = commands.Exec(accessTokenCreateCmd)
 	if err != nil {
 		return err
