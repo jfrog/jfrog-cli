@@ -27,9 +27,6 @@ func TestPipInstall(t *testing.T) {
 	// Init pip.
 	initPipTest(t)
 
-	// Init CLI without credential flags.
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", "")
-
 	// Add virtual-environment path to 'PATH' for executing all pip and python commands inside the virtual-environment.
 	pathValue := setPathEnvForPipInstall(t)
 	if t.Failed() {
@@ -87,7 +84,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 
 	args = append(args, "--build-number="+buildNumber)
 
-	err = artifactoryCli.Exec(args...)
+	err = artifactoryCli.WithoutCredentials().Exec(args...)
 	if err != nil {
 		assert.Fail(t, "Failed executing pip-install command", err.Error())
 		cleanPipTest(t, outputFolder)
