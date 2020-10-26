@@ -42,10 +42,12 @@ func TestGoBuildInfo(t *testing.T) {
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
 
-	artifactoryCli.Exec("go", "build", tests.GoRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	err = artifactoryCli.Exec("go", "build", tests.GoRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
 	cleanGoCache(t)
 
-	artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
+	err = artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
+	assert.NoError(t, err)
 	module := "github.com/jfrog/dependency"
 	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
 	artifactoryVersion, err := artAuth.GetVersion()
@@ -143,9 +145,35 @@ func TestGoWithGlobalConfig(t *testing.T) {
 
 	prepareGoProject(newHomeDir, t, false)
 	runGo(ModuleNameJFrogTest, tests.GoBuildName, buildNumber, t, "go", "build", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
-
 	assert.NoError(t, os.Chdir(wd))
 
+	cleanGoTest()
+}
+
+func TestGoGetSpecificVersion(t *testing.T) {
+	// Init test and preper Global config
+	initGoTest(t)
+	buildNumber := "1"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
+	defer os.RemoveAll(newHomeDir)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	prepareGoProject("", t, true)
+	// Build and publish a go project.
+	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be aviable for the get command
+	runGo("", tests.GoBuildName, buildNumber, t, "go", "build", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+
+	// Go get one of the known dependencies
+	err = tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("go", "get", "rsc.io/quote@v1.5.2", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber)
+	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+
+	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote")
+
+	// Cleanup
+	assert.NoError(t, os.Chdir(wd))
 	cleanGoTest()
 }
 
@@ -204,17 +232,19 @@ func TestGoPublishResolve(t *testing.T) {
 	assert.NoError(t, os.Chdir(project1Path))
 
 	// Download dependencies without Artifactory
-	artifactoryCli.Exec("go", "build", tests.GoRepo)
+	artifactoryCli.Exec("go", "build", tests.GoRepo, "--publish-deps=true")
 	cleanGoCache(t)
 
 	// Publish dependency project to Artifactory
-	artifactoryCli.Exec("gp", tests.GoRepo, "v1.0.0")
+	err = artifactoryCli.Exec("gp", tests.GoRepo, "v1.0.0")
+	assert.NoError(t, err)
 	cleanGoCache(t)
 
 	assert.NoError(t, os.Chdir(project2Path))
 
 	// Build the second project, download dependencies from Artifactory
-	artifactoryCli.Exec("go", "build", tests.GoRepo)
+	err = artifactoryCli.Exec("go", "build", tests.GoRepo)
+	assert.NoError(t, err)
 	cleanGoCache(t)
 
 	// Restore workspace
