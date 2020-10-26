@@ -59,9 +59,9 @@ func TestNativeNugetResolve(t *testing.T) {
 		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
 		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
-		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"proj1", "proj2"}, []int{4, 3}},
-		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
-		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2"}, []int{4, 3}},
+		{"multipackagesconfigwithoutmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
+		{"multipackagesconfigwithmodulechnage", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{8}},
+		{"multipackagesconfigwithslnPath", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./multipackagesconfig.sln"}, []string{"proj1", "proj2", "proj3"}, []int{4, 3, 2}},
 		{"multipackagesconfigsingleprojectdir", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj2/", "-SolutionDirectory", "."}, []string{"proj2"}, []int{3}},
 		{"multipackagesconfigsingleprojectconfig", "multipackagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./proj1/packages.config", "-SolutionDirectory", "."}, []string{"proj1"}, []int{4}},
 	}
