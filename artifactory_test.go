@@ -1896,8 +1896,8 @@ func TestArtifactoryDeleteByProps(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFile)
 
 	// Set properties to the directories as well (and their content)
-	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b", "D=5", "--include-dirs")
-	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/c", "D=2", "--include-dirs")
+	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/", "D=5", "--include-dirs")
+	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/c/", "D=2", "--include-dirs")
 
 	//  Set the property D=5 to c1.in, which is a different value then its directory c/
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/a/b/c/c1.in", "D=5")
