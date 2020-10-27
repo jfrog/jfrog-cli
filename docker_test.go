@@ -133,20 +133,20 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 func TestDockerFatManifestPull(t *testing.T) {
 	initDockerTest(t)
 	for _, dockerRepo := range [...]string{*tests.DockerRemoteRepo, *tests.DockerVirtualRepo} {
-	imageName := "traefik"
-	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":2.2")
-	buildNumber := "1"
+		imageName := "traefik"
+		imageTag := path.Join(*tests.DockerRepoDomain, imageName+":2.2")
+		buildNumber := "1"
 
-	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+		// Pull docker image using docker client
+		artifactoryCli.Exec("docker-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
-	// Validate
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.DockerBuildName, buildNumber, t, artHttpDetails)
-	validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
+		// Validate
+		buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.DockerBuildName, buildNumber, t, artHttpDetails)
+		validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
 
-	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
-	inttestutils.DeleteTestDockerImage(imageTag)
+		inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
+		inttestutils.DeleteTestDockerImage(imageTag)
 	}
 }
 
