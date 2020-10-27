@@ -1,10 +1,11 @@
 package cliutils
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"sort"
 	"strconv"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
@@ -1106,10 +1107,10 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, insecureTls,
 	},
 	BuildAddGit: {
-		configFlag, serverId,
+		configFlag, serverId, insecureTls,
 	},
 	BuildScan: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
@@ -1131,79 +1132,79 @@ var commandFlags = map[string][]string{
 		glcQuiet, insecureTls,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, insecureTls,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
-		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
+		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern, insecureTls,
 	},
 	Mvn: {
 		buildName, buildNumber, deploymentThreads, insecureTls,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads,
+		buildName, buildNumber, deploymentThreads, insecureTls,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId,
+		serverId, insecureTls,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, skipLogin, threads,
+		serverId, skipLogin, threads, insecureTls,
 	},
 	DockerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, skipLogin,
+		serverId, skipLogin, insecureTls,
 	},
 	NpmConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, insecureTls,
 	},
 	Npm: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, npmThreads,
+		buildNumber, module, npmThreads, insecureTls,
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module,
+		buildNumber, module, insecureTls,
 	},
 	NugetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, insecureTls,
 	},
 	Nuget: {
 		nugetArgs, solutionRoot, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module,
+		deprecatedAccessToken, buildName, buildNumber, module, insecureTls,
 	},
 	DotnetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, insecureTls,
 	},
 	Dotnet: {
-		buildName, buildNumber, module,
+		buildName, buildNumber, module, insecureTls,
 	},
 	GoConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, insecureTls,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module,
+		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module, insecureTls,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module,
+		deprecatedAccessToken, buildName, buildNumber, module, insecureTls,
 	},
 	GoRecursivePublish: {
-		url, user, password, apikey, accessToken, serverId,
+		url, user, password, apikey, accessToken, serverId, insecureTls,
 	},
 	Ping: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, insecureTls,
 	},
 	Curl: {
-		serverId,
+		serverId, insecureTls,
 	},
 	PipConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, insecureTls,
 	},
 	PipInstall: {
-		buildName, buildNumber, module,
+		buildName, buildNumber, module, insecureTls,
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars,
@@ -1227,46 +1228,46 @@ var commandFlags = map[string][]string{
 	},
 	TemplateConsumer: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, vars,
+		clientCertKeyPath, vars, insecureTls,
 	},
 	RepoDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		clientCertKeyPath, deleteQuiet, insecureTls,
 	},
 	ReplicationDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		clientCertKeyPath, deleteQuiet, insecureTls,
 	},
 	PermissionTargetDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, deleteQuiet,
+		clientCertKeyPath, deleteQuiet, insecureTls,
 	},
 	AccessTokenCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
+		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience, insecureTls,
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, version, target,
+		licenseId, from, to, version, target, insecureTls,
 	},
 	// Mission Control's commands
 	McConfig: {
-		mcUrl, mcAccessToken, mcInteractive,
+		mcUrl, mcAccessToken, mcInteractive, insecureTls,
 	},
 	LicenseAcquire: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, insecureTls,
 	},
 	LicenseDeploy: {
-		mcUrl, mcAccessToken, licenseCount,
+		mcUrl, mcAccessToken, licenseCount, insecureTls,
 	},
 	LicenseRelease: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, insecureTls,
 	},
 	JpdAdd: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, insecureTls,
 	},
 	JpdDelete: {
-		mcUrl, mcAccessToken,
+		mcUrl, mcAccessToken, insecureTls,
 	},
 }
 
