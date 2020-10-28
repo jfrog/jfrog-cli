@@ -42,6 +42,7 @@ func TestGoBuildInfo(t *testing.T) {
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
 
+	cleanGoCache(t)
 	err = artifactoryCli.Exec("go", "build", tests.GoRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	assert.NoError(t, err)
 	cleanGoCache(t)
@@ -179,6 +180,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 
 func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) {
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	cleanGoCache(t)
 	assert.NoError(t, artifactoryGoCli.Exec(args...))
 	cleanGoCache(t)
 	artifactoryCli.Exec("bp", buildName, buildNumber)
@@ -232,6 +234,7 @@ func TestGoPublishResolve(t *testing.T) {
 	assert.NoError(t, os.Chdir(project1Path))
 
 	// Download dependencies without Artifactory
+	cleanGoCache(t)
 	artifactoryCli.Exec("go", "build", tests.GoRepo, "--publish-deps=true")
 	cleanGoCache(t)
 
@@ -265,7 +268,7 @@ func TestGoFallback(t *testing.T) {
 	projectBuild := createGoProject(t, "projectbuild", false)
 
 	assert.NoError(t, os.Chdir(projectBuild))
-
+	cleanGoCache(t)
 	err = artifactoryCli.Exec("go", "build", tests.GoRepo)
 	if err != nil {
 		log.Warn(err)
@@ -298,6 +301,7 @@ func TestGoRecursivePublish(t *testing.T) {
 	projectMissingDependency := createGoProject(t, "projectmissingdependency", false)
 	projectBuild := createGoProject(t, "projectbuild", false)
 
+	cleanGoCache(t)
 	uploadGoProject(project1Path, t)
 	uploadGoProject(projectMissingDependency, t)
 
@@ -351,6 +355,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	defer os.Chdir(wd)
 
 	log.Info("Using Go project located at ", project1Path)
+	cleanGoCache(t)
 	artifactoryCli.Exec("go", "build", tests.GoRepo, "--publish-deps=true")
 	cleanGoCache(t)
 
