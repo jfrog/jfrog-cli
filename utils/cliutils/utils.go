@@ -88,9 +88,17 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	log.Output(basicSummary)
 	defer log.Output("}")
 	for file := new(serviceutils.FileInfo); reader.NextRecord(file) == nil; file = new(serviceutils.FileInfo) {
+		var source, target string
+		if rtUrl != "" {
+			source = rtUrl + file.ArtifactoryPath
+			target = file.LocalPath
+		} else {
+			source = file.LocalPath
+			target = file.ArtifactoryPath
+		}
 		record := detailedSummaryRecord{
-			Source: rtUrl + file.ArtifactoryPath,
-			Target: file.LocalPath,
+			Source: source,
+			Target: target,
 		}
 		writer.Write(record)
 	}
