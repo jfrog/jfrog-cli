@@ -88,14 +88,28 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	log.Output(basicSummary)
 	defer log.Output("}")
 	for file := new(serviceutils.FileInfo); reader.NextRecord(file) == nil; file = new(serviceutils.FileInfo) {
+		source, target := getSourceAndTarget(*file, rtUrl)
 		record := detailedSummaryRecord{
-			Source: rtUrl + file.ArtifactoryPath,
-			Target: file.LocalPath,
+			Source: source,
+			Target: target,
 		}
 		writer.Write(record)
 	}
 	mErr = writer.Close()
 	return summaryPrintError(mErr, originalErr)
+}
+
+func getSourceAndTarget(file serviceutils.FileInfo, rtUrl string) (source, target string) {
+	if rtUrl != "" {
+		// Download
+		source = rtUrl + file.ArtifactoryPath
+		target = file.LocalPath
+	} else {
+		// Upload
+		source = file.LocalPath
+		target = file.ArtifactoryPath
+	}
+	return
 }
 
 func CreateSummaryReportString(success, failed int, err error) (string, error) {
