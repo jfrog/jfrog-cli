@@ -36,6 +36,9 @@ else
         aarch64)
             ARCH="arm64"
             ;;
+        s390x)
+            ARCH="s390x"
+            ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
             exit -1
