@@ -1,3 +1,7 @@
+## 1.40.1 (November 2, 2020)
+- Publish Linux s390x architecture binary of JFrog CLI
+- Bugfix - Upload --detailed-summary output 
+
 ## 1.40.0 (October 26, 2020)
 - “jfrog rt upload” - New --detailed-summary option
 - Build-info support for “jfrog rt go get” with Artifactory
