@@ -313,10 +313,14 @@ func GetBuildInfo(t *testing.T, artDetails *config.ArtifactoryDetails, buildName
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	bi, err := servicesManager.GetBuildInfo(params)
+	bi, notFound, err := servicesManager.GetBuildInfo(params)
 	if err != nil {
 		assert.NoError(t, err)
 		return buildinfo.BuildInfo{}, err
+	}
+	if notFound {
+		assert.False(t, notFound, "expected to find build info")
+		return buildinfo.BuildInfo{}, errors.New("expected to find build info")
 	}
 	return bi.BuildInfo, nil
 }
@@ -330,16 +334,12 @@ func VerifyBuildInfoDoesntExist(t *testing.T, artDetails *config.ArtifactoryDeta
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	_, err = servicesManager.GetBuildInfo(params)
-	// Expecting an error with 404.
+	_, notFound, err := servicesManager.GetBuildInfo(params)
 	if err != nil {
-		if strings.Contains(err.Error(), "Artifactory response: 404 Not Found") {
-			return true, nil
-		}
-		assert.Contains(t, err.Error(), "Artifactory response: 404 Not Found", "expected error to contain 404")
+		assert.NoError(t, err)
+		return false, err
 	}
-	assert.NoError(t, err)
-	return false, err
+	return notFound, nil
 }
 
 var reposConfigMap = map[*string]string{
