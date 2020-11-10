@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -20,7 +19,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	rtutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
-	"github.com/jfrog/jfrog-client-go/httpclient"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
@@ -62,7 +60,10 @@ func TestBuildPromote(t *testing.T) {
 
 	// Promote build to Repo1 using build name and build number as args.
 	artifactoryCli.Exec("build-promote", tests.RtBuildName1, buildNumberA, tests.RtRepo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumberA, t, artHttpDetails)
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumberA)
+	if err != nil {
+		return
+	}
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
@@ -73,7 +74,10 @@ func TestBuildPromote(t *testing.T) {
 	defer os.Unsetenv(coreutils.BuildName)
 	defer os.Unsetenv(coreutils.BuildNumber)
 	artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
-	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumberA, t, artHttpDetails)
+	buildInfo, err = tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumberA)
+	if err != nil {
+		return
+	}
 	resultItems = getResultItemsFromArtifactory(tests.SearchRepo2, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
@@ -172,15 +176,21 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was not published
-	_, found := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumber, t, artHttpDetails)
-	assert.False(t, found)
+	doesntExist, err := tests.VerifyBuildInfoDoesntExist(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		return
+	}
+	assert.True(t, doesntExist)
 
 	// Execute the bp command without dry run
 	artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber)
 	// Verify build dir is empty
 	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was published
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumber, t, artHttpDetails)
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		return
+	}
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1)
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
@@ -238,19 +248,31 @@ func TestBuildAddDependencies(t *testing.T) {
 }
 
 // Test publish build info without --build-url
-func TestArtifactoryPublishBuildInfo(t *testing.T) {
+func TestArtifactoryPublishAndGetBuildInfo(t *testing.T) {
+	testArtifactoryPublishWithoutBuildUrl(t, tests.RtBuildName1, "10")
+}
+
+// Test publish and get build info with spaces in name.
+func TestArtifactoryPublishAndGetBuildInfoSpecialChars(t *testing.T) {
+	testArtifactoryPublishWithoutBuildUrl(t, tests.RtBuildNameWithSpecialChars, "11")
+}
+
+func testArtifactoryPublishWithoutBuildUrl(t *testing.T, buildName, buildNumber string) {
 	initArtifactoryTest(t)
-	buildNumber := "10"
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
-	body := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
+	bi, err := uploadFilesAndGetBuildInfo(t, buildName, buildNumber, "")
+	if err != nil {
+		return
+	}
 
-	// Validate no build url
-	_, _, _, err := jsonparser.Get(body, "buildInfo", "url")
-	assert.Error(t, err, "Build url is expected to be empty")
+	assert.Equal(t, buildName, bi.Name)
+	assert.NotEmpty(t, bi.Modules)
+	// Validate no build url.
+	assert.Empty(t, bi.BuildUrl)
 
 	// Cleanup
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
@@ -263,12 +285,12 @@ func TestArtifactoryPublishBuildInfoBuildUrl(t *testing.T) {
 	defer os.Unsetenv(cliutils.BuildUrl)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
 
-	body := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, buildUrl)
-
+	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, buildUrl)
+	if err != nil {
+		return
+	}
 	// Validate correctness of build url
-	actualBuildUrl, err := jsonparser.GetString(body, "buildInfo", "url")
-	assert.NoError(t, err)
-	assert.Equal(t, buildUrl, actualBuildUrl)
+	assert.Equal(t, buildUrl, bi.BuildUrl)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
@@ -283,15 +305,34 @@ func TestArtifactoryPublishBuildInfoBuildUrlFromEnv(t *testing.T) {
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
 	os.Setenv(cliutils.BuildUrl, buildUrl)
 	defer os.Unsetenv(cliutils.BuildUrl)
-	body := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
 
-	// Validate correctness of build url
-	actualBuildUrl, err := jsonparser.GetString(body, "buildInfo", "url")
-	assert.NoError(t, err)
-	assert.Equal(t, buildUrl, actualBuildUrl)
+	bi, err := uploadFilesAndGetBuildInfo(t, tests.RtBuildName1, buildNumber, "")
+	if err != nil {
+		return
+	}
+
+	// Validate correctness of build url.
+	assert.Equal(t, buildUrl, bi.BuildUrl)
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestGetNonExistingBuildInfo(t *testing.T) {
+	initArtifactoryTest(t)
+	buildName := "jfrog-cli-rt-tests-non-existing-build-info"
+	buildNumber := "10"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+
+	doesntExist, err := tests.VerifyBuildInfoDoesntExist(t, artifactoryDetails, buildName, buildNumber)
+	if err != nil {
+		return
+	}
+	assert.True(t, doesntExist)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 	cleanArtifactoryTest()
 }
 
@@ -338,7 +379,10 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 
 	// Publish build info
 	artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumber, t, artHttpDetails)
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		return
+	}
 
 	// Make sure no sensitive data in build env
 	for k := range buildInfo.Properties {
@@ -403,9 +447,9 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
 
 	// Fetch the published build-info for validation
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.RtBuildName1, buildNumber, t, artHttpDetails)
-	if t.Failed() {
-		t.FailNow()
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	if err != nil {
+		return
 	}
 	require.NotNil(t, buildInfo.Vcs, "Received build-info with empty VCS.")
 
@@ -449,27 +493,30 @@ func TestReadGitConfig(t *testing.T) {
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
 }
 
-func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) []byte {
+func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) (buildinfo.BuildInfo, error) {
 	uploadFiles(t, "upload", "--build-name="+buildName, "--build-number="+buildNumber)
 
-	//publish buildInfo
+	// Publish buildInfo.
 	publishBuildInfoArgs := []string{"build-publish", buildName, buildNumber}
 	if buildUrl != "" {
 		publishBuildInfoArgs = append(publishBuildInfoArgs, "--build-url="+buildUrl)
 	}
-	artifactoryCli.Exec(publishBuildInfoArgs...)
+	err := artifactoryCli.Exec(publishBuildInfoArgs...)
+	if err != nil {
+		return buildinfo.BuildInfo{}, err
+	}
 
-	//validate files are uploaded with the build info name and number
+	// Validate files are uploaded with the build info name and number.
 	props := fmt.Sprintf("build.name=%v;build.number=%v", buildName, buildNumber)
 	verifyExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo1(), tests.RtRepo1+"/*", props, t)
 
-	//download build info
-	buildInfoUrl := fmt.Sprintf("%vapi/build/%v/%v", artifactoryDetails.Url, buildName, buildNumber)
-	client, err := httpclient.ClientBuilder().Build()
-	assert.NoError(t, err)
-	_, body, _, err := client.SendGet(buildInfoUrl, false, artHttpDetails)
-	assert.NoError(t, err)
-	return body
+	// Get build info.
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, buildNumber)
+	if err != nil {
+		return buildinfo.BuildInfo{}, err
+	}
+	validateBuildInfo(buildInfo, t, 0, 9, buildName)
+	return buildInfo, nil
 }
 
 func uploadFiles(t *testing.T, args ...string) {
@@ -496,7 +543,7 @@ func TestModuleName(t *testing.T) {
 		args     []string
 	}
 
-	tests := []struct {
+	testsArray := []struct {
 		testName             string
 		buildNumber          string
 		moduleName           string
@@ -512,14 +559,17 @@ func TestModuleName(t *testing.T) {
 		{"uploadAndDownloadAggregationWithoutModuleChange", "14", buildName, 9, 9, []command{{uploadFiles, []string{"upload", "--build-name=" + buildName}}, {downloadFiles, []string{"download", "--build-name=" + buildName}}}},
 	}
 
-	for _, test := range tests {
+	for _, test := range testsArray {
 		t.Run(test.testName, func(t *testing.T) {
 			for _, exeCommand := range test.execCommands {
 				exeCommand.args = append(exeCommand.args, "--build-number="+test.buildNumber)
 				exeCommand.execFunc(t, exeCommand.args...)
 			}
 			artifactoryCli.Exec("bp", buildName, test.buildNumber)
-			buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, test.buildNumber, t, artHttpDetails)
+			buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, test.buildNumber)
+			if err != nil {
+				return
+			}
 			validateBuildInfo(buildInfo, t, test.expectedDependencies, test.expectedArtifacts, test.moduleName)
 		})
 	}
@@ -549,7 +599,10 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 }
 
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildInfoTestParams.buildName, buildInfoTestParams.buildNumber, t, artHttpDetails)
+	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildInfoTestParams.buildName, buildInfoTestParams.buildNumber)
+	if err != nil {
+		return
+	}
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		buildInfoString, _ := json.Marshal(buildInfo)
 		// Case no module was not created

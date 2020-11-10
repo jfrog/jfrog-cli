@@ -1,42 +1,25 @@
 package inttestutils
 
 import (
-	"encoding/json"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
-	"testing"
+	"path"
 )
-
-func GetBuildInfo(artifactoryUrl, buildName, buildNumber string, t *testing.T, artHttpDetails httputils.HttpClientDetails) (buildInfo buildinfo.BuildInfo, found bool) {
-	client, err := httpclient.ClientBuilder().Build()
-	if err != nil {
-		t.Error(err)
-	}
-	resp, body, _, err := client.SendGet(artifactoryUrl+"api/build/"+buildName+"/"+buildNumber, true, artHttpDetails)
-	if err != nil {
-		t.Error(err)
-	}
-	if resp.StatusCode == http.StatusNotFound {
-		return buildinfo.BuildInfo{}, false
-	}
-	var buildInfoJson struct {
-		BuildInfo buildinfo.BuildInfo `json:"buildInfo,omitempty"`
-	}
-	if err := json.Unmarshal(body, &buildInfoJson); err != nil {
-		t.Error(err)
-	}
-	return buildInfoJson.BuildInfo, true
-}
 
 func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.HttpClientDetails) {
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		log.Error(err)
 	}
-	resp, body, err := client.SendDelete(artifactoryUrl+"api/build/"+buildName+"?deleteAll=1", nil, artHttpDetails)
+
+	restApi := path.Join("api/build/", buildName)
+	params := map[string]string{"deleteAll": "1"}
+	requestFullUrl, err := utils.BuildArtifactoryUrl(artifactoryUrl, restApi, params)
+
+	resp, body, err := client.SendDelete(requestFullUrl, nil, artHttpDetails)
 	if err != nil {
 		log.Error(err)
 	}

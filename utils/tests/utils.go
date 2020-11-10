@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -302,6 +304,44 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles(reader)
 }
 
+func GetBuildInfo(t *testing.T, artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (buildinfo.BuildInfo, error) {
+	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return buildinfo.BuildInfo{}, err
+	}
+	params := services.NewBuildInfoParams()
+	params.BuildName = buildName
+	params.BuildNumber = buildNumber
+	bi, err := servicesManager.GetBuildInfo(params)
+	if err != nil {
+		assert.NoError(t, err)
+		return buildinfo.BuildInfo{}, err
+	}
+	return bi.BuildInfo, nil
+}
+
+func VerifyBuildInfoDoesntExist(t *testing.T, artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (doesntExist bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return false, err
+	}
+	params := services.NewBuildInfoParams()
+	params.BuildName = buildName
+	params.BuildNumber = buildNumber
+	_, err = servicesManager.GetBuildInfo(params)
+	// Expecting an error with 404.
+	if err != nil {
+		if strings.Contains(err.Error(), "Artifactory response: 404 Not Found") {
+			return true, nil
+		}
+		assert.Contains(t, err.Error(), "Artifactory response: 404 Not Found", "expected error to contain 404")
+	}
+	assert.NoError(t, err)
+	return false, err
+}
+
 var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
@@ -395,7 +435,7 @@ func GetAllRepositoriesNames() []string {
 
 func GetBuildNames() []string {
 	buildNamesMap := map[*bool][]*string{
-		TestArtifactory:  {&RtBuildName1, &RtBuildName2},
+		TestArtifactory:  {&RtBuildName1, &RtBuildName2, &RtBuildNameWithSpecialChars},
 		TestDistribution: {},
 		TestDocker:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
@@ -482,6 +522,7 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += timestampSuffix
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
+	RtBuildNameWithSpecialChars += timestampSuffix
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
