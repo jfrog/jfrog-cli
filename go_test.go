@@ -55,7 +55,16 @@ func TestGoBuildInfo(t *testing.T) {
 	}
 
 	module := "github.com/jfrog/dependency"
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	artifactoryVersion, err := artAuth.GetVersion()
 	assert.NoError(t, err)
 
@@ -94,7 +103,16 @@ func TestGoBuildInfo(t *testing.T) {
 		return
 	}
 
-	buildInfo, _ = inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err = tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo = publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
 
 	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
@@ -195,7 +213,16 @@ func TestGoGetSpecificVersion(t *testing.T) {
 		return
 	}
 
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.GoBuildName, buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 
 	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote")
 
@@ -216,7 +243,17 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 		assert.NoError(t, err)
 		return
 	}
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, buildName, buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+
 	if module == "" {
 		module = "github.com/jfrog/dependency"
 	}
