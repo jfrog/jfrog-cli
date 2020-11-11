@@ -32,11 +32,17 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildName := "gradle-cli"
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
-	artifactoryCli.Exec("bp", buildName, buildNumber)
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 
 	cleanGradleTest()
@@ -59,11 +65,18 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
-	artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber)
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.GradleBuildName, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
+
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanGradleTest()
 }
@@ -78,11 +91,17 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
 
-	artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber)
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.GradleBuildName, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanGradleTest()
 }
@@ -106,11 +125,17 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 	assert.NoError(t, err)
 
 	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
-	artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber)
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.GradleBuildName, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
 	cleanGradleTest()
 }

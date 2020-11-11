@@ -59,25 +59,39 @@ func TestBuildPromote(t *testing.T) {
 	value2 := "property"
 
 	// Promote build to Repo1 using build name and build number as args.
-	artifactoryCli.Exec("build-promote", tests.RtBuildName1, buildNumberA, tests.RtRepo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumberA)
+	assert.NoError(t, artifactoryCli.Exec("build-promote", tests.RtBuildName1, buildNumberA, tests.RtRepo1, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2)))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumberA)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	resultItems := getResultItemsFromArtifactory(tests.SearchAllRepo1, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
 	// Promote the same build to Repo2 using build name and build number as env vars.
-	os.Setenv(coreutils.BuildName, tests.RtBuildName1)
-	os.Setenv(coreutils.BuildNumber, buildNumberA)
+	assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
+	assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumberA))
 	defer os.Unsetenv(coreutils.BuildName)
 	defer os.Unsetenv(coreutils.BuildNumber)
-	artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2))
-	buildInfo, err = tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumberA)
+	assert.NoError(t, artifactoryCli.Exec("build-promote", tests.RtRepo2, fmt.Sprintf("--props=%s=%s;%s=%s", key1, value1, key2, value2)))
+
+	publishedBuildInfo, found, err = tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumberA)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo = publishedBuildInfo.BuildInfo
+
 	resultItems = getResultItemsFromArtifactory(tests.SearchRepo2, t)
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
@@ -167,30 +181,40 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Upload files with build name & number.
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
 	// Verify build dir is not empty
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 
-	// Execute the bp command with dry run
-	artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--dry-run=true")
-	// Verify build dir is not empty
+	// Execute the bp command with dry run.
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--dry-run=true"))
+	// Verify build dir is not empty.
 	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
-	// Verify build was not published
-	doesntExist, err := tests.VerifyBuildInfoDoesntExist(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	// Verify build was not published.
+	_, found, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
-	assert.True(t, doesntExist)
+	if found {
+		assert.False(t, found, "build info was expected not to be found")
+		return
+	}
 
 	// Execute the bp command without dry run
-	artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber))
 	// Verify build dir is empty
 	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
 	// Verify build was published
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1)
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
@@ -325,11 +349,12 @@ func TestGetNonExistingBuildInfo(t *testing.T) {
 	buildNumber := "10"
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
-	doesntExist, err := tests.VerifyBuildInfoDoesntExist(t, artifactoryDetails, buildName, buildNumber)
+	_, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
-	assert.True(t, doesntExist)
+	assert.False(t, found, "build info was expected not to be found")
 
 	// Cleanup
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
@@ -373,16 +398,22 @@ func TestArtifactoryBuildCollectEnv(t *testing.T) {
 	buildNumber := "12"
 
 	// Build collect env
-	os.Setenv("DONT_COLLECT", "foo")
-	os.Setenv("COLLECT", "bar")
-	artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber)
+	assert.NoError(t, os.Setenv("DONT_COLLECT", "foo"))
+	assert.NoError(t, os.Setenv("COLLECT", "bar"))
+	assert.NoError(t, artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber))
 
 	// Publish build info
-	artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT")
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--env-exclude=*password*;*psw*;*secret*;*key*;*token*;DONT_COLLECT"))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 
 	// Make sure no sensitive data in build env
 	for k := range buildInfo.Properties {
@@ -430,8 +461,8 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	// Run build-add-git
 	var err error
 	if useEnvBuildNameAndNumber {
-		os.Setenv(coreutils.BuildName, tests.RtBuildName1)
-		os.Setenv(coreutils.BuildNumber, buildNumber)
+		assert.NoError(t, os.Setenv(coreutils.BuildName, tests.RtBuildName1))
+		assert.NoError(t, os.Setenv(coreutils.BuildNumber, buildNumber))
 		defer os.Unsetenv(coreutils.BuildName)
 		defer os.Unsetenv(coreutils.BuildNumber)
 		err = gitCollectCliRunner.Exec("build-add-git", baseDir, "--config="+configPath)
@@ -442,15 +473,21 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Clear previous build if exists and publish build-info
+	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
-	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber))
 
-	// Fetch the published build-info for validation
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.RtBuildName1, buildNumber)
+	// Fetch the published build-info for validation.
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	require.NotNil(t, buildInfo.Vcs, "Received build-info with empty VCS.")
 
 	// Validate results
@@ -503,6 +540,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 	}
 	err := artifactoryCli.Exec(publishBuildInfoArgs...)
 	if err != nil {
+		assert.NoError(t, err)
 		return buildinfo.BuildInfo{}, err
 	}
 
@@ -511,10 +549,16 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 	verifyExistInArtifactoryByProps(tests.GetSimpleUploadExpectedRepo1(), tests.RtRepo1+"/*", props, t)
 
 	// Get build info.
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return buildinfo.BuildInfo{}, err
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return buildinfo.BuildInfo{}, err
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, 0, 9, buildName)
 	return buildInfo, nil
 }
@@ -565,11 +609,17 @@ func TestModuleName(t *testing.T) {
 				exeCommand.args = append(exeCommand.args, "--build-number="+test.buildNumber)
 				exeCommand.execFunc(t, exeCommand.args...)
 			}
-			artifactoryCli.Exec("bp", buildName, test.buildNumber)
-			buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, test.buildNumber)
+			assert.NoError(t, artifactoryCli.Exec("bp", buildName, test.buildNumber))
+			publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, test.buildNumber)
 			if err != nil {
+				assert.NoError(t, err)
 				return
 			}
+			if !found {
+				assert.True(t, found, "build info was expected to be found")
+				return
+			}
+			buildInfo := publishedBuildInfo.BuildInfo
 			validateBuildInfo(buildInfo, t, test.expectedDependencies, test.expectedArtifacts, test.moduleName)
 		})
 	}
@@ -594,15 +644,21 @@ func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvB
 	}
 
 	// Execute tha bad command
-	noCredsCli.Exec(append(command, badTest.commandArgs...)...)
-	artifactoryCli.Exec("bp", badTest.buildName, badTest.buildNumber)
+	assert.NoError(t, noCredsCli.Exec(append(command, badTest.commandArgs...)...))
+	assert.NoError(t, artifactoryCli.Exec("bp", badTest.buildName, badTest.buildNumber))
 }
 
 func validateBuildAddDepsBuildInfo(t *testing.T, buildInfoTestParams buildAddDepsBuildInfoTestParams) {
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildInfoTestParams.buildName, buildInfoTestParams.buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildInfoTestParams.buildName, buildInfoTestParams.buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		buildInfoString, _ := json.Marshal(buildInfo)
 		// Case no module was not created

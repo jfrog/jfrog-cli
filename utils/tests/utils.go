@@ -304,42 +304,16 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles(reader)
 }
 
-func GetBuildInfo(t *testing.T, artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (buildinfo.BuildInfo, error) {
+// This function makes no assertion, caller is responsible to assert as needed.
+func GetBuildInfo(artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
 	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
 	if err != nil {
-		assert.NoError(t, err)
-		return buildinfo.BuildInfo{}, err
+		return nil, false, err
 	}
 	params := services.NewBuildInfoParams()
 	params.BuildName = buildName
 	params.BuildNumber = buildNumber
-	bi, notFound, err := servicesManager.GetBuildInfo(params)
-	if err != nil {
-		assert.NoError(t, err)
-		return buildinfo.BuildInfo{}, err
-	}
-	if notFound {
-		assert.False(t, notFound, "expected to find build info")
-		return buildinfo.BuildInfo{}, errors.New("expected to find build info")
-	}
-	return bi.BuildInfo, nil
-}
-
-func VerifyBuildInfoDoesntExist(t *testing.T, artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (doesntExist bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
-	if err != nil {
-		assert.NoError(t, err)
-		return false, err
-	}
-	params := services.NewBuildInfoParams()
-	params.BuildName = buildName
-	params.BuildNumber = buildNumber
-	_, notFound, err := servicesManager.GetBuildInfo(params)
-	if err != nil {
-		assert.NoError(t, err)
-		return false, err
-	}
-	return notFound, nil
+	return servicesManager.GetBuildInfo(params)
 }
 
 var reposConfigMap = map[*string]string{

@@ -138,14 +138,20 @@ func TestDockerFatManifestPull(t *testing.T) {
 		buildNumber := "1"
 
 		// Pull docker image using docker client
-		artifactoryCli.Exec("docker-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-		artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+		assert.NoError(t, artifactoryCli.Exec("docker-pull", imageTag, dockerRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
+		assert.NoError(t, artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber))
 
 		// Validate
-		buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, tests.DockerBuildName, buildNumber)
+		publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.DockerBuildName, buildNumber)
 		if err != nil {
+			assert.NoError(t, err)
 			return
 		}
+		if !found {
+			assert.True(t, found, "build info was expected to be found")
+			return
+		}
+		buildInfo := publishedBuildInfo.BuildInfo
 		validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
 
 		inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
@@ -180,10 +186,16 @@ func TestDockerPromote(t *testing.T) {
 
 func validateDockerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
 	validateDockerImage(t, imagePath, expectedItemsInArtifactory)
-	buildInfo, err := tests.GetBuildInfo(t, artifactoryDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
 	if err != nil {
+		assert.NoError(t, err)
 		return
 	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
 }
 
