@@ -27,6 +27,9 @@ const GlobalEnvVars string = `	JFROG_CLI_LOG_LEVEL
 	JFROG_CLI_BUILD_NUMBER
 		Build number to be used by commands which expect a build number, unless sent as a command argument or option.
 
+	JFROG_CLI_BUILD_PROJECT
+		Artifactory project name to be used by the "jfrog rt build-publish" command.
+
 	JFROG_CLI_BUILD_URL
 		Sets the CI server build URL in the build-info. The "jfrog rt build-publish" command uses the value of this environment variable, unless the --build-url command option is sent.
 	

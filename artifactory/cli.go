@@ -2716,7 +2716,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// If the username is provided as an argument, then it is used when creating the token. 
+	// If the username is provided as an argument, then it is used when creating the token.
 	// If not, then the configured username (or the the value of the --user option) is used.
 	var userName string
 	if c.NArg() > 0 {
@@ -3351,6 +3351,7 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 		buildNumberArg = ""
 	}
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = c.String("project")
 	return buildConfiguration
 }
 
