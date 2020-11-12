@@ -56,8 +56,9 @@ To register your plugin in the registry, create a pull request to add the YAML f
 pluginName: hello-frog
 version: v1.0.0
 repository: https://github.com/my-org/my-amazing-plugin
-maintainerName: Firstname Lastname
-maintainerEmail: amazing@yes.com
+maintainers:
+    - github-username1
+    - github-username2
 # optional:
 relativePath: build-info-analyzer
 branch: my-release-branch
