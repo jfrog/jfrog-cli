@@ -203,6 +203,7 @@ const (
 	envInclude         = "env-include"
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
+	project            = "project"
 
 	// Unique build-add-dependencies flags
 	badPrefix    = "bad-"
@@ -688,6 +689,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  buildUrl,
 		Usage: "[Optional] Can be used for setting the CI server build URL in the build-info.` `",
 	},
+	project: cli.StringFlag{
+		Name:  project,
+		Usage: "[Optional] Artifactory project name.` `",
+	},
 	bpDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
@@ -1103,7 +1108,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls,
+		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
 		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
