@@ -1,6 +1,6 @@
 # JFrog CLI Plugin Developer Guide
 ## Overview
-JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of your community. When a plugin is included in the registry, it becomes publicly available and can be installed using the following JFrog CLI command:
+JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the community. When a plugin is included in the registry, it becomes publicly available and can be installed using the following JFrog CLI command:
 ```
 $ jfrog plugin install the-plugin-name
 ```

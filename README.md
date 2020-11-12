@@ -10,6 +10,7 @@
 - [Tests](#tests)
 - [Code Contributions](#code-contributions)
 - [Using JFrog CLI](#using-jfrog-cli)
+- [JFrog CLI Plugins](#jfrog-cli-plugins)
 - [Release Notes](#release-notes)
 
 # Overview
@@ -249,6 +250,9 @@ We welcome code contributions through pull requests from the community.
 JFrog CLI can be used for a variety of functions with Artifactory, Bintray, Xray and Mission Control,
 and has a dedicated set of commands for each product.
 To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://www.jfrog.com/confluence/display/CLI/Welcome+to+JFrog+CLI).
+
+# JFrog CLI Plugins
+JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
 
 ## Using JFrog CLI Docker Image
 The docker image of JFrog CLI can be pulled from Bintray by running the following command:
