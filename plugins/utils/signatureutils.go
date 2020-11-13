@@ -108,19 +108,23 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 			Name:            sig.Name,
 			Usage:           sig.Usage,
 			SkipFlagParsing: true,
-			Action: func(c *cli.Context) error {
-				output, err := gofrogcmd.RunCmdOutput(
-					&SignatureCmd{
-						sig.ExecutablePath,
-						c.Args()})
-				if err == nil {
-					log.Output(output)
-				}
-				return err
-			},
+			Action: getAction(*sig),
 		})
 	}
 	return commands
+}
+
+func getAction(sig components.PluginSignature) func(*cli.Context) error {
+	return func(c *cli.Context) error {
+		output, err := gofrogcmd.RunCmdOutput(
+			&SignatureCmd{
+				sig.ExecutablePath,
+				c.Args()})
+		if err == nil {
+			log.Output(output)
+		}
+		return err
+	}
 }
 
 func GetPlugins() []cli.Command {
