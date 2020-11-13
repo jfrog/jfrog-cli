@@ -1,3 +1,6 @@
+## 1.41.1 (November 13, 2020)
+Bug fix - With multiple JFrog CLI plugins installed, the wrong plugin gets executed 
+
 ## 1.41.0 (November 12, 2020)
 New "JFrog CLI Plugins" feature
 Bug fix - "jfrog rt pip-install" fails with local repos in some scenarios
