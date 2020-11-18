@@ -177,6 +177,27 @@ func TestArtifactoryUploadPathWithSpecialCharsAsNoRegex(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryEmptyBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	buildNumber := "5"
+
+	// Try to upload with non existent pattern
+	err := artifactoryCli.Exec("upload", "*.notExist", tests.RtRepo1, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	// Try to download with non existent pattern
+	err = artifactoryCli.Exec("download", tests.RtRepo1+"/*.notExist", "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	assert.NoError(t, err)
+
+	// Publish empty build info
+	err = artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
+	assert.NoError(t, err)
+
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadFromVirtual(t *testing.T) {
 	initArtifactoryTest(t)
 
