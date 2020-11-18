@@ -7,8 +7,8 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/jfrog/gocmd v0.1.17
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core v1.1.0
-	github.com/jfrog/jfrog-client-go v0.15.0
+	github.com/jfrog/jfrog-cli-core v1.1.1
+	github.com/jfrog/jfrog-client-go v0.16.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.4.0
@@ -17,9 +17,9 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
