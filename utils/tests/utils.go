@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -302,6 +304,18 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 	return deleteCommand.DeleteFiles(reader)
 }
 
+// This function makes no assertion, caller is responsible to assert as needed.
+func GetBuildInfo(artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+	if err != nil {
+		return nil, false, err
+	}
+	params := services.NewBuildInfoParams()
+	params.BuildName = buildName
+	params.BuildNumber = buildNumber
+	return servicesManager.GetBuildInfo(params)
+}
+
 var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
@@ -395,7 +409,7 @@ func GetAllRepositoriesNames() []string {
 
 func GetBuildNames() []string {
 	buildNamesMap := map[*bool][]*string{
-		TestArtifactory:  {&RtBuildName1, &RtBuildName2},
+		TestArtifactory:  {&RtBuildName1, &RtBuildName2, &RtBuildNameWithSpecialChars},
 		TestDistribution: {},
 		TestDocker:       {&DockerBuildName},
 		TestGo:           {&GoBuildName},
@@ -482,6 +496,7 @@ func AddTimestampToGlobalVars() {
 	PipBuildName += timestampSuffix
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
+	RtBuildNameWithSpecialChars += timestampSuffix
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {

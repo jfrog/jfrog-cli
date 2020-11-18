@@ -226,7 +226,16 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json-9.0.6.tgz", scopes: []string{"development"}})
 	}
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
 		assert.Fail(t, "npm install test with the arguments: \n%v \nexpected to have module with the following dependencies: \n%v \nbut has no modules: \n%v",
@@ -252,7 +261,16 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	assert.Zero(t, buildInfo.Modules, "npm install test with the arguments: \n%v \nexpected to have no modules")
 
 	packageJsonFile, err := ioutil.ReadFile(npmTestParams.wd)
@@ -282,7 +300,16 @@ func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.NpmBuildName, npmTestParams.buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	expectedArtifactName := "jfrog-cli-tests-1.0.0.tgz"
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
