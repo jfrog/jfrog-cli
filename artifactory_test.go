@@ -1077,11 +1077,10 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 	}
 	client := &http.Client{Transport: tr}
 
-	for attempt := 0; attempt < 10; attempt++ {
+	for attempt := 0; attempt < 20; attempt++ {
 		log.Info("Checking if proxy server is up and running.", strconv.Itoa(attempt+1), "attempt.", "URL:", proxyScheme+"://localhost:"+port)
 		resp, err := client.Get(proxyScheme + "://localhost:" + port)
 		if err != nil {
-			attempt++
 			time.Sleep(time.Second)
 			continue
 		}
@@ -1089,7 +1088,6 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		if resp.StatusCode != http.StatusOK {
 			continue
 		}
-
 		return nil
 	}
 	return fmt.Errorf("failed while waiting for the proxy server to be accessible")
