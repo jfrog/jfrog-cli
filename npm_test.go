@@ -238,8 +238,8 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	buildInfo := publishedBuildInfo.BuildInfo
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		// Case no module was created
-		assert.Fail(t, "npm install test with the arguments: \n%v \nexpected to have module with the following dependencies: \n%v \nbut has no modules: \n%v",
-			npmTestParams, expectedDependencies, buildInfo)
+		t.Error(fmt.Sprintf("npm install test with command '%s' and repo '%s' failed", npmTestParams.command, npmTestParams.repo))
+		return
 	}
 	// The checksums are ignored when comparing the actual and the expected
 	assert.Equal(t, len(expectedDependencies), len(buildInfo.Modules[0].Dependencies), "npm install test with the arguments: \n%v \nexpected to have the following dependencies: \n%v \nbut has: \n%v",

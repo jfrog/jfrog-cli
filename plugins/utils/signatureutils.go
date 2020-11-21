@@ -108,7 +108,7 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 			Name:            sig.Name,
 			Usage:           sig.Usage,
 			SkipFlagParsing: true,
-			Action: getAction(*sig),
+			Action:          getAction(*sig),
 		})
 	}
 	return commands
