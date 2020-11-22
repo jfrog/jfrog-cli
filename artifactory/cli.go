@@ -1108,10 +1108,7 @@ func mvnCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args, err := utils.ParseArgs(extractCommand(c))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
+		args := extractCommand(c)
 		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
@@ -1149,10 +1146,7 @@ func gradleCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args, err := utils.ParseArgs(extractCommand(c))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
+		args := extractCommand(c)
 		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
@@ -1283,10 +1277,8 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 
-		args, err := utils.ParseArgs(extractCommand(c))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
+		args := extractCommand(c)
+
 		// Validates the nuget command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNugetFlags()); err != nil {
@@ -1364,10 +1356,7 @@ func dotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	args, err := utils.ParseArgs(extractCommand(c))
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
+	args := extractCommand(c)
 
 	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
@@ -1424,10 +1413,7 @@ func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLeg
 
 	if exists {
 		// Found a config file. Continue as native command.
-		args, err := utils.ParseArgs(extractCommand(c))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
+		args := extractCommand(c)
 		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
@@ -1473,10 +1459,7 @@ func npmPublishCmd(c *cli.Context) error {
 	}
 	if exists {
 		// Found a config file. Continue as native command.
-		args, err := utils.ParseArgs(extractCommand(c))
-		if err != nil {
-			return errorutils.CheckError(err)
-		}
+		args := extractCommand(c)
 		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
