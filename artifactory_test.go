@@ -1086,6 +1086,7 @@ func checkIfServerIsUp(port, proxyScheme string, useClientCerts bool) error {
 		}
 		resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
+			time.Sleep(time.Second)
 			continue
 		}
 		return nil

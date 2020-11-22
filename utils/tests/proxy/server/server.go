@@ -197,7 +197,7 @@ func GetProxyHttpsPort() string {
 func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) error {
 	handler, err := getReverseProxyHandler(proxyTarget)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	// Starts a new Go routine
 	httpsMux, absPathCert, absPathKey, err := prepareHTTPSHandling(handler)
