@@ -168,12 +168,12 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.bintray -bt.user=$int_jfrog_bintray_user -bt.key=$int_jfrog_bintray_apikey
 
-       - name: Plugins
-         type: Bash
-         configuration:
-           <<: *COMMON_CONFIGURATION
-         execution:
-           <<: *UPDATE_COMMIT_STATUS
-           onExecute:
-             - cd $res_jfrogCliGit_resourcePath
-             - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.plugins
+      - name: Plugins
+        type: Bash
+        configuration:
+          <<: *COMMON_CONFIGURATION
+        execution:
+          <<: *UPDATE_COMMIT_STATUS
+          onExecute:
+            - cd $res_jfrogCliGit_resourcePath
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.plugins
