@@ -9,8 +9,8 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -38,7 +38,7 @@ func TestPluginFullCycle(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Install plugin from registry.
-	err = jfrogCli.Exec("plugin install " + pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "install", pluginTemplateName)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -59,7 +59,7 @@ func TestPluginFullCycle(t *testing.T) {
 	}
 
 	// Uninstall plugin from home dir.
-	err = jfrogCli.Exec("plugin uninstall " + pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "uninstall", pluginTemplateName)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -72,10 +72,8 @@ func TestPluginFullCycle(t *testing.T) {
 
 func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Get signature from plugin.
-	cmd := exec.Command("jfrog", pluginTemplateName, plugins.SignatureCommandName)
-	content, err := cmd.Output()
+	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, plugins.SignatureCommandName)
 	if err != nil {
-		assert.NoError(t, err)
 		return err
 	}
 
@@ -99,15 +97,39 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 
 func verifyPluginCommand(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Run plugin's command.
-	cmd := exec.Command("jfrog", pluginTemplateName, "hello", "hello world", "--shout")
-	content, err := cmd.Output()
+	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, "hello", "\"hello world\"", "--shout")
 	if err != nil {
-		assert.NoError(t, err)
 		return err
 	}
 
 	assert.Contains(t, string(content), "HELLO WORLD")
 	return nil
+}
+
+func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte, error) {
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	os.Stdout = w
+	defer func() {
+		os.Stdout = oldStdout
+		r.Close()
+		w.Close()
+	}()
+	err = jfrogCli.Exec(cmd...)
+	if err != nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	w.Close()
+	content, err := ioutil.ReadAll(r)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	return content, err
 }
 
 func verifyPluginInPluginsDir(t *testing.T, shouldExist bool) error {
