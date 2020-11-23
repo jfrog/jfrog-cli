@@ -8,11 +8,13 @@ import (
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/plugins/components"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -116,14 +118,11 @@ func signaturesToCommands(signatures []*components.PluginSignature) []cli.Comman
 
 func getAction(sig components.PluginSignature) func(*cli.Context) error {
 	return func(c *cli.Context) error {
-		output, err := gofrogcmd.RunCmdOutput(
-			&SignatureCmd{
-				sig.ExecutablePath,
-				c.Args()})
-		if err == nil {
-			log.Output(output)
-		}
-		return err
+		cmd := exec.Command(sig.ExecutablePath, cliutils.ExtractCommand(c)...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		return cmd.Run()
 	}
 }
 

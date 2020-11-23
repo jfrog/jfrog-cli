@@ -1108,7 +1108,7 @@ func mvnCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args := extractCommand(c)
+		args := cliutils.ExtractCommand(c)
 		// Validates the mvn command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
@@ -1146,7 +1146,7 @@ func gradleCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		args := extractCommand(c)
+		args := cliutils.ExtractCommand(c)
 		// Validates the gradle command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
@@ -1277,7 +1277,7 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 
-		args := extractCommand(c)
+		args := cliutils.ExtractCommand(c)
 
 		// Validates the nuget command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
@@ -1356,7 +1356,7 @@ func dotnetCmd(c *cli.Context) error {
 		return err
 	}
 
-	args := extractCommand(c)
+	args := cliutils.ExtractCommand(c)
 
 	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
@@ -1413,7 +1413,7 @@ func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLeg
 
 	if exists {
 		// Found a config file. Continue as native command.
-		args := extractCommand(c)
+		args := cliutils.ExtractCommand(c)
 		// Validates the npm command. If a config file is found, the only flags that can be used are threads, build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
@@ -1459,7 +1459,7 @@ func npmPublishCmd(c *cli.Context) error {
 	}
 	if exists {
 		// Found a config file. Continue as native command.
-		args := extractCommand(c)
+		args := cliutils.ExtractCommand(c)
 		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
@@ -1671,7 +1671,7 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	args := extractCommand(c)
+	args := cliutils.ExtractCommand(c)
 	// Validates the go command. If a config file is found, the only flags that can be used are build-name, build-number and module.
 	// Otherwise, throw an error.
 	if err := validateCommand(args, cliutils.GetLegacyGoFlags()); err != nil {
@@ -2457,7 +2457,7 @@ func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	curlCommand := curl.NewCurlCommand().SetArguments(extractCommand(c))
+	curlCommand := curl.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	rtDetails, err := curlCommand.GetArtifactoryDetails()
 	if err != nil {
 		return err
@@ -2490,7 +2490,7 @@ func pipInstallCmd(c *cli.Context) error {
 
 	// Run command.
 	pipCmd := pip.NewPipInstallCommand()
-	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(extractCommand(c))
+	pipCmd.SetRtDetails(rtDetails).SetRepo(pipConfig.TargetRepo()).SetArgs(cliutils.ExtractCommand(c))
 	return commands.Exec(pipCmd)
 }
 
@@ -3336,12 +3336,6 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
 	buildConfiguration.Project = c.String("project")
 	return buildConfiguration
-}
-
-func extractCommand(c *cli.Context) (command []string) {
-	command = make([]string, len(c.Args()))
-	copy(command, c.Args())
-	return command
 }
 
 func deprecatedWarning(projectType utils.ProjectType, command, configCommand string) string {
