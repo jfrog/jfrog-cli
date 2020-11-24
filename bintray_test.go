@@ -50,7 +50,7 @@ func initBintrayOrg() {
 func TestBintrayPackages(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/testPackage"
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, "testPackage")
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 	bintrayCli.Exec("package-show", packagePath)
 	bintrayCli.Exec("package-update", packagePath, "--licenses=GPL-3.0", "--vcs-url=other.url.com")
@@ -62,7 +62,7 @@ func TestBintrayPackages(t *testing.T) {
 func TestBintrayVersions(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/testPackage"
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, "testPackage")
 	versionPath := packagePath + "/1.0"
 
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
@@ -80,18 +80,18 @@ func TestBintraySimpleUpload(t *testing.T) {
 	initBintrayTest(t)
 
 	packageName := "simpleUploadPackage"
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + packageName
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, packageName)
 	versionName := "1.0"
-	versionPath := packagePath + "/" + versionName
+	versionPath := path.Join(packagePath, versionName)
 
 	createPackageAndVersion(packagePath, versionPath)
-	//Upload file
+	// Upload file
 	fileName := "a1.in"
 	path := "some/path/in/bintray/"
 	uploadFilePath := tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", uploadFilePath, versionPath, path)
 
-	//Check file uploaded
+	// Check file uploaded
 	expected := []tests.PackageSearchResultItem{{
 		Repo:    tests.BintrayRepo,
 		Path:    path + fileName,
@@ -109,9 +109,9 @@ func TestBintrayUploadNoVersion(t *testing.T) {
 	initBintrayTest(t)
 
 	packageName := "simpleUploadPackage"
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + packageName
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, packageName)
 	versionName := "1.0"
-	versionPath := packagePath + "/" + versionName
+	versionPath := path.Join(packagePath, versionName)
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 
 	//Upload file
@@ -143,9 +143,9 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 	assert.NoError(t, ioutil.WriteFile(testFileAbs, d1, 0644), "Couldn't create file")
 
 	packageName := "simpleUploadHomePackage"
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + packageName
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, packageName)
 	versionName := "1.0"
-	versionPath := packagePath + "/" + versionName
+	versionPath := path.Join(packagePath, versionName)
 	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
 	bintrayCli.Exec("upload", testFileRel, versionPath, "--recursive=false")
 
@@ -167,8 +167,8 @@ func TestBintrayUploadFromHomeDir(t *testing.T) {
 func TestBintrayUploadOverride(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + tests.BintrayUploadTestPackageName
-	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, tests.BintrayUploadTestPackageName)
+	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 
 	testResourcePath := tests.GetTestResourcesPath()
@@ -219,8 +219,8 @@ func TestBintrayUploads(t *testing.T) {
 func TestBintrayLogs(t *testing.T) {
 	initBintrayTest(t)
 
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + tests.BintrayUploadTestPackageName
-	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, tests.BintrayUploadTestPackageName)
+	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 
 	path := tests.GetTestResourcesPath() + "a/*"
@@ -235,9 +235,9 @@ func TestBintrayLogs(t *testing.T) {
 func TestBintrayFileDownloads(t *testing.T) {
 	initBintrayTest(t)
 
-	repositoryPath := bintrayOrganization + "/" + tests.BintrayRepo
-	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
-	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	repositoryPath := path.Join(bintrayOrganization, tests.BintrayRepo)
+	packagePath := path.Join(repositoryPath, tests.BintrayUploadTestPackageName)
+	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true")
@@ -294,9 +294,9 @@ func TestBintrayFileDownloads(t *testing.T) {
 func TestBintrayVersionDownloads(t *testing.T) {
 	initBintrayTest(t)
 
-	repositoryPath := bintrayOrganization + "/" + tests.BintrayRepo
-	packagePath := repositoryPath + "/" + tests.BintrayUploadTestPackageName
-	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	repositoryPath := path.Join(bintrayOrganization, tests.BintrayRepo)
+	packagePath := path.Join(repositoryPath, tests.BintrayUploadTestPackageName)
+	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 
 	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
@@ -328,12 +328,12 @@ func TestBintrayUploadWindowsCompatibility(t *testing.T) {
 	}
 
 	packageName := "simpleUploadPackage"
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + packageName
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, packageName)
 	versionName := "1.0"
-	versionPath := packagePath + "/" + versionName
+	versionPath := path.Join(packagePath, versionName)
 
 	createPackageAndVersion(packagePath, versionPath)
-	//Upload file
+	// Upload file
 	fileName := "a1.in"
 	path := "some/path/in/bintray/"
 	uploadFilePath := ioutils.UnixToWinPathSeparator(tests.GetFilePathForBintray(fileName, tests.GetTestResourcesPath(), "a"))
@@ -410,8 +410,8 @@ func cleanBintrayTest() {
 }
 
 func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.PackageSearchResultItem) {
-	packagePath := bintrayOrganization + "/" + tests.BintrayRepo + "/" + tests.BintrayUploadTestPackageName
-	versionPath := packagePath + "/" + tests.BintrayUploadTestVersion
+	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, tests.BintrayUploadTestPackageName)
+	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 
 	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+relPath, versionPath, flags)
@@ -481,8 +481,8 @@ func packageFileHash(item tests.PackageSearchResultItem) string {
 }
 
 func createPackageAndVersion(packagePath, versionPath string) {
-	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0 --vcs-url=vcs.url.com")
-	bintrayCli.Exec("version-create", versionPath, "--desc=versionDescription --vcs-tag=vcs.tag")
+	bintrayCli.Exec("package-create", packagePath, "--licenses=Apache-2.0", "--vcs-url=vcs.url.com")
+	bintrayCli.Exec("version-create", versionPath, "--desc=versionDescription", "--vcs-tag=vcs.tag")
 }
 
 func createBintrayRepo() {
