@@ -202,16 +202,16 @@ func TestBintrayUploads(t *testing.T) {
 		}
 	}
 
-	testBintrayUpload(t, path, "--flat=true --recursive=true", tests.GetBintrayExpectedUploadFlatRecursive())
-	testBintrayUpload(t, path, "--flat=true --recursive=false", tests.GetBintrayExpectedUploadFlatNonRecursive())
-	testBintrayUpload(t, path, "--flat=false --recursive=true", bintrayExpectedUploadNonFlatRecursive)
-	testBintrayUpload(t, path, "--flat=false --recursive=false", bintrayExpectedUploadNonFlatNonRecursive)
+	testBintrayUpload(t, path, tests.GetBintrayExpectedUploadFlatRecursive(), "--flat=true", "--recursive=true")
+	testBintrayUpload(t, path, tests.GetBintrayExpectedUploadFlatNonRecursive(), "--flat=true", "--recursive=false")
+	testBintrayUpload(t, path, bintrayExpectedUploadNonFlatRecursive, "--flat=false", "--recursive=true")
+	testBintrayUpload(t, path, bintrayExpectedUploadNonFlatNonRecursive, "--flat=false", "--recursive=false")
 
 	path = tests.GetFilePathForBintray("(.*)", "", "a")
-	testBintrayUpload(t, path, "--flat=true --recursive=true --regexp=true", tests.GetBintrayExpectedUploadFlatRecursive())
-	testBintrayUpload(t, path, "--flat=true --recursive=false --regexp=true", tests.GetBintrayExpectedUploadFlatNonRecursive())
-	testBintrayUpload(t, path, "--flat=false --recursive=true --regexp=true", bintrayExpectedUploadNonFlatRecursive)
-	testBintrayUpload(t, path, "--flat=false --recursive=false --regexp=true", bintrayExpectedUploadNonFlatNonRecursive)
+	testBintrayUpload(t, path, tests.GetBintrayExpectedUploadFlatRecursive(), "--flat=true", "--recursive=true", "--regexp=true")
+	testBintrayUpload(t, path, tests.GetBintrayExpectedUploadFlatNonRecursive(), "--flat=true", "--recursive=false", "--regexp=true")
+	testBintrayUpload(t, path, bintrayExpectedUploadNonFlatRecursive, "--flat=false", "--recursive=true", "--regexp=true")
+	testBintrayUpload(t, path, bintrayExpectedUploadNonFlatNonRecursive, "--flat=false", "--recursive=false", "--regexp=true")
 
 	cleanBintrayTest()
 }
@@ -224,7 +224,7 @@ func TestBintrayLogs(t *testing.T) {
 	createPackageAndVersion(packagePath, versionPath)
 
 	path := tests.GetTestResourcesPath() + "a/*"
-	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true --publish=true")
+	bintrayCli.Exec("upload", path, versionPath, "--flat=true", "--recursive=true", "--publish=true")
 	assertPackageFiles(tests.GetBintrayExpectedUploadFlatRecursive(), getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("logs", packagePath)
 
@@ -240,7 +240,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
-	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true")
+	bintrayCli.Exec("upload", path, versionPath, "--flat=true", "--recursive=true")
 	path = tests.GetFilePathForBintray("a1.in", tests.GetTestResourcesPath(), "a")
 	bintrayCli.Exec("upload", path, versionPath, "--flat=false")
 
@@ -273,7 +273,7 @@ func TestBintrayFileDownloads(t *testing.T) {
 	assert.NoError(t, retryExecutor.Execute())
 
 	// File a/a1.in
-	args = []string{"download-file", repositoryPath + "/" + tests.GetTestResourcesPath() + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true --unpublished=true"}
+	args = []string{"download-file", repositoryPath + "/" + tests.GetTestResourcesPath() + "(a)/a1.in", tests.Out + "/bintray/{1}/fullpatha1.in", "--flat=true", "--unpublished=true"}
 	assert.NoError(t, retryExecutor.Execute())
 
 	//Validate that files were downloaded as expected
@@ -300,7 +300,7 @@ func TestBintrayVersionDownloads(t *testing.T) {
 	createPackageAndVersion(packagePath, versionPath)
 
 	path := tests.GetFilePathForBintray("*", tests.GetTestResourcesPath(), "a")
-	bintrayCli.Exec("upload", path, versionPath, "--flat=true --recursive=true")
+	bintrayCli.Exec("upload", path, versionPath, "--flat=true", "--recursive=true")
 	bintrayCli.Exec("download-ver", versionPath, tests.Out+"/bintray/", "--unpublished=true")
 
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+"/bintray/", false)
@@ -409,12 +409,14 @@ func cleanBintrayTest() {
 	tests.CleanFileSystem()
 }
 
-func testBintrayUpload(t *testing.T, relPath, flags string, expected []tests.PackageSearchResultItem) {
+func testBintrayUpload(t *testing.T, relPath string, expected []tests.PackageSearchResultItem, flags ...string) {
 	packagePath := path.Join(bintrayOrganization, tests.BintrayRepo, tests.BintrayUploadTestPackageName)
 	versionPath := path.Join(packagePath, tests.BintrayUploadTestVersion)
 	createPackageAndVersion(packagePath, versionPath)
 
-	bintrayCli.Exec("upload", tests.GetTestResourcesPath()+relPath, versionPath, flags)
+	args := []string{"upload", tests.GetTestResourcesPath() + relPath, versionPath}
+	args = append(args, flags...)
+	bintrayCli.Exec(args...)
 	assertPackageFiles(expected, getPackageFiles(tests.BintrayUploadTestPackageName), t)
 	bintrayCli.Exec("package-delete", packagePath)
 }
