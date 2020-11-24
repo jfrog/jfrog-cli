@@ -1,6 +1,11 @@
 package progressbar
 
 import (
+	"os"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
@@ -10,12 +15,6 @@ import (
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 	"golang.org/x/crypto/ssh/terminal"
-	"io"
-	"io/ioutil"
-	"os"
-	"strings"
-	"sync"
-	"time"
 )
 
 var terminalWidth int
@@ -25,7 +24,7 @@ const minTerminalWidth = 70
 const progressRefreshRate = 200 * time.Millisecond
 
 type progressBarManager struct {
-	bars           []*progressBarUnit
+	bars           []progressBar
 	barsWg         *sync.WaitGroup
 	container      *mpb.Progress
 	barsRWMutex    sync.RWMutex
@@ -39,49 +38,83 @@ type progressBarUnit struct {
 	replaceBar  *mpb.Bar
 }
 
-// Initializes a new progress bar
-func (p *progressBarManager) New(total int64, prefix, path string) (barId int) {
+type progressBar interface {
+	ioUtils.ProgressBar
+	getProgressBarUnit() *progressBarUnit
+}
+
+func NewProcessProgressBar(prefix, extraInformation string) (bar ioUtils.ProgressBar) {
+	return nil
+}
+
+func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInformation string) (bar ioUtils.ProgressBar) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
-
 	newBar := p.container.AddBar(int64(total),
 		mpb.BarStyle("⬜⬜⬜⬛⬛"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
-			decor.Name(buildProgressDescription(prefix, path, 17)),
+			decor.Name(buildProgressDescription(prefix, extraInformation, 17)),
 			decor.CountersKibiByte("%3.1f/%3.1f"),
 		),
 	)
 
 	// Add bar to bars array
 	unit := initNewBarUnit(newBar)
-	p.bars = append(p.bars, unit)
-	barId = len(p.bars)
+	barId := len(p.bars) + 1
+	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
+	p.bars = append(p.bars, &readerProgressBar)
 	p.barsRWMutex.Unlock()
-	return barId
+	return &readerProgressBar
 }
 
+// // Initializes a new progress bar
+// func (p *progressBarManager) NewConsumerProgressBar(consumer parallel.Runner, prefix string) (barId int) {
+// 	// Write Lock when appending a new bar to the slice
+// 	p.barsRWMutex.Lock()
+// 	p.barsWg.Add(1)
+
+// 	newBar := p.container.AddBar(int64(consumer.TasksCount()),
+// 		mpb.BarStyle("🐸🐸..."),
+// 		mpb.BarRemoveOnComplete(),
+// 		mpb.AppendDecorators(
+// 			// Extra chars length is the max length of the KibiByteCounter
+// 			decor.Name(buildProgressDescription(prefix, 17)),
+// 			decor.CountersKibiByte("%3.1f/%3.1f"),
+// 		),
+// 	)
+
+// 	// Add bar to bars array
+// 	unit := initNewBarUnit(newBar)
+// 	p.bars = append(p.bars, unit)
+// 	barId = len(p.bars)
+// 	p.barsRWMutex.Unlock()
+// 	return barId
+// }
+
 // Initializes a new progress bar, that replaces an existing bar when it is completed
-func (p *progressBarManager) NewReplacement(replaceBarId int, prefix, path string) (barId int) {
+// Refactor it name to new replacemant spinner!
+func (p *progressBarManager) AddNewReplacementSpinner(replaceBarId int, prefix, extraInformation string) (id int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
 
 	newBar := p.container.AddSpinner(1, mpb.SpinnerOnMiddle,
 		mpb.SpinnerStyle(createSpinnerFramesArray()),
-		mpb.BarParkTo(p.bars[replaceBarId-1].bar),
+		mpb.BarParkTo(p.bars[replaceBarId-1].getProgressBarUnit().bar),
 		mpb.AppendDecorators(
-			decor.Name(buildProgressDescription(prefix, path, 0)),
+			decor.Name(buildProgressDescription(prefix, extraInformation, 0)),
 		),
 	)
 
 	// Bar replacement is a spinner and thus does not use a channel for incrementing
-	unit := &progressBarUnit{bar: newBar, incrChannel: nil, replaceBar: p.bars[replaceBarId-1].bar}
+	unit := &progressBarUnit{bar: newBar, incrChannel: nil, replaceBar: p.bars[replaceBarId-1].getProgressBarUnit().bar}
 	// Add bar to bars array
-	p.bars = append(p.bars, unit)
-	barId = len(p.bars)
+	barId := len(p.bars) + 1
+	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
+	p.bars = append(p.bars, &readerProgressBar)
 	p.barsRWMutex.Unlock()
 	return barId
 }
@@ -137,50 +170,8 @@ func createSpinnerFramesArray() []string {
 	return spinnerFramesArray
 }
 
-// Wraps a body of a response (io.Reader) and increments bar accordingly
-func (p *progressBarManager) ReadWithProgress(barId int, reader io.Reader) (wrappedReader io.Reader) {
-	p.barsRWMutex.RLock()
-	wrappedReader = initProxyReader(p.bars[barId-1], reader)
-	p.barsRWMutex.RUnlock()
-	return wrappedReader
-}
-
-func initProxyReader(unit *progressBarUnit, reader io.Reader) io.ReadCloser {
-	if reader == nil {
-		return nil
-	}
-	rc, ok := reader.(io.ReadCloser)
-	if !ok {
-		rc = ioutil.NopCloser(reader)
-	}
-	return &proxyReader{unit, rc}
-}
-
-// Wraps an io.Reader for bytes reading tracking
-type proxyReader struct {
-	unit *progressBarUnit
-	io.ReadCloser
-}
-
-// Overrides the Read method of the original io.Reader.
-func (pr *proxyReader) Read(p []byte) (n int, err error) {
-	n, err = pr.ReadCloser.Read(p)
-	if n > 0 && err == nil {
-		pr.incrChannel(n)
-	}
-	return
-}
-
-func (pr *proxyReader) incrChannel(n int) {
-	// When an upload / download error occurs (for example, a bad HTTP error code),
-	// The progress bar's Abort method is invoked and closes the channel.
-	// Therefore, the channel may be already closed at this stage, which leads to a panic.
-	// We therefore need to recover if that happens.
-	defer func() {
-		recover()
-	}()
-	pr.unit.incrChannel <- n
-}
+// split this class - to prograssbarreader and mgr. make the mgr class to be responsable to the new prograssbar of the general prograss
+// make sure it will be easy to add new types of prograss action like reader to move/copy.
 
 // Aborts a progress bar.
 // Should be called even if bar completed successfully.
@@ -188,19 +179,7 @@ func (pr *proxyReader) incrChannel(n int) {
 func (p *progressBarManager) Abort(barId int) {
 	p.barsRWMutex.RLock()
 	defer p.barsWg.Done()
-
-	// If a replacing bar
-	if p.bars[barId-1].replaceBar != nil {
-		// The replacing bar is displayed only if the replacedBar completed, so needs to be dropped only if so
-		if p.bars[barId-1].replaceBar.Completed() {
-			p.bars[barId-1].bar.Abort(true)
-		} else {
-			p.bars[barId-1].bar.Abort(false)
-		}
-	} else {
-		close(p.bars[barId-1].incrChannel)
-		p.bars[barId-1].bar.Abort(true)
-	}
+	p.bars[barId-1].Abort()
 	p.barsRWMutex.RUnlock()
 }
 
@@ -218,10 +197,14 @@ func (p *progressBarManager) Quit() {
 	p.container.Wait()
 }
 
+func (p *progressBarManager) GetProgressBar(id int) ioUtils.ProgressBar {
+	return p.bars[id-1]
+}
+
 // Initializes progress bar if possible (all conditions in 'shouldInitProgressBar' are met).
 // Creates a log file and sets the Logger to it. Caller responsible to close the file.
 // Returns nil, nil, err if failed.
-func InitProgressBarIfPossible() (ioUtils.Progress, *os.File, error) {
+func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
 	shouldInit, err := shouldInitProgressBar()
 	if !shouldInit || err != nil {
 		return nil, nil, err

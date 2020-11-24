@@ -3,6 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -17,11 +23,6 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -1862,7 +1863,7 @@ func uploadCmd(c *cli.Context) error {
 
 type CommandWithProgress interface {
 	commands.Command
-	SetProgress(ioUtils.Progress)
+	SetProgress(ioUtils.ProgressMgr)
 }
 
 func execWithProgress(cmd CommandWithProgress) error {
