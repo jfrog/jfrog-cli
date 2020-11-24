@@ -95,7 +95,7 @@ func TestBundleAsyncDistDownload(t *testing.T) {
 	inttestutils.WaitForDistribution(t, tests.BundleName, bundleVersion, distHttpDetails)
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -209,7 +209,7 @@ func TestBundleExclusions(t *testing.T) {
 	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
+	runRt(t, "dl "+tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion, "--exclusions=*b2.in")
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -343,7 +343,7 @@ func TestUpdateReleaseBundle(t *testing.T) {
 	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
 	// Download by bundle version, b2 and b3 should not be downloaded, b1 should
-	runRt(t, "dl "+tests.DistRepo1+"/data/* "+tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
+	runRt(t, "dl", tests.DistRepo1+"/data/*", tests.Out+fileutils.GetFileSeparator()+"download"+fileutils.GetFileSeparator()+"simple_by_build"+fileutils.GetFileSeparator(), "--bundle="+tests.BundleName+"/"+bundleVersion)
 
 	// Validate files are downloaded by bundle version
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)

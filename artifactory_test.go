@@ -625,7 +625,7 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Copy by pattern
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/ "+tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
 
 	// Validate files are moved by build number
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -1480,14 +1480,14 @@ func TestValidateValidSymlink(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Upload symlink to artifactory
-	artifactoryCli.Exec("u", validLink+" "+tests.RtRepo1+" --symlinks=true")
+	artifactoryCli.Exec("u", validLink, tests.RtRepo1, "--symlinks=true")
 
 	// Delete the local symlink
 	err = os.Remove(validLink)
 	assert.NoError(t, err)
 
 	// Download symlink from artifactory
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/link "+tests.GetTestResourcesPath()+"a/ --validate-symlinks=true")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 
 	// Should be valid if successful
 	validateSymLink(validLink, localFile, t)
@@ -1569,10 +1569,10 @@ func TestSymlinkWildcardPathHandling(t *testing.T) {
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
 	link1 := filepath.Join(tests.GetTestResourcesPath()+"a/", "link*")
-	artifactoryCli.Exec("u", link1+" "+tests.RtRepo1+" --symlinks=true")
+	artifactoryCli.Exec("u", link1, tests.RtRepo1, "--symlinks=true")
 	err = os.Remove(link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/link "+tests.GetTestResourcesPath()+"a/ --validate-symlinks=true")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/link "+tests.GetTestResourcesPath()+"a/", "--validate-symlinks=true")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -1589,10 +1589,10 @@ func TestSymlinkToDirHandling(t *testing.T) {
 	link := filepath.Join(tests.GetTestResourcesPath()+"a/", "link")
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("u", link+" "+tests.RtRepo1+" --symlinks=true --recursive=true")
+	artifactoryCli.Exec("u", link, tests.RtRepo1, "--symlinks=true", "--recursive=true")
 	err = os.Remove(link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/link "+tests.GetTestResourcesPath()+"a/")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -1610,10 +1610,10 @@ func TestSymlinkToDirWildcardHandling(t *testing.T) {
 	err := os.Symlink(localFile, link)
 	assert.NoError(t, err)
 	link1 := filepath.Join(tests.GetTestResourcesPath()+"a/", "lin*")
-	artifactoryCli.Exec("u", link1+" "+tests.RtRepo1+" --symlinks=true --recursive=true")
+	artifactoryCli.Exec("u", link1, tests.RtRepo1, "--symlinks=true", "--recursive=true")
 	err = os.Remove(link)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/link "+tests.GetTestResourcesPath()+"a/")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/link", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link, localFile, t)
 	os.Remove(link)
 	cleanArtifactoryTest()
@@ -1636,14 +1636,14 @@ func TestSymlinkInsideSymlinkDirWithRecursionIssueUpload(t *testing.T) {
 	err = os.Symlink(localFilePath, link2)
 	assert.NoError(t, err)
 
-	artifactoryCli.Exec("u", localDirPath+"/link* "+tests.RtRepo1+" --symlinks=true --recursive=true")
+	artifactoryCli.Exec("u", localDirPath+"/link*", tests.RtRepo1, "--symlinks=true", "--recursive=true")
 	err = os.Remove(link1)
 	assert.NoError(t, err)
 
 	err = os.Remove(link2)
 	assert.NoError(t, err)
 
-	artifactoryCli.Exec("dl", tests.RtRepo1+"/link* "+tests.GetTestResourcesPath()+"a/")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/link*", tests.GetTestResourcesPath()+"a/")
 	validateSymLink(link1, localDirPath, t)
 	os.Remove(link1)
 	validateSymLink(link2, localFilePath, t)
@@ -3888,7 +3888,7 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Run command with dry-run
-	artifactoryCli.Exec(command, tests.RtRepo1+"/data/*a* "+tests.RtRepo2+"/", "--dry-run")
+	artifactoryCli.Exec(command, tests.RtRepo1+"/data/*a*", tests.RtRepo2+"/", "--dry-run")
 
 	// Validate files weren't affected
 	cpMvSpecFilePath, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -3896,7 +3896,7 @@ func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpec
 	verifyExistInArtifactory(beforeCommandExpected, cpMvSpecFilePath, t)
 
 	// Run command
-	artifactoryCli.Exec(command, tests.RtRepo1+"/data/*a* "+tests.RtRepo2+"/")
+	artifactoryCli.Exec(command, tests.RtRepo1+"/data/*a*", tests.RtRepo2+"/")
 
 	// Validate files were affected
 	verifyExistInArtifactory(afterCommandExpected, cpMvSpecFilePath, t)

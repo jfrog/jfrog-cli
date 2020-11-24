@@ -222,18 +222,21 @@ func NewJfrogCli(mainFunc func() error, prefix, credentials string) *JfrogCli {
 func (cli *JfrogCli) Exec(args ...string) error {
 	spaceSplit := " "
 	os.Args = strings.Split(cli.prefix, spaceSplit)
+	output := strings.Split(cli.prefix, spaceSplit)
 	for _, v := range args {
 		if v == "" {
 			continue
 		}
+		args := strings.Split(v, spaceSplit)
 		os.Args = append(os.Args, v)
+		output = append(output, args...)
 	}
 	if cli.credentials != "" {
 		args := strings.Split(cli.credentials, spaceSplit)
 		os.Args = append(os.Args, args...)
 	}
 
-	log.Info("[Command]", strings.Join(os.Args, " "))
+	log.Info("[Command]", strings.Join(output, " "))
 	return cli.main()
 }
 
