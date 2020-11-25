@@ -11,6 +11,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
@@ -19,17 +20,21 @@ import (
 
 // Image get parent image id command
 type BuildDockerImage struct {
-	DockerFilePath string
-	DockerTag      string
+	DockerFilePath   string
+	DockerTag        string
+	containerManager container.ContainerManagerType
+}
+
+func NewBuildDockerImage(imageTag, dockerFilePath string, containerManager container.ContainerManagerType) *BuildDockerImage {
+	return &BuildDockerImage{DockerTag: imageTag, DockerFilePath: dockerFilePath, containerManager: containerManager}
 }
 
 func (image *BuildDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, "docker")
 	cmd = append(cmd, "build")
 	cmd = append(cmd, image.DockerFilePath)
 	cmd = append(cmd, "--tag", image.DockerTag)
-	return exec.Command(cmd[0], cmd[1:]...)
+	return exec.Command(image.containerManager.String(), cmd[:]...)
 }
 
 func (image *BuildDockerImage) GetEnv() map[string]string {
@@ -45,16 +50,20 @@ func (image *BuildDockerImage) GetErrWriter() io.WriteCloser {
 }
 
 type deleteDockerImage struct {
-	dockerImageTag string
+	dockerImageTag   string
+	containerManager container.ContainerManagerType
+}
+
+func NewDeleteDockerImage(imageTag string, containerManager container.ContainerManagerType) *BuildDockerImage {
+	return &BuildDockerImage{DockerTag: imageTag, containerManager: containerManager}
 }
 
 func (image *deleteDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, "docker")
 	cmd = append(cmd, "image")
 	cmd = append(cmd, "rm")
 	cmd = append(cmd, image.dockerImageTag)
-	return exec.Command(cmd[0], cmd[1:]...)
+	return exec.Command(image.containerManager.String(), cmd[:]...)
 }
 
 func (image *deleteDockerImage) GetEnv() map[string]string {
@@ -69,20 +78,20 @@ func (image *deleteDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func BuildTestDockerImage(imageName string) string {
+func BuildTestContainerImage(imageName string, containerManagerType container.ContainerManagerType) string {
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
 	dockerFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
-	imageBuilder := &BuildDockerImage{DockerTag: imageTag, DockerFilePath: dockerFilePath}
+	imageBuilder := NewBuildDockerImage(imageTag, dockerFilePath, containerManagerType)
 	gofrogcmd.RunCmd(imageBuilder)
 	return imageTag
 }
 
-func DeleteTestDockerImage(imageTag string) {
-	imageBuilder := &deleteDockerImage{dockerImageTag: imageTag}
+func DeleteTestContainerImage(imageTag string, containerManagerType container.ContainerManagerType) {
+	imageBuilder := NewDeleteDockerImage(imageTag, containerManagerType)
 	gofrogcmd.RunCmd(imageBuilder)
 }
 
-func DockerTestCleanup(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
+func ContainerTestCleanup(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
 	// Remove build from Artifactory
 	DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
