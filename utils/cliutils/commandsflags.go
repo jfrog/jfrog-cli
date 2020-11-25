@@ -1,10 +1,11 @@
 package cliutils
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"sort"
 	"strconv"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
@@ -31,8 +32,8 @@ const (
 	Gradle                  = "gradle"
 	GradleConfig            = "gradle-config"
 	DockerPromote           = "docker-promote"
-	DockerPull              = "docker-pull"
-	DockerPush              = "docker-push"
+	ContainerPull           = "container-pull"
+	ContainerPush           = "container-push"
 	NpmConfig               = "npm-config"
 	Npm                     = "npm"
 	NpmPublish              = "npmPublish"
@@ -1181,11 +1182,11 @@ var commandFlags = map[string][]string{
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId,
 	},
-	DockerPush: {
+	ContainerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, threads,
 	},
-	DockerPull: {
+	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin,
 	},

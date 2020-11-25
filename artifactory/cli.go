@@ -9,8 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
@@ -20,6 +22,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
@@ -29,7 +33,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/docker"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/gradle"
@@ -446,7 +449,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "docker-push",
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerPush),
+			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
 			Aliases:      []string{"dp"},
 			Usage:        dockerpush.Description,
 			HelpName:     corecommon.CreateUsage("rt docker-push", dockerpush.Description, dockerpush.Usage),
@@ -454,12 +457,12 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return dockerPushCmd(c)
+				return containerPushCmd(c, containerutils.Docker)
 			},
 		},
 		{
 			Name:         "docker-pull",
-			Flags:        cliutils.GetCommandFlags(cliutils.DockerPull),
+			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
 			Aliases:      []string{"dpl"},
 			Usage:        dockerpull.Description,
 			HelpName:     corecommon.CreateUsage("rt docker-pull", dockerpull.Description, dockerpull.Usage),
@@ -467,7 +470,33 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return dockerPullCmd(c)
+				return containerPullCmd(c, containerutils.Docker)
+			},
+		},
+		{
+			Name:         "podman-push",
+			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
+			Aliases:      []string{"pp"},
+			Usage:        podmanpush.Description,
+			HelpName:     corecommon.CreateUsage("rt podman-push", podmanpull.Description, podmanpull.Usage),
+			UsageText:    podmanpush.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return containerPushCmd(c, containerutils.Podman)
+			},
+		},
+		{
+			Name:         "podman-pull",
+			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPull),
+			Aliases:      []string{"ppl"},
+			Usage:        podmanpull.Description,
+			HelpName:     corecommon.CreateUsage("rt podman-pull", podmanpull.Description, podmanpull.Usage),
+			UsageText:    podmanpull.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return containerPullCmd(c, containerutils.Podman)
 			},
 		},
 		{
@@ -1216,13 +1245,13 @@ func dockerPromoteCmd(c *cli.Context) error {
 	params.SourceTag = c.String("source-tag")
 	params.TargetTag = c.String("target-tag")
 	params.Copy = c.Bool("copy")
-	dockerPromoteCommand := docker.NewDockerPromoteCommand()
+	dockerPromoteCommand := container.NewDockerPromoteCommand()
 	dockerPromoteCommand.SetParams(params).SetRtDetails(artDetails)
 
 	return commands.Exec(dockerPromoteCommand)
 }
 
-func dockerPushCmd(c *cli.Context) error {
+func containerPushCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1238,7 +1267,7 @@ func dockerPushCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	dockerPushCommand := docker.NewDockerPushCommand()
+	dockerPushCommand := container.NewPushCommand(containerManagerType)
 	threads, err := getThreadsCount(c)
 	if err != nil {
 		return err
@@ -1248,7 +1277,7 @@ func dockerPushCmd(c *cli.Context) error {
 	return commands.Exec(dockerPushCommand)
 }
 
-func dockerPullCmd(c *cli.Context) error {
+func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1263,7 +1292,7 @@ func dockerPullCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	dockerPullCommand := docker.NewDockerPullCommand()
+	dockerPullCommand := container.NewPullCommand(containerManagerType)
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(dockerPullCommand)

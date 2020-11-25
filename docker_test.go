@@ -9,7 +9,7 @@ import (
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils/docker"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -34,29 +34,50 @@ func initDockerTest(t *testing.T) {
 
 func TestDockerPush(t *testing.T) {
 	initDockerTest(t)
-	runDockerPushTest(tests.DockerImageName, tests.DockerImageName+":1", false, t)
+	containerManagers := []string{"docker"}
+	if coreutils.IsLinux() {
+		containerManagers = append(containerManagers, "podman")
+	}
+	for _, containerManager := range containerManagers {
+
+		runPushTest(containerManager, tests.DockerImageName, tests.DockerImageName+":1", false, t)
+	}
 }
 
 func TestDockerPushWithModuleName(t *testing.T) {
 	initDockerTest(t)
-	runDockerPushTest(tests.DockerImageName, ModuleNameJFrogTest, true, t)
+	containerManagers := []string{"docker"}
+	if coreutils.IsLinux() {
+		containerManagers = append(containerManagers, "podman")
+	}
+	for _, containerManager := range containerManagers {
+
+		runPushTest(containerManager, tests.DockerImageName, ModuleNameJFrogTest, true, t)
+	}
 }
 
 func TestDockerPushWithMultipleSlash(t *testing.T) {
 	initDockerTest(t)
-	runDockerPushTest(tests.DockerImageName+"/multiple", "multiple:1", false, t)
+	containerManagers := []string{"docker"}
+	if coreutils.IsLinux() {
+		containerManagers = append(containerManagers, "podman")
+	}
+	for _, containerManager := range containerManagers {
+
+		runPushTest(containerManager, tests.DockerImageName+"/multiple", "multiple:1", false, t)
+	}
 }
 
 // Run docker push to Artifactory
-func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) {
+func runPushTest(containerManager, imageName, module string, withModule bool, t *testing.T) {
 	imageTag := inttestutils.BuildTestDockerImage(imageName)
 	buildNumber := "1"
 
 	// Push docker image using docker client
 	if withModule {
-		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
+		artifactoryCli.Exec(containerManager+"-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
 	} else {
-		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		artifactoryCli.Exec(containerManager+"-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
 
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
@@ -69,46 +90,57 @@ func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) 
 }
 func TestDockerPushBuildNameNumberFromEnv(t *testing.T) {
 	initDockerTest(t)
-	imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
-	buildNumber := "1"
-	os.Setenv(coreutils.BuildName, tests.DockerBuildName)
-	os.Setenv(coreutils.BuildNumber, buildNumber)
-	defer os.Unsetenv(coreutils.BuildName)
-	defer os.Unsetenv(coreutils.BuildNumber)
+	containerManagers := []string{"docker"}
+	if coreutils.IsLinux() {
+		containerManagers = append(containerManagers, "podman")
+	}
+	for _, containerManager := range containerManagers {
+		imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
+		buildNumber := "1"
+		os.Setenv(coreutils.BuildName, tests.DockerBuildName)
+		os.Setenv(coreutils.BuildNumber, buildNumber)
+		defer os.Unsetenv(coreutils.BuildName)
+		defer os.Unsetenv(coreutils.BuildNumber)
 
-	// Push docker image using docker client
-	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
-	artifactoryCli.Exec("build-publish")
+		// Push docker image using docker client
+		artifactoryCli.Exec(containerManager+"-push", imageTag, *tests.DockerTargetRepo)
+		artifactoryCli.Exec("build-publish")
 
-	imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
-	validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
+		imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
+		validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
 
-	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+		inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+	}
 }
 
 func TestDockerPull(t *testing.T) {
 	initDockerTest(t)
+	containerManagers := []string{"docker"}
+	if coreutils.IsLinux() {
+		containerManagers = append(containerManagers, "podman")
+	}
+	for _, containerManager := range containerManagers {
+		imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
 
-	imageTag := inttestutils.BuildTestDockerImage(tests.DockerImageName)
+		// Push docker image using docker client
+		artifactoryCli.Exec(containerManager+"-push", imageTag, *tests.DockerTargetRepo)
 
-	// Push docker image using docker client
-	artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
+		buildNumber := "1"
 
-	buildNumber := "1"
+		// Pull docker image using docker client
+		artifactoryCli.Exec(containerManager+"-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
+		artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
-	// Pull docker image using docker client
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
-	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+		imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
+		validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
 
-	imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
-	validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 0, 7, 7, t)
+		buildNumber = "2"
+		artifactoryCli.Exec(containerManager+"-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+		artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+		validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
-	buildNumber = "2"
-	artifactoryCli.Exec("docker-pull", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
-	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
-	validateDockerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
-
-	inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+		inttestutils.DockerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+	}
 }
 
 func dockerTestCleanup(imageName, buildName string) {
@@ -121,16 +153,16 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 	initDockerTest(t)
 
 	// Run docker version command and expect no errors
-	cmd := &docker.VersionCmd{}
+	cmd := &container.VersionCmd{}
 	content, err := gofrogcmd.RunCmdOutput(cmd)
 	assert.NoError(t, err)
 
 	// Expect VersionRegex to match the output API version
 	content = strings.TrimSpace(content)
-	assert.True(t, docker.ApiVersionRegex.Match([]byte(content)))
+	assert.True(t, container.ApiVersionRegex.Match([]byte(content)))
 
 	// Assert docker min API version
-	assert.True(t, docker.IsCompatibleApiVersion(content))
+	assert.True(t, container.IsCompatibleApiVersion(content))
 }
 
 func TestDockerFatManifestPull(t *testing.T) {
