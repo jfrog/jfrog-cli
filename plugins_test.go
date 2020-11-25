@@ -117,14 +117,18 @@ func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte
 	defer func() {
 		os.Stdout = oldStdout
 		r.Close()
-		w.Close()
 	}()
 	err = jfrogCli.Exec(cmd...)
 	if err != nil {
 		assert.NoError(t, err)
+		w.Close()
 		return nil, err
 	}
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
 	content, err := ioutil.ReadAll(r)
 	if err != nil {
 		assert.NoError(t, err)
