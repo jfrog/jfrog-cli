@@ -228,7 +228,7 @@ func (cli *JfrogCli) Exec(args ...string) error {
 			continue
 		}
 		args := strings.Split(v, spaceSplit)
-		os.Args = append(os.Args, args...)
+		os.Args = append(os.Args, v)
 		output = append(output, args...)
 	}
 	if cli.credentials != "" {

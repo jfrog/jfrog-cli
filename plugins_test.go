@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/buger/jsonparser"
 	"github.com/jfrog/jfrog-cli-core/plugins"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -9,8 +8,8 @@ import (
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,7 +38,7 @@ func TestPluginFullCycle(t *testing.T) {
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
 	// Install plugin from registry.
-	err = jfrogCli.Exec("plugin install " + pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "install", pluginTemplateName)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -49,22 +48,18 @@ func TestPluginFullCycle(t *testing.T) {
 		return
 	}
 
-	// Redirect to extract signature and commands output.
-	buffer, previousLog := tests.RedirectLogOutputToBuffer()
-	defer log.SetLogger(previousLog)
-
-	err = verifyPluginSignature(t, jfrogCli, buffer)
+	err = verifyPluginSignature(t, jfrogCli)
 	if err != nil {
 		return
 	}
 
-	err = verifyPluginCommand(t, jfrogCli, buffer)
+	err = verifyPluginCommand(t, jfrogCli)
 	if err != nil {
 		return
 	}
 
 	// Uninstall plugin from home dir.
-	err = jfrogCli.Exec("plugin uninstall " + pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "uninstall", pluginTemplateName)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -75,17 +70,12 @@ func TestPluginFullCycle(t *testing.T) {
 	}
 }
 
-func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli, buffer *bytes.Buffer) error {
+func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Get signature from plugin.
-	err := jfrogCli.Exec(pluginTemplateName + " " + plugins.SignatureCommandName)
+	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, plugins.SignatureCommandName)
 	if err != nil {
-		assert.NoError(t, err)
 		return err
 	}
-
-	// Write the command output to the origin.
-	content := buffer.Bytes()
-	buffer.Reset()
 
 	// Extract the the name from the output.
 	name, err := jsonparser.GetString(content, "name")
@@ -105,20 +95,45 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli, buffer *bytes
 	return nil
 }
 
-func verifyPluginCommand(t *testing.T, jfrogCli *tests.JfrogCli, buffer *bytes.Buffer) error {
+func verifyPluginCommand(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Run plugin's command.
-	err := jfrogCli.Exec(pluginTemplateName + " hello world --shout")
+	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, "hello", "\"hello world\"", "--shout")
 	if err != nil {
-		assert.NoError(t, err)
 		return err
 	}
 
-	// Write the command output to the origin
-	content := buffer.Bytes()
-	buffer.Reset()
-
 	assert.Contains(t, string(content), "HELLO WORLD")
 	return nil
+}
+
+func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte, error) {
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	os.Stdout = w
+	defer func() {
+		os.Stdout = oldStdout
+		r.Close()
+	}()
+	err = jfrogCli.Exec(cmd...)
+	if err != nil {
+		assert.NoError(t, err)
+		w.Close()
+		return nil, err
+	}
+	err = w.Close()
+	if err != nil {
+		assert.NoError(t, err)
+		return nil, err
+	}
+	content, err := ioutil.ReadAll(r)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	return content, err
 }
 
 func verifyPluginInPluginsDir(t *testing.T, shouldExist bool) error {
