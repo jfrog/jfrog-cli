@@ -1,3 +1,9 @@
+## 1.41.2 (November 25, 2020)
+Bug fix - User prompts in plugins are invisible
+Bug fix - Occasional panic on TestInsecureTlsMavenBuild
+Bug fix - Avoid using "ParseArgs" for new syntax package manager commands
+Bug fix - Error when uploading / downloading 0 files 
+
 ## 1.41.1 (November 13, 2020)
 Bug fix - With multiple JFrog CLI plugins installed, the wrong plugin gets executed 
 
