@@ -26,40 +26,33 @@ func InitDockerTests() {
 	createRequiredRepos()
 }
 
-func initContainerTest(t *testing.T) {
+func initContainerTest(t *testing.T) []container.ContainerManagerType {
 	if !*tests.TestDocker {
 		t.Skip("Skipping docker/podman test. To run docker test add the '-test.docker=true' option.")
 	}
-}
-
-func TestContainerPush(t *testing.T) {
-	initContainerTest(t)
 	containerManagers := []container.ContainerManagerType{container.Docker}
 	if coreutils.IsLinux() {
 		containerManagers = append(containerManagers, container.Podman)
 	}
+	return containerManagers
+}
+
+func TestContainerPush(t *testing.T) {
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 		runPushTest(containerManager, tests.DockerImageName, tests.DockerImageName+":1", false, t)
 	}
 }
 
 func TestContainerPushWithModuleName(t *testing.T) {
-	initContainerTest(t)
-	containerManagers := []container.ContainerManagerType{container.Docker}
-	if coreutils.IsLinux() {
-		containerManagers = append(containerManagers, container.Podman)
-	}
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 		runPushTest(containerManager, tests.DockerImageName, ModuleNameJFrogTest, true, t)
 	}
 }
 
 func TestContainerPushWithMultipleSlash(t *testing.T) {
-	initContainerTest(t)
-	containerManagers := []container.ContainerManagerType{container.Docker}
-	if coreutils.IsLinux() {
-		containerManagers = append(containerManagers, container.Podman)
-	}
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 
 		runPushTest(containerManager, tests.DockerImageName+"/multiple", "multiple:1", false, t)
@@ -87,11 +80,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 
 }
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
-	initContainerTest(t)
-	containerManagers := []container.ContainerManagerType{container.Docker}
-	if coreutils.IsLinux() {
-		containerManagers = append(containerManagers, container.Podman)
-	}
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(tests.DockerImageName, containerManager)
 		buildNumber := "1"
@@ -112,11 +101,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 }
 
 func TestContainerPull(t *testing.T) {
-	initContainerTest(t)
-	containerManagers := []container.ContainerManagerType{container.Docker}
-	if coreutils.IsLinux() {
-		containerManagers = append(containerManagers, container.Podman)
-	}
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 		imageTag := inttestutils.BuildTestContainerImage(tests.DockerImageName, containerManager)
 
@@ -164,11 +149,7 @@ func TestDockerClientApiVersionCmd(t *testing.T) {
 }
 
 func TestContainerFatManifestPull(t *testing.T) {
-	initContainerTest(t)
-	containerManagers := []container.ContainerManagerType{container.Docker}
-	if coreutils.IsLinux() {
-		containerManagers = append(containerManagers, container.Podman)
-	}
+	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
 		for _, dockerRepo := range [...]string{*tests.DockerRemoteRepo, *tests.DockerVirtualRepo} {
 			imageName := "traefik"
