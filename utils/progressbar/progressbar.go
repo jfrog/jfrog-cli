@@ -24,12 +24,14 @@ const minTerminalWidth = 70
 const progressRefreshRate = 200 * time.Millisecond
 
 type progressBarManager struct {
-	bars           []progressBar
-	barsWg         *sync.WaitGroup
-	container      *mpb.Progress
-	barsRWMutex    sync.RWMutex
-	headlineBar    *mpb.Bar
-	logFilePathBar *mpb.Bar
+	bars               []progressBar
+	barsWg             *sync.WaitGroup
+	container          *mpb.Progress
+	barsRWMutex        sync.RWMutex
+	headlineBar        *mpb.Bar
+	logFilePathBar     *mpb.Bar
+	generalProgressBar *mpb.Bar
+	tasksCount         int64
 }
 
 type progressBarUnit struct {
@@ -43,16 +45,12 @@ type progressBar interface {
 	getProgressBarUnit() *progressBarUnit
 }
 
-func NewProcessProgressBar(prefix, extraInformation string) (bar ioUtils.ProgressBar) {
-	return nil
-}
-
 func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInformation string) (bar ioUtils.ProgressBar) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
 	newBar := p.container.AddBar(int64(total),
-		mpb.BarStyle("⬜⬜⬜⬛⬛"),
+		mpb.BarStyle("|🟩🟩⬛|"),
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
@@ -70,37 +68,12 @@ func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInfo
 	return &readerProgressBar
 }
 
-// // Initializes a new progress bar
-// func (p *progressBarManager) NewConsumerProgressBar(consumer parallel.Runner, prefix string) (barId int) {
-// 	// Write Lock when appending a new bar to the slice
-// 	p.barsRWMutex.Lock()
-// 	p.barsWg.Add(1)
-
-// 	newBar := p.container.AddBar(int64(consumer.TasksCount()),
-// 		mpb.BarStyle("🐸🐸..."),
-// 		mpb.BarRemoveOnComplete(),
-// 		mpb.AppendDecorators(
-// 			// Extra chars length is the max length of the KibiByteCounter
-// 			decor.Name(buildProgressDescription(prefix, 17)),
-// 			decor.CountersKibiByte("%3.1f/%3.1f"),
-// 		),
-// 	)
-
-// 	// Add bar to bars array
-// 	unit := initNewBarUnit(newBar)
-// 	p.bars = append(p.bars, unit)
-// 	barId = len(p.bars)
-// 	p.barsRWMutex.Unlock()
-// 	return barId
-// }
-
 // Initializes a new progress bar, that replaces an existing bar when it is completed
-// Refactor it name to new replacemant spinner!
 func (p *progressBarManager) AddNewReplacementSpinner(replaceBarId int, prefix, extraInformation string) (id int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
-
+	p.IncreaseGeneralProgressTotalBy(1)
 	newBar := p.container.AddSpinner(1, mpb.SpinnerOnMiddle,
 		mpb.SpinnerStyle(createSpinnerFramesArray()),
 		mpb.BarParkTo(p.bars[replaceBarId-1].getProgressBarUnit().bar),
@@ -123,7 +96,7 @@ func buildProgressDescription(prefix, path string, extraCharsLen int) string {
 	separator := " | "
 	// Max line length after decreasing bar width (*2 in case unicode chars with double width are used) and the extra chars
 	descMaxLength := terminalWidth - (progressBarWidth*2 + extraCharsLen)
-	return buildDescByLimits(descMaxLength, separator+prefix+separator, path, separator)
+	return buildDescByLimits(descMaxLength, " "+prefix+separator, path, separator)
 }
 
 func buildDescByLimits(descMaxLength int, prefix, path, suffix string) string {
@@ -170,9 +143,6 @@ func createSpinnerFramesArray() []string {
 	return spinnerFramesArray
 }
 
-// split this class - to prograssbarreader and mgr. make the mgr class to be responsable to the new prograssbar of the general prograss
-// make sure it will be easy to add new types of prograss action like reader to move/copy.
-
 // Aborts a progress bar.
 // Should be called even if bar completed successfully.
 // The progress component's Abort method has no effect if bar has already completed, so can always be safely called anyway
@@ -181,6 +151,8 @@ func (p *progressBarManager) Abort(barId int) {
 	defer p.barsWg.Done()
 	p.bars[barId-1].Abort()
 	p.barsRWMutex.RUnlock()
+	p.generalProgressBar.Increment()
+
 }
 
 // Quits the progress bar while aborting the initial bars.
@@ -190,6 +162,10 @@ func (p *progressBarManager) Quit() {
 		p.barsWg.Done()
 	}
 	if p.logFilePathBar != nil {
+		p.barsWg.Done()
+	}
+	if p.generalProgressBar != nil {
+		p.generalProgressBar.Abort(true)
 		p.barsWg.Done()
 	}
 	// Wait a refresh rate to make sure all aborts have finished
@@ -229,6 +205,8 @@ func InitProgressBarIfPossible() (ioUtils.ProgressMgr, *os.File, error) {
 	// Add headline bar to the whole progress
 	newProgressBar.printLogFilePathAsBar(logFile.Name())
 	newProgressBar.newHeadlineBar(" Working... ")
+	newProgressBar.tasksCount = 0
+	newProgressBar.newGeneralProgressBar()
 
 	return newProgressBar, logFile, nil
 }
@@ -263,6 +241,21 @@ func setTerminalWidthVar() error {
 	return err
 }
 
+// Initializes a new progress bar for general progress indication
+func (p *progressBarManager) newGeneralProgressBar() {
+	p.barsWg.Add(1)
+	p.generalProgressBar = p.container.AddBar(
+		p.tasksCount,
+		mpb.BarStyle("|⬜⬜⬛|"),
+		mpb.BarRemoveOnComplete(),
+		mpb.AppendDecorators(
+			decor.Name(" Tasks:"),
+			decor.CountersNoUnit("%d/%d"),
+		),
+	)
+
+}
+
 // Initializes a new progress bar for headline, with a spinner
 func (p *progressBarManager) newHeadlineBar(headline string) {
 	p.barsWg.Add(1)
@@ -286,4 +279,12 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 		),
 	)
 	p.logFilePathBar.SetTotal(0, true)
+}
+
+// IncreaseGeneralProgressTotalBy increses the general progress bar total count by given n.
+func (p *progressBarManager) IncreaseGeneralProgressTotalBy(n int64) {
+	p.tasksCount += n
+	if p.generalProgressBar != nil {
+		p.generalProgressBar.SetTotal(p.tasksCount, false)
+	}
 }
