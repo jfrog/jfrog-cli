@@ -36,7 +36,7 @@ Well, plugins can do almost anything. The sky is the limit.
 ## Guidelines for developing and publishing a plugin
 To publish your plugin, you need to include it in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). Please make sure your plugin meets the following guidelines before publishing it.
 
-* Read the [Developer Terms](https://github.com/jfrog/jfrog-cli-plugins-reg/blob/master/DEVELOPERS_TERMS.md`) document. You'll be asked to accept it before your plugin becomes available.
+* Read the [Developer Terms](https://github.com/jfrog/jfrog-cli-plugins-reg/blob/master/DEVELOPERS_TERMS.md) document. You'll be asked to accept it before your plugin becomes available.
 * **Code structure.** Make sure the plugin code is structured similarly to the jfrog cli plugin template. Specifically, it should include a *commands* package, and a separate file for each command.
 * **Tests.** The plugin code should include a series of thorough tests. Use the [jfrog-cli-plugin-template](https://github.com/jfrog/jfrog-cli-plugin-template.git) as a reference on how the tests should be included as part of the source code. The tests should be executed using the following Go command while inside the root directory of the plugin project. **Note:** The Registry verifies the plugin and tries to run your plugin tests using the following command. ```go vet -v ./... && go test -v ./...```
 * **Code formatting.** To make sure the code formatted properly, run the following go command on your plugin sources, while inside the root of your project directory. ```go fmt ./...```
