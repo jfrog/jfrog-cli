@@ -3,6 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -17,11 +23,6 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -1808,6 +1809,11 @@ func downloadCmd(c *cli.Context) error {
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
 
+	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
+
 	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), rtDetails.Url, err)
@@ -1853,6 +1859,10 @@ func uploadCmd(c *cli.Context) error {
 	}
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
 
+	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
 	err = execWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), "", err)
