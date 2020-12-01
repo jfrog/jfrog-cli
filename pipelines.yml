@@ -168,5 +168,3 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.plugins
 
-
-
