@@ -134,10 +134,10 @@ func incrBarFromChannel(unit *progressBarUnit) {
 
 func createSpinnerFramesArray() []string {
 	black := "⬛"
-	white := "⬜"
+	green := "🟩"
 	spinnerFramesArray := make([]string, progressBarWidth)
-	for i := 0; i < progressBarWidth; i++ {
-		cur := strings.Repeat(black, i) + white + strings.Repeat(black, progressBarWidth-1-i)
+	for i := 1; i < progressBarWidth-1; i++ {
+		cur := "|" + strings.Repeat(black, i-1) + green + strings.Repeat(black, progressBarWidth-2-i) + "|"
 		spinnerFramesArray[i] = cur
 	}
 	return spinnerFramesArray

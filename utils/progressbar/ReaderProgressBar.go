@@ -77,7 +77,7 @@ func initProxyReader(unit *progressBarUnit, reader io.Reader) io.ReadCloser {
 // Overrides the Read method of the original io.Reader.
 func (pr *proxyReader) Read(p []byte) (n int, err error) {
 	n, err = pr.ReadCloser.Read(p)
-	if n > 0 && err == nil {
+	if n > 0 && (err == nil || err == io.EOF) {
 		pr.incrChannel(n)
 	}
 	return
