@@ -16,19 +16,9 @@ type proxyReader struct {
 	io.ReadCloser
 }
 
-// Initializes a new progress indication for a new file transfer.
-// Input: 'total' - file size, 'prefix' - optional description, 'extraInformation' - information to be desplayed.
-// Output: A progressBar object
-
-// Used to updated the progress bar progress.
-func (p *ReaderProgressBar) ActionWithProgress(args ...interface{}) (results interface{}) {
-	if len(args) > 0 {
-		reader, ok := args[0].(io.Reader)
-		if ok {
-			return p.readWithProgress(reader)
-		}
-	}
-	return nil
+// Uses to updated the progress bar progress.
+func (p *ReaderProgressBar) ActionWithProgress(reader io.Reader) (results io.Reader) {
+	return p.readWithProgress(reader)
 }
 
 // Abort aborts a progress indication. Called on both successful and unsuccessful operations

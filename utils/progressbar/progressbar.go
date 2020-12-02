@@ -45,6 +45,9 @@ type progressBar interface {
 	getProgressBarUnit() *progressBarUnit
 }
 
+// Initializes a new reader progress indication for a new file transfer.
+// Input: 'total' - file size, 'prefix' - optional description, 'extraInformation' -extra information for disply.
+// Output: progress indication id
 func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInformation string) (bar ioUtils.ProgressBar) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
@@ -253,7 +256,6 @@ func (p *progressBarManager) newGeneralProgressBar() {
 			decor.CountersNoUnit("%d/%d"),
 		),
 	)
-
 }
 
 // Initializes a new progress bar for headline, with a spinner
@@ -281,7 +283,7 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.logFilePathBar.SetTotal(0, true)
 }
 
-// IncreaseGeneralProgressTotalBy increses the general progress bar total count by given n.
+// IncreaseGeneralProgressTotalBy increases the general progress bar total count by given n.
 func (p *progressBarManager) IncreaseGeneralProgressTotalBy(n int64) {
 	p.tasksCount += n
 	if p.generalProgressBar != nil {
