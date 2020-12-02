@@ -489,6 +489,9 @@ func createGoProject(t *testing.T, projectName string, includeDirs bool) string 
 	assert.NoError(t, err)
 	projectTarget, err = filepath.Abs(projectTarget)
 	assert.NoError(t, err)
+	goModeOriginalPath := filepath.Join(projectTarget, "createGoProject_go.mod_suffix")
+	goModeTargetPath := filepath.Join(projectTarget, "go.mod")
+	os.Rename(goModeOriginalPath, goModeTargetPath)
 	return projectTarget
 }
 
