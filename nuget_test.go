@@ -56,6 +56,7 @@ func TestNugetResolve(t *testing.T) {
 
 func TestNativeNugetResolve(t *testing.T) {
 	uniqueNugetTests := []testDescriptor{
+		{"nugetargswithspaces", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "-PackagesDirectory", "./packages dir with spaces"}, []string{"packagesconfig"}, []int{6}},
 		{"packagesconfigwithoutmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore"}, []string{"packagesconfig"}, []int{6}},
 		{"packagesconfigwithmodulechnage", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "--module=" + ModuleNameJFrogTest}, []string{ModuleNameJFrogTest}, []int{6}},
 		{"packagesconfigwithconfigpath", "packagesconfig", []string{dotnetutils.Nuget.String(), "restore", "./packages.config", "-SolutionDirectory", "."}, []string{"packagesconfig"}, []int{6}},
@@ -70,6 +71,7 @@ func TestNativeNugetResolve(t *testing.T) {
 
 func TestDotnetResolve(t *testing.T) {
 	uniqueDotnetTests := []testDescriptor{
+		{"dotnetargswithspaces", "multireference", []string{dotnetutils.DotnetCore.String(), "restore", "src/multireference.proj1/", "--packages", "./packages dir with spaces"}, []string{"proj1"}, []int{5}},
 		{"multireferencesingleprojectdir", "multireference", []string{dotnetutils.DotnetCore.String(), "restore", "src/multireference.proj1/"}, []string{"proj1"}, []int{5}},
 	}
 	testNativeNugetDotnetResolve(t, uniqueDotnetTests, tests.DotnetBuildName, utils.Dotnet)
@@ -89,7 +91,10 @@ func testNativeNugetDotnetResolve(t *testing.T, uniqueTests []testDescriptor, bu
 	for buildNumber, test := range testDescriptors {
 		projectPath := createNugetProject(t, test.project)
 		err := createConfigFileForTest([]string{projectPath}, tests.NugetRemoteRepo, "", t, projectType, false)
-		assert.NoError(t, err)
+		if err != nil {
+			assert.NoError(t, err)
+			return
+		}
 		t.Run(test.name, func(t *testing.T) {
 			testNugetCmd(t, projectPath, buildName, strconv.Itoa(buildNumber), test.expectedModules, test.args, test.expectedDependencies, true)
 		})
@@ -127,7 +132,10 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	assert.NoError(t, err)
 	args = append(args, "--build-name="+buildName, "--build-number="+buildNumber)
 	if native {
-		runNuGet(t, args...)
+		err = runNuGet(t, args...)
+		if err != nil {
+			return
+		}
 	} else {
 		assert.NoError(t, artifactoryCli.Exec(args...))
 	}
@@ -154,10 +162,11 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 }
 
-func runNuGet(t *testing.T, args ...string) {
+func runNuGet(t *testing.T, args ...string) error {
 	artifactoryNuGetCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err := artifactoryNuGetCli.Exec(args...)
 	assert.NoError(t, err)
+	return err
 }
 
 func TestInitNewConfig(t *testing.T) {

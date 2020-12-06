@@ -1295,7 +1295,7 @@ func nugetCmd(c *cli.Context) error {
 		// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 		// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 		if len(filteredNugetArgs) > 1 {
-			nugetCmd.SetArgAndFlags(strings.Join(filteredNugetArgs[1:], " "))
+			nugetCmd.SetArgAndFlags(filteredNugetArgs[1:])
 		}
 		return commands.Exec(nugetCmd)
 	}
@@ -1317,7 +1317,14 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String("nuget-args")).
+
+	args := c.String("nuget-args")
+	if args == "" {
+		nugetCmd.SetArgAndFlags([]string{})
+	} else {
+		nugetCmd.SetArgAndFlags(strings.Split(args, " "))
+	}
+	nugetCmd.SetBasicCommand(c.Args().Get(0)).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
 		SetSolutionPath(c.String("solution-root")).
@@ -1369,7 +1376,7 @@ func dotnetCmd(c *cli.Context) error {
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
 	if len(filteredDotnetArgs) > 1 {
-		dotnetCmd.SetArgAndFlags(strings.Join(filteredDotnetArgs[1:], " "))
+		dotnetCmd.SetArgAndFlags(filteredDotnetArgs[1:])
 	}
 	return commands.Exec(dotnetCmd)
 }
