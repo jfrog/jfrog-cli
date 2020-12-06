@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,7 +15,12 @@ import (
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	kanikoImage = "gcr.io/kaniko-project/executor:latest"
 )
 
 func InitDockerTests() {
@@ -76,7 +82,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
 	validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
-	inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
+	inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
 
 }
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
@@ -96,7 +102,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 		imagePath := path.Join(*tests.DockerTargetRepo, tests.DockerImageName, "1") + "/"
 		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, tests.DockerImageName+":1", 7, 5, 7, t)
 
-		inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+		inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
 	}
 }
 
@@ -122,14 +128,14 @@ func TestContainerPull(t *testing.T) {
 		artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 		validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, ModuleNameJFrogTest, 0, 7, 7, t)
 
-		inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+		inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
 	}
 }
 
-func containerTestCleanup(imageName, buildName string) {
+func containerTestCleanup(t *testing.T, imageName, buildName string) {
 	// Remove build from Artifactory
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
-	inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+	inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
 }
 
 func TestDockerClientApiVersionCmd(t *testing.T) {
@@ -173,8 +179,8 @@ func TestContainerFatManifestPull(t *testing.T) {
 			buildInfo := publishedBuildInfo.BuildInfo
 			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
 
-			inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
-			inttestutils.DeleteTestContainerImage(imageTag, containerManager)
+			inttestutils.DeleteBuild(artifactoryDetails.Url, tests.DockerBuildName, artHttpDetails)
+			inttestutils.DeleteTestContainerImage(t, imageTag, containerManager)
 		}
 	}
 }
@@ -200,8 +206,8 @@ func TestDockerPromote(t *testing.T) {
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetDockerDeployedManifest(), searchSpec, t)
 
-	inttestutils.ContainerTestCleanup(artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
-	inttestutils.DeleteTestContainerImage(imageTag, container.Docker)
+	inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, tests.DockerImageName, tests.DockerBuildName)
+	inttestutils.DeleteTestContainerImage(t, imageTag, container.Docker)
 }
 
 func validateContainerBuild(buildName, buildNumber, imagePath, module string, expectedArtifacts, expectedDependencies, expectedItemsInArtifactory int, t *testing.T) {
@@ -229,4 +235,55 @@ func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtif
 	assert.NoError(t, err)
 	assert.Equal(t, expectedItemsInArtifactory, length, "Container build info was not pushed correctly")
 	assert.NoError(t, reader.Close())
+}
+
+func TestKanikoBuildCollect(t *testing.T) {
+	initContainerTest(t)
+	imageName := "hello-world-or"
+	imageTag := imageName + ":latest"
+	buildNumber := "1"
+	registryDestination := path.Join(*tests.DockerRepoDomain, imageTag)
+	kanikoOutput := runKaniko(t, tests.Out, registryDestination, kanikoImage)
+
+	// Run 'build-docker-create' & publish the results to Artifactory.
+	assert.NoError(t, artifactoryCli.Exec("build-docker-create", *tests.DockerTargetRepo, "--image-name-with-digest-file="+kanikoOutput, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber))
+	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber))
+
+	// Validate.
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.DockerBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	validateBuildInfo(buildInfo, t, 0, 3, imageTag)
+
+	// Cleanup.
+	inttestutils.ContainerTestCleanup(t, artifactoryDetails, artHttpDetails, imageName, tests.DockerBuildName)
+	inttestutils.DeleteTestContainerImage(t, kanikoImage, container.Docker)
+	assert.NoError(t, os.RemoveAll(tests.Out))
+}
+
+// t - test object.
+// kanikoWorkspac - local path to kaniko's workspace.
+// imageToPush - the image to be pushed by kaniko.
+// return - path to the kaniko's output file.
+func runKaniko(t *testing.T, kanikoWorkspac, imageToPush, kanikoImage string) string {
+	testDir := tests.GetTestResourcesPath()
+	dockerFile := "TestKanikoBuildCollect"
+	imageNameWithDigestFile := "image-name-with-digest-file"
+	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)
+	assert.NoError(t, err)
+	credentialsFile, err = filepath.Abs(credentialsFile)
+	assert.NoError(t, err)
+	workspace, err := filepath.Abs(tests.Out)
+	assert.NoError(t, err)
+	fileutils.CopyFile(workspace, filepath.Join(testDir, "docker", dockerFile))
+	imageRunnder := inttestutils.NewRunDockerImage(container.Docker, "--rm", "-v", workspace+":/workspace", "-v", credentialsFile+":/kaniko/.docker/config.json:ro", kanikoImage, "--dockerfile="+dockerFile, "--destination="+imageToPush, "--image-name-with-digest-file="+imageNameWithDigestFile)
+	assert.NoError(t, gofrogcmd.RunCmd(imageRunnder))
+	return filepath.Join(workspace, imageNameWithDigestFile)
 }

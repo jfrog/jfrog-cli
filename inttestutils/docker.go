@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
@@ -16,6 +17,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/stretchr/testify/assert"
 )
 
 // Image get parent image id command
@@ -49,32 +51,60 @@ func (image *BuildDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-type deleteDockerImage struct {
-	dockerImageTag   string
+type RunDockerImage struct {
+	Args             []string
 	containerManager container.ContainerManagerType
 }
 
-func NewDeleteDockerImage(imageTag string, containerManager container.ContainerManagerType) *BuildDockerImage {
-	return &BuildDockerImage{DockerTag: imageTag, containerManager: containerManager}
+func NewRunDockerImage(containerManager container.ContainerManagerType, args ...string) *RunDockerImage {
+	return &RunDockerImage{Args: args, containerManager: containerManager}
 }
 
-func (image *deleteDockerImage) GetCmd() *exec.Cmd {
+func (run *RunDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
-	cmd = append(cmd, "image")
-	cmd = append(cmd, "rm")
-	cmd = append(cmd, image.dockerImageTag)
-	return exec.Command(image.containerManager.String(), cmd[:]...)
+	cmd = append(cmd, "run")
+	cmd = append(cmd, run.Args...)
+	return exec.Command(run.containerManager.String(), cmd[:]...)
 }
 
-func (image *deleteDockerImage) GetEnv() map[string]string {
+func (run *RunDockerImage) GetEnv() map[string]string {
 	return map[string]string{}
 }
 
-func (image *deleteDockerImage) GetStdWriter() io.WriteCloser {
+func (run *RunDockerImage) GetStdWriter() io.WriteCloser {
 	return nil
 }
 
-func (image *deleteDockerImage) GetErrWriter() io.WriteCloser {
+func (run *RunDockerImage) GetErrWriter() io.WriteCloser {
+	return nil
+}
+
+type DeleteDockerImage struct {
+	imageTag         string
+	containerManager container.ContainerManagerType
+}
+
+func NewDeleteDockerImage(imageTag string, containerManager container.ContainerManagerType) *DeleteDockerImage {
+	return &DeleteDockerImage{imageTag: imageTag, containerManager: containerManager}
+}
+
+func (image *DeleteDockerImage) GetCmd() *exec.Cmd {
+	var cmd []string
+	cmd = append(cmd, "image")
+	cmd = append(cmd, "rm")
+	cmd = append(cmd, image.imageTag)
+	return exec.Command(image.containerManager.String(), cmd[:]...)
+}
+
+func (image *DeleteDockerImage) GetEnv() map[string]string {
+	return map[string]string{}
+}
+
+func (image *DeleteDockerImage) GetStdWriter() io.WriteCloser {
+	return nil
+}
+
+func (image *DeleteDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
@@ -86,18 +116,21 @@ func BuildTestContainerImage(imageName string, containerManagerType container.Co
 	return imageTag
 }
 
-func DeleteTestContainerImage(imageTag string, containerManagerType container.ContainerManagerType) {
+func DeleteTestContainerImage(t *testing.T, imageTag string, containerManagerType container.ContainerManagerType) {
 	imageBuilder := NewDeleteDockerImage(imageTag, containerManagerType)
-	gofrogcmd.RunCmd(imageBuilder)
+	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func ContainerTestCleanup(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
+func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
 	// Remove build from Artifactory
 	DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
-	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	successCount, failCount, err := tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	assert.Greater(t, successCount, 0)
+	assert.Equal(t, failCount, 0)
+	assert.NoError(t, err)
 }
 
 func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string, error) {

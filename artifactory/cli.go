@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/accesstokencreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
@@ -497,6 +498,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return containerPullCmd(c, containerutils.Podman)
+			},
+		},
+		{
+			Name:         "build-docker-create",
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildDockerCreate),
+			Aliases:      []string{"bdc"},
+			Usage:        builddockercreate.Description,
+			HelpName:     corecommon.CreateUsage("rt build-docker-create", builddockercreate.Description, builddockercreate.Usage),
+			UsageText:    builddockercreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return BuildDockerCreateCmd(c)
 			},
 		},
 		{
@@ -1296,6 +1310,31 @@ func containerPullCmd(c *cli.Context, containerManagerType containerutils.Contai
 	dockerPullCommand.SetImageTag(imageTag).SetRepo(sourceRepo).SetSkipLogin(skipLogin).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
 
 	return commands.Exec(dockerPullCommand)
+}
+
+func BuildDockerCreateCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	artDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	sourceRepo := c.Args().Get(0)
+	imageNameWithDigestFile := c.String("image-name-with-digest-file")
+	if imageNameWithDigestFile == "" {
+		return cliutils.PrintHelpAndReturnError("Missing the flag 'image-name-with-digest-file'.", c)
+	}
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+	buildDockerCreateCommand := container.NewBuildDockerCreateCommand()
+	if err := buildDockerCreateCommand.SetImageNameWithDigest(imageNameWithDigestFile); err != nil {
+		return err
+	}
+	buildDockerCreateCommand.SetRepo(sourceRepo).SetRtDetails(artDetails).SetBuildConfiguration(buildConfiguration)
+	return commands.Exec(buildDockerCreateCommand)
 }
 
 func nugetCmd(c *cli.Context) error {
