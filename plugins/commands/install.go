@@ -126,6 +126,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string) error {
 		return err
 	}
 	if progressMgr != nil {
+		progressMgr.IncGeneralProgressTotalBy(1)
 		defer logUtils.CloseLogFile(logFile)
 		defer progressMgr.Quit()
 	}
