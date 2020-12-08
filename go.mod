@@ -19,7 +19,7 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.16.0
 
-replace github.com/jfrog/jfrog-cli-core => github.com/RobiNino/jfrog-cli-core v0.0.0-20201208100219-e326e02a4356
+replace github.com/jfrog/jfrog-cli-core => github.com/RobiNino/jfrog-cli-core nuget-v3
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
