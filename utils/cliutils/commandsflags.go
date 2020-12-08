@@ -293,8 +293,12 @@ const (
 	npmArgs    = "npm-args"
 
 	// Unique nuget flags
-	nugetArgs    = "nuget-args"
-	solutionRoot = "solution-root"
+	nugetArgs     = "nuget-args"
+	solutionRoot  = "solution-root"
+	legacyNugetV2 = "nuget-v2-protocol"
+
+	// Unique nuget/dotnet config flags
+	nugetV2 = "nuget-v2"
 
 	// Unique go flags
 	deps        = "deps"
@@ -918,6 +922,15 @@ var flagsMap = map[string]cli.Flag{
 		Usage:  "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		Hidden: true,
 	},
+	legacyNugetV2: cli.BoolFlag{
+		Name:   legacyNugetV2,
+		Usage:  "[Deprecated] [Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
+		Hidden: true,
+	},
+	nugetV2: cli.BoolFlag{
+		Name:   nugetV2,
+		Usage:  "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
+	},
 	deps: cli.StringFlag{
 		Name:  deps,
 		Value: "",
@@ -1172,14 +1185,14 @@ var commandFlags = map[string][]string{
 		buildNumber, module,
 	},
 	NugetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		nugetArgs, solutionRoot, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
+		nugetArgs, solutionRoot, legacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module,
 	},
 	DotnetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
 		buildName, buildNumber, module,
@@ -1302,7 +1315,7 @@ var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword
 
 // This function is used for legacy (deprecated) nuget command validation
 func GetLegacyNugetFlags() (flags []cli.Flag) {
-	legacyNugetFlags := []string{nugetArgs, solutionRoot}
+	legacyNugetFlags := []string{nugetArgs, solutionRoot, legacyNugetV2}
 	legacyNugetFlags = append(legacyNugetFlags, deprecatedFlags...)
 	return buildAndSortFlags(legacyNugetFlags)
 }
