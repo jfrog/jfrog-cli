@@ -23,19 +23,8 @@ func (p *ReaderProgressBar) ActionWithProgress(reader io.Reader) (results io.Rea
 
 // Abort aborts a progress indication. Called on both successful and unsuccessful operations
 func (p *ReaderProgressBar) Abort() {
-	// If a replacing bar
-	if p.replaceBar != nil {
-		// The replacing bar is displayed only if the replacedBar completed, so needs to be dropped only if so
-		if p.replaceBar.Completed() {
-			p.bar.Abort(true)
-		} else {
-			p.bar.Abort(false)
-		}
-	} else {
-		close(p.incrChannel)
-		p.bar.Abort(true)
-	}
-
+	close(p.incrChannel)
+	p.bar.Abort(true)
 }
 
 // GetId Returns the ProgressBar ID

@@ -37,18 +37,18 @@ type progressBarManager struct {
 type progressBarUnit struct {
 	bar         *mpb.Bar
 	incrChannel chan int
-	replaceBar  *mpb.Bar
+	description string
 }
 
 type progressBar interface {
-	ioUtils.ProgressBar
+	ioUtils.Progress
 	getProgressBarUnit() *progressBarUnit
 }
 
 // Initializes a new reader progress indication for a new file transfer.
 // Input: 'total' - file size, 'prefix' - optional description, 'extraInformation' -extra information for disply.
 // Output: progress indication id
-func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInformation string) (bar ioUtils.ProgressBar) {
+func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInformation string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	p.barsWg.Add(1)
@@ -63,7 +63,7 @@ func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInfo
 	)
 
 	// Add bar to bars array
-	unit := initNewBarUnit(newBar)
+	unit := initNewBarUnit(newBar, extraInformation)
 	barId := len(p.bars) + 1
 	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
 	p.bars = append(p.bars, &readerProgressBar)
@@ -71,28 +71,31 @@ func (p *progressBarManager) NewReaderProgressBar(total int64, prefix, extraInfo
 	return &readerProgressBar
 }
 
-// Initializes a new progress bar, that replaces an existing bar when it is completed
-func (p *progressBarManager) AddNewReplacementSpinner(replaceBarId int, prefix, extraInformation string) (id int) {
+// Changes progress indicator state and acts accordingly.
+func (p *progressBarManager) SetProgressState(id int, state string) {
+	switch state {
+	case "Merging":
+		p.addNewMergingSpinner(id)
+	}
+}
+
+// Initializes a new progress bar, that replaces the progress bar with the given replacedBarId
+func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
-	p.barsWg.Add(1)
-	p.IncreaseGeneralProgressTotalBy(1)
+	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
+	p.bars[replacedBarId-1].Abort()
 	newBar := p.container.AddSpinner(1, mpb.SpinnerOnMiddle,
 		mpb.SpinnerStyle(createSpinnerFramesArray()),
-		mpb.BarParkTo(p.bars[replaceBarId-1].getProgressBarUnit().bar),
 		mpb.AppendDecorators(
-			decor.Name(buildProgressDescription(prefix, extraInformation, 0)),
+			decor.Name(buildProgressDescription("  Merging  ", replacedBar.description, 0)),
 		),
 	)
-
-	// Bar replacement is a spinner and thus does not use a channel for incrementing
-	unit := &progressBarUnit{bar: newBar, incrChannel: nil, replaceBar: p.bars[replaceBarId-1].getProgressBarUnit().bar}
-	// Add bar to bars array
-	barId := len(p.bars) + 1
-	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
-	p.bars = append(p.bars, &readerProgressBar)
+	// Bar replacement is a simple spinner and thus does not implement any read functionality
+	unit := &progressBarUnit{bar: newBar, description: replacedBar.description}
+	progressBar := SimpleProgressBar{progressBarUnit: unit, Id: replacedBarId}
+	p.bars[replacedBarId-1] = &progressBar
 	p.barsRWMutex.Unlock()
-	return barId
 }
 
 func buildProgressDescription(prefix, path string, extraCharsLen int) string {
@@ -121,9 +124,9 @@ func buildDescByLimits(descMaxLength int, prefix, path, suffix string) string {
 	return prefix + path + suffix
 }
 
-func initNewBarUnit(bar *mpb.Bar) *progressBarUnit {
+func initNewBarUnit(bar *mpb.Bar, extraInformation string) *progressBarUnit {
 	ch := make(chan int, 1000)
-	unit := &progressBarUnit{bar: bar, incrChannel: ch}
+	unit := &progressBarUnit{bar: bar, incrChannel: ch, description: extraInformation}
 	go incrBarFromChannel(unit)
 	return unit
 }
@@ -149,10 +152,10 @@ func createSpinnerFramesArray() []string {
 // Aborts a progress bar.
 // Should be called even if bar completed successfully.
 // The progress component's Abort method has no effect if bar has already completed, so can always be safely called anyway
-func (p *progressBarManager) Abort(barId int) {
+func (p *progressBarManager) RemoveProgress(id int) {
 	p.barsRWMutex.RLock()
 	defer p.barsWg.Done()
-	p.bars[barId-1].Abort()
+	p.bars[id-1].Abort()
 	p.barsRWMutex.RUnlock()
 	p.generalProgressBar.Increment()
 
@@ -176,7 +179,7 @@ func (p *progressBarManager) Quit() {
 	p.container.Wait()
 }
 
-func (p *progressBarManager) GetProgressBar(id int) ioUtils.ProgressBar {
+func (p *progressBarManager) GetProgress(id int) ioUtils.Progress {
 	return p.bars[id-1]
 }
 
@@ -283,8 +286,8 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 	p.logFilePathBar.SetTotal(0, true)
 }
 
-// IncreaseGeneralProgressTotalBy increases the general progress bar total count by given n.
-func (p *progressBarManager) IncreaseGeneralProgressTotalBy(n int64) {
+// IncGeneralProgressTotalBy incremenates the general progress bar total count by given n.
+func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
 	p.tasksCount += n
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.SetTotal(p.tasksCount, false)
