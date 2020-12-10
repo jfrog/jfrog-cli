@@ -9,13 +9,13 @@ type SimpleProgressBar struct {
 	Id int
 }
 
-// Uses to updated the progress bar progress.
+// Usesd to update the progress bar progress.
 func (p *SimpleProgressBar) ActionWithProgress(reader io.Reader) (results io.Reader) {
 	p.bar.Increment()
 	return nil
 }
 
-// Abort aborts a progress indication. Called on both successful and unsuccessful operations
+// Abort aborts a progress indicator. Called on both successful and unsuccessful operations
 func (p *SimpleProgressBar) Abort() {
 	p.bar.Abort(true)
 }

@@ -16,12 +16,12 @@ type proxyReader struct {
 	io.ReadCloser
 }
 
-// Uses to updated the progress bar progress.
+// Used to update the progress bar progress.
 func (p *ReaderProgressBar) ActionWithProgress(reader io.Reader) (results io.Reader) {
 	return p.readWithProgress(reader)
 }
 
-// Abort aborts a progress indication. Called on both successful and unsuccessful operations
+// Abort aborts a progress indicator. Called on both successful and unsuccessful operations
 func (p *ReaderProgressBar) Abort() {
 	close(p.incrChannel)
 	p.bar.Abort(true)

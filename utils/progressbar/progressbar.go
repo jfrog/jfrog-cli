@@ -24,14 +24,22 @@ const minTerminalWidth = 70
 const progressRefreshRate = 200 * time.Millisecond
 
 type progressBarManager struct {
-	bars               []progressBar
-	barsWg             *sync.WaitGroup
-	container          *mpb.Progress
-	barsRWMutex        sync.RWMutex
-	headlineBar        *mpb.Bar
-	logFilePathBar     *mpb.Bar
+	// A list of progress bar objects.
+	bars []progressBar
+	// A wait group for all progress bars.
+	barsWg *sync.WaitGroup
+	// A container of all external mpb bar objects to be displayed.
+	container *mpb.Progress
+	// A synchronization lock object.
+	barsRWMutex sync.RWMutex
+	// A general work indicator spinner.
+	headlineBar *mpb.Bar
+	// A bar that displies the path of the log file.
+	logFilePathBar *mpb.Bar
+	// A general tasks completion indicator.
 	generalProgressBar *mpb.Bar
-	tasksCount         int64
+	// A cumulative amount of tasks
+	tasksCount int64
 }
 
 type progressBarUnit struct {
@@ -45,9 +53,11 @@ type progressBar interface {
 	getProgressBarUnit() *progressBarUnit
 }
 
-// Initializes a new reader progress indication for a new file transfer.
-// Input: 'total' - file size, 'prefix' - optional description, 'extraInformation' -extra information for disply.
-// Output: progress indication id
+// Initializes a new reader progress indicator for a new file transfer.
+// Input: 'total' - file size.
+//		  'prefix' - optional description.
+//		  'extraInformation' - extra information for disply.
+// Output: progress indicator id
 func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInformation string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
