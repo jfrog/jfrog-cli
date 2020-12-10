@@ -454,6 +454,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	// Create .git folder for this test
 	originalFolder := "buildaddgit_.git_suffix"
 	baseDir, dotGitPath := coretests.PrepareDotGitDir(t, originalFolder, "testdata")
+	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
 
 	// Get path for build-add-git config file
 	pwd, _ := os.Getwd()
@@ -470,7 +471,6 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	} else {
 		err = gitCollectCliRunner.Exec("build-add-git", tests.RtBuildName1, buildNumber, baseDir, "--config="+configPath)
 	}
-	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
 	if err != nil {
 		t.Fatal(err)
 	}
