@@ -3,6 +3,12 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -17,11 +23,6 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -1281,12 +1282,8 @@ func nugetCmd(c *cli.Context) error {
 		if c.NArg() < 1 {
 			return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 		}
-		nugetConfig, err := utils.ReadResolutionOnlyConfiguration(configFilePath)
-		if err != nil {
-			return errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
-		}
-		// Set arg values.
-		rtDetails, err := nugetConfig.RtDetails()
+
+		rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
 		if err != nil {
 			return err
 		}
@@ -1305,7 +1302,8 @@ func nugetCmd(c *cli.Context) error {
 		}
 
 		nugetCmd := dotnet.NewNugetCommand()
-		nugetCmd.SetRtDetails(rtDetails).SetRepoName(nugetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredNugetArgs[0])
+		nugetCmd.SetRtDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
+			SetBasicCommand(filteredNugetArgs[0]).SetUseNugetV2(useNugetV2)
 		// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 		// we want to separate the actual NuGet basic command (restore/build...) from the arguments and flags
 		if len(filteredNugetArgs) > 1 {
@@ -1331,10 +1329,11 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String("nuget-args")).
+	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String(cliutils.NugetArgs)).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
-		SetSolutionPath(c.String("solution-root")).
+		SetSolutionPath(c.String(cliutils.SolutionRoot)).
+		SetUseNugetV2(c.Bool(cliutils.LegacyNugetV2)).
 		SetRtDetails(rtDetails)
 
 	return commands.Exec(nugetCmd)
@@ -1357,15 +1356,17 @@ func dotnetCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	// Get dotnet configuration.
-	dotnetConfig, err := utils.GetResolutionOnlyConfiguration(utils.Dotnet)
+	// Get configuration file path.
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Dotnet)
 	if err != nil {
+		return err
+	}
+	if !exists {
 		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file: %s\n"+
 			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
 	}
 
-	// Set arg values.
-	rtDetails, err := dotnetConfig.RtDetails()
+	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
 	if err != nil {
 		return err
 	}
@@ -1379,13 +1380,32 @@ func dotnetCmd(c *cli.Context) error {
 
 	// Run command.
 	dotnetCmd := dotnet.NewDotnetCoreCliCommand()
-	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(dotnetConfig.TargetRepo()).SetBuildConfiguration(buildConfiguration).SetBasicCommand(filteredDotnetArgs[0])
+	dotnetCmd.SetRtDetails(rtDetails).SetRepoName(targetRepo).SetBuildConfiguration(buildConfiguration).
+		SetBasicCommand(filteredDotnetArgs[0]).SetUseNugetV2(useNugetV2)
 	// Since we are using the values of the command's arguments and flags along the buildInfo collection process,
 	// we want to separate the actual .NET basic command (restore/build...) from the arguments and flags
 	if len(filteredDotnetArgs) > 1 {
 		dotnetCmd.SetArgAndFlags(strings.Join(filteredDotnetArgs[1:], " "))
 	}
 	return commands.Exec(dotnetCmd)
+}
+
+func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *config.ArtifactoryDetails, targetRepo string, useNugetV2 bool, err error) {
+	vConfig, err := utils.ReadConfigFile(configFilePath, utils.YAML)
+	if err != nil {
+		return nil, "", false, errors.New(fmt.Sprintf("Error occurred while attempting to read nuget-configuration file: %s", err.Error()))
+	}
+	projectConfig, err := utils.GetRepoConfigByPrefix(configFilePath, utils.ProjectConfigResolverPrefix, vConfig)
+	if err != nil {
+		return nil, "", false, err
+	}
+	rtDetails, err = projectConfig.RtDetails()
+	if err != nil {
+		return nil, "", false, err
+	}
+	targetRepo = projectConfig.TargetRepo()
+	useNugetV2 = vConfig.GetBool(utils.ProjectConfigResolverPrefix + "." + "nugetV2")
+	return
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
@@ -1822,6 +1842,11 @@ func downloadCmd(c *cli.Context) error {
 	downloadCommand := generic.NewDownloadCommand()
 	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
 
+	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
+
 	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), rtDetails.Url, err)
@@ -1867,6 +1892,10 @@ func uploadCmd(c *cli.Context) error {
 	}
 	uploadCmd.SetUploadConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(uploadSpec).SetRtDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
 
+	if uploadCmd.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some artifacts in Artifactory. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
 	err = execWithProgress(uploadCmd)
 	result := uploadCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), "", err)

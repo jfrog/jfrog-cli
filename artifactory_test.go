@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -21,6 +19,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
@@ -698,6 +699,12 @@ func TestArtifactoryUploadAndSyncDelete(t *testing.T) {
 	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep3(), searchFilePath, t)
+	// Upload testdata/b/ and sync syncDir/testdata/b/b
+	// Noticed that testdata/c/ includes sub folders with special chars like '-' and '#'
+	artifactoryCli.Exec("upload", path.Join("testdata", "c", "*"), tests.RtRepo1+"/syncDir/", "--sync-deletes="+tests.RtRepo1+"/syncDir/", "--flat=false")
+	searchFilePath, err = tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetUploadExpectedRepo1SyncDeleteStep4(), searchFilePath, t)
 
 	cleanArtifactoryTest()
 }

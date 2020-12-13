@@ -1483,6 +1483,15 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 		RtRepo1 + "/syncDir/d.zip",
 	}
 }
+func GetUploadExpectedRepo1SyncDeleteStep4() []string {
+	return []string{
+		RtRepo1 + "/syncDir/testdata/c/a/a.zip",
+		RtRepo1 + "/syncDir/testdata/c/a/aaa.zip",
+		RtRepo1 + "/syncDir/testdata/c/a-b/a.zip",
+		RtRepo1 + "/syncDir/testdata/c/a-b/aaa.zip",
+		RtRepo1 + "/syncDir/testdata/c/#a/a.zip",
+	}
+}
 
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
