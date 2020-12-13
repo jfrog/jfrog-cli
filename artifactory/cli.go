@@ -1314,11 +1314,11 @@ func nugetLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String("nuget-args")).
+	nugetCmd.SetBasicCommand(c.Args().Get(0)).SetArgAndFlags(c.String(cliutils.NugetArgs)).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
-		SetSolutionPath(c.String("solution-root")).
-		SetUseNugetV2(c.Bool("nuget-v2-protocol")).
+		SetSolutionPath(c.String(cliutils.SolutionRoot)).
+		SetUseNugetV2(c.Bool(cliutils.LegacyNugetV2)).
 		SetRtDetails(rtDetails)
 
 	return commands.Exec(nugetCmd)
