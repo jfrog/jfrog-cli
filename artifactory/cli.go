@@ -1961,7 +1961,11 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	moveCmd.SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(moveSpec)
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return err
+	}
+	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails).SetSpec(moveSpec)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
@@ -1997,7 +2001,11 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	copyCommand.SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails)
+	threads, err := getThreadsCount(c)
+	if err != nil {
+		return err
+	}
+	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetRtDetails(rtDetails)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
