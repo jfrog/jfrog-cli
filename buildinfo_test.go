@@ -275,6 +275,7 @@ func TestBuildAppend(t *testing.T) {
 	// Clean builds
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 func TestBuildAddDependencies(t *testing.T) {

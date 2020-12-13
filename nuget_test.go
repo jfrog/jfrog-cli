@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/xml"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
@@ -15,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,6 +133,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	} else {
 		assert.NoError(t, artifactoryCli.Exec(args...))
 	}
+	inttestutils.ValidateGeneratedBuildInfo(t, buildName, buildNumber, expectedModule, buildinfo.Nuget)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
