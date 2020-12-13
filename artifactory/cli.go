@@ -1891,7 +1891,7 @@ func uploadCmd(c *cli.Context) error {
 
 type CommandWithProgress interface {
 	commands.Command
-	SetProgress(ioUtils.Progress)
+	SetProgress(ioUtils.ProgressMgr)
 }
 
 func execWithProgress(cmd CommandWithProgress) error {
