@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
@@ -453,6 +453,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	// Create .git folder for this test
 	originalFolder := "buildaddgit_.git_suffix"
 	baseDir, dotGitPath := coretests.PrepareDotGitDir(t, originalFolder, "testdata")
+	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
 
 	// Get path for build-add-git config file
 	pwd, _ := os.Getwd()
@@ -469,7 +470,6 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	} else {
 		err = gitCollectCliRunner.Exec("build-add-git", tests.RtBuildName1, buildNumber, baseDir, "--config="+configPath)
 	}
-	defer cleanBuildAddGitTest(t, baseDir, originalFolder, oldHomeDir, dotGitPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -488,13 +488,13 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	require.NotNil(t, buildInfo.Vcs, "Received build-info with empty VCS.")
+	require.NotNil(t, buildInfo.VcsList, "Received build-info with empty VCS.")
 
 	// Validate results
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
-	buildInfoVcsUrl := buildInfo.Vcs.Url
-	buildInfoVcsRevision := buildInfo.Vcs.Revision
+	buildInfoVcsUrl := buildInfo.VcsList[0].Url
+	buildInfoVcsRevision := buildInfo.VcsList[0].Revision
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,

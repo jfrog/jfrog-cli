@@ -293,8 +293,13 @@ const (
 	npmArgs    = "npm-args"
 
 	// Unique nuget flags
-	nugetArgs    = "nuget-args"
-	solutionRoot = "solution-root"
+	NugetArgs    = "nuget-args"
+	SolutionRoot = "solution-root"
+	// This flag is different than the nugetV2 since it is hidden and used in the 'nuget' cmd, and not the 'nugetc' cmd.
+	LegacyNugetV2 = "nuget-v2-protocol"
+
+	// Unique nuget/dotnet config flags
+	nugetV2 = "nuget-v2"
 
 	// Unique go flags
 	deps        = "deps"
@@ -908,15 +913,24 @@ var flagsMap = map[string]cli.Flag{
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
-	nugetArgs: cli.StringFlag{
-		Name:   nugetArgs,
+	NugetArgs: cli.StringFlag{
+		Name:   NugetArgs,
 		Usage:  "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
 		Hidden: true,
 	},
-	solutionRoot: cli.StringFlag{
-		Name:   solutionRoot,
+	SolutionRoot: cli.StringFlag{
+		Name:   SolutionRoot,
 		Usage:  "[Deprecated] [Default: .] Path to the root directory of the solution. If the directory includes more than one sln files, then the first argument passed in the --nuget-args option should be the name (not the path) of the sln file.` `",
 		Hidden: true,
+	},
+	LegacyNugetV2: cli.BoolFlag{
+		Name:   LegacyNugetV2,
+		Usage:  "[Deprecated] [Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
+		Hidden: true,
+	},
+	nugetV2: cli.BoolFlag{
+		Name:  nugetV2,
+		Usage: "[Default: false] Set to true if you'd like to use the NuGet V2 protocol when restoring packages from Artifactory.` `",
 	},
 	deps: cli.StringFlag{
 		Name:  deps,
@@ -1172,14 +1186,14 @@ var commandFlags = map[string][]string{
 		buildNumber, module,
 	},
 	NugetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
-		nugetArgs, solutionRoot, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
+		NugetArgs, SolutionRoot, LegacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module,
 	},
 	DotnetConfig: {
-		global, serverIdResolve, repoResolve,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
 		buildName, buildNumber, module,
@@ -1302,7 +1316,7 @@ var deprecatedFlags = []string{deprecatedUrl, deprecatedUser, deprecatedPassword
 
 // This function is used for legacy (deprecated) nuget command validation
 func GetLegacyNugetFlags() (flags []cli.Flag) {
-	legacyNugetFlags := []string{nugetArgs, solutionRoot}
+	legacyNugetFlags := []string{NugetArgs, SolutionRoot, LegacyNugetV2}
 	legacyNugetFlags = append(legacyNugetFlags, deprecatedFlags...)
 	return buildAndSortFlags(legacyNugetFlags)
 }

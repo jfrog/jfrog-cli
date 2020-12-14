@@ -1,6 +1,6 @@
 {
   "key": "${PYPI_VIRTUAL_REPO}",
+  "rclass": "virtual",
   "packageType": "pypi",
-  "repositories": ["${PYPI_REMOTE_REPO}"],
-  "rclass": "virtual"
+  "repositories": ["${PYPI_REMOTE_REPO}"]
 }
