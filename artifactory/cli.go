@@ -46,6 +46,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildadddependencies"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildaddgit"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/buildappend"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildclean"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/buildcollectenv"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddiscard"
@@ -262,6 +263,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return buildCollectEnvCmd(c)
+			},
+		},
+		{
+			Name:         "build-append",
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildAppend),
+			Aliases:      []string{"ba"},
+			Usage:        buildadddependencies.Description,
+			HelpName:     corecommon.CreateUsage("rt build-append", buildappend.Description, buildappend.Usage),
+			UsageText:    buildappend.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return buildAppendCmd(c)
 			},
 		},
 		{
@@ -2164,6 +2178,23 @@ func buildPublishCmd(c *cli.Context) error {
 	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
 
 	return commands.Exec(buildPublishCmd)
+}
+
+func buildAppendCmd(c *cli.Context) error {
+	if c.NArg() != 4 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration := createBuildConfiguration(c)
+	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
+		return err
+	}
+	buildNameToAppend, buildNumberToAppend := c.Args().Get(2), c.Args().Get(3)
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	buildAppendCmd := buildinfo.NewBuildAppendCommand().SetRtDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetBuildNameToAppend(buildNameToAppend).SetBuildNumberToAppend(buildNumberToAppend)
+	return commands.Exec(buildAppendCmd)
 }
 
 func buildAddDependenciesCmd(c *cli.Context) error {

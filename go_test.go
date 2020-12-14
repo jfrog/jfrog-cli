@@ -12,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	_go "github.com/jfrog/jfrog-client-go/artifactory/services/go"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -48,6 +49,7 @@ func TestGoBuildInfo(t *testing.T) {
 		return
 	}
 
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.GoBuildName, buildNumber, []string{"github.com/jfrog/dependency"}, buildinfo.Go)
 	err = execGo(t, artifactoryCli, "bp", tests.GoBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)

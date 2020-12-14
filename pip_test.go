@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,6 +92,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 		return
 	}
 
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipBuildName, buildNumber, []string{module}, buildinfo.Pip)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.PipBuildName, buildNumber)

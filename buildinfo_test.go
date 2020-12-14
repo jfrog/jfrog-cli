@@ -230,6 +230,54 @@ func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.File
 	return files
 }
 
+func TestBuildAppend(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber1 := "12"
+	buildNumber2 := "13"
+
+	// Clean old builds tests if exists
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName2, artHttpDetails)
+
+	// Publish build RtBuildName1/buildNumber1
+	err := artifactoryCli.WithoutCredentials().Exec("bce", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
+	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Assert RtBuildName2/buildNumber2 is appended to RtBuildName1/buildNumber1 locally
+	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+	assert.Len(t, partials, 1)
+	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, partials[0].ModuleId)
+	assert.Equal(t, buildinfo.Build, partials[0].ModuleType)
+	assert.NotZero(t, partials[0].Timestamp)
+	assert.NotNil(t, partials[0].Checksum)
+	assert.NotZero(t, partials[0].Checksum.Md5)
+	assert.NotZero(t, partials[0].Checksum.Sha1)
+
+	// Publish build RtBuildName2/buildNumber2
+	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+
+	// Check published build info
+	buildInfo, _, err := tests.GetBuildInfo(artifactoryDetails, tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+	assert.NotNil(t, buildInfo)
+	assert.Len(t, buildInfo.BuildInfo.Modules, 1)
+	module := buildInfo.BuildInfo.Modules[0]
+	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, module.Id)
+
+	// Clean builds
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 func TestBuildAddDependencies(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
@@ -269,6 +317,7 @@ func TestBuildAddDependencies(t *testing.T) {
 		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 // Test publish build info without --build-url
@@ -499,6 +548,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	cleanArtifactoryTest()
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
@@ -528,6 +578,7 @@ func TestReadGitConfig(t *testing.T) {
 	}
 
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
+	cleanArtifactoryTest()
 }
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) (buildinfo.BuildInfo, error) {
@@ -625,6 +676,7 @@ func TestModuleName(t *testing.T) {
 	}
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {

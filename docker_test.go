@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,6 +58,8 @@ func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) 
 	} else {
 		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
+	
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"
