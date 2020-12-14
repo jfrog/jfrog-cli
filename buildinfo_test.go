@@ -317,6 +317,7 @@ func TestBuildAddDependencies(t *testing.T) {
 		utils.RemoveBuildDir(badTest.buildName, badTest.buildNumber)
 	}
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 // Test publish build info without --build-url
@@ -547,6 +548,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
 		"Wrong issues number, expected 4 issues, received: %+v", *buildInfo.Issues)
+	cleanArtifactoryTest()
 }
 
 func cleanBuildAddGitTest(t *testing.T, baseDir, originalFolder, oldHomeDir, dotGitPath string) {
@@ -576,6 +578,7 @@ func TestReadGitConfig(t *testing.T) {
 	}
 
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
+	cleanArtifactoryTest()
 }
 
 func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl string) (buildinfo.BuildInfo, error) {
@@ -673,6 +676,7 @@ func TestModuleName(t *testing.T) {
 	}
 
 	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	cleanArtifactoryTest()
 }
 
 func collectDepsAndPublishBuild(badTest buildAddDepsBuildInfoTestParams, useEnvBuildNameAndNumber bool, t *testing.T) {
