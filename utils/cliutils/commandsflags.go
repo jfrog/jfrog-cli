@@ -1096,12 +1096,12 @@ var commandFlags = map[string][]string{
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
-		moveFlat, dryRun, build, moveProps, moveExcludeProps, failNoOp, archiveEntries, insecureTls,
+		moveFlat, dryRun, build, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
-		copyFlat, dryRun, build, bundle, copyProps, copyExcludeProps, failNoOp, archiveEntries, insecureTls,
+		copyFlat, dryRun, build, bundle, copyProps, copyExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
