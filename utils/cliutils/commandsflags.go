@@ -116,6 +116,8 @@ const (
 	recursive        = "recursive"
 	flat             = "flat"
 	build            = "build"
+	excludeArtifacts = "exclude-artifacts"
+	includeDeps      = "include-deps"
 	regexpFlag       = "regexp"
 	retries          = "retries"
 	dryRun           = "dry-run"
@@ -485,6 +487,14 @@ var flagsMap = map[string]cli.Flag{
 	build: cli.StringFlag{
 		Name:  build,
 		Usage: "[Optional] If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.` `",
+	},
+	excludeArtifacts: cli.StringFlag{
+		Name:  excludeArtifacts,
+		Usage: "[Default: false] If specified, build artifacts are not matched. Used together with the --build flag.` `",
+	},
+	includeDeps: cli.StringFlag{
+		Name:  includeDeps,
+		Usage: "[Default: false] If specified, also dependencies of the specified build are matched. Used together with the --build flag.` `",
 	},
 	includeDirs: cli.BoolFlag{
 		Name:  includeDirs,
@@ -1089,36 +1099,36 @@ var commandFlags = map[string][]string{
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, excludePatterns, exclusions, sortBy,
-		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, minSplit, splitCount, downloadRetries, dryRun,
-		downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps, failNoOp, threads,
-		archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
+		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
+		downloadRetries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
+		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
-		moveFlat, dryRun, build, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
+		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
-		copyFlat, dryRun, build, bundle, copyProps, copyExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
+		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
-		deleteRecursive, dryRun, build, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
+		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls,
 	},
 	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
-		searchRecursive, build, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
+		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		insecureTls,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
-		propsRecursive, build, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
+		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		insecureTls,
 	},
 	BuildPublish: {
