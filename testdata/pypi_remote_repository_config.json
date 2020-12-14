@@ -1,7 +1,6 @@
 {
   "key": "${PYPI_REMOTE_REPO}",
+  "rclass": "remote",
   "packageType": "pypi",
-  "repoLayoutRef": "simple-default",
-  "url": "https://files.pythonhosted.org",
-  "rclass": "remote"
+  "url": "https://files.pythonhosted.org"
 }

@@ -1,7 +1,5 @@
 {
   "key": "${NPM_REPO}",
-  "packageType": "npm",
-  "repoLayoutRef": "npm-default",
-  "enableNpmSupport": true,
-  "rclass": "local"
+  "rclass": "local",
+  "packageType": "npm"
 }
