@@ -1104,7 +1104,9 @@ func mvnLegacyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals([]string{c.Args().Get(0)}).SetThreads(threads)
+	// We're splitting the goals, because the legacy maven command accepts the goals as one argument.
+	goals := strings.Split(c.Args().Get(0), " ")
+	mvnCmd := mvn.NewMvnCommand().SetConfiguration(configuration).SetConfigPath(c.Args().Get(1)).SetGoals(goals).SetThreads(threads)
 
 	return commands.Exec(mvnCmd)
 }
