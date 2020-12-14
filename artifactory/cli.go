@@ -1316,13 +1316,8 @@ func nugetLegacyCmd(c *cli.Context) error {
 		return err
 	}
 
-	args := c.String(cliutils.NugetArgs)
-	if args == "" {
-		nugetCmd.SetArgAndFlags([]string{})
-	} else {
-		nugetCmd.SetArgAndFlags(strings.Split(args, " "))
-	}
 	nugetCmd.SetBasicCommand(c.Args().Get(0)).
+		SetArgAndFlags(getLegacyNugetArgsList(c)).
 		SetRepoName(c.Args().Get(1)).
 		SetBuildConfiguration(buildConfiguration).
 		SetSolutionPath(c.String(cliutils.SolutionRoot)).
@@ -1330,6 +1325,14 @@ func nugetLegacyCmd(c *cli.Context) error {
 		SetRtDetails(rtDetails)
 
 	return commands.Exec(nugetCmd)
+}
+
+func getLegacyNugetArgsList(c *cli.Context) []string {
+	args := c.String(cliutils.NugetArgs)
+	if args == "" {
+		return []string{}
+	}
+	return strings.Split(args, " ")
 }
 
 func nugetDepsTreeCmd(c *cli.Context) error {
