@@ -1,6 +1,5 @@
 {
   "key": "${GO_REPO}",
-  "packageType": "go",
-  "repoLayoutRef": "simple-default",
-  "rclass": "local"
+  "rclass": "local",
+  "packageType": "go"
 }

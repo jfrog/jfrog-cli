@@ -212,10 +212,10 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	}
 	var expectedDependencies []expectedDependency
 	if !strings.Contains(npmTestParams.npmArgs, "-only=dev") {
-		expectedDependencies = append(expectedDependencies, expectedDependency{id: "xml-1.0.1.tgz", scopes: []string{"production"}})
+		expectedDependencies = append(expectedDependencies, expectedDependency{id: "xml:1.0.1", scopes: []string{"production"}})
 	}
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
-		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json-9.0.6.tgz", scopes: []string{"development"}})
+		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"development"}})
 	}
 	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
 	if err != nil {

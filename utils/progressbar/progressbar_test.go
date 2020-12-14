@@ -21,13 +21,13 @@ func TestBuildProgressDescription(t *testing.T) {
 }
 
 func getTestCases() []testCase {
-	prefix := "downloading"
+	prefix := "  downloading"
 	path := "/a/path/to/a/file"
 	separator := " | "
 
-	fullDesc := separator + prefix + separator + path + separator
-	emptyPathDesc := separator + prefix + separator + "..." + separator
-	shortenedDesc := separator + prefix + separator + "...ggggg/path/to/a/file" + separator
+	fullDesc := " " + prefix + separator + path + separator
+	emptyPathDesc := " " + prefix + separator + "..." + separator
+	shortenedDesc := " " + prefix + separator + "...ggggg/path/to/a/file" + separator
 
 	widthMinusProgress := terminalWidth - progressBarWidth*2
 	return []testCase{
@@ -35,7 +35,7 @@ func getTestCases() []testCase {
 		{"zeroExtraChars", prefix, path, 0, fullDesc},
 		{"minDescLength", prefix, path, widthMinusProgress - len(emptyPathDesc), emptyPathDesc},
 		{"longPath", prefix, "/a/longggggggggggggggggggggg/path/to/a/file", 17, shortenedDesc},
-		{"longPrefix", "longgggggggggggggggggggggg prefix", path, 17, ""},
+		{"longPrefix", "longggggggggggggggggggggggggg prefix", path, 17, ""},
 		{"manyExtraChars", prefix, path, widthMinusProgress - len(emptyPathDesc) + 1, ""},
 	}
 }
