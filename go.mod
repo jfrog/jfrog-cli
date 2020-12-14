@@ -10,11 +10,12 @@ require (
 	github.com/jfrog/jfrog-cli-core v1.1.2
 	github.com/jfrog/jfrog-client-go v0.16.0
 	github.com/mholt/archiver v2.1.0+incompatible
-	github.com/pkg/errors v0.8.1
-	github.com/stretchr/testify v1.4.0
+	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
+	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.6.1
 	github.com/vbauerster/mpb/v4 v4.7.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.3.0
 )
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
