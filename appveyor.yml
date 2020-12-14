@@ -86,9 +86,9 @@ environment:
   - DISTRIBUTION_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --test.distribution=true"
-#   - PLUGINS_TESTS:
-#     TEST_SUIT:
-#       "%COMMON_TESTS_ARGS% --test.plugins=true"
+  - PLUGINS_TESTS:
+    TEST_SUIT:
+      "%COMMON_TESTS_ARGS% --test.plugins=true"
 
 test_script:
   - "%TEST_SUIT%"

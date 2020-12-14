@@ -2,6 +2,11 @@ package server
 
 import (
 	"crypto/tls"
+	"github.com/jfrog/jfrog-cli/utils/tests"
+	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
+	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	clilog "github.com/jfrog/jfrog-client-go/utils/log"
 	"io"
 	"log"
 	"net"
@@ -10,11 +15,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-
-	"github.com/jfrog/jfrog-cli/utils/tests"
-	"github.com/jfrog/jfrog-cli/utils/tests/proxy/server/certificate"
-	"github.com/jfrog/jfrog-client-go/utils"
-	clilog "github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 type httpResponse func(rw http.ResponseWriter, req *http.Request)
@@ -156,22 +156,34 @@ func GetProxyHttpPort() string {
 	return port
 }
 
-func prepareHTTPSHandling(handler *httputil.ReverseProxy) (*http.ServeMux, string, string) {
+func prepareHTTPSHandling(handler *httputil.ReverseProxy) (httpsMux *http.ServeMux, absPathCert, absPathKey string, err error) {
 	// We can use the same handler for both HTTP and HTTPS
-	httpsMux := http.NewServeMux()
+	httpsMux = http.NewServeMux()
 	httpsMux.HandleFunc("/", handleReverseProxyHttps(handler))
-	absPathCert, absPathKey := CreateNewServerCertificates()
-	return httpsMux, absPathCert, absPathKey
+	absPathCert, absPathKey, err = CreateNewServerCertificates()
+	return
 }
 
-// Create new server certificates and returns the certificates path
-func CreateNewServerCertificates() (string, string) {
-	if _, err := os.Stat(certificate.CERT_FILE); os.IsNotExist(err) {
-		certificate.CreateNewCert()
+// Creates a server cerf file and cert key file.
+// Returns the absolute path of these two files.
+func CreateNewServerCertificates() (certFilePath, keyCertFilePath string, err error) {
+	certFilePath, err = filepath.Abs(certificate.CERT_FILE)
+	if errorutils.CheckError(err) != nil {
+		return
 	}
-	absPathCert, _ := filepath.Abs(certificate.CERT_FILE)
-	absPathKey, _ := filepath.Abs(certificate.KEY_FILE)
-	return absPathCert, absPathKey
+	keyCertFilePath, err = filepath.Abs(certificate.KEY_FILE)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+
+	if _, err = os.Stat(certFilePath); os.IsNotExist(err) {
+		err = certificate.CreateNewCert(certFilePath, keyCertFilePath)
+		if err != nil {
+			return
+		}
+	}
+	errorutils.CheckError(err)
+	return
 }
 
 func GetProxyHttpsPort() string {
@@ -182,13 +194,16 @@ func GetProxyHttpsPort() string {
 	return port
 }
 
-func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) {
+func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) error {
 	handler, err := getReverseProxyHandler(proxyTarget)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	// Starts a new Go routine
-	httpsMux, absPathCert, absPathKey := prepareHTTPSHandling(handler)
+	httpsMux, absPathCert, absPathKey, err := prepareHTTPSHandling(handler)
+	if err != nil {
+		return err
+	}
 
 	if requestClientCerts {
 		server := &http.Server{
@@ -198,14 +213,12 @@ func startHttpsReverseProxy(proxyTarget string, requestClientCerts bool) {
 				ClientAuth: tls.RequireAnyClientCert,
 			},
 		}
-
-		server.ListenAndServeTLS(absPathCert, absPathKey)
+		err = server.ListenAndServeTLS(absPathCert, absPathKey)
 	} else {
 		err = http.ListenAndServeTLS(":"+GetProxyHttpsPort(), absPathCert, absPathKey, httpsMux)
-		if err != nil {
-			panic(err)
-		}
 	}
+
+	return err
 }
 
 func StartLocalReverseHttpProxy(artifactoryUrl string, requestClientCerts bool) {
@@ -213,7 +226,10 @@ func StartLocalReverseHttpProxy(artifactoryUrl string, requestClientCerts bool) 
 		artifactoryUrl = "http://localhost:8081/artifactory/"
 	}
 	artifactoryUrl = utils.AddTrailingSlashIfNeeded(artifactoryUrl)
-	startHttpsReverseProxy(artifactoryUrl, requestClientCerts)
+	err := startHttpsReverseProxy(artifactoryUrl, requestClientCerts)
+	// Since this function is always executed in its own go routine,
+	// we panic when an error occurs.
+	panic(err)
 }
 
 func StartHttpProxy() {

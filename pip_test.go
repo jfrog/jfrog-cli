@@ -91,9 +91,18 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 		return
 	}
 
-	artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber)
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
 
-	buildInfo, _ := inttestutils.GetBuildInfo(artifactoryDetails.Url, tests.PipBuildName, buildNumber, t, artHttpDetails)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.PipBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
 	require.NotEmpty(t, buildInfo.Modules, "Pip build info was not generated correctly, no modules were created.")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of artifacts found in the build-info")
 	assert.Equal(t, module, buildInfo.Modules[0].Id, "Unexpected module name")

@@ -24,3 +24,9 @@ func GetStringsArrFlagValue(c *cli.Context, flagName string) (resultArray []stri
 	}
 	return
 }
+
+func ExtractCommand(c *cli.Context) (command []string) {
+	command = make([]string, len(c.Args()))
+	copy(command, c.Args())
+	return command
+}

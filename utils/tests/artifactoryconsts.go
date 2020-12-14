@@ -134,17 +134,18 @@ var (
 	RtRepo1And2            = "cli-tests-rt*"
 	RtRepo1And2Placeholder = "cli-tests-rt(*)"
 
-	BundleName      = "cli-tests-dist-bundle"
-	DockerBuildName = "cli-tests-docker-build"
-	DockerImageName = "cli-tests-docker-image"
-	DotnetBuildName = "cli-tests-dotnet-build"
-	GoBuildName     = "cli-tests-go-build"
-	GradleBuildName = "cli-tests-gradle-build"
-	NpmBuildName    = "cli-tests-npm-build"
-	NuGetBuildName  = "cli-tests-nuget-build"
-	PipBuildName    = "cli-tests-pip-build"
-	RtBuildName1    = "cli-tests-rt-build1"
-	RtBuildName2    = "cli-tests-rt-build2"
+	BundleName                  = "cli-tests-dist-bundle"
+	DockerBuildName             = "cli-tests-docker-build"
+	DockerImageName             = "cli-tests-docker-image"
+	DotnetBuildName             = "cli-tests-dotnet-build"
+	GoBuildName                 = "cli-tests-go-build"
+	GradleBuildName             = "cli-tests-gradle-build"
+	NpmBuildName                = "cli-tests-npm-build"
+	NuGetBuildName              = "cli-tests-nuget-build"
+	PipBuildName                = "cli-tests-pip-build"
+	RtBuildName1                = "cli-tests-rt-build1"
+	RtBuildName2                = "cli-tests-rt-build2"
+	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
@@ -1480,6 +1481,15 @@ func GetUploadExpectedRepo1SyncDeleteStep3() []string {
 		RtRepo1 + "/syncDir/b.zip",
 		RtRepo1 + "/syncDir/c.zip",
 		RtRepo1 + "/syncDir/d.zip",
+	}
+}
+func GetUploadExpectedRepo1SyncDeleteStep4() []string {
+	return []string{
+		RtRepo1 + "/syncDir/testdata/c/a/a.zip",
+		RtRepo1 + "/syncDir/testdata/c/a/aaa.zip",
+		RtRepo1 + "/syncDir/testdata/c/a-b/a.zip",
+		RtRepo1 + "/syncDir/testdata/c/a-b/aaa.zip",
+		RtRepo1 + "/syncDir/testdata/c/#a/a.zip",
 	}
 }
 

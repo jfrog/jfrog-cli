@@ -2,22 +2,25 @@ package commands
 
 import (
 	"errors"
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
-	"github.com/jfrog/jfrog-cli/utils/cliutils"
-	"github.com/jfrog/jfrog-client-go/httpclient"
-	"github.com/jfrog/jfrog-client-go/utils"
-	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	pluginsutils "github.com/jfrog/jfrog-cli/plugins/utils"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	logUtils "github.com/jfrog/jfrog-cli/utils/log"
+	"github.com/jfrog/jfrog-cli/utils/progressbar"
+	"github.com/jfrog/jfrog-client-go/httpclient"
+	"github.com/jfrog/jfrog-client-go/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/jfrog/jfrog-client-go/utils/io/httputils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const pluginsRegistryUrl = "https://releases.jfrog.io/artifactory"
@@ -110,14 +113,26 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string) error {
 		DownloadPath:  downloadUrl,
 		LocalPath:     pluginsDir,
 		LocalFileName: exeName,
+		RelativePath:  exeName,
 	}
 
 	client, err := httpclient.ClientBuilder().Build()
 	if err != nil {
 		return err
 	}
+	// Init progress bar.
+	progressMgr, logFile, err := progressbar.InitProgressBarIfPossible()
+	if err != nil {
+		return err
+	}
+	if progressMgr != nil {
+		progressMgr.IncGeneralProgressTotalBy(1)
+		defer logUtils.CloseLogFile(logFile)
+		defer progressMgr.Quit()
+	}
+	log.Info("Downloading plugin: " + pluginName)
 
-	resp, err := client.DownloadFile(downloadDetails, "", httputils.HttpClientDetails{}, 3, false)
+	resp, err := client.DownloadFileWithProgress(downloadDetails, "", httputils.HttpClientDetails{}, 3, false, progressMgr)
 	if err != nil {
 		return err
 	}

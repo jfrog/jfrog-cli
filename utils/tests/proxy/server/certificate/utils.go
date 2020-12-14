@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"math/big"
 	"net"
 	"os"
@@ -35,27 +36,28 @@ func createCertTemplate() *x509.Certificate {
 	}
 }
 
-func CreateNewCert() {
+func CreateNewCert(absPathCert, absPathKey string) error {
 	rootKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
 	certTemplate := createCertTemplate()
 	derBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, certTemplate, &rootKey.PublicKey, rootKey)
-	if err != nil {
-		panic(err)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
-	certOut, err := os.Create(CERT_FILE)
-	if err != nil {
-		panic(err)
+	certOut, err := os.Create(absPathCert)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
+	defer certOut.Close()
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
 
-	keyOut, err := os.OpenFile(KEY_FILE, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		panic(err)
+	keyOut, err := os.OpenFile(absPathKey, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if errorutils.CheckError(err) != nil {
+		return err
 	}
+	defer keyOut.Close()
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey)})
-	keyOut.Close()
+	return nil
 }
