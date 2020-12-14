@@ -55,11 +55,11 @@ func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) 
 	// Push docker image using docker client
 	if withModule {
 		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber, "--module="+module)
-		inttestutils.ValidateGeneratedBuildInfo(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
 	} else {
 		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
-
+	
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(*tests.DockerTargetRepo, imageName, "1") + "/"

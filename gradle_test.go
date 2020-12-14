@@ -1,19 +1,25 @@
 package main
 
 import (
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 )
 
-const gradleFlagName = "gradle"
+const (
+	gradleFlagName = "gradle"
+	gradleModuleId = ":minimal-example:1.0"
+)
 
 func cleanGradleTest() {
 	os.Unsetenv(coreutils.HomeDir)
@@ -43,7 +49,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
 
 	cleanGradleTest()
 }
@@ -77,7 +83,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
 	cleanGradleTest()
 }
 
@@ -102,7 +108,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
 	cleanGradleTest()
 }
 
@@ -136,7 +142,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, ":minimal-example:1.0")
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
 	cleanGradleTest()
 }
 
@@ -147,6 +153,7 @@ func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumbe
 
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, []string{gradleModuleId}, buildinfo.Gradle)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

@@ -36,17 +36,17 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	}
 }
 
-func ValidateGeneratedBuildInfo(t *testing.T, buildname, buildNumber string, moduleNames []string, moduleType buildinfo.ModuleType) {
+func ValidateGeneratedBuildInfoModule(t *testing.T, buildname, buildNumber string, moduleNames []string, moduleType buildinfo.ModuleType) {
 	builds, err := coreutils.GetGeneratedBuildsInfo(buildname, buildNumber)
 	assert.NoError(t, err)
 	assert.Len(t, builds, 1)
 	for _, module := range builds[0].Modules {
-		assert.Equal(t, moduleType, module.Type)
 		for _, moduleName := range moduleNames {
 			if moduleName == module.Id {
+				assert.Equal(t, moduleType, module.Type)
 				return
 			}
 		}
-		assert.Fail(t, fmt.Sprintf("Module %s is expected to be one of %v", module.Id, moduleNames))
+		assert.Fail(t, fmt.Sprintf("Module '%s' with type of '%v' is expected to be one of %v", module.Id, module.Type, moduleNames))
 	}
 }

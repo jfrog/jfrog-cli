@@ -49,7 +49,7 @@ func TestGoBuildInfo(t *testing.T) {
 		return
 	}
 
-	inttestutils.ValidateGeneratedBuildInfo(t, tests.GoBuildName, buildNumber, []string{"github.com/jfrog/dependency"}, buildinfo.Go)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.GoBuildName, buildNumber, []string{"github.com/jfrog/dependency"}, buildinfo.Go)
 	err = execGo(t, artifactoryCli, "bp", tests.GoBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
