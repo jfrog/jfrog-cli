@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -61,6 +62,7 @@ type progressBar interface {
 func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInformation string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
+	defer p.barsRWMutex.Unlock()
 	p.barsWg.Add(1)
 	newBar := p.container.AddBar(int64(total),
 		mpb.BarStyle("|🟩🟩⬛|"),
@@ -77,7 +79,6 @@ func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInforma
 	barId := len(p.bars) + 1
 	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
 	p.bars = append(p.bars, &readerProgressBar)
-	p.barsRWMutex.Unlock()
 	return &readerProgressBar
 }
 
@@ -93,6 +94,7 @@ func (p *progressBarManager) SetProgressState(id int, state string) {
 func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
+	defer p.barsRWMutex.Unlock()
 	replacedBar := p.bars[replacedBarId-1].getProgressBarUnit()
 	p.bars[replacedBarId-1].Abort()
 	newBar := p.container.AddSpinner(1, mpb.SpinnerOnMiddle,
@@ -105,7 +107,6 @@ func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	unit := &progressBarUnit{bar: newBar, description: replacedBar.description}
 	progressBar := SimpleProgressBar{progressBarUnit: unit, Id: replacedBarId}
 	p.bars[replacedBarId-1] = &progressBar
-	p.barsRWMutex.Unlock()
 }
 
 func buildProgressDescription(prefix, path string, extraCharsLen int) string {
@@ -165,8 +166,8 @@ func createSpinnerFramesArray() []string {
 func (p *progressBarManager) RemoveProgress(id int) {
 	p.barsRWMutex.RLock()
 	defer p.barsWg.Done()
+	defer p.barsRWMutex.RUnlock()
 	p.bars[id-1].Abort()
-	p.barsRWMutex.RUnlock()
 	p.generalProgressBar.Increment()
 
 }
@@ -298,7 +299,7 @@ func (p *progressBarManager) printLogFilePathAsBar(path string) {
 
 // IncGeneralProgressTotalBy incremenates the general progress bar total count by given n.
 func (p *progressBarManager) IncGeneralProgressTotalBy(n int64) {
-	p.tasksCount += n
+	atomic.AddInt64(&p.tasksCount, n)
 	if p.generalProgressBar != nil {
 		p.generalProgressBar.SetTotal(p.tasksCount, false)
 	}
