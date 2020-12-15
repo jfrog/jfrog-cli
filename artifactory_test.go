@@ -2368,6 +2368,94 @@ func TestArtifactoryDownloadByBuildNoPatternUsingSpec(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func prepareDownloadByBuildWithDependenciesTests(t *testing.T) {
+	// Init
+	initArtifactoryTest(t)
+	buildNumber := "1337"
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+
+	// Upload files with buildName and buildNumber
+	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
+	assert.NoError(t, err)
+
+	// Add build artifacts.
+	artifactoryCli.Exec("upload", "--spec="+specFileA, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber)
+	artifactoryCli.Exec("upload", "--spec="+specFileB)
+
+	// Add build dependencies.
+	artifactoryCliNoCreds := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	artifactoryCliNoCreds.Exec("bad", "--spec=" + specFileB, tests.RtBuildName1, buildNumber)
+
+	// Publish build.
+	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
+}
+
+func TestArtifactoryDownloadByBuildWithDependenciesSpecNoPattern(t *testing.T) {
+	prepareDownloadByBuildWithDependenciesTests(t)
+
+	// Download with exclude-artifacts.
+	specFile, err := tests.CreateSpec(tests.BuildDownloadSpecExcludeArtifacts)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+specFile)
+	// Validate.
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildDownloadDoesntExist(), paths)
+	assert.NoError(t, err)
+
+	// Download deps-only.
+	specFile, err = tests.CreateSpec(tests.BuildDownloadSpecDepsOnly)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+specFile)
+	// Validate.
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildOnlyDeps(), paths)
+	assert.NoError(t, err)
+
+	// Download artifacts and deps.
+	specFile, err = tests.CreateSpec(tests.BuildDownloadSpecIncludeDeps)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+specFile)
+	// Validate.
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + string(os.PathSeparator) + "download" + string(os.PathSeparator) + "download_build_with_dependencies", false)
+	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildIncludeDeps(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadByBuildWithDependencies(t *testing.T) {
+	prepareDownloadByBuildWithDependenciesTests(t)
+
+	// Download with exclude-artifacts.
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true")
+	// Validate.
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err := tests.ValidateListsIdentical(tests.GetBuildDownloadDoesntExist(), paths)
+	assert.NoError(t, err)
+
+	// Download deps-only.
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_only_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true", "--include-deps=true")
+	// Validate.
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildOnlyDeps(), paths)
+	assert.NoError(t, err)
+
+	// Download artifacts and deps.
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--include-deps=true")
+	// Validate.
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + string(os.PathSeparator) + "download" + string(os.PathSeparator) + "download_build_with_dependencies", false)
+	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildIncludeDeps(), paths)
+	assert.NoError(t, err)
+
+	// Cleanup
+	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
 // Upload a file to build A.
 // Verify that it doesn't exist in B.
 func TestArtifactoryDownloadArtifactDoesntExistInBuild(t *testing.T) {

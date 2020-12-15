@@ -2941,6 +2941,8 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -2981,6 +2983,8 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3002,6 +3006,8 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -3025,6 +3031,8 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -3148,6 +3156,8 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -3376,6 +3386,8 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Props, c, "props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
+	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
 	overrideStringIfSet(&spec.Bundle, c, "bundle")
 	overrideStringIfSet(&spec.Recursive, c, "recursive")
 	overrideStringIfSet(&spec.Flat, c, "flat")
