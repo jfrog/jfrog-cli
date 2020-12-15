@@ -76,6 +76,7 @@ createDEBPackage(){
 										\
 										echo '' && echo '' && \
 										apt-get update && \
+										apt-get install -y fakeroot && \
 										DEBIAN_FRONTEND=noninteractive apt-get install -y ${DEB_DEPS} \
 										--no-install-recommends tzdata && \
 										echo '' && echo '' && \
