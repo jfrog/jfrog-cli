@@ -643,23 +643,21 @@ func GetDownloadByBuildOnlyDeps() []string {
 		Out,
 		filepath.Join(Out, "download"),
 		filepath.Join(Out, "download", "download_build_only_dependencies"),
-		filepath.Join(Out, "download", "download_build_only_dependencies", "data"),
-		filepath.Join(Out, "download", "download_build_only_dependencies", "data", "b1.in"),
-		filepath.Join(Out, "download", "download_build_only_dependencies", "data", "b2.in"),
-		filepath.Join(Out, "download", "download_build_only_dependencies", "data", "b3.in"),
+		filepath.Join(Out, "download", "download_build_only_dependencies", "b1.in"),
+		filepath.Join(Out, "download", "download_build_only_dependencies", "b2.in"),
+		filepath.Join(Out, "download", "download_build_only_dependencies", "b3.in"),
 	}
 }
 
 func GetDownloadByBuildIncludeDeps() []string {
 	return []string{
 		filepath.Join(Out, "download", "download_build_with_dependencies"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "a1.in"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "a2.in"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "a3.in"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "b1.in"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "b2.in"),
-		filepath.Join(Out, "download", "download_build_with_dependencies", "data", "b3.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "a1.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "a2.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "a3.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "b1.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "b2.in"),
+		filepath.Join(Out, "download", "download_build_with_dependencies", "b3.in"),
 	}
 }
 

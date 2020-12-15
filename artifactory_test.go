@@ -2431,21 +2431,21 @@ func TestArtifactoryDownloadByBuildWithDependencies(t *testing.T) {
 	prepareDownloadByBuildWithDependenciesTests(t)
 
 	// Download with exclude-artifacts.
-	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true")
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true", "--flat=true")
 	// Validate.
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err := tests.ValidateListsIdentical(tests.GetBuildDownloadDoesntExist(), paths)
 	assert.NoError(t, err)
 
 	// Download deps-only.
-	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_only_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true", "--include-deps=true")
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_only_dependencies/", "--build="+tests.RtBuildName1, "--exclude-artifacts=true", "--include-deps=true", "--flat=true")
 	// Validate.
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildOnlyDeps(), paths)
 	assert.NoError(t, err)
 
 	// Download artifacts and deps.
-	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--include-deps=true")
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--include-deps=true", "--flat=true")
 	// Validate.
 	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + string(os.PathSeparator) + "download" + string(os.PathSeparator) + "download_build_with_dependencies", false)
 	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildIncludeDeps(), paths)
