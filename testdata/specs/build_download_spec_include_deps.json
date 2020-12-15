@@ -3,7 +3,8 @@
     {
       "target": "out/download/download_build_with_dependencies/",
       "build": "${BUILD_NAME1}",
-      "includeDeps": "true"
+      "includeDeps": "true",
+      "flat": "true"
     }
   ]
 }
