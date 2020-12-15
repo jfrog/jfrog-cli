@@ -58,7 +58,7 @@ func runDockerPushTest(imageName, module string, withModule bool, t *testing.T) 
 	} else {
 		artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
-	
+
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 

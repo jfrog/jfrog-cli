@@ -1,15 +1,28 @@
+## 1.42.0 (December 15, 2020)
+- Build-info performance improvements for npm and pip
+- "jfrog rt cp" and "jfrog rt mv" are now parallel
+- New "jfrog rt build-append" command
+- Support VCS list in build-info
+- New additional "cross action" progress bar for Artifactory uploads and downloads
+- Progress bar added to "jfrog plugin install"
+- Add color to log leval prefix in logs
+- Nuget v3 is now used by default
+- Bug fix - download with the explode option fails in some dcenarios
+- Bug fix - Artifactory upload with sync-deletes can delete when shouldn't, if path includes dashes
+- Bug fix - Support white-spaces in args for the "jfrog rt mvn", "jfrog rt nuget" and "jfrog rt dotnet"
+
 ## 1.41.2 (November 25, 2020)
-Bug fix - User prompts in plugins are invisible
-Bug fix - Occasional panic on TestInsecureTlsMavenBuild
-Bug fix - Avoid using "ParseArgs" for new syntax package manager commands
-Bug fix - Error when uploading / downloading 0 files 
+- Bug fix - User prompts in plugins are invisible
+- Bug fix - Occasional panic on TestInsecureTlsMavenBuild
+- Bug fix - Avoid using "ParseArgs" for new syntax package manager commands
+- Bug fix - Error when uploading / downloading 0 files 
 
 ## 1.41.1 (November 13, 2020)
-Bug fix - With multiple JFrog CLI plugins installed, the wrong plugin gets executed 
+- Bug fix - With multiple JFrog CLI plugins installed, the wrong plugin gets executed 
 
 ## 1.41.0 (November 12, 2020)
-New "JFrog CLI Plugins" feature
-Bug fix - "jfrog rt pip-install" fails with local repos in some scenarios
+- New "JFrog CLI Plugins" feature
+- Bug fix - "jfrog rt pip-install" fails with local repos in some scenarios
 
 ## 1.40.1 (November 2, 2020)
 - Publish Linux s390x architecture binary of JFrog CLI
