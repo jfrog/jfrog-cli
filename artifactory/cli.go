@@ -2941,6 +2941,8 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -2981,6 +2983,8 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
@@ -3027,6 +3031,8 @@ func createDefaultPropertiesSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
@@ -3150,6 +3156,8 @@ func createDefaultDownloadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Props(c.String("props")).
 		ExcludeProps(c.String("exclude-props")).
 		Build(c.String("build")).
+		ExcludeArtifacts(c.Bool("exclude-artifacts")).
+		IncludeDeps(c.Bool("include-deps")).
 		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).

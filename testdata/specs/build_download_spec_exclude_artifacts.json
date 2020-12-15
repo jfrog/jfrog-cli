@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "target": "out/download/download_build_with_dependencies/",
+      "build": "${BUILD_NAME1}/1337",
+      "excludeArtifacts": "true"
+    }
+  ]
+}
