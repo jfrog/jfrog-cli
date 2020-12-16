@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
+	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/jfrog/gocmd v0.1.17
 	github.com/jfrog/gofrog v1.0.6
 	github.com/jfrog/jfrog-cli-core v1.2.0
@@ -18,9 +19,9 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
+replace github.com/jfrog/jfrog-client-go => dev
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
+replace github.com/jfrog/jfrog-cli-core => dev
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
