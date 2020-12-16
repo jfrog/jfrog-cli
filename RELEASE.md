@@ -1,3 +1,6 @@
+## 1.42.1 (December 16, 2020)
+- Bug fix - Explode after download fails, if not downloaded to the curr dir 
+
 ## 1.42.0 (December 15, 2020)
 - Build-info performance improvements for npm and pip
 - "jfrog rt cp" and "jfrog rt mv" are now parallel
