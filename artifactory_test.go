@@ -725,11 +725,20 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	randFile.File.Close()
 	os.RemoveAll(tests.Out)
-	artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "randFile"), tests.Out+"/", "--explode=true")
-	artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50")
-	artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "bulk.tar"), tests.Out+"/", "--explode=true")
-	artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true", "--min-split=50")
-	artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true")
+	// Download 'concurrent.tar.gz' as 'concurrent' file name and explode it.
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/concurrent", "--explode=true"))
+	// Download 'concurrent.tar.gz' and explode it.
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true"))
+	// Download 'concurrent.tar.gz' withour explode it.
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false"))
+	// Try to explode the archive that already been downloaded.
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true"))
+	os.RemoveAll(tests.Out)
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "randFile"), tests.Out+"/", "--explode=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "bulk.tar"), tests.Out+"/", "--explode=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true"))
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
@@ -2386,7 +2395,7 @@ func prepareDownloadByBuildWithDependenciesTests(t *testing.T) {
 
 	// Add build dependencies.
 	artifactoryCliNoCreds := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	artifactoryCliNoCreds.Exec("bad", "--spec=" + specFileB, tests.RtBuildName1, buildNumber)
+	artifactoryCliNoCreds.Exec("bad", "--spec="+specFileB, tests.RtBuildName1, buildNumber)
 
 	// Publish build.
 	artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber)
@@ -2418,7 +2427,7 @@ func TestArtifactoryDownloadByBuildWithDependenciesSpecNoPattern(t *testing.T) {
 	assert.NoError(t, err)
 	artifactoryCli.Exec("download", "--spec="+specFile)
 	// Validate.
-	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + string(os.PathSeparator) + "download" + string(os.PathSeparator) + "download_build_with_dependencies", false)
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"download"+string(os.PathSeparator)+"download_build_with_dependencies", false)
 	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildIncludeDeps(), paths)
 	assert.NoError(t, err)
 
@@ -2447,7 +2456,7 @@ func TestArtifactoryDownloadByBuildWithDependencies(t *testing.T) {
 	// Download artifacts and deps.
 	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/download_build_with_dependencies/", "--build="+tests.RtBuildName1, "--include-deps=true", "--flat=true")
 	// Validate.
-	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out + string(os.PathSeparator) + "download" + string(os.PathSeparator) + "download_build_with_dependencies", false)
+	paths, _ = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"download"+string(os.PathSeparator)+"download_build_with_dependencies", false)
 	err = tests.ValidateListsIdentical(tests.GetDownloadByBuildIncludeDeps(), paths)
 	assert.NoError(t, err)
 
