@@ -1,3 +1,7 @@
+## 1.42.2 (December 17, 2020)
+- Bug fix - Revert "Change pypi AQL query" following performance issues
+- Bug fix - Download explode fail when overriding the archive filename 
+
 ## 1.42.1 (December 16, 2020)
 - Bug fix - Explode after download fails, if not downloaded to the curr dir 
 
