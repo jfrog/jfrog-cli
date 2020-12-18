@@ -1,3 +1,6 @@
+## 1.42.3 (December 18, 2020)
+- Bug fix - Download and explode fails while inside a docker container
+
 ## 1.42.2 (December 17, 2020)
 - Bug fix - Revert "Change pypi AQL query" following performance issues
 - Bug fix - Download explode fail when overriding the archive filename 
