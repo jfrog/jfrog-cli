@@ -166,6 +166,7 @@ def build(goos, goarch, pkg, fileName) {
         env.GOOS="$goos"
         env.GOARCH="$goarch"
         sh "build/build.sh $fileName"
+        sh "chmod +x $fileName"
 
         if (goos == 'windows') {
             dir("${cliWorkspace}/certs-dir") {
