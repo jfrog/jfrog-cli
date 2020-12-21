@@ -153,6 +153,14 @@ def uploadToBintray(pkg, fileName) {
     }
 }
 
+def uploadToJfrogReleases(pkg, fileName) {
+    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+        sh """#!/bin/bash
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/$version/$pkg/
+                --url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+        """
+}
+
 def build(goos, goarch, pkg, fileName) {
     dir("${jfrogCliRepoDir}") {
         env.GOOS="$goos"
@@ -182,6 +190,7 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
 
     build(goos, goarch, pkg, fileName)
     uploadToBintray(pkg, fileName)
+    uploadToJfrogReleases(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
 
