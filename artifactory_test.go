@@ -500,7 +500,7 @@ func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
 	assert.NoError(t, err)
 	os.Chdir(tests.Out)
 
-	assert.NoError(t, artifactoryCli.Exec("download", filepath.Join(tests.RtRepo1, "p-modules", "DownloadDotAsTarget"), "."))
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/DownloadDotAsTarget", "."))
 	assert.NoError(t, os.Chdir(wd))
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -789,7 +789,7 @@ func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	assert.NoError(t, os.Chdir(tests.Out))
-	assert.NoError(t, artifactoryCli.Exec("download", filepath.Join(tests.RtRepo1, "p-modules", "concurrent.tar.gz"), ".", "--explode=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/concurrent.tar.gz", ".", "--explode=true"))
 	assert.NoError(t, os.Chdir(wd))
 
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
