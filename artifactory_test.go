@@ -747,9 +747,6 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
 	randFile.File.Close()
 	os.RemoveAll(tests.Out)
-
-	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-
 	// Download 'concurrent.tar.gz' as 'concurrent' file name and explode it.
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/concurrent", "--explode=true"))
 	// Download 'concurrent.tar.gz' and explode it.
