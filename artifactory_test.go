@@ -487,6 +487,28 @@ func TestArtifactoryDownloadFilesNameWithParenthesis(t *testing.T) {
 
 	cleanArtifactoryTest()
 }
+func TestArtifactoryDownloadDotAsTarget(t *testing.T) {
+	initArtifactoryTest(t)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadDotAsTarget"), 100000)
+	randFile.File.Close()
+	assert.NoError(t, artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true"))
+	assert.NoError(t, os.RemoveAll(tests.Out))
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	os.Chdir(tests.Out)
+
+	assert.NoError(t, artifactoryCli.Exec("download", filepath.Join(tests.RtRepo1, "p-modules", "DownloadDotAsTarget"), "."))
+	assert.NoError(t, os.Chdir(wd))
+
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadDotAsTarget")}, paths, t)
+	os.RemoveAll(tests.Out)
+	cleanArtifactoryTest()
+}
 
 func TestArtifactoryDirectoryCopyUsingWildcardFlat(t *testing.T) {
 	initArtifactoryTest(t)
@@ -744,6 +766,36 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	assert.NoError(t, err)
 	tests.VerifyExistLocally(tests.GetExtractedDownload(), paths, t)
 
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
+	initArtifactoryTest(t)
+
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadAndExplodeDotAsTarget"), 100000)
+	assert.NoError(t, err)
+
+	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{randFile.Name()})
+	assert.NoError(t, err)
+
+	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
+	assert.NoError(t, artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/p-modules/", "--flat=true"))
+	randFile.File.Close()
+	os.RemoveAll(tests.Out)
+
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	assert.NoError(t, os.Chdir(tests.Out))
+	assert.NoError(t, artifactoryCli.Exec("download", filepath.Join(tests.RtRepo1, "p-modules", "concurrent.tar.gz"), ".", "--explode=true"))
+	assert.NoError(t, os.Chdir(wd))
+
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadAndExplodeDotAsTarget")}, paths, t)
+	os.RemoveAll(tests.Out)
 	cleanArtifactoryTest()
 }
 
