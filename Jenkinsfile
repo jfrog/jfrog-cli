@@ -156,8 +156,7 @@ def uploadToBintray(pkg, fileName) {
 def uploadToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
-                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/$version/$pkg/
-                --url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
+                builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
 }
 
