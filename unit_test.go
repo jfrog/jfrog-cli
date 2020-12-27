@@ -1,14 +1,14 @@
 package main
 
 import (
+	"os"
+	"testing"
+
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
 	"github.com/jfrog/jfrog-cli/utils/tests"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	clientTests "github.com/jfrog/jfrog-client-go/utils/tests"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 const (
@@ -17,21 +17,17 @@ const (
 )
 
 func TestUnitTests(t *testing.T) {
-	homePath, err := filepath.Abs(JfrogTestsHome)
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-
-	oldHome, err := coreTests.SetJfrogHome(homePath)
+	oldHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 	defer os.Setenv(coreutils.HomeDir, oldHome)
+	// Clean from previous tests.
+	coreTests.CleanUnitTestsJfrogHome()
+	defer coreTests.CleanUnitTestsJfrogHome()
 
 	packages := clientTests.GetTestPackages("./...")
 	packages = clientTests.ExcludeTestsPackage(packages, CliIntegrationTests)
 	clientTests.RunTests(packages, *tests.HideUnitTestLog)
-	coreTests.CleanUnitTestsJfrogHome(homePath)
 }
