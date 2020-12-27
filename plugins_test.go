@@ -15,20 +15,19 @@ import (
 	"testing"
 )
 
-const jfrogPluginTestsHome = ".jfrogCliPluginsTest"
 const pluginTemplateName = "hello-frog"
 
 func TestPluginFullCycle(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
-	oldHome, err := coreTests.SetJfrogHome(jfrogPluginTestsHome)
+	oldHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
 	defer os.Setenv(coreutils.HomeDir, oldHome)
 	// Clean from previous tests.
-	os.RemoveAll(jfrogPluginTestsHome)
-	defer os.RemoveAll(jfrogPluginTestsHome)
+	coreTests.CleanUnitTestsJfrogHome()
+	defer coreTests.CleanUnitTestsJfrogHome()
 
 	// Set CI to true to prevent interactive.
 	oldCi := os.Getenv(coreutils.CI)
