@@ -4270,14 +4270,28 @@ func TestAccessTokenCreate(t *testing.T) {
 	defer log.SetLogger(previousLog)
 
 	// Create access token for current user, implicitly
-	err := artifactoryCli.Exec("atc")
-	assert.NoError(t, err)
+	if *tests.RtAccessToken != "" {
+		// Use Artifactory CLI with basic auth to allow running `jfrog rt atc` without arguments
+		origAccessToken := *tests.RtAccessToken
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		defer func() {
+			*tests.RtUser = origUsername
+			*tests.RtPassword = origPassword
+			*tests.RtAccessToken = origAccessToken
+		}()
+		*tests.RtAccessToken = ""
+		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate()).Exec("atc")
+		assert.NoError(t, err)
+	} else {
+		err := artifactoryCli.Exec("atc")
+		assert.NoError(t, err)
+	}
 
 	// Check access token
 	checkAccessToken(t, buffer)
 
 	// Create access token for current user, explicitly
-	err = artifactoryCli.Exec("atc", *tests.RtUser)
+	err := artifactoryCli.Exec("atc", *tests.RtUser)
 	assert.NoError(t, err)
 
 	// Check access token
