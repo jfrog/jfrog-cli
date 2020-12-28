@@ -2785,7 +2785,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		userName = c.Args().Get(0)
 	} else {
-		userName = rtDetails.GetUrl()
+		userName = rtDetails.GetUser()
 	}
 	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
 	if err != nil {
