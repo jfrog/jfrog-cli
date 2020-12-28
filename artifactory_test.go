@@ -4269,18 +4269,18 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
 
+	// If access token is provided, use a new Artifactory CLI with username and password
 	accessTokenCli := artifactoryCli
 	if *tests.RtAccessToken != "" {
 		origAccessToken := *tests.RtAccessToken
-		*tests.RtAccessToken = ""
 		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
 		defer func() {
 			*tests.RtUser = origUsername
 			*tests.RtPassword = origPassword
 			*tests.RtAccessToken = origAccessToken
 		}()
-		cred := authenticate()
-		accessTokenCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
+		*tests.RtAccessToken = ""
+		accessTokenCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate())
 	}
 
 	// Create access token for current user, implicitly
