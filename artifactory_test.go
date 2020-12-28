@@ -4276,8 +4276,8 @@ func TestAccessTokenCreate(t *testing.T) {
 	// Check access token
 	checkAccessToken(t, buffer)
 
-	// Create access token for current user, explicitly
-	err = artifactoryCli.Exec("atc", *tests.RtUser)
+	// Create access token for a dummy user
+	err = artifactoryCli.Exec("atc", "dummy-user")
 	assert.NoError(t, err)
 
 	// Check access token
