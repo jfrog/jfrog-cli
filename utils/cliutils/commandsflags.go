@@ -293,7 +293,7 @@ const (
 	dockerPromoteCopy   = dockerPromotePrefix + Copy
 
 	// Unique build docker create
-	imageNameWithDigestFile = "image-name-with-digest-file"
+	imageFile = "image-file"
 
 	// Unique npm flags
 	npmPrefix  = "npm-"
@@ -1088,8 +1088,8 @@ var flagsMap = map[string]cli.Flag{
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
 	},
-	imageNameWithDigestFile: cli.StringFlag{
-		Name:  imageNameWithDigestFile,
+	imageFile: cli.StringFlag{
+		Name:  imageFile,
 		Value: "",
 		Usage: "File path to the image name and manifest's digest in Artifactory.` `",
 	},
@@ -1197,7 +1197,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, imageNameWithDigestFile,
+		serverId, imageFile,
 	},
 	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,

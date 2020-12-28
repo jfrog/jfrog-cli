@@ -458,7 +458,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return containerPushCmd(c, containerutils.Docker)
+				return containerPushCmd(c, containerutils.DockerClient)
 			},
 		},
 		{
@@ -471,7 +471,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return containerPullCmd(c, containerutils.Docker)
+				return containerPullCmd(c, containerutils.DockerClient)
 			},
 		},
 		{
@@ -1321,9 +1321,9 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 		return err
 	}
 	sourceRepo := c.Args().Get(0)
-	imageNameWithDigestFile := c.String("image-name-with-digest-file")
+	imageNameWithDigestFile := c.String("image-file")
 	if imageNameWithDigestFile == "" {
-		return cliutils.PrintHelpAndReturnError("Missing the flag 'image-name-with-digest-file'.", c)
+		return cliutils.PrintHelpAndReturnError("The '--image-file' command option was not provided.", c)
 	}
 	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {

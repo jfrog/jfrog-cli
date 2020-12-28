@@ -2,10 +2,10 @@ package builddockercreate
 
 const Description = "Build Docker Create."
 
-var Usage = []string{"jfrog rt build-docker-create <target repo> <--image-name-with-digest-file=*file-path*>"}
+var Usage = []string{"jfrog rt build-docker-create <target repo> <--image-file=*file-path*>"}
 
-const Arguments string = `	image-name-with-digest-file
-		File path to the image name and manifest's digest in Artifactory.
+const Arguments string = `	image-file
+		Path to a file which includes one line in the following format: IMAGE-TAG@sha256:MANIFEST-SHA256.
 	target repo
 		The repository to which the image was pushed.
 `
