@@ -67,7 +67,7 @@ func TestContainerPushWithMultipleSlash(t *testing.T) {
 
 // Run container push to Artifactory
 func runPushTest(containerManager container.ContainerManagerType, imageName, module string, withModule bool, t *testing.T) {
-	imageTag := inttestutils.BuildTestContainerImage(imageName, containerManager)
+	imageTag := inttestutils.BuildTestContainerImage(t, imageName, containerManager)
 	buildNumber := "1"
 
 	// Push image
@@ -88,7 +88,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
-		imageTag := inttestutils.BuildTestContainerImage(tests.DockerImageName, containerManager)
+		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 		buildNumber := "1"
 		os.Setenv(coreutils.BuildName, tests.DockerBuildName)
 		os.Setenv(coreutils.BuildNumber, buildNumber)
@@ -109,7 +109,7 @@ func TestContainerPushBuildNameNumberFromEnv(t *testing.T) {
 func TestContainerPull(t *testing.T) {
 	containerManagers := initContainerTest(t)
 	for _, containerManager := range containerManagers {
-		imageTag := inttestutils.BuildTestContainerImage(tests.DockerImageName, containerManager)
+		imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, containerManager)
 
 		// Push container image
 		artifactoryCli.Exec(containerManager.String()+"-push", imageTag, *tests.DockerTargetRepo)
@@ -189,7 +189,7 @@ func TestDockerPromote(t *testing.T) {
 	initContainerTest(t)
 
 	// Build and push image
-	imageTag := inttestutils.BuildTestContainerImage(tests.DockerImageName, container.DockerClient)
+	imageTag := inttestutils.BuildTestContainerImage(t, tests.DockerImageName, container.DockerClient)
 	err := artifactoryCli.Exec("docker-push", imageTag, *tests.DockerTargetRepo)
 	assert.NoError(t, err)
 
