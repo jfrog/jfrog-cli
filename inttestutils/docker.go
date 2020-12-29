@@ -34,6 +34,9 @@ func NewBuildDockerImage(imageTag, dockerFilePath string, containerManager conta
 func (image *BuildDockerImage) GetCmd() *exec.Cmd {
 	var cmd []string
 	cmd = append(cmd, "build")
+	if image.containerManager == container.Podman {
+		cmd = append(cmd, "--cgroup-manager=cgroupfs")
+	}
 	cmd = append(cmd, image.DockerFilePath)
 	cmd = append(cmd, "--tag", image.DockerTag)
 	return exec.Command(image.containerManager.String(), cmd[:]...)
