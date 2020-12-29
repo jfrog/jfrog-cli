@@ -28,6 +28,7 @@ pipelines:
   # Global configuration
   - name: test_cli
     configuration:
+      nodePool: u20-2xl
       runtime:
         type: image
         image:
