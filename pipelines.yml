@@ -41,99 +41,25 @@ pipelines:
           CI: "true"
 
     steps:
-      - name: Artifactory
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.artifactory -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Npm
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - npm --version
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.npm -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Maven
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - mvn --version
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.maven -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Gradle
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - gradle --version
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.gradle -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Pip
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - pip --version
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.pip -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Go
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - go version
-            - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.go -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken)
-
-      - name: Distribution
-        type: Bash
-        configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
-          <<: *UPDATE_COMMIT_STATUS
-          onExecute:
-            - cd $res_orjfrogCliGit_resourcePath
-            - *CREATE_RT_ACCESS_TOKEN
-            - curl -X POST -u $int_jfrog_rt_user:$int_jfrog_rt_password $int_jfrog_dist_url/api/v1/security/token -d "username=$int_jfrog_rt_user" -d 'expires_in=1800' | jq '.access_token' -r > distToken
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.distribution -rt.url=$int_jfrog_rt_url -rt.distUrl=$int_jfrog_dist_url -rt.accessToken=$(< rtToken) -rt.distAccessToken=$(< distToken)
-
       - name: Docker
         type: Bash
         configuration:
-          <<: *COMMON_CONFIGURATION
-        execution:
+          integrations:
+            runtime:
+              type: host
+            - name: jfrog
+          inputResources:
+            - name: orjfrogCliGit
+            execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
             - cd $res_orjfrogCliGit_resourcePath
             - docker version
             - *CREATE_RT_ACCESS_TOKEN
+            - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+            - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key | apt-key add -
+            - apt update
+            - apt -yq install podman
             - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.dockerTargetRepo=docker-local -rt.dockerRemoteRepo=docker-remote
 
       - name: NuGet
