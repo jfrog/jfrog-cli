@@ -23,6 +23,6 @@ replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
 
 replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
 
-// replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
+replace github.com/jfrog/gocmd => github.com/jfrog/gocmd dev
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
