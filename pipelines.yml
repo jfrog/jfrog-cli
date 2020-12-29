@@ -47,7 +47,7 @@ pipelines:
           runtime:
             type: host
           <<: *COMMON_CONFIGURATION
-            execution:
+        execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
             - cd $res_orjfrogCliGit_resourcePath
