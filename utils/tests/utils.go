@@ -2,11 +2,10 @@ package tests
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -16,6 +15,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 
 	corelog "github.com/jfrog/jfrog-cli-core/utils/log"
 
@@ -420,35 +422,37 @@ func GetBuildNames() []string {
 // We use substitution map to set repositories and builds with timestamp.
 func getSubstitutionMap() map[string]string {
 	return map[string]string{
-		"${REPO1}":              RtRepo1,
-		"${REPO2}":              RtRepo2,
-		"${REPO_1_AND_2}":       RtRepo1And2,
-		"${VIRTUAL_REPO}":       RtVirtualRepo,
-		"${LFS_REPO}":           RtLfsRepo,
-		"${DEBIAN_REPO}":        RtDebianRepo,
-		"${DOCKER_REPO}":        DockerRepo,
-		"${MAVEN_REPO1}":        MvnRepo1,
-		"${MAVEN_REPO2}":        MvnRepo2,
-		"${MAVEN_REMOTE_REPO}":  MvnRemoteRepo,
-		"${GRADLE_REMOTE_REPO}": GradleRemoteRepo,
-		"${GRADLE_REPO}":        GradleRepo,
-		"${NPM_REPO}":           NpmRepo,
-		"${NPM_REMOTE_REPO}":    NpmRemoteRepo,
-		"${GO_REPO}":            GoRepo,
-		"${RT_SERVER_ID}":       RtServerId,
-		"${RT_URL}":             *RtUrl,
-		"${RT_API_KEY}":         *RtApiKey,
-		"${RT_USERNAME}":        *RtUser,
-		"${RT_PASSWORD}":        *RtPassword,
-		"${RT_ACCESS_TOKEN}":    *RtAccessToken,
-		"${PYPI_REMOTE_REPO}":   PypiRemoteRepo,
-		"${PYPI_VIRTUAL_REPO}":  PypiVirtualRepo,
-		"${BUILD_NAME1}":        RtBuildName1,
-		"${BUILD_NAME2}":        RtBuildName2,
-		"${BINTRAY_REPO}":       BintrayRepo,
-		"${BUNDLE_NAME}":        BundleName,
-		"${DIST_REPO1}":         DistRepo1,
-		"${DIST_REPO2}":         DistRepo2,
+		"${REPO1}":                     RtRepo1,
+		"${REPO2}":                     RtRepo2,
+		"${REPO_1_AND_2}":              RtRepo1And2,
+		"${VIRTUAL_REPO}":              RtVirtualRepo,
+		"${LFS_REPO}":                  RtLfsRepo,
+		"${DEBIAN_REPO}":               RtDebianRepo,
+		"${DOCKER_REPO}":               DockerRepo,
+		"${DOCKER_REPO_DOMAIN}":        *DockerRepoDomain,
+		"${MAVEN_REPO1}":               MvnRepo1,
+		"${MAVEN_REPO2}":               MvnRepo2,
+		"${MAVEN_REMOTE_REPO}":         MvnRemoteRepo,
+		"${GRADLE_REMOTE_REPO}":        GradleRemoteRepo,
+		"${GRADLE_REPO}":               GradleRepo,
+		"${NPM_REPO}":                  NpmRepo,
+		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
+		"${GO_REPO}":                   GoRepo,
+		"${RT_SERVER_ID}":              RtServerId,
+		"${RT_URL}":                    *RtUrl,
+		"${RT_API_KEY}":                *RtApiKey,
+		"${RT_USERNAME}":               *RtUser,
+		"${RT_PASSWORD}":               *RtPassword,
+		"${RT_CREDENTIALS_BASIC_AUTH}": base64.StdEncoding.EncodeToString([]byte(*RtUser + ":" + *RtPassword)),
+		"${RT_ACCESS_TOKEN}":           *RtAccessToken,
+		"${PYPI_REMOTE_REPO}":          PypiRemoteRepo,
+		"${PYPI_VIRTUAL_REPO}":         PypiVirtualRepo,
+		"${BUILD_NAME1}":               RtBuildName1,
+		"${BUILD_NAME2}":               RtBuildName2,
+		"${BINTRAY_REPO}":              BintrayRepo,
+		"${BUNDLE_NAME}":               BundleName,
+		"${DIST_REPO1}":                DistRepo1,
+		"${DIST_REPO2}":                DistRepo2,
 	}
 }
 

@@ -1,0 +1,7 @@
+{
+	"auths": {
+		"${DOCKER_REPO_DOMAIN}" : {
+			"auth": "${RT_CREDENTIALS_BASIC_AUTH}"
+		}
+	}
+}

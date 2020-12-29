@@ -1,10 +1,11 @@
 package cliutils
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"sort"
 	"strconv"
+
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
 const (
@@ -31,8 +32,9 @@ const (
 	Gradle                  = "gradle"
 	GradleConfig            = "gradle-config"
 	DockerPromote           = "docker-promote"
-	DockerPull              = "docker-pull"
-	DockerPush              = "docker-push"
+	ContainerPull           = "container-pull"
+	ContainerPush           = "container-push"
+	BuildDockerCreate       = "build-docker-create"
 	NpmConfig               = "npm-config"
 	Npm                     = "npm"
 	NpmPublish              = "npmPublish"
@@ -289,6 +291,9 @@ const (
 	sourceTag           = "source-tag"
 	targetTag           = "target-tag"
 	dockerPromoteCopy   = dockerPromotePrefix + Copy
+
+	// Unique build docker create
+	imageFile = "image-file"
 
 	// Unique npm flags
 	npmPrefix  = "npm-"
@@ -1083,6 +1088,11 @@ var flagsMap = map[string]cli.Flag{
 		Value: "",
 		Usage: "[Default: " + strconv.Itoa(DefaultLicenseCount) + "] The number of licenses to deploy. Minimum value is 1.` `",
 	},
+	imageFile: cli.StringFlag{
+		Name:  imageFile,
+		Value: "",
+		Usage: "File path to the image name and manifest's digest in Artifactory.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
@@ -1181,11 +1191,15 @@ var commandFlags = map[string][]string{
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId,
 	},
-	DockerPush: {
+	ContainerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, threads,
 	},
-	DockerPull: {
+	BuildDockerCreate: {
+		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		serverId, imageFile,
+	},
+	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin,
 	},

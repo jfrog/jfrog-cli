@@ -43,6 +43,7 @@ const (
 	DistributionUploadSpecA                = "dist_upload_spec_a.json"
 	DistributionUploadSpecB                = "dist_upload_spec_b.json"
 	DockerRepoConfig                       = "docker_repository_config.json"
+	KanikoConfig                           = "kaniko_config.json"
 	DownloadAllRepo1TestResources          = "download_all_repo1_test_resources.json"
 	DownloadEmptyDirs                      = "download_empty_dir_spec.json"
 	DownloadModFileGo                      = "downloadmodfile_go.json"
