@@ -52,6 +52,8 @@ pipelines:
           onExecute:
             - cd $res_orjfrogCliGit_resourcePath
             - docker version
+            - apt update
+            - apt install -yq zip unzip curl git uuid jq gettext golang-1.14-go 
             - *CREATE_RT_ACCESS_TOKEN
             - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
             - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key | apt-key add -
