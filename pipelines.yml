@@ -127,14 +127,28 @@ pipelines:
       - name: Docker
         type: Bash
         configuration:
+          runtime:
+            type: host
           <<: *COMMON_CONFIGURATION
         execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
             - cd $res_jfrogCliGit_resourcePath
             - docker version
+            # Install Golang
+            - apt update
+            - apt install -yq zip unzip curl git uuid jq gettext golang-1.14-go
+            - env -i PATH=$PATH:/usr/lib/go-1.14/bin
+            - export PATH=$PATH:/usr/lib/go-1.14/bin
+            - go version
             - *CREATE_RT_ACCESS_TOKEN
-            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME DOCKER_CLI_EXPERIMENTAL=enabled `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.dockerTargetRepo=docker-local -rt.dockerRemoteRepo=docker-remote
+            # Install podman
+            - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+            - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key | apt-key add -
+            - apt update
+            - apt -yq install podman
+            - podman version
+            - env -i PATH=$PATH M2_HOME=$M2_HOME HOME=$HOME `which go` test -v -timeout 0 -test.docker -rt.url=$int_jfrog_rt_url -rt.accessToken=$(< rtToken) -rt.dockerRepoDomain=ecosysjfrog-docker-virtual.jfrog.io -rt.dockerVirtualRepo=docker-virtual -rt.dockerTargetRepo=docker-local -rt.dockerRemoteRepo=docker-remote
 
       - name: NuGet
         type: Bash
