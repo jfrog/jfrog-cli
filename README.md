@@ -153,7 +153,6 @@ go test -v github.com/jfrog/jfrog-cli -test.gradle [flags]
 
 #### Docker tests
 In addition to [general optional flags](#Usage) you *must* use the following docker flags.
-Kaniko tests will run as well.
 ##### Requirements
 * On Linux machines, [Podman](https://podman.io/) tests will be running, so make sure it's available in the local path.
 
