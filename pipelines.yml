@@ -44,12 +44,9 @@ pipelines:
       - name: Docker
         type: Bash
         configuration:
-          integrations:
-            runtime:
-              type: host
-            - name: jfrog
-          inputResources:
-            - name: orjfrogCliGit
+          runtime:
+            type: host
+          <<: *COMMON_CONFIGURATION
             execution:
           <<: *UPDATE_COMMIT_STATUS
           onExecute:
