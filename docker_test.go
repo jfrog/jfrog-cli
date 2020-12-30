@@ -276,6 +276,13 @@ func runKaniko(t *testing.T, kanikoWorkspac, imageToPush, kanikoImage string) st
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
 	imageNameWithDigestFile := "image-file"
+	if *tests.RtAccessToken != "" {
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		defer func() {
+			*tests.RtUser = origUsername
+			*tests.RtPassword = origPassword
+		}()
+	}
 	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)
 	assert.NoError(t, err)
 	credentialsFile, err = filepath.Abs(credentialsFile)
