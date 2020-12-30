@@ -1,3 +1,10 @@
+## 1.43.0 (December 30, 2020)
+- Add Podman & Kaniko support
+- Improve tests and release process
+- Bug fix - Access token create without username
+- Bug fix - Artifactory download with the explode option fails to extract files with no r permissions
+- Bug fix - Artifactory download fails to download files for '.' as target path
+
 ## 1.42.3 (December 18, 2020)
 - Bug fix - Download and explode fails while inside a docker container
 
