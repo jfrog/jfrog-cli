@@ -108,11 +108,12 @@ func (image *DeleteDockerImage) GetErrWriter() io.WriteCloser {
 	return nil
 }
 
-func BuildTestContainerImage(imageName string, containerManagerType container.ContainerManagerType) string {
+func BuildTestContainerImage(t *testing.T, imageName string, containerManagerType container.ContainerManagerType) string {
+	log.Info("Building image", imageName, "with", containerManagerType.String())
 	imageTag := path.Join(*tests.DockerRepoDomain, imageName+":1")
 	dockerFilePath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "docker")
 	imageBuilder := NewBuildDockerImage(imageTag, dockerFilePath, containerManagerType)
-	gofrogcmd.RunCmd(imageBuilder)
+	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 	return imageTag
 }
 
