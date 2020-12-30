@@ -15,7 +15,7 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
-	"github.com/jfrog/jfrog-client-go/httpclient"
+	"github.com/jfrog/jfrog-client-go/http/httpclient"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
