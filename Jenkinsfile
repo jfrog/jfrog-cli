@@ -158,6 +158,7 @@ def uploadToJfrogReleases(pkg, fileName) {
         sh """#!/bin/bash
                 builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
+    }
 }
 
 def build(goos, goarch, pkg, fileName) {
