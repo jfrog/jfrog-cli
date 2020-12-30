@@ -135,12 +135,12 @@ pipelines:
             - cd $res_jfrogCliGit_resourcePath
             - docker version
             # Install Golang
-            - apt update && apt install -yq golang-1.14-go
-            - export PATH=$PATH:/usr/lib/go-1.14/bin
+            - curl -LO https://get.golang.org/$(uname)/go_installer && chmod +x go_installer && SHELL=bash ./go_installer && rm go_installer
+            - export PATH=/$HOME/.go/bin:$PATH
             - go version
             # Install Podman
-            - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-            - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key | apt-key add -
+            - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+            - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/Release.key | apt-key add -
             - apt update && apt -yq install podman
             - podman version
 
