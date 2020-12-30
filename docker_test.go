@@ -268,14 +268,21 @@ func TestKanikoBuildCollect(t *testing.T) {
 	assert.NoError(t, os.RemoveAll(tests.Out))
 }
 
-// t - test object.
-// kanikoWorkspac - local path to kaniko's workspace.
-// imageToPush - the image to be pushed by kaniko.
-// return - path to the kaniko's output file.
-func runKaniko(t *testing.T, kanikoWorkspac, imageToPush, kanikoImage string) string {
+// t - Test struct.
+// kanikoWorkspace - Local path to kaniko's workspace.
+// imageToPush - The image to be pushed by kaniko.
+// return path to the kaniko's output file.
+func runKaniko(t *testing.T, kanikoWorkspace, imageToPush, kanikoImage string) string {
 	testDir := tests.GetTestResourcesPath()
 	dockerFile := "TestKanikoBuildCollect"
 	imageNameWithDigestFile := "image-file"
+	if *tests.RtAccessToken != "" {
+		origUsername, origPassword := tests.SetBasicAuthFromAccessToken(t)
+		defer func() {
+			*tests.RtUser = origUsername
+			*tests.RtPassword = origPassword
+		}()
+	}
 	credentialsFile, err := tests.ReplaceTemplateVariables(filepath.Join(testDir, tests.KanikoConfig), tests.Out)
 	assert.NoError(t, err)
 	credentialsFile, err = filepath.Abs(credentialsFile)
