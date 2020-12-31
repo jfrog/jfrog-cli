@@ -1090,7 +1090,6 @@ var flagsMap = map[string]cli.Flag{
 	},
 	imageFile: cli.StringFlag{
 		Name:  imageFile,
-		Value: "",
 		Usage: "[Mandatory] Path to a file which includes one line in the following format: <IMAGE-TAG>@sha256:<MANIFEST-SHA256>.` `",
 	},
 }
