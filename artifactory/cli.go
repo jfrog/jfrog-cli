@@ -479,7 +479,7 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.ContainerPush),
 			Aliases:      []string{"pp"},
 			Usage:        podmanpush.Description,
-			HelpName:     corecommon.CreateUsage("rt podman-push", podmanpull.Description, podmanpull.Usage),
+			HelpName:     corecommon.CreateUsage("rt podman-push", podmanpush.Description, podmanpush.Usage),
 			UsageText:    podmanpush.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),

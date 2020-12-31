@@ -1,11 +1,9 @@
 package builddockercreate
 
-const Description = "Build Docker Create."
+const Description = "Add a published docker image to the build-info."
 
-var Usage = []string{"jfrog rt build-docker-create <target repo> <--image-file=*file-path*>"}
+var Usage = []string{"jfrog rt build-docker-create <target repo> --image-file=<file-path>"}
 
-const Arguments string = `	image-file
-		Path to a file which includes one line in the following format: IMAGE-TAG@sha256:MANIFEST-SHA256.
-	target repo
+const Arguments string = `	target repo
 		The repository to which the image was pushed.
 `

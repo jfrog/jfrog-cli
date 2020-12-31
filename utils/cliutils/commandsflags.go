@@ -1091,7 +1091,7 @@ var flagsMap = map[string]cli.Flag{
 	imageFile: cli.StringFlag{
 		Name:  imageFile,
 		Value: "",
-		Usage: "File path to the image name and manifest's digest in Artifactory.` `",
+		Usage: "[Mandatory] Path to a file which includes one line in the following format: <IMAGE-TAG>@sha256:<MANIFEST-SHA256>.` `",
 	},
 }
 
@@ -1155,6 +1155,10 @@ var commandFlags = map[string][]string{
 	BuildAddGit: {
 		configFlag, serverId,
 	},
+	BuildDockerCreate: {
+		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
+		serverId, imageFile,
+	},
 	BuildScan: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
 	},
@@ -1194,10 +1198,6 @@ var commandFlags = map[string][]string{
 	ContainerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
 		serverId, skipLogin, threads,
-	},
-	BuildDockerCreate: {
-		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, imageFile,
 	},
 	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
