@@ -1,3 +1,6 @@
+## 1.43.1 (December 30, 2020)
+- Embedded help fixes
+
 ## 1.43.0 (December 30, 2020)
 - Add Podman & Kaniko support
 - Improve tests and release process
