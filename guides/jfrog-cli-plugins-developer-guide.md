@@ -46,23 +46,28 @@ To publish your plugin, you need to include it in [JFrog CLI's Plugins Registry]
 * **Plugin version**. Make sure that your built plugin has the correct version. The version is declared as part of the plugin sources. To check your plugin version, run the plugin executable with the -v option. For example: ```./my-plugin -v```. The plugin version should have a **v** prefix. For example ```v1.0.0``` and it should follow the semantic versioning guidelines.
 
 ## Publishing a new plugin
+### General
 To publish a new plugin, you need to register the plugin in the JFrog CLI Plugins Registry. The registry is hosted in [https://github.com/jfrog/jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg). The registry includes a descriptor file in YAML format for each registered plugin, inside the *plugins* directory. To include your plugin in the registry, create a pull request to add the plugin descriptor file for your plugin according to this file name format: *your-plugin-name.yml*.
+
+### Important notes
+* Please make sure that the extension of your plugin descriptor file is **yml** and not **yaml**.
+* Please make sure your pull request includes only one or more plugin descriptors. Please do not add, edit or remove other files.
 
 ### YAML format example
 ```
-# mandatory:
+# Mandatory:
 pluginName: hello-frog
 version: v1.0.0
 repository: https://github.com/my-org/my-amazing-plugin
 maintainers:
     - github-username1
     - github-username2
-# optional:
+# Optional:
 relativePath: build-info-analyzer
+# You may set either branch or tag, but noth both
 branch: my-release-branch
 tag: my-release-tag
 ```
 
-## Publishing a new plugin version
-To publish a new version of your plugin, all you need to do is create a pull request which updates the version in your plugin's YAML. If needed, your change should also include the branch and/or tag in the YAML. 
-
+## Publishing a new version of a published plugin
+To publish a new version of your plugin, all you need to do is create a pull request, which updates the version inside your plugin descriptor file. If needed, your change can also include either the branch or tag. 
