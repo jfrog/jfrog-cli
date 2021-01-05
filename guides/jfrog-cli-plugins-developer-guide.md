@@ -51,7 +51,7 @@ To publish a new plugin, you need to register the plugin in the JFrog CLI Plugin
 
 ### Important notes
 * Please make sure that the extension of your plugin descriptor file is **yml** and not **yaml**.
-* Please make sure your pull request includes only one file, which is the plugin descriptor.
+* Please make sure your pull request includes only one or more plugin descriptors. Please do not add, edit or remove other files.
 
 ### YAML format example
 ```
