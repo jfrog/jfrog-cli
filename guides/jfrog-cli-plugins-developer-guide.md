@@ -68,6 +68,13 @@ relativePath: build-info-analyzer
 branch: my-release-branch
 tag: my-release-tag
 ```
+* **pluginName** - The name of the plugin. This name should match the plugin name set in the plugin's code. 
+* **version** - The version of the plugin. This version should have a **v** prefix and match the version set in the plugin's code. 
+* **repository** - The plugin's code GitHub repository URL.
+* **maintainers** - The GitHub usernames of the plugin maintainers.
+* **relativePath** - If the plugin's **go.mod** file is not located at the root of the GitHub repository, set the relative path to this file. This path should not include the **go.mod** file.
+* **branch** - Optionally set an existing branch in your plugin's GitHub repository.
+* **tag** - Optionally set an existing tag in your plugin's GitHub repository.
 
 ## Publishing a new version of a published plugin
 To publish a new version of your plugin, all you need to do is create a pull request, which updates the version inside your plugin descriptor file. If needed, your change can also include either the branch or tag. 
