@@ -131,7 +131,6 @@ def uploadCli(architectures) {
             buildAndUpload(currentBuild.goos, currentBuild.goarch, currentBuild.pkg, currentBuild.fileExtention)
         }
     }
-    copyToReleasesLatestDir()
 }
 
 def buildPublishDockerImage(version, jfrogCliRepoDir) {
@@ -158,15 +157,6 @@ def uploadToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
                 builder/jfrog rt u $jfrogCliRepoDir/$fileName jfrog-cli/v1/$version/$pkg/ --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
-        """
-    }
-}
-
-def copyToReleasesLatestDir() {
-    print "Copying version $version to releases latest dir."
-    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
-        sh """#!/bin/bash
-                builder/jfrog rt cp jfrog-cli/v1/$version/(*) jfrog-cli/v1/latest/{1}" --flat --url https://releases.jfrog.io/artifactory/ --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN
         """
     }
 }
