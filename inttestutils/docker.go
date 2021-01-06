@@ -122,12 +122,12 @@ func DeleteTestContainerImage(t *testing.T, imageTag string, containerManagerTyp
 	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
+func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
 	// Remove build from Artifactory
 	DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	// Remove image from Artifactory
-	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+	deleteSpec := spec.NewBuilder().Pattern(path.Join(repo, imageName)).BuildSpec()
 	successCount, failCount, err := tests.DeleteFiles(deleteSpec, artifactoryDetails)
 	assert.Greater(t, successCount, 0)
 	assert.Equal(t, failCount, 0)
@@ -136,7 +136,7 @@ func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDe
 
 func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string, error) {
 	var imageNames []string
-	prefix := *tests.DockerTargetRepo + "/"
+	prefix := *tests.DockerLocalRepo + "/"
 	specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
@@ -154,7 +154,7 @@ func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string,
 func CleanUpOldImages(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails) {
 	getActualItems := func() ([]string, error) { return getAllImagesNames(artifactoryDetails) }
 	deleteItem := func(imageName string) {
-		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()
 		tests.DeleteFiles(deleteSpec, artifactoryDetails)
 		log.Info("Image", imageName, "deleted.")
 	}

@@ -59,7 +59,7 @@ var TestMaven *bool
 var DockerRepoDomain *string
 var DockerVirtualRepo *string
 var DockerRemoteRepo *string
-var DockerTargetRepo *string
+var DockerLocalRepo *string
 var TestNuget *bool
 var HideUnitTestLog *bool
 var TestPip *bool
@@ -91,7 +91,7 @@ func init() {
 	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
 	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
 	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
-	DockerTargetRepo = flag.String("rt.dockerTargetRepo", "", "Docker local repo")
+	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
