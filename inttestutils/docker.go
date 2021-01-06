@@ -122,12 +122,12 @@ func DeleteTestContainerImage(t *testing.T, imageTag string, containerManagerTyp
 	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName string) {
+func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
 	// Remove build from Artifactory
 	DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
 
 	// Remove image from Artifactory
-	deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+	deleteSpec := spec.NewBuilder().Pattern(path.Join(repo, imageName)).BuildSpec()
 	successCount, failCount, err := tests.DeleteFiles(deleteSpec, artifactoryDetails)
 	assert.Greater(t, successCount, 0)
 	assert.Equal(t, failCount, 0)
