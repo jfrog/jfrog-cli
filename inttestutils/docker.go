@@ -136,7 +136,7 @@ func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDe
 
 func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string, error) {
 	var imageNames []string
-	prefix := *tests.DockerTargetRepo + "/"
+	prefix := *tests.DockerLocalRepo + "/"
 	specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
 	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
@@ -154,7 +154,7 @@ func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string,
 func CleanUpOldImages(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails) {
 	getActualItems := func() ([]string, error) { return getAllImagesNames(artifactoryDetails) }
 	deleteItem := func(imageName string) {
-		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerTargetRepo, imageName)).BuildSpec()
+		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()
 		tests.DeleteFiles(deleteSpec, artifactoryDetails)
 		log.Info("Image", imageName, "deleted.")
 	}

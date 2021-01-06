@@ -1388,7 +1388,7 @@ func GetSearchResultAfterDeleteByPropsStep3() []utils.SearchResult {
 
 func GetDockerSourceManifest() []string {
 	return []string{
-		*DockerTargetRepo + "/" + DockerImageName + "/1/manifest.json",
+		*DockerLocalRepo + "/" + DockerImageName + "/1/manifest.json",
 	}
 }
 
