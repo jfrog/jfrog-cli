@@ -1,3 +1,7 @@
+## 1.43.2 (January 6, 2021)
+- Bug fix - docker push fails to set props for virtual repositories
+- Bug fix - config import fails with refreshable token
+
 ## 1.43.1 (December 30, 2020)
 - Embedded help fixes
 
