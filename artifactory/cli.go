@@ -1,8 +1,10 @@
 package artifactory
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +14,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
 	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
@@ -25,6 +28,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
@@ -936,6 +940,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargetDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "users-create",
+			Aliases:      []string{"uc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.UsersCreate),
+			Usage:        userscreate.Description,
+			HelpName:     corecommon.CreateUsage("rt uc", userscreate.Description, userscreate.Usage),
+			UsageText:    userscreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return usersCreateCmd(c)
 			},
 		},
 		{
@@ -2832,6 +2849,81 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 	permissionTargetDeleteCmd := permissiontarget.NewPermissionTargetDeleteCommand()
 	permissionTargetDeleteCmd.SetPermissionTargetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(permissionTargetDeleteCmd)
+}
+
+func usersCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
+	csvFilePath := c.String("csv")
+	if csvFilePath == "" {
+		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>", c)
+	}
+	usersList, err := createUsersListFromCSV(csvFilePath)
+	if err != nil {
+		return err
+	}
+	if len(usersList) < 1 {
+		return fmt.Errorf("An empty input file was given.")
+	}
+	// Run command.
+	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceExistUsersFlag(false)
+	return commands.Exec(usersCreateCmd)
+}
+
+func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err error) {
+	usersList = make([]services.User, 0)
+	// Returns an empty list if no file path was given.
+	if csvfilePath == "" {
+		return
+	}
+	content, err := os.Open(csvfilePath)
+	if errorutils.CheckError(err) != nil {
+		return
+	}
+	csvReader := csv.NewReader(content)
+	csvHeader, err := csvReader.Read()
+	if err != nil {
+		return
+	}
+	// Iterate through the records
+	for {
+		// Read each record from csv
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if errorutils.CheckError(err) != nil {
+			return usersList, err
+		}
+		// Validaite CSV Line
+		if len(record) != len(csvHeader) {
+			return usersList, errorutils.CheckError(fmt.Errorf("The line: %s should be in the format of %s", record, strings.Join(csvHeader, ",")))
+		}
+		newUser := new(services.User)
+		for i, fieldName := range csvHeader {
+			// Dynamicly set user detail according to the csv header
+			err = cliutils.SetField(newUser, strings.Title(fieldName), record[i])
+
+			if errorutils.CheckError(err) != nil {
+				return usersList, err
+			}
+		}
+
+		usersList = append(usersList, *newUser)
+	}
+	return
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {

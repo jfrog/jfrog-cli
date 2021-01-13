@@ -1,7 +1,10 @@
 package cliutils
 
 import (
+	"fmt"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -192,4 +195,52 @@ func getOrDefaultEnv(arg, envKey string) string {
 		return arg
 	}
 	return os.Getenv(envKey)
+}
+
+// SetStructField sets field of given struct with given name to given value.
+func SetStructField(structPointer interface{}, name string, value string) error {
+	reflectedPointer := reflect.ValueOf(structPointer)
+	if reflectedPointer.Kind() != reflect.Ptr || reflectedPointer.Elem().Kind() != reflect.Struct {
+		return errors.New("structPointer must be a pointer to  a struct")
+	}
+
+	// Dereference pointer
+	reflectedData := reflectedPointer.Elem()
+
+	// Lookup data field by name
+	field := reflectedData.FieldByName(name)
+	if !field.IsValid() {
+		return fmt.Errorf("%s is not valid field name.", name)
+	}
+
+	// Field must be public
+	if !field.CanSet() {
+		return fmt.Errorf("can't set field %s.", name)
+	}
+	// Set the field value according to the field type.
+	switch fieldKind := field.Kind(); fieldKind {
+	// The basic case, field from type string
+	case reflect.String:
+		field.SetString(value)
+	// Field from type bool
+	case reflect.Bool:
+		convertValue, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("value %s is not from type bool.", value)
+		}
+		field.SetBool(convertValue)
+	// Field from type int
+	case reflect.Int:
+		convertValue, err := strconv.ParseInt(value, 0, 32)
+		if err != nil {
+			return fmt.Errorf("value %s is not from type int.", value)
+		}
+		field.SetInt(convertValue)
+
+	// Unsupported field type
+	default:
+		return fmt.Errorf("can't assigned value %s to field %s.", value, name)
+
+	}
+	return nil
 }

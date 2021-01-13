@@ -60,6 +60,8 @@ const (
 	ReplicationDelete       = "replication-delete"
 	PermissionTargetDelete  = "permission-target-delete"
 	AccessTokenCreate       = "access-token-create"
+	UsersCreate             = "users-create"
+
 	// MC's Commands Keys
 	McConfig       = "mc-config"
 	LicenseAcquire = "license-acquire"
@@ -337,6 +339,10 @@ const (
 
 	// Template user flags
 	vars = "vars"
+
+	// User Management flags
+	csv         = "csv"
+	usersGroups = "users-groups"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1065,6 +1071,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  audience,
 		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 	},
+	csv: cli.StringFlag{
+		Name:  csv,
+		Usage: "[Mandatory] Path to a csv file contains users details. The first row of the file should contain the user fields names e.g name,password,email` `",
+	},
+	usersGroups: cli.StringFlag{
+		Name:  usersGroups,
+		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
+	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
@@ -1307,6 +1321,10 @@ var commandFlags = map[string][]string{
 	AccessTokenCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
+	},
+	UsersCreate: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		deleteQuiet, csv, usersGroups,
 	},
 	// Xray's commands
 	OfflineUpdate: {
