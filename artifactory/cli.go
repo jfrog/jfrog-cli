@@ -22,6 +22,8 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
@@ -953,6 +955,32 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return usersCreateCmd(c)
+			},
+		},
+		{
+			Name:         "group-create",
+			Aliases:      []string{"gc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupCreate),
+			Usage:        groupcreate.Description,
+			HelpName:     corecommon.CreateUsage("rt gc", groupcreate.Description, groupcreate.Usage),
+			UsageText:    groupcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupCreateCmd(c)
+			},
+		},
+		{
+			Name:         "group-add-users",
+			Aliases:      []string{"gau"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupAddUsers),
+			Usage:        groupaddusers.Description,
+			HelpName:     corecommon.CreateUsage("rt gau", groupaddusers.Description, groupaddusers.Usage),
+			UsageText:    groupaddusers.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupAddUsersCmd(c)
 			},
 		},
 		{
@@ -2914,7 +2942,7 @@ func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err 
 		newUser := new(services.User)
 		for i, fieldName := range csvHeader {
 			// Dynamicly set user detail according to the csv header
-			err = cliutils.SetField(newUser, strings.Title(fieldName), record[i])
+			err = cliutils.SetStructField(newUser, strings.Title(fieldName), record[i])
 
 			if errorutils.CheckError(err) != nil {
 				return usersList, err
@@ -2924,6 +2952,46 @@ func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err 
 		usersList = append(usersList, *newUser)
 	}
 	return
+}
+
+func groupCreateCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
+	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails)
+	return commands.Exec(groupCreateCmd)
+}
+
+func groupAddUsersCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	groupAddUsersCmd := usersmanagement.NewGroupUpdateCommand()
+	groupAddUsersCmd.SetName(c.Args().Get(0)).SetUsers(strings.Split(c.Args().Get(1), ",")).SetRtDetails(rtDetails)
+	return commands.Exec(groupAddUsersCmd)
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {

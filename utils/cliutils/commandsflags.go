@@ -61,6 +61,8 @@ const (
 	PermissionTargetDelete  = "permission-target-delete"
 	AccessTokenCreate       = "access-token-create"
 	UsersCreate             = "users-create"
+	GroupCreate             = "group-create"
+	GroupAddUsers           = "group-add-users"
 
 	// MC's Commands Keys
 	McConfig       = "mc-config"
@@ -1324,7 +1326,13 @@ var commandFlags = map[string][]string{
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		deleteQuiet, csv, usersGroups,
+		csv, usersGroups,
+	},
+	GroupCreate: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+	},
+	GroupAddUsers: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
 	},
 	// Xray's commands
 	OfflineUpdate: {
