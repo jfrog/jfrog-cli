@@ -343,8 +343,9 @@ const (
 	vars = "vars"
 
 	// User Management flags
-	csv         = "csv"
-	usersGroups = "users-groups"
+	csv          = "csv"
+	usersGroups  = "users-groups"
+	replaceExist = "replace-exist"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1081,6 +1082,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usersGroups,
 		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
 	},
+	replaceExist: cli.BoolFlag{
+		Name:  replaceExist,
+		Usage: "[Optional] Set to true if you'd like the exist user or group to be replaced (overridded).` `",
+	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
@@ -1326,10 +1331,11 @@ var commandFlags = map[string][]string{
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		csv, usersGroups,
+		csv, usersGroups, replaceExist,
 	},
 	GroupCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		replaceExist,
 	},
 	GroupAddUsers: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,

@@ -2906,7 +2906,7 @@ func usersCreateCmd(c *cli.Context) error {
 		return fmt.Errorf("An empty input file was given.")
 	}
 	// Run command.
-	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceExistUsersFlag(false)
+	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceExistUsersFlag(c.Bool("replace-exist"))
 	return commands.Exec(usersCreateCmd)
 }
 
@@ -2970,7 +2970,7 @@ func groupCreateCmd(c *cli.Context) error {
 
 	// Run command.
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
-	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails)
+	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetReplaceExistGroupFlag(c.Bool("replace-exist"))
 	return commands.Exec(groupCreateCmd)
 }
 
