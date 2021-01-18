@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -459,6 +461,39 @@ func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
 	verifyExistInArtifactory(tests.GetCopyFileNameWithParentheses(), searchPath, t)
 
 	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCreateUsers(t *testing.T) {
+	initArtifactoryTest(t)
+	usersCSVPath := "testdata/usersmanagement/users.csv"
+
+	err := artifactoryCli.Exec("users-create", "--csv "+usersCSVPath)
+	// Clean up
+	defer artifactoryCli.Exec("users-delete", "--csv "+usersCSVPath)
+
+	assert.NoError(t, err)
+
+	verifyUsersExistInArtifactory(usersCSVPath, t)
+}
+
+func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
+	// Parse input CSV
+	content, err := os.Open(csvFilePath)
+	assert.NoError(t, err)
+	csvReader := csv.NewReader(content)
+	// Ignore the header
+	csvReader.Read()
+	for {
+		// Read each record from csv
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		user, password := record[0], record[1]
+		err = artifactoryCli.Exec("ping", "--url "+artifactoryDetails.Url, "--user "+user, "--password "+password)
+		assert.NoError(t, err)
+	}
+
 }
 
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {
