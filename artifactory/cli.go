@@ -24,6 +24,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
@@ -31,6 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
@@ -958,6 +960,19 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
+			Name:         "users-delete",
+			Aliases:      []string{"udel"},
+			Flags:        cliutils.GetCommandFlags(cliutils.UsersDelete),
+			Usage:        userscreate.Description,
+			HelpName:     corecommon.CreateUsage("rt udel", usersdelete.Description, usersdelete.Usage),
+			UsageText:    userscreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return usersDeleteCmd(c)
+			},
+		},
+		{
 			Name:         "group-create",
 			Aliases:      []string{"gc"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GroupCreate),
@@ -981,6 +996,19 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return groupAddUsersCmd(c)
+			},
+		},
+		{
+			Name:         "group-delete",
+			Aliases:      []string{"gdel"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupDelete),
+			Usage:        groupcreate.Description,
+			HelpName:     corecommon.CreateUsage("rt gdel", groupdelete.Description, groupdelete.Usage),
+			UsageText:    groupcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupDeleteCmd(c)
 			},
 		},
 		{
@@ -2910,6 +2938,41 @@ func usersCreateCmd(c *cli.Context) error {
 	return commands.Exec(usersCreateCmd)
 }
 
+func usersDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() > 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	usersDeleteCmd := usersmanagement.NewUsersDeleteCommand()
+	var usersNamesList = make([]string, 0)
+	csvFilePath := c.String("csv")
+	if csvFilePath != "" {
+		usersList, err := createUsersListFromCSV(csvFilePath)
+		if err != nil {
+			return err
+		}
+		usersNamesList = append(usersNamesList, usersToUsersNamesList(usersList)...)
+	}
+	usersNamesList = append(usersNamesList, strings.Split(c.Args().Get(0), ",")...)
+
+	if len(usersNamesList) < 1 {
+		return cliutils.PrintHelpAndReturnError("missing <Usersnames List> OR --csv <File Path>", c)
+	}
+	// Run command.
+	usersDeleteCmd.SetRtDetails(rtDetails).SetUsers(usersNamesList)
+	return commands.Exec(usersDeleteCmd)
+
+}
+
 func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err error) {
 	usersList = make([]services.User, 0)
 	// Returns an empty list if no file path was given.
@@ -2954,6 +3017,15 @@ func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err 
 	return
 }
 
+func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
+	for _, user := range usersList {
+		if user.Name != "" {
+			usersNames = append(usersNames, user.Name)
+		}
+	}
+	return
+}
+
 func groupCreateCmd(c *cli.Context) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
@@ -2992,6 +3064,26 @@ func groupAddUsersCmd(c *cli.Context) error {
 	groupAddUsersCmd := usersmanagement.NewGroupUpdateCommand()
 	groupAddUsersCmd.SetName(c.Args().Get(0)).SetUsers(strings.Split(c.Args().Get(1), ",")).SetRtDetails(rtDetails)
 	return commands.Exec(groupAddUsersCmd)
+}
+
+func groupDeleteCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	groupDeleteCmd := usersmanagement.NewGroupDeleteCommand()
+	groupDeleteCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails)
+	return commands.Exec(groupDeleteCmd)
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {
