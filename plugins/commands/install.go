@@ -174,6 +174,8 @@ func getArchitecture() (string, error) {
 		return "linux-arm", nil
 	case "386":
 		return "linux-386", nil
+	case "s390x":
+		return "linux-s390x", nil
 	}
 	return "", errors.New("no compatible plugin architecture was found for the architecture of this machine")
 }
