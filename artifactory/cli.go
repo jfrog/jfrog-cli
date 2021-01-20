@@ -2010,7 +2010,7 @@ func uploadCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments. ##################", c)
 	}
 
 	var uploadSpec *spec.SpecFiles
