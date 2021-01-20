@@ -331,6 +331,7 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
+	addedProps          = "added-props"
 
 	// Template user flags
 	vars = "vars"
@@ -1023,6 +1024,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  deleteFromDist,
 		Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
 	},
+	addedProps: cli.StringFlag{
+		Name:  addedProps,
+		Usage: "[Optional] The list of properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle.` `",
+	},
 	vars: cli.StringFlag{
 		Name:  vars,
 		Usage: "[Optional] List of variables in the form of \"key1=value1;key2=value2;...\" to be replaced in the template. In the template, the variables should be used as follows: ${key1}.` `",
@@ -1253,11 +1258,11 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module,
 	},
 	ReleaseBundleCreate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addedProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
 	ReleaseBundleUpdate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addedProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
 	ReleaseBundleSign: {

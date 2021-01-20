@@ -3182,6 +3182,7 @@ func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVer
 	releaseBundleParams.StoringRepository = c.String("repo")
 	releaseBundleParams.GpgPassphrase = c.String("passphrase")
 	releaseBundleParams.Description = c.String("desc")
+	releaseBundleParams.AddedProps = c.String("added-props")
 	if c.IsSet("release-notes-path") {
 		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
 		if err != nil {

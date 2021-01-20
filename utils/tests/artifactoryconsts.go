@@ -403,6 +403,14 @@ func GetBundleCopyExpected() []string {
 	}
 }
 
+func GetBundlePropsExpected() []string {
+	return []string{
+		DistRepo1 + "/data/b1.in",
+		DistRepo1 + "/data/b2.in",
+		DistRepo1 + "/data/b3.in",
+	}
+}
+
 func GetGitLfsExpected() []string {
 	return []string{
 		RtLfsRepo + "/objects/4b/f4/4bf4c8c0fef3f5c8cf6f255d1c784377138588c0a9abe57e440bce3ccb350c2e",
