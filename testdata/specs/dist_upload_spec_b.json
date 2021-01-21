@@ -4,7 +4,8 @@
       "pattern": "testdata/a/b/*",
       "target": "${DIST_REPO1}/data/",
       "flat": "true",
-      "recursive": "false"
+      "recursive": "false",
+      "addedProps": "key1=val1"
     }
   ]
 }

@@ -1372,6 +1372,13 @@ func createFileInHomeDir(t *testing.T, fileName string) (testFileRelPath string,
 	return
 }
 
+func TestArtifactoryUploadLegacyProps(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCli.Exec("upload", "testdata/a/a*", tests.RtRepo1 + "/data/", "--props=key1=val1;key2=val2,val3")
+	verifyExistInArtifactoryByProps(tests.GetUploadLegacyPropsExpected(), tests.RtRepo1, "key1=val1;key2=val2;key2=val3", t)
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryUploadExcludeByCli1Wildcard(t *testing.T) {
 	initArtifactoryTest(t)
 	// Upload files
@@ -3071,7 +3078,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files separately so we can sort by created.
-	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--props=k1=v1`)
+	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--added-props=k1=v1`)
 	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
 	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
 
@@ -3764,7 +3771,7 @@ func preUploadBasicTestResources() {
 	uploadPath := tests.GetTestResourcesPath() + "a/(.*)"
 	targetPath := tests.RtRepo1 + "/test_resources/{1}"
 	artifactoryCli.Exec("upload", uploadPath, targetPath,
-		"--threads=10", "--regexp=true", "--props=searchMe=true", "--flat=false")
+		"--threads=10", "--regexp=true", "--added-props=searchMe=true", "--flat=false")
 }
 
 func execDeleteRepo(repoName string) {

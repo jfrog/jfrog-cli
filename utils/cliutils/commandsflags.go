@@ -126,6 +126,7 @@ const (
 	explode          = "explode"
 	includeDirs      = "include-dirs"
 	props            = "props"
+	addedProps       = "added-props"
 	excludeProps     = "exclude-props"
 	failNoOp         = "fail-no-op"
 	threads          = "threads"
@@ -151,6 +152,7 @@ const (
 	uploadRetries         = uploadPrefix + retries
 	uploadExplode         = uploadPrefix + explode
 	uploadProps           = uploadPrefix + props
+	uploadAddedProps      = uploadPrefix + addedProps
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
 	deb                   = "deb"
 	symlinks              = "symlinks"
@@ -331,7 +333,6 @@ const (
 	sync                = "sync"
 	maxWaitMinutes      = "max-wait-minutes"
 	deleteFromDist      = "delete-from-dist"
-	addedProps          = "added-props"
 
 	// Template user flags
 	vars = "vars"
@@ -578,6 +579,10 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 	},
 	uploadProps: cli.StringFlag{
+		Name:  props,
+		Usage: "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
+	},
+	uploadAddedProps: cli.StringFlag{
 		Name:  props,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
@@ -1105,7 +1110,7 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
 	Upload: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, addedProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,

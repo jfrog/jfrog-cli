@@ -172,6 +172,14 @@ func GetSimpleUploadExpectedRepo1() []string {
 	}
 }
 
+func GetUploadLegacyPropsExpected() []string {
+	return []string{
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
+	}
+}
+
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
