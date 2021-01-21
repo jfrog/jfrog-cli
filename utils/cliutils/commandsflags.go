@@ -126,7 +126,7 @@ const (
 	explode          = "explode"
 	includeDirs      = "include-dirs"
 	props            = "props"
-	addedProps       = "added-props"
+	addProps         = "add-props"
 	excludeProps     = "exclude-props"
 	failNoOp         = "fail-no-op"
 	threads          = "threads"
@@ -152,7 +152,7 @@ const (
 	uploadRetries         = uploadPrefix + retries
 	uploadExplode         = uploadPrefix + explode
 	uploadProps           = uploadPrefix + props
-	uploadAddedProps      = uploadPrefix + addedProps
+	uploadAddProps        = uploadPrefix + addProps
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
 	deb                   = "deb"
 	symlinks              = "symlinks"
@@ -582,7 +582,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  props,
 		Usage: "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
-	uploadAddedProps: cli.StringFlag{
+	uploadAddProps: cli.StringFlag{
 		Name:  props,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
 	},
@@ -1029,8 +1029,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  deleteFromDist,
 		Usage: "[Default: false] Set to true to delete release bundle version in JFrog Distribution itself after deletion is complete in the specified Edge node/s.` `",
 	},
-	addedProps: cli.StringFlag{
-		Name:  addedProps,
+	addProps: cli.StringFlag{
+		Name:  addProps,
 		Usage: "[Optional] The list of properties, in the form of key1=value1;key2=value2,..., to be added to the artifacts after distribution of the release bundle.` `",
 	},
 	vars: cli.StringFlag{
@@ -1110,7 +1110,7 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
 	Upload: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, addedProps,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, addProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
@@ -1263,11 +1263,11 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, module,
 	},
 	ReleaseBundleCreate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addedProps,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
 	ReleaseBundleUpdate: {
-		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addedProps,
+		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, addProps,
 		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
 	},
 	ReleaseBundleSign: {

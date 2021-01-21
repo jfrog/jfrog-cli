@@ -15,7 +15,7 @@
     {
       "pattern": "testdata/a/b/c/c1.in",
       "target": "${REPO1}/a/",
-      "addedProps": "c=1"
+      "addProps": "c=1"
     },
     {
       "pattern": "testdata/a/b/*",
@@ -24,7 +24,7 @@
     {
       "pattern": "testdata/a/b/c/c1.in",
       "target": "${REPO1}/e/",
-      "addedProps": "c=1"
+      "addProps": "c=1"
     }
   ]
 }

@@ -3273,7 +3273,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
-		AddedProps(c.String("added-props")).
+		AddProps(c.String("add-props")).
 		Build(c.String("build")).
 		Offset(offset).
 		Limit(limit).
@@ -3313,7 +3313,7 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		Bundle(c.String("bundle")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
-		AddedProps(c.String("added-props")).
+		AddProps(c.String("add-props")).
 		BuildSpec()
 }
 
@@ -3454,7 +3454,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
-	overrideStringIfSet(&spec.AddedProps, c, "added-props")
+	overrideStringIfSet(&spec.AddProps, c, "add-props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
