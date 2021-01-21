@@ -141,6 +141,11 @@ func getCommands() []cli.Command {
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
 		},
+		{
+			Name:        cliutils.CmdBootstrap,
+			Usage:       "Bootstrap commands",
+			Subcommands: bootstrap.GetCommands(),
+		},
 	}
 	return append(cliNameSpaces, utils.GetPlugins()...)
 }
