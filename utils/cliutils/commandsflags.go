@@ -1337,7 +1337,7 @@ var commandFlags = map[string][]string{
 	},
 	UsersDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		csv,
+		csv, deleteQuiet,
 	},
 	GroupCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
@@ -1347,7 +1347,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
 	},
 	GroupDelete: {
-		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	// Xray's commands
 	OfflineUpdate: {

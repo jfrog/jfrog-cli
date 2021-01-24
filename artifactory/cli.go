@@ -2959,6 +2959,12 @@ func usersDeleteCmd(c *cli.Context) error {
 	if len(usersNamesList) < 1 {
 		return cliutils.PrintHelpAndReturnError("missing <Usersnames List> OR --csv <File Path>", c)
 	}
+
+	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete users. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
+
 	// Run command.
 	usersDeleteCmd.SetRtDetails(rtDetails).SetUsers(usersNamesList)
 	return commands.Exec(usersDeleteCmd)
@@ -3063,6 +3069,11 @@ func groupDeleteCmd(c *cli.Context) error {
 	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
+	}
+
+	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete the group. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
 	}
 
 	// Run command.
