@@ -467,9 +467,9 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 	initArtifactoryTest(t)
 	usersCSVPath := "testdata/usersmanagement/users.csv"
 
-	err := artifactoryCli.Exec("users-create", "--csv "+usersCSVPath)
+	err := artifactoryCli.Exec("users-create", "--csv="+usersCSVPath)
 	// Clean up
-	defer artifactoryCli.Exec("users-delete", "--csv "+usersCSVPath)
+	defer artifactoryCli.Exec("users-delete", "--csv="+usersCSVPath)
 
 	assert.NoError(t, err)
 
@@ -490,7 +490,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 			break
 		}
 		user, password := record[0], record[1]
-		err = artifactoryCli.Exec("ping", "--url "+artifactoryDetails.Url, "--user "+user, "--password "+password)
+		err = artifactoryCli.Exec("ping", "--url="+artifactoryDetails.Url, "--user="+user, "--password="+password)
 		assert.NoError(t, err)
 	}
 

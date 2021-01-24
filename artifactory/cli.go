@@ -2929,8 +2929,12 @@ func usersCreateCmd(c *cli.Context) error {
 	if len(usersList) < 1 {
 		return fmt.Errorf("An empty input file was provided.")
 	}
+	var usersGroups []string
+	if c.String("user-groups") != "" {
+		usersGroups = strings.Split(c.String("user-groups"), ",")
+	}
 	// Run command.
-	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceIfExists(c.Bool("replace"))
+	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
 	return commands.Exec(usersCreateCmd)
 }
 
