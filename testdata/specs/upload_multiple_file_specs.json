@@ -8,7 +8,7 @@
       "pattern": "testdata/a/b/b2.in",
       "target": "${REPO1}/multiple/properties/",
       "flat": "false",
-      "addProps": "searchMe=true"
+      "targetProps": "searchMe=true"
     }
   ]
 }

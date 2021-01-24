@@ -3078,7 +3078,7 @@ func TestArtifactorySortByCreated(t *testing.T) {
 	initArtifactoryTest(t)
 
 	// Upload files separately so we can sort by created.
-	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--add-props=k1=v1`)
+	artifactoryCli.Exec("upload", "testdata/created/or", tests.RtRepo1, `--target-props=k1=v1`)
 	artifactoryCli.Exec("upload", "testdata/created/o", tests.RtRepo1)
 	artifactoryCli.Exec("upload", "testdata/created/org", tests.RtRepo1)
 
@@ -3771,7 +3771,7 @@ func preUploadBasicTestResources() {
 	uploadPath := tests.GetTestResourcesPath() + "a/(.*)"
 	targetPath := tests.RtRepo1 + "/test_resources/{1}"
 	artifactoryCli.Exec("upload", uploadPath, targetPath,
-		"--threads=10", "--regexp=true", "--add-props=searchMe=true", "--flat=false")
+		"--threads=10", "--regexp=true", "--target-props=searchMe=true", "--flat=false")
 }
 
 func execDeleteRepo(repoName string) {

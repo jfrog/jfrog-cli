@@ -5,7 +5,7 @@
       "target": "${DIST_REPO1}/data/",
       "flat": "true",
       "recursive": "false",
-      "addProps": "key1=val1"
+      "targetProps": "key1=val1"
     }
   ]
 }

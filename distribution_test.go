@@ -391,7 +391,7 @@ func TestCreateBundleProps(t *testing.T) {
 	runRt(t, "u", "--spec="+specFile)
 
 	// Create and distribute release bundle with added props
-	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--add-props=key1=val1;key2=val2,val3", "--sign")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1;key2=val2,val3", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
@@ -411,7 +411,7 @@ func TestUpdateBundleProps(t *testing.T) {
 
 	// Create, update and distribute release bundle with added props
 	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*")
-	runRb(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--add-props=key1=val1", "--sign")
+	runRb(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/*", "--target-props=key1=val1", "--sign")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
 
