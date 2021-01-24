@@ -2908,10 +2908,6 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 }
 
 func usersCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2931,18 +2927,14 @@ func usersCreateCmd(c *cli.Context) error {
 		return err
 	}
 	if len(usersList) < 1 {
-		return fmt.Errorf("An empty input file was given.")
+		return fmt.Errorf("An empty input file was provided.")
 	}
 	// Run command.
-	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceExistUsersFlag(c.Bool("replace-exist"))
+	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(strings.Split(c.String("user-groups"), ",")).SetReplaceIfExists(c.Bool("replace"))
 	return commands.Exec(usersCreateCmd)
 }
 
 func usersDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2970,7 +2962,6 @@ func usersDeleteCmd(c *cli.Context) error {
 	// Run command.
 	usersDeleteCmd.SetRtDetails(rtDetails).SetUsers(usersNamesList)
 	return commands.Exec(usersDeleteCmd)
-
 }
 
 func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err error) {
@@ -2979,11 +2970,17 @@ func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err 
 	if csvfilePath == "" {
 		return
 	}
-	content, err := os.Open(csvfilePath)
+	file, err := os.Open(csvfilePath)
+	defer func() {
+		e := file.Close()
+		if err == nil {
+			err = errorutils.CheckError(e)
+		}
+	}()
 	if errorutils.CheckError(err) != nil {
 		return
 	}
-	csvReader := csv.NewReader(content)
+	csvReader := csv.NewReader(file)
 	csvHeader, err := csvReader.Read()
 	if err != nil {
 		return
@@ -3027,10 +3024,6 @@ func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
 }
 
 func groupCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -3042,15 +3035,11 @@ func groupCreateCmd(c *cli.Context) error {
 
 	// Run command.
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
-	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetReplaceExistGroupFlag(c.Bool("replace-exist"))
+	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetReplaceIfExists(c.Bool("replace"))
 	return commands.Exec(groupCreateCmd)
 }
 
 func groupAddUsersCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -3067,10 +3056,6 @@ func groupAddUsersCmd(c *cli.Context) error {
 }
 
 func groupDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}

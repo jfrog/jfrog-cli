@@ -345,9 +345,9 @@ const (
 	vars = "vars"
 
 	// User Management flags
-	csv          = "csv"
-	usersGroups  = "users-groups"
-	replaceExist = "replace-exist"
+	csv         = "csv"
+	usersGroups = "users-groups"
+	replace     = "replace"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1078,15 +1078,15 @@ var flagsMap = map[string]cli.Flag{
 	},
 	csv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file contains users details. The first row of the file should contain the user fields names e.g name,password,email` `",
+		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file should contain the user fields names e.g name,password,email` `",
 	},
 	usersGroups: cli.StringFlag{
 		Name:  usersGroups,
 		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
 	},
-	replaceExist: cli.BoolFlag{
-		Name:  replaceExist,
-		Usage: "[Optional] Set to true if you'd like the exist user or group to be replaced (overridded).` `",
+	replace: cli.BoolFlag{
+		Name:  replace,
+		Usage: "[Optional] Set to true if you'd like existing users or groups to be replaced.` `",
 	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
@@ -1333,7 +1333,7 @@ var commandFlags = map[string][]string{
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		csv, usersGroups, replaceExist,
+		csv, usersGroups, replace,
 	},
 	UsersDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
@@ -1341,7 +1341,7 @@ var commandFlags = map[string][]string{
 	},
 	GroupCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		replaceExist,
+		replace,
 	},
 	GroupAddUsers: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,

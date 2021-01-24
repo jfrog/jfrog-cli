@@ -201,7 +201,7 @@ func getOrDefaultEnv(arg, envKey string) string {
 func SetStructField(structPointer interface{}, name string, value string) error {
 	reflectedPointer := reflect.ValueOf(structPointer)
 	if reflectedPointer.Kind() != reflect.Ptr || reflectedPointer.Elem().Kind() != reflect.Struct {
-		return errors.New("structPointer must be a pointer to  a struct")
+		return errors.New("structPointer must be a pointer to a struct")
 	}
 
 	// Dereference pointer
