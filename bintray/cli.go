@@ -920,6 +920,8 @@ func upload(c *cli.Context) error {
 	params.Override = c.Bool("override")
 	params.Explode = c.Bool("explode")
 	params.UseRegExp = c.Bool("regexp")
+	//gai
+	params.UseAnt = c.Bool("ant")
 
 	if params.ShowInDownloadList && !params.Publish {
 		return errors.New("The --list-download option cannot be used without the --publish option.")

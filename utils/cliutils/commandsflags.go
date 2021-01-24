@@ -142,6 +142,8 @@ const (
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
+	//gai
+	antFlag = "ant"
 
 	// Config flags
 	interactive   = "interactive"
@@ -162,6 +164,8 @@ const (
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
 	deb                   = "deb"
 	symlinks              = "symlinks"
+	//gai
+	uploadAnt = uploadPrefix + antFlag
 
 	// Unique download flags
 	downloadPrefix       = "download-"
@@ -223,6 +227,8 @@ const (
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
+	//gai
+	badAnt = badPrefix + antFlag
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -576,6 +582,11 @@ var flagsMap = map[string]cli.Flag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 	},
+	//gai (map so i ignored order)
+	uploadAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to upload.` `",
+	},
 	uploadRetries: cli.StringFlag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of upload retries.` `",
@@ -754,6 +765,11 @@ var flagsMap = map[string]cli.Flag{
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
+	},
+	//gai (map - dont care about order)
+	badAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to be added to the build info.` `",
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1145,11 +1161,12 @@ var commandFlags = map[string][]string{
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
+	//gai - added uploadAnt in the end
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project, uploadAnt,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,

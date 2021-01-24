@@ -3436,6 +3436,7 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	return
 }
 
+//gai
 func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	offset, limit, err := getOffsetAndLimitValues(c)
 	if err != nil {
@@ -3456,6 +3457,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Flat(c.BoolT("flat")).
 		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
+		Ant(c.Bool("ant")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
 		BuildSpec(), nil
@@ -3467,12 +3469,14 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		// Build name and build number from env
 		pattern = c.Args().Get(0)
 	}
+	//gai
 	return spec.NewBuilder().
 		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
+		Ant(c.Bool("ant")).
 		BuildSpec()
 }
 
@@ -3486,6 +3490,7 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		TargetProps(c.String("target-props")).
+		Ant(c.Bool("ant")).
 		BuildSpec()
 }
 
