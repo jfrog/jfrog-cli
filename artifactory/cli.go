@@ -1,10 +1,8 @@
 package artifactory
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,6 +34,7 @@ import (
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
+	"github.com/jszwec/csvutil"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -2922,7 +2921,7 @@ func usersCreateCmd(c *cli.Context) error {
 	if csvFilePath == "" {
 		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>", c)
 	}
-	usersList, err := createUsersListFromCSV(csvFilePath)
+	usersList, err := parseCSVToUsersList(csvFilePath)
 	if err != nil {
 		return err
 	}
@@ -2952,13 +2951,17 @@ func usersDeleteCmd(c *cli.Context) error {
 	var usersNamesList = make([]string, 0)
 	csvFilePath := c.String("csv")
 	if csvFilePath != "" {
-		usersList, err := createUsersListFromCSV(csvFilePath)
+		usersList, err := parseCSVToUsersList(csvFilePath)
 		if err != nil {
 			return err
 		}
+		// If --csv <File Path> provided, parse and append its content to the usersNamesList to be deleted.
 		usersNamesList = append(usersNamesList, usersToUsersNamesList(usersList)...)
 	}
-	usersNamesList = append(usersNamesList, strings.Split(c.Args().Get(0), ",")...)
+	// If <Usersnames List> provided as arg, append its content to the usersNamesList to be deleted.
+	if c.NArg() > 0 {
+		usersNamesList = append(usersNamesList, strings.Split(c.Args().Get(0), ",")...)
+	}
 
 	if len(usersNamesList) < 1 {
 		return cliutils.PrintHelpAndReturnError("missing <Usersnames List> OR --csv <File Path>", c)
@@ -2974,54 +2977,16 @@ func usersDeleteCmd(c *cli.Context) error {
 	return commands.Exec(usersDeleteCmd)
 }
 
-func createUsersListFromCSV(csvfilePath string) (usersList []services.User, err error) {
-	usersList = make([]services.User, 0)
-	// Returns an empty list if no file path was given.
-	if csvfilePath == "" {
-		return
-	}
-	file, err := os.Open(csvfilePath)
-	defer func() {
-		e := file.Close()
-		if err == nil {
-			err = errorutils.CheckError(e)
-		}
-	}()
-	if errorutils.CheckError(err) != nil {
-		return
-	}
-	csvReader := csv.NewReader(file)
-	csvHeader, err := csvReader.Read()
+func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
+	var usersList []services.User
+	csvInput, err := ioutil.ReadFile(csvFilePath)
 	if err != nil {
-		return
+		return usersList, errorutils.CheckError(err)
 	}
-	// Iterate through the records
-	for {
-		// Read each record from csv
-		record, err := csvReader.Read()
-		if err == io.EOF {
-			break
-		}
-		if errorutils.CheckError(err) != nil {
-			return usersList, err
-		}
-		// Validaite CSV Line
-		if len(record) != len(csvHeader) {
-			return usersList, errorutils.CheckError(fmt.Errorf("The line: %s should be in the format of %s", record, strings.Join(csvHeader, ",")))
-		}
-		newUser := new(services.User)
-		for i, fieldName := range csvHeader {
-			// Dynamicly set user detail according to the csv header
-			err = cliutils.SetStructField(newUser, strings.Title(fieldName), record[i])
-
-			if errorutils.CheckError(err) != nil {
-				return usersList, err
-			}
-		}
-
-		usersList = append(usersList, *newUser)
+	if err = csvutil.Unmarshal(csvInput, &usersList); err != nil {
+		return usersList, errorutils.CheckError(err)
 	}
-	return
+	return usersList, nil
 }
 
 func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
