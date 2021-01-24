@@ -172,6 +172,14 @@ func GetSimpleUploadExpectedRepo1() []string {
 	}
 }
 
+func GetUploadLegacyPropsExpected() []string {
+	return []string{
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
+	}
+}
+
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
@@ -400,6 +408,14 @@ func GetBundleCopyExpected() []string {
 		DistRepo2 + "/data/a1.in",
 		DistRepo2 + "/data/a2.in",
 		DistRepo2 + "/data/a3.in",
+	}
+}
+
+func GetBundlePropsExpected() []string {
+	return []string{
+		DistRepo1 + "/data/b1.in",
+		DistRepo1 + "/data/b2.in",
+		DistRepo1 + "/data/b3.in",
 	}
 }
 

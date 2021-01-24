@@ -142,7 +142,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "upload",
-			Flags:        cliutils.GetCommandFlags("upload"), //(cliutils.Upload),
+			Flags:        cliutils.GetCommandFlags(cliutils.Upload),
 			Aliases:      []string{"u"},
 			Usage:        upload.Description,
 			HelpName:     corecommon.CreateUsage("rt upload", upload.Description, upload.Usage),
@@ -1902,7 +1902,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(downloadSpec.Files, false, true)
+	err = spec.ValidateSpec(downloadSpec.Files, false, true, false)
 	if err != nil {
 		return err
 	}
@@ -1952,7 +1952,7 @@ func uploadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(uploadSpec.Files, true, false)
+	err = spec.ValidateSpec(uploadSpec.Files, true, false, true)
 	if err != nil {
 		return err
 	}
@@ -2020,7 +2020,7 @@ func moveCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(moveSpec.Files, true, true)
+	err = spec.ValidateSpec(moveSpec.Files, true, true, false)
 	if err != nil {
 		return err
 	}
@@ -2059,7 +2059,7 @@ func copyCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(copySpec.Files, true, true)
+	err = spec.ValidateSpec(copySpec.Files, true, true, false)
 	if err != nil {
 		return err
 	}
@@ -2099,7 +2099,7 @@ func deleteCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(deleteSpec.Files, false, true)
+	err = spec.ValidateSpec(deleteSpec.Files, false, true, false)
 	if err != nil {
 		return err
 	}
@@ -2140,7 +2140,7 @@ func searchCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(searchSpec.Files, false, true)
+	err = spec.ValidateSpec(searchSpec.Files, false, true, false)
 	if err != nil {
 		return err
 	}
@@ -2192,7 +2192,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = spec.ValidateSpec(propsSpec.Files, false, true)
+	err = spec.ValidateSpec(propsSpec.Files, false, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -2451,7 +2451,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true)
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true, false)
 	if err != nil {
 		return err
 	}
@@ -2484,7 +2484,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true)
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true, false)
 	if err != nil {
 		return err
 	}
@@ -3273,6 +3273,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(0)).
 		Props(c.String("props")).
+		TargetProps(c.String("target-props")).
 		Build(c.String("build")).
 		Offset(offset).
 		Limit(limit).
@@ -3312,6 +3313,7 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		Bundle(c.String("bundle")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
+		TargetProps(c.String("target-props")).
 		BuildSpec()
 }
 
@@ -3452,6 +3454,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideIntIfSet(&spec.Limit, c, "limit")
 	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
 	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.TargetProps, c, "target-props")
 	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
 	overrideStringIfSet(&spec.Build, c, "build")
 	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
