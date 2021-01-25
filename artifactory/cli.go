@@ -3308,6 +3308,7 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 	return spec.NewBuilder().
 		Pattern(c.Args().Get(2)).
+		Target(c.String("target")).
 		Props(c.String("props")).
 		Build(c.String("build")).
 		Bundle(c.String("bundle")).

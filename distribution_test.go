@@ -421,6 +421,48 @@ func TestUpdateBundleProps(t *testing.T) {
 	cleanDistributionTest(t)
 }
 
+func TestBundlePathMapping(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
+
+	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/(*)", "--sign", "--target="+tests.DistRepo2+"/target/{1}")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+
+	// Validate files are distributed to the target mapping
+	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+
+	cleanDistributionTest(t)
+}
+
+func TestBundlePathMappingUsingSpec(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
+
+	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
+	spec, err := tests.CreateSpec(tests.DistributionCreateWithMapping)
+	assert.NoError(t, err)
+	runRb(t, "rbc", tests.BundleName, bundleVersion, "--sign", "--spec="+spec)
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+
+	// Validate files are distributed to the target mapping
+	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+
+	cleanDistributionTest(t)
+}
+
 // Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
 func runRb(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)

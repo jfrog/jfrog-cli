@@ -36,6 +36,8 @@ const (
 	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
 	DistributionCreateByAql                = "dist_create_by_aql.json"
+	DistributionCreateWithMapping          = "dist_create_with_mapping.json"
+	DistributionMappingDownload            = "dist_mapping_download_spec.json"
 	DistributionRepoConfig1                = "dist_repository_config1.json"
 	DistributionRepoConfig2                = "dist_repository_config2.json"
 	DistributionRules                      = "distribution_rules.json"
@@ -416,6 +418,14 @@ func GetBundlePropsExpected() []string {
 		DistRepo1 + "/data/b1.in",
 		DistRepo1 + "/data/b2.in",
 		DistRepo1 + "/data/b3.in",
+	}
+}
+
+func GetBundleMappingExpected() []string {
+	return []string{
+		DistRepo2 + "/target/b1.in",
+		DistRepo2 + "/target/b2.in",
+		DistRepo2 + "/target/b3.in",
 	}
 }
 
