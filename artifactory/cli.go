@@ -1516,6 +1516,7 @@ func dotnetCmd(c *cli.Context) error {
 			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
 	}
 
+	//g
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
 	if err != nil {
 		return err
