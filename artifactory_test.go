@@ -469,8 +469,10 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 
 	err := artifactoryCli.Exec("users-create", "--csv="+usersCSVPath)
 	// Clean up
-	defer artifactoryCli.Exec("users-delete", "--csv="+usersCSVPath)
-
+	defer func() {
+		err = artifactoryCli.Exec("users-delete", "--csv="+usersCSVPath)
+		assert.NoError(t, err)
+	}()
 	assert.NoError(t, err)
 
 	verifyUsersExistInArtifactory(usersCSVPath, t)
