@@ -322,6 +322,7 @@ const (
 	rbDryRun            = releaseBundlePrefix + dryRun
 	rbRepo              = releaseBundlePrefix + repo
 	rbPassphrase        = releaseBundlePrefix + passphrase
+	distTarget          = releaseBundlePrefix + target
 	sign                = "sign"
 	desc                = "desc"
 	releaseNotesPath    = "release-notes-path"
@@ -997,6 +998,11 @@ var flagsMap = map[string]cli.Flag{
 		Name:  passphrase,
 		Usage: "[Optional] The passphrase for the signing key. ` `",
 	},
+	distTarget: cli.StringFlag{
+		Name: target,
+		Usage: "[Optional] The target path for distributed artifacts on the edge node. If not specified, the artifacts will have the same path and name on the edge node, as on the source Artifactory server. " +
+			"For flexibility in specifying the distribution path, you can include placeholders in the form of {1}, {2} which are replaced by corresponding tokens in the pattern path that are enclosed in parenthesis. ` `",
+	},
 	rbRepo: cli.StringFlag{
 		Name:  repo,
 		Usage: "[Optional] A repository name at source Artifactory to store release bundle artifacts in. If not provided, Artifactory will use the default one.` `",
@@ -1264,11 +1270,11 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
 	},
 	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
 	},
 	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
