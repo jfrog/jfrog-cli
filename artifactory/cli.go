@@ -1714,6 +1714,7 @@ func goPublishCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
+// This method should be uesd iff the SkipFlagParsing option is used.
 func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
@@ -2715,10 +2716,6 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func repoTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2730,10 +2727,6 @@ func repoTemplateCmd(c *cli.Context) error {
 }
 
 func repoCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2750,10 +2743,6 @@ func repoCreateCmd(c *cli.Context) error {
 }
 
 func repoUpdateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2770,10 +2759,6 @@ func repoUpdateCmd(c *cli.Context) error {
 }
 
 func repoDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2789,9 +2774,6 @@ func repoDeleteCmd(c *cli.Context) error {
 }
 
 func replicationTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2801,9 +2783,6 @@ func replicationTemplateCmd(c *cli.Context) error {
 }
 
 func replicationCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2817,9 +2796,6 @@ func replicationCreateCmd(c *cli.Context) error {
 }
 
 func replicationDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2833,10 +2809,6 @@ func replicationDeleteCmd(c *cli.Context) error {
 }
 
 func permissionTargrtTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2848,10 +2820,6 @@ func permissionTargrtTemplateCmd(c *cli.Context) error {
 }
 
 func permissionTargetCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2868,10 +2836,6 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 }
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2888,10 +2852,6 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 }
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -3052,10 +3012,6 @@ func groupDeleteCmd(c *cli.Context) error {
 }
 
 func accessTokenCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
