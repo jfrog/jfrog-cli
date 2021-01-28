@@ -1,5 +1,3 @@
 "name","password","email"
-"Alice","A12356789z","Alice@Bob.com"
-"Alice2","1B234578y9","Alice2@Bob.com"
-"Alice3","12C3456x79","Alice3@Bob.com"
-"Alice4","123D45w678","Alice4@Bob.com"
+"{USER_NAME_1}","{PASSWORD_1}","Alice@Bob.com"
+"{USER_NAME_2}","{PASSWORD_2}","Alice2@Bob.com"

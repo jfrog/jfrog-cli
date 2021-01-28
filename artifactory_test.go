@@ -466,16 +466,17 @@ func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
 func TestArtifactoryCreateUsers(t *testing.T) {
 	initArtifactoryTest(t)
 	usersCSVPath := "testdata/usersmanagement/users.csv"
-
-	err := artifactoryCli.Exec("users-create", "--csv="+usersCSVPath)
+	randomUsersCSVPath, err := tests.ReplaceTemplateVariables(usersCSVPath, "")
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("users-create", "--csv="+randomUsersCSVPath)
 	// Clean up
 	defer func() {
-		err = artifactoryCli.Exec("users-delete", "--csv="+usersCSVPath)
+		err = artifactoryCli.Exec("users-delete", "--csv="+randomUsersCSVPath)
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
 
-	verifyUsersExistInArtifactory(usersCSVPath, t)
+	verifyUsersExistInArtifactory(randomUsersCSVPath, t)
 }
 
 func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
@@ -492,7 +493,7 @@ func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
 			break
 		}
 		user, password := record[0], record[1]
-		err = artifactoryCli.Exec("ping", "--url="+artifactoryDetails.Url, "--user="+user, "--password="+password)
+		err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+artifactoryDetails.Url+" --user="+user+" --password="+password).Exec("ping")
 		assert.NoError(t, err)
 	}
 

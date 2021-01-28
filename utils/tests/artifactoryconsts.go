@@ -152,6 +152,12 @@ var (
 	RtBuildName1                = "cli-tests-rt-build1"
 	RtBuildName2                = "cli-tests-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
+
+	// Users
+	UserName1 = "Alice"
+	Password1 = "A12356789z"
+	UserName2 = "Alice2"
+	Password2 = "1B234578y9"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
