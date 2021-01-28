@@ -2,7 +2,7 @@ package groupdelete
 
 const Description = "Delete a users group."
 
-var Usage = []string{`jfrog rt gdel <Group Name>`}
+var Usage = []string{`jfrog rt gdel <group name>`}
 
 const Arguments string = `	group name
-Group name to be deleted.`
+		Group name to be deleted.`

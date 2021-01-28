@@ -603,7 +603,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"ndt"},
 			Usage:        nugettree.Description,
 			HelpName:     corecommon.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
-			UsageText:    nugettree.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -951,7 +950,6 @@ func GetCommands() []cli.Command {
 			Flags:        cliutils.GetCommandFlags(cliutils.UsersCreate),
 			Usage:        userscreate.Description,
 			HelpName:     corecommon.CreateUsage("rt uc", userscreate.Description, userscreate.Usage),
-			UsageText:    userscreate.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -962,9 +960,9 @@ func GetCommands() []cli.Command {
 			Name:         "users-delete",
 			Aliases:      []string{"udel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.UsersDelete),
-			Usage:        userscreate.Description,
+			Usage:        usersdelete.Description,
 			HelpName:     corecommon.CreateUsage("rt udel", usersdelete.Description, usersdelete.Usage),
-			UsageText:    userscreate.Arguments,
+			UsageText:    usersdelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -1001,9 +999,9 @@ func GetCommands() []cli.Command {
 			Name:         "group-delete",
 			Aliases:      []string{"gdel"},
 			Flags:        cliutils.GetCommandFlags(cliutils.GroupDelete),
-			Usage:        groupcreate.Description,
+			Usage:        groupdelete.Description,
 			HelpName:     corecommon.CreateUsage("rt gdel", groupdelete.Description, groupdelete.Usage),
-			UsageText:    groupcreate.Arguments,
+			UsageText:    groupdelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -1714,7 +1712,7 @@ func goPublishCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
-// This method should be uesd iff the SkipFlagParsing option is used.
+// This function should be uesd iff the SkipFlagParsing option is used.
 func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil

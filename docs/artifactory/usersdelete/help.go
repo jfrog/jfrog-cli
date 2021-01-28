@@ -2,8 +2,7 @@ package usersdelete
 
 const Description = "Deletes users."
 
-var Usage = []string{`jfrog rt udel <Users List>`, `jfrog rt udel --csv <Users Details File Path>`}
+var Usage = []string{`jfrog rt udel <users list>`, `jfrog rt udel --csv <users details file path>`}
 
-const Arguments string = `
-users list
-	Comma-separated list of usernames to delete.`
+const Arguments string = `	users list
+		Comma-separated list of usernames to delete.`
