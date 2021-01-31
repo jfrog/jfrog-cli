@@ -87,7 +87,7 @@ func execMain() error {
 
 	app := cli.NewApp()
 	app.Name = "jfrog"
-	app.Usage = "See https://github.com/jfrog/jfrog-cli-go for usage instructions."
+	app.Usage = "See https://github.com/jfrog/jfrog-cli for usage instructions."
 	app.Version = cliutils.GetVersion()
 	args := os.Args
 	app.EnableBashCompletion = true
