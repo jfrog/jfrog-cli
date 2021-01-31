@@ -591,8 +591,9 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Default: false] Set to true to preserve symbolic links structure in Artifactory.` `",
 	},
 	uploadProps: cli.StringFlag{
-		Name:  props,
-		Usage: "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
+		Name:   props,
+		Usage:  "[Deprecated] [Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Those properties will be attached to the uploaded artifacts.` `",
+		Hidden: true,
 	},
 	uploadTargetProps: cli.StringFlag{
 		Name:  props,
