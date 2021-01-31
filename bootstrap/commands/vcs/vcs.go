@@ -32,6 +32,12 @@ func VcsCmd(c *cli.Context) error {
 }
 
 func cloneProject(data vcsData) (err error) {
+	// Create the desired path if necessary
+	err = os.MkdirAll(data.LocalDirPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	cloneOption := &git.CloneOptions{
 		URL:           data.VcsCredentials.GetUrl(),
 		ReferenceName: plumbing.ReferenceName(data.VcsBranch),
