@@ -2913,16 +2913,16 @@ func usersDeleteCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		// If --csv <File Path> provided, parse and append its content to the usersNamesList to be deleted.
+		// If --csv <users details file path> provided, parse and append its content to the usersNamesList to be deleted.
 		usersNamesList = append(usersNamesList, usersToUsersNamesList(usersList)...)
 	}
-	// If <Usersnames List> provided as arg, append its content to the usersNamesList to be deleted.
+	// If <users list> provided as arg, append its content to the usersNamesList to be deleted.
 	if c.NArg() > 0 {
 		usersNamesList = append(usersNamesList, strings.Split(c.Args().Get(0), ",")...)
 	}
 
 	if len(usersNamesList) < 1 {
-		return cliutils.PrintHelpAndReturnError("missing <Usersnames List> OR --csv <File Path>", c)
+		return cliutils.PrintHelpAndReturnError("missing <users list> OR --csv <users details file path>", c)
 	}
 
 	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete users. Are you sure you want to continue?\n"+

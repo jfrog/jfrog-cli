@@ -1,6 +1,6 @@
 package usersdelete
 
-const Description = "Deletes users."
+const Description = "Delete users."
 
 var Usage = []string{`jfrog rt udel <users list>`, `jfrog rt udel --csv <users details file path>`}
 
