@@ -1081,11 +1081,11 @@ var flagsMap = map[string]cli.Flag{
 	},
 	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is the reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
+		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
 	},
 	usersDeleteCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is the reserved for the cells' headers. It must include \"username\"` `",
+		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
 	},
 	usersGroups: cli.StringFlag{
 		Name:  usersGroups,
