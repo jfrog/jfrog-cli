@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -459,6 +461,42 @@ func TestArtifactoryCopyFilesNameWithParentheses(t *testing.T) {
 	verifyExistInArtifactory(tests.GetCopyFileNameWithParentheses(), searchPath, t)
 
 	cleanArtifactoryTest()
+}
+
+func TestArtifactoryCreateUsers(t *testing.T) {
+	initArtifactoryTest(t)
+	usersCSVPath := "testdata/usersmanagement/users.csv"
+	randomUsersCSVPath, err := tests.ReplaceTemplateVariables(usersCSVPath, "")
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("users-create", "--csv="+randomUsersCSVPath)
+	// Clean up
+	defer func() {
+		err = artifactoryCli.Exec("users-delete", "--csv="+randomUsersCSVPath)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+
+	verifyUsersExistInArtifactory(randomUsersCSVPath, t)
+}
+
+func verifyUsersExistInArtifactory(csvFilePath string, t *testing.T) {
+	// Parse input CSV
+	content, err := os.Open(csvFilePath)
+	assert.NoError(t, err)
+	csvReader := csv.NewReader(content)
+	// Ignore the header
+	csvReader.Read()
+	for {
+		// Read each record from csv
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		user, password := record[0], record[1]
+		err = tests.NewJfrogCli(execMain, "jfrog rt", "--url="+artifactoryDetails.Url+" --user="+user+" --password="+password).Exec("ping")
+		assert.NoError(t, err)
+	}
+
 }
 
 func TestArtifactoryUploadFilesNameWithParenthesis(t *testing.T) {

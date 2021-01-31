@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -453,6 +454,10 @@ func getSubstitutionMap() map[string]string {
 		"${BUNDLE_NAME}":               BundleName,
 		"${DIST_REPO1}":                DistRepo1,
 		"${DIST_REPO2}":                DistRepo2,
+		"{USER_NAME_1}":                UserName1,
+		"{PASSWORD_1}":                 Password1,
+		"{USER_NAME_2}":                UserName2,
+		"{PASSWORD_2}":                 Password2,
 	}
 }
 
@@ -495,6 +500,13 @@ func AddTimestampToGlobalVars() {
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
 	RtBuildNameWithSpecialChars += timestampSuffix
+
+	// Users
+	UserName1 += timestampSuffix
+	UserName2 += timestampSuffix
+	rand.Seed(time.Now().Unix())
+	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {

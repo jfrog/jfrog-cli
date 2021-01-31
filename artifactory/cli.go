@@ -12,6 +12,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
 	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
@@ -19,15 +20,21 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/builddockercreate"
 	dotnetdocs "github.com/jfrog/jfrog-cli/docs/artifactory/dotnet"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/dotnetconfig"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupaddusers"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupcreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/groupdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetcreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetdelete"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargettemplate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
 	"github.com/jfrog/jfrog-cli/utils/progressbar"
 	ioUtils "github.com/jfrog/jfrog-client-go/utils/io"
+	"github.com/jszwec/csvutil"
 
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -596,7 +603,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"ndt"},
 			Usage:        nugettree.Description,
 			HelpName:     corecommon.CreateUsage("rt nuget-deps-tree", nugettree.Description, nugettree.Usage),
-			UsageText:    nugettree.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -936,6 +942,70 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargetDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "users-create",
+			Aliases:      []string{"uc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.UsersCreate),
+			Usage:        userscreate.Description,
+			HelpName:     corecommon.CreateUsage("rt uc", userscreate.Description, userscreate.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return usersCreateCmd(c)
+			},
+		},
+		{
+			Name:         "users-delete",
+			Aliases:      []string{"udel"},
+			Flags:        cliutils.GetCommandFlags(cliutils.UsersDelete),
+			Usage:        usersdelete.Description,
+			HelpName:     corecommon.CreateUsage("rt udel", usersdelete.Description, usersdelete.Usage),
+			UsageText:    usersdelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return usersDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "group-create",
+			Aliases:      []string{"gc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupCreate),
+			Usage:        groupcreate.Description,
+			HelpName:     corecommon.CreateUsage("rt gc", groupcreate.Description, groupcreate.Usage),
+			UsageText:    groupcreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupCreateCmd(c)
+			},
+		},
+		{
+			Name:         "group-add-users",
+			Aliases:      []string{"gau"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupAddUsers),
+			Usage:        groupaddusers.Description,
+			HelpName:     corecommon.CreateUsage("rt gau", groupaddusers.Description, groupaddusers.Usage),
+			UsageText:    groupaddusers.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupAddUsersCmd(c)
+			},
+		},
+		{
+			Name:         "group-delete",
+			Aliases:      []string{"gdel"},
+			Flags:        cliutils.GetCommandFlags(cliutils.GroupDelete),
+			Usage:        groupdelete.Description,
+			HelpName:     corecommon.CreateUsage("rt gdel", groupdelete.Description, groupdelete.Usage),
+			UsageText:    groupdelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return groupDeleteCmd(c)
 			},
 		},
 		{
@@ -1642,6 +1712,7 @@ func goPublishCmd(c *cli.Context) error {
 
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
+// This function should be uesd iff the SkipFlagParsing option is used.
 func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
 	if len(c.Args()) != 1 {
 		return false, nil
@@ -2643,10 +2714,6 @@ func pipInstallCmd(c *cli.Context) error {
 }
 
 func repoTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2658,10 +2725,6 @@ func repoTemplateCmd(c *cli.Context) error {
 }
 
 func repoCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2678,10 +2741,6 @@ func repoCreateCmd(c *cli.Context) error {
 }
 
 func repoUpdateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2698,10 +2757,6 @@ func repoUpdateCmd(c *cli.Context) error {
 }
 
 func repoDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2717,9 +2772,6 @@ func repoDeleteCmd(c *cli.Context) error {
 }
 
 func replicationTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2729,9 +2781,6 @@ func replicationTemplateCmd(c *cli.Context) error {
 }
 
 func replicationCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2745,9 +2794,6 @@ func replicationCreateCmd(c *cli.Context) error {
 }
 
 func replicationDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2761,10 +2807,6 @@ func replicationDeleteCmd(c *cli.Context) error {
 }
 
 func permissionTargrtTemplateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2776,10 +2818,6 @@ func permissionTargrtTemplateCmd(c *cli.Context) error {
 }
 
 func permissionTargetCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2796,10 +2834,6 @@ func permissionTargetCreateCmd(c *cli.Context) error {
 }
 
 func permissionTargetUpdateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2816,10 +2850,6 @@ func permissionTargetUpdateCmd(c *cli.Context) error {
 }
 
 func permissionTargetDeleteCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
-		return err
-	}
-
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -2834,11 +2864,152 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 	return commands.Exec(permissionTargetDeleteCmd)
 }
 
-func accessTokenCreateCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+func usersCreateCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
 		return err
 	}
 
+	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
+	csvFilePath := c.String("csv")
+	if csvFilePath == "" {
+		return cliutils.PrintHelpAndReturnError("missing --csv <File Path>", c)
+	}
+	usersList, err := parseCSVToUsersList(csvFilePath)
+	if err != nil {
+		return err
+	}
+	if len(usersList) < 1 {
+		return fmt.Errorf("An empty input file was provided.")
+	}
+	var usersGroups []string
+	if c.String("user-groups") != "" {
+		usersGroups = strings.Split(c.String("user-groups"), ",")
+	}
+	// Run command.
+	usersCreateCmd.SetRtDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
+	return commands.Exec(usersCreateCmd)
+}
+
+func usersDeleteCmd(c *cli.Context) error {
+	if c.NArg() > 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	usersDeleteCmd := usersmanagement.NewUsersDeleteCommand()
+	var usersNamesList = make([]string, 0)
+	csvFilePath := c.String("csv")
+	if csvFilePath != "" {
+		usersList, err := parseCSVToUsersList(csvFilePath)
+		if err != nil {
+			return err
+		}
+		// If --csv <File Path> provided, parse and append its content to the usersNamesList to be deleted.
+		usersNamesList = append(usersNamesList, usersToUsersNamesList(usersList)...)
+	}
+	// If <Usersnames List> provided as arg, append its content to the usersNamesList to be deleted.
+	if c.NArg() > 0 {
+		usersNamesList = append(usersNamesList, strings.Split(c.Args().Get(0), ",")...)
+	}
+
+	if len(usersNamesList) < 1 {
+		return cliutils.PrintHelpAndReturnError("missing <Usersnames List> OR --csv <File Path>", c)
+	}
+
+	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete users. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
+
+	// Run command.
+	usersDeleteCmd.SetRtDetails(rtDetails).SetUsers(usersNamesList)
+	return commands.Exec(usersDeleteCmd)
+}
+
+func parseCSVToUsersList(csvFilePath string) ([]services.User, error) {
+	var usersList []services.User
+	csvInput, err := ioutil.ReadFile(csvFilePath)
+	if err != nil {
+		return usersList, errorutils.CheckError(err)
+	}
+	if err = csvutil.Unmarshal(csvInput, &usersList); err != nil {
+		return usersList, errorutils.CheckError(err)
+	}
+	return usersList, nil
+}
+
+func usersToUsersNamesList(usersList []services.User) (usersNames []string) {
+	for _, user := range usersList {
+		if user.Name != "" {
+			usersNames = append(usersNames, user.Name)
+		}
+	}
+	return
+}
+
+func groupCreateCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
+	groupCreateCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails).SetReplaceIfExists(c.Bool("replace"))
+	return commands.Exec(groupCreateCmd)
+}
+
+func groupAddUsersCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	// Run command.
+	groupAddUsersCmd := usersmanagement.NewGroupUpdateCommand()
+	groupAddUsersCmd.SetName(c.Args().Get(0)).SetUsers(strings.Split(c.Args().Get(1), ",")).SetRtDetails(rtDetails)
+	return commands.Exec(groupAddUsersCmd)
+}
+
+func groupDeleteCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	if !cliutils.GetQuietValue(c) && !coreutils.AskYesNo("This command will delete the group. Are you sure you want to continue?\n"+
+		"You can avoid this confirmation message by adding --quiet to the command.", false) {
+		return nil
+	}
+
+	// Run command.
+	groupDeleteCmd := usersmanagement.NewGroupDeleteCommand()
+	groupDeleteCmd.SetName(c.Args().Get(0)).SetRtDetails(rtDetails)
+	return commands.Exec(groupDeleteCmd)
+}
+
+func accessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
