@@ -345,9 +345,11 @@ const (
 	vars = "vars"
 
 	// User Management flags
-	csv         = "csv"
-	usersGroups = "users-groups"
-	replace     = "replace"
+	csv            = "csv"
+	usersCreateCsv = "users-create-csv"
+	usersDeleteCsv = "users-delete-csv"
+	usersGroups    = "users-groups"
+	replace        = "replace"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1077,9 +1079,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  audience,
 		Usage: "[Optional] A space-separate list of the other Artifactory instances or services that should accept this token identified by their Artifactory Service IDs, as obtained by the 'jfrog rt curl api/system/service_id' command.` `",
 	},
-	csv: cli.StringFlag{
+	usersCreateCsv: cli.StringFlag{
 		Name:  csv,
-		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file should contain the user fields names e.g name,password,email` `",
+		Usage: "[Mandatory] Path to a csv file with the users' details. The first row of the file is the reserved for the cells' headers. It must include \"username\",\"password\",\"email\"` `",
+	},
+	usersDeleteCsv: cli.StringFlag{
+		Name:  csv,
+		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is the reserved for the cells' headers. It must include \"username\"` `",
 	},
 	usersGroups: cli.StringFlag{
 		Name:  usersGroups,
@@ -1334,11 +1340,11 @@ var commandFlags = map[string][]string{
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		csv, usersGroups, replace,
+		usersCreateCsv, usersGroups, replace,
 	},
 	UsersDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		csv, deleteQuiet,
+		usersDeleteCsv, deleteQuiet,
 	},
 	GroupCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
