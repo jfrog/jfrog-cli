@@ -671,6 +671,10 @@ func getSpecialCharFilePath() string {
 	return "testdata/a$+~&^a#/a*"
 }
 
+func getAntPatternFilePath() string {
+	return "testdata/cache/downloa?/**/*.in"
+}
+
 func TestArtifactoryCopyNoSpec(t *testing.T) {
 	testCopyMoveNoSpec("cp", tests.GetBuildBeforeCopyExpected(), tests.GetBuildCopyExpected(), t)
 }
@@ -4510,4 +4514,40 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 	}
 	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
 	return nil
+}
+
+//This test checks the case of using --ant and --regexp at the same time
+func TestArtifactoryUploadAntPatternFlag(t *testing.T) {
+	initArtifactoryTest(t)
+	filePath := getAntPatternFilePath()
+
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--regexp", "--ant")
+	assert.Error(t, err)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadPathWithAntPattern(t *testing.T) {
+	initArtifactoryTest(t)
+	filePath := getAntPatternFilePath()
+
+	artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/upload_ant_pattern/{1}", "--ant")
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactorySimpleUploadWithAntPatternSpec(t *testing.T) {
+	initArtifactoryTest(t)
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPattern)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
+	cleanArtifactoryTest()
 }
