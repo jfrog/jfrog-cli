@@ -1516,7 +1516,6 @@ func dotnetCmd(c *cli.Context) error {
 			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
 	}
 
-	//g
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)
 	if err != nil {
 		return err
@@ -2014,7 +2013,7 @@ func uploadCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Can not use the option of regexp and ant together.", c)
 	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments. ##################", c)
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var uploadSpec *spec.SpecFiles
@@ -3440,7 +3439,6 @@ func createDownloadConfiguration(c *cli.Context) (downloadConfiguration *utils.D
 	return
 }
 
-//gai
 func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	offset, limit, err := getOffsetAndLimitValues(c)
 	if err != nil {
@@ -3473,7 +3471,6 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		// Build name and build number from env
 		pattern = c.Args().Get(0)
 	}
-	//gai
 	return spec.NewBuilder().
 		Pattern(pattern).
 		Recursive(c.BoolT("recursive")).
