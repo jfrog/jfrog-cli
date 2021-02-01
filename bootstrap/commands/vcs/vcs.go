@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -20,7 +21,7 @@ type vcsData struct {
 	LocalDirPath     string
 	VcsBranch        string
 	BuildCommand     string
-	ArtifactoryRepos []string
+	ArtifactoryRepos []services.RepositoryDetails
 	// A collection of technologies that was found with a list of theirs indications
 	Technologies     map[technology][]string
 	VcsCredentials   auth.ServiceDetails
@@ -28,6 +29,8 @@ type vcsData struct {
 }
 
 func VcsCmd(c *cli.Context) error {
+	var data vcsData
+
 	return fmt.Errorf("Not Impelemanted...")
 }
 
@@ -80,4 +83,8 @@ func createCredentials(serviceDetails auth.ServiceDetails) (auth transport.AuthM
 		password = serviceDetails.GetPassword()
 	}
 	return &http.BasicAuth{Username: serviceDetails.GetUser(), Password: password}
+}
+
+func creatRepo() (*services.RepositoryDetails, error) {
+	return nil, fmt.Errorf("Not Impelemanted...")
 }
