@@ -1,3 +1,5 @@
+# Release Notes
+
 ## 1.44.0 (January 31, 2021)
 - New users-create and user-delete commands
 - New group-create, group-update and group-delete commands
