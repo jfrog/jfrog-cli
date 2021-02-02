@@ -267,4 +267,4 @@ docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
 ````
 
 # Release Notes
-The release notes are available [here](RELEASE.md).
+The release notes are available [here](RELEASE.md#release-notes).
