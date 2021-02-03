@@ -1,4 +1,4 @@
-package vcs
+package commands
 
 // func TestGetNameAndVersion(t *testing.T) {
 // 	tests := []struct {

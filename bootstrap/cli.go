@@ -3,7 +3,7 @@ package bootstrap
 import (
 	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
-	"github.com/jfrog/jfrog-cli/bootstrap/commands"
+	commands "github.com/jfrog/jfrog-cli/bootstrap/commands/vcs"
 	"github.com/jfrog/jfrog-cli/docs/bootstrap/vcs"
 	"github.com/jfrog/jfrog-cli/docs/common"
 )

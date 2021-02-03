@@ -1,4 +1,4 @@
-package vcs
+package commands
 
 import (
 	"fmt"
@@ -17,11 +17,11 @@ import (
 )
 
 type vcsData struct {
-	ProjectName      string
-	LocalDirPath     string
-	VcsBranch        string
-	BuildCommand     string
-	ArtifactoryRepos []services.RepositoryDetails
+	ProjectName             string
+	LocalDirPath            string
+	VcsBranch               string
+	BuildCommand            string
+	ArtifactoryVirtualRepos map[technology]services.RepositoryDetails
 	// A collection of technologies that was found with a list of theirs indications
 	Technologies     map[technology][]string
 	VcsCredentials   auth.ServiceDetails
@@ -29,7 +29,7 @@ type vcsData struct {
 }
 
 func VcsCmd(c *cli.Context) error {
-	var data vcsData
+	//var data vcsData
 
 	return fmt.Errorf("Not Impelemanted...")
 }
