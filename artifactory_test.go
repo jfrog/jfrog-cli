@@ -64,6 +64,7 @@ func InitArtifactoryTests() {
 	initArtifactoryCli()
 	cleanUpOldBuilds()
 	cleanUpOldRepositories()
+	cleanUpOldUsers()
 	tests.AddTimestampToGlobalVars()
 	createRequiredRepos()
 	cleanArtifactoryTest()
@@ -3820,42 +3821,27 @@ func execDeleteRepo(repoName string) {
 	}
 }
 
-func execListRepoRest() ([]string, error) {
-	var repositoryKeys []string
+func execDeleteUser(username string) {
+	err := artifactoryCli.Exec("users-delete", username, "--quiet")
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+}
 
-	// Build http client
-	client, err := httpclient.ClientBuilder().Build()
+func getAllRepos() (repositoryKeys []string, err error) {
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
 	if err != nil {
 		return nil, err
 	}
-
-	// Send get request
-	resp, body, _, err := client.SendGet(artifactoryDetails.Url+"api/repositories", true, artHttpDetails)
+	repos, err := servicesManager.GetAllRepositories()
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, errors.New("Artifactory response: " + resp.Status + "\n" + clientutils.IndentJson(body))
+	for _, repo := range *repos {
+		repositoryKeys = append(repositoryKeys, repo.Key)
 	}
-
-	// Extract repository keys from the json response
-	var keyError error
-	_, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		if err != nil || keyError != nil {
-			return
-		}
-		repoKey, err := jsonparser.GetString(value, "key")
-		if err != nil {
-			keyError = err
-			return
-		}
-		repositoryKeys = append(repositoryKeys, repoKey)
-	})
-	if keyError != nil {
-		return nil, err
-	}
-
-	return repositoryKeys, err
+	return
 }
 
 func execListBuildNamesRest() ([]string, error) {
@@ -3925,6 +3911,21 @@ func execCreateRepoRest(repoConfig, repoName string) {
 	log.Info("Repository", repoName, "created.")
 }
 
+func getUsers() (usersnames []string, err error) {
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	if err != nil {
+		return nil, err
+	}
+	users, err := servicesManager.GetAllUsers()
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		usersnames = append(usersnames, user.Name)
+	}
+	return
+}
+
 func createRequiredRepos() {
 	tests.CreatedNonVirtualRepositories = tests.GetNonVirtualRepositories()
 	createRepos(tests.CreatedNonVirtualRepositories)
@@ -3940,7 +3941,11 @@ func cleanUpOldBuilds() {
 }
 
 func cleanUpOldRepositories() {
-	tests.CleanUpOldItems(tests.GetAllRepositoriesNames(), execListRepoRest, execDeleteRepo)
+	tests.CleanUpOldItems(tests.GetAllRepositoriesNames(), getAllRepos, execDeleteRepo)
+}
+
+func cleanUpOldUsers() {
+	tests.CleanUpOldItems(tests.GetAllUsersNames(), getUsers, execDeleteUser)
 }
 
 func createRepos(repos map[*string]string) {
