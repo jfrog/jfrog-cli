@@ -133,15 +133,17 @@ def uploadCli(architectures) {
     }
 }
 
-def buildPublishDockerImage(version, jfrogCliRepoDir) {
+def buildPublishDockerImage(version, jfrogCliRepoDir) {  
     dir("$jfrogCliRepoDir") {
-        withCredentials([usernamePassword(credentialsId: 'bintray-key-eco', usernameVariable: 'USER_NAME', passwordVariable: 'KEY')]) {
-            docker.build("jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version")
-            sh '#!/bin/sh -e\n' + 'echo $KEY | docker login --username=$USER_NAME --password-stdin jfrog-docker-reg2.bintray.io/jfrog'
-            sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version"
-            sh "docker tag jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:$version jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
-            sh "docker push jfrog-docker-reg2.bintray.io/jfrog/jfrog-cli-go:latest"
-        }
+        docker.build("releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version")
+    }  
+    withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
+        options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
+        sh """#!/bin/bash
+            builder/jfrog rt docker-push releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version reg2 $options
+            docker tag releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version releases-docker.jfrog.io/jfrog/jfrog-cli-go:latest
+            builder/jfrog rt docker-push releases-docker.jfrog.io/jfrog/jfrog-cli-go:latest reg2 $options
+        """
     }
 }
 
