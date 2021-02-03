@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/go-git/go-git/v5"
@@ -30,8 +31,19 @@ type vcsData struct {
 
 func VcsCmd(c *cli.Context) error {
 	//var data vcsData
-
 	return fmt.Errorf("Not Impelemanted...")
+}
+
+func setProjectName(data vcsData) {
+	vcsUrl := data.VcsCredentials.GetUrl()
+	// Trim trailing "/" if one exists
+	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
+	data.VcsCredentials.SetUrl(vcsUrl)
+	projectName := vcsUrl[strings.LastIndex(vcsUrl, "/")+1:]
+	if strings.Contains(projectName, ".") {
+		projectName = vcsUrl[:strings.LastIndex(vcsUrl, "/")]
+	}
+	data.ProjectName = projectName
 }
 
 func cloneProject(data vcsData) (err error) {
@@ -40,17 +52,16 @@ func cloneProject(data vcsData) (err error) {
 	if err != nil {
 		return err
 	}
-
 	cloneOption := &git.CloneOptions{
 		URL:           data.VcsCredentials.GetUrl(),
-		ReferenceName: plumbing.ReferenceName(data.VcsBranch),
+		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", data.VcsBranch)),
 		Progress:      os.Stdout,
 		Auth:          createCredentials(data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
 	// Clone the given repository to the given directory from the given branch
-	log.Info("git clone %s %s", data.VcsCredentials.GetUrl(), data.LocalDirPath)
+	log.Info("git clone project %q from: %q to: %q", data.ProjectName, data.VcsCredentials.GetUrl(), data.LocalDirPath)
 	_, err = git.PlainClone(data.LocalDirPath, false, cloneOption)
 	return
 }
