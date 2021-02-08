@@ -733,7 +733,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	project: cli.StringFlag{
 		Name:  project,
-		Usage: "[Optional] Artifactory project name.` `",
+		Usage: "[Optional] Artifactory project key.` `",
 	},
 	bpDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1149,7 +1149,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1192,7 +1192,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls,
+		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
 		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
@@ -1202,10 +1202,11 @@ var commandFlags = map[string][]string{
 	},
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, imageFile,
+		serverId, imageFile, project,
 	},
 	BuildScan: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, fail, insecureTls,
+		project,
 	},
 	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
@@ -1234,7 +1235,7 @@ var commandFlags = map[string][]string{
 		buildName, buildNumber, deploymentThreads, insecureTls,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads,
+		buildName, buildNumber, deploymentThreads, project,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1242,7 +1243,7 @@ var commandFlags = map[string][]string{
 	},
 	ContainerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, skipLogin, threads,
+		serverId, skipLogin, threads, project,
 	},
 	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1257,7 +1258,7 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module,
+		buildNumber, module, project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
@@ -1276,7 +1277,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module,
+		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module, project,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
