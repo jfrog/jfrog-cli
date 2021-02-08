@@ -38,7 +38,7 @@ const npmFlagName = "npm"
 func cleanNpmTest() {
 	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.NpmRepo).BuildSpec()
-	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
 }
 
@@ -106,7 +106,7 @@ func runTestNpm(t *testing.T, native bool) {
 	err = os.Chdir(wd)
 	assert.NoError(t, err)
 	cleanNpmTest()
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.NpmBuildName, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NpmBuildName, artHttpDetails)
 }
 
 func readModuleId(t *testing.T, wd string) string {
@@ -217,7 +217,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"development"}})
 	}
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.NpmBuildName, npmTestParams.buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -252,7 +252,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.NpmBuildName, npmTestParams.buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -291,7 +291,7 @@ func validateNpmScopedPublish(t *testing.T, npmTestParams npmTestParams) {
 }
 
 func validateNpmCommonPublish(t *testing.T, npmTestParams npmTestParams) {
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.NpmBuildName, npmTestParams.buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.NpmBuildName, npmTestParams.buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return

@@ -122,24 +122,24 @@ func DeleteTestContainerImage(t *testing.T, imageTag string, containerManagerTyp
 	assert.NoError(t, gofrogcmd.RunCmd(imageBuilder))
 }
 
-func ContainerTestCleanup(t *testing.T, artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
+func ContainerTestCleanup(t *testing.T, serverDetails *config.ServerDetails, artHttpDetails httputils.HttpClientDetails, imageName, buildName, repo string) {
 	// Remove build from Artifactory
-	DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	DeleteBuild(serverDetails.Url, buildName, artHttpDetails)
 
 	// Remove image from Artifactory
 	deleteSpec := spec.NewBuilder().Pattern(path.Join(repo, imageName)).BuildSpec()
-	successCount, failCount, err := tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	successCount, failCount, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.Greater(t, successCount, 0)
 	assert.Equal(t, failCount, 0)
 	assert.NoError(t, err)
 }
 
-func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string, error) {
+func getAllImagesNames(serverDetails *config.ServerDetails) ([]string, error) {
 	var imageNames []string
 	prefix := *tests.DockerLocalRepo + "/"
 	specFile := spec.NewBuilder().Pattern(prefix + tests.DockerImageName + "*").IncludeDirs(true).BuildSpec()
 	searchCmd := generic.NewSearchCommand()
-	searchCmd.SetRtDetails(artifactoryDetails).SetSpec(specFile)
+	searchCmd.SetServerDetails(serverDetails).SetSpec(specFile)
 	reader, err := searchCmd.Search()
 	if err != nil {
 		return nil, err
@@ -151,11 +151,11 @@ func getAllImagesNames(artifactoryDetails *config.ArtifactoryDetails) ([]string,
 	return imageNames, err
 }
 
-func CleanUpOldImages(artifactoryDetails *config.ArtifactoryDetails, artHttpDetails httputils.HttpClientDetails) {
-	getActualItems := func() ([]string, error) { return getAllImagesNames(artifactoryDetails) }
+func CleanUpOldImages(serverDetails *config.ServerDetails, artHttpDetails httputils.HttpClientDetails) {
+	getActualItems := func() ([]string, error) { return getAllImagesNames(serverDetails) }
 	deleteItem := func(imageName string) {
 		deleteSpec := spec.NewBuilder().Pattern(path.Join(*tests.DockerLocalRepo, imageName)).BuildSpec()
-		tests.DeleteFiles(deleteSpec, artifactoryDetails)
+		tests.DeleteFiles(deleteSpec, serverDetails)
 		log.Info("Image", imageName, "deleted.")
 	}
 	tests.CleanUpOldItems([]string{tests.DockerImageName}, getActualItems, deleteItem)

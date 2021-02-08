@@ -144,7 +144,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, expectedModule, buildinfo.Nuget)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -162,7 +162,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	assert.NoError(t, os.Chdir(wd))
 
 	// cleanup
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 func runNuGet(t *testing.T, args ...string) error {
@@ -208,7 +208,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	params := &dotnet.DotnetCommand{}
-	params.SetRtDetails(&config.ArtifactoryDetails{Url: baseRtUrl, User: "user", Password: "password"}).
+	params.SetServerDetails(&config.ServerDetails{Url: baseRtUrl, User: "user", Password: "password"}).
 		SetUseNugetAddSource(testSuite.useNugetAddSource).SetUseNugetV2(testSuite.useNugetV2)
 	// Prepare the config file with NuGet authentication
 	configFile, err := params.InitNewConfig(tempDirPath)
