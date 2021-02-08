@@ -68,7 +68,7 @@ node("docker") {
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
-            print "Uploading version $version to Bintray and to releases.jfrog.io"
+            print "Uploading version $version to releases.jfrog.io"
             uploadCli(architectures)
         }
     }
@@ -147,14 +147,6 @@ def buildPublishDockerImage(version, jfrogCliRepoDir) {
     }
 }
 
-def uploadToBintray(pkg, fileName) {
-    withCredentials([usernamePassword(credentialsId: 'bintray-key-eco', usernameVariable: 'USER_NAME', passwordVariable: 'KEY')]) {
-        sh """#!/bin/bash
-                builder/jfrog bt u $jfrogCliRepoDir/$fileName $subject/jfrog-cli-go/$pkg/$version /$version/$pkg/ --user=$USER_NAME --key=$KEY
-        """
-    }
-}
-
 def uploadToJfrogReleases(pkg, fileName) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         sh """#!/bin/bash
@@ -192,7 +184,6 @@ def buildAndUpload(goos, goarch, pkg, fileExtension) {
     def fileName = "jfrog$fileExtension"
 
     build(goos, goarch, pkg, fileName)
-    uploadToBintray(pkg, fileName)
     uploadToJfrogReleases(pkg, fileName)
     sh "rm $jfrogCliRepoDir/$fileName"
 }
