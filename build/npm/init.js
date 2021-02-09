@@ -8,7 +8,7 @@ var packageJson = require('./package.json');
 var fileName = getFileName();
 var filePath = "bin/" + fileName;
 var version = packageJson.version;
-var btPackage = "jfrog-cli-" + getArchitecture();
+var pkgName = "jfrog-cli-" + getArchitecture();
 
 downloadCli();
 
@@ -59,7 +59,7 @@ function download(url) {
 
 function downloadCli() {
     console.log("Downloading JFrog CLI " + version );
-    var startUrl = 'https://api.bintray.com/content/jfrog/jfrog-cli-go/' + version + '/' + btPackage + '/' + fileName + '?bt_package=' + btPackage;
+    var startUrl = 'https://releases.jfrog.io/artifactory/jfrog-cli/v1/' + version + '/' + pkgName + '/' + fileName;
     // We detect outbount proxy by looking at the environment variable
     if (process.env.https_proxy && process.env.https_proxy.length > 0) {
         downloadWithProxy(startUrl);
