@@ -63,8 +63,8 @@ node("docker") {
                 publishNpmPackage(jfrogCliRepoDir)
             }
 
-            stage('Build and Publish Docker Image') {
-                buildPublishDockerImage(version, jfrogCliRepoDir)
+            stage('Build and Publish Docker Images') {
+                buildPublishDockerImages(version, jfrogCliRepoDir)
             }
         } else if ("$EXECUTION_MODE".toString().equals("Build CLI")) {
             downloadToolsCert()
@@ -133,16 +133,46 @@ def uploadCli(architectures) {
     }
 }
 
-def buildPublishDockerImage(version, jfrogCliRepoDir) {  
+def buildPublishDockerImages(version, jfrogCliRepoDir) {
+    def images = [
+            // Pushing the second slim name for backward compatibility.
+            [dockerFile:'build/docker/slim/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli', 'releases-docker.jfrog.io/jfrog/jfrog-cli-go']],
+            [dockerFile:'build/docker/full/Dockerfile', names:['releases-docker.jfrog.io/jfrog/jfrog-cli-full']]
+    ]
+    for (int i = 0; i < images.size(); i++) {
+        def currentImage = images[i]
+        def primaryName = currentImage.names[0]
+
+        buildDockerImage(primaryName, version, currentImage.dockerFile, jfrogCliRepoDir)
+        pushDockerImageVersionAndRelease(primaryName, version)
+
+        // Push alternative tags if needed.
+        for (int n = 1; n < currentImage.names.size(); n++) {
+            def newName = currentImage.names[n]
+            // Create new tag.
+            sh """#!/bin/bash
+                docker tag $primaryName:$version $newName:$version
+            """
+            pushDockerImageVersionAndRelease(newName, version)
+        }
+    }
+}
+
+def buildDockerImage(name, version, dockerFile, jfrogCliRepoDir) {
     dir("$jfrogCliRepoDir") {
-        docker.build("releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version")
-    }  
+        sh """#!/bin/bash
+            docker build --tag=$name:$version -f $dockerFile .
+        """
+    }
+}
+
+def pushDockerImageVersionAndRelease(name, version) {
     withCredentials([string(credentialsId: 'jfrog-cli-automation', variable: 'JFROG_CLI_AUTOMATION_ACCESS_TOKEN')]) {
         options = "--url https://releases.jfrog.io/artifactory --access-token=$JFROG_CLI_AUTOMATION_ACCESS_TOKEN"
         sh """#!/bin/bash
-            builder/jfrog rt docker-push releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version reg2 $options
-            docker tag releases-docker.jfrog.io/jfrog/jfrog-cli-go:$version releases-docker.jfrog.io/jfrog/jfrog-cli-go:latest
-            builder/jfrog rt docker-push releases-docker.jfrog.io/jfrog/jfrog-cli-go:latest reg2 $options
+            builder/jfrog rt docker-push $name:$version reg2 $options
+            docker tag $name:$version $name:latest
+            builder/jfrog rt docker-push $name:latest reg2 $options
         """
     }
 }
