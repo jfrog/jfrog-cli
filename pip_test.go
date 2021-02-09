@@ -92,7 +92,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 		return
 	}
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipBuildName, buildNumber, []string{module}, buildinfo.Pip)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipBuildName, buildNumber, "", []string{module}, buildinfo.Pip)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.PipBuildName, buildNumber)

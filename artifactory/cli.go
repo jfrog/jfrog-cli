@@ -3569,6 +3569,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
 	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
+	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	buildConfigConfiguration.Module = c.String("module")
 	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
 	return
@@ -3669,7 +3670,7 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 		buildNumberArg = ""
 	}
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = c.String("project")
+	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	return buildConfiguration
 }
 
