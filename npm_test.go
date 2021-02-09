@@ -131,7 +131,7 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 }
 
 func validatePartialsBuildInfo(t *testing.T, buildNumber, moduleName string) {
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.NpmBuildName, buildNumber)
+	partials, err := utils.ReadPartialBuildInfoFiles(tests.NpmBuildName, buildNumber, "")
 	assert.NoError(t, err)
 	for _, module := range partials {
 		assert.Equal(t, moduleName, module.ModuleId)

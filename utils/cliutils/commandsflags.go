@@ -1156,7 +1156,7 @@ var commandFlags = map[string][]string{
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, excludePatterns, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		downloadRetries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
-		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
+		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1195,10 +1195,10 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project,
 	},
 	BuildAddGit: {
-		configFlag, serverId,
+		configFlag, serverId, project,
 	},
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1210,7 +1210,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPromote: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, status, comment,
-		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls,
+		sourceRepo, includeDependencies, copyFlag, bprDryRun, bprProps, insecureTls, project,
 	},
 	BuildDistribute: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, sourceRepos, passphrase,
@@ -1218,7 +1218,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildDiscard: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, maxDays, maxBuilds,
-		excludeBuilds, deleteArtifacts, bdiAsync, insecureTls,
+		excludeBuilds, deleteArtifacts, bdiAsync, insecureTls, project,
 	},
 	GitLfsClean: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, refs, glcRepo, glcDryRun,
@@ -1232,7 +1232,7 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls,
+		buildName, buildNumber, deploymentThreads, insecureTls, project,
 	},
 	Gradle: {
 		buildName, buildNumber, deploymentThreads, project,
@@ -1247,14 +1247,14 @@ var commandFlags = map[string][]string{
 	},
 	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, skipLogin,
+		serverId, skipLogin, project,
 	},
 	NpmConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, npmThreads,
+		buildNumber, module, npmThreads, project,
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
@@ -1265,13 +1265,13 @@ var commandFlags = map[string][]string{
 	},
 	Nuget: {
 		NugetArgs, SolutionRoot, LegacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module,
+		deprecatedAccessToken, buildName, buildNumber, module, project,
 	},
 	DotnetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
-		buildName, buildNumber, module,
+		buildName, buildNumber, module, project,
 	},
 	GoConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
@@ -1281,7 +1281,7 @@ var commandFlags = map[string][]string{
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
-		deprecatedAccessToken, buildName, buildNumber, module,
+		deprecatedAccessToken, buildName, buildNumber, module, project,
 	},
 	GoRecursivePublish: {
 		url, user, password, apikey, accessToken, serverId,
@@ -1297,7 +1297,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, repoResolve,
 	},
 	PipInstall: {
-		buildName, buildNumber, module,
+		buildName, buildNumber, module, project,
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
