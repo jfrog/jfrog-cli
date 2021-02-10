@@ -2009,9 +2009,6 @@ func uploadCmd(c *cli.Context) error {
 	if c.NArg() > 0 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if c.IsSet("regexp") && c.IsSet("ant") {
-		return cliutils.PrintHelpAndReturnError("Can not use the option of regexp and ant together.", c)
-	}
 	if !(c.NArg() == 2 || (c.NArg() == 0 && c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}

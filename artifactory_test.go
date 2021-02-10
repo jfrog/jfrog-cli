@@ -4516,29 +4516,32 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 	return nil
 }
 
-//This test checks the case of using --ant and --regexp at the same time
-func TestArtifactoryUploadAntPatternFlag(t *testing.T) {
+func TestArtifactoryUploadAntPattern(t *testing.T) {
 	initArtifactoryTest(t)
-	filePath := getAntPatternFilePath()
 
-	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--regexp", "--ant")
-	assert.Error(t, err)
+	uploadUsingAntAndRegexpTogether(t)
+	simpleUploadAntIsTrueRegexpIsFalse(t)
+	simpleUploadWithAntPatternSpec(t)
+
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryUploadPathWithAntPattern(t *testing.T) {
-	initArtifactoryTest(t)
+func uploadUsingAntAndRegexpTogether(t *testing.T) {
 	filePath := getAntPatternFilePath()
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--regexp", "--ant")
+	assert.Error(t, err)
+}
 
-	artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/upload_ant_pattern/{1}", "--ant")
+func simpleUploadAntIsTrueRegexpIsFalse(t *testing.T) {
+	filePath := getAntPatternFilePath()
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/upload_ant_pattern/{1}", "--ant", "--regexp=false")
+	assert.NoError(t, err)
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
-	cleanArtifactoryTest()
 }
 
-func TestArtifactorySimpleUploadWithAntPatternSpec(t *testing.T) {
-	initArtifactoryTest(t)
+func simpleUploadWithAntPatternSpec(t *testing.T) {
 	// Init tmp dir
 	specFile, err := tests.CreateSpec(tests.UploadAntPattern)
 	assert.NoError(t, err)
@@ -4549,5 +4552,4 @@ func TestArtifactorySimpleUploadWithAntPatternSpec(t *testing.T) {
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
-	cleanArtifactoryTest()
 }
