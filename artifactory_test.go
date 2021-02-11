@@ -3911,7 +3911,7 @@ func execCreateRepoRest(repoConfig, repoName string) {
 	log.Info("Repository", repoName, "created.")
 }
 
-func getUsers() (usersnames []string, err error) {
+func getAllUsernames() (usersnames []string, err error) {
 	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
 	if err != nil {
 		return nil, err
@@ -3945,7 +3945,7 @@ func cleanUpOldRepositories() {
 }
 
 func cleanUpOldUsers() {
-	tests.CleanUpOldItems(tests.GetAllUsersNames(), getUsers, execDeleteUser)
+	tests.CleanUpOldItems(tests.GetTestUsersNames(), getAllUsernames, execDeleteUser)
 }
 
 func createRepos(repos map[*string]string) {

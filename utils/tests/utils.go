@@ -404,7 +404,7 @@ func GetAllRepositoriesNames() []string {
 	return baseRepoNames
 }
 
-func GetAllUsersNames() []string {
+func GetTestUsersNames() []string {
 	return []string{UserName1, UserName2}
 }
 
