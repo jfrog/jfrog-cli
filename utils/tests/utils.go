@@ -404,6 +404,10 @@ func GetAllRepositoriesNames() []string {
 	return baseRepoNames
 }
 
+func GetTestUsersNames() []string {
+	return []string{UserName1, UserName2}
+}
+
 func GetBuildNames() []string {
 	buildNamesMap := map[*bool][]*string{
 		TestArtifactory:  {&RtBuildName1, &RtBuildName2, &RtBuildNameWithSpecialChars},
@@ -586,14 +590,14 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 				continue
 			}
 
-			repoTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
+			itemTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
 			if err != nil {
 				log.Warn("Error while parsing timestamp of ", item, err)
 				continue
 			}
 
-			repoTime := time.Unix(repoTimestamp, 0)
-			if now.Sub(repoTime).Hours() > 24 {
+			itemTime := time.Unix(itemTimestamp, 0)
+			if now.Sub(itemTime).Hours() > 24 {
 				deleteItem(item)
 			}
 		}
