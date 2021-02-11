@@ -6,6 +6,7 @@ require (
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
 	github.com/frankban/quicktest v1.11.3 // indirect
+	github.com/go-git/go-git/v5 v5.2.0 // indirect
 	github.com/jfrog/gocmd v0.1.19
 	github.com/jfrog/gofrog v1.0.6
 	github.com/jfrog/jfrog-cli-core v1.4.2

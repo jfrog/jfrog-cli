@@ -5,9 +5,9 @@ import "strings"
 type technology string
 
 const (
-	maven  = "maven"
-	gradle = "gradle"
-	npm    = "npm"
+	Maven  = "maven"
+	Gradle = "gradle"
+	Npm    = "npm"
 )
 
 type TechnologyIndicator interface {
