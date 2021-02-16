@@ -82,7 +82,7 @@ func runPushTest(containerManager container.ContainerManagerType, imageName, mod
 		artifactoryCli.Exec(containerManager.String()+"-push", imageTag, repo, "--build-name="+tests.DockerBuildName, "--build-number="+buildNumber)
 	}
 
-	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, []string{module}, buildinfo.Docker)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
 	artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
 
 	imagePath := path.Join(repo, imageName, "1") + "/"

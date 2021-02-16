@@ -10,8 +10,8 @@ import (
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/config/add"
-	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/edit"
+	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"

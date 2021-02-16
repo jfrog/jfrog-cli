@@ -141,7 +141,7 @@ func testNugetCmd(t *testing.T, projectPath, buildName, buildNumber string, expe
 	} else {
 		assert.NoError(t, artifactoryCli.Exec(args...))
 	}
-	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, expectedModule, buildinfo.Nuget)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", expectedModule, buildinfo.Nuget)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
 
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)

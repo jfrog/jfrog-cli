@@ -36,7 +36,7 @@ func DeleteBuild(artifactoryUrl, buildName string, artHttpDetails httputils.Http
 	}
 }
 
-func ValidateGeneratedBuildInfoModule(t *testing.T, buildname, buildNumber string, moduleNames []string, moduleType buildinfo.ModuleType) {
+func ValidateGeneratedBuildInfoModule(t *testing.T, buildname, buildNumber, projectKey string, moduleNames []string, moduleType buildinfo.ModuleType) {
 	builds, err := coreutils.GetGeneratedBuildsInfo(buildname, buildNumber)
 	assert.NoError(t, err)
 	assert.Len(t, builds, 1)

@@ -154,9 +154,9 @@ var (
 	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
 
 	// Users
-	UserName1 = "Alice"
+	UserName1 = "alice"
 	Password1 = "A12356789z"
-	UserName2 = "Alice2"
+	UserName2 = "bob"
 	Password2 = "1B234578y9"
 )
 

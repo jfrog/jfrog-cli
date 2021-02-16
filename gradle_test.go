@@ -153,7 +153,7 @@ func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumbe
 
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
-	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, []string{gradleModuleId}, buildinfo.Gradle)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{gradleModuleId}, buildinfo.Gradle)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

@@ -1128,7 +1128,8 @@ func configCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	log.Warn(`You are using a deprecated syntax of the "jfrog rt config" commands. Use "jfrog config create" or "jfrog config modify" instead.
+	log.Warn(`You are using a deprecated syntax of the "jfrog rt config" commands. 
+	Use "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" or "jfrog config export" respectfully.
 	In the new command, if "--url" flag is used, replaced it by "--artifactory-url".
 	For example: 
 	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
@@ -3513,6 +3514,7 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
 	buildConfigConfiguration = new(utils.BuildConfiguration)
 	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
+	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	buildConfigConfiguration.Module = c.String("module")
 	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
 	return
@@ -3614,7 +3616,7 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 		buildNumberArg = ""
 	}
 	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = c.String("project")
+	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	return buildConfiguration
 }
 

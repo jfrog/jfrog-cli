@@ -183,12 +183,12 @@ func TestBuildPublishDryRun(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
 	// Verify build dir is not empty
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 
 	// Execute the bp command with dry run.
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--dry-run=true"))
 	// Verify build dir is not empty.
-	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was not published.
 	_, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -203,7 +203,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	// Execute the bp command without dry run
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber))
 	// Verify build dir is empty
-	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber))
+	assert.Empty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
 	// Verify build was published
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.RtBuildName1, buildNumber)
 	if err != nil {
@@ -221,7 +221,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func getFilesFromBuildDir(t *testing.T, buildName, buildNumber string) []os.FileInfo {
+func getFilesFromBuildDir(t *testing.T, buildName, buildNumber, projectKey string) []os.FileInfo {
 	buildDir, err := utils.GetBuildDir(buildName, buildNumber)
 	assert.NoError(t, err)
 
