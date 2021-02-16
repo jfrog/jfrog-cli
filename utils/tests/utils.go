@@ -504,6 +504,7 @@ func AddTimestampToGlobalVars() {
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
 	RtBuildNameWithSpecialChars += timestampSuffix
+	RtPermissionTargetName += timestampSuffix
 
 	// Users
 	UserName1 += timestampSuffix

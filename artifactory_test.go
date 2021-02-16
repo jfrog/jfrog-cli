@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
 	"net"
@@ -4510,4 +4511,57 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 	}
 	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
 	return nil
+}
+
+func TestPermissionTargets(t *testing.T) {
+	initArtifactoryTest(t)
+	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	templatePath := filepath.Join(tests.GetTestResourcesPath(), "permissiontarget", "template")
+
+	// Create permission target on specific repo.
+	assert.NoError(t, artifactoryCli.Exec("ptc", templatePath, createPermissionTargetsTemplateVars(tests.RtRepo1)))
+	err = getAndAssertExpectedPermissionTarget(t, servicesManager, tests.RtRepo1)
+	if err != nil {
+		return
+	}
+
+	defer cleanPermissionTarget()
+
+	// Update permission target to ANY repo.
+	any := "ANY"
+	assert.NoError(t, artifactoryCli.Exec("ptu", templatePath, createPermissionTargetsTemplateVars(any)))
+	err = getAndAssertExpectedPermissionTarget(t, servicesManager, any)
+	if err != nil {
+		return
+	}
+
+	// Delete permission target.
+	assert.NoError(t, artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName))
+
+	cleanArtifactoryTest()
+}
+
+func createPermissionTargetsTemplateVars(reposValue string) string {
+	ptNameVarKey := "pt_name"
+	reposVarKey := "repos_var"
+	return fmt.Sprintf("--vars=%s=%s;%s=%s", ptNameVarKey, tests.RtPermissionTargetName, reposVarKey, reposValue)
+}
+
+func getAndAssertExpectedPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) error {
+	actual, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
+	if err != nil {
+		assert.NoError(t, err)
+		return err
+	}
+	expected := tests.GetExpectedPermissionTarget(repoValue)
+	assert.EqualValues(t, expected, *actual)
+	return nil
+}
+
+func cleanPermissionTarget() {
+	_ = artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName)
 }

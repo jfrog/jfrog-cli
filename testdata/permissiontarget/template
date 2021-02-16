@@ -1,0 +1,10 @@
+{
+    "name": "${pt_name}",
+    "repo": {
+        "repositories": "${repos_var}",
+        "include-patterns": "**",
+        "actions-groups": {
+            "readers": "read"
+        }
+    }
+}
