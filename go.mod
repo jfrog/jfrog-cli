@@ -22,7 +22,7 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.18.1-0.20210128164400-8496bc186725
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.2.7-0.20210131072901-a08bbc2e898b
+replace github.com/jfrog/jfrog-cli-core => github.com/yahavi/jfrog-cli-core config
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 

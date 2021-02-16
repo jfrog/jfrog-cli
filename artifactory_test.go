@@ -54,7 +54,7 @@ import (
 var artifactoryCli *tests.JfrogCli
 
 // JFrog CLI for config command only (doesn't pass the --ssh-passphrase flag)
-var configArtifactoryCli *tests.JfrogCli
+var configCli *tests.JfrogCli
 
 var serverDetails *config.ServerDetails
 var artAuth auth.ServiceDetails
@@ -69,9 +69,14 @@ func InitArtifactoryTests() {
 	cleanArtifactoryTest()
 }
 
-func authenticate() string {
+func authenticate(configCli bool) string {
 	serverDetails = &config.ServerDetails{ArtifactoryUrl: clientutils.AddTrailingSlashIfNeeded(*tests.RtUrl), SshKeyPath: *tests.RtSshKeyPath, SshPassphrase: *tests.RtSshPassphrase}
-	cred := "--url=" + *tests.RtUrl
+	var cred string
+	if configCli {
+		cred += "--artifactory-url=" + *tests.RtUrl
+	} else {
+		cred += "--url=" + *tests.RtUrl
+	}
 	if !fileutils.IsSshUrl(serverDetails.ArtifactoryUrl) {
 		if *tests.RtApiKey != "" {
 			serverDetails.ApiKey = *tests.RtApiKey
@@ -99,7 +104,7 @@ func createConfigJfrogCLI(cred string) *tests.JfrogCli {
 	if strings.Contains(cred, " --ssh-passphrase=") {
 		cred = strings.Replace(cred, " --ssh-passphrase="+*tests.RtSshPassphrase, "", -1)
 	}
-	return tests.NewJfrogCli(execMain, "jfrog rt", cred)
+	return tests.NewJfrogCli(execMain, "jfrog config", cred)
 }
 
 func getArtifactoryTestCredentials() string {
@@ -155,8 +160,9 @@ func TestArtifactorySimpleUploadWithWildcardSpec(t *testing.T) {
 // This test is similar to TestArtifactorySimpleUploadSpec but using "--server-id" flag
 func TestArtifactorySimpleUploadSpecUsingConfig(t *testing.T) {
 	initArtifactoryTest(t)
-	passphrase := createServerConfigAndReturnPassphrase()
+	passphrase, err := createServerConfigAndReturnPassphrase()
 	defer deleteServerConfig()
+	assert.NoError(t, err)
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
 	assert.NoError(t, err)
@@ -1125,7 +1131,7 @@ func testArtifactoryProxy(t *testing.T, isHttps bool) {
 	if !*tests.TestArtifactoryProxy {
 		t.SkipNow()
 	}
-	authenticate()
+	authenticate(true)
 	proxyRtUrl := prepareArtifactoryUrlForProxyTest(t)
 	spec := spec.NewBuilder().Pattern(tests.RtRepo1 + "/*.zip").Recursive(true).BuildSpec()
 	serverDetails.ArtifactoryUrl = proxyRtUrl
@@ -4063,17 +4069,16 @@ func getCliDotGitPath(t *testing.T) string {
 }
 
 func deleteServerConfig() {
-	configArtifactoryCli.Exec("c", "delete", tests.RtServerId, "--interactive=false")
+	configCli.WithoutCredentials().Exec("rm", tests.RtServerId, "--quiet")
 }
 
 // This function will create server config and return the entire passphrase flag if it needed.
 // For example if passphrase is needed it will return "--ssh-passphrase=${theConfiguredPassphrase}" or empty string.
-func createServerConfigAndReturnPassphrase() (passphrase string) {
+func createServerConfigAndReturnPassphrase() (passphrase string, err error) {
 	if *tests.RtSshPassphrase != "" {
 		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
 	}
-	configArtifactoryCli.Exec("c", tests.RtServerId, "--interactive=false")
-	return passphrase
+	return passphrase, configCli.Exec("add", tests.RtServerId)
 }
 
 func testCopyMoveNoSpec(command string, beforeCommandExpected, afterCommandExpected []string, t *testing.T) {
@@ -4166,8 +4171,9 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 
 func TestGetJcenterRemoteDetails(t *testing.T) {
 	initArtifactoryTest(t)
-	createServerConfigAndReturnPassphrase()
+	_, err := createServerConfigAndReturnPassphrase()
 	defer deleteServerConfig()
+	assert.NoError(t, err)
 
 	unsetEnvVars := func() {
 		err := os.Unsetenv(utils.JCenterRemoteServerEnv)
@@ -4191,7 +4197,7 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 
 	// Setting the utils.JCenterRemoteServerEnv env var now,
 	// Expecting therefore the download to be from the the server ID configured by this env var.
-	err := os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
+	err = os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
 	assert.NoError(t, err)
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
 	expectedRemotePath = path.Join("jcenter", downloadPath)
@@ -4209,10 +4215,10 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 }
 
 func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
-	artDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
+	serverDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
-	assert.False(t, os.Getenv(utils.JCenterRemoteServerEnv) != "" && artDetails == nil, "Expected a server to be returned")
+	assert.False(t, os.Getenv(utils.JCenterRemoteServerEnv) != "" && serverDetails == nil, "Expected a server to be returned")
 }
 
 func TestVcsProps(t *testing.T) {
@@ -4274,7 +4280,7 @@ func initVcsTestDir(t *testing.T) string {
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
-	err := tests.NewJfrogCli(execMain, "jfrog rt", "").Exec("c", tests.RtServerId, "--url="+*tests.RtUrl, "--user=admin", "--password=password", "--interactive=false", "--enc-password=false")
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
 	defer deleteServerConfig()
 	assert.NoError(t, err)
 
@@ -4325,7 +4331,7 @@ func TestAccessTokenCreate(t *testing.T) {
 			*tests.RtAccessToken = origAccessToken
 		}()
 		*tests.RtAccessToken = ""
-		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate()).Exec("atc")
+		err := tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false)).Exec("atc")
 		assert.NoError(t, err)
 	} else {
 		err := artifactoryCli.Exec("atc")
@@ -4368,13 +4374,14 @@ func TestRefreshableTokens(t *testing.T) {
 	}
 
 	// Create server with initialized refreshable tokens.
-	_ = createServerConfigAndReturnPassphrase()
+	_, err := createServerConfigAndReturnPassphrase()
 	defer deleteServerConfig()
+	assert.NoError(t, err)
 
 	// Upload a file and assert the refreshable tokens were generated.
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	uploadedFiles := 1
-	err := uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a1.in", uploadedFiles)
+	err = uploadWithSpecificServerAndVerify(t, artifactoryCommandExecutor, tests.RtServerId, "testdata/a/a1.in", uploadedFiles)
 	if err != nil {
 		return
 	}

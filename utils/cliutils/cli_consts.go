@@ -12,7 +12,7 @@ const (
 	CmdXray           = "xr"
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
-	CmdConfig         = "conf"
+	CmdConfig         = "config"
 
 	// Download
 	DownloadMinSplitKb    = 5120

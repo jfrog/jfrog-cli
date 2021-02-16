@@ -208,7 +208,7 @@ func runInitNewConfig(t *testing.T, testSuite testInitNewConfigDescriptor, baseR
 	defer fileutils.RemoveTempDir(tempDirPath)
 
 	params := &dotnet.DotnetCommand{}
-	params.SetServerDetails(&config.ServerDetails{Url: baseRtUrl, User: "user", Password: "password"}).
+	params.SetServerDetails(&config.ServerDetails{ArtifactoryUrl: baseRtUrl, User: "user", Password: "password"}).
 		SetUseNugetAddSource(testSuite.useNugetAddSource).SetUseNugetV2(testSuite.useNugetV2)
 	// Prepare the config file with NuGet authentication
 	configFile, err := params.InitNewConfig(tempDirPath)

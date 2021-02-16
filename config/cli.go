@@ -9,7 +9,9 @@ import (
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli/docs/config/delete"
+	"github.com/jfrog/jfrog-cli/docs/config/add"
+	"github.com/jfrog/jfrog-cli/docs/config/remove"
+	"github.com/jfrog/jfrog-cli/docs/config/edit"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
@@ -21,6 +23,26 @@ import (
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
+			Name:         "add",
+			Description:  add.Description,
+			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			HelpName:     corecommon.CreateUsage("c create", add.Description, add.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return configCmd(c)
+			},
+		},
+		{
+			Name:         "edit",
+			Description:  edit.Description,
+			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			HelpName:     corecommon.CreateUsage("c edit", edit.Description, edit.Usage),
+			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
+			Action: func(c *cli.Context) error {
+				return modifyCmd(c)
+			},
+		},
+		{
 			Name:         "show",
 			Aliases:      []string{"s"},
 			Description:  show.Description,
@@ -31,11 +53,11 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "delete",
-			Aliases:      []string{"del"},
-			Description:  delete.Description,
+			Name:         "remove",
+			Aliases:      []string{"rm"},
+			Description:  remove.Description,
 			Flags:        cliutils.GetCommandFlags(cliutils.DeleteConfig),
-			HelpName:     corecommon.CreateUsage("c del", delete.Description, delete.Usage),
+			HelpName:     corecommon.CreateUsage("c rm", remove.Description, remove.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
 				return deleteCmd(c)
@@ -73,18 +95,28 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func ConfigCmd(c *cli.Context) error {
-	if len(c.Args()) > 1 {
+func configCmd(c *cli.Context) error {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	return createOrModify(c)
+}
 
+func modifyCmd(c *cli.Context) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return createOrModify(c)
+}
+
+func createOrModify(c *cli.Context) error {
 	configCommandConfiguration, err := createConfigCommandConfiguration(c)
 	if err != nil {
 		return err
 	}
 
 	var serverId string
-	if len(c.Args()) > 0 {
+	if c.NArg() > 0 {
 		serverId = c.Args()[0]
 		if err := ValidateServerId(serverId); err != nil {
 			return err
@@ -100,7 +132,7 @@ func ConfigCmd(c *cli.Context) error {
 }
 
 func showCmd(c *cli.Context) error {
-	if len(c.Args()) > 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	var serverId string
@@ -111,7 +143,7 @@ func showCmd(c *cli.Context) error {
 }
 
 func deleteCmd(c *cli.Context) error {
-	if len(c.Args()) > 1 {
+	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	quiet := cliutils.GetQuietValue(c)
@@ -131,21 +163,21 @@ func deleteCmd(c *cli.Context) error {
 }
 
 func importCmd(c *cli.Context) error {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commands.Import(c.Args()[0])
 }
 
 func exportCmd(c *cli.Context) error {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commands.Export(c.Args()[0])
 }
 
 func useCmd(c *cli.Context) error {
-	if len(c.Args()) != 1 {
+	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commands.Use(c.Args()[0])

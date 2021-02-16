@@ -1128,11 +1128,11 @@ func configCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	log.Warn(`You are using a deprecated syntax of the "jfrog rt config" commands. Use "jfrog config" instead.
+	log.Warn(`You are using a deprecated syntax of the "jfrog rt config" commands. Use "jfrog config create" or "jfrog config modify" instead.
 	In the new command, if "--url" flag is used, replaced it by "--artifactory-url".
 	For example: 
 	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
-	New syntax: "jfrog config <server-id> --artifactory-url=<artifactory-url>"`)
+	New syntax: "jfrog config create <server-id> --artifactory-url=<artifactory-url>"`)
 
 	var serverId string
 	configCommandConfiguration, err := createConfigCommandConfiguration(c)
@@ -1185,8 +1185,6 @@ func configCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configCommandConfiguration.ServerDetails.ArtifactoryUrl = configCommandConfiguration.ServerDetails.Url
-	configCommandConfiguration.ServerDetails.Url = ""
 	configCmd := coreCommonCommands.NewConfigCommand().SetDetails(configCommandConfiguration.ServerDetails).SetInteractive(configCommandConfiguration.Interactive).
 		SetServerId(serverId).SetEncPassword(configCommandConfiguration.EncPassword).SetUseBasicAuthOnly(configCommandConfiguration.BasicAuthOnly)
 	return configCmd.Config()
@@ -1970,7 +1968,7 @@ func downloadCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	serverDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -1979,7 +1977,7 @@ func downloadCmd(c *cli.Context) error {
 		return err
 	}
 	downloadCommand := generic.NewDownloadCommand()
-	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(rtDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
+	downloadCommand.SetConfiguration(configuration).SetBuildConfiguration(buildConfiguration).SetSpec(downloadSpec).SetServerDetails(serverDetails).SetDryRun(c.Bool("dry-run")).SetSyncDeletesPath(c.String("sync-deletes")).SetQuiet(cliutils.GetQuietValue(c)).SetDetailedSummary(c.Bool("detailed-summary"))
 
 	if downloadCommand.ShouldPrompt() && !coreutils.AskYesNo("Sync-deletes may delete some files in your local file system. Are you sure you want to continue?\n"+
 		"You can avoid this confirmation message by adding --quiet to the command.", false) {
@@ -1988,7 +1986,7 @@ func downloadCmd(c *cli.Context) error {
 
 	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), rtDetails.Url, err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), serverDetails.ArtifactoryUrl, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -3002,7 +3000,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	serverDetails, err := createArtifactoryDetailsByFlags(c, false)
 	if err != nil {
 		return err
 	}
@@ -3012,14 +3010,14 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	if c.NArg() > 0 {
 		userName = c.Args().Get(0)
 	} else {
-		userName = rtDetails.GetUser()
+		userName = serverDetails.GetUser()
 	}
 	expiry, err := cliutils.GetIntFlagValue(c, "expiry", cliutils.TokenExpiry)
 	if err != nil {
 		return err
 	}
 	accessTokenCreateCmd := generic.NewAccessTokenCreateCommand()
-	accessTokenCreateCmd.SetUserName(userName).SetServerDetails(rtDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
+	accessTokenCreateCmd.SetUserName(userName).SetServerDetails(serverDetails).SetRefreshable(c.Bool("refreshable")).SetExpiry(expiry).SetGroups(c.String("groups")).SetAudience(c.String("audience")).SetGrantAdmin(c.Bool("grant-admin"))
 	err = commands.Exec(accessTokenCreateCmd)
 	if err != nil {
 		return err

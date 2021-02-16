@@ -7,7 +7,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	"github.com/jfrog/jfrog-cli/docs/config/create"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
@@ -138,12 +137,8 @@ func getCommands() []cli.Command {
 		},
 		{
 			Name:        cliutils.CmdConfig,
-			ShortName:   "c",
+			Aliases:     []string{"c"},
 			Description: "Config commands",
-			Usage:       "jfrog config <server ID>",
-			Flags:       cliutils.GetCommandFlags(cliutils.Config),
-			ArgsUsage:   create.Arguments,
-			Action:      config.ConfigCmd,
 			Subcommands: config.GetCommands(),
 		},
 	}

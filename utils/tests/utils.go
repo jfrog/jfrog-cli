@@ -302,8 +302,8 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails
 }
 
 // This function makes no assertion, caller is responsible to assert as needed.
-func GetBuildInfo(artDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, false)
 	if err != nil {
 		return nil, false, err
 	}
