@@ -389,6 +389,7 @@ const (
 	configRtUrl       = "artifactory-url"
 	configXrUrl       = "xray-url"
 	configMcUrl       = "mission-control-url"
+	configPlUrl       = "pipelines-url"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1166,11 +1167,15 @@ var flagsMap = map[string]cli.Flag{
 		Name:  configMcUrl,
 		Usage: "[Optional] Mission Control URL.` `",
 	},
+	configPlUrl: cli.StringFlag{
+		Name:  configPlUrl,
+		Usage: "[Optional] Pipelines URL.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
 	RtConfig: {
