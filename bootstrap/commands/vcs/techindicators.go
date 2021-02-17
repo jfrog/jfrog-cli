@@ -2,7 +2,7 @@ package commands
 
 import "strings"
 
-type technology string
+type Technology string
 
 const (
 	Maven  = "maven"
@@ -11,15 +11,15 @@ const (
 )
 
 type TechnologyIndicator interface {
-	GetTechnology() technology
+	GetTechnology() Technology
 	Indicates(file string) bool
 }
 
 type MavenIndicator struct {
 }
 
-func (mi MavenIndicator) GetTechnology() technology {
-	return technology(maven)
+func (mi MavenIndicator) GetTechnology() Technology {
+	return Technology(Maven)
 }
 
 func (mi MavenIndicator) Indicates(file string) bool {
@@ -29,8 +29,8 @@ func (mi MavenIndicator) Indicates(file string) bool {
 type GradleIndicator struct {
 }
 
-func (gi GradleIndicator) GetTechnology() technology {
-	return technology(gradle)
+func (gi GradleIndicator) GetTechnology() Technology {
+	return Technology(Gradle)
 }
 
 func (gi GradleIndicator) Indicates(file string) bool {
@@ -40,8 +40,8 @@ func (gi GradleIndicator) Indicates(file string) bool {
 type NpmIndicator struct {
 }
 
-func (ni NpmIndicator) GetTechnology() technology {
-	return technology(npm)
+func (ni NpmIndicator) GetTechnology() Technology {
+	return Technology(Npm)
 }
 
 func (ni NpmIndicator) Indicates(file string) bool {

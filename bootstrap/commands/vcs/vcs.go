@@ -44,11 +44,11 @@ type vcsData struct {
 	LocalDirPath            string
 	VcsBranch               string
 	BuildCommand            string
-	ArtifactoryVirtualRepos map[technology]services.RepositoryDetails
+	ArtifactoryVirtualRepos map[Technology]services.RepositoryDetails
 	// A collection of technologies that was found with a list of theirs indications
-	Technologies     map[technology][]string
-	VcsCredentials   auth.ServiceDetails
-	JfrogCredentials auth.ServiceDetails
+	DetectedTechnologies map[Technology]bool
+	VcsCredentials       auth.ServiceDetails
+	JfrogCredentials     auth.ServiceDetails
 }
 
 func VcsCmd(c *cli.Context) error {
@@ -58,32 +58,56 @@ func VcsCmd(c *cli.Context) error {
 		return err
 	}
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
-	err = runBuildQuestionnaire()
+	err = runBuildQuestionnaire(c)
 	if err != nil {
 		return err
 	}
-	// Ask user for the desired output (Pipliens.yaml, Jenkins file or Docker Image)
+
+	// Ask for Publish emp
 
 	return err
 }
 
-func runBuildQuestionnaire() (err error) {
+func runBuildQuestionnaire(c *cli.Context) (err error) {
 	// First create repositories for each technology in Artifactory according to user input
-	for tech, descriptor := range data.Technologies {
-		if coreutils.AskYesNo(fmt.Sprintf("The %q project descriptor was found, would you like %q repositories will be created in your Artifactory?", descriptor, tech)) {
-			switch tech {
-			case Maven:
-
-			case Gradle:
-
-			case Npm:
-
+	for tech, detected := range data.DetectedTechnologies {
+		if detected && coreutils.AskYesNo(fmt.Sprintf("A %q technology has been detected, would you like %q repositories to be configured?", tech, tech), true) {
+			err = interactivelyCreatRepos(tech)
+			if err != nil {
+				return
 			}
 		}
 	}
 	// Ask for working build command
 
 	return nil
+}
+
+func interactivelyCreatRepos(technologyType Technology) (err error) {
+	// Get all relevant remotes to chose from
+	remoteRepos, err := GetAllRepos(data.JfrogCredentials, Remote, string(technologyType))
+	if err != nil {
+		return err
+	}
+	repoNames := ConvertRepoDetailsToRepoNames(remoteRepos)
+	// Add the option to create new remote repository
+	repoNames = append(repoNames, NewRepository)
+
+	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
+	remoteRepo := utils.AskFromList("", "Would you like to chose one of the following repositories or create a new one?", false, utils.ConvertToSuggests(repoNames), NewRepository)
+	if remoteRepo == NewRepository {
+		repoName := utils.AskStringWithDefault("", "Enter repository name >", GetRemoteDefaultName(technologyType))
+		remoteUrl := utils.AskStringWithDefault("", "Enter repository url >", GetRemoteDefaultUrl(technologyType))
+		err = CreateRemoteRepo(data.JfrogCredentials, technologyType, repoName, remoteUrl)
+		if err != nil {
+			return err
+		}
+		remoteRepo = repoName
+	}
+	// Create virtual repository
+	virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetRemoteDefaultName(technologyType))
+	err = CreateVirtualRepo(data.JfrogCredentials, technologyType, virtualRepoName, remoteRepo)
+	return
 }
 
 func runBasicAuthenticationQuestionnaire() (err error) {
@@ -173,7 +197,7 @@ func detectTechnologies() (err error) {
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
-				data.Technologies[indicator.GetTechnology()] = append(data.Technologies[indicator.GetTechnology()], file)
+				data.DetectedTechnologies[indicator.GetTechnology()] = true
 				// Same file can't indicate on more than one technology.
 				break
 			}
