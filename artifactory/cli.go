@@ -1136,10 +1136,12 @@ func configCmd(c *cli.Context) error {
 	New syntax: "jfrog config create <server-id> --artifactory-url=<artifactory-url>"`)
 
 	var serverId string
-	configCommandConfiguration, err := createConfigCommandConfiguration(c)
+	configCommandConfiguration, err := config.CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
 	}
+	configCommandConfiguration.ServerDetails.ArtifactoryUrl = configCommandConfiguration.ServerDetails.Url
+	configCommandConfiguration.ServerDetails.Url = ""
 	if len(c.Args()) == 2 {
 		if c.Args()[0] == "import" {
 			return coreCommonCommands.Import(c.Args()[1])
@@ -3517,16 +3519,6 @@ func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguratio
 	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	buildConfigConfiguration.Module = c.String("module")
 	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
-	return
-}
-
-// Deprecated
-func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *coreCommonCommands.ConfigCommandConfiguration, err error) {
-	configCommandConfiguration = new(coreCommonCommands.ConfigCommandConfiguration)
-	configCommandConfiguration.ServerDetails = createArtifactoryDetailsFromFlags(c)
-	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
-	configCommandConfiguration.Interactive = cliutils.GetInteractiveValue(c)
-	configCommandConfiguration.BasicAuthOnly = c.Bool("basic-auth-only")
 	return
 }
 

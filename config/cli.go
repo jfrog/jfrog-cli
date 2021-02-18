@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/config/edit"
 	"github.com/jfrog/jfrog-cli/docs/config/remove"
 	"github.com/jfrog/jfrog-cli/docs/config/use"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 
 	"github.com/jfrog/jfrog-cli/docs/config/exportcmd"
 	"github.com/jfrog/jfrog-cli/docs/config/importcmd"
@@ -26,10 +27,10 @@ func GetCommands() []cli.Command {
 			Name:         "add",
 			Description:  add.Description,
 			Flags:        cliutils.GetCommandFlags(cliutils.Config),
-			HelpName:     corecommon.CreateUsage("c create", add.Description, add.Usage),
+			HelpName:     corecommon.CreateUsage("c add", add.Description, add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return configCmd(c)
+				return addCmd(c)
 			},
 		},
 		{
@@ -39,7 +40,7 @@ func GetCommands() []cli.Command {
 			HelpName:     corecommon.CreateUsage("c edit", edit.Description, edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
-				return modifyCmd(c)
+				return editCmd(c)
 			},
 		},
 		{
@@ -95,22 +96,22 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func configCmd(c *cli.Context) error {
+func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return createOrModify(c)
+	return addOrEdit(c, false)
 }
 
-func modifyCmd(c *cli.Context) error {
+func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return createOrModify(c)
+	return addOrEdit(c, true)
 }
 
-func createOrModify(c *cli.Context) error {
-	configCommandConfiguration, err := createConfigCommandConfiguration(c)
+func addOrEdit(c *cli.Context, expectExist bool) error {
+	configCommandConfiguration, err := CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
 	}
@@ -119,6 +120,9 @@ func createOrModify(c *cli.Context) error {
 	if c.NArg() > 0 {
 		serverId = c.Args()[0]
 		if err := ValidateServerId(serverId); err != nil {
+			return err
+		}
+		if err := validateServerExistence(serverId, expectExist); err != nil {
 			return err
 		}
 	}
@@ -183,7 +187,7 @@ func useCmd(c *cli.Context) error {
 	return commands.Use(c.Args()[0])
 }
 
-func createConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
+func CreateConfigCommandConfiguration(c *cli.Context) (configCommandConfiguration *commands.ConfigCommandConfiguration, err error) {
 	configCommandConfiguration = new(commands.ConfigCommandConfiguration)
 	configCommandConfiguration.ServerDetails = cliutils.CreateServerDetailsFromFlags(c)
 	configCommandConfiguration.EncPassword = c.BoolT("enc-password")
@@ -198,6 +202,17 @@ func ValidateServerId(serverId string) error {
 		if serverId == reservedId {
 			return errors.New(fmt.Sprintf("Server can't have one of the following ID's: %s\n %s", strings.Join(reservedIds, ", "), cliutils.GetDocumentationMessage()))
 		}
+	}
+	return nil
+}
+
+func validateServerExistence(serverId string, expectExist bool) error {
+	config, err := commands.GetConfig(serverId, false)
+	serverExist := err == nil && config.ServerId != ""
+	if expectExist && !serverExist {
+		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' doesn't exist.", serverId)))
+	} else if !expectExist && serverExist {
+		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' already exists.", serverId)))
 	}
 	return nil
 }
