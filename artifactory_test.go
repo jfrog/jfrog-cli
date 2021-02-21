@@ -671,6 +671,10 @@ func getSpecialCharFilePath() string {
 	return "testdata/a$+~&^a#/a*"
 }
 
+func getAntPatternFilePath() string {
+	return "testdata/cache/downloa?/**/*.in"
+}
+
 func TestArtifactoryCopyNoSpec(t *testing.T) {
 	testCopyMoveNoSpec("cp", tests.GetBuildBeforeCopyExpected(), tests.GetBuildCopyExpected(), t)
 }
@@ -4510,4 +4514,42 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 	}
 	assert.Len(t, searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix), expectedResults)
 	return nil
+}
+
+func TestArtifactoryUploadAntPattern(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadUsingAntAndRegexpTogether(t)
+	simpleUploadAntIsTrueRegexpIsFalse(t)
+	simpleUploadWithAntPatternSpec(t)
+
+	cleanArtifactoryTest()
+}
+
+func uploadUsingAntAndRegexpTogether(t *testing.T) {
+	filePath := getAntPatternFilePath()
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--regexp", "--ant")
+	assert.Error(t, err)
+}
+
+func simpleUploadAntIsTrueRegexpIsFalse(t *testing.T) {
+	filePath := getAntPatternFilePath()
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/upload_ant_pattern/{1}", "--ant", "--regexp=false")
+	assert.NoError(t, err)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
+}
+
+func simpleUploadWithAntPatternSpec(t *testing.T) {
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPattern)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath()+"cache", filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 }

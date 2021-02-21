@@ -142,6 +142,7 @@ const (
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
+	antFlag          = "ant"
 
 	// Config flags
 	interactive   = "interactive"
@@ -162,6 +163,7 @@ const (
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
 	deb                   = "deb"
 	symlinks              = "symlinks"
+	uploadAnt             = uploadPrefix + antFlag
 
 	// Unique download flags
 	downloadPrefix       = "download-"
@@ -223,6 +225,7 @@ const (
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
+	badAnt       = badPrefix + antFlag
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -576,6 +579,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 	},
+	uploadAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to upload.` `",
+	},
 	uploadRetries: cli.StringFlag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of upload retries.` `",
@@ -754,6 +761,10 @@ var flagsMap = map[string]cli.Flag{
 	badRegexp: cli.BoolFlag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
+	},
+	badAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to be added to the build info.` `",
 	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
@@ -1149,7 +1160,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project, uploadAnt,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1195,7 +1206,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badAnt,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,

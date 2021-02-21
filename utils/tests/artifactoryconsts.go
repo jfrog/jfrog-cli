@@ -97,6 +97,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
@@ -191,6 +192,13 @@ func GetUploadLegacyPropsExpected() []string {
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
+	}
+}
+
+func GetSimpleAntPatternUploadExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/upload_ant_pattern/bitbucket.com/bitbucket.in",
+		RtRepo1 + "/upload_ant_pattern/github.com/github.in",
 	}
 }
 

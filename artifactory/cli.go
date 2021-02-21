@@ -3456,6 +3456,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Flat(c.BoolT("flat")).
 		Explode(c.String("explode")).
 		Regexp(c.Bool("regexp")).
+		Ant(c.Bool("ant")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
 		BuildSpec(), nil
@@ -3473,6 +3474,7 @@ func createDefaultBuildAddDependenciesSpec(c *cli.Context) *spec.SpecFiles {
 		ExcludePatterns(cliutils.GetStringsArrFlagValue(c, "exclude-patterns")).
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
+		Ant(c.Bool("ant")).
 		BuildSpec()
 }
 
@@ -3486,6 +3488,7 @@ func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		Regexp(c.Bool("regexp")).
 		TargetProps(c.String("target-props")).
+		Ant(c.Bool("ant")).
 		BuildSpec()
 }
 

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "tmp/downloa?/**/*.in",
+      "target": "${REPO1}/upload_ant_pattern/{1}",
+      "ant": "true"
+    }
+  ]
+}
