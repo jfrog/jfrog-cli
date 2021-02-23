@@ -87,6 +87,7 @@ const (
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
@@ -197,8 +198,8 @@ func GetSimpleWildcardUploadExpectedRepo1() []string {
 
 func GetSimpleAntPatternUploadExpectedRepo1() []string {
 	return []string{
-		RtRepo1 + "/upload_ant_pattern/bitbucket.com/bitbucket.in",
-		RtRepo1 + "/upload_ant_pattern/github.com/github.in",
+		RtRepo1 + "/bitbucket.in",
+		RtRepo1 + "/github.in",
 	}
 }
 

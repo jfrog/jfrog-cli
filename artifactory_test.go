@@ -4534,7 +4534,7 @@ func uploadUsingAntAndRegexpTogether(t *testing.T) {
 
 func simpleUploadAntIsTrueRegexpIsFalse(t *testing.T) {
 	filePath := getAntPatternFilePath()
-	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1+"/upload_ant_pattern/{1}", "--ant", "--regexp=false")
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--regexp=false")
 	assert.NoError(t, err)
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
@@ -4552,4 +4552,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
+	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
+	verifyDoesntExistInArtifactory(searchFilePath, t)
+
 }
