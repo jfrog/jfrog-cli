@@ -5,4 +5,4 @@ const Description string = `Creates a server configuration token. The generated 
 var Usage = []string{"jfrog config export <server token>"}
 
 const Arguments string = `	server ID
-		A unique ID for the new server configuration.`
+		The configured server ID.`

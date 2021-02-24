@@ -5,4 +5,4 @@ const Description string = `Shows the stored configuration. In case this argumen
 var Usage = []string{"jfrog config show <server ID>"}
 
 const Arguments string = `	server ID
-		A unique ID for the new server configuration.`
+		The configured server ID.`

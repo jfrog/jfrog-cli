@@ -218,7 +218,7 @@ func ShouldOfferConfig() (bool, error) {
 	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
 		"The CLI commands require the URL and authentication details\n"+
 		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
-		"You can also configure these parameters later using the 'jfrog rt c' command.\n"+
+		"You can also configure these parameters later using the 'jfrog c' command.\n"+
 		"Configure now?", OfferConfig)
 	confirmed := coreutils.AskYesNo(msg, false)
 	if !confirmed {

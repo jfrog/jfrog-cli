@@ -6,4 +6,4 @@ var Usage = []string{"jfrog config add",
 	"jfrog config add <server ID>"}
 
 const Arguments string = `	server ID
-		A unique ID for the new server configuration.`
+		The configured server ID.`

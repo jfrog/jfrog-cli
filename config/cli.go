@@ -110,7 +110,7 @@ func editCmd(c *cli.Context) error {
 	return addOrEdit(c, true)
 }
 
-func addOrEdit(c *cli.Context, expectExist bool) error {
+func addOrEdit(c *cli.Context, expectExists bool) error {
 	configCommandConfiguration, err := CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func addOrEdit(c *cli.Context, expectExist bool) error {
 		if err := ValidateServerId(serverId); err != nil {
 			return err
 		}
-		if err := validateServerExistence(serverId, expectExist); err != nil {
+		if err := validateServerExistence(serverId, expectExists); err != nil {
 			return err
 		}
 	}
@@ -221,7 +221,7 @@ func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfi
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ServerDetails.ArtifactoryUrl == "" {
 		return errors.New("the --artifactory-url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
 	}
-	// Validate the option is not used along an access token
+	// Validate the option is not used along with an access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
 		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}

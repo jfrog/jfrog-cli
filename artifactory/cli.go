@@ -1119,7 +1119,7 @@ func useCmd(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	log.Warn(`You are using a deprecated syntax of the "jfrog rt use" command. Use "jfrog config use" instead.`)
+	log.Warn(`The "jfrog rt use" command is deprecated. Please use "jfrog config use" instead.`)
 	return coreCommonCommands.Use(c.Args()[0])
 }
 
@@ -1128,12 +1128,12 @@ func configCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	log.Warn(`You are using a deprecated syntax of the "jfrog rt config" commands. 
-	Use "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" or "jfrog config export" respectfully.
-	In the new command, if "--url" flag is used, replaced it by "--artifactory-url".
+	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
+	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
+	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
 	For example: 
 	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
-	New syntax: "jfrog config create <server-id> --artifactory-url=<artifactory-url>"`)
+	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
 
 	var serverId string
 	configCommandConfiguration, err := config.CreateConfigCommandConfiguration(c)
@@ -3526,7 +3526,7 @@ func validateConfigFlags(configCommandConfiguration *coreCommonCommands.ConfigCo
 	if !configCommandConfiguration.Interactive && configCommandConfiguration.ServerDetails.ArtifactoryUrl == "" {
 		return errors.New("the --url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
 	}
-	// Validate the option is not used along an access token
+	// Validate the option is not used along with an access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
 		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
