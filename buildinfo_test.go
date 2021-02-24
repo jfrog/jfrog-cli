@@ -522,13 +522,19 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	//Check partials VCS info
+	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	expectedVcsBranch := "master"
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
-	assert.Equal(t, expectedVcsUrl, partials[0].VcsList[0].Url, "Wrong url")
-	assert.Equal(t, expectedVcsRevision, partials[0].VcsList[0].Revision, "Wrong revision")
-	assert.Equal(t, expectedVcsBranch, partials[0].VcsList[0].Branch, "Wrong branch")
+	buildInfoVcsUrl := partials[0].VcsList[0].Url
+	buildInfoVcsRevision := partials[0].VcsList[0].Revision
+	buildInfoVcsBranch := partials[0].VcsList[0].Branch
+	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
+	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
+	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.RtBuildName1, artHttpDetails)
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber))
@@ -547,9 +553,8 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	require.NotNil(t, buildInfo.VcsList, "Received build-info with empty VCS.")
 
 	// Validate results
-
-	buildInfoVcsUrl := buildInfo.VcsList[0].Url
-	buildInfoVcsRevision := buildInfo.VcsList[0].Revision
+	buildInfoVcsUrl = buildInfo.VcsList[0].Url
+	buildInfoVcsRevision = buildInfo.VcsList[0].Revision
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
