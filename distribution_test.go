@@ -22,7 +22,7 @@ import (
 const bundleVersion = "10"
 
 var (
-	distributionDetails *config.ArtifactoryDetails
+	distributionDetails *config.ServerDetails
 	distAuth            auth.ServiceDetails
 	distHttpDetails     httputils.HttpClientDetails
 	// JFrog CLI for Distribution commands
@@ -41,7 +41,7 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	distributionDetails = &config.ArtifactoryDetails{DistributionUrl: *tests.RtDistributionUrl}
+	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
 	cred := "--dist-url=" + *tests.RtDistributionUrl
 	if *tests.RtAccessToken != "" {
 		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
@@ -79,7 +79,7 @@ func initDistributionTest(t *testing.T) {
 func cleanDistributionTest(t *testing.T) {
 	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
 	inttestutils.WaitForDeletion(t, tests.BundleName, bundleVersion, distHttpDetails)
-	inttestutils.CleanDistributionRepositories(t, artifactoryDetails)
+	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
 
