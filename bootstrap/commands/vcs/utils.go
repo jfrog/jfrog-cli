@@ -23,7 +23,7 @@ const (
 	GradleRemoteDefaultUrl   = "https://jcenter.bintray.com"
 	GradleVirtualDefaultName = "gradle-virtual"
 	NpmRemoteDefaultName     = "npm-remote"
-	NpmRemoteDefaultUrl      = "http://mirror.centos.org/centos/"
+	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
 	NpmVirtualDefaultName    = "npm-virtual"
 )
 
@@ -96,6 +96,19 @@ func GetRemoteDefaultName(technologyType Technology) string {
 		return GradleRemoteDefaultName
 	case Npm:
 		return NpmRemoteDefaultName
+	default:
+		return ""
+	}
+}
+
+func GetVirtualDefaultName(technologyType Technology) string {
+	switch technologyType {
+	case Maven:
+		return MavenVirtualDefaultName
+	case Gradle:
+		return GradleVirtualDefaultName
+	case Npm:
+		return NpmVirtualDefaultName
 	default:
 		return ""
 	}

@@ -14,13 +14,19 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
+	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/auth"
+	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
+	"github.com/jfrog/jfrog-client-go/xray"
+	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 )
 
 const (
@@ -35,6 +41,7 @@ const (
 	LocalDir      = "localDir"
 
 	// Technologies, repositories & build questions keys
+	DefultFirstBuildNumber = "0"
 
 	// Output questions keys
 )
@@ -42,13 +49,16 @@ const (
 type vcsData struct {
 	ProjectName             string
 	LocalDirPath            string
-	VcsBranch               string
+	VcsBranch               []string
 	BuildCommand            string
-	ArtifactoryVirtualRepos map[Technology]services.RepositoryDetails
+	BuildName               string
+	ArtifactoryVirtualRepos map[Technology]string
 	// A collection of technologies that was found with a list of theirs indications
 	DetectedTechnologies map[Technology]bool
 	VcsCredentials       auth.ServiceDetails
-	JfrogCredentials     auth.ServiceDetails
+
+	JfrogCredentials auth.ServiceDetails
+	JfrogServerId    string
 }
 
 func VcsCmd(c *cli.Context) error {
@@ -62,10 +72,93 @@ func VcsCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	// Publish empty build info.
+	err = publishFirstBuild()
+	if err != nil {
+		return err
+	}
+	// Configure Xray to scan the new build.
+	err = configureXray()
+	if err != nil {
+		return err
+	}
+	// Run jfrog-vcs-agent
 
-	// Ask for Publish emp
+	// Output?
 
 	return err
+}
+
+func publishFirstBuild() (err error) {
+	buildName := utils.AskStringWithDefault("", "> Enter name for your build.", "${projectName}-${branch}")
+	data.BuildName = buildName
+	// Run BAG Command (in order to publish the first, empty, buildinfo)
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(filepath.Join(data.LocalDirPath, data.ProjectName)).SetServerId(data.JfrogServerId) //.SetConfigFilePath(c.String("config"))
+	buildConfiguration := rtutils.BuildConfiguration{BuildName: buildName, BuildNumber: DefultFirstBuildNumber}
+	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
+	err = commands.Exec(buildAddGitConfigurationCmd)
+	if err != nil {
+		return err
+	}
+	// Run BP Command.
+	rtDetails, err := utilsconfig.GetArtifactorySpecificConfig(data.JfrogServerId, true, false)
+	if err != nil {
+		return err
+	}
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetRtDetails(rtDetails).SetBuildConfiguration(&buildConfiguration)
+	return commands.Exec(buildPublishCmd)
+}
+
+func configureXray() (err error) {
+	serviceConfig, err := config.NewConfigBuilder().
+		SetServiceDetails(data.JfrogCredentials).
+		Build()
+	if err != nil {
+		return err
+	}
+	xrayManager, err := xray.New(&data.JfrogCredentials, serviceConfig)
+	if err != nil {
+		return err
+	}
+	// AddBuildsToIndexing.
+	buildsToIndex := []string{data.BuildName}
+	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
+	// Create new defult policy.
+	policyParams := xrayutils.NewPolicyParams()
+	policyParams.Name = "vcs-integration-security-policy"
+	policyParams.Type = xrayutils.Security
+	policyParams.Description = "Basic Security policy."
+	policyParams.Rules = []xrayutils.PolicyRule{
+		{
+			Name:     "min-severity-rule",
+			Criteria: *xrayutils.CreateSeverityPolicyCriteria(xrayutils.Critical),
+			Priority: 1,
+		},
+	}
+	err = xrayManager.CreatePolicy(policyParams)
+	if err != nil {
+		return err
+	}
+	// Create new defult watcher.
+	watchParams := xrayutils.NewWatchParams()
+	watchParams.Name = "vcs-integration-watch-all"
+	watchParams.Description = "VCS Configured Build Watch"
+	watchParams.Active = true
+
+	// Need to be verified before merging
+	watchParams.Builds.Type = xrayutils.WatchBuildAll
+	watchParams.Policies = []xrayutils.AssignedPolicy{
+		{
+			Name: policyParams.Name,
+			Type: "security",
+		},
+	}
+
+	err = xrayManager.CreateWatch(watchParams)
+	if err != nil {
+		return err
+	}
+	return
 }
 
 func runBuildQuestionnaire(c *cli.Context) (err error) {
@@ -79,7 +172,7 @@ func runBuildQuestionnaire(c *cli.Context) (err error) {
 		}
 	}
 	// Ask for working build command
-
+	data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary.", false, false)
 	return nil
 }
 
@@ -105,8 +198,13 @@ func interactivelyCreatRepos(technologyType Technology) (err error) {
 		remoteRepo = repoName
 	}
 	// Create virtual repository
-	virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetRemoteDefaultName(technologyType))
+	virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetVirtualDefaultName(technologyType))
 	err = CreateVirtualRepo(data.JfrogCredentials, technologyType, virtualRepoName, remoteRepo)
+	if err != nil {
+		return
+	}
+	// Saves the new created repo name (key) in the results data structure.
+	data.ArtifactoryVirtualRepos[technologyType] = virtualRepoName
 	return
 }
 
@@ -145,7 +243,7 @@ func setVcsCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value st
 }
 
 func setAndPreformeClone(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
-	data.VcsBranch = iq.AnswersMap[VcsBranch].(string)
+	data.VcsBranch = strings.Split(iq.AnswersMap[VcsBranch].(string), ",")
 	data.LocalDirPath = iq.AnswersMap[LocalDir].(string)
 	err = cloneProject()
 	if err != nil {
@@ -272,7 +370,7 @@ var basicAuthenticationQuestionMap = map[string]utils.QuestionInfo{
 	},
 	VcsBranch: {
 		Msg:          "",
-		PromptPrefix: "Enter VCS desired branch >",
+		PromptPrefix: "Enter comma sperated list of git branches >",
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
 		MapKey:       VcsBranch,
@@ -280,7 +378,7 @@ var basicAuthenticationQuestionMap = map[string]utils.QuestionInfo{
 	},
 	LocalDir: {
 		Options: []prompt.Suggest{
-			{Text: "./JFrogVcsBootstrap", Description: "a temp dir that will include a clone of the VCS project."},
+			{Text: "./workspace", Description: "a temp dir that will include a clone of the VCS project."},
 		},
 		Msg:          "",
 		PromptPrefix: "Enter target directory for projet clone >",
