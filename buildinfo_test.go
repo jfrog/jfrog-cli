@@ -576,8 +576,12 @@ func TestReadGitConfig(t *testing.T) {
 	if !strings.HasSuffix(url, ".git") {
 		url += ".git"
 	}
-
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
+
+	branch, _, err := gitExecutor.GetBranch()
+	require.NoError(t, err)
+	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
+
 	cleanArtifactoryTest()
 }
 
