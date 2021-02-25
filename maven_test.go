@@ -25,9 +25,9 @@ var localRepoDir string
 func cleanMavenTest() {
 	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.MvnRepo1).BuildSpec()
-	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.DeleteFiles(deleteSpec, serverDetails)
 	deleteSpec = spec.NewBuilder().Pattern(tests.MvnRepo2).BuildSpec()
-	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
 }
 
@@ -101,7 +101,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	initMavenTest(t, true)
 	// Establish a reverse proxy without any certificates
 	os.Setenv(tests.HttpsProxyEnvVar, mavenTestsProxyPort)
-	go cliproxy.StartLocalReverseHttpProxy(artifactoryDetails.Url, false)
+	go cliproxy.StartLocalReverseHttpProxy(serverDetails.ArtifactoryUrl, false)
 	// The two certificate files are created by the reverse proxy on startup in the current directory.
 	os.Remove(certificate.KEY_FILE)
 	os.Remove(certificate.CERT_FILE)
@@ -109,7 +109,7 @@ func TestInsecureTlsMavenBuild(t *testing.T) {
 	assert.NoError(t, checkIfServerIsUp(cliproxy.GetProxyHttpsPort(), "https", false))
 	// Save the original Artifactory url, and change the url to proxy url
 	oldRtUrl := tests.RtUrl
-	parsedUrl, err := url.Parse(artifactoryDetails.Url)
+	parsedUrl, err := url.Parse(serverDetails.ArtifactoryUrl)
 	proxyUrl := "https://127.0.0.1:" + cliproxy.GetProxyHttpsPort() + parsedUrl.RequestURI()
 	tests.RtUrl = &proxyUrl
 

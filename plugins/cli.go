@@ -14,7 +14,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "install",
 			Aliases:      []string{"i"},
-			Usage:        installdocs.Description,
+			Description:  installdocs.Description,
 			HelpName:     corecommon.CreateUsage("plugin install", installdocs.Description, installdocs.Usage),
 			UsageText:    installdocs.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "uninstall",
 			Aliases:      []string{"ui"},
-			Usage:        uninstalldocs.Description,
+			Description:  uninstalldocs.Description,
 			HelpName:     corecommon.CreateUsage("plugin uninstall", uninstalldocs.Description, uninstalldocs.Usage),
 			UsageText:    uninstalldocs.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
