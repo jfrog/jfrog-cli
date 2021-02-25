@@ -4561,5 +4561,4 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
-
 }
