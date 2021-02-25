@@ -525,6 +525,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 
 	//Check partials VCS info
 	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
+	assert.NoError(t, err)
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	expectedVcsBranch := "master"
@@ -579,18 +580,18 @@ func TestReadGitConfig(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir.")
 	gitExecutor := tests.GitExecutor(workingDir)
 	revision, _, err := gitExecutor.GetRevision()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, revision, gitManager.GetRevision(), "Wrong revision")
 
 	url, _, err := gitExecutor.GetUrl()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if !strings.HasSuffix(url, ".git") {
 		url += ".git"
 	}
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
 
 	branch, _, err := gitExecutor.GetBranch()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
 
 	cleanArtifactoryTest()
