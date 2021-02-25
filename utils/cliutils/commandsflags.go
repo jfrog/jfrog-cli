@@ -10,7 +10,8 @@ import (
 
 const (
 	// Artifactory's Commands Keys
-	Config                  = "config"
+	RtConfig                = "rt-config"
+	DeleteConfig            = "delete-config"
 	Upload                  = "upload"
 	Download                = "download"
 	Move                    = "move"
@@ -75,6 +76,9 @@ const (
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
 	OfflineUpdate = "offline-update"
+
+	// Config commands keys
+	Config = "config"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -381,6 +385,14 @@ const (
 
 	// Unique license-deploy flags
 	licenseCount = "license-count"
+
+	// *** Config Commands' flags ***
+	configPrefix      = "config-"
+	configPlatformUrl = configPrefix + url
+	configRtUrl       = "artifactory-url"
+	configXrUrl       = "xray-url"
+	configMcUrl       = "mission-control-url"
+	configPlUrl       = "pipelines-url"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1149,12 +1161,40 @@ var flagsMap = map[string]cli.Flag{
 		Name:  imageFile,
 		Usage: "[Mandatory] Path to a file which includes one line in the following format: <IMAGE-TAG>@sha256:<MANIFEST-SHA256>.` `",
 	},
+	// Config commands Flags
+	configPlatformUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog platform URL.` `",
+	},
+	configRtUrl: cli.StringFlag{
+		Name:  configRtUrl,
+		Usage: "[Optional] Artifactory URL.` `",
+	},
+	configXrUrl: cli.StringFlag{
+		Name:  configXrUrl,
+		Usage: "[Optional] Xray URL.` `",
+	},
+	configMcUrl: cli.StringFlag{
+		Name:  configMcUrl,
+		Usage: "[Optional] Mission Control URL.` `",
+	},
+	configPlUrl: cli.StringFlag{
+		Name:  configPlUrl,
+		Usage: "[Optional] Pipelines URL.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, insecureTls,
+	},
+	RtConfig: {
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
+	},
+	DeleteConfig: {
+		deleteQuiet,
 	},
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
