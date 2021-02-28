@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	"github.com/jfrog/jfrog-cli-core/utils/log"
 
 	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	artifactoryUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
@@ -88,6 +90,11 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 		credentials = "--access-token=" + *tests.RtAccessToken
 	} else {
 		credentials = "--user=" + *tests.RtUser + " --password=" + *tests.RtPassword
+	}
+	// Delete the default server if exist
+	config, err := commands.GetConfig("default", false)
+	if err == nil && config.ServerId != "" {
+		err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", "default", "--quiet")
 	}
 	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
