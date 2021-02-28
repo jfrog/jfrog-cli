@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/master"
+    }
+  ]
+}
