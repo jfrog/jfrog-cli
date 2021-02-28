@@ -57,7 +57,7 @@ func TestGoBuildInfo(t *testing.T) {
 	}
 
 	module := "github.com/jfrog/dependency"
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GoBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -105,7 +105,7 @@ func TestGoBuildInfo(t *testing.T) {
 		return
 	}
 
-	publishedBuildInfo, found, err = tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	publishedBuildInfo, found, err = tests.GetBuildInfo(serverDetails, tests.GoBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -129,7 +129,7 @@ func TestGoBuildInfo(t *testing.T) {
 	validateArtifactsProperties(resultItems, t, propsMap)
 
 	assert.NoError(t, os.Chdir(wd))
-	inttestutils.DeleteBuild(artifactoryDetails.Url, tests.GoBuildName, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.GoBuildName, artHttpDetails)
 	cleanGoTest(t)
 }
 
@@ -215,7 +215,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 		return
 	}
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GoBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GoBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -245,7 +245,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 		assert.NoError(t, err)
 		return
 	}
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -270,7 +270,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 		validateBuildInfo(buildInfo, t, 8, 0, module)
 	}
 
-	inttestutils.DeleteBuild(artifactoryDetails.Url, buildName, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
 func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
@@ -462,7 +462,7 @@ func cleanGoTest(t *testing.T) {
 	cleanGoCache(t)
 	assert.NoError(t, os.Unsetenv("GONOSUMDB"))
 	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
-	_, _, err := tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
 	cleanBuildToolsTest()
 }

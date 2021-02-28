@@ -13,7 +13,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "bash",
-			Usage:        bash_docs.Description,
+			Description:  bash_docs.Description,
 			HelpName:     corecommon.CreateUsage("completion bash", bash_docs.Description, bash_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(*cli.Context) {
@@ -22,7 +22,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:         "zsh",
-			Usage:        zsh_docs.Description,
+			Description:  zsh_docs.Description,
 			HelpName:     corecommon.CreateUsage("completion zsh", zsh_docs.Description, zsh_docs.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(*cli.Context) {

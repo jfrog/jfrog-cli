@@ -89,7 +89,7 @@ func createJfrogHomeConfig(t *testing.T, encryptPassword bool) {
 	} else {
 		credentials = "--user=" + *tests.RtUser + " --password=" + *tests.RtPassword
 	}
-	err = tests.NewJfrogCli(execMain, "jfrog rt", credentials).Exec("c", "default", "--interactive=false", "--url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
+	err = tests.NewJfrogCli(execMain, "jfrog config", credentials).Exec("add", "default", "--interactive=false", "--artifactory-url="+*tests.RtUrl, "--enc-password="+strconv.FormatBool(encryptPassword))
 	assert.NoError(t, err)
 }
 
@@ -124,10 +124,9 @@ func initArtifactoryCli() {
 		return
 	}
 	*tests.RtUrl = utils.AddTrailingSlashIfNeeded(*tests.RtUrl)
-	cred := authenticate()
-	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", cred)
+	artifactoryCli = tests.NewJfrogCli(execMain, "jfrog rt", authenticate(false))
 	if *tests.TestArtifactory && !*tests.TestArtifactoryProxy {
-		configArtifactoryCli = createConfigJfrogCLI(cred)
+		configCli = createConfigJfrogCLI(authenticate(true))
 	}
 }
 

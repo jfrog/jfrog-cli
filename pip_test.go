@@ -67,7 +67,7 @@ func TestPipInstall(t *testing.T) {
 			testPipCmd(t, test.name, createPipProject(t, test.outputFolder, test.project), strconv.Itoa(buildNumber), test.moduleId, test.expectedDependencies, test.args)
 			if test.cleanAfterExecution {
 				// cleanup
-				inttestutils.DeleteBuild(artifactoryDetails.Url, tests.PipBuildName, artHttpDetails)
+				inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.PipBuildName, artHttpDetails)
 				cleanPipTest(t, test.name)
 			}
 		})
@@ -95,7 +95,7 @@ func testPipCmd(t *testing.T, outputFolder, projectPath, buildNumber, module str
 	inttestutils.ValidateGeneratedBuildInfoModule(t, tests.PipBuildName, buildNumber, "", []string{module}, buildinfo.Pip)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.PipBuildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.PipBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.PipBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
