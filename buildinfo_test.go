@@ -523,7 +523,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 		t.Fatal(err)
 	}
 
-	//Check partials VCS info
+	// Check partials VCS info
 	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
 	assert.NoError(t, err)
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
