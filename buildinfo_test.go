@@ -522,6 +522,20 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Check partials VCS info
+	partials, err := utils.ReadPartialBuildInfoFiles(tests.RtBuildName1, buildNumber, "")
+	assert.NoError(t, err)
+	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
+	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
+	expectedVcsBranch := "master"
+	buildInfoVcsUrl := partials[0].VcsList[0].Url
+	buildInfoVcsRevision := partials[0].VcsList[0].Revision
+	buildInfoVcsBranch := partials[0].VcsList[0].Branch
+	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
+	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
+	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	assert.NoError(t, artifactoryCli.Exec("build-publish", tests.RtBuildName1, buildNumber))
@@ -540,10 +554,8 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	require.NotNil(t, buildInfo.VcsList, "Received build-info with empty VCS.")
 
 	// Validate results
-	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
-	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
-	buildInfoVcsUrl := buildInfo.VcsList[0].Url
-	buildInfoVcsRevision := buildInfo.VcsList[0].Revision
+	buildInfoVcsUrl = buildInfo.VcsList[0].Url
+	buildInfoVcsRevision = buildInfo.VcsList[0].Revision
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.False(t, buildInfo.Issues == nil || len(buildInfo.Issues.AffectedIssues) != 4,
@@ -568,16 +580,20 @@ func TestReadGitConfig(t *testing.T) {
 	assert.NoError(t, err, "Failed to get current dir.")
 	gitExecutor := tests.GitExecutor(workingDir)
 	revision, _, err := gitExecutor.GetRevision()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, revision, gitManager.GetRevision(), "Wrong revision")
 
 	url, _, err := gitExecutor.GetUrl()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	if !strings.HasSuffix(url, ".git") {
 		url += ".git"
 	}
-
 	assert.Equal(t, url, gitManager.GetUrl(), "Wrong url")
+
+	branch, _, err := gitExecutor.GetBranch()
+	assert.NoError(t, err)
+	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
+
 	cleanArtifactoryTest()
 }
 
