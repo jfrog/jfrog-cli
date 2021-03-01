@@ -48,5 +48,5 @@ else
     FILE_NAME="jfrog"
 fi
 
-curl -XGET "$URL" -L -k > $FILE_NAME
+curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME
