@@ -20,6 +20,7 @@ import (
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
+	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -230,6 +231,7 @@ func runBasicAuthenticationQuestionnaire() (err error) {
 }
 
 func setJfrogCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
+	data.JfrogCredentials = (artifactoryAuth.NewArtifactoryDetails())
 	data.JfrogCredentials.SetUrl(iq.AnswersMap[JfrogUrl].(string))
 	data.JfrogCredentials.SetUser(iq.AnswersMap[JfrogUsername].(string))
 	data.JfrogCredentials.SetPassword(iq.AnswersMap[JfrogPassword].(string))
@@ -237,6 +239,7 @@ func setJfrogCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value 
 }
 
 func setVcsCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
+	data.VcsCredentials = (artifactoryAuth.NewArtifactoryDetails())
 	data.VcsCredentials.SetUrl(iq.AnswersMap[VcsUrl].(string))
 	data.VcsCredentials.SetUser(iq.AnswersMap[VcsUsername].(string))
 	data.VcsCredentials.SetPassword(iq.AnswersMap[VcsPassword].(string))
