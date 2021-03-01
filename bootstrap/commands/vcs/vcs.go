@@ -37,7 +37,7 @@ const (
 	VcsUrl        = "vcsUrl"
 	VcsUsername   = "vcsUsername"
 	VcsPassword   = "vcsPassword"
-	VcsBranch     = "vcsBranch"
+	VcsBranches   = "vcsBranches"
 	LocalDir      = "localDir"
 
 	// Technologies, repositories & build questions keys
@@ -46,10 +46,10 @@ const (
 	// Output questions keys
 )
 
-type vcsData struct {
+type VcsData struct {
 	ProjectName             string
 	LocalDirPath            string
-	VcsBranch               []string
+	VcsBranches             []string
 	BuildCommand            string
 	BuildName               string
 	ArtifactoryVirtualRepos map[Technology]string
@@ -83,6 +83,7 @@ func VcsCmd(c *cli.Context) error {
 		return err
 	}
 	// Run jfrog-vcs-agent
+	//buildConfig := convertVcsDataToBuildConfig(*data)
 
 	// Output?
 
@@ -210,7 +211,7 @@ func interactivelyCreatRepos(technologyType Technology) (err error) {
 
 func runBasicAuthenticationQuestionnaire() (err error) {
 	basicAuthenticationQuestionnaire := &utils.InteractiveQuestionnaire{
-		MandatoryQuestionsKeys: []string{JfrogUrl, JfrogUsername, JfrogPassword, VcsUrl, VcsUsername, VcsPassword, VcsBranch, LocalDir},
+		MandatoryQuestionsKeys: []string{JfrogUrl, JfrogUsername, JfrogPassword, VcsUrl, VcsUsername, VcsPassword, VcsBranches, LocalDir},
 		QuestionsMap:           basicAuthenticationQuestionMap,
 	}
 	err = basicAuthenticationQuestionnaire.Perform()
@@ -243,7 +244,7 @@ func setVcsCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value st
 }
 
 func setAndPreformeClone(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
-	data.VcsBranch = strings.Split(iq.AnswersMap[VcsBranch].(string), ",")
+	data.VcsBranches = strings.Split(iq.AnswersMap[VcsBranches].(string), ",")
 	data.LocalDirPath = iq.AnswersMap[LocalDir].(string)
 	err = cloneProject()
 	if err != nil {
@@ -261,7 +262,7 @@ func cloneProject() (err error) {
 	}
 	cloneOption := &git.CloneOptions{
 		URL:           data.VcsCredentials.GetUrl(),
-		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", data.VcsBranch)),
+		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", data.VcsBranches[0])),
 		Progress:      os.Stdout,
 		Auth:          createCredentials(data.VcsCredentials),
 		// Enable git submodules clone if there any.
@@ -316,7 +317,7 @@ func createCredentials(serviceDetails auth.ServiceDetails) (auth transport.AuthM
 	return &http.BasicAuth{Username: serviceDetails.GetUser(), Password: password}
 }
 
-var data = &vcsData{}
+var data = &VcsData{}
 
 var basicAuthenticationQuestionMap = map[string]utils.QuestionInfo{
 
@@ -368,12 +369,12 @@ var basicAuthenticationQuestionMap = map[string]utils.QuestionInfo{
 		MapKey:       VcsPassword,
 		Callback:     setVcsCredentials,
 	},
-	VcsBranch: {
+	VcsBranches: {
 		Msg:          "",
 		PromptPrefix: "Enter comma sperated list of git branches >",
 		AllowVars:    true,
 		Writer:       utils.WriteStringAnswer,
-		MapKey:       VcsBranch,
+		MapKey:       VcsBranches,
 		Callback:     setVcsCredentials,
 	},
 	LocalDir: {

@@ -5,6 +5,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/auth"
+	agentutils "github.com/jfrog/jfrog-vcs-agent/utils"
 )
 
 const (
@@ -78,6 +79,26 @@ func convertServiceDetailesToRTDetails(serviceDetails auth.ServiceDetails) *conf
 		IsDefault:            false,
 		InsecureTls:          false,
 		ApiKey:               serviceDetails.GetApiKey(),
+	}
+}
+func convertVcsDataToBuildConfig(vcsData VcsData) *agentutils.BuildConfig {
+	return &agentutils.BuildConfig{
+		ProjectName:  vcsData.ProjectName,
+		BuildCommand: vcsData.BuildCommand,
+		Vcs: &agentutils.Vcs{
+			Url:      vcsData.VcsCredentials.GetUrl(),
+			User:     vcsData.VcsCredentials.GetUser(),
+			Password: vcsData.VcsCredentials.GetPassword(),
+			Token:    vcsData.VcsCredentials.GetAccessToken(),
+			Branches: vcsData.VcsBranches,
+		},
+		Jfrog: &agentutils.JfrogDetails{
+			ArtUrl:   vcsData.JfrogCredentials.GetUrl(), // need to seperate url to Artifactory, Xray and pipelines
+			User:     vcsData.JfrogCredentials.GetUser(),
+			Password: vcsData.JfrogCredentials.GetPassword(),
+			//Repositories: vcsData.ArtifactoryVirtualRepos,
+			BuildName: vcsData.BuildName,
+		},
 	}
 }
 
