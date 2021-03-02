@@ -799,6 +799,19 @@ func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryUploadAsArchive(t *testing.T) {
+	initArtifactoryTest(t)
+
+	specFile, err := tests.CreateSpec(tests.UploadAsArchive)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
+	// TODO: try to check the files inside the zip
+	cleanArtifactoryTest()
+}
+
 func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	initArtifactoryTest(t)
 
