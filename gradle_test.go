@@ -24,7 +24,7 @@ const (
 func cleanGradleTest() {
 	os.Unsetenv(coreutils.HomeDir)
 	deleteSpec := spec.NewBuilder().Pattern(tests.GradleRepo).BuildSpec()
-	tests.DeleteFiles(deleteSpec, artifactoryDetails)
+	tests.DeleteFiles(deleteSpec, serverDetails)
 	tests.CleanFileSystem()
 }
 
@@ -39,7 +39,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 	buildNumber := "1"
 	runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumber, t)
 	assert.NoError(t, artifactoryCli.Exec("bp", buildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, buildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, buildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -73,7 +73,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+tests.GradleBuildName+";build.number="+buildNumber, t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
 
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -98,7 +98,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
 
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -132,7 +132,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 
 	runAndValidateGradle(buildGradlePath, configFilePath, tests.GradleBuildName, buildNumber, t)
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.GradleBuildName, buildNumber))
-	publishedBuildInfo, found, err := tests.GetBuildInfo(artifactoryDetails, tests.GradleBuildName, buildNumber)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GradleBuildName, buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -153,7 +153,7 @@ func runAndValidateGradle(buildGradlePath, configFilePath, buildName, buildNumbe
 
 	verifyExistInArtifactory(tests.GetGradleDeployedArtifacts(), searchSpec, t)
 	verifyExistInArtifactoryByProps(tests.GetGradleDeployedArtifacts(), tests.GradleRepo+"/*", "build.name="+buildName+";build.number="+buildNumber, t)
-	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, []string{gradleModuleId}, buildinfo.Gradle)
+	inttestutils.ValidateGeneratedBuildInfoModule(t, buildName, buildNumber, "", []string{gradleModuleId}, buildinfo.Gradle)
 }
 
 func createGradleProject(t *testing.T, projectName string) string {

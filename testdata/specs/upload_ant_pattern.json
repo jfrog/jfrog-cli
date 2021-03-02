@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/**/bitbucke?.com/*.in",
+      "target": "${REPO1}",
+      "ant": "true"
+    },
+    {
+      "pattern": "testdata/**/githu?.com/*.in",
+      "target": "${REPO1}",
+      "ant": "true"
+    },
+    {
+      "pattern": "testdata/vcs/gitdata/*/master",
+      "target": "${REPO1}",
+      "ant": "true"
+    }
+  ]
+}

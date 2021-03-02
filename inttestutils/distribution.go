@@ -274,7 +274,7 @@ func ListAllBundlesNames(distHttpDetails httputils.HttpClientDetails) ([]string,
 }
 
 // Clean up 'cli-tests-dist1-<timestamp>' and 'cli-tests-dist2-<timestamp>' after running a distribution test
-func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ArtifactoryDetails) {
+func CleanDistributionRepositories(t *testing.T, distributionDetails *config.ServerDetails) {
 	deleteSpec := spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()
 	tests.DeleteFiles(deleteSpec, distributionDetails)
 	deleteSpec = spec.NewBuilder().Pattern(tests.DistRepo1).BuildSpec()

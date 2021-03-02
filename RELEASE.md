@@ -1,3 +1,13 @@
+# Release Notes
+
+## 1.44.0 (January 31, 2021)
+- New users-create and user-delete commands
+- New group-create, group-update and group-delete commands
+- Allow running pip install without setup.py
+- Bug fix - docker - missing clear error message when working with a repo that doesn't exist
+- Artifactory upload - the "Props" command option was deprecated and replaced with "TargetProps"
+- Support installing jfrog-plugins on s390x linux arch
+
 ## 1.43.2 (January 6, 2021)
 - Bug fix - docker push fails to set props for virtual repositories
 - Bug fix - config import fails with refreshable token

@@ -18,7 +18,7 @@ func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
 			Name:         "offline-update",
-			Usage:        offlineupdate.Description,
+			Description:  offlineupdate.Description,
 			HelpName:     corecommon.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),

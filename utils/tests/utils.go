@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -276,6 +277,10 @@ func (m *gitManager) GetRevision() (string, string, error) {
 	return m.execGit("show", "-s", "--format=%H", "HEAD")
 }
 
+func (m *gitManager) GetBranch() (string, string, error) {
+	return m.execGit("branch", "--show-current")
+}
+
 func (m *gitManager) execGit(args ...string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -289,9 +294,9 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }
 
-func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
+func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (successCount, failCount int, err error) {
 	deleteCommand := generic.NewDeleteCommand()
-	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
+	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetServerDetails(serverDetails).SetDryRun(false)
 	reader, err := deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
@@ -301,8 +306,8 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 }
 
 // This function makes no assertion, caller is responsible to assert as needed.
-func GetBuildInfo(artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, false)
 	if err != nil {
 		return nil, false, err
 	}
@@ -403,6 +408,10 @@ func GetAllRepositoriesNames() []string {
 	return baseRepoNames
 }
 
+func GetTestUsersNames() []string {
+	return []string{UserName1, UserName2}
+}
+
 func GetBuildNames() []string {
 	buildNamesMap := map[*bool][]*string{
 		TestArtifactory:  {&RtBuildName1, &RtBuildName2, &RtBuildNameWithSpecialChars},
@@ -453,6 +462,10 @@ func getSubstitutionMap() map[string]string {
 		"${BUNDLE_NAME}":               BundleName,
 		"${DIST_REPO1}":                DistRepo1,
 		"${DIST_REPO2}":                DistRepo2,
+		"{USER_NAME_1}":                UserName1,
+		"{PASSWORD_1}":                 Password1,
+		"{USER_NAME_2}":                UserName2,
+		"{PASSWORD_2}":                 Password2,
 	}
 }
 
@@ -495,6 +508,13 @@ func AddTimestampToGlobalVars() {
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
 	RtBuildNameWithSpecialChars += timestampSuffix
+
+	// Users
+	UserName1 += timestampSuffix
+	UserName2 += timestampSuffix
+	rand.Seed(time.Now().Unix())
+	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
@@ -574,14 +594,14 @@ func CleanUpOldItems(baseItemNames []string, getActualItems func() ([]string, er
 				continue
 			}
 
-			repoTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
+			itemTimestamp, err := strconv.ParseInt(regexGroups[len(regexGroups)-1], 10, 64)
 			if err != nil {
 				log.Warn("Error while parsing timestamp of ", item, err)
 				continue
 			}
 
-			repoTime := time.Unix(repoTimestamp, 0)
-			if now.Sub(repoTime).Hours() > 24 {
+			itemTime := time.Unix(itemTimestamp, 0)
+			if now.Sub(itemTime).Hours() > 24 {
 				deleteItem(item)
 			}
 		}

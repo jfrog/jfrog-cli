@@ -2,7 +2,7 @@ package cliutils
 
 const (
 	// General CLI constants
-	CliVersion  = "1.43.2"
+	CliVersion  = "1.44.0"
 	ClientAgent = "jfrog-cli-go"
 
 	// CLI base commands constants:
@@ -12,6 +12,7 @@ const (
 	CmdXray           = "xr"
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
+	CmdConfig         = "config"
 
 	// Download
 	DownloadMinSplitKb    = 5120
