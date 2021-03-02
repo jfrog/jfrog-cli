@@ -3287,6 +3287,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Regexp(c.Bool("regexp")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
+		Symlinks(c.Bool("symlinks")).
 		BuildSpec(), nil
 }
 
@@ -3378,7 +3379,6 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Symlink = c.Bool("symlinks")
 	uploadConfiguration.Retries, err = getRetries(c)
 	if err != nil {
 		return nil, err
@@ -3466,6 +3466,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
+	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {

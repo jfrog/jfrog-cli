@@ -135,6 +135,7 @@ const (
 	bundle           = "bundle"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
+	archive          = "archive"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
 
 	// Config flags
@@ -154,6 +155,7 @@ const (
 	uploadProps           = uploadPrefix + props
 	uploadTargetProps     = uploadPrefix + targetProps
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
+	uploadArchive         = uploadPrefix + archive
 	deb                   = "deb"
 	symlinks              = "symlinks"
 
@@ -589,6 +591,10 @@ var flagsMap = map[string]cli.Flag{
 	uploadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
 		Usage: "[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `",
+	},
+	uploadArchive: cli.StringFlag{
+		Name:  archive,
+		Usage: "[Optional] Set to \"zip\" to deploy to Artifactory in a ZIP archive.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -1113,7 +1119,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,

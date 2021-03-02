@@ -87,8 +87,8 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
 	log.Output(basicSummary)
 	defer log.Output("}")
-	for file := new(serviceutils.FileInfo); reader.NextRecord(file) == nil; file = new(serviceutils.FileInfo) {
-		source, target := getSourceAndTarget(*file, rtUrl)
+	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+		source, target := getSourceAndTarget(*transferDetails, rtUrl)
 		record := detailedSummaryRecord{
 			Source: source,
 			Target: target,
@@ -99,15 +99,15 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	return summaryPrintError(mErr, originalErr)
 }
 
-func getSourceAndTarget(file serviceutils.FileInfo, rtUrl string) (source, target string) {
+func getSourceAndTarget(transferDetails serviceutils.FileTransferDetails, rtUrl string) (source, target string) {
 	if rtUrl != "" {
 		// Download
-		source = rtUrl + file.ArtifactoryPath
-		target = file.LocalPath
+		source = rtUrl + transferDetails.ArtifactoryPath
+		target = transferDetails.LocalPath
 	} else {
 		// Upload
-		source = file.LocalPath
-		target = file.ArtifactoryPath
+		source = transferDetails.LocalPath
+		target = transferDetails.ArtifactoryPath
 	}
 	return
 }
