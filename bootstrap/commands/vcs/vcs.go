@@ -293,10 +293,7 @@ func setProjectName() {
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	data.VcsCredentials.SetUrl(vcsUrl)
 	projectName := vcsUrl[strings.LastIndex(vcsUrl, "/")+1:]
-	if strings.Contains(projectName, ".") {
-		projectName = vcsUrl[:strings.LastIndex(vcsUrl, "/")]
-	}
-	data.ProjectName = projectName
+	data.ProjectName = strings.TrimSuffix(projectName, ".git")
 }
 
 func detectTechnologies() (err error) {
