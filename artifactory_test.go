@@ -17,6 +17,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -851,17 +852,67 @@ func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
 func TestArtifactoryUploadAsArchive(t *testing.T) {
 	initArtifactoryTest(t)
 
-	specFile, err := tests.CreateSpec(tests.UploadAsArchive)
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
 	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFile)
+	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
-	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
 
-	artifactoryCli.Exec("download", tests.RtRepo1+"/archive/a.zip", tests.Out+"/", "--explode")
+	// Verify the properties are valid
+	resultItems := searchItemsInArtifactory(t, tests.SearchAllRepo1)
+	assert.NotZero(t, len(resultItems))
+	for _, item := range resultItems {
+		if item.Name != "a.zip" {
+			assert.Zero(t, len(item.Properties))
+			continue
+		}
+		properties := item.Properties
+		assert.Equal(t, 3, len(properties))
+
+		// Sort the properties alphabetically by key and value to make the comparison easier
+		sort.Slice(properties, func(i, j int) bool {
+			if properties[i].Key == properties[j].Key {
+				return properties[i].Value < properties[j].Value
+			}
+			return properties[i].Key < properties[j].Key
+		})
+		assert.Equal(t, "k1", properties[0].Key)
+		assert.Equal(t, "v11", properties[0].Value)
+		assert.Equal(t, "k1", properties[1].Key)
+		assert.Equal(t, "v12", properties[1].Value)
+		assert.Equal(t, "k2", properties[2].Key)
+		assert.Equal(t, "v2", properties[2].Value)
+	}
+
+	// Check the files inside the archives by downloading and exploding them
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAndExplodeArchives)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally(tests.GetDownloadArchiveAndExplode(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchiveAndSymlinks(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks")
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchiveToDir(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchiveToDir)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	assert.Error(t, err)
 
 	cleanArtifactoryTest()
 }
