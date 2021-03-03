@@ -5,7 +5,7 @@ CLI_UNAME="na"
 
 if [ $# -eq 0 ]
   then
-	VERSION=\$latest
+	VERSION="[RELEASE]"
 	echo "Downloading the latest version of JFrog CLI..."
   else
 	VERSION=$1
@@ -14,11 +14,11 @@ fi
 
 if $(echo "${OSTYPE}" | grep -q msys); then
     CLI_OS="windows"
-    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe?bt_package=jfrog-cli-windows-amd64"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-windows-amd64/jfrog.exe"
     FILE_NAME="jfrog.exe"
 elif $(echo "${OSTYPE}" | grep -q darwin); then
     CLI_OS="mac"
-    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-mac-386/jfrog?bt_package=jfrog-cli-mac-386"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-mac-386/jfrog"
     FILE_NAME="jfrog"
 else
     CLI_OS="linux"
@@ -44,9 +44,9 @@ else
             exit -1
             ;;
     esac
-    URL="https://api.bintray.com/content/jfrog/jfrog-cli-go/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog?bt_package=jfrog-cli-${CLI_OS}-${ARCH}"
+    URL="https://releases.jfrog.io/artifactory/jfrog-cli/v1/${VERSION}/jfrog-cli-${CLI_OS}-${ARCH}/jfrog"
     FILE_NAME="jfrog"
 fi
 
-curl -XGET "$URL" -L -k > $FILE_NAME
+curl -XGET "$URL" -L -k -g > $FILE_NAME
 chmod u+x $FILE_NAME

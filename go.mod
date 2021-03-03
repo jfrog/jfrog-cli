@@ -8,8 +8,9 @@ require (
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/jfrog/gocmd v0.1.19
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core v1.2.6
+	github.com/jfrog/jfrog-cli-core v1.3.1
 	github.com/jfrog/jfrog-client-go v0.19.1
+	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
@@ -19,9 +20,9 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/asafgabai/jfrog-client-go v0.18.1-0.20210301134916-5b16d7149f74
+replace github.com/jfrog/jfrog-client-go => github.com/asafgabai/jfrog-client-go upload-archive
 
-replace github.com/jfrog/jfrog-cli-core => github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210302081338-13115da3fd97
+replace github.com/jfrog/jfrog-cli-core => github.com/asafgabai/jfrog-cli-core upload-archive
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 

@@ -36,6 +36,8 @@ const (
 	DelSpecExclude                         = "delete_spec_exclude.json"
 	DelSpecExclusions                      = "delete_spec_exclusions.json"
 	DistributionCreateByAql                = "dist_create_by_aql.json"
+	DistributionCreateWithMapping          = "dist_create_with_mapping.json"
+	DistributionMappingDownload            = "dist_mapping_download_spec.json"
 	DistributionRepoConfig1                = "dist_repository_config1.json"
 	DistributionRepoConfig2                = "dist_repository_config2.json"
 	DistributionRules                      = "distribution_rules.json"
@@ -85,6 +87,7 @@ const (
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
@@ -95,6 +98,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
@@ -151,6 +155,12 @@ var (
 	RtBuildName1                = "cli-tests-rt-build1"
 	RtBuildName2                = "cli-tests-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
+
+	// Users
+	UserName1 = "alice"
+	Password1 = "A12356789z"
+	UserName2 = "bob"
+	Password2 = "1B234578y9"
 )
 
 func GetTxtUploadExpectedRepo1() []string {
@@ -184,6 +194,13 @@ func GetUploadLegacyPropsExpected() []string {
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
+	}
+}
+
+func GetSimpleAntPatternUploadExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/bitbucket.in",
+		RtRepo1 + "/github.in",
 	}
 }
 
@@ -432,6 +449,14 @@ func GetBundlePropsExpected() []string {
 		DistRepo1 + "/data/b1.in",
 		DistRepo1 + "/data/b2.in",
 		DistRepo1 + "/data/b3.in",
+	}
+}
+
+func GetBundleMappingExpected() []string {
+	return []string{
+		DistRepo2 + "/target/b1.in",
+		DistRepo2 + "/target/b2.in",
+		DistRepo2 + "/target/b3.in",
 	}
 }
 

@@ -22,7 +22,7 @@ import (
 const bundleVersion = "10"
 
 var (
-	distributionDetails *config.ArtifactoryDetails
+	distributionDetails *config.ServerDetails
 	distAuth            auth.ServiceDetails
 	distHttpDetails     httputils.HttpClientDetails
 	// JFrog CLI for Distribution commands
@@ -41,7 +41,7 @@ func CleanDistributionTests() {
 }
 
 func authenticateDistribution() string {
-	distributionDetails = &config.ArtifactoryDetails{DistributionUrl: *tests.RtDistributionUrl}
+	distributionDetails = &config.ServerDetails{DistributionUrl: *tests.RtDistributionUrl}
 	cred := "--dist-url=" + *tests.RtDistributionUrl
 	if *tests.RtAccessToken != "" {
 		distributionDetails.AccessToken = *tests.RtDistributionAccessToken
@@ -79,7 +79,7 @@ func initDistributionTest(t *testing.T) {
 func cleanDistributionTest(t *testing.T) {
 	distributionCli.Exec("rbdel", tests.BundleName, bundleVersion, "--site=*", "--delete-from-dist", "--quiet")
 	inttestutils.WaitForDeletion(t, tests.BundleName, bundleVersion, distHttpDetails)
-	inttestutils.CleanDistributionRepositories(t, artifactoryDetails)
+	inttestutils.CleanDistributionRepositories(t, serverDetails)
 	tests.CleanFileSystem()
 }
 
@@ -417,6 +417,48 @@ func TestUpdateBundleProps(t *testing.T) {
 
 	// Verify props are added to the distributes artifact
 	verifyExistInArtifactoryByProps(tests.GetBundlePropsExpected(), tests.DistRepo1+"/data/", "key1=val1", t)
+
+	cleanDistributionTest(t)
+}
+
+func TestBundlePathMapping(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
+
+	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/(*)", "--sign", "--target="+tests.DistRepo2+"/target/{1}")
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+
+	// Validate files are distributed to the target mapping
+	spec, err := tests.CreateSpec(tests.DistributionMappingDownload)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
+
+	cleanDistributionTest(t)
+}
+
+func TestBundlePathMappingUsingSpec(t *testing.T) {
+	initDistributionTest(t)
+
+	// Upload files
+	specFile, err := tests.CreateSpec(tests.DistributionUploadSpecB)
+	assert.NoError(t, err)
+	runRt(t, "u", "--spec="+specFile)
+
+	// Create and distribute release bundle with path mapping from <DistRepo1>/data/ to <DistRepo2>/target/
+	spec, err := tests.CreateSpec(tests.DistributionCreateWithMapping)
+	assert.NoError(t, err)
+	runRb(t, "rbc", tests.BundleName, bundleVersion, "--sign", "--spec="+spec)
+	runRb(t, "rbd", tests.BundleName, bundleVersion, "--site=*", "--sync")
+
+	// Validate files are distributed to the target mapping
+	spec, err = tests.CreateSpec(tests.DistributionMappingDownload)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetBundleMappingExpected(), spec, t)
 
 	cleanDistributionTest(t)
 }
