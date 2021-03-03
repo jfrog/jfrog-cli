@@ -2,9 +2,8 @@ package commands
 
 import (
 	artUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/utils/config"
+	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	"github.com/jfrog/jfrog-client-go/auth"
 	agentutils "github.com/jfrog/jfrog-vcs-agent/utils"
 )
 
@@ -28,8 +27,8 @@ const (
 	NpmVirtualDefaultName    = "npm-virtual"
 )
 
-func GetAllRepos(serviceDetails auth.ServiceDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {
-	servicesManager, err := artUtils.CreateServiceManager(convertServiceDetailesToRTDetails(serviceDetails), false)
+func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, false)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +36,8 @@ func GetAllRepos(serviceDetails auth.ServiceDetails, repoType, packageType strin
 	return servicesManager.GetAllRepositoriesFiltered(filterParams)
 }
 
-func CreateRemoteRepo(serviceDetails auth.ServiceDetails, technologyType Technology, repoName, remoteUrl string) error {
-	servicesManager, err := artUtils.CreateServiceManager(convertServiceDetailesToRTDetails(serviceDetails), false)
+func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType Technology, repoName, remoteUrl string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, false)
 	if err != nil {
 		return err
 	}
@@ -49,8 +48,8 @@ func CreateRemoteRepo(serviceDetails auth.ServiceDetails, technologyType Technol
 	return servicesManager.CreateBasicRemoteRepository(params)
 }
 
-func CreateVirtualRepo(serviceDetails auth.ServiceDetails, technologyType Technology, repoName string, repositories ...string) error {
-	servicesManager, err := artUtils.CreateServiceManager(convertServiceDetailesToRTDetails(serviceDetails), false)
+func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType Technology, repoName string, repositories ...string) error {
+	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, false)
 	if err != nil {
 		return err
 	}
@@ -61,27 +60,9 @@ func CreateVirtualRepo(serviceDetails auth.ServiceDetails, technologyType Techno
 	return servicesManager.CreateBasicVirtualRepository(params)
 }
 
-func convertServiceDetailesToRTDetails(serviceDetails auth.ServiceDetails) *config.ArtifactoryDetails {
-	return &config.ArtifactoryDetails{
-		Url:                  serviceDetails.GetUrl(),
-		SshUrl:               "",
-		DistributionUrl:      "",
-		User:                 serviceDetails.GetUser(),
-		Password:             serviceDetails.GetPassword(),
-		SshKeyPath:           "",
-		SshPassphrase:        "",
-		AccessToken:          serviceDetails.GetAccessToken(),
-		RefreshToken:         "",
-		TokenRefreshInterval: 0,
-		ClientCertPath:       "",
-		ClientCertKeyPath:    "",
-		ServerId:             "",
-		IsDefault:            false,
-		InsecureTls:          false,
-		ApiKey:               serviceDetails.GetApiKey(),
-	}
-}
 func convertVcsDataToBuildConfig(vcsData VcsData) *agentutils.BuildConfig {
+	serviceDetails, _ := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+	rtDetails, _ := serviceDetails.CreateArtAuthConfig()
 	return &agentutils.BuildConfig{
 		ProjectName:  vcsData.ProjectName,
 		BuildCommand: vcsData.BuildCommand,
@@ -93,9 +74,9 @@ func convertVcsDataToBuildConfig(vcsData VcsData) *agentutils.BuildConfig {
 			Branches: vcsData.VcsBranches,
 		},
 		Jfrog: &agentutils.JfrogDetails{
-			ArtUrl:   vcsData.JfrogCredentials.GetUrl(), // need to seperate url to Artifactory, Xray and pipelines
-			User:     vcsData.JfrogCredentials.GetUser(),
-			Password: vcsData.JfrogCredentials.GetPassword(),
+			ArtUrl:   rtDetails.GetUrl(),
+			User:     rtDetails.GetUser(),
+			Password: rtDetails.GetPassword(),
 			//Repositories: vcsData.ArtifactoryVirtualRepos,
 			BuildName: vcsData.BuildName,
 		},
