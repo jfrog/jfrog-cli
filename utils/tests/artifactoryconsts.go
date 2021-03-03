@@ -358,6 +358,15 @@ func GetUploadAsArchive() []string {
 	}
 }
 
+func GetDownloadArchiveAndExplode() []string {
+	return []string{
+		RtRepo1 + "/archive/a1.in",
+		RtRepo1 + "/archive/a2.in",
+		RtRepo1 + "/archive/a3.in",
+		RtRepo1 + "/archive/b1.in",
+	}
+}
+
 func GetMoveCopySpecExpected() []string {
 	return []string{
 		RtRepo2 + "/copy_move_target/a1.in",

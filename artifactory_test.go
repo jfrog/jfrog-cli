@@ -808,7 +808,12 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
 	assert.NoError(t, err)
 	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
-	// TODO: try to check the files inside the zip
+
+	artifactoryCli.Exec("download", tests.RtRepo1+"/archive/a.zip", tests.Out+"/", "--explode")
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally(tests.GetDownloadArchiveAndExplode(), paths, t)
+
 	cleanArtifactoryTest()
 }
 
