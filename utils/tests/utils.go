@@ -126,7 +126,7 @@ func VerifyExistLocally(expected, actual []string, t *testing.T) {
 
 func ValidateListsIdentical(expected, actual []string) error {
 	if len(actual) != len(expected) {
-		return errors.New("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
+		return errors.New(fmt.Sprintf("Unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", ")))
 	}
 	err := compare(expected, actual)
 	return err
