@@ -90,28 +90,14 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	log.Output(basicSummary)
 	defer log.Output("}")
 	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
-		source, target := getSourceAndTarget(*transferDetails, rtUrl)
 		record := detailedSummaryRecord{
-			Source: source,
-			Target: target,
+			Source: transferDetails.SourcePath,
+			Target: transferDetails.TargetPath,
 		}
 		writer.Write(record)
 	}
 	mErr = writer.Close()
 	return summaryPrintError(mErr, originalErr)
-}
-
-func getSourceAndTarget(transferDetails serviceutils.FileTransferDetails, rtUrl string) (source, target string) {
-	if rtUrl != "" {
-		// Download
-		source = rtUrl + transferDetails.ArtifactoryPath
-		target = transferDetails.LocalPath
-	} else {
-		// Upload
-		source = transferDetails.LocalPath
-		target = transferDetails.ArtifactoryPath
-	}
-	return
 }
 
 func CreateSummaryReportString(success, failed int, err error) (string, error) {
