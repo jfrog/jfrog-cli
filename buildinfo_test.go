@@ -533,7 +533,7 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	buildInfoVcsUrl := partials[0].VcsList[0].Url
 	buildInfoVcsRevision := partials[0].VcsList[0].Revision
 	buildInfoVcsBranch := partials[0].VcsList[0].Branch
-	buildInfoVcsCommitMessage := partials[0].VcsList[0].Commit
+	buildInfoVcsCommitMessage := partials[0].VcsList[0].Message
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
