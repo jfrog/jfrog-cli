@@ -146,7 +146,6 @@ func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T,
 func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err := utils.RemoveBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
@@ -158,7 +157,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.NoError(t, err)
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	// Execute the bad command
+	// Execute the bad command on local file system
 	noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true")
 	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
@@ -166,7 +165,15 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	files, _ := ioutil.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command with dry-run failed. The dry-run option has no effect.")
 
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	// Execute the bad command on remote Artifactory
+	artifactoryCli.Exec("upload", "a/*", tests.RtRepo1)
+	noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true")
+	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
+	assert.NoError(t, err)
+
+	files, _ = ioutil.ReadDir(buildDir)
+	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
+
 	os.Chdir(wd)
 	cleanArtifactoryTest()
 }
@@ -282,17 +289,29 @@ func TestBuildAddDependencies(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-
+	buildAddDepsRemoteSpec, err := tests.CreateSpec(tests.BuildAddDepsRemoteSpec)
+	assert.NoError(t, err)
+	buildAddDepsDoubleRemoteSpec, err := tests.CreateSpec(tests.BuildAddDepsDoubleRemoteSpec)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
 		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
 		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclusions=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
 		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
 		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
-		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+
+		// Remote
+		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt"}, expectedDependencies: allFiles},
+		{description: "'rt bad' single file", commandArgs: []string{tests.RtRepo1 + "/testdata/a/a1.in", "--from-rt"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' none recursive", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--recursive=false", "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--exclusions=*a2*;*a3.in", "--from-rt"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + buildAddDepsRemoteSpec, "--from-rt"}, expectedDependencies: allFiles},
+		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + buildAddDepsDoubleRemoteSpec, "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
 	}
 
 	// Tests compatibility to file paths with windows separators.
