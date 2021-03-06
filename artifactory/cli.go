@@ -1131,7 +1131,7 @@ func configCmd(c *cli.Context) error {
 	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
 	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
 	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
-	For example: 
+	For example:
 	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
 	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
 
@@ -2350,6 +2350,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	}
 
 	var dependenciesSpec *spec.SpecFiles
+	var rtDetails *coreConfig.ServerDetails
 	var err error
 	if c.IsSet("spec") {
 		dependenciesSpec, err = getFileSystemSpec(c)
@@ -2359,8 +2360,15 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	} else {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
-	fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
-	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
+	if c.Bool("from-rt") {
+		rtDetails, err = createArtifactoryDetailsByFlags(c, false)
+		if err != nil {
+			return err
+		}
+	} else {
+		fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
+	}
+	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)

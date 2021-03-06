@@ -148,6 +148,7 @@ const (
 	archive          = "archive"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
 	antFlag          = "ant"
+	fromRt           = "from-rt"
 
 	// Config flags
 	interactive   = "interactive"
@@ -232,6 +233,7 @@ const (
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
 	badAnt       = badPrefix + antFlag
+	badFromRt    = badPrefix + fromRt
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -788,6 +790,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
 	},
+	badFromRt: cli.BoolFlag{
+		Name:  fromRt,
+		Usage: "[Optional] Add remote files from Artifactory as build dependencies. If not specified serverID, the default configured Artifactory server is used. Not compatible with --regex/--ant.` `",
+	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,
 		Usage: "[Optional] Path to a configuration file.` `",
@@ -1253,7 +1259,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badAnt,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badAnt, badFromRt,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
