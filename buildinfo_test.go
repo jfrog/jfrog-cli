@@ -597,6 +597,10 @@ func TestReadGitConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
 
+	message, _, err := gitExecutor.GetMessage(revision)
+	assert.NoError(t, err)
+	assert.Equal(t, message, gitManager.GetMessage(), "Wrong message")
+
 	cleanArtifactoryTest()
 }
 
