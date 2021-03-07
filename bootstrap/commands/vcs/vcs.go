@@ -21,6 +21,7 @@ import (
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
+	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -96,28 +97,47 @@ func VcsCmd(c *cli.Context) error {
 }
 
 func runConfigCmd() (err error) {
-	configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId)
-	return configCmd.Config()
+	configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
+	for {
+		err = configCmd.Config()
+		if err == nil {
+			return nil
+		}
+		log.Error(err)
+	}
 }
 
 func publishFirstBuild() (err error) {
 	buildName := utils.AskStringWithDefault("", "> Enter name for your build.", "${projectName}-${branch}")
+	if len(data.VcsBranches) > 1 && !strings.Contains(buildName, "${branch}") {
+		return fmt.Errorf("Build name must be uniq, please include the ${branch} variable in vcs build name")
+	}
 	data.BuildName = buildName
-	// Run BAG Command (in order to publish the first, empty, buildinfo)
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(filepath.Join(data.LocalDirPath, data.ProjectName)).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
-	buildConfiguration := rtutils.BuildConfiguration{BuildName: buildName, BuildNumber: DefultFirstBuildNumber}
-	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
-	err = commands.Exec(buildAddGitConfigurationCmd)
-	if err != nil {
-		return err
+	buildName = strings.Replace(buildName, "${projectName}", data.ProjectName, -1)
+	for _, branch := range data.VcsBranches {
+
+		buildName = strings.Replace(buildName, "${branch}", branch, -1)
+		// Run BAG Command (in order to publish the first, empty, buildinfo)
+		buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
+		buildConfiguration := rtutils.BuildConfiguration{BuildName: buildName, BuildNumber: DefultFirstBuildNumber}
+		buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
+		err = commands.Exec(buildAddGitConfigurationCmd)
+		if err != nil {
+			return err
+		}
+		// Run BP Command.
+		serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+		if err != nil {
+			return err
+		}
+		buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
+		buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration).SetConfig(&buildInfoConfiguration)
+		err = commands.Exec(buildPublishCmd)
+		if err != nil {
+			return err
+		}
 	}
-	// Run BP Command.
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
-	if err != nil {
-		return err
-	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration)
-	return commands.Exec(buildPublishCmd)
+	return
 }
 
 func configureXray() (err error) {
@@ -178,6 +198,7 @@ func configureXray() (err error) {
 }
 
 func runBuildQuestionnaire(c *cli.Context) (err error) {
+	data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("A %q technology has been detected, would you like %q repositories to be configured?", tech, tech), true) {
@@ -209,23 +230,31 @@ func interactivelyCreatRepos(technologyType Technology) (err error) {
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
 	remoteRepo := utils.AskFromList("", "Would you like to chose one of the following repositories or create a new one?", false, utils.ConvertToSuggests(repoNames), NewRepository)
 	if remoteRepo == NewRepository {
-		repoName := utils.AskStringWithDefault("", "Enter repository name >", GetRemoteDefaultName(technologyType))
-		remoteUrl := utils.AskStringWithDefault("", "Enter repository url >", GetRemoteDefaultUrl(technologyType))
-		err = CreateRemoteRepo(serviceDetails, technologyType, repoName, remoteUrl)
-		if err != nil {
-			return err
+		for {
+			repoName := utils.AskStringWithDefault("", "Enter repository name >", GetRemoteDefaultName(technologyType))
+			remoteUrl := utils.AskStringWithDefault("", "Enter repository url >", GetRemoteDefaultUrl(technologyType))
+			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, remoteUrl)
+			if err != nil {
+				log.Error(err)
+			} else {
+				remoteRepo = repoName
+				break
+			}
 		}
-		remoteRepo = repoName
 	}
 	// Create virtual repository
-	virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetVirtualDefaultName(technologyType))
-	err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
-	if err != nil {
-		return
+	for {
+		virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetVirtualDefaultName(technologyType))
+		err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
+		if err != nil {
+			log.Error(err)
+		} else {
+			// Saves the new created repo name (key) in the results data structure.
+			data.ArtifactoryVirtualRepos[technologyType] = virtualRepoName
+			return
+		}
 	}
-	// Saves the new created repo name (key) in the results data structure.
-	data.ArtifactoryVirtualRepos[technologyType] = virtualRepoName
-	return
+
 }
 
 func runBasicAuthenticationQuestionnaire() (err error) {
@@ -282,8 +311,8 @@ func cloneProject() (err error) {
 	setProjectName()
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", data.ProjectName, data.VcsCredentials.GetUrl(), data.LocalDirPath))
-	r, err := git.PlainClone(data.LocalDirPath, false, cloneOption)
-	log.Info(r.Head())
+	_, err = git.PlainClone(data.LocalDirPath, false, cloneOption)
+	log.Info(err)
 	return
 }
 
@@ -299,14 +328,15 @@ func setProjectName() {
 func detectTechnologies() (err error) {
 	indicators := GetTechIndicators()
 	log.Info(filepath.Join(data.LocalDirPath, data.ProjectName))
-	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(filepath.Join(data.LocalDirPath, data.ProjectName), false)
-	log.Info(filesList)
+	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(data.LocalDirPath, false)
 	if err != nil {
 		return err
 	}
+	data.DetectedTechnologies = make(map[Technology]bool)
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
+				//log.Info(file)
 				data.DetectedTechnologies[indicator.GetTechnology()] = true
 				// Same file can't indicate on more than one technology.
 				break
