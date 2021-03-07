@@ -280,6 +280,7 @@ func TestBuildAppend(t *testing.T) {
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
 	cleanArtifactoryTest()
 }
+
 func TestDownloadAppendedBuild(t *testing.T) {
 	initArtifactoryTest(t)
 	buildNumber1 := "12"

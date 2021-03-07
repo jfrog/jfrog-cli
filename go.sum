@@ -137,6 +137,8 @@ github.com/jfrog/gofrog v1.0.6 h1:yUDxSCw8gTK6vC4PvtG0HTnEOQJSZ+O4lWGCgkev1nU=
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
 github.com/jfrog/jfrog-cli-core v1.3.2-0.20210304101505-6caa329c10be h1:nCXZcHsO/6LDoAPOiItrJ4gPGm5WincEC7c+/hoOEgc=
 github.com/jfrog/jfrog-cli-core v1.3.2-0.20210304101505-6caa329c10be/go.mod h1:SIHEOhJJNqdCLpGowmCrk0LwZ1Iktonj43DxTRisCgM=
+github.com/jfrog/jfrog-client-go v0.19.2-0.20210307132208-42197d207767 h1:GBRlADK55HQn6bRTx4SvAopP8JzyYwLyPd95ypNr0gQ=
+github.com/jfrog/jfrog-client-go v0.19.2-0.20210307132208-42197d207767/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
@@ -282,8 +284,6 @@ github.com/xanzy/ssh-agent v0.2.0/go.mod h1:0NyE30eGUDliuLEHJgYte/zncp2zdTStcOnW
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofmx9yWTog9BfvIu0q41lo=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
-github.com/yahavi/jfrog-client-go v0.1.2-0.20210307113225-02f4532cedac h1:SXBO8S30KMwgdzFgP0YakY6+HOwwvXl8y6YOKOpdBW4=
-github.com/yahavi/jfrog-client-go v0.1.2-0.20210307113225-02f4532cedac/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
