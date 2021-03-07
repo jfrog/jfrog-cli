@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
@@ -271,6 +273,97 @@ func TestBuildAppend(t *testing.T) {
 	assert.Len(t, buildInfo.BuildInfo.Modules, 1)
 	module := buildInfo.BuildInfo.Modules[0]
 	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, module.Id)
+	assert.Equal(t, buildinfo.Build, module.Type)
+
+	// Clean builds
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDownloadAppendedBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber1 := "12"
+	buildNumber2 := "13"
+
+	// Clean old builds tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+
+	// Add files to RtBuildName1/buildNumber1.
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+
+	// Publish build RtBuildName1/buildNumber1
+	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
+	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Publish build RtBuildName2/buildNumber2
+	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+
+	// Download
+	err = artifactoryCli.Exec("dl", tests.RtRepo1, filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName2+"/"+buildNumber2)
+	assert.NoError(t, err)
+
+	// Validate files from
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownloadNoPattern(), paths)
+	assert.NoError(t, err)
+
+	// Clean builds
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestSearchAppendedBuildNoPattern(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber1 := "12"
+	buildNumber2 := "13"
+
+	// Clean old builds tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+
+	// Add files to RtBuildName1/buildNumber1.
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+
+	// Publish build RtBuildName1/buildNumber1
+	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
+	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Publish build RtBuildName2/buildNumber2
+	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+
+	// Run search on RtBuildName2/buildNumber2
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails)
+	searchCmd.SetSpec(spec.NewBuilder().Build(tests.RtBuildName2 + "/" + buildNumber2).BuildSpec())
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+
+	// Make sure artifacts from RtBuildName1/buildNumber1 are matched by searching on RtBuildName2/buildNumber2
+	length, err := reader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, length)
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		assert.Contains(t, tests.GetSearchAppendedBuildNoPatternExpected(), resultItem.Path)
+		assert.Equal(t, []string{tests.RtBuildName1}, resultItem.Props["build.name"])
+		assert.Equal(t, []string{buildNumber1}, resultItem.Props["build.number"])
+	}
 
 	// Clean builds
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
