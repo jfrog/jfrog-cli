@@ -3407,6 +3407,7 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
 		Symlinks(c.Bool("symlinks")).
+		Archive(c.String("archive")).
 		BuildSpec(), nil
 }
 

@@ -628,7 +628,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	uploadArchive: cli.StringFlag{
 		Name:  archive,
-		Usage: "[Optional] Set to \"zip\" to deploy to Artifactory in a ZIP archive.` `",
+		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
