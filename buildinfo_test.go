@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
@@ -146,7 +148,6 @@ func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T,
 func TestBuildAddDependenciesDryRun(t *testing.T) {
 	initArtifactoryTest(t)
 	// Clean old build tests if exists
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	err := utils.RemoveBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
 
@@ -158,7 +159,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.NoError(t, err)
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	// Execute the bad command
+	// Execute the bad command on the local file system
 	noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true")
 	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
@@ -166,7 +167,15 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	files, _ := ioutil.ReadDir(buildDir)
 	assert.Zero(t, len(files), "'rt bad' command with dry-run failed. The dry-run option has no effect.")
 
-	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	// Execute the bad command on remote Artifactory
+	artifactoryCli.Exec("upload", "a/*", tests.RtRepo1)
+	noCredsCli.Exec("bad", tests.RtBuildName1, "2", tests.RtRepo1+"/*", "--from-rt", "--dry-run=true")
+	buildDir, err = utils.GetBuildDir(tests.RtBuildName1, "2", "")
+	assert.NoError(t, err)
+
+	files, _ = ioutil.ReadDir(buildDir)
+	assert.Zero(t, len(files), "'rt bad' command on remote with dry-run failed. The dry-run option has no effect.")
+
 	os.Chdir(wd)
 	cleanArtifactoryTest()
 }
@@ -271,6 +280,97 @@ func TestBuildAppend(t *testing.T) {
 	assert.Len(t, buildInfo.BuildInfo.Modules, 1)
 	module := buildInfo.BuildInfo.Modules[0]
 	assert.Equal(t, tests.RtBuildName1+"/"+buildNumber1, module.Id)
+	assert.Equal(t, buildinfo.Build, module.Type)
+
+	// Clean builds
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestDownloadAppendedBuild(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber1 := "12"
+	buildNumber2 := "13"
+
+	// Clean old builds tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+
+	// Add files to RtBuildName1/buildNumber1.
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+
+	// Publish build RtBuildName1/buildNumber1
+	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
+	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Publish build RtBuildName2/buildNumber2
+	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+
+	// Download
+	err = artifactoryCli.Exec("dl", tests.RtRepo1, filepath.Join(tests.Out, "download", "simple_by_build")+fileutils.GetFileSeparator(), "--build="+tests.RtBuildName2+"/"+buildNumber2)
+	assert.NoError(t, err)
+
+	// Validate files from
+	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	err = tests.ValidateListsIdentical(tests.GetBuildSimpleDownloadNoPattern(), paths)
+	assert.NoError(t, err)
+
+	// Clean builds
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func TestSearchAppendedBuildNoPattern(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber1 := "12"
+	buildNumber2 := "13"
+
+	// Clean old builds tests if exists
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName2, artHttpDetails)
+
+	// Add files to RtBuildName1/buildNumber1.
+	specFile, err := tests.CreateSpec(tests.SplitUploadSpecA)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber1))
+
+	// Publish build RtBuildName1/buildNumber1
+	err = artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Create a build RtBuildName2/buildNumber2 and append RtBuildName1/buildNumber1 to the build
+	err = artifactoryCli.Exec("ba", tests.RtBuildName2, buildNumber2, tests.RtBuildName1, buildNumber1)
+	assert.NoError(t, err)
+
+	// Publish build RtBuildName2/buildNumber2
+	err = artifactoryCli.Exec("bp", tests.RtBuildName2, buildNumber2)
+	assert.NoError(t, err)
+
+	// Run search on RtBuildName2/buildNumber2
+	searchCmd := generic.NewSearchCommand()
+	searchCmd.SetServerDetails(serverDetails)
+	searchCmd.SetSpec(spec.NewBuilder().Build(tests.RtBuildName2 + "/" + buildNumber2).BuildSpec())
+	reader, err := searchCmd.Search()
+	assert.NoError(t, err)
+
+	// Make sure artifacts from RtBuildName1/buildNumber1 are matched by searching on RtBuildName2/buildNumber2
+	length, err := reader.Length()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, length)
+	for resultItem := new(utils.SearchResult); reader.NextRecord(resultItem) == nil; resultItem = new(utils.SearchResult) {
+		assert.Contains(t, tests.GetSearchAppendedBuildNoPatternExpected(), resultItem.Path)
+		assert.Equal(t, []string{tests.RtBuildName1}, resultItem.Props["build.name"])
+		assert.Equal(t, []string{buildNumber1}, resultItem.Props["build.number"])
+	}
 
 	// Clean builds
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -280,19 +380,33 @@ func TestBuildAppend(t *testing.T) {
 
 func TestBuildAddDependencies(t *testing.T) {
 	initArtifactoryTest(t)
+	createJfrogHomeConfig(t, true)
 	// Clean old build tests if exists
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
-
+	buildAddDepsRemoteSpec, err := tests.CreateSpec(tests.BuildAddDepsRemoteSpec)
+	assert.NoError(t, err)
+	buildAddDepsDoubleRemoteSpec, err := tests.CreateSpec(tests.BuildAddDepsDoubleRemoteSpec)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
+		// Collect the dependencies from the local file system (the --from-rt option is not used).
 		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
 		{description: "'rt bad' special chars recursive", commandArgs: []string{getSpecialCharFilePath()}, expectedDependencies: []string{"a1.in"}},
-		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclude-patterns=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{"testdata/a/*", "--exclusions=*a2*;*a3.in"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
 		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsSpec)}, expectedDependencies: allFiles},
 		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
-		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclude-patterns=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
+
+		// Collect the dependencies from Artifactory using the --from-rt option.
+		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt"}, expectedDependencies: allFiles},
+		{description: "'rt bad' single file", commandArgs: []string{tests.RtRepo1 + "/testdata/a/a1.in", "--from-rt"}, expectedDependencies: []string{"a1.in"}},
+		{description: "'rt bad' none recursive", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--recursive=false", "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
+		{description: "'rt bad' exclude command line wildcards", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--exclusions=*a2*;*a3.in", "--from-rt"}, expectedDependencies: []string{"a1.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}},
+		{description: "'rt bad' spec", commandArgs: []string{"--spec=" + buildAddDepsRemoteSpec, "--from-rt"}, expectedDependencies: allFiles},
+		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + buildAddDepsDoubleRemoteSpec, "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
 	}
 
 	// Tests compatibility to file paths with windows separators.

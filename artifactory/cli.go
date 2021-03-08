@@ -1131,7 +1131,7 @@ func configCmd(c *cli.Context) error {
 	log.Warn(`The "jfrog rt config" command is deprecated. Please use "jfrog config" command instead. You can use it as follows:
 	The command includes the following sub-commands - "jfrog config add", "jfrog config edit", "jfrog config show", "jfrog config remove", "jfrog config import" and "jfrog config export".
 	Important: When switching to the new command, please replace "--url" with "--artifactory-url".
-	For example: 
+	For example:
 	Old syntax: "jfrog rt config <server-id> --url=<artifactoryUrl>"
 	New syntax: "jfrog config add <server-id> --artifactory-url=<artifactory-url>"`)
 
@@ -2339,6 +2339,9 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.NArg() > 2 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("Only path or spec is allowed, not both.", c)
 	}
+	if c.IsSet("regexp") && c.IsSet("from-rt") {
+		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
+	}
 	buildConfiguration := createBuildConfiguration(c)
 	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
@@ -2350,6 +2353,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	}
 
 	var dependenciesSpec *spec.SpecFiles
+	var rtDetails *coreConfig.ServerDetails
 	var err error
 	if c.IsSet("spec") {
 		dependenciesSpec, err = getFileSystemSpec(c)
@@ -2359,8 +2363,15 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	} else {
 		dependenciesSpec = createDefaultBuildAddDependenciesSpec(c)
 	}
-	fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
-	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec)
+	if c.Bool("from-rt") {
+		rtDetails, err = createArtifactoryDetailsByFlags(c, false)
+		if err != nil {
+			return err
+		}
+	} else {
+		fixWinPathsForFileSystemSourcedCmds(dependenciesSpec, c)
+	}
+	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
 	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
@@ -3406,6 +3417,8 @@ func createDefaultUploadSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Ant(c.Bool("ant")).
 		IncludeDirs(c.Bool("include-dirs")).
 		Target(strings.TrimPrefix(c.Args().Get(1), "/")).
+		Symlinks(c.Bool("symlinks")).
+		Archive(c.String("archive")).
 		BuildSpec(), nil
 }
 
@@ -3500,7 +3513,6 @@ func fixWinPathBySource(path string, fromSpec bool) string {
 
 func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.UploadConfiguration, err error) {
 	uploadConfiguration = new(utils.UploadConfiguration)
-	uploadConfiguration.Symlink = c.Bool("symlinks")
 	uploadConfiguration.Retries, err = getRetries(c)
 	if err != nil {
 		return nil, err
@@ -3580,6 +3592,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.Regexp, c, "regexp")
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
+	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {

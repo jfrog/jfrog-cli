@@ -145,8 +145,10 @@ const (
 	bundle           = "bundle"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
+	archive          = "archive"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
 	antFlag          = "ant"
+	fromRt           = "from-rt"
 
 	// Config flags
 	interactive   = "interactive"
@@ -165,6 +167,7 @@ const (
 	uploadProps           = uploadPrefix + props
 	uploadTargetProps     = uploadPrefix + targetProps
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
+	uploadArchive         = uploadPrefix + archive
 	deb                   = "deb"
 	symlinks              = "symlinks"
 	uploadAnt             = uploadPrefix + antFlag
@@ -229,7 +232,7 @@ const (
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
-	badAnt       = badPrefix + antFlag
+	badFromRt    = badPrefix + fromRt
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -624,6 +627,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  syncDeletes,
 		Usage: "[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `",
 	},
+	uploadArchive: cli.StringFlag{
+		Name:  archive,
+		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
+	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
 		Usage: "[Default: $CI] Set to true to skip the sync-deletes confirmation message.` `",
@@ -774,13 +781,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
 	},
-	badAnt: cli.BoolFlag{
-		Name:  antFlag,
-		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to be added to the build info.` `",
-	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
+	},
+	badFromRt: cli.BoolFlag{
+		Name:  fromRt,
+		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system. The --regexp option is not supported when --from-rt is set to true.` `",
 	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,
@@ -1200,7 +1207,8 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
-		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project, uploadAnt,
+		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		uploadAnt, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1246,7 +1254,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badAnt,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,

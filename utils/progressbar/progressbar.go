@@ -1,6 +1,7 @@
 package progressbar
 
 import (
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -56,10 +57,10 @@ type progressBar interface {
 
 // Initializes a new reader progress indicator for a new file transfer.
 // Input: 'total' - file size.
-//		  'prefix' - optional description.
-//		  'extraInformation' - extra information for disply.
+//		  'label' - the title of the operation.
+//		  'path' - the path of the file being processed.
 // Output: progress indicator id
-func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInformation string) (bar ioUtils.Progress) {
+func (p *progressBarManager) NewProgressReader(total int64, label, path string) (bar ioUtils.Progress) {
 	// Write Lock when appending a new bar to the slice
 	p.barsRWMutex.Lock()
 	defer p.barsRWMutex.Unlock()
@@ -69,13 +70,13 @@ func (p *progressBarManager) NewProgressReader(total int64, prefix, extraInforma
 		mpb.BarRemoveOnComplete(),
 		mpb.AppendDecorators(
 			// Extra chars length is the max length of the KibiByteCounter
-			decor.Name(buildProgressDescription(prefix, extraInformation, 17)),
+			decor.Name(buildProgressDescription(label, path, 17)),
 			decor.CountersKibiByte("%3.1f/%3.1f"),
 		),
 	)
 
 	// Add bar to bars array
-	unit := initNewBarUnit(newBar, extraInformation)
+	unit := initNewBarUnit(newBar, path)
 	barId := len(p.bars) + 1
 	readerProgressBar := ReaderProgressBar{progressBarUnit: unit, Id: barId}
 	p.bars = append(p.bars, &readerProgressBar)
@@ -109,11 +110,23 @@ func (p *progressBarManager) addNewMergingSpinner(replacedBarId int) {
 	p.bars[replacedBarId-1] = &progressBar
 }
 
-func buildProgressDescription(prefix, path string, extraCharsLen int) string {
+func buildProgressDescription(label, path string, extraCharsLen int) string {
 	separator := " | "
 	// Max line length after decreasing bar width (*2 in case unicode chars with double width are used) and the extra chars
 	descMaxLength := terminalWidth - (progressBarWidth*2 + extraCharsLen)
-	return buildDescByLimits(descMaxLength, " "+prefix+separator, path, separator)
+	return buildDescByLimits(descMaxLength, " "+label+separator, shortenUrl(path), separator)
+}
+
+func shortenUrl(path string) string {
+	if _, err := url.ParseRequestURI(path); err != nil {
+		return path
+	}
+
+	semicolonIndex := strings.Index(path, ";")
+	if semicolonIndex == -1 {
+		return path
+	}
+	return path[:semicolonIndex]
 }
 
 func buildDescByLimits(descMaxLength int, prefix, path, suffix string) string {
@@ -135,9 +148,9 @@ func buildDescByLimits(descMaxLength int, prefix, path, suffix string) string {
 	return prefix + path + suffix
 }
 
-func initNewBarUnit(bar *mpb.Bar, extraInformation string) *progressBarUnit {
+func initNewBarUnit(bar *mpb.Bar, path string) *progressBarUnit {
 	ch := make(chan int, 1000)
-	unit := &progressBarUnit{bar: bar, incrChannel: ch, description: extraInformation}
+	unit := &progressBarUnit{bar: bar, incrChannel: ch, description: path}
 	go incrBarFromChannel(unit)
 	return unit
 }
