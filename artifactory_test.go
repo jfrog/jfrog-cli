@@ -4084,6 +4084,7 @@ func deleteServerConfig() {
 // This function will create server config and return the entire passphrase flag if it needed.
 // For example if passphrase is needed it will return "--ssh-passphrase=${theConfiguredPassphrase}" or empty string.
 func createServerConfigAndReturnPassphrase() (passphrase string, err error) {
+	deleteServerConfig()
 	if *tests.RtSshPassphrase != "" {
 		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
 	}

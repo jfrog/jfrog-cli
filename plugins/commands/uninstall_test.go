@@ -4,7 +4,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/log"
 	coreTests "github.com/jfrog/jfrog-cli-core/utils/tests"
-	"github.com/jfrog/jfrog-cli/plugins/utils"
+	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -47,7 +47,7 @@ func TestRunUninstallCmd(t *testing.T) {
 	}
 
 	pluginName := filepath.Base(pluginMockPath)
-	pluginExePath := filepath.Join(pluginsDir, utils.GetPluginExecutableName(pluginName))
+	pluginExePath := filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginName))
 	// Fix path for windows.
 	assert.NoError(t, os.Rename(filepath.Join(pluginsDir, pluginName), pluginExePath))
 
@@ -55,6 +55,9 @@ func TestRunUninstallCmd(t *testing.T) {
 	err = runUninstallCmd("non-existing-plugin")
 	expectedError := generateNoPluginFoundError("non-existing-plugin")
 	assert.Error(t, err)
+	if expectedError == nil {
+		return
+	}
 	assert.Equal(t, expectedError.Error(), err.Error())
 	exists, err := fileutils.IsFileExists(pluginExePath, false)
 	if err != nil {
