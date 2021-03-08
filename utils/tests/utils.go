@@ -281,6 +281,10 @@ func (m *gitManager) GetBranch() (string, string, error) {
 	return m.execGit("branch", "--show-current")
 }
 
+func (m *gitManager) GetMessage(revision string) (string, string, error) {
+	return m.execGit("show", "-s", "--format=%B", revision)
+}
+
 func (m *gitManager) execGit(args ...string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
