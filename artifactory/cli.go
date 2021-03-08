@@ -1063,7 +1063,7 @@ func getSplitCount(c *cli.Context) (splitCount int, err error) {
 }
 
 func getThreadsCount(c *cli.Context) (threads int, err error) {
-	threads = 3
+	threads = cliutils.Threads
 	err = nil
 	if c.String("threads") != "" {
 		threads, err = strconv.Atoi(c.String("threads"))

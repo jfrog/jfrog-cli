@@ -546,7 +546,7 @@ var flagsMap = map[string]cli.Flag{
 	threads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: 3] Number of working threads.` `",
+		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of working threads.` `",
 	},
 	insecureTls: cli.BoolFlag{
 		Name:  insecureTls,
@@ -964,7 +964,7 @@ var flagsMap = map[string]cli.Flag{
 	deploymentThreads: cli.StringFlag{
 		Name:  threads,
 		Value: "",
-		Usage: "[Default: 3] Number of threads for uploading build artifacts.` `",
+		Usage: "[Default: " + strconv.Itoa(Threads) + "] Number of threads for uploading build artifacts.` `",
 	},
 	skipLogin: cli.BoolFlag{
 		Name:  skipLogin,

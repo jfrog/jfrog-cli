@@ -377,6 +377,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:        {},
 		TestPip:          {&PypiRemoteRepo},
+		TestPlugins:      {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
