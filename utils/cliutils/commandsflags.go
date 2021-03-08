@@ -232,7 +232,6 @@ const (
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
-	badAnt       = badPrefix + antFlag
 	badFromRt    = badPrefix + fromRt
 
 	// Unique build-add-git flags
@@ -782,17 +781,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to be added to the build info.` `",
 	},
-	badAnt: cli.BoolFlag{
-		Name:  antFlag,
-		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to be added to the build info.` `",
-	},
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
-		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system.` `",
+		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system. The --regex option is not supported with --from-rt is set to true.` `",
 	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,
@@ -1259,7 +1254,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badAnt, badFromRt,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
