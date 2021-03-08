@@ -11,7 +11,7 @@ const Arguments string = `	plugin name and version
 
 const EnvVar string = `	JFROG_CLI_PLUGINS_SERVER
 		[Default: Official JFrog CLI Plugins registry]
-		Configured Artifactory server ID from which to download the JFrog CLI Plugin.
+		Configured Artifactory server ID from which to download JFrog CLI Plugins.
 
 	JFROG_CLI_PLUGINS_REPO
 		[Default: 'jfrog-cli-plugins']

@@ -54,10 +54,9 @@ func TestRunUninstallCmd(t *testing.T) {
 	// Try uninstalling a plugin that doesn't exist.
 	err = runUninstallCmd("non-existing-plugin")
 	expectedError := generateNoPluginFoundError("non-existing-plugin")
+	// Assert error was returned.
 	assert.Error(t, err)
-	if expectedError == nil {
-		return
-	}
+	assert.Error(t, expectedError)
 	assert.Equal(t, expectedError.Error(), err.Error())
 	exists, err := fileutils.IsFileExists(pluginExePath, false)
 	if err != nil {
