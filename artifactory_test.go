@@ -4566,7 +4566,7 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 
 func TestPermissionTargets(t *testing.T) {
 	initArtifactoryTest(t)
-	servicesManager, err := utils.CreateServiceManager(artifactoryDetails, false)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
 	if err != nil {
 		assert.NoError(t, err)
 		return
