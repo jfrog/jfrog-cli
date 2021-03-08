@@ -4580,7 +4580,12 @@ func TestPermissionTargets(t *testing.T) {
 		return
 	}
 
-	defer cleanPermissionTarget()
+	permissionDeleted := false
+	defer func() {
+		if !permissionDeleted {
+			cleanPermissionTarget()
+		}
+	}()
 
 	// Update permission target to ANY repo.
 	any := "ANY"
@@ -4592,6 +4597,10 @@ func TestPermissionTargets(t *testing.T) {
 
 	// Delete permission target.
 	assert.NoError(t, artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName))
+	permissionDeleted, err = assertPermissionTargetDeleted(t, servicesManager)
+	if err != nil {
+		return
+	}
 
 	cleanArtifactoryTest()
 }
@@ -4611,6 +4620,19 @@ func getAndAssertExpectedPermissionTarget(t *testing.T, manager artifactory.Arti
 	expected := tests.GetExpectedPermissionTarget(repoValue)
 	assert.EqualValues(t, expected, *actual)
 	return nil
+}
+
+func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) (bool, error) {
+	_, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
+	if err == nil {
+		assert.Error(t, err)
+		return false, nil
+	}
+	if strings.Contains(err.Error(), "404 Not Found") {
+		return true, nil
+	}
+	assert.Contains(t, err.Error(), "404 Not Found")
+	return false, err
 }
 
 func cleanPermissionTarget() {
