@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
@@ -156,6 +157,7 @@ var (
 	RtBuildName1                = "cli-tests-rt-build1"
 	RtBuildName2                = "cli-tests-rt-build2"
 	RtBuildNameWithSpecialChars = "cli-tests-rt-a$+~&^a#-build3"
+	RtPermissionTargetName      = "cli-tests-rt-pt"
 
 	// Users
 	UserName1 = "alice"
@@ -1585,6 +1587,22 @@ func GetReplicationConfig() []clientutils.ReplicationParams {
 			SyncProperties:         true,
 			SyncStatistics:         false,
 			PathPrefix:             "/my/path",
+		},
+	}
+}
+
+func GetExpectedPermissionTarget(repoValue string) services.PermissionTargetParams {
+	return services.PermissionTargetParams{
+		Name: RtPermissionTargetName,
+		Repo: &services.PermissionTargetSection{
+			Repositories:    []string{repoValue},
+			IncludePatterns: []string{"**"},
+			ExcludePatterns: []string{},
+			Actions: &services.Actions{
+				Groups: map[string][]string{
+					"readers": {"read"},
+				},
+			},
 		},
 	}
 }
