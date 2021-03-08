@@ -787,7 +787,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
-		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system. The --regex option is not supported with --from-rt is set to true.` `",
+		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system. The --regex option is not supported when --from-rt is set to true.` `",
 	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,
