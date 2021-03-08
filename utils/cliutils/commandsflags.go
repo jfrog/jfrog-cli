@@ -792,7 +792,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	badFromRt: cli.BoolFlag{
 		Name:  fromRt,
-		Usage: "[Optional] Add remote files from Artifactory as build dependencies. If not specified serverID, the default configured Artifactory server is used. Not compatible with --regex/--ant.` `",
+		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system.` `",
 	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,

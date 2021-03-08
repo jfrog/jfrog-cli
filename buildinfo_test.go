@@ -159,7 +159,7 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 	assert.NoError(t, err)
 
 	noCredsCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
-	// Execute the bad command on local file system
+	// Execute the bad command on the local file system
 	noCredsCli.Exec("bad", tests.RtBuildName1, "1", "a/*", "--dry-run=true")
 	buildDir, err := utils.GetBuildDir(tests.RtBuildName1, "1", "")
 	assert.NoError(t, err)
@@ -390,6 +390,7 @@ func TestBuildAddDependencies(t *testing.T) {
 	artifactoryCli.Exec("upload", "testdata/a/*", tests.RtRepo1, "--flat=false")
 	allFiles := []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in", "c1.in", "c2.in", "c3.in"}
 	var badTests = []buildAddDepsBuildInfoTestParams{
+		// Collect the dependencies from the local file system (the --from-rt option is not used).
 		{description: "'rt bad' simple cli", commandArgs: []string{"testdata/a/*"}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{"testdata/a/a1.in"}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' none recursive", commandArgs: []string{"testdata/a/*", "--recursive=false"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
@@ -399,7 +400,7 @@ func TestBuildAddDependencies(t *testing.T) {
 		{description: "'rt bad' two specFiles", commandArgs: []string{"--spec=" + tests.GetFilePathForArtifactory(tests.BuildAddDepsDoubleSpec)}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in", "b1.in", "b2.in", "b3.in"}},
 		{description: "'rt bad' exclude command line regexp", commandArgs: []string{"testdata/a/a(.*)", "--exclusions=(.*)a2.*;.*a3.in", "--regexp=true"}, expectedDependencies: []string{"a1.in"}},
 
-		// Remote
+		// Collect the dependencies from Artifactory using the --from-rt option.
 		{description: "'rt bad' simple cli", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--from-rt"}, expectedDependencies: allFiles},
 		{description: "'rt bad' single file", commandArgs: []string{tests.RtRepo1 + "/testdata/a/a1.in", "--from-rt"}, expectedDependencies: []string{"a1.in"}},
 		{description: "'rt bad' none recursive", commandArgs: []string{tests.RtRepo1 + "/testdata/a/*", "--recursive=false", "--from-rt"}, expectedDependencies: []string{"a1.in", "a2.in", "a3.in"}},
