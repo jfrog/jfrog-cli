@@ -2339,6 +2339,9 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	if c.NArg() > 2 && c.IsSet("spec") {
 		return cliutils.PrintHelpAndReturnError("Only path or spec is allowed, not both.", c)
 	}
+	if c.IsSet("regexp") && c.IsSet("from-rt") {
+		return cliutils.PrintHelpAndReturnError("The --regexp option is not supported when --from-rt is set to true.", c)
+	}
 	buildConfiguration := createBuildConfiguration(c)
 	if err := validateBuildConfiguration(c, buildConfiguration); err != nil {
 		return err
