@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/testdata/a/*",
+      "from-rt": "true"
+    }
+  ]
+}
