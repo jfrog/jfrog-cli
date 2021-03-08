@@ -10,7 +10,8 @@ import (
 
 const (
 	// Artifactory's Commands Keys
-	Config                  = "config"
+	RtConfig                = "rt-config"
+	DeleteConfig            = "delete-config"
 	Upload                  = "upload"
 	Download                = "download"
 	Move                    = "move"
@@ -75,6 +76,9 @@ const (
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
 	OfflineUpdate = "offline-update"
+
+	// Config commands keys
+	Config = "config"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -141,7 +145,10 @@ const (
 	bundle           = "bundle"
 	archiveEntries   = "archive-entries"
 	detailedSummary  = "detailed-summary"
+	archive          = "archive"
 	syncDeletesQuiet = syncDeletes + "-" + quiet
+	antFlag          = "ant"
+	fromRt           = "from-rt"
 
 	// Config flags
 	interactive   = "interactive"
@@ -160,8 +167,10 @@ const (
 	uploadProps           = uploadPrefix + props
 	uploadTargetProps     = uploadPrefix + targetProps
 	uploadSyncDeletes     = uploadPrefix + syncDeletes
+	uploadArchive         = uploadPrefix + archive
 	deb                   = "deb"
 	symlinks              = "symlinks"
+	uploadAnt             = uploadPrefix + antFlag
 
 	// Unique download flags
 	downloadPrefix       = "download-"
@@ -223,6 +232,7 @@ const (
 	badDryRun    = badPrefix + dryRun
 	badRecursive = badPrefix + recursive
 	badRegexp    = badPrefix + regexpFlag
+	badFromRt    = badPrefix + fromRt
 
 	// Unique build-add-git flags
 	configFlag = "config"
@@ -378,6 +388,14 @@ const (
 
 	// Unique license-deploy flags
 	licenseCount = "license-count"
+
+	// *** Config Commands' flags ***
+	configPrefix      = "config-"
+	configPlatformUrl = configPrefix + url
+	configRtUrl       = "artifactory-url"
+	configXrUrl       = "xray-url"
+	configMcUrl       = "mission-control-url"
+	configPlUrl       = "pipelines-url"
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -576,6 +594,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  regexpFlag,
 		Usage: "[Default: false] Set to true to use a regular expression instead of wildcards expression to collect files to upload.` `",
 	},
+	uploadAnt: cli.BoolFlag{
+		Name:  antFlag,
+		Usage: "[Default: false] Set to true to use an ant pattern instead of wildcards expression to collect files to upload.` `",
+	},
 	uploadRetries: cli.StringFlag{
 		Name:  retries,
 		Usage: "[Default: " + strconv.Itoa(Retries) + "] Number of upload retries.` `",
@@ -604,6 +626,10 @@ var flagsMap = map[string]cli.Flag{
 	uploadSyncDeletes: cli.StringFlag{
 		Name:  syncDeletes,
 		Usage: "[Optional] Specific path in Artifactory, under which to sync artifacts after the upload. After the upload, this path will include only the artifacts uploaded during this upload operation. The other files under this path will be deleted.` `",
+	},
+	uploadArchive: cli.StringFlag{
+		Name:  archive,
+		Usage: "[Optional] Set to \"zip\" to deploy the files to Artifactory in a ZIP archive.` `",
 	},
 	syncDeletesQuiet: cli.BoolFlag{
 		Name:  quiet,
@@ -758,6 +784,10 @@ var flagsMap = map[string]cli.Flag{
 	badDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to only get a summery of the dependencies that will be added to the build info.` `",
+	},
+	badFromRt: cli.BoolFlag{
+		Name:  fromRt,
+		Usage: "[Default: false] Set true to search the files in Artifactory, rather than on the local file system. The --regexp option is not supported when --from-rt is set to true.` `",
 	},
 	configFlag: cli.StringFlag{
 		Name:  configFlag,
@@ -1138,18 +1168,47 @@ var flagsMap = map[string]cli.Flag{
 		Name:  imageFile,
 		Usage: "[Mandatory] Path to a file which includes one line in the following format: <IMAGE-TAG>@sha256:<MANIFEST-SHA256>.` `",
 	},
+	// Config commands Flags
+	configPlatformUrl: cli.StringFlag{
+		Name:  url,
+		Usage: "[Optional] JFrog platform URL.` `",
+	},
+	configRtUrl: cli.StringFlag{
+		Name:  configRtUrl,
+		Usage: "[Optional] Artifactory URL.` `",
+	},
+	configXrUrl: cli.StringFlag{
+		Name:  configXrUrl,
+		Usage: "[Optional] Xray URL.` `",
+	},
+	configMcUrl: cli.StringFlag{
+		Name:  configMcUrl,
+		Usage: "[Optional] Mission Control URL.` `",
+	},
+	configPlUrl: cli.StringFlag{
+		Name:  configPlUrl,
+		Usage: "[Optional] Pipelines URL.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, insecureTls,
+	},
+	RtConfig: {
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
+	},
+	DeleteConfig: {
+		deleteQuiet,
 	},
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
 		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
+		uploadAnt, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1195,7 +1254,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,

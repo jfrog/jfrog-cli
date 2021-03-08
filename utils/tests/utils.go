@@ -126,7 +126,7 @@ func VerifyExistLocally(expected, actual []string, t *testing.T) {
 
 func ValidateListsIdentical(expected, actual []string) error {
 	if len(actual) != len(expected) {
-		return errors.New("Unexpected behavior, expected: " + strconv.Itoa(len(expected)) + " files, found: " + strconv.Itoa(len(actual)))
+		return errors.New(fmt.Sprintf("Unexpected behavior, \nexpected: [%s], \nfound:    [%s]", strings.Join(expected, ", "), strings.Join(actual, ", ")))
 	}
 	err := compare(expected, actual)
 	return err
@@ -277,6 +277,10 @@ func (m *gitManager) GetRevision() (string, string, error) {
 	return m.execGit("show", "-s", "--format=%H", "HEAD")
 }
 
+func (m *gitManager) GetBranch() (string, string, error) {
+	return m.execGit("branch", "--show-current")
+}
+
 func (m *gitManager) execGit(args ...string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -290,9 +294,9 @@ func (m *gitManager) execGit(args ...string) (string, string, error) {
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }
 
-func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.ArtifactoryDetails) (successCount, failCount int, err error) {
+func DeleteFiles(deleteSpec *spec.SpecFiles, serverDetails *config.ServerDetails) (successCount, failCount int, err error) {
 	deleteCommand := generic.NewDeleteCommand()
-	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetRtDetails(artifactoryDetails).SetDryRun(false)
+	deleteCommand.SetThreads(3).SetSpec(deleteSpec).SetServerDetails(serverDetails).SetDryRun(false)
 	reader, err := deleteCommand.GetPathsToDelete()
 	if err != nil {
 		return 0, 0, err
@@ -302,8 +306,8 @@ func DeleteFiles(deleteSpec *spec.SpecFiles, artifactoryDetails *config.Artifact
 }
 
 // This function makes no assertion, caller is responsible to assert as needed.
-func GetBuildInfo(artDetails *config.ArtifactoryDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
-	servicesManager, err := artUtils.CreateServiceManager(artDetails, false)
+func GetBuildInfo(serverDetails *config.ServerDetails, buildName, buildNumber string) (pbi *buildinfo.PublishedBuildInfo, found bool, err error) {
+	servicesManager, err := artUtils.CreateServiceManager(serverDetails, false)
 	if err != nil {
 		return nil, false, err
 	}

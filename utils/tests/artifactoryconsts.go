@@ -12,7 +12,9 @@ const (
 	ArchiveEntriesDownload                 = "archive_entries_download_spec.json"
 	ArchiveEntriesUpload                   = "archive_entries_upload_spec.json"
 	BuildAddDepsDoubleSpec                 = "build_add_deps_double_spec.json"
+	BuildAddDepsDoubleRemoteSpec           = "build_add_deps_double_remote_spec.json"
 	BuildAddDepsSpec                       = "build_add_deps_simple_spec.json"
+	BuildAddDepsRemoteSpec                 = "build_add_deps_simple_remote_spec.json"
 	BuildDownloadSpec                      = "build_download_spec.json"
 	BuildDownloadSpecNoBuildNumber         = "build_download_spec_no_build_number.json"
 	BuildDownloadSpecNoBuildNumberWithSort = "build_download_spec_no_build_number_with_sort.json"
@@ -88,6 +90,7 @@ const (
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
@@ -98,6 +101,7 @@ const (
 	SplitUploadSpecA                       = "upload_split_spec_a.json"
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
+	UploadAntPattern                       = "upload_ant_pattern.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
@@ -190,9 +194,24 @@ func GetUploadLegacyPropsExpected() []string {
 	}
 }
 
+func GetSearchAppendedBuildNoPatternExpected() []string {
+	return []string{
+		RtRepo1 + "/data/a1.in",
+		RtRepo1 + "/data/a2.in",
+		RtRepo1 + "/data/a3.in",
+	}
+}
+
 func GetSimpleWildcardUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/upload_simple_wildcard/github.com/github.in",
+	}
+}
+
+func GetSimpleAntPatternUploadExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/bitbucket.in",
+		RtRepo1 + "/github.in",
 	}
 }
 

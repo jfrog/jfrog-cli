@@ -1,14 +1,14 @@
 package missioncontrol
 
 import (
-	"fmt"
+	"strconv"
+
 	"github.com/codegangsta/cli"
+	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/missioncontrol/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/config"
-	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	configdocs "github.com/jfrog/jfrog-cli/docs/missioncontrol/config"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/jpdadd"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/jpddelete"
 	"github.com/jfrog/jfrog-cli/docs/missioncontrol/licenseacquire"
@@ -18,28 +18,14 @@ import (
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
-	"strconv"
 )
 
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
-			Name:         "config",
-			Flags:        cliutils.GetCommandFlags(cliutils.McConfig),
-			Usage:        configdocs.Description,
-			HelpName:     corecommon.CreateUsage("mc config", configdocs.Description, configdocs.Usage),
-			UsageText:    configdocs.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			Aliases:      []string{"c"},
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return configure(c)
-			},
-		},
-		{
 			Name:         "license-acquire",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseAcquire),
-			Usage:        licenseacquire.Description,
+			Description:  licenseacquire.Description,
 			HelpName:     corecommon.CreateUsage("mc license-acquire", licenseacquire.Description, licenseacquire.Usage),
 			UsageText:    licenseacquire.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -52,7 +38,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "license-deploy",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseDeploy),
-			Usage:        licensedeploy.Description,
+			Description:  licensedeploy.Description,
 			HelpName:     corecommon.CreateUsage("mc license-deploy", licensedeploy.Description, licensedeploy.Usage),
 			UsageText:    licensedeploy.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -65,7 +51,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "license-release",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseRelease),
-			Usage:        licenserelease.Description,
+			Description:  licenserelease.Description,
 			HelpName:     corecommon.CreateUsage("mc license-release", licenserelease.Description, licenserelease.Usage),
 			UsageText:    licenserelease.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -78,7 +64,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "jpd-add",
 			Flags:        cliutils.GetCommandFlags(cliutils.JpdAdd),
-			Usage:        jpdadd.Description,
+			Description:  jpdadd.Description,
 			HelpName:     corecommon.CreateUsage("mc jpd-add", jpdadd.Description, jpdadd.Usage),
 			UsageText:    jpdadd.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -91,7 +77,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "jpd-delete",
 			Flags:        cliutils.GetCommandFlags(cliutils.JpdDelete),
-			Usage:        jpddelete.Description,
+			Description:  jpddelete.Description,
 			HelpName:     corecommon.CreateUsage("mc jpd-delete", jpddelete.Description, jpddelete.Usage),
 			UsageText:    jpddelete.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -119,7 +105,7 @@ func jpdDelete(c *cli.Context) error {
 	if len(c.Args()) != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	mcDetails, err := createMissionControlDetails(c, true)
+	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
 		return err
 	}
@@ -131,7 +117,7 @@ func licenseAcquire(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	mcDetails, err := createMissionControlDetails(c, true)
+	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
 		return err
 	}
@@ -156,73 +142,36 @@ func licenseRelease(c *cli.Context) error {
 	if size != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	mcDetails, err := createMissionControlDetails(c, true)
+	mcDetails, err := createMissionControlDetails(c)
 	if err != nil {
 		return err
 	}
 	return commands.LicenseRelease(c.Args()[0], c.Args()[1], mcDetails)
 }
 
-func offerConfig(c *cli.Context) (*config.MissionControlDetails, error) {
-	exists, err := config.IsMissionControlConfExists()
-	if err != nil || exists {
+func offerConfig(c *cli.Context) (*config.ServerDetails, error) {
+	confirmed, err := cliutils.ShouldOfferConfig()
+	if !confirmed || err != nil {
 		return nil, err
 	}
-	val, err := clientutils.GetBoolEnvValue(cliutils.OfferConfig, true)
+	details := createMCDetailsFromFlags(c)
+	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true)
+	err = configCmd.Config()
 	if err != nil {
 		return nil, err
 	}
-	if !val {
-		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
-		return nil, nil
-	}
-	msg := fmt.Sprintf("To avoid this message in the future, set the %s environment variable to false.\n"+
-		"The CLI commands require the Mission Control URL and authentication details\n"+
-		"Configuring JFrog CLI with these parameters now will save you having to include them as command options.\n"+
-		"You can also configure these parameters later using the 'jfrog mc c' command.\n"+
-		"Configure now?", cliutils.OfferConfig)
-	confirmed := coreutils.AskYesNo(msg, false)
-	if !confirmed {
-		_ = config.SaveMissionControlConf(new(config.MissionControlDetails))
-		return nil, nil
-	}
-	details, err := createMissionControlDetails(c, false)
-	if err != nil {
-		return nil, err
-	}
-	return commands.Config(nil, details, true)
-}
 
-func configure(c *cli.Context) error {
-	if len(c.Args()) > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	if len(c.Args()) == 1 {
-		switch c.Args()[0] {
-		case "show":
-			return commands.ShowConfig()
-		case "clear":
-			return commands.ClearConfig()
-		default:
-			return cliutils.PrintHelpAndReturnError("Unknown argument '"+c.Args()[0]+"'. Available arguments are 'show' and 'clear'.", c)
-		}
-	}
-	flags, err := createConfigFlags(c)
-	if err != nil {
-		return err
-	}
-	_, err = commands.Config(flags.MissionControlDetails, nil, flags.Interactive)
-	return err
+	return configCmd.ServerDetails()
 }
 
 func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlags, err error) {
 	flags = new(commands.LicenseDeployFlags)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
+	flags.ServerDetails, err = createMissionControlDetails(c)
 	if err != nil {
 		return
 	}
 	flags.LicenseCount = cliutils.DefaultLicenseCount
-	if c.String("license-count") != "" {
+	if c.IsSet("license-count") {
 		flags.LicenseCount, err = strconv.Atoi(c.String("license-count"))
 		if err != nil {
 			return nil, cliutils.PrintHelpAndReturnError("The '--license-count' option must have a numeric value. ", c)
@@ -234,22 +183,9 @@ func createLicenseDeployFlags(c *cli.Context) (flags *commands.LicenseDeployFlag
 	return
 }
 
-func createConfigFlags(c *cli.Context) (flags *commands.ConfigFlags, err error) {
-	flags = new(commands.ConfigFlags)
-	flags.Interactive = cliutils.GetInteractiveValue(c)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, false)
-	if err != nil {
-		return
-	}
-	if !flags.Interactive && (flags.MissionControlDetails.Url == "" || flags.MissionControlDetails.AccessToken == "") {
-		return nil, cliutils.PrintHelpAndReturnError("the --url and --access-token options are mandatory when the --interactive option is set to false or the CI environment variable is set to true.", c)
-	}
-	return
-}
-
 func createJpdAddFlags(c *cli.Context) (flags *commands.JpdAddFlags, err error) {
 	flags = new(commands.JpdAddFlags)
-	flags.MissionControlDetails, err = createMissionControlDetails(c, true)
+	flags.ServerDetails, err = createMissionControlDetails(c)
 	if err != nil {
 		return
 	}
@@ -260,34 +196,40 @@ func createJpdAddFlags(c *cli.Context) (flags *commands.JpdAddFlags, err error) 
 	return
 }
 
-func createMissionControlDetails(c *cli.Context, includeConfig bool) (*config.MissionControlDetails, error) {
-	if includeConfig {
-		details, err := offerConfig(c)
-		if err != nil {
-			return nil, err
-		}
-		if details != nil {
-			return details, nil
-		}
+func createMissionControlDetails(c *cli.Context) (*config.ServerDetails, error) {
+	createdDetails, err := offerConfig(c)
+	if err != nil {
+		return nil, err
 	}
-	details := new(config.MissionControlDetails)
-	details.Url = c.String("url")
-	details.AccessToken = c.String("access-token")
+	if createdDetails != nil {
+		return createdDetails, nil
+	}
 
-	if includeConfig {
-		if details.Url == "" || details.AccessToken == "" {
-			confDetails, err := commands.GetConfig()
-			if err != nil {
-				return nil, err
-			}
-			if details.Url == "" {
-				details.Url = confDetails.Url
-			}
-			if details.AccessToken == "" {
-				details.SetAccessToken(confDetails.AccessToken)
-			}
-		}
+	details := createMCDetailsFromFlags(c)
+	// If urls or credentials were passed as options, use options as they are.
+	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
+	// Either use command options only or config only.
+	if credentialsChanged(details) {
+		return details, nil
 	}
-	details.Url = clientutils.AddTrailingSlashIfNeeded(details.Url)
-	return details, nil
+
+	// Else, use details from config for requested serverId, or for default server if empty.
+	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, true)
+	if err != nil {
+		return nil, err
+	}
+
+	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.MissionControlUrl)
+	return confDetails, nil
+}
+
+func createMCDetailsFromFlags(c *cli.Context) (details *config.ServerDetails) {
+	details = cliutils.CreateServerDetailsFromFlags(c)
+	details.MissionControlUrl = details.Url
+	details.Url = ""
+	return
+}
+
+func credentialsChanged(details *config.ServerDetails) bool {
+	return details.MissionControlUrl != "" || details.User != "" || details.Password != "" || details.AccessToken != ""
 }

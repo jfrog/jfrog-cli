@@ -137,7 +137,7 @@ pipelines:
             # Install Golang
             - curl -LO https://get.golang.org/$(uname)/go_installer && chmod +x go_installer && SHELL=bash ./go_installer && rm go_installer
             - export PATH=/$HOME/.go/bin:$PATH
-            - go version
+            - go version && go mod tidy
             # Install Podman
             - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
             - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/Release.key | apt-key add -
