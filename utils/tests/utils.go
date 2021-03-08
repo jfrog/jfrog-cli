@@ -377,6 +377,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
 		TestNuget:        {},
 		TestPip:          {&PypiRemoteRepo},
+		TestPlugins:      {&RtRepo1},
 	}
 	return getNeededRepositories(nonVirtualReposMap)
 }
@@ -508,6 +509,7 @@ func AddTimestampToGlobalVars() {
 	RtBuildName1 += timestampSuffix
 	RtBuildName2 += timestampSuffix
 	RtBuildNameWithSpecialChars += timestampSuffix
+	RtPermissionTargetName += timestampSuffix
 
 	// Users
 	UserName1 += timestampSuffix

@@ -21,6 +21,7 @@ const (
 
 	// Common
 	Retries             = 3
+	Threads             = 3
 	TokenExpiry         = 3600
 	DefaultLicenseCount = 1
 
