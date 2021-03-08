@@ -643,15 +643,15 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	expectedVcsBranch := "master"
-	expectedVcsCommitMessage := "TEST-4 - Adding text to file2.txt"
+	expectedVcsMessage := "TEST-4 - Adding text to file2.txt"
 	buildInfoVcsUrl := partials[0].VcsList[0].Url
 	buildInfoVcsRevision := partials[0].VcsList[0].Revision
 	buildInfoVcsBranch := partials[0].VcsList[0].Branch
-	buildInfoVcsCommitMessage := partials[0].VcsList[0].Message
+	buildInfoVcsMessage := partials[0].VcsList[0].Message
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
-	assert.Equal(t, expectedVcsCommitMessage, buildInfoVcsCommitMessage, "Wrong Commit Message")
+	assert.Equal(t, expectedVcsMessage, buildInfoVcsMessage, "Wrong Message")
 
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
