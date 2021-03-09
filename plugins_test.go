@@ -22,13 +22,12 @@ const pluginTemplateName = "hello-frog"
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	initPluginsTest(t)
 	// Create temp jfrog home
+	coreTests.CleanUnitTestsJfrogHome()
 	oldHome, err := coreTests.SetJfrogHome()
 	if err != nil {
 		return
 	}
 	defer os.Setenv(coreutils.HomeDir, oldHome)
-	// Clean from previous tests.
-	coreTests.CleanUnitTestsJfrogHome()
 	defer coreTests.CleanUnitTestsJfrogHome()
 
 	// Set empty plugins server to run against official registry.
@@ -243,7 +242,7 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,
-		strings.Replace(expectedPath, cliutils.GetVersion(), "latest", 1),
+		strings.Replace(expectedPath, cliutils.GetVersion(), utils.LatestVersionName, 1),
 	}
 	verifyExistInArtifactory(expected, searchFilePath, t)
 	return nil

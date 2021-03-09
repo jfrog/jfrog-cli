@@ -24,6 +24,8 @@ const (
 	DefaultPluginsRepo = "jfrog-cli-plugins"
 
 	PluginsOfficialRegistryUrl = "https://releases.jfrog.io/artifactory/"
+
+	LatestVersionName = "latest"
 )
 
 var ArchitecturesMap = map[string]Architecture{

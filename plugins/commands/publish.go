@@ -221,7 +221,7 @@ func createCopySpec(pluginName, pluginVersion string) *spec.SpecFiles {
 	pluginsRepo := utils.GetPluginsRepo()
 	return spec.NewBuilder().
 		Pattern(path.Join(pluginsRepo, pluginName, pluginVersion, "(*)")).
-		Target(path.Join(pluginsRepo, pluginName, "latest", "{1}")).
+		Target(path.Join(pluginsRepo, pluginName, utils.LatestVersionName, "{1}")).
 		Flat(true).
 		Recursive(true).
 		IncludeDirs(true).
