@@ -22,8 +22,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 )
 
-const latestVersionName = "latest"
-
 func InstallCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -196,7 +194,7 @@ func downloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails http
 func getNameAndVersion(requested string) (name, version string, err error) {
 	split := strings.Split(requested, "@")
 	if len(split) == 1 || (len(split) == 2 && split[1] == "") {
-		return split[0], latestVersionName, nil
+		return split[0], commandsUtils.LatestVersionName, nil
 	}
 	if len(split) > 2 {
 		return "", "", errorutils.CheckError(errors.New("unexpected number of '@' separators in provided argument"))
