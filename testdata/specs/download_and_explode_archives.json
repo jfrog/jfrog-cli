@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "pattern": "${REPO1}/archive/(*).zip",
+      "target": "out/archive/{1}/",
+      "explode": "true",
+      "flat": "true"
+    }
+  ]
+}
