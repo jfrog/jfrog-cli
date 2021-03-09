@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -33,6 +34,7 @@ import (
 
 const (
 	ConfigServerId = "vcs-integration-platform"
+	VcsConfigFile  = "jfrog-cli-vcs.conf"
 	// Basic vcs questions keys
 	JfrogUrl      = "jfrogUrl"
 	JfrogUsername = "jfrogUsername"
@@ -49,6 +51,11 @@ const (
 	// Output questions keys
 )
 
+type VcsCommand struct {
+	defaultData *VcsData
+	data        *VcsData
+}
+
 type VcsData struct {
 	ProjectName             string
 	LocalDirPath            string
@@ -61,13 +68,78 @@ type VcsData struct {
 	VcsCredentials       auth.ServiceDetails
 }
 
+func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
+	vc.data = data
+	return vc
+}
+func (vc *VcsCommand) SetDefaultData(data *VcsData) *VcsCommand {
+	vc.defaultData = data
+	return vc
+}
+
+func (vc *VcsCommand) Run() error {
+	vc.prepareConfigurationData()
+	err := vc.VcsCmd()
+	if err != nil {
+		return err
+	}
+	return saveVcsConf(vc.data)
+
+}
+
+func (vc *VcsCommand) prepareConfigurationData() error {
+	// If data is nil, initialize a new one
+	if vc.data == nil {
+		vc.data = new(VcsData)
+	}
+
+	// Get previous vcs data if exists
+	vc.defaultData = readVcsConf()
+	return nil
+}
+
+func readVcsConf() (conf *VcsData) {
+	conf = &VcsData{}
+	path, err := coreutils.GetJfrogHomeDir()
+	if err != nil {
+		return
+	}
+	configFile, err := fileutils.ReadFile(filepath.Join(path, VcsConfigFile))
+	if err != nil {
+		return
+	}
+	json.Unmarshal(configFile, conf)
+	return
+}
+
+func saveVcsConf(conf *VcsData) error {
+	path, err := coreutils.GetJfrogHomeDir()
+	if err != nil {
+		return err
+	}
+	bytesContent, err := json.Marshal(conf)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	var content bytes.Buffer
+	err = json.Indent(&content, bytesContent, "", "  ")
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	err = ioutil.WriteFile(path, []byte(content.String()), 0600)
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	return nil
+}
+
 func VcsCmd(c *cli.Context) error {
 	// Run JFrog config command
 	err := runConfigCmd()
 	if err != nil {
 		return err
 	}
-	log.Info("Done config Jfrog Platfrom")
+	log.Info("Done config JFrog server - " + ConfigServerId)
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = runBasicAuthenticationQuestionnaire()
 	if err != nil {
@@ -75,17 +147,17 @@ func VcsCmd(c *cli.Context) error {
 	}
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
 	err = runBuildQuestionnaire(c)
-	if err != nil {
+	if err != nil || saveVcsConf(data) != nil {
 		return err
 	}
 	// Publish empty build info.
 	err = publishFirstBuild()
-	if err != nil {
+	if err != nil || saveVcsConf(data) != nil {
 		return err
 	}
 	// Configure Xray to scan the new build.
 	err = configureXray()
-	if err != nil {
+	if err != nil || saveVcsConf(data) != nil {
 		return err
 	}
 	// Run jfrog-vcs-agent
