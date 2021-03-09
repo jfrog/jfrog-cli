@@ -5,8 +5,11 @@ import (
 	"github.com/codegangsta/cli"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/xray/commands"
+	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
+	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
-	"github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
+	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
+	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"time"
@@ -17,9 +20,21 @@ const DATE_FORMAT = "2006-01-02"
 func GetCommands() []cli.Command {
 	return []cli.Command{
 		{
+			Name:            "curl",
+			Flags:           cliutils.GetCommandFlags(cliutils.XrCurl),
+			Aliases:         []string{"cl"},
+			Description:     curldocs.Description,
+			HelpName:        corecommon.CreateUsage("xr curl", curldocs.Description, curldocs.Usage),
+			UsageText:       curldocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			SkipFlagParsing: true,
+			Action:          curlCmd,
+		},
+		{
 			Name:         "offline-update",
-			Description:  offlineupdate.Description,
-			HelpName:     corecommon.CreateUsage("xr offline-update", offlineupdate.Description, offlineupdate.Usage),
+			Description:  offlineupdatedocs.Description,
+			HelpName:     corecommon.CreateUsage("xr offline-update", offlineupdatedocs.Description, offlineupdatedocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),
 			Aliases:      []string{"ou"},
@@ -29,8 +44,8 @@ func GetCommands() []cli.Command {
 	}
 }
 
-func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags, err error) {
-	flags = new(commands.OfflineUpdatesFlags)
+func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesFlags, err error) {
+	flags = new(offlineupdate.OfflineUpdatesFlags)
 	flags.Version = c.String("version")
 	flags.License = c.String("license-id")
 	flags.Target = c.String("target")
@@ -73,5 +88,18 @@ func offlineUpdates(c *cli.Context) error {
 		return err
 	}
 
-	return commands.OfflineUpdate(offlineUpdateFlags)
+	return offlineupdate.OfflineUpdate(offlineUpdateFlags)
+}
+
+func curlCmd(c *cli.Context) error {
+	if c.NArg() < 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	curlCommand := curl.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	xrDetails, err := curlCommand.GetServerDetails()
+	if err != nil {
+		return err
+	}
+	curlCommand.SetServerDetails(xrDetails)
+	return commands.Exec(curlCommand)
 }
