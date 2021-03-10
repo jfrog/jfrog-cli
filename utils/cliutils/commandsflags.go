@@ -396,10 +396,10 @@ const (
 	configXrUrl       = "xray-url"
 	configMcUrl       = "mission-control-url"
 	configPlUrl       = "pipelines-url"
-	configAccessToken = "config-" + accessToken
-	configUser        = "config-" + user
-	configPassword    = "config-" + password
-	configApiKey      = "config-" + apikey
+	configAccessToken = configPrefix + accessToken
+	configUser        = configPrefix + user
+	configPassword    = configPrefix + password
+	configApiKey      = configPrefix + apikey
 )
 
 var flagsMap = map[string]cli.Flag{
