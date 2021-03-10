@@ -269,6 +269,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "build-collect-env",
 			Aliases:      []string{"bce"},
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildCollectEnv),
 			Description:  buildcollectenv.Description,
 			HelpName:     corecommon.CreateUsage("rt build-collect-env", buildcollectenv.Description, buildcollectenv.Usage),
 			UsageText:    buildcollectenv.Arguments,

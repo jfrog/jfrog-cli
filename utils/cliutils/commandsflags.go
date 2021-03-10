@@ -27,6 +27,7 @@ const (
 	BuildDiscard            = "build-discard"
 	BuildAddDependencies    = "build-add-dependencies"
 	BuildAddGit             = "build-add-git"
+	BuildCollectEnv         = "build-collect-env"
 	GitLfsClean             = "git-lfs-clean"
 	Mvn                     = "mvn"
 	MvnConfig               = "mvn-config"
@@ -1278,6 +1279,9 @@ var commandFlags = map[string][]string{
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
+	},
+	BuildCollectEnv: {
+		project,
 	},
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
