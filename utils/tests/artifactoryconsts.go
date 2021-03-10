@@ -103,6 +103,7 @@ const (
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
 	UploadAntPattern                       = "upload_ant_pattern.json"
+	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
@@ -215,6 +216,17 @@ func GetSimpleAntPatternUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/bitbucket.in",
 		RtRepo1 + "/github.in",
+	}
+}
+
+func GetAntPatternUploadWithExclusionsExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/c1.in",
+		RtRepo1 + "/c2.in",
+		RtRepo1 + "/c3.in",
 	}
 }
 

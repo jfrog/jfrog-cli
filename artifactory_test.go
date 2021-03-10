@@ -4597,9 +4597,10 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 func TestArtifactoryUploadAntPattern(t *testing.T) {
 	initArtifactoryTest(t)
 
-	uploadUsingAntAndRegexpTogether(t)
-	simpleUploadAntIsTrueRegexpIsFalse(t)
-	simpleUploadWithAntPatternSpec(t)
+	//uploadUsingAntAndRegexpTogether(t)
+	//simpleUploadAntIsTrueRegexpIsFalse(t)
+	//simpleUploadWithAntPatternSpec(t)
+	uploadWithAntPatternAndExclusionsSpec(t)
 
 	cleanArtifactoryTest()
 }
@@ -4632,6 +4633,21 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
+}
+
+func uploadWithAntPatternAndExclusionsSpec(t *testing.T) {
+	// Init tmp dir
+	specFile, err := tests.CreateSpec(tests.UploadAntPatternExclusions)
+	assert.NoError(t, err)
+	err = fileutils.CopyDir(tests.GetTestResourcesPath(), filepath.Dir(specFile), true, nil)
+	assert.NoError(t, err)
+	// Upload
+	artifactoryCli.Exec("upload", "--spec="+specFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1ByInSuffix)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetAntPatternUploadWithExclusionsExpectedRepo1(), searchFilePath, t)
+	//searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
+	//verifyDoesntExistInArtifactory(searchFilePath, t)
 }
 
 func TestPermissionTargets(t *testing.T) {
