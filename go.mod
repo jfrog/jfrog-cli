@@ -8,7 +8,7 @@ require (
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/jfrog/gocmd v0.1.19
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core v1.4.0
+	github.com/jfrog/jfrog-cli-core v1.4.1
 	github.com/jfrog/jfrog-client-go v0.20.1
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
