@@ -2676,13 +2676,23 @@ func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	curlCommand := curl.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
-	rtDetails, err := curlCommand.GetServerDetails()
+	rtCurlCommand, err := newRtCurlCommand(c)
 	if err != nil {
 		return err
 	}
-	curlCommand.SetServerDetails(rtDetails)
-	return commands.Exec(curlCommand)
+	return commands.Exec(rtCurlCommand)
+}
+
+func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
+	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
+	rtDetails, err := curlCommand.GetServerDetails()
+	if err != nil {
+		return nil, err
+	}
+	rtCurlCommand.SetServerDetails(rtDetails)
+	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
+	return rtCurlCommand, err
 }
 
 func pipInstallCmd(c *cli.Context) error {

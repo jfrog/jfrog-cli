@@ -3,7 +3,8 @@ package xray
 import (
 	"errors"
 	"github.com/codegangsta/cli"
-	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
+	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
+	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/xray/commands"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
@@ -24,21 +25,21 @@ func GetCommands() []cli.Command {
 			Flags:           cliutils.GetCommandFlags(cliutils.XrCurl),
 			Aliases:         []string{"cl"},
 			Description:     curldocs.Description,
-			HelpName:        corecommon.CreateUsage("xr curl", curldocs.Description, curldocs.Usage),
+			HelpName:        corecommondocs.CreateUsage("xr curl", curldocs.Description, curldocs.Usage),
 			UsageText:       curldocs.Arguments,
 			ArgsUsage:       common.CreateEnvVars(),
-			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			BashComplete:    corecommondocs.CreateBashCompletionFunc(),
 			SkipFlagParsing: true,
 			Action:          curlCmd,
 		},
 		{
 			Name:         "offline-update",
 			Description:  offlineupdatedocs.Description,
-			HelpName:     corecommon.CreateUsage("xr offline-update", offlineupdatedocs.Description, offlineupdatedocs.Usage),
+			HelpName:     corecommondocs.CreateUsage("xr offline-update", offlineupdatedocs.Description, offlineupdatedocs.Usage),
 			ArgsUsage:    common.CreateEnvVars(),
 			Flags:        cliutils.GetCommandFlags(cliutils.OfflineUpdate),
 			Aliases:      []string{"ou"},
-			BashComplete: corecommon.CreateBashCompletionFunc(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,
 		},
 	}
@@ -95,11 +96,21 @@ func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	curlCommand := curl.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
-	xrDetails, err := curlCommand.GetServerDetails()
+	xrCurlCmd, err := newXrCurlCommand(c)
 	if err != nil {
 		return err
 	}
-	curlCommand.SetServerDetails(xrDetails)
-	return commands.Exec(curlCommand)
+	return commands.Exec(xrCurlCmd)
+}
+
+func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
+	curlCommand := corecommon.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	xrCurlCommand := curl.NewXrCurlCommand(*curlCommand)
+	xrDetails, err := curlCommand.GetServerDetails()
+	if err != nil {
+		return nil, err
+	}
+	xrCurlCommand.SetServerDetails(xrDetails)
+	xrCurlCommand.SetUrl(xrDetails.XrayUrl)
+	return xrCurlCommand, err
 }
