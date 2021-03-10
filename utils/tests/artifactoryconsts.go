@@ -92,6 +92,7 @@ const (
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
+	SearchRepo1NonExistFileAntExclusions   = "search_repo1_ant_and_exclusions_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
