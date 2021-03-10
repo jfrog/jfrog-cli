@@ -141,7 +141,7 @@ pipelines:
             # Install Podman
             - echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/ /" | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
             - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_18.04/Release.key | apt-key add -
-            - apt update && apt -yq install podman
+            - timeout 1h bash -c 'until apt update && apt -yq install podman; do sleep 10; done'
             - podman version
 
             - *CREATE_RT_ACCESS_TOKEN
