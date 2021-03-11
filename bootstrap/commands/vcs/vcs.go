@@ -8,9 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
-	"github.com/c-bata/go-prompt"
-	"github.com/codegangsta/cli"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -21,7 +20,7 @@ import (
 	corecommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
-	artifactoryAuth "github.com/jfrog/jfrog-client-go/artifactory/auth"
+	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/config"
@@ -30,23 +29,15 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/xray"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
 	ConfigServerId = "vcs-integration-platform"
 	VcsConfigFile  = "jfrog-cli-vcs.conf"
-	// Basic vcs questions keys
-	JfrogUrl      = "jfrogUrl"
-	JfrogUsername = "jfrogUsername"
-	JfrogPassword = "jfrogPassword"
-	VcsUrl        = "vcsUrl"
-	VcsUsername   = "vcsUsername"
-	VcsPassword   = "vcsPassword"
-	VcsBranches   = "vcsBranches"
-	LocalDir      = "localDir"
-
 	// Technologies, repositories & build questions keys
 	DefultFirstBuildNumber = "0"
+	DefultWorkSpace        = "./JFrogVcsWorkSpace"
 
 	// Output questions keys
 )
@@ -59,13 +50,13 @@ type VcsCommand struct {
 type VcsData struct {
 	ProjectName             string
 	LocalDirPath            string
-	VcsBranches             []string
+	VcsBranch               string
 	BuildCommand            string
 	BuildName               string
 	ArtifactoryVirtualRepos map[Technology]string
 	// A collection of technologies that was found with a list of theirs indications
 	DetectedTechnologies map[Technology]bool
-	VcsCredentials       auth.ServiceDetails
+	VcsCredentials       auth.CommonConfigFields
 }
 
 func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
@@ -77,9 +68,10 @@ func (vc *VcsCommand) SetDefaultData(data *VcsData) *VcsCommand {
 	return vc
 }
 
-func (vc *VcsCommand) Run() error {
+func VcsCmd() error {
+	vc := &VcsCommand{}
 	vc.prepareConfigurationData()
-	err := vc.VcsCmd()
+	err := vc.Run()
 	if err != nil {
 		return err
 	}
@@ -126,14 +118,14 @@ func saveVcsConf(conf *VcsData) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	err = ioutil.WriteFile(path, []byte(content.String()), 0600)
+	err = ioutil.WriteFile(filepath.Join(path, VcsConfigFile), []byte(content.String()), 0600)
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
 	return nil
 }
 
-func VcsCmd(c *cli.Context) error {
+func (vc *VcsCommand) Run() error {
 	// Run JFrog config command
 	err := runConfigCmd()
 	if err != nil {
@@ -141,23 +133,30 @@ func VcsCmd(c *cli.Context) error {
 	}
 	log.Info("Done config JFrog server - " + ConfigServerId)
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
-	err = runBasicAuthenticationQuestionnaire()
+	err = vc.getVcsCredentialsFromConsole()
 	if err != nil {
 		return err
 	}
+	err = vc.prepareVcsData()
+	if err != nil {
+		return err
+	}
+	if saveVcsConf(vc.data) != nil {
+		return err
+	}
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
-	err = runBuildQuestionnaire(c)
-	if err != nil || saveVcsConf(data) != nil {
+	err = vc.runBuildQuestionnaire()
+	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
 	// Publish empty build info.
-	err = publishFirstBuild()
-	if err != nil || saveVcsConf(data) != nil {
+	err = vc.publishFirstBuild()
+	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
 	// Configure Xray to scan the new build.
-	err = configureXray()
-	if err != nil || saveVcsConf(data) != nil {
+	err = vc.configureXray()
+	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
 	// Run jfrog-vcs-agent
@@ -179,40 +178,34 @@ func runConfigCmd() (err error) {
 	}
 }
 
-func publishFirstBuild() (err error) {
-	buildName := utils.AskStringWithDefault("", "> Enter name for your build.", "${projectName}-${branch}")
-	if len(data.VcsBranches) > 1 && !strings.Contains(buildName, "${branch}") {
-		return fmt.Errorf("Build name must be uniq, please include the ${branch} variable in vcs build name")
+func (vc *VcsCommand) publishFirstBuild() (err error) {
+	ioutils.ScanFromConsole("Build Name", &vc.data.BuildName, "${projectName}-${branch}")
+	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.ProjectName, -1)
+	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.VcsBranch, -1)
+	// Run BAG Command (in order to publish the first, empty, buildinfo)
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
+	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefultFirstBuildNumber}
+	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
+	err = commands.Exec(buildAddGitConfigurationCmd)
+	if err != nil {
+		return err
 	}
-	data.BuildName = buildName
-	buildName = strings.Replace(buildName, "${projectName}", data.ProjectName, -1)
-	for _, branch := range data.VcsBranches {
+	// Run BP Command.
+	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+	if err != nil {
+		return err
+	}
+	buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration).SetConfig(&buildInfoConfiguration)
+	err = commands.Exec(buildPublishCmd)
+	if err != nil {
+		return err
 
-		buildName = strings.Replace(buildName, "${branch}", branch, -1)
-		// Run BAG Command (in order to publish the first, empty, buildinfo)
-		buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
-		buildConfiguration := rtutils.BuildConfiguration{BuildName: buildName, BuildNumber: DefultFirstBuildNumber}
-		buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
-		err = commands.Exec(buildAddGitConfigurationCmd)
-		if err != nil {
-			return err
-		}
-		// Run BP Command.
-		serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
-		if err != nil {
-			return err
-		}
-		buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
-		buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration).SetConfig(&buildInfoConfiguration)
-		err = commands.Exec(buildPublishCmd)
-		if err != nil {
-			return err
-		}
 	}
 	return
 }
 
-func configureXray() (err error) {
+func (vc *VcsCommand) configureXray() (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
 	if err != nil {
 		return err
@@ -229,7 +222,7 @@ func configureXray() (err error) {
 		return err
 	}
 	// AddBuildsToIndexing.
-	buildsToIndex := []string{data.BuildName}
+	buildsToIndex := []string{vc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
 	// Create new defult policy.
 	policyParams := xrayutils.NewPolicyParams()
@@ -269,23 +262,24 @@ func configureXray() (err error) {
 	return
 }
 
-func runBuildQuestionnaire(c *cli.Context) (err error) {
-	data.ArtifactoryVirtualRepos = make(map[Technology]string)
+func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
+
+	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
-	for tech, detected := range data.DetectedTechnologies {
+	for tech, detected := range vc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("A %q technology has been detected, would you like %q repositories to be configured?", tech, tech), true) {
-			err = interactivelyCreatRepos(tech)
+			err = vc.interactivelyCreatRepos(tech)
 			if err != nil {
 				return
 			}
 		}
 	}
 	// Ask for working build command
-	data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary.", false, false)
+	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary.", false, false)
 	return nil
 }
 
-func interactivelyCreatRepos(technologyType Technology) (err error) {
+func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
 	if err != nil {
 		return err
@@ -300,12 +294,16 @@ func interactivelyCreatRepos(technologyType Technology) (err error) {
 	repoNames = append(repoNames, NewRepository)
 
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	remoteRepo := utils.AskFromList("", "Would you like to chose one of the following repositories or create a new one?", false, utils.ConvertToSuggests(repoNames), NewRepository)
+	remoteRepo, err := promptARepoSelection(repoNames)
+	if err != nil {
+		return nil
+	}
 	if remoteRepo == NewRepository {
 		for {
-			repoName := utils.AskStringWithDefault("", "Enter repository name >", GetRemoteDefaultName(technologyType))
-			remoteUrl := utils.AskStringWithDefault("", "Enter repository url >", GetRemoteDefaultUrl(technologyType))
-			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, remoteUrl)
+			var repoName, repoUrl string
+			ioutils.ScanFromConsole("Repository Name", &repoName, GetRemoteDefaultName(technologyType))
+			ioutils.ScanFromConsole("Repository URL", &repoUrl, GetRemoteDefaultUrl(technologyType))
+			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, repoUrl)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -314,102 +312,112 @@ func interactivelyCreatRepos(technologyType Technology) (err error) {
 			}
 		}
 	}
-	// Create virtual repository
-	for {
-		virtualRepoName := utils.AskStringWithDefault(fmt.Sprintf("Creating %q virtual repository", technologyType), "Enter repository name >", GetVirtualDefaultName(technologyType))
-		err = CreateVirtualRepo(serviceDetails, technologyType, virtualRepoName, remoteRepo)
-		if err != nil {
-			log.Error(err)
-		} else {
-			// Saves the new created repo name (key) in the results data structure.
-			data.ArtifactoryVirtualRepos[technologyType] = virtualRepoName
-			return
-		}
-	}
-
-}
-
-func runBasicAuthenticationQuestionnaire() (err error) {
-	basicAuthenticationQuestionnaire := &utils.InteractiveQuestionnaire{
-		MandatoryQuestionsKeys: []string{VcsUrl, VcsUsername, VcsPassword, VcsBranches, LocalDir},
-		QuestionsMap:           basicAuthenticationQuestionMap,
-	}
-	err = basicAuthenticationQuestionnaire.Perform()
+	virtualRepos, err := GetAllRepos(serviceDetails, Virtual, string(technologyType))
 	if err != nil {
 		return err
 	}
-	resBytes, err := json.Marshal(basicAuthenticationQuestionnaire.AnswersMap)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	if err = ioutil.WriteFile("./VCS-Authentication-config", resBytes, 0644); err != nil {
-		return errorutils.CheckError(err)
-	}
-	log.Info(fmt.Sprintf("Basic VCS Authentication config template successfully created at curent directory"))
-	return nil
-}
+	repoNames = ConvertRepoDetailsToRepoNames(virtualRepos)
+	// Add the option to create new remote repository
+	repoNames = append(repoNames, NewRepository)
 
-func setVcsCredentials(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
-	data.VcsCredentials = (artifactoryAuth.NewArtifactoryDetails())
-	data.VcsCredentials.SetUrl(iq.AnswersMap[VcsUrl].(string))
-	data.VcsCredentials.SetUser(iq.AnswersMap[VcsUsername].(string))
-	data.VcsCredentials.SetPassword(iq.AnswersMap[VcsPassword].(string))
+	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
+	virtualRepo, err := promptARepoSelection(repoNames)
+	if virtualRepo == NewRepository {
+		// Create virtual repository
+		for {
+			var repoName string
+			ioutils.ScanFromConsole("Repository Name", &repoName, GetVirtualDefaultName(technologyType))
+			err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
+			if err != nil {
+				log.Error(err)
+			} else {
+				break
+			}
+		}
+		// Saves the new created repo name (key) in the results data structure.
+		vc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
+		return
+	}
 	return
 }
 
-func setAndPreformeClone(iq *utils.InteractiveQuestionnaire, ans string) (value string, err error) {
-	data.VcsBranches = strings.Split(iq.AnswersMap[VcsBranches].(string), ",")
-	data.LocalDirPath = iq.AnswersMap[LocalDir].(string)
-	err = cloneProject()
+func promptARepoSelection(repoNames []string) (repoName string, err error) {
+
+	selectableItems := []ioutils.PromptItem{}
+	for _, repoName := range repoNames {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repoName, TargetValue: &repoName})
+	}
+	err = ioutils.SelectString(selectableItems, "Select remote repository", func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+	})
+	return
+}
+
+func (vc *VcsCommand) prepareVcsData() (err error) {
+	ioutils.ScanFromConsole("VCS Branch", &vc.data.VcsBranch, vc.defaultData.VcsBranch)
+	err = fileutils.CreateDirIfNotExist(DefultWorkSpace)
+	if err != nil {
+		return err
+	}
+	dirEmpty, err := fileutils.IsDirEmpty(DefultWorkSpace)
+	if err != nil {
+		return err
+	}
+	if !dirEmpty {
+		ioutils.ScanFromConsole("WorkSpace Dir", &vc.data.LocalDirPath, "")
+	} else {
+		vc.data.LocalDirPath = DefultWorkSpace
+	}
+	err = vc.cloneProject()
 	if err != nil {
 		return
 	}
-	err = detectTechnologies()
+	err = vc.detectTechnologies()
 	return
 }
 
-func cloneProject() (err error) {
+func (vc *VcsCommand) cloneProject() (err error) {
 	// Create the desired path if necessary
-	err = os.MkdirAll(data.LocalDirPath, os.ModePerm)
+	err = os.MkdirAll(vc.data.LocalDirPath, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	cloneOption := &git.CloneOptions{
-		URL:  data.VcsCredentials.GetUrl(),
-		Auth: createCredentials(data.VcsCredentials),
+		URL:  vc.data.VcsCredentials.GetUrl(),
+		Auth: createCredentials(&vc.data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
-	setProjectName()
+	vc.setProjectName()
 	// Clone the given repository to the given directory from the given branch
-	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", data.ProjectName, data.VcsCredentials.GetUrl(), data.LocalDirPath))
-	_, err = git.PlainClone(data.LocalDirPath, false, cloneOption)
+	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", vc.data.ProjectName, vc.data.VcsCredentials.GetUrl(), vc.data.LocalDirPath))
+	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
 	log.Info(err)
 	return
 }
 
-func setProjectName() {
-	vcsUrl := data.VcsCredentials.GetUrl()
+func (vc *VcsCommand) setProjectName() {
+	vcsUrl := vc.data.VcsCredentials.GetUrl()
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
-	data.VcsCredentials.SetUrl(vcsUrl)
+	vc.data.VcsCredentials.SetUrl(vcsUrl)
 	projectName := vcsUrl[strings.LastIndex(vcsUrl, "/")+1:]
-	data.ProjectName = strings.TrimSuffix(projectName, ".git")
+	vc.data.ProjectName = strings.TrimSuffix(projectName, ".git")
 }
 
-func detectTechnologies() (err error) {
+func (vc *VcsCommand) detectTechnologies() (err error) {
 	indicators := GetTechIndicators()
-	log.Info(filepath.Join(data.LocalDirPath, data.ProjectName))
-	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(data.LocalDirPath, false)
+	log.Info(filepath.Join(vc.data.LocalDirPath, vc.data.ProjectName))
+	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(vc.data.LocalDirPath, false)
 	if err != nil {
 		return err
 	}
-	data.DetectedTechnologies = make(map[Technology]bool)
+	vc.data.DetectedTechnologies = make(map[Technology]bool)
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
 				//log.Info(file)
-				data.DetectedTechnologies[indicator.GetTechnology()] = true
+				vc.data.DetectedTechnologies[indicator.GetTechnology()] = true
 				// Same file can't indicate on more than one technology.
 				break
 			}
@@ -418,7 +426,7 @@ func detectTechnologies() (err error) {
 	return
 }
 
-func createCredentials(serviceDetails auth.ServiceDetails) (auth transport.AuthMethod) {
+func createCredentials(serviceDetails *auth.CommonConfigFields) (auth transport.AuthMethod) {
 	var password string
 	if serviceDetails.GetApiKey() != "" {
 		password = serviceDetails.GetApiKey()
@@ -430,50 +438,31 @@ func createCredentials(serviceDetails auth.ServiceDetails) (auth transport.AuthM
 	return &http.BasicAuth{Username: serviceDetails.GetUser(), Password: password}
 }
 
-var data = &VcsData{}
-
-var basicAuthenticationQuestionMap = map[string]utils.QuestionInfo{
-	VcsUrl: {
-		Msg:          "",
-		PromptPrefix: "Enter VCS URL >",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       VcsUrl,
-		Callback:     nil,
-	},
-	VcsUsername: {
-		Msg:          "",
-		PromptPrefix: "Enter VCS admin user name >",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       VcsUsername,
-		Callback:     nil,
-	},
-	VcsPassword: {
-		Msg:          "",
-		PromptPrefix: "Enter VCS password >",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       VcsPassword,
-		Callback:     setVcsCredentials,
-	},
-	VcsBranches: {
-		Msg:          "",
-		PromptPrefix: "Enter comma sperated list of git branches >",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       VcsBranches,
-		Callback:     setVcsCredentials,
-	},
-	LocalDir: {
-		Options: []prompt.Suggest{
-			{Text: "./workspace", Description: "a temp dir that will include a clone of the VCS project."},
-		},
-		Msg:          "",
-		PromptPrefix: "Enter target directory for projet clone >",
-		AllowVars:    true,
-		Writer:       utils.WriteStringAnswer,
-		MapKey:       LocalDir,
-		Callback:     setAndPreformeClone,
-	},
+func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
+	ioutils.ScanFromConsole("Version Control System URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
+	print("Access token (Leave blank for username and password): ")
+	byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return errorutils.CheckError(err)
+	}
+	// New-line required after the access token input:
+	fmt.Println()
+	if len(byteToken) > 0 {
+		vc.data.VcsCredentials.SetAccessToken(string(byteToken))
+	} else {
+		ioutils.ScanFromConsole("User", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
+		print("Password: ")
+		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+		err = errorutils.CheckError(err)
+		if err != nil {
+			return err
+		}
+		vc.data.VcsCredentials.SetPassword(string(bytePassword))
+		if vc.data.VcsCredentials.GetPassword() == "" {
+			vc.data.VcsCredentials.SetPassword(vc.defaultData.VcsCredentials.GetPassword())
+		}
+		// New-line required after the password input:
+		fmt.Println()
+	}
+	return
 }

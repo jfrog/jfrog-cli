@@ -18,7 +18,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return commands.VcsCmd(c)
+				return commands.VcsCmd()
 			},
 		},
 	}

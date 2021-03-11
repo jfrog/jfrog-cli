@@ -60,7 +60,7 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	return servicesManager.CreateBasicVirtualRepository(params)
 }
 
-func convertVcsDataToBuildConfig(vcsData VcsData) *agentutils.BuildConfig {
+func convertVcsDataToBuildConfig(vcsData *VcsData) *agentutils.BuildConfig {
 	serviceDetails, _ := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
 	rtDetails, _ := serviceDetails.CreateArtAuthConfig()
 	return &agentutils.BuildConfig{
@@ -71,7 +71,7 @@ func convertVcsDataToBuildConfig(vcsData VcsData) *agentutils.BuildConfig {
 			User:     vcsData.VcsCredentials.GetUser(),
 			Password: vcsData.VcsCredentials.GetPassword(),
 			Token:    vcsData.VcsCredentials.GetAccessToken(),
-			Branches: vcsData.VcsBranches,
+			Branches: []string{vcsData.VcsBranch},
 		},
 		Jfrog: &agentutils.JfrogDetails{
 			ArtUrl:   rtDetails.GetUrl(),
