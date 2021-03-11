@@ -1,4 +1,4 @@
-package install
+package uninstall
 
 const Description = "Uninstall a JFrog CLI plugin."
 
