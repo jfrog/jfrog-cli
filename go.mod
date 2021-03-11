@@ -23,7 +23,8 @@ require (
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go dev
 
 // replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core dev
-replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210310145532-c45a6f2852e9
+//replace github.com/jfrog/jfrog-cli-core => /Users/gail/dev/new/jfrog-cli-core
+replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core xr-curl
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
