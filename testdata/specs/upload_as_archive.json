@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/a*.in",
+      "target": "${REPO1}/archive/a.zip",
+      "archive": "zip",
+      "targetProps": "k1=v11"
+    },
+    {
+      "pattern": "testdata/a/b/b1.in",
+      "target": "${REPO1}/archive/a.zip",
+      "archive": "zip",
+      "targetProps": "k1=v11,v12;k2=v2"
+    },
+    {
+      "pattern": "testdata/a/b/b*.in",
+      "target": "${REPO1}/archive/b.zip",
+      "archive": "zip"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/jfrog/jfrog-cli/plugins/commands/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -13,8 +14,8 @@ func TestGetNameAndVersion(t *testing.T) {
 		expectedName    string
 		expectedVersion string
 	}{
-		{"latest", "hello-frog", true, "hello-frog", latestVersionName},
-		{"latestWithSeparator", "hello-frog@", true, "hello-frog", latestVersionName},
+		{"latest", "hello-frog", true, "hello-frog", utils.LatestVersionName},
+		{"latestWithSeparator", "hello-frog@", true, "hello-frog", utils.LatestVersionName},
 		{"version", "hello-frog@1.0.0", true, "hello-frog", "1.0.0"},
 		{"tooManySeparators", "hello-frog@1.0.0@", false, "", ""},
 		{"tooManySeparators2", "hello-frog@@1.0.0", false, "", ""},

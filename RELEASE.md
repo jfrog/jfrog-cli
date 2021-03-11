@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.45.1 (March 10, 2021)
+- Bug fix - panic when running build-docker-create command if image name does not include slash or colon.
+- Bug fix - wrong usage for the config 'add' and 'edit' commands.
+- Bug fix - missing --server-id option for the "bad" command.
+- Bug fix - Missing --project option for the "bce" command.
+
 ## 1.45.0 (March 9, 2021)
 - New "jfrog config" command, replacing the old "jfrog rt config" command.
 - Support for private JFrog CLI Plugins.

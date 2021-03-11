@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "pattern": "testdata/a/a*.in",
+      "target": "${REPO1}/archive/",
+      "archive": "zip"
+    }
+  ]
+}

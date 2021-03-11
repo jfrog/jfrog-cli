@@ -270,6 +270,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "build-collect-env",
 			Aliases:      []string{"bce"},
+			Flags:        cliutils.GetCommandFlags(cliutils.BuildCollectEnv),
 			Description:  buildcollectenv.Description,
 			HelpName:     corecommon.CreateUsage("rt build-collect-env", buildcollectenv.Description, buildcollectenv.Usage),
 			UsageText:    buildcollectenv.Arguments,
@@ -1502,8 +1503,8 @@ func dotnetCmd(c *cli.Context) error {
 		return err
 	}
 	if !exists {
-		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file: %s\n"+
-			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'.", err.Error()))
+		return errors.New(fmt.Sprintf("Error occurred while attempting to read dotnet-configuration file.\n" +
+			"Please run 'jfrog rt dotnet-config' command prior to running 'jfrog rt dotnet'."))
 	}
 
 	rtDetails, targetRepo, useNugetV2, err := getNugetAndDotnetConfigFields(configFilePath)

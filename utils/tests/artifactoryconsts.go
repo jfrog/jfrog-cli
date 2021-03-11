@@ -56,6 +56,7 @@ const (
 	DownloadSpecExclude                    = "download_spec_exclude.json"
 	DownloadSpecExclusions                 = "download_spec_exclusions.json"
 	DownloadWildcardRepo                   = "download_wildcard_repo.json"
+	DownloadAndExplodeArchives             = "download_and_explode_archives.json"
 	GitLfsAssertSpec                       = "git_lfs_assert_spec.json"
 	GitLfsTestRepositoryConfig             = "git_lfs_test_repository_config.json"
 	GoLocalRepositoryConfig                = "go_local_repository_config.json"
@@ -113,6 +114,8 @@ const (
 	UploadTempWildcard                     = "upload_temp_wildcard.json"
 	UploadWithPropsSpec                    = "upload_with_props_spec.json"
 	UploadWithPropsSpecdeleteExcludeProps  = "upload_with_props_spec_delete_exclude_props.json"
+	UploadAsArchive                        = "upload_as_archive.json"
+	UploadAsArchiveToDir                   = "upload_as_archive_to_dir.json"
 	VirtualRepositoryConfig                = "specs_virtual_repository_config.json"
 	WinBuildAddDepsSpec                    = "win_simple_build_add_deps_spec.json"
 	WinSimpleDownloadSpec                  = "win_simple_download_spec.json"
@@ -377,6 +380,25 @@ func GetUploadFileNameWithParentheses() []string {
 		RtRepo1 + "/new)/testdata/b/(b)/(b).in",
 		RtRepo1 + "/(new/testdata/b/)b)/)b).in",
 		RtRepo1 + "/(new/testdata/b/)b/)b.in",
+	}
+}
+
+func GetUploadAsArchive() []string {
+	return []string{
+		RtRepo1 + "/archive/a.zip",
+		RtRepo1 + "/archive/b.zip",
+	}
+}
+
+func GetDownloadArchiveAndExplode() []string {
+	return []string{
+		filepath.Join(Out, "archive/a/a1.in"),
+		filepath.Join(Out, "archive/a/a2.in"),
+		filepath.Join(Out, "archive/a/a3.in"),
+		filepath.Join(Out, "archive/a/b1.in"),
+		filepath.Join(Out, "archive/b/b1.in"),
+		filepath.Join(Out, "archive/b/b2.in"),
+		filepath.Join(Out, "archive/b/b3.in"),
 	}
 }
 

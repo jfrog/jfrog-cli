@@ -27,6 +27,7 @@ const (
 	BuildDiscard            = "build-discard"
 	BuildAddDependencies    = "build-add-dependencies"
 	BuildAddGit             = "build-add-git"
+	BuildCollectEnv         = "build-collect-env"
 	GitLfsClean             = "git-lfs-clean"
 	Mvn                     = "mvn"
 	MvnConfig               = "mvn-config"
@@ -397,6 +398,10 @@ const (
 	configXrUrl       = "xray-url"
 	configMcUrl       = "mission-control-url"
 	configPlUrl       = "pipelines-url"
+	configAccessToken = configPrefix + accessToken
+	configUser        = configPrefix + user
+	configPassword    = configPrefix + password
+	configApiKey      = configPrefix + apikey
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1190,11 +1195,27 @@ var flagsMap = map[string]cli.Flag{
 		Name:  configPlUrl,
 		Usage: "[Optional] Pipelines URL.` `",
 	},
+	configUser: cli.StringFlag{
+		Name:  user,
+		Usage: "[Optional] JFrog Platform username. ` `",
+	},
+	configPassword: cli.StringFlag{
+		Name:  password,
+		Usage: "[Optional] JFrog Platform password. ` `",
+	},
+	configApiKey: cli.StringFlag{
+		Name:  apikey,
+		Usage: "[Optional] JFrog Platform API key. ` `",
+	},
+	configAccessToken: cli.StringFlag{
+		Name:  accessToken,
+		Usage: "[Optional] JFrog Platform access token. ` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
-		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, insecureTls,
 	},
 	RtConfig: {
@@ -1255,10 +1276,13 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt,
+		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
+	},
+	BuildCollectEnv: {
+		project,
 	},
 	BuildDockerCreate: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
