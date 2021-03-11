@@ -1,5 +1,25 @@
 # Release Notes
 
+## 1.45.1 (March 10, 2021)
+- Bug fix - panic when running build-docker-create command if image name does not include slash or colon.
+- Bug fix - wrong usage for the config 'add' and 'edit' commands.
+- Bug fix - missing --server-id option for the "bad" command.
+- Bug fix - Missing --project option for the "bce" command.
+
+## 1.45.0 (March 9, 2021)
+- New "jfrog config" command, replacing the old "jfrog rt config" command.
+- Support for private JFrog CLI Plugins.
+- New full-jfrog-cli docker image
+- "jfrog rt build-add-dependencies" - support collecting the dependencies from Artifactory.
+- Allow uploading files to Artifactory, after packing them in a zip archive.
+- Allow specifying Artifactory project, when publishing build-info.
+- Support for ANT patterns when uploading files to Artifactory.
+- Download artifacts of all builds, including aggregated (referenced) builds.
+- Support fetching VCS attached properties, when git submodules is used.
+- Add new "build.branch" property to uploaded build artifacts.
+- Bug fix - prompt for Artifactory's SSH passphrase when using "jfrog config".
+- Bug fix - "jfrog rt build-add-git" - support the case where the revision no longer exists in the build log.
+
 ## 1.44.0 (January 31, 2021)
 - New users-create and user-delete commands
 - New group-create, group-update and group-delete commands

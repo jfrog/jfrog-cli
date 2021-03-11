@@ -12,7 +12,6 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -21,31 +20,6 @@ import (
 )
 
 const pluginsErrorPrefix = "jfrog cli plugins: "
-
-// Command used to extract a plugin's signature, and to execute plugin commands.
-type SignatureCmd struct {
-	execPath string
-	Command  []string
-}
-
-func (signatureCmd *SignatureCmd) GetCmd() *exec.Cmd {
-	var cmd []string
-	cmd = append(cmd, signatureCmd.execPath)
-	cmd = append(cmd, signatureCmd.Command...)
-	return exec.Command(cmd[0], cmd[1:]...)
-}
-
-func (signatureCmd *SignatureCmd) GetEnv() map[string]string {
-	return map[string]string{}
-}
-
-func (signatureCmd *SignatureCmd) GetStdWriter() io.WriteCloser {
-	return nil
-}
-
-func (signatureCmd *SignatureCmd) GetErrWriter() io.WriteCloser {
-	return nil
-}
 
 // Gets all the installed plugins' signatures by looping over the plugins dir.
 func getPluginsSignatures() ([]*components.PluginSignature, error) {
@@ -73,7 +47,7 @@ func getPluginsSignatures() ([]*components.PluginSignature, error) {
 		pluginName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
 		execPath := filepath.Join(pluginsDir, f.Name())
 		output, err := gofrogcmd.RunCmdOutput(
-			&SignatureCmd{
+			&PluginExecCmd{
 				execPath,
 				[]string{plugins.SignatureCommandName},
 			})

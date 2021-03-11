@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
 	"net"
@@ -17,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -845,6 +847,74 @@ func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
 	assert.NoError(t, err)
 	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadAndExplodeDotAsTarget")}, paths, t)
 	os.RemoveAll(tests.Out)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchive(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	searchFilePath, err := tests.CreateSpec(tests.SearchAllRepo1)
+	verifyExistInArtifactory(tests.GetUploadAsArchive(), searchFilePath, t)
+
+	// Verify the properties are valid
+	resultItems := searchItemsInArtifactory(t, tests.SearchAllRepo1)
+	assert.NotZero(t, len(resultItems))
+	for _, item := range resultItems {
+		if item.Name != "a.zip" {
+			assert.Zero(t, len(item.Properties))
+			continue
+		}
+		properties := item.Properties
+		assert.Equal(t, 3, len(properties))
+
+		// Sort the properties alphabetically by key and value to make the comparison easier
+		sort.Slice(properties, func(i, j int) bool {
+			if properties[i].Key == properties[j].Key {
+				return properties[i].Value < properties[j].Value
+			}
+			return properties[i].Key < properties[j].Key
+		})
+		assert.Equal(t, "k1", properties[0].Key)
+		assert.Equal(t, "v11", properties[0].Value)
+		assert.Equal(t, "k1", properties[1].Key)
+		assert.Equal(t, "v12", properties[1].Value)
+		assert.Equal(t, "k2", properties[2].Key)
+		assert.Equal(t, "v2", properties[2].Value)
+	}
+
+	// Check the files inside the archives by downloading and exploding them
+	downloadSpecFile, err := tests.CreateSpec(tests.DownloadAndExplodeArchives)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("download", "--spec="+downloadSpecFile)
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally(tests.GetDownloadArchiveAndExplode(), paths, t)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchiveAndSymlinks(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchive)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile, "--symlinks")
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryUploadAsArchiveToDir(t *testing.T) {
+	initArtifactoryTest(t)
+
+	uploadSpecFile, err := tests.CreateSpec(tests.UploadAsArchiveToDir)
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", "--spec="+uploadSpecFile)
+	assert.Error(t, err)
+
 	cleanArtifactoryTest()
 }
 
@@ -4084,6 +4154,7 @@ func deleteServerConfig() {
 // This function will create server config and return the entire passphrase flag if it needed.
 // For example if passphrase is needed it will return "--ssh-passphrase=${theConfiguredPassphrase}" or empty string.
 func createServerConfigAndReturnPassphrase() (passphrase string, err error) {
+	deleteServerConfig()
 	if *tests.RtSshPassphrase != "" {
 		passphrase = "--ssh-passphrase=" + *tests.RtSshPassphrase
 	}
@@ -4561,4 +4632,79 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
+}
+
+func TestPermissionTargets(t *testing.T) {
+	initArtifactoryTest(t)
+	servicesManager, err := utils.CreateServiceManager(serverDetails, false)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	templatePath := filepath.Join(tests.GetTestResourcesPath(), "permissiontarget", "template")
+
+	// Create permission target on specific repo.
+	assert.NoError(t, artifactoryCli.Exec("ptc", templatePath, createPermissionTargetsTemplateVars(tests.RtRepo1)))
+	err = getAndAssertExpectedPermissionTarget(t, servicesManager, tests.RtRepo1)
+	if err != nil {
+		return
+	}
+
+	permissionDeleted := false
+	defer func() {
+		if !permissionDeleted {
+			cleanPermissionTarget()
+		}
+	}()
+
+	// Update permission target to ANY repo.
+	any := "ANY"
+	assert.NoError(t, artifactoryCli.Exec("ptu", templatePath, createPermissionTargetsTemplateVars(any)))
+	err = getAndAssertExpectedPermissionTarget(t, servicesManager, any)
+	if err != nil {
+		return
+	}
+
+	// Delete permission target.
+	assert.NoError(t, artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName))
+	permissionDeleted, err = assertPermissionTargetDeleted(t, servicesManager)
+	if err != nil {
+		return
+	}
+
+	cleanArtifactoryTest()
+}
+
+func createPermissionTargetsTemplateVars(reposValue string) string {
+	ptNameVarKey := "pt_name"
+	reposVarKey := "repos_var"
+	return fmt.Sprintf("--vars=%s=%s;%s=%s", ptNameVarKey, tests.RtPermissionTargetName, reposVarKey, reposValue)
+}
+
+func getAndAssertExpectedPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) error {
+	actual, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
+	if err != nil {
+		assert.NoError(t, err)
+		return err
+	}
+	expected := tests.GetExpectedPermissionTarget(repoValue)
+	assert.EqualValues(t, expected, *actual)
+	return nil
+}
+
+func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) (bool, error) {
+	_, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
+	if err == nil {
+		assert.Error(t, err)
+		return false, nil
+	}
+	if strings.Contains(err.Error(), "404 Not Found") {
+		return true, nil
+	}
+	assert.Contains(t, err.Error(), "404 Not Found")
+	return false, err
+}
+
+func cleanPermissionTarget() {
+	_ = artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName)
 }
