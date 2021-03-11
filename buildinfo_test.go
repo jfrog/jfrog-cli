@@ -643,12 +643,15 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	expectedVcsBranch := "master"
+	expectedVcsMessage := "TEST-4 - Adding text to file2.txt"
 	buildInfoVcsUrl := partials[0].VcsList[0].Url
 	buildInfoVcsRevision := partials[0].VcsList[0].Revision
 	buildInfoVcsBranch := partials[0].VcsList[0].Branch
+	buildInfoVcsMessage := partials[0].VcsList[0].Message
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+	assert.Equal(t, expectedVcsMessage, buildInfoVcsMessage, "Wrong Message")
 
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -707,6 +710,10 @@ func TestReadGitConfig(t *testing.T) {
 	branch, _, err := gitExecutor.GetBranch()
 	assert.NoError(t, err)
 	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
+
+	message, _, err := gitExecutor.GetMessage(revision)
+	assert.NoError(t, err)
+	assert.Equal(t, message, gitManager.GetMessage(), "Wrong message")
 
 	cleanArtifactoryTest()
 }
