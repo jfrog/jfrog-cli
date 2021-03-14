@@ -4,7 +4,6 @@ import (
 	artUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	agentutils "github.com/jfrog/jfrog-vcs-agent/utils"
 )
 
 const (
@@ -60,28 +59,28 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	return servicesManager.CreateBasicVirtualRepository(params)
 }
 
-func convertVcsDataToBuildConfig(vcsData *VcsData) *agentutils.BuildConfig {
-	serviceDetails, _ := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
-	rtDetails, _ := serviceDetails.CreateArtAuthConfig()
-	return &agentutils.BuildConfig{
-		ProjectName:  vcsData.ProjectName,
-		BuildCommand: vcsData.BuildCommand,
-		Vcs: &agentutils.Vcs{
-			Url:      vcsData.VcsCredentials.Url,
-			User:     vcsData.VcsCredentials.User,
-			Password: vcsData.VcsCredentials.Password,
-			Token:    vcsData.VcsCredentials.AccessToken,
-			Branches: []string{vcsData.VcsBranch},
-		},
-		Jfrog: &agentutils.JfrogDetails{
-			ArtUrl:   rtDetails.GetUrl(),
-			User:     rtDetails.GetUser(),
-			Password: rtDetails.GetPassword(),
-			//Repositories: vcsData.ArtifactoryVirtualRepos,
-			BuildName: vcsData.BuildName,
-		},
-	}
-}
+// func convertVcsDataToBuildConfig(vcsData *VcsData) *agentutils.BuildConfig {
+// 	serviceDetails, _ := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+// 	// rtDetails, _ := serviceDetails.CreateArtAuthConfig()
+// 	// return &agentutils.BuildConfig{
+// 	// 	ProjectName:  vcsData.ProjectName,
+// 	// 	BuildCommand: vcsData.BuildCommand,
+// 	// 	Vcs: &agentutils.Vcs{
+// 	// 		Url:      vcsData.VcsCredentials.Url,
+// 	// 		User:     vcsData.VcsCredentials.User,
+// 	// 		Password: vcsData.VcsCredentials.Password,
+// 	// 		Token:    vcsData.VcsCredentials.AccessToken,
+// 	// 		Branches: []string{vcsData.VcsBranch},
+// 	// 	},
+// 	// 	Jfrog: &agentutils.JfrogDetails{
+// 	// 		ArtUrl:   rtDetails.GetUrl(),
+// 	// 		User:     rtDetails.GetUser(),
+// 	// 		Password: rtDetails.GetPassword(),
+// 	// 		//Repositories: vcsData.ArtifactoryVirtualRepos,
+// 	// 		BuildName: vcsData.BuildName,
+// 	// 	},
+// 	// }
+// }
 
 func ConvertRepoDetailsToRepoNames(reposDetails *[]services.RepositoryDetails) (reposNames []string) {
 	for _, repo := range *reposDetails {
