@@ -67,10 +67,10 @@ func convertVcsDataToBuildConfig(vcsData *VcsData) *agentutils.BuildConfig {
 		ProjectName:  vcsData.ProjectName,
 		BuildCommand: vcsData.BuildCommand,
 		Vcs: &agentutils.Vcs{
-			Url:      vcsData.VcsCredentials.GetUrl(),
-			User:     vcsData.VcsCredentials.GetUser(),
-			Password: vcsData.VcsCredentials.GetPassword(),
-			Token:    vcsData.VcsCredentials.GetAccessToken(),
+			Url:      vcsData.VcsCredentials.Url,
+			User:     vcsData.VcsCredentials.User,
+			Password: vcsData.VcsCredentials.Password,
+			Token:    vcsData.VcsCredentials.AccessToken,
 			Branches: []string{vcsData.VcsBranch},
 		},
 		Jfrog: &agentutils.JfrogDetails{

@@ -22,7 +22,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
-	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -56,7 +55,19 @@ type VcsData struct {
 	ArtifactoryVirtualRepos map[Technology]string
 	// A collection of technologies that was found with a list of theirs indications
 	DetectedTechnologies map[Technology]bool
-	VcsCredentials       auth.CommonConfigFields
+	VcsCredentials       VcsServerDetails
+}
+type VcsServerDetails struct {
+	Url                  string `json:"url,omitempty"`
+	User                 string `json:"user,omitempty"`
+	Password             string `json:"password,omitempty"`
+	SshKeyPath           string `json:"sshKeyPath,omitempty"`
+	SshPassphrase        string `json:"SshPassphrase,omitempty"`
+	AccessToken          string `json:"accessToken,omitempty"`
+	RefreshToken         string `json:"refreshToken,omitempty"`
+	TokenRefreshInterval int    `json:"tokenRefreshInterval,omitempty"`
+	ClientCertPath       string `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath    string `json:"clientCertKeyPath,omitempty"`
 }
 
 func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
@@ -168,8 +179,8 @@ func (vc *VcsCommand) Run() error {
 }
 
 func runConfigCmd() (err error) {
-	configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
 	for {
+		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
 		err = configCmd.Config()
 		if err == nil {
 			return nil
@@ -294,10 +305,11 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	repoNames = append(repoNames, NewRepository)
 
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(repoNames)
+	remoteRepo, err := promptARepoSelection(repoNames, Remote)
 	if err != nil {
 		return nil
 	}
+	log.Info(remoteRepo)
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
@@ -321,7 +333,7 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	repoNames = append(repoNames, NewRepository)
 
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(repoNames)
+	virtualRepo, err := promptARepoSelection(repoNames, Virtual)
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
@@ -341,13 +353,13 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	return
 }
 
-func promptARepoSelection(repoNames []string) (repoName string, err error) {
+func promptARepoSelection(repoNames []string, repoType string) (selectedRepoName string, err error) {
 
 	selectableItems := []ioutils.PromptItem{}
 	for _, repoName := range repoNames {
-		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repoName, TargetValue: &repoName})
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repoName, TargetValue: &selectedRepoName, DefaultValue: ""})
 	}
-	err = ioutils.SelectString(selectableItems, "Select remote repository", func(item ioutils.PromptItem) {
+	err = ioutils.SelectString(selectableItems, fmt.Sprintf("Select %s repository", repoType), func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
@@ -383,24 +395,24 @@ func (vc *VcsCommand) cloneProject() (err error) {
 		return err
 	}
 	cloneOption := &git.CloneOptions{
-		URL:  vc.data.VcsCredentials.GetUrl(),
+		URL:  vc.data.VcsCredentials.Url,
 		Auth: createCredentials(&vc.data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
 	vc.setProjectName()
 	// Clone the given repository to the given directory from the given branch
-	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", vc.data.ProjectName, vc.data.VcsCredentials.GetUrl(), vc.data.LocalDirPath))
+	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
 	log.Info(err)
 	return
 }
 
 func (vc *VcsCommand) setProjectName() {
-	vcsUrl := vc.data.VcsCredentials.GetUrl()
+	vcsUrl := vc.data.VcsCredentials.Url
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
-	vc.data.VcsCredentials.SetUrl(vcsUrl)
+	vc.data.VcsCredentials.Url = vcsUrl
 	projectName := vcsUrl[strings.LastIndex(vcsUrl, "/")+1:]
 	vc.data.ProjectName = strings.TrimSuffix(projectName, ".git")
 }
@@ -426,16 +438,14 @@ func (vc *VcsCommand) detectTechnologies() (err error) {
 	return
 }
 
-func createCredentials(serviceDetails *auth.CommonConfigFields) (auth transport.AuthMethod) {
+func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMethod) {
 	var password string
-	if serviceDetails.GetApiKey() != "" {
-		password = serviceDetails.GetApiKey()
-	} else if serviceDetails.GetAccessToken() != "" {
-		password = serviceDetails.GetAccessToken()
+	if serviceDetails.AccessToken != "" {
+		password = serviceDetails.AccessToken
 	} else {
-		password = serviceDetails.GetPassword()
+		password = serviceDetails.Password
 	}
-	return &http.BasicAuth{Username: serviceDetails.GetUser(), Password: password}
+	return &http.BasicAuth{Username: serviceDetails.User, Password: password}
 }
 
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
@@ -448,7 +458,7 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 	// New-line required after the access token input:
 	fmt.Println()
 	if len(byteToken) > 0 {
-		vc.data.VcsCredentials.SetAccessToken(string(byteToken))
+		vc.data.VcsCredentials.AccessToken = string(byteToken)
 	} else {
 		ioutils.ScanFromConsole("User", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
 		print("Password: ")
@@ -457,9 +467,9 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 		if err != nil {
 			return err
 		}
-		vc.data.VcsCredentials.SetPassword(string(bytePassword))
-		if vc.data.VcsCredentials.GetPassword() == "" {
-			vc.data.VcsCredentials.SetPassword(vc.defaultData.VcsCredentials.GetPassword())
+		vc.data.VcsCredentials.Password = string(bytePassword)
+		if vc.data.VcsCredentials.Password == "" {
+			vc.data.VcsCredentials.Password = vc.defaultData.VcsCredentials.Password
 		}
 		// New-line required after the password input:
 		fmt.Println()
