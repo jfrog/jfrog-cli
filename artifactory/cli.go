@@ -1235,11 +1235,11 @@ func mvnCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredMavenArgs, insecureTls, err := commonutils.ExtractInsecureTlsFromArgs(args)
+		filteredMavenArgs, insecureTls, err := utils.ExtractInsecureTlsFromArgs(args)
 		if err != nil {
 			return err
 		}
-		filteredMavenArgs, buildConfiguration, err := commonutils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
+		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
@@ -1273,7 +1273,7 @@ func gradleCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredGradleArgs, buildConfiguration, err := commonutils.ExtractBuildDetailsFromArgs(args)
+		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1427,7 +1427,7 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 
-		filteredNugetArgs, buildConfiguration, err := commonutils.ExtractBuildDetailsFromArgs(args)
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1514,7 +1514,7 @@ func dotnetCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
-	filteredDotnetArgs, buildConfiguration, err := commonutils.ExtractBuildDetailsFromArgs(args)
+	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -1567,7 +1567,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmInstallArgs, err := commonutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmInstallArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1662,7 +1662,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmPublicArgs, err := commonutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmPublicArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1813,7 +1813,7 @@ func goLegacyCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	goArg, err := commonutils.ParseArgs(strings.Split(c.Args().Get(0), " "))
+	goArg, err := utils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
 	}
