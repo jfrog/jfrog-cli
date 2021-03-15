@@ -9,9 +9,14 @@
       "items": {
         "$ref": "#/$file"
       },
-      "description": "Details of files you want to upload or download to or from Artifactory.",
+      "description": "Details of files to be uploaded or downloaded from Artifactory.",
       "minItems": 1,
-      "uniqueItems": true
+      "uniqueItems": true,
+      "default": [
+        {
+          "pattern": ""
+        }
+      ]
     }
   },
   "$file": {

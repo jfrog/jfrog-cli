@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"io/fs"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -17,9 +17,9 @@ func TestFileSpecSchema(t *testing.T) {
 	schemaLoader := gojsonschema.NewBytesLoader(schema)
 
 	// Validate all specs in ../testdata/specs against the filespec-schema.json
-	filepath.WalkDir("../testdata/specs", func(path string, d fs.DirEntry, err error) error {
+	filepath.Walk("../testdata/specs", func(path string, info os.FileInfo, err error) error {
 		assert.NoError(t, err)
-		if d.IsDir() {
+		if info.IsDir() {
 			return nil
 		}
 
