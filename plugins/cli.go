@@ -8,10 +8,11 @@ import (
 	publishdocs "github.com/jfrog/jfrog-cli/docs/plugin/publish"
 	uninstalldocs "github.com/jfrog/jfrog-cli/docs/plugin/uninstall"
 	"github.com/jfrog/jfrog-cli/plugins/commands"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "install",
 			Aliases:      []string{"i"},
@@ -48,5 +49,5 @@ func GetCommands() []cli.Command {
 				return commands.PublishCmd(c)
 			},
 		},
-	}
+	})
 }

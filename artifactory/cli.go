@@ -124,7 +124,7 @@ import (
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RtConfig),
@@ -1024,7 +1024,7 @@ func GetCommands() []cli.Command {
 				return accessTokenCreateCmd(c)
 			},
 		},
-	}
+	})
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*coreConfig.ServerDetails, error) {
