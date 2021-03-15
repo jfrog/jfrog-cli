@@ -333,9 +333,10 @@ const (
 
 	// Unique go flags
 	deps        = "deps"
-	self        = "self"
 	noRegistry  = "no-registry"
 	publishDeps = "publish-deps"
+	// Deprecated.
+	self = "self"
 
 	// Unique release-bundle flags
 	releaseBundlePrefix = "rb-"
@@ -1373,7 +1374,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module, project,
+		deps, url, user, password, apikey, accessToken, buildName, buildNumber, module, project,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
