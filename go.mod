@@ -21,9 +21,9 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/asafgabai/jfrog-client-go v0.18.1-0.20210316125615-2b6c46cf7ce4
+replace github.com/jfrog/jfrog-client-go => github.com/asafgabai/jfrog-client-go omit-identical-props-in-archive
 
-replace github.com/jfrog/jfrog-cli-core => github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210316104406-d4565a5ec3cf
+replace github.com/jfrog/jfrog-cli-core => github.com/asafgabai/jfrog-cli-core omit-identical-props-in-archive
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
