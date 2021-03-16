@@ -847,10 +847,11 @@ func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 
 	// Dot as target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", ".", "--explode=true"))
-	// Changing working dir for testing
+	// Changing current working dir to "out" dir
 	assert.NoError(t, os.Chdir(wd))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
 	assert.NoError(t, os.Chdir(tests.Out))
+
 	// No target
 	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", "--explode=true"))
 	// Changing working dir for testing
@@ -909,7 +910,7 @@ func TestArtifactoryDownloadAndExplodeConcurrent(t *testing.T) {
 	file3.File.Close()
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-	//
+
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--min-split=50"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50"))

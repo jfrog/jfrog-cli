@@ -346,20 +346,6 @@ func GetExplodeUploadExpectedRepo1() []string {
 	}
 }
 
-func GetFlatExplodeUploadExpectedRepo1() []string {
-	return []string{
-		RtRepo1 + "/a3.in",
-		RtRepo1 + "/a1.in",
-		RtRepo1 + "/a2.in",
-		RtRepo1 + "/b1.in",
-		RtRepo1 + "/b2.in",
-		RtRepo1 + "/b3.in",
-		RtRepo1 + "/c1.in",
-		RtRepo1 + "/c2.in",
-		RtRepo1 + "/c3.in",
-	}
-}
-
 func GetCopyFileNameWithParentheses() []string {
 	return []string{
 		RtRepo2 + "/testdata/b/(/(.in",
@@ -542,17 +528,17 @@ func GetBuildDeleteExpected() []string {
 	}
 }
 
-func GetExtractedDownloadCurDir() []string {
-	return []string{
-		filepath.Join(Out, "p-modules"),
-		filepath.Join(Out, "p-modules", "DownloadAndExplodeCurDirTarget"),
-	}
-}
-
 func GetExtractedDownload() []string {
 	return []string{
 		filepath.Join(Out, "randFile"),
 		filepath.Join(Out, "concurrent.tar.gz"),
+	}
+}
+
+func GetExtractedDownloadCurDir() []string {
+	return []string{
+		filepath.Join(Out, "p-modules"),
+		filepath.Join(Out, "p-modules", "DownloadAndExplodeCurDirTarget"),
 	}
 }
 
