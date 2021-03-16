@@ -143,7 +143,6 @@ func (vc *VcsCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Info("Done config JFrog server - " + ConfigServerId)
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = vc.getVcsCredentialsFromConsole()
 	if err != nil {
@@ -279,7 +278,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range vc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf("A %q technology has been detected, would you like %q repositories to be configured?", tech, tech), true) {
+		if detected && coreutils.AskYesNo(fmt.Sprintf(" It looks like the source code is built using %q. Would you like to resolve the %q dependencies from Artifactory?", tech, tech), true) {
 			err = vc.interactivelyCreatRepos(tech)
 			if err != nil {
 				return
@@ -307,7 +306,6 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	if err != nil {
 		return nil
 	}
-	log.Info(remoteRepo)
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
@@ -396,9 +394,8 @@ func (vc *VcsCommand) cloneProject() (err error) {
 	}
 	vc.setProjectName()
 	// Clone the given repository to the given directory from the given branch
-	log.Info(fmt.Sprintf("git clone project %q from: %q to: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
+	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
-	log.Info(err)
 	return
 }
 
@@ -413,7 +410,6 @@ func (vc *VcsCommand) setProjectName() {
 
 func (vc *VcsCommand) detectTechnologies() (err error) {
 	indicators := GetTechIndicators()
-	log.Info(filepath.Join(vc.data.LocalDirPath, vc.data.ProjectName))
 	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(vc.data.LocalDirPath, false)
 	if err != nil {
 		return err
@@ -422,7 +418,6 @@ func (vc *VcsCommand) detectTechnologies() (err error) {
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
-				//log.Info(file)
 				vc.data.DetectedTechnologies[indicator.GetTechnology()] = true
 				// Same file can't indicate on more than one technology.
 				break
