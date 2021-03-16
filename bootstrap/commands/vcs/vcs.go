@@ -28,6 +28,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
 	"github.com/jfrog/jfrog-client-go/xray"
+	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -253,7 +254,13 @@ func (vc *VcsCommand) configureXray() (err error) {
 	}
 	err = xrayManager.CreatePolicy(policyParams)
 	if err != nil {
-		return err
+		// In case the error is from type PolicyAlreadyExistsError, we should continue with the regular flow.
+		if _, ok := err.(*xrayservices.PolicyAlreadyExistsError); !ok {
+			return err
+		} else {
+			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
+			err = nil
+		}
 	}
 	// Create new defult watcher.
 	watchParams := xrayutils.NewWatchParams()
@@ -272,7 +279,13 @@ func (vc *VcsCommand) configureXray() (err error) {
 
 	err = xrayManager.CreateWatch(watchParams)
 	if err != nil {
-		return err
+		// In case the error is from type WatchAlreadyExistsError, we should continue with the regular flow.
+		if _, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
+			return err
+		} else {
+			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
+			err = nil
+		}
 	}
 	return
 }
