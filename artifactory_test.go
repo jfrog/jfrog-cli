@@ -882,7 +882,6 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/", "--explode=true", "--flat=true"))
-	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlat)
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlatFalse)
 
@@ -893,31 +892,15 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 func TestArtifactoryDownloadAndExplodeConcurrent(t *testing.T) {
 	initArtifactoryTest(t)
 	initTestOutDir(t)
-
-	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file1"), 100000)
-	assert.NoError(t, err)
-	file2, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file2"), 100000)
-	assert.NoError(t, err)
-	file3, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file3"), 100000)
-	assert.NoError(t, err)
-
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{file1.Name(), file2.Name(), file3.Name()})
-	assert.NoError(t, err)
-
-	artifactoryCli.Exec("upload", tests.Out+"/concurrent.tar.gz", tests.RtRepo1)
-	file1.File.Close()
-	file2.File.Close()
-	file3.File.Close()
-	os.RemoveAll(tests.Out)
+	artifactoryCli.Exec("upload", path.Join("testdata", "archives", "a.zip"), tests.RtRepo1, "--flat=true")
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "a.zip"), tests.Out+"/", "--explode=true", "--min-split=50"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "a.zip"), tests.Out+"/", "--explode=false", "--min-split=50"))
 	verifyExistAndCleanDir(t, tests.GetArchiveConcurrent)
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--split-count=15", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "a.zip"), tests.Out+"/", "--explode=true", "--split-count=15", "--min-split=50"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--split-count=0", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "a.zip"), tests.Out+"/", "--explode=true", "--split-count=0", "--min-split=50"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
 	os.RemoveAll(tests.Out)
 	cleanArtifactoryTest()
