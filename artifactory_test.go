@@ -782,10 +782,16 @@ func TestArtifactoryUploadAndSyncDelete(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadAndExplode(t *testing.T) {
-	initArtifactoryTest(t)
+func initTestOutDir(t *testing.T) {
+	os.RemoveAll(tests.Out)
 	err := fileutils.CreateDirIfNotExist(tests.Out)
 	assert.NoError(t, err)
+}
+
+func TestArtifactoryDownloadAndExplode(t *testing.T) {
+	initArtifactoryTest(t)
+	initTestOutDir(t)
+
 	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "randFile"), 100000)
 	assert.NoError(t, err)
 
@@ -802,33 +808,30 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/concurrent", "--explode=true"))
 	// Download 'concurrent.tar.gz' and explode it.
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true"))
-	// Download 'concurrent.tar.gz' withour explode it.
+	// Download 'concurrent.tar.gz' without explode it.
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false"))
 	// Try to explode the archive that already been downloaded.
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true"))
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "randFile"), tests.Out+"/", "--explode=true"))
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "bulk.tar"), tests.Out+"/", "--explode=true"))
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true", "--min-split=50"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownload)
 
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	assert.NoError(t, err)
-	tests.VerifyExistLocally(tests.GetExtractedDownload(), paths, t)
-
+	os.RemoveAll(tests.Out)
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
+func TestArtifactoryDownloadAndExplodeCurDirAsTarget(t *testing.T) {
 	initArtifactoryTest(t)
+	initTestOutDir(t)
 
-	err := fileutils.CreateDirIfNotExist(tests.Out)
-	assert.NoError(t, err)
-	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadAndExplodeDotAsTarget"), 100000)
+	randFile, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "DownloadAndExplodeCurDirTarget"), 100000)
 	assert.NoError(t, err)
 
-	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{randFile.Name()})
+	err = archiver.TarGz.Make(filepath.Join(tests.Out, "curDir.tar.gz"), []string{randFile.Name()})
 	assert.NoError(t, err)
 
 	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1, "--flat=true")
@@ -836,18 +839,96 @@ func TestArtifactoryDownloadAndExplodeDotAsTarget(t *testing.T) {
 	randFile.File.Close()
 	os.RemoveAll(tests.Out)
 
+	// Change working dir to tests temp "out" dir
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 	assert.NoError(t, os.Chdir(tests.Out))
-	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/concurrent.tar.gz", ".", "--explode=true"))
-	assert.NoError(t, os.Chdir(wd))
 
-	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	assert.NoError(t, err)
-	tests.VerifyExistLocally([]string{tests.Out, filepath.Join(tests.Out, "p-modules"), filepath.Join(tests.Out, "p-modules", "DownloadAndExplodeDotAsTarget")}, paths, t)
+	// Dot as target
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", ".", "--explode=true"))
+	// Changing working dir for testing
+	assert.NoError(t, os.Chdir(wd))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
+	assert.NoError(t, os.Chdir(tests.Out))
+	// No target
+	assert.NoError(t, artifactoryCli.Exec("download", tests.RtRepo1+"/p-modules/curDir.tar.gz", "--explode=true"))
+	// Changing working dir for testing
+	assert.NoError(t, os.Chdir(wd))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadCurDir)
+	assert.NoError(t, os.Chdir(tests.Out))
+
+	assert.NoError(t, os.Chdir(wd))
 	os.RemoveAll(tests.Out)
 	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
+	initArtifactoryTest(t)
+	initTestOutDir(t)
+
+	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file1"), 100000)
+	assert.NoError(t, err)
+
+	err = archiver.Tar.Make(filepath.Join(tests.Out, "flat.tar"), []string{file1.Name()})
+	assert.NoError(t, err)
+	err = archiver.Zip.Make(filepath.Join(tests.Out, "tarZipFile.zip"), []string{tests.Out + "/flat.tar"})
+	assert.NoError(t, err)
+
+	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/checkFlat/dir/")
+	file1.File.Close()
+	os.RemoveAll(tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/", "--explode=true", "--flat=true"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlat)
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlatFalse)
+
+	os.RemoveAll(tests.Out)
+	cleanArtifactoryTest()
+}
+
+func TestArtifactoryDownloadAndExplodeConcurrent(t *testing.T) {
+	initArtifactoryTest(t)
+	initTestOutDir(t)
+
+	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file1"), 100000)
+	assert.NoError(t, err)
+	file2, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file2"), 100000)
+	assert.NoError(t, err)
+	file3, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file3"), 100000)
+	assert.NoError(t, err)
+
+	err = archiver.TarGz.Make(filepath.Join(tests.Out, "concurrent.tar.gz"), []string{file1.Name(), file2.Name(), file3.Name()})
+	assert.NoError(t, err)
+
+	artifactoryCli.Exec("upload", tests.Out+"/concurrent.tar.gz", tests.RtRepo1)
+	file1.File.Close()
+	file2.File.Close()
+	file3.File.Close()
+	os.RemoveAll(tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+	//
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--min-split=50"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false", "--min-split=50"))
+	verifyExistAndCleanDir(t, tests.GetArchiveConcurrent)
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--split-count=15", "--min-split=50"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=true", "--split-count=0", "--min-split=50"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadConcurrent)
+	os.RemoveAll(tests.Out)
+	cleanArtifactoryTest()
+}
+
+func verifyExistAndCleanDir(t *testing.T, GetExtractedDownload func() []string) {
+	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
+	assert.NoError(t, err)
+	tests.VerifyExistLocally(GetExtractedDownload(), paths, t)
+	os.RemoveAll(tests.Out)
+	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
+
 }
 
 func TestArtifactoryUploadAsArchive(t *testing.T) {
