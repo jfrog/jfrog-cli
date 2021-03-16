@@ -22,6 +22,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
+	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -300,12 +301,9 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	if err != nil {
 		return err
 	}
-	repoNames := ConvertRepoDetailsToRepoNames(remoteRepos)
-	// Add the option to create new remote repository
-	repoNames = append(repoNames, NewRepository)
 
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(repoNames, Remote)
+	remoteRepo, err := promptARepoSelection(remoteRepos, Remote)
 	if err != nil {
 		return nil
 	}
@@ -328,12 +326,8 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	if err != nil {
 		return err
 	}
-	repoNames = ConvertRepoDetailsToRepoNames(virtualRepos)
-	// Add the option to create new remote repository
-	repoNames = append(repoNames, NewRepository)
-
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(repoNames, Virtual)
+	virtualRepo, err := promptARepoSelection(virtualRepos, Virtual)
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
@@ -353,11 +347,11 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	return
 }
 
-func promptARepoSelection(repoNames []string, repoType string) (selectedRepoName string, err error) {
+func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, repoType string) (selectedRepoName string, err error) {
 
-	selectableItems := []ioutils.PromptItem{}
-	for _, repoName := range repoNames {
-		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repoName, TargetValue: &selectedRepoName, DefaultValue: ""})
+	selectableItems := []ioutils.PromptItem{ioutils.PromptItem{Option: NewRepository, TargetValue: &selectedRepoName}}
+	for _, repo := range *repoDetailes {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
 	err = ioutils.SelectString(selectableItems, fmt.Sprintf("Select %s repository", repoType), func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option

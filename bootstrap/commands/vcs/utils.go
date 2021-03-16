@@ -82,13 +82,6 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 // 	// }
 // }
 
-func ConvertRepoDetailsToRepoNames(reposDetails *[]services.RepositoryDetails) (reposNames []string) {
-	for _, repo := range *reposDetails {
-		reposNames = append(reposNames, repo.Key)
-	}
-	return
-}
-
 func GetRemoteDefaultName(technologyType Technology) string {
 	switch technologyType {
 	case Maven:
