@@ -50,7 +50,7 @@ type VcsCommand struct {
 type VcsData struct {
 	ProjectName             string
 	LocalDirPath            string
-	VcsBranch               string
+	GitBranch               string
 	BuildCommand            string
 	BuildName               string
 	ArtifactoryVirtualRepos map[Technology]string
@@ -192,7 +192,7 @@ func runConfigCmd() (err error) {
 func (vc *VcsCommand) publishFirstBuild() (err error) {
 	ioutils.ScanFromConsole("Build Name", &vc.data.BuildName, "${projectName}-${branch}")
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.ProjectName, -1)
-	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.VcsBranch, -1)
+	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
 	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefultFirstBuildNumber}
@@ -358,7 +358,7 @@ func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, repoType s
 }
 
 func (vc *VcsCommand) prepareVcsData() (err error) {
-	ioutils.ScanFromConsole("VCS Branch", &vc.data.VcsBranch, vc.defaultData.VcsBranch)
+	ioutils.ScanFromConsole("Git Branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
 	err = fileutils.CreateDirIfNotExist(DefultWorkSpace)
 	if err != nil {
 		return err
@@ -438,8 +438,8 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 }
 
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
-	ioutils.ScanFromConsole("Version Control System URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-	print("Access token (Leave blank for username and password): ")
+	ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
+	print("Git Access token (Leave blank for username and password)")
 	byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -449,8 +449,8 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 	if len(byteToken) > 0 {
 		vc.data.VcsCredentials.AccessToken = string(byteToken)
 	} else {
-		ioutils.ScanFromConsole("User", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
-		print("Password: ")
+		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
+		print("Git password: ")
 		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 		err = errorutils.CheckError(err)
 		if err != nil {
