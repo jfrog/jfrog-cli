@@ -92,6 +92,7 @@ const (
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
 	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
+	SearchRepo1NonExistFileAntExclusions   = "search_repo1_ant_and_exclusions_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
 	SearchRepo2                            = "search_repo2.json"
 	SearchSimplePlaceholders               = "search_simple_placeholders.json"
@@ -103,6 +104,7 @@ const (
 	SplitUploadSpecB                       = "upload_split_spec_b.json"
 	Temp                                   = "tmp"
 	UploadAntPattern                       = "upload_ant_pattern.json"
+	UploadAntPatternExclusions             = "upload_ant_pattern_exclusions.json"
 	UploadEmptyDirs                        = "upload_empty_dir_spec.json"
 	UploadFileWithParenthesesSpec          = "upload_file_with_parentheses.json"
 	UploadFlatNonRecursive                 = "upload_flat_non_recursive.json"
@@ -215,6 +217,17 @@ func GetSimpleAntPatternUploadExpectedRepo1() []string {
 	return []string{
 		RtRepo1 + "/bitbucket.in",
 		RtRepo1 + "/github.in",
+	}
+}
+
+func GetAntPatternUploadWithExclusionsExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/a1.in",
+		RtRepo1 + "/a2.in",
+		RtRepo1 + "/a3.in",
+		RtRepo1 + "/c1.in",
+		RtRepo1 + "/c2.in",
+		RtRepo1 + "/c3.in",
 	}
 }
 
