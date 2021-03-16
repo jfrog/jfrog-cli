@@ -143,14 +143,18 @@ func (vc *VcsCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Basic VCS questionnaire (URLs, Credentials, etc'...)
-	err = vc.getVcsCredentialsFromConsole()
-	if err != nil {
-		return err
-	}
-	err = vc.prepareVcsData()
-	if err != nil {
-		return err
+	for {
+		// Basic VCS questionnaire (URLs, Credentials, etc'...)
+		err = vc.getVcsCredentialsFromConsole()
+		if err != nil {
+			return err
+		}
+		err = vc.prepareVcsData()
+		if err != nil {
+			log.Error(err)
+		} else {
+			break
+		}
 	}
 	if saveVcsConf(vc.data) != nil {
 		return err
