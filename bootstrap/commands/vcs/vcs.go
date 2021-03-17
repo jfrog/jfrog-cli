@@ -144,22 +144,13 @@ func (vc *VcsCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	for {
-		// Basic VCS questionnaire (URLs, Credentials, etc'...)
-		err = vc.getVcsCredentialsFromConsole()
-		if err != nil {
-			return err
-		}
-		err = vc.prepareVcsData()
-		if err != nil {
-			log.Error(err)
-		} else {
-			break
-		}
-	}
-	if saveVcsConf(vc.data) != nil {
+
+	// Basic VCS questionnaire (URLs, Credentials, etc'...)
+	err = vc.getVcsCredentialsFromConsole()
+	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
+
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
 	err = vc.runBuildQuestionnaire()
 	if err != nil || saveVcsConf(vc.data) != nil {
@@ -455,30 +446,40 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 }
 
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
-	ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-	print("Git Access token (Leave blank for username and password)")
-	byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	// New-line required after the access token input:
-	fmt.Println()
-	if len(byteToken) > 0 {
-		vc.data.VcsCredentials.AccessToken = string(byteToken)
-	} else {
-		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
-		print("Git password: ")
-		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-		err = errorutils.CheckError(err)
+	for {
+		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
+		print("Git Access token (Leave blank for username and password)")
+		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		}
-		vc.data.VcsCredentials.Password = string(bytePassword)
-		if vc.data.VcsCredentials.Password == "" {
-			vc.data.VcsCredentials.Password = vc.defaultData.VcsCredentials.Password
-		}
-		// New-line required after the password input:
+		// New-line required after the access token input:
 		fmt.Println()
+		if len(byteToken) > 0 {
+			vc.data.VcsCredentials.AccessToken = string(byteToken)
+		} else {
+			ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
+			print("Git password: ")
+			bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+			err = errorutils.CheckError(err)
+			if err != nil {
+				return err
+			}
+			vc.data.VcsCredentials.Password = string(bytePassword)
+			if vc.data.VcsCredentials.Password == "" {
+				vc.data.VcsCredentials.Password = vc.defaultData.VcsCredentials.Password
+			}
+			// New-line required after the password input:
+			fmt.Println()
+		}
+		err = vc.prepareVcsData()
+		if err != nil {
+			log.Error(err)
+			continue
+		} else {
+			return nil
+		}
 	}
-	return
+
 }
