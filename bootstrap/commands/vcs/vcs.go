@@ -439,6 +439,8 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 	var password string
 	if serviceDetails.AccessToken != "" {
 		password = serviceDetails.AccessToken
+		// Authentication fails if the username string is empty. This can be anything except an empty string...
+		serviceDetails.User = "user"
 	} else {
 		password = serviceDetails.Password
 	}
