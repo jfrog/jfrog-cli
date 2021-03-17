@@ -32,6 +32,8 @@ github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210316104406-d4565a5ec3cf h1:HLw+
 github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210316104406-d4565a5ec3cf/go.mod h1:EzTdcgy2wy+X9DeS766ZuWFtsqrtDCPAaNZWFcN7v1Y=
 github.com/asafgabai/jfrog-client-go v0.18.1-0.20210316125615-2b6c46cf7ce4 h1:BAD7tLhIQIleW3l0fHYDufBwWhf+xbiBRG7NRHq7+fc=
 github.com/asafgabai/jfrog-client-go v0.18.1-0.20210316125615-2b6c46cf7ce4/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20210317085423-90231d446388 h1:O0JTadAg3UZLosB2tZzftTr3ZbCmzEjM12temJjt3lU=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20210317085423-90231d446388/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
