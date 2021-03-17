@@ -283,7 +283,7 @@ func (vc *VcsCommand) configureXray() (err error) {
 		if _, ok := err.(*xrayservices.WatchAlreadyExistsError); !ok {
 			return err
 		} else {
-			log.Debug(err.(*xrayservices.PolicyAlreadyExistsError).InnerError)
+			log.Debug(err.(*xrayservices.WatchAlreadyExistsError).InnerError)
 			err = nil
 		}
 	}
@@ -364,7 +364,7 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 
 func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, repoType string) (selectedRepoName string, err error) {
 
-	selectableItems := []ioutils.PromptItem{ioutils.PromptItem{Option: NewRepository, TargetValue: &selectedRepoName}}
+	selectableItems := []ioutils.PromptItem{{Option: NewRepository, TargetValue: &selectedRepoName}}
 	for _, repo := range *repoDetailes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
