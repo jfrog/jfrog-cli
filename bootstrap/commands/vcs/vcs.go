@@ -288,7 +288,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 		}
 	}
 	// Ask for working build command
-	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary.", false, false)
+	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary:", false, false)
 	return nil
 }
 
@@ -353,7 +353,8 @@ func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, repoType s
 	for _, repo := range *repoDetailes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
-	err = ioutils.SelectString(selectableItems, fmt.Sprintf("Select %s repository", repoType), func(item ioutils.PromptItem) {
+	println(fmt.Sprintf("Select %s repository", repoType))
+	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
 	return
