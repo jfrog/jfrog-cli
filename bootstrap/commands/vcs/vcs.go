@@ -60,16 +60,10 @@ type VcsData struct {
 	VcsCredentials       VcsServerDetails
 }
 type VcsServerDetails struct {
-	Url                  string `json:"url,omitempty"`
-	User                 string `json:"user,omitempty"`
-	Password             string `json:"password,omitempty"`
-	SshKeyPath           string `json:"sshKeyPath,omitempty"`
-	SshPassphrase        string `json:"SshPassphrase,omitempty"`
-	AccessToken          string `json:"accessToken,omitempty"`
-	RefreshToken         string `json:"refreshToken,omitempty"`
-	TokenRefreshInterval int    `json:"tokenRefreshInterval,omitempty"`
-	ClientCertPath       string `json:"clientCertPath,omitempty"`
-	ClientCertKeyPath    string `json:"clientCertKeyPath,omitempty"`
+	Url         string `json:"url,omitempty"`
+	User        string `json:"user,omitempty"`
+	Password    string `json:"-"`
+	AccessToken string `json:"-"`
 }
 
 func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
