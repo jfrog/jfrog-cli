@@ -23,7 +23,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
@@ -58,7 +57,19 @@ type VcsData struct {
 	ArtifactoryVirtualRepos map[Technology]string
 	// A collection of technologies that was found with a list of theirs indications
 	DetectedTechnologies map[Technology]bool
-	VcsCredentials       *auth.CommonConfigFields
+	VcsCredentials       VcsServerDetails
+}
+type VcsServerDetails struct {
+	Url                  string `json:"url,omitempty"`
+	User                 string `json:"user,omitempty"`
+	Password             string `json:"password,omitempty"`
+	SshKeyPath           string `json:"sshKeyPath,omitempty"`
+	SshPassphrase        string `json:"SshPassphrase,omitempty"`
+	AccessToken          string `json:"accessToken,omitempty"`
+	RefreshToken         string `json:"refreshToken,omitempty"`
+	TokenRefreshInterval int    `json:"tokenRefreshInterval,omitempty"`
+	ClientCertPath       string `json:"clientCertPath,omitempty"`
+	ClientCertKeyPath    string `json:"clientCertKeyPath,omitempty"`
 }
 
 func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
@@ -385,7 +396,7 @@ func (vc *VcsCommand) cloneProject() (err error) {
 	}
 	cloneOption := &git.CloneOptions{
 		URL:  vc.data.VcsCredentials.Url,
-		Auth: createCredentials(vc.data.VcsCredentials),
+		Auth: createCredentials(&vc.data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
@@ -424,7 +435,7 @@ func (vc *VcsCommand) detectTechnologies() (err error) {
 	return
 }
 
-func createCredentials(serviceDetails *auth.CommonConfigFields) (auth transport.AuthMethod) {
+func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMethod) {
 	var password string
 	if serviceDetails.AccessToken != "" {
 		password = serviceDetails.AccessToken
