@@ -6,7 +6,7 @@
 - NPM build-info now includes depedencies hierarchy.
 - Block the usage of "excludeProps" with "aql" in file specs.
 - Validate container name when pushing docker images.
-- New file schema validator added (filespec-schema.json).
+- New File Spec schema added. This schema can help to build and validate File Specs.
 
 ## 1.45.1 (March 10, 2021)
 - Bug fix - panic when running build-docker-create command if image name does not include slash or colon.
@@ -24,7 +24,7 @@
 - Support for ANT patterns when uploading files to Artifactory.
 - Download artifacts of all builds, including aggregated (referenced) builds.
 - Support fetching VCS attached properties, when git submodules is used.
-- Add new "build.branch" property to uploaded build artifacts.
+- Add new "vcs.branch" property to uploaded build artifacts.
 - Bug fix - prompt for Artifactory's SSH passphrase when using "jfrog config".
 - Bug fix - "jfrog rt build-add-git" - support the case where the revision no longer exists in the build log.
 
