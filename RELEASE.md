@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.45.2 (March 18, 2021)
+- Bug fix - Uploading files to Artifactory with "archive=zip" causes high memory consumption.
+- Add VCS commit message to buildinfo.
+- NPM build-info now includes depedencies hierarchy.
+- Block the usage of "excludeProps" with "aql" in file specs.
+- Validate container name when pushing docker images.
+- New file schema validator added (filespec-schema.json).
+
 ## 1.45.1 (March 10, 2021)
 - Bug fix - panic when running build-docker-create command if image name does not include slash or colon.
 - Bug fix - wrong usage for the config 'add' and 'edit' commands.
