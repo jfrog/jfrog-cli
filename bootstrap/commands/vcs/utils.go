@@ -12,7 +12,7 @@ const (
 	Virtual = "virtual"
 	Local   = "local"
 
-	NewRepository = "[create new reposetory]"
+	NewRepository = "[Create new repository]"
 
 	// Repos defaults
 	MavenRemoteDefaultName   = "maven-remote"

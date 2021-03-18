@@ -34,13 +34,15 @@ import (
 )
 
 const (
-	ConfigServerId = "vcs-integration-platform"
-	VcsConfigFile  = "jfrog-cli-vcs.conf"
-	// Technologies, repositories & build questions keys
+	ConfigServerId         = "vcs-integration-platform"
+	VcsConfigFile          = "jfrog-cli-vcs.conf"
 	DefultFirstBuildNumber = "0"
 	DefultWorkSpace        = "./JFrogVcsWorkSpace"
 
-	// Output questions keys
+	// Error hint messages
+	GitCredentialHintMsg = `It looks like the 'git clone' operation failed. If your username and password are valid,
+	please consider using an access token instead. In some cases, authentication with a username and password can fail.
+	For example, if your git server has two factor authentication configured.`
 )
 
 type VcsCommand struct {
@@ -180,13 +182,15 @@ func runConfigCmd() (err error) {
 }
 
 func (vc *VcsCommand) publishFirstBuild() (err error) {
-	ioutils.ScanFromConsole("Build Name", &vc.data.BuildName, "${projectName}-${branch}")
+	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
+	ioutils.ScanFromConsole("Please choose a name of the build", &vc.data.BuildName, "${projectName}-${branch}")
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.ProjectName, -1)
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
 	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefultFirstBuildNumber}
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
+	log.Info("Generating an initial build-info...")
 	err = commands.Exec(buildAddGitConfigurationCmd)
 	if err != nil {
 		return err
@@ -280,7 +284,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range vc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf(" It looks like the source code is built using %q. Would you like to resolve the %q dependencies from Artifactory?", tech, tech), true) {
+		if detected && coreutils.AskYesNo(fmt.Sprintf(" It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
 			err = vc.interactivelyCreatRepos(tech)
 			if err != nil {
 				return
@@ -288,7 +292,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 		}
 	}
 	// Ask for working build command
-	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or AND operator if necessary:", false, false)
+	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or the && operator:", false, false)
 	return nil
 }
 
@@ -399,6 +403,9 @@ func (vc *VcsCommand) cloneProject() (err error) {
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
+	if err != nil {
+		return fmt.Errorf(err.Error() + ".\n\t" + GitCredentialHintMsg)
+	}
 	return
 }
 
