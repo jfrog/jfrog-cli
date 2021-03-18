@@ -431,15 +431,16 @@ func (vc *VcsCommand) detectTechnologies() (err error) {
 }
 
 func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMethod) {
-	var password string
+	var password, username string
 	if serviceDetails.AccessToken != "" {
 		password = serviceDetails.AccessToken
 		// Authentication fails if the username string is empty. This can be anything except an empty string...
-		serviceDetails.User = "user"
+		username = "user"
 	} else {
 		password = serviceDetails.Password
+		username = serviceDetails.User
 	}
-	return &http.BasicAuth{Username: serviceDetails.User, Password: password}
+	return &http.BasicAuth{Username: username, Password: password}
 }
 
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
