@@ -559,10 +559,10 @@ func CreateSpec(fileName string) (string, error) {
 	return searchFilePath, err
 }
 
-func ConvertSliceToMap(props []utils.Property) map[string]string {
-	propsMap := make(map[string]string)
+func ConvertSliceToMap(props []utils.Property) map[string][]string {
+	propsMap := make(map[string][]string)
 	for _, item := range props {
-		propsMap[item.Key] = item.Value
+		propsMap[item.Key] = append(propsMap[item.Key], item.Value)
 	}
 	return propsMap
 }
