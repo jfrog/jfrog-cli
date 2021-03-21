@@ -68,16 +68,16 @@ var PipVirtualEnv *string
 var TestPlugins *bool
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "password", "Artifactory password")
+	RtUrl = flag.String("rt.url", "https://gai.jfrog.io/artifactory", "Artifactoryurl")
+	RtUser = flag.String("rt.user", "gail@jfrog.com", "Artifactoryusername")
+	RtPassword = flag.String("rt.password", "Gg0546790011!", "Artifactorypassword")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
 	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
 	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
-	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
+	TestArtifactory = flag.Bool("test.artifactory", true, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
 	TestBintray = flag.Bool("test.bintray", false, "Test Bintray")
 	BtUser = flag.String("bt.user", "", "Bintray username")
@@ -85,7 +85,7 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestGo = flag.Bool("test.go", false, "Test Go")
+	TestGo = flag.Bool("test.go", true, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
@@ -559,10 +559,10 @@ func CreateSpec(fileName string) (string, error) {
 	return searchFilePath, err
 }
 
-func ConvertSliceToMap(props []utils.Property) map[string]string {
-	propsMap := make(map[string]string)
+func ConvertSliceToMap(props []utils.Property) map[string][]string {
+	propsMap := make(map[string][]string)
 	for _, item := range props {
-		propsMap[item.Key] = item.Value
+		propsMap[item.Key] = append(propsMap[item.Key], item.Value)
 	}
 	return propsMap
 }

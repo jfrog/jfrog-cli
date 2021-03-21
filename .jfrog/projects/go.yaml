@@ -1,0 +1,8 @@
+version: 1
+type: go
+resolver:
+  repo: jfrog-cli-plugins
+  serverId: gai
+deployer:
+  repo: gp-repo
+  serverId: gai
