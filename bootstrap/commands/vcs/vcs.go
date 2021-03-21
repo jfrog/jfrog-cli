@@ -308,10 +308,11 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	}
 
 	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(remoteRepos, Remote)
+	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
 	if err != nil {
 		return nil
 	}
+	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
@@ -322,16 +323,27 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 				log.Error(err)
 			} else {
 				remoteRepo = repoName
-				break
+				// Create a new virtual repository as well
+				ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
+					&repoName, GetVirtualDefaultName(technologyType))
+				err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
+				if err != nil {
+					log.Error(err)
+				} else {
+					// we created both remote and virtual repositories successfully
+					vc.data.ArtifactoryVirtualRepos[technologyType] = repoName
+					return
+				}
 			}
 		}
 	}
+	// Else, the user choose an existing remote repo
 	virtualRepos, err := GetAllRepos(serviceDetails, Virtual, string(technologyType))
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, Virtual)
+	// Ask if the user would like us to create a new virtual or to chose from the exist repositories list
+	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or chose to create a new repo:", remoteRepo))
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
@@ -341,23 +353,37 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 			if err != nil {
 				log.Error(err)
 			} else {
+				virtualRepo = repoName
 				break
 			}
 		}
-		// Saves the new created repo name (key) in the results data structure.
-		vc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
-		return
+	} else {
+		// Validate that the chosen virtual repo contains the chosen remote repo
+		rtAuth, err := serviceDetails.CreateArtAuthConfig()
+		if err != nil {
+			return err
+		}
+		chosenVirtualRepo, err := GetVirtualRepo(&rtAuth, virtualRepo)
+		if err != nil {
+			return err
+		}
+		if !contains(chosenVirtualRepo.Repositories, remoteRepo) {
+			log.Error(fmt.Sprintf("The chosen virtual repo %q does not contain the chosen remote repo %q", virtualRepo, remoteRepo))
+			return vc.interactivelyCreatRepos(technologyType)
+		}
 	}
+	// Saves the new created repo name (key) in the results data structure.
+	vc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
 	return
 }
 
-func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, repoType string) (selectedRepoName string, err error) {
+func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, promptMsg string) (selectedRepoName string, err error) {
 
 	selectableItems := []ioutils.PromptItem{{Option: NewRepository, TargetValue: &selectedRepoName}}
 	for _, repo := range *repoDetailes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
-	println(fmt.Sprintf("Select %s repository", repoType))
+	println(promptMsg)
 	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
