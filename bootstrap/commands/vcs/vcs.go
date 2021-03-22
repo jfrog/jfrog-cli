@@ -305,7 +305,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 		}
 	}
 	// Ask for working build command
-	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use scripts or the && operator:", false, false)
+	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use the && operator:", false, false)
 	return nil
 }
 
