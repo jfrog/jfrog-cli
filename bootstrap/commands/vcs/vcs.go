@@ -149,13 +149,13 @@ func (vc *VcsCommand) Run() error {
 	}
 
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
-	err = vc.getVcsCredentialsFromConsole()
+	err = vc.gitPhase()
 	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
 
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
-	err = vc.runBuildQuestionnaire()
+	err = vc.artifactoryConfigPhase()
 	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (vc *VcsCommand) Run() error {
 		return err
 	}
 	// Configure Xray to scan the new build.
-	err = vc.configureXray()
+	err = vc.xrayConfigPhase()
 	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func (vc *VcsCommand) publishFirstBuild() (err error) {
 	return
 }
 
-func (vc *VcsCommand) configureXray() (err error) {
+func (vc *VcsCommand) xrayConfigPhase() (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -317,7 +317,7 @@ func (vc *VcsCommand) configureXray() (err error) {
 	return
 }
 
-func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
+func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
 
 	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
@@ -551,7 +551,7 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 	return &http.BasicAuth{Username: username, Password: password}
 }
 
-func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
+func (vc *VcsCommand) gitPhase() (err error) {
 	for {
 		gitProvider, err := promptGitProviderSelection()
 		if err != nil {
