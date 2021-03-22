@@ -38,11 +38,6 @@ const (
 	VcsConfigFile          = "jfrog-cli-vcs.conf"
 	DefultFirstBuildNumber = "0"
 	DefultWorkSpace        = "./JFrogVcsWorkSpace"
-
-	// Error hint messages
-	GitCredentialHintMsg = `It looks like the 'git clone' operation failed. If your username and password are valid,
-	please consider using an access token instead. In some cases, authentication with a username and password can fail.
-	For example, if your git server has two factor authentication configured.`
 )
 
 type VcsCommand struct {
@@ -430,7 +425,7 @@ func (vc *VcsCommand) cloneProject() (err error) {
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
 	if err != nil {
-		return fmt.Errorf(err.Error() + ".\n\t" + GitCredentialHintMsg)
+		return err
 	}
 	return
 }
@@ -479,7 +474,7 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 	for {
 		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-		print("Git Access token (Leave blank for username and password)")
+		print("Git Access token")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
@@ -487,27 +482,11 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 		}
 		// New-line required after the access token input:
 		fmt.Println()
-		if len(byteToken) > 0 {
-			vc.data.VcsCredentials.AccessToken = string(byteToken)
-		} else {
-			ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
-			print("Git password: ")
-			bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-			err = errorutils.CheckError(err)
-			if err != nil {
-				return err
-			}
-			vc.data.VcsCredentials.Password = string(bytePassword)
-			if vc.data.VcsCredentials.Password == "" {
-				vc.data.VcsCredentials.Password = vc.defaultData.VcsCredentials.Password
-			}
-			// New-line required after the password input:
-			fmt.Println()
-		}
+		vc.data.VcsCredentials.AccessToken = string(byteToken)
+		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
 		err = vc.prepareVcsData()
 		if err != nil {
 			log.Error(err)
-			continue
 		} else {
 			return nil
 		}
