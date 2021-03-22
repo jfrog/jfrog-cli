@@ -40,13 +40,23 @@ const (
 	DefultWorkSpace        = "./JFrogVcsWorkSpace"
 )
 
+type GitProvider string
+
+const (
+	Github           = "Github"
+	GithubEnterprise = "GithubEnterprise"
+	Bitbucket        = "Bitbucket"
+	BitbucketServer  = "BitbucketServer"
+	Gitlab           = "Gitlab"
+)
+
 type VcsCommand struct {
 	defaultData *VcsData
 	data        *VcsData
 }
 
 type VcsData struct {
-	ProjectName             string
+	RepositoryName          string
 	ProjectDomain           string
 	LocalDirPath            string
 	GitBranch               string
@@ -56,6 +66,7 @@ type VcsData struct {
 	// A collection of technologies that was found with a list of theirs indications
 	DetectedTechnologies map[Technology]bool
 	VcsCredentials       VcsServerDetails
+	GitProvider          GitProvider
 }
 type VcsServerDetails struct {
 	Url         string `json:"url,omitempty"`
@@ -186,7 +197,7 @@ func runConfigCmd() (err error) {
 func (vc *VcsCommand) publishFirstBuild() (err error) {
 	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
 	ioutils.ScanFromConsole("Please choose a name of the build", &vc.data.BuildName, "${projectName}-${branch}")
-	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.ProjectName, -1)
+	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.RepositoryName, -1)
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
@@ -392,6 +403,26 @@ func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, promptMsg 
 	return
 }
 
+func promptGitProviderSelection() (selected string, err error) {
+	gitProviders := []GitProvider{
+		Github,
+		GithubEnterprise,
+		Bitbucket,
+		BitbucketServer,
+		Gitlab,
+	}
+
+	selectableItems := []ioutils.PromptItem{}
+	for _, provider := range gitProviders {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
+	}
+	println("Choose your project Git provider:")
+	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+	})
+	return
+}
+
 func (vc *VcsCommand) prepareVcsData() (err error) {
 	ioutils.ScanFromConsole("Git Branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
 	err = fileutils.CreateDirIfNotExist(DefultWorkSpace)
@@ -427,9 +458,9 @@ func (vc *VcsCommand) cloneProject() (err error) {
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
-	vc.extractProjectName()
+	vc.extractRepositoryName()
 	// Clone the given repository to the given directory from the given branch
-	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
+	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.RepositoryName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
 	if err != nil {
 		return err
@@ -450,15 +481,15 @@ func (vc *VcsCommand) stagePipelinesYaml(path string) error {
 	return err
 }
 
-func (vc *VcsCommand) extractProjectName() {
+func (vc *VcsCommand) extractRepositoryName() {
 	vcsUrl := vc.data.VcsCredentials.Url
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	vc.data.VcsCredentials.Url = vcsUrl
 	splittedUrl := strings.Split(vcsUrl, "/")
-	projectName := splittedUrl[len(splittedUrl)-1]
+	repositoryName := splittedUrl[len(splittedUrl)-1]
 	vc.data.ProjectDomain = splittedUrl[len(splittedUrl)-2]
-	vc.data.ProjectName = strings.TrimSuffix(projectName, ".git")
+	vc.data.RepositoryName = strings.TrimSuffix(repositoryName, ".git")
 }
 
 func (vc *VcsCommand) detectTechnologies() (err error) {
@@ -495,6 +526,12 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 
 func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 	for {
+		gitProvider, err := promptGitProviderSelection()
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		vc.data.GitProvider = GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
 		print("Git Access token")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))

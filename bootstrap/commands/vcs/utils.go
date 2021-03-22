@@ -97,29 +97,6 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	return servicesManager.CreateBasicVirtualRepository(params)
 }
 
-// func convertVcsDataToBuildConfig(vcsData *VcsData) *agentutils.BuildConfig {
-// 	serviceDetails, _ := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
-// 	// rtDetails, _ := serviceDetails.CreateArtAuthConfig()
-// 	// return &agentutils.BuildConfig{
-// 	// 	ProjectName:  vcsData.ProjectName,
-// 	// 	BuildCommand: vcsData.BuildCommand,
-// 	// 	Vcs: &agentutils.Vcs{
-// 	// 		Url:      vcsData.VcsCredentials.Url,
-// 	// 		User:     vcsData.VcsCredentials.User,
-// 	// 		Password: vcsData.VcsCredentials.Password,
-// 	// 		Token:    vcsData.VcsCredentials.AccessToken,
-// 	// 		Branches: []string{vcsData.VcsBranch},
-// 	// 	},
-// 	// 	Jfrog: &agentutils.JfrogDetails{
-// 	// 		ArtUrl:   rtDetails.GetUrl(),
-// 	// 		User:     rtDetails.GetUser(),
-// 	// 		Password: rtDetails.GetPassword(),
-// 	// 		//Repositories: vcsData.ArtifactoryVirtualRepos,
-// 	// 		BuildName: vcsData.BuildName,
-// 	// 	},
-// 	// }
-// }
-
 func GetRemoteDefaultName(technologyType Technology) string {
 	switch technologyType {
 	case Maven:
