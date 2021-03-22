@@ -121,10 +121,10 @@ func TestGoBuildInfo(t *testing.T) {
 
 	resultItems := getResultItemsFromArtifactory(tests.SearchGo, t)
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
-	propsMap := map[string]string{
-		"build.name":   tests.GoBuildName,
-		"build.number": buildNumber,
-		"go.version":   "v1.0.0",
+	propsMap := map[string][]string{
+		"build.name":   {tests.GoBuildName},
+		"build.number": {buildNumber},
+		"go.version":   {"v1.0.0"},
 	}
 	validateArtifactsProperties(resultItems, t, propsMap)
 

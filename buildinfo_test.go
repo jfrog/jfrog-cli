@@ -98,11 +98,11 @@ func TestBuildPromote(t *testing.T) {
 
 	assert.Equal(t, len(buildInfo.Modules[0].Artifacts), len(resultItems), "Incorrect number of artifacts were uploaded")
 
-	propsMap := map[string]string{
-		"build.name":   buildInfo.Name,
-		"build.number": buildInfo.Number,
-		key1:           value1,
-		key2:           value2,
+	propsMap := map[string][]string{
+		"build.name":   {buildInfo.Name},
+		"build.number": {buildInfo.Number},
+		key1:           strings.Split(value1, ","),
+		key2:           {value2},
 	}
 
 	validateArtifactsProperties(resultItems, t, propsMap)
@@ -131,16 +131,18 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 }
 
 // This function validates the properties on the provided artifacts. Every property within the provided map should be attached to the artifact.
-func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T, propsMap map[string]string) {
+func validateArtifactsProperties(resultItems []rtutils.ResultItem, t *testing.T, propsMap map[string][]string) {
 	for _, item := range resultItems {
 		properties := item.Properties
 		assert.GreaterOrEqual(t, len(properties), 1, "Failed finding properties on item:", item.GetItemRelativePath())
 		propertiesMap := tests.ConvertSliceToMap(properties)
 
-		for key, value := range propsMap {
-			valueFromArtifact, contains := propertiesMap[key]
+		for key, values := range propsMap {
+			valuesFromArtifact, contains := propertiesMap[key]
 			assert.True(t, contains, "Failed finding %s property on %s", key, item.Name)
-			assert.Equalf(t, value, valueFromArtifact, "Wrong value for %s property on %s.", key, item.Name)
+			for _, value := range values {
+				assert.Contains(t, valuesFromArtifact, value, "Wrong value for %s property on %s", key, item.Name)
+			}
 		}
 	}
 }
@@ -643,12 +645,15 @@ func testBuildAddGit(t *testing.T, useEnvBuildNameAndNumber bool) {
 	expectedVcsUrl := "https://github.com/jfrog/jfrog-cli-go.git"
 	expectedVcsRevision := "b033a0e508bdb52eee25654c9e12db33ff01b8ff"
 	expectedVcsBranch := "master"
+	expectedVcsMessage := "TEST-4 - Adding text to file2.txt"
 	buildInfoVcsUrl := partials[0].VcsList[0].Url
 	buildInfoVcsRevision := partials[0].VcsList[0].Revision
 	buildInfoVcsBranch := partials[0].VcsList[0].Branch
+	buildInfoVcsMessage := partials[0].VcsList[0].Message
 	assert.Equal(t, expectedVcsUrl, buildInfoVcsUrl, "Wrong url")
 	assert.Equal(t, expectedVcsRevision, buildInfoVcsRevision, "Wrong revision")
 	assert.Equal(t, expectedVcsBranch, buildInfoVcsBranch, "Wrong branch")
+	assert.Equal(t, expectedVcsMessage, buildInfoVcsMessage, "Wrong Message")
 
 	// Clear previous build if exists and publish build-info.
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
@@ -707,6 +712,10 @@ func TestReadGitConfig(t *testing.T) {
 	branch, _, err := gitExecutor.GetBranch()
 	assert.NoError(t, err)
 	assert.Equal(t, branch, gitManager.GetBranch(), "Wrong branch")
+
+	message, _, err := gitExecutor.GetMessage(revision)
+	assert.NoError(t, err)
+	assert.Equal(t, message, gitManager.GetMessage(), "Wrong message")
 
 	cleanArtifactoryTest()
 }
