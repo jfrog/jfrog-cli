@@ -169,7 +169,7 @@ func GetCommands() []cli.Command {
 			Description:  download.Description,
 			HelpName:     corecommon.CreateUsage("rt download", download.Description, download.Usage),
 			UsageText:    download.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return downloadCmd(c)
@@ -3216,6 +3216,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
+		Transitive(c.Bool("transitive")).
 		BuildSpec(), nil
 }
 
@@ -3594,6 +3595,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
 	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
+	overrideStringIfSet(&spec.Transitive, c, "transitive")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
