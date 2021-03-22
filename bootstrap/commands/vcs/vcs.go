@@ -157,12 +157,18 @@ func (vc *VcsCommand) Run() error {
 	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
-	// Run jfrog-vcs-agent
-	//buildConfig := convertVcsDataToBuildConfig(*data)
+	// Run Pipelines setup
+	pipelinesYamlPath, err := runPipelinesBootstrap(vc.data)
+	if err != nil {
+		return err
+	}
 
-	// Output?
+	return vc.stagePipelinesYaml(pipelinesYamlPath)
+}
 
-	return err
+func runPipelinesBootstrap(vcsData *VcsData) (string, error) {
+	return "", nil
+
 }
 
 func runConfigCmd() (err error) {
@@ -191,7 +197,7 @@ func (vc *VcsCommand) publishFirstBuild() (err error) {
 		return err
 	}
 	// Run BP Command.
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -206,7 +212,7 @@ func (vc *VcsCommand) publishFirstBuild() (err error) {
 }
 
 func (vc *VcsCommand) configureXray() (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -292,7 +298,7 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 }
 
 func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, true, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -428,6 +434,19 @@ func (vc *VcsCommand) cloneProject() (err error) {
 		return err
 	}
 	return
+}
+
+func (vc *VcsCommand) stagePipelinesYaml(path string) error {
+	repo, err := git.PlainOpen(vc.data.LocalDirPath)
+	if err != nil {
+		return err
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	_, err = worktree.Add(path)
+	return err
 }
 
 func (vc *VcsCommand) setProjectName() {
