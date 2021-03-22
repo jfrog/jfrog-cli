@@ -47,6 +47,7 @@ type VcsCommand struct {
 
 type VcsData struct {
 	ProjectName             string
+	ProjectDomain           string
 	LocalDirPath            string
 	GitBranch               string
 	BuildCommand            string
@@ -426,7 +427,7 @@ func (vc *VcsCommand) cloneProject() (err error) {
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
-	vc.setProjectName()
+	vc.extractProjectName()
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.ProjectName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
 	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
@@ -449,12 +450,14 @@ func (vc *VcsCommand) stagePipelinesYaml(path string) error {
 	return err
 }
 
-func (vc *VcsCommand) setProjectName() {
+func (vc *VcsCommand) extractProjectName() {
 	vcsUrl := vc.data.VcsCredentials.Url
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	vc.data.VcsCredentials.Url = vcsUrl
-	projectName := vcsUrl[strings.LastIndex(vcsUrl, "/")+1:]
+	splittedUrl := strings.Split(vcsUrl, "/")
+	projectName := splittedUrl[len(splittedUrl)-1]
+	vc.data.ProjectDomain = splittedUrl[len(splittedUrl)-2]
 	vc.data.ProjectName = strings.TrimSuffix(projectName, ".git")
 }
 
