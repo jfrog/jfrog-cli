@@ -559,6 +559,7 @@ func (vc *VcsCommand) gitPhase() (err error) {
 		}
 		vc.data.GitProvider = GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
+		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
 		print("Git access token: ")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
@@ -568,7 +569,6 @@ func (vc *VcsCommand) gitPhase() (err error) {
 		// New-line required after the access token input:
 		fmt.Println()
 		vc.data.VcsCredentials.AccessToken = string(byteToken)
-		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
 		err = vc.prepareVcsData()
 		if err != nil {
 			log.Error(err)
