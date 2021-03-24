@@ -189,8 +189,8 @@ func getPipelinesToken() (string, error) {
 	var err error
 	var byteToken []byte
 	for len(byteToken) == 0 {
-		print("Please provide a JFrog Pipelines admin token: (To generate the token, " +
-			"log into the JFrog Platform UI --> Administration --> Identity and Access --> Access Tokens --> Generate Admin Token) ")
+		print("Please provide a JFrog Pipelines admin token (To generate the token, " +
+			"log into the JFrog Platform UI --> Administration --> Identity and Access --> Access Tokens --> Generate Admin Token): ")
 		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
@@ -449,7 +449,7 @@ func promptGitProviderSelection() (selected string, err error) {
 }
 
 func (vc *VcsCommand) prepareVcsData() (err error) {
-	ioutils.ScanFromConsole("Git Branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
+	ioutils.ScanFromConsole("Git branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
 	err = fileutils.CreateDirIfNotExist(DefaultWorkspace)
 	if err != nil {
 		return err

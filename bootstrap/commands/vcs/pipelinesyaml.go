@@ -41,13 +41,14 @@ func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([
 	log.Debug("Creating Pipelines Yaml...")
 	pipelineName := createPipelineName(vcsData)
 	gitResourceName := createGitResourceName(vcsData)
+	serverId := createServerIdName(vcsData)
 
 	converted, err := convertBuildCmd(vcsData.BuildCommand)
 	if err != nil {
 		return nil, err
 	}
 
-	pipelinesCommands := getPipelineCommands(rtIntegration, gitResourceName, converted, vcsData)
+	pipelinesCommands := getPipelineCommands(rtIntegration, serverId, gitResourceName, converted, vcsData)
 	gitResource := createGitResource(gitResourceName, gitProvider, getRepoFullName(vcsData), vcsData.GitBranch)
 	pipeline := createPipeline(rtIntegration, pipelineName, gitResourceName, pipelinesCommands)
 	pipelineYaml := PipelineYml{
@@ -61,12 +62,12 @@ func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([
 	return pipelineBytes, nil
 }
 
-func getPipelineCommands(rtIntegration, gitResourceName, convertedBuildCmd string, vcsData *VcsData) []string {
+func getPipelineCommands(rtIntegration, serverId, gitResourceName, convertedBuildCmd string, vcsData *VcsData) []string {
 	var commandsArray []string
 	commandsArray = append(commandsArray, getCdToResourceCmd(gitResourceName))
 	commandsArray = append(commandsArray, getExportsCommands(vcsData)...)
-	commandsArray = append(commandsArray, getJfrogCliConfigCmd(rtIntegration))
-	commandsArray = append(commandsArray, getTechConfigsCommands(rtIntegration, vcsData)...)
+	commandsArray = append(commandsArray, getJfrogCliConfigCmd(rtIntegration, serverId))
+	commandsArray = append(commandsArray, getTechConfigsCommands(serverId, vcsData)...)
 	commandsArray = append(commandsArray, convertedBuildCmd)
 	commandsArray = append(commandsArray, jfrogCliBag)
 	commandsArray = append(commandsArray, jfrogCliBp)
@@ -107,9 +108,9 @@ func getFlagSyntax(flagName string) string {
 	return fmt.Sprintf("--%s", flagName)
 }
 
-func getJfrogCliConfigCmd(rtIntName string) string {
+func getJfrogCliConfigCmd(rtIntName, serverId string) string {
 	return strings.Join([]string{
-		jfrogCliConfig, rtIntName,
+		jfrogCliConfig, serverId,
 		getFlagSyntax(rtUrlFlag), getIntDetailForCmd(rtIntName, urlFlag),
 		getFlagSyntax(userFlag), getIntDetailForCmd(rtIntName, userFlag),
 		getFlagSyntax(apikeyFlag), getIntDetailForCmd(rtIntName, apikeyFlag),
@@ -340,4 +341,8 @@ func createGitResourceName(data *VcsData) string {
 
 func createPipelineName(data *VcsData) string {
 	return createPipelinesSuitableName(data, "pipeline")
+}
+
+func createServerIdName(data *VcsData) string {
+	return createPipelinesSuitableName(data, "serverId")
 }
