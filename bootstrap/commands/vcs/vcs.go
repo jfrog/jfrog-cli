@@ -42,11 +42,11 @@ const (
 type GitProvider string
 
 const (
-	Github           = "Github"
-	GithubEnterprise = "Github Enterprise"
+	Github           = "GitHub"
+	GithubEnterprise = "GitHub Enterprise"
 	Bitbucket        = "Bitbucket"
 	BitbucketServer  = "Bitbucket Server"
-	Gitlab           = "Gitlab"
+	Gitlab           = "GitLab"
 )
 
 type VcsCommand struct {
@@ -321,7 +321,7 @@ func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
 	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range vc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf(" It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
+		if detected && coreutils.AskYesNo(fmt.Sprintf("It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
 			err = vc.interactivelyCreatRepos(tech)
 			if err != nil {
 				return
