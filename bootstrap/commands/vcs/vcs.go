@@ -203,7 +203,7 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
+		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(false)
 		err = configCmd.Config()
 		if err == nil {
 			return nil
@@ -220,8 +220,8 @@ func (vc *VcsCommand) saveYamlToFile(yaml []byte) error {
 
 func (vc *VcsCommand) publishFirstBuild() (err error) {
 	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
-	ioutils.ScanFromConsole("Please choose a name for the build", &vc.data.BuildName, "${projectName}-${branch}")
-	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.RepositoryName, -1)
+	ioutils.ScanFromConsole("Please choose a name for the build", &vc.data.BuildName, "${vcs.repo.name}-${branch}")
+	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${vcs.repo.name}", vc.data.RepositoryName, -1)
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
@@ -329,7 +329,7 @@ func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
 		}
 	}
 	// Ask for working build command
-	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported:"
+	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported"
 	ioutils.ScanFromConsole(prompt, &vc.data.BuildCommand, vc.defaultData.BuildCommand)
 	return nil
 }
@@ -361,16 +361,18 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 				log.Error(err)
 			} else {
 				remoteRepo = repoName
-				// Create a new virtual repository as well
-				ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
-					&repoName, GetVirtualDefaultName(technologyType))
-				err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
-				if err != nil {
-					log.Error(err)
-				} else {
-					// we created both remote and virtual repositories successfully
-					vc.data.ArtifactoryVirtualRepos[technologyType] = repoName
-					return
+				for {
+					// Create a new virtual repository as well
+					ioutils.ScanFromConsole(fmt.Sprintf("Choose a name for a new virtual repository which will include %q remote repo", remoteRepo),
+						&repoName, GetVirtualDefaultName(technologyType))
+					err = CreateVirtualRepo(serviceDetails, technologyType, repoName, remoteRepo)
+					if err != nil {
+						log.Error(err)
+					} else {
+						// we created both remote and virtual repositories successfully
+						vc.data.ArtifactoryVirtualRepos[technologyType] = repoName
+						return
+					}
 				}
 			}
 		}
@@ -449,19 +451,23 @@ func promptGitProviderSelection() (selected string, err error) {
 }
 
 func (vc *VcsCommand) prepareVcsData() (err error) {
-	ioutils.ScanFromConsole("Git branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
-	err = fileutils.CreateDirIfNotExist(DefaultWorkspace)
-	if err != nil {
-		return err
-	}
-	dirEmpty, err := fileutils.IsDirEmpty(DefaultWorkspace)
-	if err != nil {
-		return err
-	}
-	if !dirEmpty {
-		ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &vc.data.LocalDirPath, "")
-	} else {
-		vc.data.LocalDirPath = DefaultWorkspace
+	vc.data.LocalDirPath = DefaultWorkspace
+	for {
+		err = fileutils.CreateDirIfNotExist(vc.data.LocalDirPath)
+		if err != nil {
+			return err
+		}
+		dirEmpty, err := fileutils.IsDirEmpty(vc.data.LocalDirPath)
+		if err != nil {
+			return err
+		}
+		if dirEmpty {
+			break
+		} else {
+			log.Error(vc.data.LocalDirPath + " isn't empty.")
+			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &vc.data.LocalDirPath, "")
+		}
+
 	}
 	err = vc.cloneProject()
 	if err != nil {
@@ -569,6 +575,7 @@ func (vc *VcsCommand) gitPhase() (err error) {
 		// New-line required after the access token input:
 		fmt.Println()
 		vc.data.VcsCredentials.AccessToken = string(byteToken)
+		ioutils.ScanFromConsole("Git branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
 		err = vc.prepareVcsData()
 		if err != nil {
 			log.Error(err)
