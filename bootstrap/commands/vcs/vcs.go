@@ -34,19 +34,19 @@ import (
 )
 
 const (
-	ConfigServerId         = "vcs-integration-platform"
-	VcsConfigFile          = "jfrog-cli-vcs.conf"
-	DefultFirstBuildNumber = "0"
-	DefultWorkSpace        = "./JFrogVcsWorkSpace"
+	ConfigServerId          = "vcs-integration-platform"
+	VcsConfigFile           = "jfrog-cli-vcs.conf"
+	DefaultFirstBuildNumber = "0"
+	DefaultWorkspace        = "./jfrog-vcs-workspace"
 )
 
 type GitProvider string
 
 const (
 	Github           = "Github"
-	GithubEnterprise = "GithubEnterprise"
+	GithubEnterprise = "Github Enterprise"
 	Bitbucket        = "Bitbucket"
-	BitbucketServer  = "BitbucketServer"
+	BitbucketServer  = "Bitbucket Server"
 	Gitlab           = "Gitlab"
 )
 
@@ -190,7 +190,8 @@ func getPipelinesToken() (string, error) {
 	var err error
 	var byteToken []byte
 	for len(byteToken) == 0 {
-		print("Please provide a JFrog Pipelines token (generated manually through the JFrog Platform UI): ")
+		print("Please provide a JFrog Pipelines admin token: (To generate the token, " +
+			"log into the JFrog Platform UI --> Administration --> Identity and Access --> Access Tokens --> Generate Admin Token) ")
 		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
@@ -220,12 +221,12 @@ func (vc *VcsCommand) saveYamlToFile(yaml []byte) error {
 
 func (vc *VcsCommand) publishFirstBuild() (err error) {
 	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
-	ioutils.ScanFromConsole("Please choose a name of the build", &vc.data.BuildName, "${projectName}-${branch}")
+	ioutils.ScanFromConsole("Please choose a name for the build", &vc.data.BuildName, "${projectName}-${branch}")
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${projectName}", vc.data.RepositoryName, -1)
 	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
-	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefultFirstBuildNumber}
+	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
 	log.Info("Generating an initial build-info...")
 	err = commands.Exec(buildAddGitConfigurationCmd)
@@ -266,7 +267,7 @@ func (vc *VcsCommand) configureXray() (err error) {
 	// AddBuildsToIndexing.
 	buildsToIndex := []string{vc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
-	// Create new defult policy.
+	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
 	policyParams.Name = "vcs-integration-security-policy"
 	policyParams.Type = xrayutils.Security
@@ -288,7 +289,7 @@ func (vc *VcsCommand) configureXray() (err error) {
 			err = nil
 		}
 	}
-	// Create new defult watcher.
+	// Create new default watcher.
 	watchParams := xrayutils.NewWatchParams()
 	watchParams.Name = "vcs-integration-watch-all"
 	watchParams.Description = "VCS Configured Build Watch"
@@ -329,7 +330,8 @@ func (vc *VcsCommand) runBuildQuestionnaire() (err error) {
 		}
 	}
 	// Ask for working build command
-	vc.data.BuildCommand = utils.AskString("", "Please provide a single-line build command. You may use the && operator:", false, false)
+	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported:"
+	vc.data.BuildCommand = utils.AskString("", prompt, false, false)
 	return nil
 }
 
@@ -338,13 +340,13 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	if err != nil {
 		return err
 	}
-	// Get all relevant remotes to chose from
+	// Get all relevant remotes to choose from
 	remoteRepos, err := GetAllRepos(serviceDetails, Remote, string(technologyType))
 	if err != nil {
 		return err
 	}
 
-	// Ask if the user would like us to create a new remote or to chose from the exist repositories list
+	// Ask if the user would like us to create a new remote or to choose from the exist repositories list
 	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
 	if err != nil {
 		return nil
@@ -379,8 +381,8 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new virtual or to chose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or chose to create a new repo:", remoteRepo))
+	// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
+	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
@@ -414,10 +416,10 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 	return
 }
 
-func promptARepoSelection(repoDetailes *[]services.RepositoryDetails, promptMsg string) (selectedRepoName string, err error) {
+func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg string) (selectedRepoName string, err error) {
 
 	selectableItems := []ioutils.PromptItem{{Option: NewRepository, TargetValue: &selectedRepoName}}
-	for _, repo := range *repoDetailes {
+	for _, repo := range *repoDetails {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: repo.Key, TargetValue: &selectedRepoName, DefaultValue: repo.Url})
 	}
 	println(promptMsg)
@@ -436,7 +438,7 @@ func promptGitProviderSelection() (selected string, err error) {
 		Gitlab,
 	}
 
-	selectableItems := []ioutils.PromptItem{}
+	var selectableItems []ioutils.PromptItem
 	for _, provider := range gitProviders {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(provider), TargetValue: &selected})
 	}
@@ -449,18 +451,18 @@ func promptGitProviderSelection() (selected string, err error) {
 
 func (vc *VcsCommand) prepareVcsData() (err error) {
 	ioutils.ScanFromConsole("Git Branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
-	err = fileutils.CreateDirIfNotExist(DefultWorkSpace)
+	err = fileutils.CreateDirIfNotExist(DefaultWorkspace)
 	if err != nil {
 		return err
 	}
-	dirEmpty, err := fileutils.IsDirEmpty(DefultWorkSpace)
+	dirEmpty, err := fileutils.IsDirEmpty(DefaultWorkspace)
 	if err != nil {
 		return err
 	}
 	if !dirEmpty {
-		ioutils.ScanFromConsole("WorkSpace Dir", &vc.data.LocalDirPath, "")
+		ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &vc.data.LocalDirPath, "")
 	} else {
-		vc.data.LocalDirPath = DefultWorkSpace
+		vc.data.LocalDirPath = DefaultWorkspace
 	}
 	err = vc.cloneProject()
 	if err != nil {
@@ -511,9 +513,9 @@ func (vc *VcsCommand) extractRepositoryName() {
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	vc.data.VcsCredentials.Url = vcsUrl
-	splittedUrl := strings.Split(vcsUrl, "/")
-	repositoryName := splittedUrl[len(splittedUrl)-1]
-	vc.data.ProjectDomain = splittedUrl[len(splittedUrl)-2]
+	splitUrl := strings.Split(vcsUrl, "/")
+	repositoryName := splitUrl[len(splitUrl)-1]
+	vc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
 	vc.data.RepositoryName = strings.TrimSuffix(repositoryName, ".git")
 }
 
@@ -558,7 +560,7 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 		}
 		vc.data.GitProvider = GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-		print("Git Access token: ")
+		print("Git access token: ")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)

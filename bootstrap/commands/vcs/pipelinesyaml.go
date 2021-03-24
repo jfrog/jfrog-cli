@@ -17,6 +17,7 @@ const (
 	jfrogCliFullImgTag    = "latest"
 	m2pathCmd             = "MVN_PATH=`which mvn` && export M2_HOME=`readlink -f $MVN_PATH | xargs dirname | xargs dirname`"
 	jfrogCliRtPrefix      = "jfrog rt"
+	jfrogCliConfig        = "jfrog c add"
 	jfrogCliBag           = "jfrog rt bag"
 	jfrogCliBp            = "jfrog rt bp"
 	buildNameEnvVar       = "JFROG_CLI_BUILD_NAME"
@@ -31,6 +32,7 @@ const (
 	failResult = "FAIL"
 
 	urlFlag    = "url"
+	rtUrlFlag  = "artifactory-url"
 	userFlag   = "user"
 	apikeyFlag = "apikey"
 )
@@ -107,8 +109,8 @@ func getFlagSyntax(flagName string) string {
 
 func getJfrogCliConfigCmd(rtIntName string) string {
 	return strings.Join([]string{
-		jfrogCliRtPrefix, "c", rtIntName,
-		getFlagSyntax(urlFlag), getIntDetailForCmd(rtIntName, urlFlag),
+		jfrogCliConfig, rtIntName,
+		getFlagSyntax(rtUrlFlag), getIntDetailForCmd(rtIntName, urlFlag),
 		getFlagSyntax(userFlag), getIntDetailForCmd(rtIntName, userFlag),
 		getFlagSyntax(apikeyFlag), getIntDetailForCmd(rtIntName, apikeyFlag),
 		"--enc-password=false",
