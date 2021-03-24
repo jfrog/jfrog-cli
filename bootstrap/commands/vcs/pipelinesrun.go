@@ -63,6 +63,9 @@ func createPipelinesServiceManager(details *config.ServerDetails, pipelinesToken
 	// Create new details with pipelines token.
 	pipelinesDetails := *details
 	pipelinesDetails.AccessToken = pipelinesToken
+	pipelinesDetails.User = ""
+	pipelinesDetails.Password = ""
+	pipelinesDetails.ApiKey = ""
 
 	certsPath, err := coreutils.GetJfrogCertsDir()
 	if err != nil {
