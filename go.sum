@@ -30,8 +30,8 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210322161459-2ab8a275b2af h1:NEDs3oZzPktn7GpoKMebFrpudOGGputtJJ/R4nlumwQ=
 github.com/asafgabai/jfrog-cli-core v1.2.7-0.20210322161459-2ab8a275b2af/go.mod h1:r03uZ+u/H0cbmhEl1AxzZ00xsMGjD0r/bstDmknRMIk=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20210322155755-a3d76b7520c5 h1:9yQdByW3F08d1k9H+KChNxzF3FoV3dLOukMpMy591Og=
-github.com/asafgabai/jfrog-client-go v0.18.1-0.20210322155755-a3d76b7520c5/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20210324074756-048df5ab459f h1:zbaR87VaRWFr+AdG2CeRyWwbF4kWy8D2O8sKtnwQWro=
+github.com/asafgabai/jfrog-client-go v0.18.1-0.20210324074756-048df5ab459f/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
