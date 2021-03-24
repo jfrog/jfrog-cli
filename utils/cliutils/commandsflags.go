@@ -285,14 +285,14 @@ const (
 
 	// Build tool config flags
 	global          = "global"
-	serverIdResolve = "server-id-resolve"
+	ServerIdResolve = "server-id-resolve"
 	serverIdDeploy  = "server-id-deploy"
-	repoResolve     = "repo-resolve"
+	RepoResolve     = "repo-resolve"
 	repoDeploy      = "repo-deploy"
 
 	// Unique maven-config flags
-	repoResolveReleases  = "repo-resolve-releases"
-	repoResolveSnapshots = "repo-resolve-snapshots"
+	RepoResolveReleases  = "repo-resolve-releases"
+	RepoResolveSnapshots = "repo-resolve-snapshots"
 	repoDeployReleases   = "repo-deploy-releases"
 	repoDeploySnapshots  = "repo-deploy-snapshots"
 
@@ -925,20 +925,20 @@ var flagsMap = map[string]cli.Flag{
 		Name:  global,
 		Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
 	},
-	serverIdResolve: cli.StringFlag{
-		Name:  serverIdResolve,
+	ServerIdResolve: cli.StringFlag{
+		Name:  ServerIdResolve,
 		Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
 	},
 	serverIdDeploy: cli.StringFlag{
 		Name:  serverIdDeploy,
 		Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
 	},
-	repoResolveReleases: cli.StringFlag{
-		Name:  repoResolveReleases,
+	RepoResolveReleases: cli.StringFlag{
+		Name:  RepoResolveReleases,
 		Usage: "[Optional] Resolution repository for release dependencies.` `",
 	},
-	repoResolveSnapshots: cli.StringFlag{
-		Name:  repoResolveSnapshots,
+	RepoResolveSnapshots: cli.StringFlag{
+		Name:  RepoResolveSnapshots,
 		Usage: "[Optional] Resolution repository for snapshot dependencies.` `",
 	},
 	repoDeployReleases: cli.StringFlag{
@@ -949,8 +949,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploySnapshots,
 		Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
 	},
-	repoResolve: cli.StringFlag{
-		Name:  repoResolve,
+	RepoResolve: cli.StringFlag{
+		Name:  RepoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
 	},
 	repoDeploy: cli.StringFlag{
@@ -1329,10 +1329,10 @@ var commandFlags = map[string][]string{
 		glcQuiet, insecureTls,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
+		global, ServerIdResolve, serverIdDeploy, RepoResolveReleases, RepoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
 	},
 	GradleConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
+		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
@@ -1354,7 +1354,7 @@ var commandFlags = map[string][]string{
 		serverId, skipLogin, project,
 	},
 	NpmConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy,
 	},
 	Npm: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
@@ -1365,20 +1365,20 @@ var commandFlags = map[string][]string{
 		buildNumber, module, project,
 	},
 	NugetConfig: {
-		global, serverIdResolve, repoResolve, nugetV2,
+		global, ServerIdResolve, RepoResolve, nugetV2,
 	},
 	Nuget: {
 		NugetArgs, SolutionRoot, LegacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module, project,
 	},
 	DotnetConfig: {
-		global, serverIdResolve, repoResolve, nugetV2,
+		global, ServerIdResolve, RepoResolve, nugetV2,
 	},
 	Dotnet: {
 		buildName, buildNumber, module, project,
 	},
 	GoConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
+		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy,
 	},
 	GoPublish: {
 		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project,
@@ -1398,7 +1398,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	PipConfig: {
-		global, serverIdResolve, repoResolve,
+		global, ServerIdResolve, RepoResolve,
 	},
 	PipInstall: {
 		buildName, buildNumber, module, project,

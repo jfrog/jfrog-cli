@@ -169,18 +169,36 @@ func (vc *VcsCommand) Run() error {
 	if err != nil || saveVcsConf(vc.data) != nil {
 		return err
 	}
-	// Run Pipelines setup
-	pipelinesYamlPath, err := runPipelinesBootstrap(vc.data)
+	// Ask for pipelines token.
+	pipelinesToken, err := getPipelinesToken()
 	if err != nil {
 		return err
 	}
-
+	// Run Pipelines setup
+	pipelinesYamlBytes, err := runPipelinesBootstrap(vc.data, pipelinesToken)
+	if err != nil {
+		return err
+	}
+	err = vc.saveYamlToFile(pipelinesYamlBytes)
+	if err != nil {
+		return err
+	}
 	return vc.stagePipelinesYaml(pipelinesYamlPath)
 }
 
-func runPipelinesBootstrap(vcsData *VcsData) (string, error) {
-	return "", nil
-
+func getPipelinesToken() (string, error) {
+	var err error
+	var byteToken []byte
+	for len(byteToken) == 0 {
+		print("Please provide a JFrog Pipelines token (generated manually through the JFrog Platform UI): ")
+		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			return "", errorutils.CheckError(err)
+		}
+		// New-line required after the access token input:
+		fmt.Println()
+	}
+	return string(byteToken), nil
 }
 
 func runConfigCmd() (err error) {
@@ -192,6 +210,12 @@ func runConfigCmd() (err error) {
 		}
 		log.Error(err)
 	}
+}
+
+func (vc *VcsCommand) saveYamlToFile(yaml []byte) error {
+	log.Debug("Saving Pipelines Yaml to file...")
+	path := filepath.Join(vc.data.LocalDirPath, pipelinesYamlPath)
+	return ioutil.WriteFile(path, yaml, 0644)
 }
 
 func (vc *VcsCommand) publishFirstBuild() (err error) {
@@ -469,6 +493,7 @@ func (vc *VcsCommand) cloneProject() (err error) {
 }
 
 func (vc *VcsCommand) stagePipelinesYaml(path string) error {
+	log.Debug("Staging pipelines.yaml...")
 	repo, err := git.PlainOpen(vc.data.LocalDirPath)
 	if err != nil {
 		return err
@@ -533,7 +558,7 @@ func (vc *VcsCommand) getVcsCredentialsFromConsole() (err error) {
 		}
 		vc.data.GitProvider = GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-		print("Git Access token")
+		print("Git Access token: ")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)

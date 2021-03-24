@@ -55,3 +55,5 @@ func GetTechIndicators() []TechnologyIndicator {
 		NpmIndicator{},
 	}
 }
+
+var techExecutablesNames = []string{"mvn", "gradle", "npm"}
