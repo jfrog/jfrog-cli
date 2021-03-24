@@ -3,10 +3,12 @@ package main
 import (
 	"os"
 
+	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/log"
-	"github.com/jfrog/jfrog-cli/bootstrap"
+	commands "github.com/jfrog/jfrog-cli/bootstrap/commands/vcs"
 	"github.com/jfrog/jfrog-cli/config"
+	"github.com/jfrog/jfrog-cli/docs/bootstrap/vcs"
 	"github.com/jfrog/jfrog-cli/docs/common"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -143,9 +145,15 @@ func getCommands() []cli.Command {
 			Subcommands: config.GetCommands(),
 		},
 		{
-			Name:        cliutils.CmdBootstrap,
-			Usage:       "Bootstrap commands",
-			Subcommands: bootstrap.GetCommands(),
+			Name:         "ci-setup",
+			Usage:        vcs.Description,
+			HelpName:     corecommon.CreateUsage("ci-setup", vcs.Description, vcs.Usage),
+			UsageText:    vcs.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return commands.VcsCmd()
+			},
 		},
 	}
 	return append(cliNameSpaces, utils.GetPlugins()...)
