@@ -23,11 +23,11 @@ const (
 	NewRepository = "[Create new repository]"
 
 	// Repos defaults
-	MavenRemoteDefaultName   = "maven-remote"
-	MavenRemoteDefaultUrl    = "https://jcenter.bintray.com"
+	MavenRemoteDefaultName   = "maven-central-remote"
+	MavenRemoteDefaultUrl    = "https://repo.maven.apache.org/maven2"
 	MavenVirtualDefaultName  = "maven-virtual"
 	GradleRemoteDefaultName  = "gradle-remote"
-	GradleRemoteDefaultUrl   = "https://jcenter.bintray.com"
+	GradleRemoteDefaultUrl   = "https://repo.maven.apache.org/maven2"
 	GradleVirtualDefaultName = "gradle-virtual"
 	NpmRemoteDefaultName     = "npm-remote"
 	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
