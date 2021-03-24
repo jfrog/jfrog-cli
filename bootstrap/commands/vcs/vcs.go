@@ -15,7 +15,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	corecommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
@@ -331,7 +330,7 @@ func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
 	}
 	// Ask for working build command
 	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported:"
-	vc.data.BuildCommand = utils.AskString("", prompt, false, false)
+	ioutils.ScanFromConsole(prompt, &vc.data.BuildCommand, vc.defaultData.BuildCommand)
 	return nil
 }
 
