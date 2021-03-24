@@ -10,6 +10,7 @@ import (
 	"github.com/jfrog/jfrog-client-go/pipelines"
 	"github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"strings"
 )
 
@@ -38,12 +39,24 @@ func runPipelinesBootstrap(vcsData *VcsData, pipelinesToken string) ([]byte, err
 		return nil, err
 	}
 
-	_, err = psm.AddPipelineSource(vcsIntId, getRepoFullName(vcsData), vcsData.GitBranch, pipelinesYamlPath)
+	err = doAddPipelineSource(psm, vcsData, vcsIntId)
 	if err != nil {
 		return nil, err
 	}
 
 	return createPipelinesYaml(vcsIntName, rtIntName, vcsData)
+}
+
+func doAddPipelineSource(psm *pipelines.PipelinesServicesManager, vcsData *VcsData, projectIntegrationId int) (err error) {
+	_, err = psm.AddPipelineSource(projectIntegrationId, getRepoFullName(vcsData), vcsData.GitBranch, pipelinesYamlPath)
+	if err != nil {
+		// If source already exists, ignore error.
+		if _, ok := err.(*services.SourceAlreadyExistsError); ok {
+			log.Debug("Pipeline Source for repo '" + getRepoFullName(vcsData) + "' and branch '" + vcsData.GitBranch + "' already exists and will be used.")
+			err = nil
+		}
+	}
+	return
 }
 
 func createPipelinesServiceManager(details *config.ServerDetails, pipelinesToken string) (*pipelines.PipelinesServicesManager, error) {
@@ -85,6 +98,21 @@ func createVcsIntegration(gitProvider GitProvider, psm *pipelines.PipelinesServi
 	default:
 		return "", -1, errorutils.CheckError(errors.New("vcs type is not supported at the moment"))
 	}
+	// If no error, or unexpected error, return.
+	if err == nil {
+		return
+	}
+	if _, ok := err.(*services.IntegrationAlreadyExistsError); !ok {
+		return
+	}
+
+	// If integration already exists, get the id from pipelines.
+	log.Debug("Integration '" + integrationName + "' already exists and will be used. Fetching id from pipelines...")
+	integration, err := psm.GetIntegrationByName(integrationName)
+	if err != nil {
+		return
+	}
+	integrationId = integration.Id
 	return
 }
 
@@ -102,6 +130,13 @@ func createArtifactoryIntegration(psm *pipelines.PipelinesServicesManager, detai
 		}
 	}
 	_, err = psm.CreateArtifactoryIntegration(integrationName, details.ArtifactoryUrl, user, apiKey)
+	if err != nil {
+		// If integration already exists, ignore error.
+		if _, ok := err.(*services.IntegrationAlreadyExistsError); ok {
+			log.Debug("Integration '" + integrationName + "' already exists and will be used.")
+			err = nil
+		}
+	}
 	return integrationName, err
 }
 
