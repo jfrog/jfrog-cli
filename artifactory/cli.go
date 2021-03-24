@@ -674,19 +674,6 @@ func GetCommands() []cli.Command {
 				return goCmd(c)
 			},
 		},
-		//{
-		//	Name:         "go-recursive-publish",
-		//	Flags:        cliutils.GetCommandFlags(cliutils.GoRecursivePublish),
-		//	Aliases:      []string{"grp"},
-		//	Description:  gorecursivepublish.Description,
-		//	HelpName:     corecommon.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
-		//	UsageText:    gorecursivepublish.Arguments,
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Action: func(c *cli.Context) error {
-		//		return goRecursivePublishCmd(c)
-		//	},
-		//},
 		{
 			Name:         "ping",
 			Flags:        cliutils.GetCommandFlags(cliutils.Ping),
@@ -1855,25 +1842,6 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
 	return commands.Exec(goNative)
 }
-
-//func goRecursivePublishCmd(c *cli.Context) error {
-//	if c.NArg() != 1 {
-//		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-//	}
-//
-//	targetRepo := c.Args().Get(0)
-//	if targetRepo == "" {
-//		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
-//	}
-//	details, err := createArtifactoryDetailsByFlags(c, false)
-//	if err != nil {
-//		return err
-//	}
-//	goRecursivePublishCmd := golang.NewGoRecursivePublishCommand()
-//	goRecursivePublishCmd.SetServerDetails(details).SetTargetRepo(targetRepo)
-//
-//	return commands.Exec(goRecursivePublishCmd)
-//}
 
 func createGradleConfigCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
