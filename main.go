@@ -6,10 +6,10 @@ import (
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/log"
-	commands "github.com/jfrog/jfrog-cli/bootstrap/commands/vcs"
 	"github.com/jfrog/jfrog-cli/config"
 	"github.com/jfrog/jfrog-cli/docs/bootstrap/vcs"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	commands "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
 
@@ -152,7 +152,7 @@ func getCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return commands.VcsCmd()
+				return commands.RunCiSetupCmd()
 			},
 		},
 	}

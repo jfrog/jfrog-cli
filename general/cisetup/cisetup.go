@@ -49,7 +49,7 @@ const (
 	Gitlab           = "GitLab"
 )
 
-type VcsCommand struct {
+type CiSetupCommand struct {
 	defaultData *VcsData
 	data        *VcsData
 }
@@ -74,34 +74,34 @@ type VcsServerDetails struct {
 	AccessToken string `json:"-"`
 }
 
-func (vc *VcsCommand) SetData(data *VcsData) *VcsCommand {
-	vc.data = data
-	return vc
+func (cc *CiSetupCommand) SetData(data *VcsData) *CiSetupCommand {
+	cc.data = data
+	return cc
 }
-func (vc *VcsCommand) SetDefaultData(data *VcsData) *VcsCommand {
-	vc.defaultData = data
-	return vc
+func (cc *CiSetupCommand) SetDefaultData(data *VcsData) *CiSetupCommand {
+	cc.defaultData = data
+	return cc
 }
 
-func VcsCmd() error {
-	vc := &VcsCommand{}
-	vc.prepareConfigurationData()
-	err := vc.Run()
+func RunCiSetupCmd() error {
+	cc := &CiSetupCommand{}
+	cc.prepareConfigurationData()
+	err := cc.Run()
 	if err != nil {
 		return err
 	}
-	return saveVcsConf(vc.data)
+	return saveVcsConf(cc.data)
 
 }
 
-func (vc *VcsCommand) prepareConfigurationData() error {
+func (cc *CiSetupCommand) prepareConfigurationData() error {
 	// If data is nil, initialize a new one
-	if vc.data == nil {
-		vc.data = new(VcsData)
+	if cc.data == nil {
+		cc.data = new(VcsData)
 	}
 
 	// Get previous vcs data if exists
-	vc.defaultData = readVcsConf()
+	cc.defaultData = readVcsConf()
 	return nil
 }
 
@@ -140,7 +140,7 @@ func saveVcsConf(conf *VcsData) error {
 	return nil
 }
 
-func (vc *VcsCommand) Run() error {
+func (cc *CiSetupCommand) Run() error {
 	// Run JFrog config command
 	err := runConfigCmd()
 	if err != nil {
@@ -148,24 +148,24 @@ func (vc *VcsCommand) Run() error {
 	}
 
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
-	err = vc.gitPhase()
-	if err != nil || saveVcsConf(vc.data) != nil {
+	err = cc.gitPhase()
+	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
 
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
-	err = vc.artifactoryConfigPhase()
-	if err != nil || saveVcsConf(vc.data) != nil {
+	err = cc.artifactoryConfigPhase()
+	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
 	// Publish empty build info.
-	err = vc.publishFirstBuild()
-	if err != nil || saveVcsConf(vc.data) != nil {
+	err = cc.publishFirstBuild()
+	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
 	// Configure Xray to scan the new build.
-	err = vc.xrayConfigPhase()
-	if err != nil || saveVcsConf(vc.data) != nil {
+	err = cc.xrayConfigPhase()
+	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
 	// Ask for pipelines token.
@@ -174,15 +174,15 @@ func (vc *VcsCommand) Run() error {
 		return err
 	}
 	// Run Pipelines setup
-	pipelinesYamlBytes, err := runPipelinesBootstrap(vc.data, pipelinesToken)
+	pipelinesYamlBytes, err := runPipelinesBootstrap(cc.data, pipelinesToken)
 	if err != nil {
 		return err
 	}
-	err = vc.saveYamlToFile(pipelinesYamlBytes)
+	err = cc.saveYamlToFile(pipelinesYamlBytes)
 	if err != nil {
 		return err
 	}
-	return vc.stagePipelinesYaml(pipelinesYamlPath)
+	return cc.stagePipelinesYaml(pipelinesYamlPath)
 }
 
 func getPipelinesToken() (string, error) {
@@ -212,20 +212,20 @@ func runConfigCmd() (err error) {
 	}
 }
 
-func (vc *VcsCommand) saveYamlToFile(yaml []byte) error {
+func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {
 	log.Debug("Saving Pipelines Yaml to file...")
-	path := filepath.Join(vc.data.LocalDirPath, pipelinesYamlPath)
+	path := filepath.Join(cc.data.LocalDirPath, pipelinesYamlPath)
 	return ioutil.WriteFile(path, yaml, 0644)
 }
 
-func (vc *VcsCommand) publishFirstBuild() (err error) {
+func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	println("Everytime the new pipeline builds the code, it generates a build entity (also known as build-info) and stores it in Artifactory.")
-	ioutils.ScanFromConsole("Please choose a name for the build", &vc.data.BuildName, "${vcs.repo.name}-${branch}")
-	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${vcs.repo.name}", vc.data.RepositoryName, -1)
-	vc.data.BuildName = strings.Replace(vc.data.BuildName, "${branch}", vc.data.GitBranch, -1)
+	ioutils.ScanFromConsole("Please choose a name for the build", &cc.data.BuildName, "${vcs.repo.name}-${branch}")
+	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${vcs.repo.name}", cc.data.RepositoryName, -1)
+	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${branch}", cc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, buildinfo)
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(vc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
-	buildConfiguration := rtutils.BuildConfiguration{BuildName: vc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
+	buildConfiguration := rtutils.BuildConfiguration{BuildName: cc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
 	log.Info("Generating an initial build-info...")
 	err = commands.Exec(buildAddGitConfigurationCmd)
@@ -247,7 +247,7 @@ func (vc *VcsCommand) publishFirstBuild() (err error) {
 	return
 }
 
-func (vc *VcsCommand) xrayConfigPhase() (err error) {
+func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -264,7 +264,7 @@ func (vc *VcsCommand) xrayConfigPhase() (err error) {
 		return err
 	}
 	// AddBuildsToIndexing.
-	buildsToIndex := []string{vc.data.BuildName}
+	buildsToIndex := []string{cc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
 	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
@@ -316,13 +316,13 @@ func (vc *VcsCommand) xrayConfigPhase() (err error) {
 	return
 }
 
-func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
+func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 
-	vc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
+	cc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
-	for tech, detected := range vc.data.DetectedTechnologies {
+	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
-			err = vc.interactivelyCreatRepos(tech)
+			err = cc.interactivelyCreatRepos(tech)
 			if err != nil {
 				return
 			}
@@ -330,11 +330,11 @@ func (vc *VcsCommand) artifactoryConfigPhase() (err error) {
 	}
 	// Ask for working build command
 	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported"
-	ioutils.ScanFromConsole(prompt, &vc.data.BuildCommand, vc.defaultData.BuildCommand)
+	ioutils.ScanFromConsole(prompt, &cc.data.BuildCommand, cc.defaultData.BuildCommand)
 	return nil
 }
 
-func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err error) {
+func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -370,7 +370,7 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 						log.Error(err)
 					} else {
 						// we created both remote and virtual repositories successfully
-						vc.data.ArtifactoryVirtualRepos[technologyType] = repoName
+						cc.data.ArtifactoryVirtualRepos[technologyType] = repoName
 						return
 					}
 				}
@@ -409,11 +409,11 @@ func (vc *VcsCommand) interactivelyCreatRepos(technologyType Technology) (err er
 		}
 		if !contains(chosenVirtualRepo.Repositories, remoteRepo) {
 			log.Error(fmt.Sprintf("The chosen virtual repo %q does not contain the chosen remote repo %q", virtualRepo, remoteRepo))
-			return vc.interactivelyCreatRepos(technologyType)
+			return cc.interactivelyCreatRepos(technologyType)
 		}
 	}
 	// Saves the new created repo name (key) in the results data structure.
-	vc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
+	cc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
 	return
 }
 
@@ -450,58 +450,58 @@ func promptGitProviderSelection() (selected string, err error) {
 	return
 }
 
-func (vc *VcsCommand) prepareVcsData() (err error) {
-	vc.data.LocalDirPath = DefaultWorkspace
+func (cc *CiSetupCommand) prepareVcsData() (err error) {
+	cc.data.LocalDirPath = DefaultWorkspace
 	for {
-		err = fileutils.CreateDirIfNotExist(vc.data.LocalDirPath)
+		err = fileutils.CreateDirIfNotExist(cc.data.LocalDirPath)
 		if err != nil {
 			return err
 		}
-		dirEmpty, err := fileutils.IsDirEmpty(vc.data.LocalDirPath)
+		dirEmpty, err := fileutils.IsDirEmpty(cc.data.LocalDirPath)
 		if err != nil {
 			return err
 		}
 		if dirEmpty {
 			break
 		} else {
-			log.Error(vc.data.LocalDirPath + " isn't empty.")
-			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &vc.data.LocalDirPath, "")
+			log.Error(cc.data.LocalDirPath + " isn't empty.")
+			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, "")
 		}
 
 	}
-	err = vc.cloneProject()
+	err = cc.cloneProject()
 	if err != nil {
 		return
 	}
-	err = vc.detectTechnologies()
+	err = cc.detectTechnologies()
 	return
 }
 
-func (vc *VcsCommand) cloneProject() (err error) {
+func (cc *CiSetupCommand) cloneProject() (err error) {
 	// Create the desired path if necessary
-	err = os.MkdirAll(vc.data.LocalDirPath, os.ModePerm)
+	err = os.MkdirAll(cc.data.LocalDirPath, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	cloneOption := &git.CloneOptions{
-		URL:  vc.data.VcsCredentials.Url,
-		Auth: createCredentials(&vc.data.VcsCredentials),
+		URL:  cc.data.VcsCredentials.Url,
+		Auth: createCredentials(&cc.data.VcsCredentials),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
-	vc.extractRepositoryName()
+	cc.extractRepositoryName()
 	// Clone the given repository to the given directory from the given branch
-	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", vc.data.RepositoryName, vc.data.VcsCredentials.Url, vc.data.LocalDirPath))
-	_, err = git.PlainClone(vc.data.LocalDirPath, false, cloneOption)
+	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", cc.data.RepositoryName, cc.data.VcsCredentials.Url, cc.data.LocalDirPath))
+	_, err = git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
 	if err != nil {
 		return err
 	}
 	return
 }
 
-func (vc *VcsCommand) stagePipelinesYaml(path string) error {
+func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
 	log.Debug("Staging pipelines.yaml...")
-	repo, err := git.PlainOpen(vc.data.LocalDirPath)
+	repo, err := git.PlainOpen(cc.data.LocalDirPath)
 	if err != nil {
 		return err
 	}
@@ -513,28 +513,28 @@ func (vc *VcsCommand) stagePipelinesYaml(path string) error {
 	return err
 }
 
-func (vc *VcsCommand) extractRepositoryName() {
-	vcsUrl := vc.data.VcsCredentials.Url
+func (cc *CiSetupCommand) extractRepositoryName() {
+	vcsUrl := cc.data.VcsCredentials.Url
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
-	vc.data.VcsCredentials.Url = vcsUrl
+	cc.data.VcsCredentials.Url = vcsUrl
 	splitUrl := strings.Split(vcsUrl, "/")
 	repositoryName := splitUrl[len(splitUrl)-1]
-	vc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
-	vc.data.RepositoryName = strings.TrimSuffix(repositoryName, ".git")
+	cc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
+	cc.data.RepositoryName = strings.TrimSuffix(repositoryName, ".git")
 }
 
-func (vc *VcsCommand) detectTechnologies() (err error) {
+func (cc *CiSetupCommand) detectTechnologies() (err error) {
 	indicators := GetTechIndicators()
-	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(vc.data.LocalDirPath, false)
+	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(cc.data.LocalDirPath, false)
 	if err != nil {
 		return err
 	}
-	vc.data.DetectedTechnologies = make(map[Technology]bool)
+	cc.data.DetectedTechnologies = make(map[Technology]bool)
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
-				vc.data.DetectedTechnologies[indicator.GetTechnology()] = true
+				cc.data.DetectedTechnologies[indicator.GetTechnology()] = true
 				// Same file can't indicate on more than one technology.
 				break
 			}
@@ -556,16 +556,16 @@ func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMet
 	return &http.BasicAuth{Username: username, Password: password}
 }
 
-func (vc *VcsCommand) gitPhase() (err error) {
+func (cc *CiSetupCommand) gitPhase() (err error) {
 	for {
 		gitProvider, err := promptGitProviderSelection()
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		vc.data.GitProvider = GitProvider(gitProvider)
-		ioutils.ScanFromConsole("Git project URL", &vc.data.VcsCredentials.Url, vc.defaultData.VcsCredentials.Url)
-		ioutils.ScanFromConsole("Git username", &vc.data.VcsCredentials.User, vc.defaultData.VcsCredentials.User)
+		cc.data.GitProvider = GitProvider(gitProvider)
+		ioutils.ScanFromConsole("Git project URL", &cc.data.VcsCredentials.Url, cc.defaultData.VcsCredentials.Url)
+		ioutils.ScanFromConsole("Git username", &cc.data.VcsCredentials.User, cc.defaultData.VcsCredentials.User)
 		print("Git access token: ")
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
@@ -574,9 +574,9 @@ func (vc *VcsCommand) gitPhase() (err error) {
 		}
 		// New-line required after the access token input:
 		fmt.Println()
-		vc.data.VcsCredentials.AccessToken = string(byteToken)
-		ioutils.ScanFromConsole("Git branch", &vc.data.GitBranch, vc.defaultData.GitBranch)
-		err = vc.prepareVcsData()
+		cc.data.VcsCredentials.AccessToken = string(byteToken)
+		ioutils.ScanFromConsole("Git branch", &cc.data.GitBranch, cc.defaultData.GitBranch)
+		err = cc.prepareVcsData()
 		if err != nil {
 			log.Error(err)
 		} else {

@@ -82,7 +82,7 @@ func CreateRemoteRepo(serviceDetails *utilsconfig.ServerDetails, technologyType 
 	params.PackageType = string(technologyType)
 	params.Key = repoName
 	params.Url = remoteUrl
-	return servicesManager.CreateBasicRemoteRepository(params)
+	return servicesManager.CreateRemoteRepositoryWithParams(params)
 }
 
 func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType Technology, repoName string, repositories ...string) error {
@@ -94,7 +94,7 @@ func CreateVirtualRepo(serviceDetails *utilsconfig.ServerDetails, technologyType
 	params.PackageType = string(technologyType)
 	params.Key = repoName
 	params.Repositories = repositories
-	return servicesManager.CreateBasicVirtualRepository(params)
+	return servicesManager.CreateVirtualRepositoryWithParams(params)
 }
 
 func GetRemoteDefaultName(technologyType Technology) string {
