@@ -1148,6 +1148,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  replace,
 		Usage: "[Optional] Set to true if you'd like existing users or groups to be replaced.` `",
 	},
+	admin: cli.BoolFlag{
+		Name:  admin,
+		Usage: "[Optional] Set to true if you'd like to create an admin user.` `",
+	},
 	// Xray's commands Flags
 	licenseId: cli.StringFlag{
 		Name:  licenseId,
