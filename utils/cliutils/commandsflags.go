@@ -62,6 +62,7 @@ const (
 	ReplicationDelete       = "replication-delete"
 	PermissionTargetDelete  = "permission-target-delete"
 	AccessTokenCreate       = "access-token-create"
+	UserCreate              = "user-create"
 	UsersCreate             = "users-create"
 	UsersDelete             = "users-delete"
 	GroupCreate             = "group-create"
@@ -366,6 +367,7 @@ const (
 	usersDeleteCsv = "users-delete-csv"
 	usersGroups    = "users-groups"
 	replace        = "replace"
+	admin          = "admin"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1442,6 +1444,10 @@ var commandFlags = map[string][]string{
 	AccessTokenCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, groups, grantAdmin, expiry, refreshable, audience,
+	},
+	UserCreate: {
+		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
+		usersGroups, replace, admin,
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,

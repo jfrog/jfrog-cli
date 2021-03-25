@@ -30,6 +30,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
@@ -931,6 +932,17 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargetDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "user-create",
+			Flags:        cliutils.GetCommandFlags(cliutils.UserCreate),
+			Description:  usercreate.Description,
+			HelpName:     corecommon.CreateUsage("rt user-create", usercreate.Description, usercreate.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return userCreateCmd(c)
 			},
 		},
 		{
@@ -2853,6 +2865,35 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 	permissionTargetDeleteCmd := permissiontarget.NewPermissionTargetDeleteCommand()
 	permissionTargetDeleteCmd.SetPermissionTargetName(c.Args().Get(0)).SetServerDetails(rtDetails).SetQuiet(cliutils.GetQuietValue(c))
 	return commands.Exec(permissionTargetDeleteCmd)
+}
+
+func userCreateCmd(c *cli.Context) error {
+	if c.NArg() != 3 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
+	userDetails := services.User{}
+	userDetails.Name = c.Args().Get(0)
+	userDetails.Password = c.Args().Get(1)
+	userDetails.Email = c.Args().Get(2)
+
+	user := []services.User{userDetails}
+	var usersGroups []string
+	if c.String("user-groups") != "" {
+		usersGroups = strings.Split(c.String("user-groups"), ",")
+	}
+	if c.String("admin") != "" {
+		userDetails.Admin = c.Bool("admin")
+	}
+	// Run command.
+	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
+	return commands.Exec(usersCreateCmd)
 }
 
 func usersCreateCmd(c *cli.Context) error {
