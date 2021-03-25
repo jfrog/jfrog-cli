@@ -399,11 +399,7 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType Technology) (er
 		}
 	} else {
 		// Validate that the chosen virtual repo contains the chosen remote repo
-		rtAuth, err := serviceDetails.CreateArtAuthConfig()
-		if err != nil {
-			return err
-		}
-		chosenVirtualRepo, err := GetVirtualRepo(&rtAuth, virtualRepo)
+		chosenVirtualRepo, err := GetVirtualRepo(serviceDetails, virtualRepo)
 		if err != nil {
 			return err
 		}
