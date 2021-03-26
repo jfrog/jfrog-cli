@@ -89,7 +89,7 @@ To create your own private plugins registry, follow these steps.
 * If needed, configure your Artifactory instance using the ```jfrog c add``` command.
 * Set the ID of the configured server as the value of the *JFROG_CLI_PLUGINS_SERVER* environment variable.
 * If you wish the name of the plugins repository to be different than *jfrog-cli-plugins*, set this name as the value of the *JFROG_CLI_PLUGINS_REPO* environment variable.
-*The ```jfrog plugin install``` command will now install plugins stored in your private registry.
+* The ```jfrog plugin install``` command will now install plugins stored in your private registry.
 
 To publish a plugin to the private registry, run the following command, while inside the root of the plugin's sources directory. This command will build the sources of the plugin for all the supported operating systems. All binaries will be uploaded to the configured registry.
 
