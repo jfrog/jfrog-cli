@@ -33,7 +33,11 @@ Well, plugins can do almost anything. The sky is the limit.
 1. You have access to most of the JFrog CLI code base. This is because your plugin code depends on the [https://github.com/jfrog/jfrog-cli-core](https://github.com/jfrog/jfrog-cli-core) module. It is a depedency declared in your project's *go.mod* file. Feel free to explore the *jfrog-cli-core* code base, and use it as part of your plugin.
 2. You can also add other Go packages to your *go.mod* and use them in your code.
 
-## Guidelines for developing and publishing a plugin
+## Including plugins in the official registry
+### General
+To make a new plugin available for anyone to use, you need to register the plugin in the JFrog CLI Plugins Registry. The registry is hosted in [https://github.com/jfrog/jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg). The registry includes a descriptor file in YAML format for each registered plugin, inside the *plugins* directory. To include your plugin in the registry, create a pull request to add the plugin descriptor file for your plugin according to this file name format: *your-plugin-name.yml*.
+
+### Guidelines for developing and publishing plugins
 To publish your plugin, you need to include it in [JFrog CLI's Plugins Registry](https://github.com/jfrog/jfrog-cli-plugins-reg). Please make sure your plugin meets the following guidelines before publishing it.
 
 * Read the [Developer Terms](https://github.com/jfrog/jfrog-cli-plugins-reg/blob/master/DEVELOPERS_TERMS.md) document. You'll be asked to accept it before your plugin becomes available.
@@ -44,10 +48,6 @@ To publish your plugin, you need to include it in [JFrog CLI's Plugins Registry]
 * **Create a Readme.** Make sure that your plugin code includes a README.md file and place it in the root of the repository. The README needs to be structured according to the [jfrog-cli-plugin-template]((https://github.com/jfrog/jfrog-cli-plugin-template.git)) README. It needs to include all the information and relevant details for the relevant plugin users..
 * **Consider create a tag for your plugin sources.** Although this is not mandatory, we recommend creating a tag for your GitHub repository before publishing the plugin. You can then provide this tag to the Registry when publishing the plugin, to make sure the correct code is built.
 * **Plugin version**. Make sure that your built plugin has the correct version. The version is declared as part of the plugin sources. To check your plugin version, run the plugin executable with the -v option. For example: ```./my-plugin -v```. The plugin version should have a **v** prefix. For example ```v1.0.0``` and it should follow the semantic versioning guidelines.
-
-## Publishing a new plugin
-### General
-To publish a new plugin, you need to register the plugin in the JFrog CLI Plugins Registry. The registry is hosted in [https://github.com/jfrog/jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg). The registry includes a descriptor file in YAML format for each registered plugin, inside the *plugins* directory. To include your plugin in the registry, create a pull request to add the plugin descriptor file for your plugin according to this file name format: *your-plugin-name.yml*.
 
 ### Important notes
 * Please make sure that the extension of your plugin descriptor file is **yml** and not **yaml**.
@@ -76,5 +76,21 @@ tag: my-release-tag
 * **branch** - Optionally set an existing branch in your plugin's GitHub repository.
 * **tag** - Optionally set an existing tag in your plugin's GitHub repository.
 
-## Publishing a new version of a published plugin
+### Publishing a new version of a published plugin
 To publish a new version of your plugin, all you need to do is create a pull request, which updates the version inside your plugin descriptor file. If needed, your change can also include either the branch or tag. 
+
+## Setting up a private plugins registry
+In addition to the public official JFrog CLI Plugins Registry, JFrog CLI supports publishing and installing plugins to and from private JFrog CLI Plugins Registries. A private registry can be hosted on any Artifactory server. It uses a local generic Artifactory repository for storing the plugins.
+
+To create your own private plugins registry, follow these steps.
+
+* On your Artifactory server, create a local generic repository named jfrog-cli-plugins.
+* Make sure your Artifactory server is included in JFrog CLI's configuration, by running the ```jfrog c show``` command.
+* If needed, configure your Artifactory instance using the ```jfrog c add``` command.
+* Set the ID of the configured server as the value of the *JFROG_CLI_PLUGINS_SERVER* environment variable.
+* If you wish the name of the plugins repository to be different than *jfrog-cli-plugins*, set this name as the value of the *JFROG_CLI_PLUGINS_REPO* environment variable.
+*The ```jfrog plugin install``` command will now install plugins stored in your private registry.
+
+To publish a plugin to the private registry, run the following command, while inside the root of the plugin's sources directory. This command will build the sources of the plugin for all the supported operating systems. All binaries will be uploaded to the configured registry.
+
+```jfrog plugin publish the-plugin-name the-plugin-version```
