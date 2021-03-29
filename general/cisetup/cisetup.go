@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,6 +38,7 @@ const (
 	VcsConfigFile           = "jfrog-cli-vcs.conf"
 	DefaultFirstBuildNumber = "0"
 	DefaultWorkspace        = "./jfrog-vcs-workspace"
+	pipelineUiPath          = "ui/pipelines/myPipelines/default/"
 )
 
 type GitProvider string
@@ -174,7 +176,7 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	// Run Pipelines setup
-	pipelinesYamlBytes, err := runPipelinesBootstrap(cc.data, pipelinesToken)
+	pipelinesYamlBytes, pipelineName, err := runPipelinesBootstrap(cc.data, pipelinesToken)
 	if err != nil {
 		return err
 	}
@@ -182,7 +184,11 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	return cc.stagePipelinesYaml(pipelinesYamlPath)
+	err = cc.stagePipelinesYaml(pipelinesYamlPath)
+	if err != nil {
+		return err
+	}
+	return cc.logCompletionInstruction(pipelineName)
 }
 
 func getPipelinesToken() (string, error) {
@@ -213,9 +219,32 @@ func runConfigCmd() (err error) {
 }
 
 func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {
-	log.Debug("Saving Pipelines Yaml to file...")
 	path := filepath.Join(cc.data.LocalDirPath, pipelinesYamlPath)
+	log.Info("Generating pipelines.yml at: '" + path + "'...")
 	return ioutil.WriteFile(path, yaml, 0644)
+}
+
+func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
+	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	if err != nil {
+		return err
+	}
+
+	instructions := []string{
+		"To complete the setup, run the following commands:", "",
+		"cd " + cc.data.LocalDirPath,
+		"git commit -m \"Add pipelines.yml\"",
+		"git push", "",
+		"Although your pipeline is configured, it hasn't run yet.",
+		"It will run and become visible in the following URL, after the next git commit:",
+		getPipelineUiPath(serviceDetails.Url, pipelineName), "",
+	}
+	log.Info(strings.Join(instructions, "\n"))
+	return nil
+}
+
+func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
+	return utils.AddTrailingSlashIfNeeded(pipelinesUrl) + pipelineUiPath + pipelineName
 }
 
 func (cc *CiSetupCommand) publishFirstBuild() (err error) {
@@ -223,7 +252,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	ioutils.ScanFromConsole("Please choose a name for the build", &cc.data.BuildName, "${vcs.repo.name}-${branch}")
 	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${vcs.repo.name}", cc.data.RepositoryName, -1)
 	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${branch}", cc.data.GitBranch, -1)
-	// Run BAG Command (in order to publish the first, empty, buildinfo)
+	// Run BAG Command (in order to publish the first, empty, build info)
 	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
 	buildConfiguration := rtutils.BuildConfiguration{BuildName: cc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
@@ -496,7 +525,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 }
 
 func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
-	log.Debug("Staging pipelines.yaml...")
+	log.Info("Staging pipelines.yml for git commit...")
 	repo, err := git.PlainOpen(cc.data.LocalDirPath)
 	if err != nil {
 		return err

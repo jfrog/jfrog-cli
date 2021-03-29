@@ -6,7 +6,6 @@ import (
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"github.com/jfrog/jfrog-client-go/utils/log"
 	"gopkg.in/yaml.v2"
 	"strconv"
 	"strings"
@@ -38,15 +37,14 @@ const (
 	apikeyFlag = "apikey"
 )
 
-func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([]byte, error) {
-	log.Debug("Creating Pipelines Yaml...")
+func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([]byte, string, error) {
 	pipelineName := createPipelineName(vcsData)
 	gitResourceName := createGitResourceName(vcsData)
 	serverId := createServerIdName(vcsData)
 
 	converted, err := convertBuildCmd(vcsData.BuildCommand)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	pipelinesCommands := getPipelineCommands(rtIntegration, serverId, gitResourceName, converted, vcsData)
@@ -58,9 +56,9 @@ func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([
 	}
 	pipelineBytes, err := yaml.Marshal(&pipelineYaml)
 	if err != nil {
-		return nil, errorutils.CheckError(err)
+		return nil, "", errorutils.CheckError(err)
 	}
-	return pipelineBytes, nil
+	return pipelineBytes, pipelineName, nil
 }
 
 func getPipelineCommands(rtIntegration, serverId, gitResourceName, convertedBuildCmd string, vcsData *VcsData) []string {

@@ -18,32 +18,32 @@ const (
 	pipelinesYamlPath = "pipelines.yml"
 )
 
-func runPipelinesBootstrap(vcsData *VcsData, pipelinesToken string) ([]byte, error) {
-	serviceDetails, err := config.GetSpecificConfig(ConfigServerId, true, false)
+func runPipelinesBootstrap(vcsData *VcsData, pipelinesToken string) (pipelinesYaml []byte, pipelineName string, err error) {
+	log.Info("Configuring JFrog Pipelines...")
+	serviceDetails, err := config.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	psm, err := createPipelinesServiceManager(serviceDetails, pipelinesToken)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	vcsIntName, vcsIntId, err := createVcsIntegration(vcsData.GitProvider, psm, vcsData)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	rtIntName, err := createArtifactoryIntegration(psm, serviceDetails, vcsData)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	err = doAddPipelineSource(psm, vcsData, vcsIntId)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-
 	return createPipelinesYaml(vcsIntName, rtIntName, vcsData)
 }
 
