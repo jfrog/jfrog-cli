@@ -16,9 +16,11 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
 	github.com/vbauerster/mpb/v4 v4.7.0
+	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
 	gopkg.in/yaml.v2 v2.3.0
 )
+
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.20.3-0.20210321133437-f327beeca71b
 

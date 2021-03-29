@@ -124,7 +124,7 @@ import (
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "config",
 			Flags:        cliutils.GetCommandFlags(cliutils.RtConfig),
@@ -1024,7 +1024,7 @@ func GetCommands() []cli.Command {
 				return accessTokenCreateCmd(c)
 			},
 		},
-	}
+	})
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*coreConfig.ServerDetails, error) {
@@ -3125,7 +3125,7 @@ func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.Serv
 }
 
 func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
+	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
 		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
 		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }

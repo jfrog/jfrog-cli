@@ -19,7 +19,7 @@ import (
 const DATE_FORMAT = "2006-01-02"
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:            "curl",
 			Flags:           cliutils.GetCommandFlags(cliutils.XrCurl),
@@ -42,7 +42,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,
 		},
-	}
+	})
 }
 
 func getOfflineUpdatesFlag(c *cli.Context) (flags *offlineupdate.OfflineUpdatesFlags, err error) {

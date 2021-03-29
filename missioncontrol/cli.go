@@ -21,7 +21,7 @@ import (
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "license-acquire",
 			Flags:        cliutils.GetCommandFlags(cliutils.LicenseAcquire),
@@ -87,7 +87,7 @@ func GetCommands() []cli.Command {
 				return jpdDelete(c)
 			},
 		},
-	}
+	})
 }
 
 func jpdAdd(c *cli.Context) error {

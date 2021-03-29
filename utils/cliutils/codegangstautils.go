@@ -3,6 +3,7 @@ package cliutils
 import (
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-client-go/utils"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -29,4 +30,9 @@ func ExtractCommand(c *cli.Context) (command []string) {
 	command = make([]string, len(c.Args()))
 	copy(command, c.Args())
 	return command
+}
+
+func GetSortedCommands(commands cli.CommandsByName) cli.CommandsByName {
+	sort.Sort(commands)
+	return commands
 }

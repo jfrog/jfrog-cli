@@ -402,6 +402,7 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configApiKey      = configPrefix + apikey
+	configInsecureTls = configPrefix + insecureTls
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -1211,16 +1212,21 @@ var flagsMap = map[string]cli.Flag{
 		Name:  accessToken,
 		Usage: "[Optional] JFrog Platform access token. ` `",
 	},
+	configInsecureTls: cli.StringFlag{
+		Name: insecureTls,
+		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, insecureTls,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
+	// Deprecated
 	RtConfig: {
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, insecureTls,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
 		deleteQuiet,

@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "JFrog File Spec",
+  "description": "JFrog File Spec schema definition.",
+
+  "properties": {
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$file"
+      },
+      "description": "Details of files to be uploaded or downloaded from Artifactory.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "default": [
+        {
+          "pattern": ""
+        }
+      ]
+    }
+  },
+  "$file": {
+    "properties": {
+      "ant": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, the command will interpret the patterns which describes the local file-system paths, as ANT patterns.",
+        "default": "false"
+      },
+      "aql": {
+        "description": "An AQL query that specified artifacts in Artifactory.",
+        "properties": {
+          "items.find": {}
+        },
+        "default": {
+          "items.find": {
+            "repo": "my-local-repo",
+            "path": "my-path",
+            "file": "my-file"
+          }
+        }
+      },
+      "archive": {
+        "type": "string",
+        "enum": ["zip"],
+        "description": "Set to \"zip\" to pack and deploy the files to Artifactory inside a ZIP archive. Currently, the only packaging format supported is zip."
+      },
+      "archiveEntries": {
+        "type": "string",
+        "description": "If specified, only archive artifacts containing entries matching this pattern are matched. You can use wildcards to specify multiple artifacts."
+      },
+      "build": {
+        "type": "string",
+        "description": "If specified, only artifacts of the specified build are matched. The property format is build-name/build-number. If you do not specify the build number, the artifacts are filtered by the latest build number.",
+        "examples": ["buildName", "buildName/buildNumber"]
+      },
+      "bundle": {
+        "type": "string",
+        "description": "If specified, only artifacts of the specified bundle are matched. The value format is bundle-name/bundle-version.",
+        "examples": ["buildName/bundleVersion"]
+      },
+      "excludeArtifacts": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If specified, build artifacts are not matched.",
+        "default": "false"
+      },
+      "excludeProps": {
+        "type": "string",
+        "description": "List of \"key=value\" pairs separated by a semi-colon. Only artifacts without all of the specified properties names and values will be affected.",
+        "examples": ["key1=value1;key2=value2;key3=value3"]
+      },
+      "exclusions": {
+        "type": "array",
+        "description": "An array (enclosed with square brackets) of patterns to be excluded from uploading/downloading.",
+        "examples": [["*.sha1", "*.md5"]]
+      },
+      "explode": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, archive file is extracted after the operation. The archived file itself is deleted. The supported archive types are: zip, tar; tar.gz; and tgz.",
+        "default": "false"
+      },
+      "flat": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, artifacts are uploaded/downloaded to the exact target path specified and their hierarchy in the source file system is ignored.",
+        "default": "true"
+      },
+      "includeDeps": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If specified, also dependencies of the specified build are matched.",
+        "default": "true"
+      },
+      "includeDirs": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, the source path applies to bottom-chain directories and not only to files. Botton-chain directories are either empty or do not include other directories that match the source path.",
+        "default": "false"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "The maximum number of items to fetch. Usually used with the sortBy option."
+      },
+      "offset": {
+        "type": "integer",
+        "description": "The offset from which to fetch items (i.e. how many items should be skipped). Usually used with the 'sort-by' option."
+      },
+      "pattern": {
+        "type": "string",
+        "description": "Specifies a local file system path or a path in Artifactory."
+      },
+      "props": {
+        "type": "string",
+        "description": "List of \"key=value\" pairs separated by a semi-colon. Only artifacts with all of the specified properties names and values will be affected.",
+        "examples": ["key1=value1;key2=value2;key3=value3"]
+      },
+      "recursive": {
+        "type": "string",
+        "enum": ["true", "false"],
+        "description": "If true, files are also collected from sub-folders of the source directory.",
+        "default": "true"
+      },
+      "regexp": {
+        "type": "string",
+        "description": "If true, the command will interpret the patterns which describes the local file-system paths, as regular expressions.",
+        "default": "false"
+      },
+      "sortBy": {
+        "type": "string",
+        "description": "A list of semicolon-separated fields to sort by. The fields must be part of the 'items' AQL domain.",
+        "examples": [
+          "repo",
+          "path",
+          "name",
+          "created",
+          "modified",
+          "updated",
+          "created_by",
+          "modified_by",
+          "type",
+          "depth",
+          "original_md5",
+          "actual_md5",
+          "original_sha1",
+          "actual_sha1",
+          "sha256",
+          "size",
+          "virtual_repos"
+        ]
+      },
+      "sortOrder": {
+        "type": "string",
+        "enum": ["asc", "desc"],
+        "description": "The order by which fields in the sortBy option should be sorted.",
+        "default": "asc"
+      },
+      "symlinks": {
+        "type": "string",
+        "description": "If true, the command will preserve the soft links structure in Artifactory. The symlink file representation will contain the symbolic link and checksum properties.",
+        "default": "false"
+      },
+      "target": {
+        "type": "string",
+        "description": "Specifies a local file system path or a path in Artifactory.",
+        "default": "./"
+      },
+      "targetProps": {
+        "type": "string",
+        "description": "List of \"key=value\" pairs separated by a semi-colon. The specified properties will be attached to the affected artifacts.",
+        "examples": ["key1=value1;key2=value2;key3=value3"]
+      },
+      "validateSymlinks": {
+        "type": "string",
+        "description": "If true, the command will validate that symlinks are pointing to existing and unchanged files, by comparing their sha1. Applicable to files and not directories.",
+        "default": "false"
+      }
+    },
+
+    "anyOf": [
+      { "required": ["pattern"] },
+      { "required": ["aql"] },
+      { "required": ["build"] },
+      { "required": ["bundle"] }
+    ],
+    "dependencies": {
+      "pattern": { "not": { "required": ["aql"] } },
+      "aql": {
+        "not": {
+          "required": [
+            "pattern",
+            "exclusions",
+            "props",
+            "targetProps",
+            "excludeProps",
+            "recursive",
+            "regexp",
+            "archiveEntries"
+          ]
+        }
+      },
+      "build": { "not": { "required": ["bundle", "limit", "offset"] } },
+      "bundle": { "not": { "required": ["build", "limit", "offset"] } },
+      "excludeArtifacts": { "required": ["build"] },
+      "includeDeps": { "required": ["build"] }
+    }
+  }
+}
