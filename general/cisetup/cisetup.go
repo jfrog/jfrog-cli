@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
@@ -170,25 +171,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
-	// Ask for pipelines token.
-	pipelinesToken, err := getPipelinesToken()
-	if err != nil {
-		return err
-	}
-	// Run Pipelines setup
-	pipelinesYamlBytes, pipelineName, err := runPipelinesBootstrap(cc.data, pipelinesToken)
-	if err != nil {
-		return err
-	}
-	err = cc.saveYamlToFile(pipelinesYamlBytes)
-	if err != nil {
-		return err
-	}
-	err = cc.stagePipelinesYaml(pipelinesYamlPath)
-	if err != nil {
-		return err
-	}
-	return cc.logCompletionInstruction(pipelineName)
+	return cc.runPipelinesPhase()
 }
 
 func getPipelinesToken() (string, error) {
@@ -216,6 +199,41 @@ func runConfigCmd() (err error) {
 		}
 		log.Error(err)
 	}
+}
+
+func (cc *CiSetupCommand) runPipelinesPhase() error {
+	var pipelinesYamlBytes []byte
+	var pipelineName string
+	var err error
+	// Ask for token and config pipelines. Run again if authentication problem.
+	for {
+		// Ask for pipelines token.
+		pipelinesToken, err := getPipelinesToken()
+		if err != nil {
+			return err
+		}
+		// Run Pipelines setup
+		pipelinesYamlBytes, pipelineName, err = configAndGeneratePipelines(cc.data, pipelinesToken)
+		// If no error, continue with flow. Elseif unauthorized error, ask for token again.
+		if err == nil {
+			break
+		}
+		if _, ok := err.(*pipelinesservices.IntegrationUnauthorizedError); !ok {
+			return err
+		}
+		log.Debug(err.Error())
+		log.Info("There seems to be an authorization problem with the pipelines token you entered. Please try again.")
+	}
+
+	err = cc.saveYamlToFile(pipelinesYamlBytes)
+	if err != nil {
+		return err
+	}
+	err = cc.stagePipelinesYaml(pipelinesYamlPath)
+	if err != nil {
+		return err
+	}
+	return cc.logCompletionInstruction(pipelineName)
 }
 
 func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {

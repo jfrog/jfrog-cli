@@ -18,7 +18,7 @@ const (
 	pipelinesYamlPath = "pipelines.yml"
 )
 
-func runPipelinesBootstrap(vcsData *VcsData, pipelinesToken string) (pipelinesYaml []byte, pipelineName string, err error) {
+func configAndGeneratePipelines(vcsData *VcsData, pipelinesToken string) (pipelinesYaml []byte, pipelineName string, err error) {
 	log.Info("Configuring JFrog Pipelines...")
 	serviceDetails, err := config.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
