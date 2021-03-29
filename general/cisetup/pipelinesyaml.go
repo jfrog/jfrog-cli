@@ -18,6 +18,7 @@ const (
 	m2pathCmd             = "MVN_PATH=`which mvn` && export M2_HOME=`readlink -f $MVN_PATH | xargs dirname | xargs dirname`"
 	jfrogCliRtPrefix      = "jfrog rt"
 	jfrogCliConfig        = "jfrog c add"
+	jfrogCliBce           = "jfrog rt bce"
 	jfrogCliBag           = "jfrog rt bag"
 	jfrogCliBp            = "jfrog rt bp"
 	buildNameEnvVar       = "JFROG_CLI_BUILD_NAME"
@@ -70,6 +71,7 @@ func getPipelineCommands(rtIntegration, serverId, gitResourceName, convertedBuil
 	commandsArray = append(commandsArray, getTechConfigsCommands(serverId, vcsData)...)
 	commandsArray = append(commandsArray, convertedBuildCmd)
 	commandsArray = append(commandsArray, jfrogCliBag)
+	commandsArray = append(commandsArray, jfrogCliBce)
 	commandsArray = append(commandsArray, jfrogCliBp)
 	return commandsArray
 }
@@ -156,6 +158,7 @@ func getExportsCommands(vcsData *VcsData) []string {
 		getExportCmd(buildNameEnvVar, vcsData.BuildName),
 		getExportCmd(buildNumberEnvVar, runNumberEnvVar),
 		getExportCmd(buildUrlEnvVar, stepUrlEnvVar),
+		getExportCmd(buildResultEnvVar, passResult),
 	}
 }
 
@@ -209,9 +212,9 @@ func createPipeline(rtIntegration, pipelineName, gitResourceName string, command
 					},
 				},
 				Execution: StepExecution{
-					OnExecute: commands,
-					OnSuccess: getOnResultCmd(passResult, gitResourceName),
-					OnFailure: getOnResultCmd(failResult, gitResourceName),
+					OnExecute:  commands,
+					OnComplete: []string{getUpdateCommitStatusCmd(gitResourceName)},
+					OnFailure:  getOnFailureCommands(),
 				},
 			},
 		},
@@ -327,8 +330,10 @@ type StepExecution struct {
 	OnFailure  []string `yaml:"onFailure,omitempty"`
 }
 
-func getOnResultCmd(result, gitResourceName string) []string {
-	return []string{getExportCmd(buildResultEnvVar, result), getUpdateCommitStatusCmd(gitResourceName)}
+func getOnFailureCommands() []string {
+	return []string{getExportCmd(buildResultEnvVar, failResult),
+		jfrogCliBce,
+		jfrogCliBp}
 }
 
 func getUpdateCommitStatusCmd(gitResourceName string) string {
