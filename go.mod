@@ -22,7 +22,7 @@ require (
 
 replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.20.3-0.20210321133437-f327beeca71b
 
-replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210329100633-97306d46e674
+replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210329135240-81d7a074c30b
 
 //replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
 

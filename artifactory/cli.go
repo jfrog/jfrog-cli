@@ -1238,7 +1238,7 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		filteredMavenArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
+		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
@@ -1272,7 +1272,7 @@ func gradleCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredGradleArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
+		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1426,7 +1426,7 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 
-		filteredNugetArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
+		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1513,7 +1513,7 @@ func dotnetCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
-	filteredDotnetArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
+	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -3056,7 +3056,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
-func validateBuildConfiguration(c *cli.Context, buildConfiguration *coreutils.BuildConfiguration) error {
+func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
 	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
 		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
@@ -3288,7 +3288,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
 	}
 
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = coreutils.GetBuildNameAndNumber(buildName, buildNumber)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(buildName, buildNumber)
 	promotionParamsImpl.TargetRepo = targetRepo
 	return promotionParamsImpl
 }
@@ -3311,7 +3311,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = coreutils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
+	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	distributeParamsImpl.TargetRepo = c.Args().Get(2)
 	return distributeParamsImpl
 }
@@ -3539,12 +3539,12 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 	return
 }
 
-func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *coreutils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(coreutils.BuildConfiguration)
-	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = coreutils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
-	buildConfigConfiguration.Project = coreutils.GetBuildProject(c.String("project"))
+func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
+	buildConfigConfiguration = new(utils.BuildConfiguration)
+	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
+	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	buildConfigConfiguration.Module = c.String("module")
-	err = coreutils.ValidateBuildAndModuleParams(buildConfigConfiguration)
+	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
 	return
 }
 
@@ -3627,15 +3627,15 @@ func isFailNoOp(context *cli.Context) bool {
 }
 
 // Returns build configuration struct using the params provided from the console.
-func createBuildConfiguration(c *cli.Context) *coreutils.BuildConfiguration {
-	buildConfiguration := new(coreutils.BuildConfiguration)
+func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
+	buildConfiguration := new(utils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
 	if buildNameArg == "" || buildNumberArg == "" {
 		buildNameArg = ""
 		buildNumberArg = ""
 	}
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = coreutils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = coreutils.GetBuildProject(c.String("project"))
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
 	return buildConfiguration
 }
 
