@@ -15,7 +15,7 @@ import (
 const DATE_FORMAT = "2006-01-02"
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "offline-update",
 			Description:  offlineupdate.Description,
@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action:       offlineUpdates,
 		},
-	}
+	})
 }
 
 func getOfflineUpdatesFlag(c *cli.Context) (flags *commands.OfflineUpdatesFlags, err error) {

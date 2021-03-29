@@ -22,7 +22,7 @@ import (
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "add",
 			Description:  add.Description,
@@ -93,7 +93,7 @@ func GetCommands() []cli.Command {
 				return useCmd(c)
 			},
 		},
-	}
+	})
 }
 
 func addCmd(c *cli.Context) error {
