@@ -51,7 +51,7 @@ const (
 	PipInstall              = "pip-install"
 	PipConfig               = "pip-config"
 	Ping                    = "ping"
-	Curl                    = "curl"
+	RtCurl                  = "rt-curl"
 	ReleaseBundleCreate     = "release-bundle-create"
 	ReleaseBundleUpdate     = "release-bundle-update"
 	ReleaseBundleSign       = "release-bundle-sign"
@@ -1374,7 +1374,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, insecureTls,
 	},
-	Curl: {
+	RtCurl: {
 		serverId,
 	},
 	PipConfig: {

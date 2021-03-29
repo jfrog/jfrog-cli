@@ -54,7 +54,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
-	commonutils "github.com/jfrog/jfrog-cli-core/common/utils"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/config"
@@ -704,7 +703,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "curl",
-			Flags:           cliutils.GetCommandFlags(cliutils.Curl),
+			Flags:           cliutils.GetCommandFlags(cliutils.RtCurl),
 			Aliases:         []string{"cl"},
 			Description:     curldocs.Description,
 			HelpName:        corecommon.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
@@ -1235,11 +1234,11 @@ func mvnCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredMavenArgs, insecureTls, err := utils.ExtractInsecureTlsFromArgs(args)
+		filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
 		if err != nil {
 			return err
 		}
-		filteredMavenArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
+		filteredMavenArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(filteredMavenArgs)
 		if err != nil {
 			return err
 		}
@@ -1273,7 +1272,7 @@ func gradleCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredGradleArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		filteredGradleArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1427,7 +1426,7 @@ func nugetCmd(c *cli.Context) error {
 			return err
 		}
 
-		filteredNugetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+		filteredNugetArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1514,7 +1513,7 @@ func dotnetCmd(c *cli.Context) error {
 
 	args := cliutils.ExtractCommand(c)
 
-	filteredDotnetArgs, buildConfiguration, err := utils.ExtractBuildDetailsFromArgs(args)
+	filteredDotnetArgs, buildConfiguration, err := coreutils.ExtractBuildDetailsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -1567,7 +1566,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmInstallArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmInstallArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1662,7 +1661,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmPublicArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmPublicArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1813,7 +1812,7 @@ func goLegacyCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	goArg, err := utils.ParseArgs(strings.Split(c.Args().Get(0), " "))
+	goArg, err := coreutils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
 	}
@@ -3057,7 +3056,7 @@ func accessTokenCreateCmd(c *cli.Context) error {
 	return nil
 }
 
-func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildConfiguration) error {
+func validateBuildConfiguration(c *cli.Context, buildConfiguration *coreutils.BuildConfiguration) error {
 	if buildConfiguration.BuildName == "" || buildConfiguration.BuildNumber == "" {
 		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
@@ -3289,7 +3288,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 		buildName, buildNumber, targetRepo = "", "", c.Args().Get(0)
 	}
 
-	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(buildName, buildNumber)
+	promotionParamsImpl.BuildName, promotionParamsImpl.BuildNumber = coreutils.GetBuildNameAndNumber(buildName, buildNumber)
 	promotionParamsImpl.TargetRepo = targetRepo
 	return promotionParamsImpl
 }
@@ -3312,7 +3311,7 @@ func createBuildDistributionConfiguration(c *cli.Context) services.BuildDistribu
 	distributeParamsImpl.GpgPassphrase = c.String("passphrase")
 	distributeParamsImpl.Async = c.Bool("async")
 	distributeParamsImpl.SourceRepos = c.String("source-repos")
-	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = utils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
+	distributeParamsImpl.BuildName, distributeParamsImpl.BuildNumber = coreutils.GetBuildNameAndNumber(c.Args().Get(0), c.Args().Get(1))
 	distributeParamsImpl.TargetRepo = c.Args().Get(2)
 	return distributeParamsImpl
 }
@@ -3540,12 +3539,12 @@ func createUploadConfiguration(c *cli.Context) (uploadConfiguration *utils.Uploa
 	return
 }
 
-func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *utils.BuildConfiguration, err error) {
-	buildConfigConfiguration = new(utils.BuildConfiguration)
-	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = utils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
-	buildConfigConfiguration.Project = utils.GetBuildProject(c.String("project"))
+func createBuildConfigurationWithModule(c *cli.Context) (buildConfigConfiguration *coreutils.BuildConfiguration, err error) {
+	buildConfigConfiguration = new(coreutils.BuildConfiguration)
+	buildConfigConfiguration.BuildName, buildConfigConfiguration.BuildNumber = coreutils.GetBuildNameAndNumber(c.String("build-name"), c.String("build-number"))
+	buildConfigConfiguration.Project = coreutils.GetBuildProject(c.String("project"))
 	buildConfigConfiguration.Module = c.String("module")
-	err = utils.ValidateBuildAndModuleParams(buildConfigConfiguration)
+	err = coreutils.ValidateBuildAndModuleParams(buildConfigConfiguration)
 	return
 }
 
@@ -3628,15 +3627,15 @@ func isFailNoOp(context *cli.Context) bool {
 }
 
 // Returns build configuration struct using the params provided from the console.
-func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
-	buildConfiguration := new(utils.BuildConfiguration)
+func createBuildConfiguration(c *cli.Context) *coreutils.BuildConfiguration {
+	buildConfiguration := new(coreutils.BuildConfiguration)
 	buildNameArg, buildNumberArg := c.Args().Get(0), c.Args().Get(1)
 	if buildNameArg == "" || buildNumberArg == "" {
 		buildNameArg = ""
 		buildNumberArg = ""
 	}
-	buildConfiguration.BuildName, buildConfiguration.BuildNumber = utils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
-	buildConfiguration.Project = utils.GetBuildProject(c.String("project"))
+	buildConfiguration.BuildName, buildConfiguration.BuildNumber = coreutils.GetBuildNameAndNumber(buildNameArg, buildNumberArg)
+	buildConfiguration.Project = coreutils.GetBuildProject(c.String("project"))
 	return buildConfiguration
 }
 
@@ -3653,11 +3652,11 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, err error) {
 	// Extract threads flag.
 	cleanArgs = append([]string(nil), args...)
-	threadsFlagIndex, threadsValueIndex, threads, err := commonutils.FindFlag("--threads", cleanArgs)
+	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
 		return
 	}
-	commonutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
+	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
 
 	// Convert flag value to int.
 	threadsCount, err = strconv.Atoi(threads)
