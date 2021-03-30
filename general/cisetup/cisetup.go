@@ -532,7 +532,7 @@ func (cc *CiSetupCommand) prepareVcsData() (err error) {
 		if dirEmpty {
 			break
 		} else {
-			log.Error(cc.data.LocalDirPath + " isn't empty.")
+			log.Error("The '" + cc.data.LocalDirPath + "' directory isn't empty.")
 			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, "")
 		}
 
