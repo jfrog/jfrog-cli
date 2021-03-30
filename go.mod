@@ -25,8 +25,6 @@ replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.
 
 replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.4.3-0.20210329152958-e4f16b636805
 
-//replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
-
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
