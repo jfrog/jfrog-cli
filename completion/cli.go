@@ -7,10 +7,11 @@ import (
 	"github.com/jfrog/jfrog-cli/completion/shells/zsh"
 	bash_docs "github.com/jfrog/jfrog-cli/docs/completion/bash"
 	zsh_docs "github.com/jfrog/jfrog-cli/docs/completion/zsh"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 )
 
 func GetCommands() []cli.Command {
-	return []cli.Command{
+	return cliutils.GetSortedCommands(cli.CommandsByName{
 		{
 			Name:         "bash",
 			Description:  bash_docs.Description,
@@ -29,5 +30,5 @@ func GetCommands() []cli.Command {
 				zsh.WriteZshCompletionScript()
 			},
 		},
-	}
+	})
 }
