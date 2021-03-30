@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gookit/color"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/gookit/color"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
+
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
@@ -556,8 +558,9 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 		return err
 	}
 	cloneOption := &git.CloneOptions{
-		URL:  cc.data.VcsCredentials.Url,
-		Auth: createCredentials(&cc.data.VcsCredentials),
+		URL:           cc.data.VcsCredentials.Url,
+		Auth:          createCredentials(&cc.data.VcsCredentials),
+		ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", cc.data.GitBranch)),
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
