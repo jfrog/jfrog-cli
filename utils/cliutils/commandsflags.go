@@ -151,6 +151,7 @@ const (
 	syncDeletesQuiet = syncDeletes + "-" + quiet
 	antFlag          = "ant"
 	fromRt           = "from-rt"
+	transitive       = "transitive"
 
 	// Config flags
 	interactive   = "interactive"
@@ -214,6 +215,7 @@ const (
 	searchProps        = searchPrefix + props
 	searchExcludeProps = searchPrefix + excludeProps
 	count              = "count"
+	searchTransitive   = searchPrefix + transitive
 
 	// Unique properties flags
 	propertiesPrefix  = "props-"
@@ -748,6 +750,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  excludeProps,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be returned` `",
 	},
+	searchTransitive: cli.BoolFlag{
+		Name:  transitive,
+		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.` `",
+	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
 		Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.` `",
@@ -1265,7 +1271,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		insecureTls,
+		insecureTls, searchTransitive,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
