@@ -80,7 +80,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/goconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gopublish"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/gorecursivepublish"
 	gradledoc "github.com/jfrog/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/move"
@@ -673,19 +672,6 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return goCmd(c)
-			},
-		},
-		{
-			Name:         "go-recursive-publish",
-			Flags:        cliutils.GetCommandFlags(cliutils.GoRecursivePublish),
-			Aliases:      []string{"grp"},
-			Description:  gorecursivepublish.Description,
-			HelpName:     corecommon.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
-			UsageText:    gorecursivepublish.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return goRecursivePublishCmd(c)
 			},
 		},
 		{
@@ -1855,25 +1841,6 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	goNative := golang.NewGoNativeCommand()
 	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
 	return commands.Exec(goNative)
-}
-
-func goRecursivePublishCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	targetRepo := c.Args().Get(0)
-	if targetRepo == "" {
-		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
-	}
-	details, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
-	}
-	goRecursivePublishCmd := golang.NewGoRecursivePublishCommand()
-	goRecursivePublishCmd.SetServerDetails(details).SetTargetRepo(targetRepo)
-
-	return commands.Exec(goRecursivePublishCmd)
 }
 
 func createGradleConfigCmd(c *cli.Context) error {
