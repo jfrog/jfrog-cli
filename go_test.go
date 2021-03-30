@@ -169,6 +169,44 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	cleanGoTest(t)
 }
 
+func TestGoPublishWithConfig(t *testing.T) {
+	initGoTest(t)
+	buildNumber := "11"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
+	defer os.RemoveAll(newHomeDir)
+	wd, err := os.Getwd()
+	defer os.Chdir(wd)
+	assert.NoError(t, err)
+	prepareGoProject("", t, true)
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err = artifactoryGoCli.Exec("gp", "v1.0.0", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2", "--module="+ModuleNameJFrogTest)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+
+	err = artifactoryCli.Exec("build-publish", tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	validateBuildInfo(buildInfo, t, 0, 3, ModuleNameJFrogTest)
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.GoBuildName, artHttpDetails)
+	assert.NoError(t, os.Chdir(wd))
+	cleanGoTest(t)
+}
+
 func TestGoWithGlobalConfig(t *testing.T) {
 	initGoTest(t)
 	buildNumber := "1"
