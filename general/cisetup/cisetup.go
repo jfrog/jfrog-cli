@@ -223,7 +223,7 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(false)
+		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
 		err = configCmd.Config()
 		if err == nil {
 			return nil
