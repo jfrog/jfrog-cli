@@ -51,7 +51,7 @@ const (
 	PipInstall              = "pip-install"
 	PipConfig               = "pip-config"
 	Ping                    = "ping"
-	Curl                    = "curl"
+	RtCurl                  = "rt-curl"
 	ReleaseBundleCreate     = "release-bundle-create"
 	ReleaseBundleUpdate     = "release-bundle-update"
 	ReleaseBundleSign       = "release-bundle-sign"
@@ -76,6 +76,7 @@ const (
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
+	XrCurl        = "xr-curl"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -401,6 +402,7 @@ const (
 	configUser        = configPrefix + user
 	configPassword    = configPrefix + password
 	configApiKey      = configPrefix + apikey
+	configInsecureTls = configPrefix + insecureTls
 )
 
 var flagsMap = map[string]cli.Flag{
@@ -456,7 +458,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
-		Usage: "[Optional] Artifactory server ID configured using the config command.` `",
+		Usage: "[Optional] Server ID configured using the config command.` `",
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -1210,16 +1212,21 @@ var flagsMap = map[string]cli.Flag{
 		Name:  accessToken,
 		Usage: "[Optional] JFrog Platform access token. ` `",
 	},
+	configInsecureTls: cli.StringFlag{
+		Name:  insecureTls,
+		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
+	},
 }
 
 var commandFlags = map[string][]string{
 	Config: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, insecureTls,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
+	// Deprecated
 	RtConfig: {
 		interactive, encPassword, url, distUrl, user, password, apikey, accessToken, sshKeyPath, clientCertPath,
-		clientCertKeyPath, basicAuthOnly, insecureTls,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
 	DeleteConfig: {
 		deleteQuiet,
@@ -1373,7 +1380,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, insecureTls,
 	},
-	Curl: {
+	RtCurl: {
 		serverId,
 	},
 	PipConfig: {
@@ -1443,6 +1450,9 @@ var commandFlags = map[string][]string{
 	// Xray's commands
 	OfflineUpdate: {
 		licenseId, from, to, version, target,
+	},
+	XrCurl: {
+		serverId,
 	},
 	// Mission Control's commands
 	McConfig: {

@@ -548,6 +548,40 @@ func GetExtractedDownload() []string {
 	}
 }
 
+func GetExtractedDownloadCurDir() []string {
+	return []string{
+		filepath.Join(Out, "p-modules"),
+		filepath.Join(Out, "p-modules", "DownloadAndExplodeCurDirTarget"),
+	}
+}
+
+func GetArchiveConcurrent() []string {
+	return []string{
+		filepath.Join(Out, "a.zip"),
+	}
+}
+
+func GetExtractedDownloadFlatFalse() []string {
+	return []string{
+		filepath.Join(Out, "file1"),
+		filepath.Join(Out, "checkFlat", "dir", "flat.tar"),
+	}
+}
+
+func GetExtractedDownloadConcurrent() []string {
+	return []string{
+		filepath.Join(Out, "a/a1.in"),
+		filepath.Join(Out, "a/a2.in"),
+		filepath.Join(Out, "a/a3.in"),
+		filepath.Join(Out, "a/b/b1.in"),
+		filepath.Join(Out, "a/b/b2.in"),
+		filepath.Join(Out, "a/b/b3.in"),
+		filepath.Join(Out, "a/b/c/c1.in"),
+		filepath.Join(Out, "a/b/c/c2.in"),
+		filepath.Join(Out, "a/b/c/c3.in"),
+	}
+}
+
 func GetFileWithParenthesesDownload() []string {
 	return []string{
 		filepath.Join(Out, "testdata"),
