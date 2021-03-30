@@ -2885,14 +2885,14 @@ func userCreateCmd(c *cli.Context) error {
 
 	user := []services.User{userDetails}
 	var usersGroups []string
-	if c.String("user-groups") != "" {
-		usersGroups = strings.Split(c.String("user-groups"), ",")
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
-	if c.String("admin") != "" {
-		userDetails.Admin = c.Bool("admin")
+	if c.String(cliutils.Admin) != "" {
+		userDetails.Admin = c.Bool(cliutils.Admin)
 	}
 	// Run command.
-	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
+	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
 }
 
@@ -2916,14 +2916,14 @@ func usersCreateCmd(c *cli.Context) error {
 		return err
 	}
 	if len(usersList) < 1 {
-		return fmt.Errorf("An empty input file was provided.")
+		return errorutils.CheckError(errors.New("an empty input file was provided"))
 	}
 	var usersGroups []string
-	if c.String("user-groups") != "" {
-		usersGroups = strings.Split(c.String("user-groups"), ",")
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	// Run command.
-	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
+	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
 }
 
@@ -3000,7 +3000,7 @@ func groupCreateCmd(c *cli.Context) error {
 
 	// Run command.
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
-	groupCreateCmd.SetName(c.Args().Get(0)).SetServerDetails(rtDetails).SetReplaceIfExists(c.Bool("replace"))
+	groupCreateCmd.SetName(c.Args().Get(0)).SetServerDetails(rtDetails).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(groupCreateCmd)
 }
 

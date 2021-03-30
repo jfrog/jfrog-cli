@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gookit/color"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
-
-	"github.com/gookit/color"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -39,11 +40,19 @@ import (
 )
 
 const (
-	ConfigServerId          = "vcs-integration-platform"
-	VcsConfigFile           = "jfrog-cli-vcs.conf"
-	DefaultFirstBuildNumber = "0"
-	DefaultWorkspace        = "./jfrog-vcs-workspace"
-	pipelineUiPath          = "ui/pipelines/myPipelines/default/"
+	ConfigServerId           = "vcs-integration-platform"
+	VcsConfigFile            = "jfrog-cli-vcs.conf"
+	DefaultFirstBuildNumber  = "0"
+	DefaultWorkspace         = "./jfrog-vcs-workspace"
+	pipelineUiPath           = "ui/pipelines/myPipelines/default/"
+	permissionTargetName     = "ide-pt"
+	permissionTargetTemplate = `{"build":{"include-patterns":"**","actions-groups":{"%s":"read"}},"name":"%s"}`
+	pttFileName              = "ci-setup-ptt"
+	ideGroupName             = "ide-group"
+	ideUserName              = "ide-user"
+	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
+	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
+	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
 )
 
 type GitProvider string
@@ -91,9 +100,12 @@ func (cc *CiSetupCommand) SetDefaultData(data *VcsData) *CiSetupCommand {
 }
 
 func RunCiSetupCmd() error {
-	logBeginningInstructions()
 	cc := &CiSetupCommand{}
-	err := cc.prepareConfigurationData()
+	err := logBeginningInstructions()
+	if err != nil {
+		return err
+	}
+	err = cc.prepareConfigurationData()
 	if err != nil {
 		return err
 	}
@@ -102,10 +114,9 @@ func RunCiSetupCmd() error {
 		return err
 	}
 	return saveVcsConf(cc.data)
-
 }
 
-func logBeginningInstructions() {
+func logBeginningInstructions() error {
 	instructions := []string{
 		"",
 		colorTitle("About this command"),
@@ -118,7 +129,7 @@ func logBeginningInstructions() {
 		" 2. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
 		"",
 	}
-	log.Info(strings.Join(instructions, "\n"))
+	return writeToScreen(strings.Join(instructions, "\n"))
 }
 
 func colorTitle(title string) string {
@@ -181,13 +192,11 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = cc.gitPhase()
 	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
-
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
 	err = cc.artifactoryConfigPhase()
 	if err != nil || saveVcsConf(cc.data) != nil {
@@ -203,15 +212,80 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil || saveVcsConf(cc.data) != nil {
 		return err
 	}
-	return cc.runPipelinesPhase()
+	pipelineName, err := cc.runPipelinesPhase()
+	if err != nil {
+		return err
+	}
+	err = runIdePhase()
+	if err != nil {
+		return err
+	}
+	return cc.logCompletionInstruction(pipelineName)
+}
+
+func runIdePhase() error {
+	serverDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	if err != nil {
+		return err
+	}
+	err = createGroup(serverDetails)
+	if err != nil {
+		return err
+	}
+	return createPermissionTarget(serverDetails)
+}
+
+func createGroup(serverDetails *utilsconfig.ServerDetails) error {
+	log.Info("Creating group...")
+	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
+	groupCreateCmd.SetName(ideGroupName).SetServerDetails(serverDetails).SetReplaceIfExists(false)
+	err := groupCreateCmd.Run()
+	if err != nil {
+		if _, ok := err.(*services.GroupAlreadyExistsError); !ok {
+			return err
+		}
+		log.Debug("Group already exists, skipping...")
+	}
+	return nil
+}
+
+func createPermissionTarget(serverDetails *utilsconfig.ServerDetails) error {
+	ptTemplate := fmt.Sprintf(permissionTargetTemplate, ideGroupName, permissionTargetName)
+	tempDir, err := fileutils.CreateTempDir()
+	if err != nil {
+		return err
+	}
+	pttPath := filepath.Join(tempDir, pttFileName)
+	err = ioutil.WriteFile(pttPath, []byte(ptTemplate), 0600)
+	if err != nil {
+		return err
+	}
+	permissionTargetCreateCmd := permissiontarget.NewPermissionTargetCreateCommand()
+	permissionTargetCreateCmd.SetTemplatePath(pttPath).SetServerDetails(serverDetails).SetVars("")
+	err = permissionTargetCreateCmd.Run()
+	if err != nil {
+		if _, ok := err.(*services.PermissionTargetAlreadyExistsError); !ok {
+			return err
+		}
+		log.Debug("Permission target already exists, skipping...")
+	}
+	return nil
+}
+
+func writeToScreen(content string) error {
+	_, err := fmt.Fprint(os.Stderr, content)
+	return errorutils.CheckError(err)
 }
 
 func getPipelinesToken() (string, error) {
 	var err error
 	var byteToken []byte
 	for len(byteToken) == 0 {
-		print("Please provide a JFrog Pipelines admin token (To generate the token, " +
+		err = writeToScreen("Please provide a JFrog Pipelines admin token (To generate the token, " +
 			"log into the JFrog Platform UI --> Administration --> Identity and Access --> Access Tokens --> Generate Admin Token): ")
+		if err != nil {
+			return "", err
+		}
 		byteToken, err = terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", errorutils.CheckError(err)
@@ -243,7 +317,7 @@ func runConfigCmd() (err error) {
 	}
 }
 
-func (cc *CiSetupCommand) runPipelinesPhase() error {
+func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 	var pipelinesYamlBytes []byte
 	var pipelineName string
 	var err error
@@ -252,7 +326,7 @@ func (cc *CiSetupCommand) runPipelinesPhase() error {
 		// Ask for pipelines token.
 		pipelinesToken, err := getPipelinesToken()
 		if err != nil {
-			return err
+			return "", err
 		}
 		// Run Pipelines setup
 		pipelinesYamlBytes, pipelineName, err = configAndGeneratePipelines(cc.data, pipelinesToken)
@@ -261,7 +335,7 @@ func (cc *CiSetupCommand) runPipelinesPhase() error {
 			break
 		}
 		if _, ok := err.(*pipelinesservices.IntegrationUnauthorizedError); !ok {
-			return err
+			return "", err
 		}
 		log.Debug(err.Error())
 		log.Info("There seems to be an authorization problem with the pipelines token you entered. Please try again.")
@@ -269,13 +343,13 @@ func (cc *CiSetupCommand) runPipelinesPhase() error {
 
 	err = cc.saveYamlToFile(pipelinesYamlBytes)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = cc.stagePipelinesYaml(pipelinesYamlPath)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return cc.logCompletionInstruction(pipelineName)
+	return pipelineName, nil
 }
 
 func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {
@@ -291,16 +365,17 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 	}
 
 	instructions := []string{
-		"To complete the setup, run the following commands:", "",
+		colorTitle("To complete the setup, run the following commands:"), "",
 		"cd " + cc.data.LocalDirPath,
 		"git commit -m \"Add pipelines.yml\"",
 		"git push", "",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
 		getPipelineUiPath(serviceDetails.Url, pipelineName), "",
+		"To create a user for your ide, that can access the builds generated by this setup, run the following command with fields of your choice:", "",
+		fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName), "",
 	}
-	log.Info(strings.Join(instructions, "\n"))
-	return nil
+	return writeToScreen(strings.Join(instructions, "\n"))
 }
 
 func getPipelineUiPath(pipelinesUrl, pipelineName string) string {
@@ -655,7 +730,10 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		cc.data.GitProvider = GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &cc.data.VcsCredentials.Url, cc.defaultData.VcsCredentials.Url)
 		ioutils.ScanFromConsole("Git username", &cc.data.VcsCredentials.User, cc.defaultData.VcsCredentials.User)
-		print("Git access token: ")
+		err = writeToScreen("Git access token: ")
+		if err != nil {
+			return err
+		}
 		byteToken, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			log.Error(err)
@@ -672,5 +750,4 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 			return nil
 		}
 	}
-
 }

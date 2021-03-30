@@ -365,9 +365,9 @@ const (
 	csv            = "csv"
 	usersCreateCsv = "users-create-csv"
 	usersDeleteCsv = "users-delete-csv"
-	usersGroups    = "users-groups"
-	replace        = "replace"
-	admin          = "admin"
+	UsersGroups    = "users-groups"
+	Replace        = "replace"
+	Admin          = "admin"
 
 	// Unique access-token-create flags
 	groups      = "groups"
@@ -1140,16 +1140,16 @@ var flagsMap = map[string]cli.Flag{
 		Name:  csv,
 		Usage: "[Optional] Path to a csv file with the users' details. The first row of the file is reserved for the cells' headers. It must include \"username\"` `",
 	},
-	usersGroups: cli.StringFlag{
-		Name:  usersGroups,
+	UsersGroups: cli.StringFlag{
+		Name:  UsersGroups,
 		Usage: "[Optional] A list of comma-separated groups for the new users to be associated with.` `",
 	},
-	replace: cli.BoolFlag{
-		Name:  replace,
+	Replace: cli.BoolFlag{
+		Name:  Replace,
 		Usage: "[Optional] Set to true if you'd like existing users or groups to be replaced.` `",
 	},
-	admin: cli.BoolFlag{
-		Name:  admin,
+	Admin: cli.BoolFlag{
+		Name:  Admin,
 		Usage: "[Optional] Set to true if you'd like to create an admin user.` `",
 	},
 	// Xray's commands Flags
@@ -1451,11 +1451,11 @@ var commandFlags = map[string][]string{
 	},
 	UserCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		usersGroups, replace, admin,
+		UsersGroups, Replace, Admin,
 	},
 	UsersCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		usersCreateCsv, usersGroups, replace,
+		usersCreateCsv, UsersGroups, Replace,
 	},
 	UsersDelete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
@@ -1463,7 +1463,7 @@ var commandFlags = map[string][]string{
 	},
 	GroupCreate: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
-		replace,
+		Replace,
 	},
 	GroupAddUsers: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId,
