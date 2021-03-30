@@ -20,8 +20,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	corecommands "github.com/jfrog/jfrog-cli-core/common/commands"
+	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
@@ -223,8 +224,18 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
+		configCmd := corecommoncommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
 		err = configCmd.Config()
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		// Validate JFrog credentials by excute ping command
+		serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+		if err != nil {
+			return err
+		}
+		err = generic.NewPingCommand().SetServerDetails(serviceDetails).Run()
 		if err == nil {
 			return nil
 		}
