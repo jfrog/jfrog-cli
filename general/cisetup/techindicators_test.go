@@ -32,6 +32,3 @@ func TestTechIndicator(t *testing.T) {
 		})
 	}
 }
-
-type techTest struct {
-}
