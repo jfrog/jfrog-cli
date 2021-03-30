@@ -99,6 +99,7 @@ const (
 	deprecatedPassword    = deprecatedPrefix + password
 	deprecatedApikey      = deprecatedPrefix + apikey
 	deprecatedAccessToken = deprecatedPrefix + accessToken
+	deprecatedserverId    = deprecatedPrefix + serverId
 
 	// Ssh flags
 	sshKeyPath    = "ssh-key-path"
@@ -462,6 +463,11 @@ var flagsMap = map[string]cli.Flag{
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the config command.` `",
+	},
+	deprecatedserverId: cli.StringFlag{
+		Name:   serverId,
+		Usage:  "[Deprecated] [Optional] Artifactory server ID configured using the config command.` `",
+		Hidden: true,
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -1019,8 +1025,9 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.` `",
 	},
 	self: cli.BoolTFlag{
-		Name:  self,
-		Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
+		Name:   self,
+		Usage:  "[Deprecated] [Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
+		Hidden: true,
 	},
 	noRegistry: cli.BoolFlag{
 		Name:   noRegistry,
@@ -1374,7 +1381,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, url, user, password, apikey, accessToken, buildName, buildNumber, module, project,
+		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,

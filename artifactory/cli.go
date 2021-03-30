@@ -1804,12 +1804,9 @@ func goPublishCmd(c *cli.Context, configFilePath string) error {
 	if err != nil {
 		return err
 	}
-	goPublishCmd := golang.NewGoPublishCommand()
-	if err := goPublishCmd.SetConfigFilePath(configFilePath); err != nil {
-		return err
-	}
 	version := c.Args().Get(0)
-	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetPublishPackage(true)
+	goPublishCmd := golang.NewGoPublishCommand()
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
@@ -1837,8 +1834,8 @@ func goLegacyPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetPublishPackage(c.BoolT("self")).SetTargetRepo(targetRepo).SetServerDetails(details)
+	goPublishCmd := golang.NewGoLegacyPublishCommand().SetPublishPackage(c.BoolT("self"))
+	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetTargetRepo(targetRepo).SetServerDetails(details)
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
 	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
