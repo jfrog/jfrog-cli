@@ -4147,7 +4147,7 @@ func searchInArtifactory(specFile string, t *testing.T) ([]utils.SearchResult, e
 }
 
 func getSpecAndCommonFlags(specFile string) (*spec.SpecFiles, rtutils.CommonConf) {
-	searchFlags := new(rtutils.CommonConfImpl)
+	searchFlags, _ := rtutils.NewCommonConfImpl(artAuth)
 	searchSpec, _ := spec.CreateSpecFromFile(specFile, nil)
 	return searchSpec, searchFlags
 }
@@ -4254,7 +4254,6 @@ func searchItemsInArtifactory(t *testing.T, specSource string) []rtutils.ResultI
 	fileSpec, err := tests.CreateSpec(specSource)
 	assert.NoError(t, err)
 	spec, flags := getSpecAndCommonFlags(fileSpec)
-	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := utils.GetSearchParams(spec.Get(i))
