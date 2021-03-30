@@ -38,7 +38,6 @@ import (
 	"github.com/jszwec/csvutil"
 
 	"github.com/codegangsta/cli"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
@@ -54,6 +53,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
 	coreConfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli/config"
@@ -703,7 +703,7 @@ func GetCommands() []cli.Command {
 		},
 		{
 			Name:            "curl",
-			Flags:           cliutils.GetCommandFlags(cliutils.Curl),
+			Flags:           cliutils.GetCommandFlags(cliutils.RtCurl),
 			Aliases:         []string{"cl"},
 			Description:     curldocs.Description,
 			HelpName:        corecommon.CreateUsage("rt curl", curldocs.Description, curldocs.Usage),
@@ -1234,7 +1234,7 @@ func mvnCmd(c *cli.Context) error {
 		if err := validateCommand(args, cliutils.GetBasicBuildToolsFlags()); err != nil {
 			return err
 		}
-		filteredMavenArgs, insecureTls, err := utils.ExtractInsecureTlsFromArgs(args)
+		filteredMavenArgs, insecureTls, err := coreutils.ExtractInsecureTlsFromArgs(args)
 		if err != nil {
 			return err
 		}
@@ -1566,7 +1566,7 @@ func npmLegacyInstallCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmInstallArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmInstallArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1661,7 +1661,7 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	npmPublicArgs, err := utils.ParseArgs(strings.Split(c.String("npm-args"), " "))
+	npmPublicArgs, err := coreutils.ParseArgs(strings.Split(c.String("npm-args"), " "))
 	if err != nil {
 		return err
 	}
@@ -1812,7 +1812,7 @@ func goLegacyCmd(c *cli.Context) error {
 	if c.Bool("no-registry") && c.NArg() > 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	goArg, err := utils.ParseArgs(strings.Split(c.Args().Get(0), " "))
+	goArg, err := coreutils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
 		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
 	}
@@ -2677,13 +2677,23 @@ func curlCmd(c *cli.Context) error {
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	curlCommand := curl.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
-	rtDetails, err := curlCommand.GetServerDetails()
+	rtCurlCommand, err := newRtCurlCommand(c)
 	if err != nil {
 		return err
 	}
-	curlCommand.SetServerDetails(rtDetails)
-	return commands.Exec(curlCommand)
+	return commands.Exec(rtCurlCommand)
+}
+
+func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
+	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
+	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
+	rtDetails, err := curlCommand.GetServerDetails()
+	if err != nil {
+		return nil, err
+	}
+	rtCurlCommand.SetServerDetails(rtDetails)
+	rtCurlCommand.SetUrl(rtDetails.ArtifactoryUrl)
+	return rtCurlCommand, err
 }
 
 func pipInstallCmd(c *cli.Context) error {
@@ -3644,11 +3654,11 @@ func deprecatedWarning(projectType utils.ProjectType, command, configCommand str
 func extractThreadsFlag(args []string) (cleanArgs []string, threadsCount int, err error) {
 	// Extract threads flag.
 	cleanArgs = append([]string(nil), args...)
-	threadsFlagIndex, threadsValueIndex, threads, err := utils.FindFlag("--threads", cleanArgs)
+	threadsFlagIndex, threadsValueIndex, threads, err := coreutils.FindFlag("--threads", cleanArgs)
 	if err != nil || threadsFlagIndex < 0 {
 		return
 	}
-	utils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
+	coreutils.RemoveFlagFromCommand(&cleanArgs, threadsFlagIndex, threadsValueIndex)
 
 	// Convert flag value to int.
 	threadsCount, err = strconv.Atoi(threads)

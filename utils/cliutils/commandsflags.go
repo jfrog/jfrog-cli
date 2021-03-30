@@ -51,7 +51,7 @@ const (
 	PipInstall              = "pip-install"
 	PipConfig               = "pip-config"
 	Ping                    = "ping"
-	Curl                    = "curl"
+	RtCurl                  = "rt-curl"
 	ReleaseBundleCreate     = "release-bundle-create"
 	ReleaseBundleUpdate     = "release-bundle-update"
 	ReleaseBundleSign       = "release-bundle-sign"
@@ -76,6 +76,7 @@ const (
 	JpdAdd         = "jpd-add"
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
+	XrCurl        = "xr-curl"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -459,7 +460,7 @@ var flagsMap = map[string]cli.Flag{
 	},
 	serverId: cli.StringFlag{
 		Name:  serverId,
-		Usage: "[Optional] Artifactory server ID configured using the config command.` `",
+		Usage: "[Optional] Server ID configured using the config command.` `",
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -1385,7 +1386,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, insecureTls,
 	},
-	Curl: {
+	RtCurl: {
 		serverId,
 	},
 	PipConfig: {
@@ -1455,6 +1456,9 @@ var commandFlags = map[string][]string{
 	// Xray's commands
 	OfflineUpdate: {
 		licenseId, from, to, version, target,
+	},
+	XrCurl: {
+		serverId,
 	},
 	// Mission Control's commands
 	McConfig: {
