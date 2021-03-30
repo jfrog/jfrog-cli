@@ -1796,7 +1796,6 @@ func goLegacyCmd(c *cli.Context) error {
 }
 
 func goPublishCmd(c *cli.Context, configFilePath string) error {
-	log.Debug("Go config file was found in:", configFilePath)
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
