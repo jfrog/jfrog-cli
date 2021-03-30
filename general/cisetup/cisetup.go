@@ -90,8 +90,11 @@ func (cc *CiSetupCommand) SetDefaultData(data *VcsData) *CiSetupCommand {
 func RunCiSetupCmd() error {
 	logBeginningInstructions()
 	cc := &CiSetupCommand{}
-	cc.prepareConfigurationData()
-	err := cc.Run()
+	err := cc.prepareConfigurationData()
+	if err != nil {
+		return err
+	}
+	err = cc.Run()
 	if err != nil {
 		return err
 	}
@@ -129,11 +132,12 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 	}
 
 	// Get previous vcs data if exists
-	cc.defaultData = readVcsConf()
-	return nil
+	defaultData, err := readVcsConf()
+	cc.defaultData = defaultData
+	return err
 }
 
-func readVcsConf() (conf *VcsData) {
+func readVcsConf() (conf *VcsData, err error) {
 	conf = &VcsData{}
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
@@ -143,7 +147,7 @@ func readVcsConf() (conf *VcsData) {
 	if err != nil {
 		return
 	}
-	json.Unmarshal(configFile, conf)
+	err = json.Unmarshal(configFile, conf)
 	return
 }
 

@@ -7,8 +7,8 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/log"
 	"github.com/jfrog/jfrog-cli/config"
-	"github.com/jfrog/jfrog-cli/docs/bootstrap/vcs"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	cisetup "github.com/jfrog/jfrog-cli/docs/general/cisetup"
 	commands "github.com/jfrog/jfrog-cli/general/cisetup"
 	"github.com/jfrog/jfrog-cli/plugins"
 	"github.com/jfrog/jfrog-cli/plugins/utils"
@@ -146,9 +146,9 @@ func getCommands() []cli.Command {
 		},
 		{
 			Name:         "ci-setup",
-			Usage:        vcs.Description,
-			HelpName:     corecommon.CreateUsage("ci-setup", vcs.Description, vcs.Usage),
-			UsageText:    vcs.Arguments,
+			Usage:        cisetup.Description,
+			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
+			UsageText:    cisetup.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
