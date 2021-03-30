@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gookit/color"
 	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
@@ -87,6 +88,7 @@ func (cc *CiSetupCommand) SetDefaultData(data *VcsData) *CiSetupCommand {
 }
 
 func RunCiSetupCmd() error {
+	logBeginningInstructions()
 	cc := &CiSetupCommand{}
 	cc.prepareConfigurationData()
 	err := cc.Run()
@@ -95,6 +97,29 @@ func RunCiSetupCmd() error {
 	}
 	return saveVcsConf(cc.data)
 
+}
+
+func logBeginningInstructions() {
+	instructions := []string{
+		"",
+		colorTitle("About this command"),
+		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
+		"It currently supports maven, gradle and npm, but additional package managers will be added in the future.",
+		"The generated CI pipeline is based on JFrog Pipelines, but additional CI providers will be added in the future.",
+		"",
+		colorTitle("Important"),
+		" 1. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
+		" 2. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
+		"",
+	}
+	log.Info(strings.Join(instructions, "\n"))
+}
+
+func colorTitle(title string) string {
+	if terminal.IsTerminal(int(os.Stderr.Fd())) {
+		return color.Green.Render(title)
+	}
+	return title
 }
 
 func (cc *CiSetupCommand) prepareConfigurationData() error {
