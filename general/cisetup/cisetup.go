@@ -601,6 +601,9 @@ func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
 
 func (cc *CiSetupCommand) extractRepositoryName() {
 	vcsUrl := cc.data.VcsCredentials.Url
+	if vcsUrl == "" {
+		return
+	}
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	cc.data.VcsCredentials.Url = vcsUrl
