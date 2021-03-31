@@ -80,7 +80,6 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gocommand"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/goconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gopublish"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/gorecursivepublish"
 	gradledoc "github.com/jfrog/jfrog-cli/docs/artifactory/gradle"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/gradleconfig"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/move"
@@ -169,7 +168,7 @@ func GetCommands() []cli.Command {
 			Description:  download.Description,
 			HelpName:     corecommon.CreateUsage("rt download", download.Description, download.Usage),
 			UsageText:    download.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
+			ArgsUsage:    common.CreateEnvVars(download.EnvVar),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return downloadCmd(c)
@@ -658,7 +657,7 @@ func GetCommands() []cli.Command {
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return goPublishCmd(c)
+				return goCmd(c, goPublishCmd, goLegacyPublishCmd)
 			},
 		},
 		{
@@ -672,20 +671,7 @@ func GetCommands() []cli.Command {
 			SkipFlagParsing: shouldSkipGoFlagParsing(),
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
-				return goCmd(c)
-			},
-		},
-		{
-			Name:         "go-recursive-publish",
-			Flags:        cliutils.GetCommandFlags(cliutils.GoRecursivePublish),
-			Aliases:      []string{"grp"},
-			Description:  gorecursivepublish.Description,
-			HelpName:     corecommon.CreateUsage("rt grp", gorecursivepublish.Description, gorecursivepublish.Usage),
-			UsageText:    gorecursivepublish.Arguments,
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Action: func(c *cli.Context) error {
-				return goRecursivePublishCmd(c)
+				return goCmd(c, goNativeCmd, goLegacyCmd)
 			},
 		},
 		{
@@ -1195,7 +1181,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Maven, os.Args[2], "mvnc"))
+	log.Warn(deprecatedWarningWithExample(utils.Maven, os.Args[2], "mvnc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1287,7 +1273,7 @@ func gradleCmd(c *cli.Context) error {
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Gradle, os.Args[2], "gradlec"))
+	log.Warn(deprecatedWarningWithExample(utils.Gradle, os.Args[2], "gradlec"))
 
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1446,7 +1432,7 @@ func nugetCmd(c *cli.Context) error {
 }
 
 func nugetLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Nuget, os.Args[2], "nugetc"))
+	log.Warn(deprecatedWarningWithExample(utils.Nuget, os.Args[2], "nugetc"))
 	if c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1549,7 +1535,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmLegacyInstallCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1601,7 +1587,7 @@ func npmInstallOrCiCmd(c *cli.Context, npmCmd *npm.NpmInstallOrCiCommand, npmLeg
 }
 
 func npmLegacyCiCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1648,7 +1634,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func npmLegacyPublishCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Npm, os.Args[2], "npmc"))
+	log.Warn(deprecatedWarningWithExample(utils.Npm, os.Args[2], "npmc"))
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
@@ -1668,36 +1654,6 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmPublicArgs).SetServerDetails(rtDetails)
 
 	return commands.Exec(npmPublicCmd)
-}
-
-func goPublishCmd(c *cli.Context) error {
-	// When "self" set to true (default), there must be two arguments passed: target repo and the version
-	if c.BoolT("self") && c.NArg() != 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-	// When "self" set to false, the target repository is mandatory but the version is not.
-	// The version is only needed for publishing the project
-	// But for automation purposes of users, keeping the possibility to pass the version without failing
-	if !c.BoolT("self") && c.NArg() > 2 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	buildConfiguration, err := createBuildConfigurationWithModule(c)
-	if err != nil {
-		return err
-	}
-	targetRepo := c.Args().Get(0)
-	version := c.Args().Get(1)
-	details, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
-	}
-	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetPublishPackage(c.BoolT("self")).SetTargetRepo(targetRepo).SetServerDetails(details)
-	err = commands.Exec(goPublishCmd)
-	result := goPublishCmd.Result()
-
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
 }
 
 // This function checks whether the command received --help as a single option.
@@ -1782,27 +1738,25 @@ func shouldSkipGradleFlagParsing() bool {
 	return exists
 }
 
-func goCmd(c *cli.Context) error {
+func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd func(*cli.Context) error) error {
 	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
-
 	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Go)
 	if err != nil {
 		return err
 	}
-
 	if exists {
 		log.Debug("Go config file was found in:", configFilePath)
-		return goNativeCmd(c, configFilePath)
+		return goCmd(c, configFilePath)
 	}
 	log.Debug("Go config file wasn't found.")
 	// If config file not found, use Go legacy command
-	return goLegacyCmd(c)
+	return legacyGoCmd(c)
 }
 
 func goLegacyCmd(c *cli.Context) error {
-	log.Warn(deprecatedWarning(utils.Go, os.Args[2], "go-config"))
+	log.Warn(deprecatedWarningWithExample(utils.Go, os.Args[2], "go-config"))
 	// When the no-registry set to false (default), two arguments are mandatory: go command and the target repository
 	if !c.Bool("no-registry") && c.NArg() != 2 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -1841,6 +1795,51 @@ func goLegacyCmd(c *cli.Context) error {
 	return err
 }
 
+func goPublishCmd(c *cli.Context, configFilePath string) error {
+	if c.NArg() != 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+	version := c.Args().Get(0)
+	goPublishCmd := golang.NewGoPublishCommand()
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps"))
+	err = commands.Exec(goPublishCmd)
+	result := goPublishCmd.Result()
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+}
+
+func goLegacyPublishCmd(c *cli.Context) error {
+	log.Warn(deprecatedWarning(os.Args[2], "go-config"))
+	// When "self" set to true (default), there must be two arguments passed: target repo and the version
+	if c.BoolT("self") && c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	// When "self" set to false, the target repository is mandatory but the version is not.
+	// The version is only needed for publishing the project
+	// But for automation purposes of users, keeping the possibility to pass the version without failing
+	if !c.BoolT("self") && c.NArg() > 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	buildConfiguration, err := createBuildConfigurationWithModule(c)
+	if err != nil {
+		return err
+	}
+	targetRepo := c.Args().Get(0)
+	version := c.Args().Get(1)
+	details, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+	goPublishCmd := golang.NewGoLegacyPublishCommand().SetPublishPackage(c.BoolT("self"))
+	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetTargetRepo(targetRepo).SetServerDetails(details)
+	err = commands.Exec(goPublishCmd)
+	result := goPublishCmd.Result()
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+}
+
 func goNativeCmd(c *cli.Context, configFilePath string) error {
 	// Found a config file. Continue as native command.
 	if c.NArg() < 1 {
@@ -1855,25 +1854,6 @@ func goNativeCmd(c *cli.Context, configFilePath string) error {
 	goNative := golang.NewGoNativeCommand()
 	goNative.SetConfigFilePath(configFilePath).SetGoArg(args)
 	return commands.Exec(goNative)
-}
-
-func goRecursivePublishCmd(c *cli.Context) error {
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	targetRepo := c.Args().Get(0)
-	if targetRepo == "" {
-		return cliutils.PrintHelpAndReturnError("Missing target repo.", c)
-	}
-	details, err := createArtifactoryDetailsByFlags(c, false)
-	if err != nil {
-		return err
-	}
-	goRecursivePublishCmd := golang.NewGoRecursivePublishCommand()
-	goRecursivePublishCmd.SetServerDetails(details).SetTargetRepo(targetRepo)
-
-	return commands.Exec(goRecursivePublishCmd)
 }
 
 func createGradleConfigCmd(c *cli.Context) error {
@@ -3226,6 +3206,7 @@ func createDefaultSearchSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
 		IncludeDirs(c.Bool("include-dirs")).
 		ArchiveEntries(c.String("archive-entries")).
+		Transitive(c.Bool("transitive")).
 		BuildSpec(), nil
 }
 
@@ -3604,6 +3585,7 @@ func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
 	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
 	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
 	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
+	overrideStringIfSet(&spec.Transitive, c, "transitive")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
@@ -3639,13 +3621,16 @@ func createBuildConfiguration(c *cli.Context) *utils.BuildConfiguration {
 	return buildConfiguration
 }
 
-func deprecatedWarning(projectType utils.ProjectType, command, configCommand string) string {
+func deprecatedWarning(command, configCommand string) string {
 	return `You are using a deprecated syntax of the "` + command + `" command.
 	To use the new syntax, the command expects the details of the Artifactory server and repositories to be pre-configured.
 	To create this configuration, run the following command from the root directory of the project:
 	$ jfrog rt ` + configCommand + `
-	This will create the configuration inside the .jfrog directory under the root directory of the project.
-	The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
+	This will create the configuration inside the .jfrog directory under the root directory of the project.`
+}
+
+func deprecatedWarningWithExample(projectType utils.ProjectType, command, configCommand string) string {
+	return deprecatedWarning(command, configCommand) + `The new command syntax looks very similar to the ` + projectType.String() + ` CLI command i.e.:
 	$ jfrog rt ` + command + ` [` + projectType.String() + ` args and option] --build-name=*BUILD_NAME* --build-number=*BUILD_NUMBER*`
 }
 

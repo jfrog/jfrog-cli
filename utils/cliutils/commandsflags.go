@@ -99,6 +99,7 @@ const (
 	deprecatedPassword    = deprecatedPrefix + password
 	deprecatedApikey      = deprecatedPrefix + apikey
 	deprecatedAccessToken = deprecatedPrefix + accessToken
+	deprecatedserverId    = deprecatedPrefix + serverId
 
 	// Ssh flags
 	sshKeyPath    = "ssh-key-path"
@@ -151,6 +152,7 @@ const (
 	syncDeletesQuiet = syncDeletes + "-" + quiet
 	antFlag          = "ant"
 	fromRt           = "from-rt"
+	transitive       = "transitive"
 
 	// Config flags
 	interactive   = "interactive"
@@ -214,6 +216,7 @@ const (
 	searchProps        = searchPrefix + props
 	searchExcludeProps = searchPrefix + excludeProps
 	count              = "count"
+	searchTransitive   = searchPrefix + transitive
 
 	// Unique properties flags
 	propertiesPrefix  = "props-"
@@ -331,9 +334,10 @@ const (
 
 	// Unique go flags
 	deps        = "deps"
-	self        = "self"
 	noRegistry  = "no-registry"
 	publishDeps = "publish-deps"
+	// Deprecated.
+	self = "self"
 
 	// Unique release-bundle flags
 	releaseBundlePrefix = "rb-"
@@ -459,6 +463,11 @@ var flagsMap = map[string]cli.Flag{
 	serverId: cli.StringFlag{
 		Name:  serverId,
 		Usage: "[Optional] Server ID configured using the config command.` `",
+	},
+	deprecatedserverId: cli.StringFlag{
+		Name:   serverId,
+		Usage:  "[Deprecated] [Optional] Artifactory server ID configured using the config command.` `",
+		Hidden: true,
 	},
 	sshKeyPath: cli.StringFlag{
 		Name:  sshKeyPath,
@@ -748,6 +757,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  excludeProps,
 		Usage: "[Optional] List of properties in the form of \"key1=value1;key2=value2,...\". Only artifacts without the specified properties will be returned` `",
 	},
+	searchTransitive: cli.BoolFlag{
+		Name:  transitive,
+		Usage: "[Default: false] Set to true to look for artifacts also in remote repositories. Available on Artifactory version 7.17.0 or higher.` `",
+	},
 	propsRecursive: cli.BoolTFlag{
 		Name:  recursive,
 		Usage: "[Default: true] When false, artifacts inside sub-folders in Artifactory will not be affected.` `",
@@ -1012,8 +1025,9 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] List of project dependencies in the form of \"dep1-name:version,dep2-name:version...\" to be published to Artifactory. Use \"ALL\" to publish all dependencies.` `",
 	},
 	self: cli.BoolTFlag{
-		Name:  self,
-		Usage: "[Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
+		Name:   self,
+		Usage:  "[Deprecated] [Default: true] Set false to skip publishing the project package zip file to Artifactory..` `",
+		Hidden: true,
 	},
 	noRegistry: cli.BoolFlag{
 		Name:   noRegistry,
@@ -1265,7 +1279,7 @@ var commandFlags = map[string][]string{
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
 		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
-		insecureTls,
+		insecureTls, searchTransitive,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
@@ -1367,7 +1381,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, serverId, buildName, buildNumber, module, project,
+		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,

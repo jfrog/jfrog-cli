@@ -114,7 +114,6 @@ func getResultItemsFromArtifactory(specName string, t *testing.T) []rtutils.Resu
 	searchGoSpecFile, err := tests.CreateSpec(specName)
 	assert.NoError(t, err)
 	spec, flags := getSpecAndCommonFlags(searchGoSpecFile)
-	flags.SetArtifactoryDetails(artAuth)
 	var resultItems []rtutils.ResultItem
 	for i := 0; i < len(spec.Files); i++ {
 		searchParams, err := utils.GetSearchParams(spec.Get(i))
