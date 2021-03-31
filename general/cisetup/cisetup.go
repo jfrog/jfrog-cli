@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gookit/color"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
@@ -626,7 +627,10 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 		// Enable git submodules clone if there any.
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 	}
-	cc.extractRepositoryName()
+	err = cc.extractRepositoryName()
+	if err != nil {
+		return
+	}
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", cc.data.RepositoryName, cc.data.VcsCredentials.Url, cc.data.LocalDirPath))
 	_, err = git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
@@ -647,18 +651,24 @@ func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
 	return errorutils.CheckError(err)
 }
 
-func (cc *CiSetupCommand) extractRepositoryName() {
+func (cc *CiSetupCommand) extractRepositoryName() error {
 	vcsUrl := cc.data.VcsCredentials.Url
 	if vcsUrl == "" {
-		return
+		return errorutils.CheckError(errors.New("vcs URL should not be empty"))
 	}
 	// Trim trailing "/" if one exists
 	vcsUrl = strings.TrimSuffix(vcsUrl, "/")
 	cc.data.VcsCredentials.Url = vcsUrl
+
+	// Split vcs url.
 	splitUrl := strings.Split(vcsUrl, "/")
-	repositoryName := splitUrl[len(splitUrl)-1]
+	if len(splitUrl) < 3 {
+		return errorutils.CheckError(errors.New("unexpected URL. URL is expected to contain the git provider URL, domain and repository names"))
+	}
+	cc.data.RepositoryName = strings.TrimSuffix(splitUrl[len(splitUrl)-1], ".git")
 	cc.data.ProjectDomain = splitUrl[len(splitUrl)-2]
-	cc.data.RepositoryName = strings.TrimSuffix(repositoryName, ".git")
+	cc.data.VcsBaseUrl = strings.Join(splitUrl[:len(splitUrl)-2], "/")
+	return nil
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
