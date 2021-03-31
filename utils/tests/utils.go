@@ -84,7 +84,7 @@ func init() {
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
-	TestDocker = flag.Bool("test.docker", true, "Test Docker build")
+	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
