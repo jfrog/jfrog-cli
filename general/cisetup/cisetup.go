@@ -5,37 +5,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gookit/color"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
-	"github.com/jfrog/jfrog-cli-core/general/cisetup"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/gookit/color"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	"github.com/jfrog/jfrog-cli-core/general/cisetup"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
-	"github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
-	"github.com/jfrog/jfrog-client-go/xray"
 	xrayservices "github.com/jfrog/jfrog-client-go/xray/services"
 	xrayutils "github.com/jfrog/jfrog-client-go/xray/services/utils"
 	"golang.org/x/crypto/ssh/terminal"
@@ -151,6 +150,11 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
+	// Validate min required versions of Artifactory and Xray
+	err = validateVersions()
+	if err != nil {
+		return err
+	}
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = cc.gitPhase()
 	err = saveIfNoError(err, cc.data)
@@ -186,6 +190,22 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	return cc.logCompletionInstruction(pipelineName)
+}
+
+func validateVersions() error {
+	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+	if err != nil {
+		return err
+	}
+	ok, err := IsMinRequiredVersions(serviceDetails)
+	if err != nil {
+		return err
+
+	}
+	if !ok {
+		return errorutils.CheckError(errors.New(fmt.Sprintf("This operation requires Artifactory version %s or higher as well as Xray version %s or higher", MinSupportedArtifactoryVersion, MinSupportedXrayVersion)))
+	}
+	return nil
 }
 
 func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
@@ -395,14 +415,7 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	if err != nil {
 		return err
 	}
-	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
-	serviceConfig, err := config.NewConfigBuilder().
-		SetServiceDetails(xrayDetails).
-		Build()
-	if err != nil {
-		return err
-	}
-	xrayManager, err := xray.New(&xrayDetails, serviceConfig)
+	xrayManager, err := CreateXrayServiceManager(serviceDetails)
 	if err != nil {
 		return err
 	}
