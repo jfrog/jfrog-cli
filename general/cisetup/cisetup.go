@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gookit/color"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -41,7 +46,6 @@ import (
 )
 
 const (
-	ConfigServerId           = "ci-setup-cmd"
 	VcsConfigFile            = "jfrog-cli-vcs.conf"
 	DefaultFirstBuildNumber  = "0"
 	DefaultWorkspace         = "./jfrog-vcs-workspace"
@@ -56,50 +60,9 @@ const (
 	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
 )
 
-type GitProvider string
-
-const (
-	Github           = "GitHub"
-	GithubEnterprise = "GitHub Enterprise"
-	Bitbucket        = "Bitbucket"
-	BitbucketServer  = "Bitbucket Server"
-	Gitlab           = "GitLab"
-)
-
 type CiSetupCommand struct {
-	defaultData *CiSetupData
-	data        *CiSetupData
-}
-
-type CiSetupData struct {
-	RepositoryName          string
-	ProjectDomain           string
-	LocalDirPath            string
-	GitBranch               string
-	BuildCommand            string
-	BuildName               string
-	ArtifactoryVirtualRepos map[Technology]string
-	// A collection of technologies that was found with a list of theirs indications
-	DetectedTechnologies map[Technology]bool
-	VcsCredentials       VcsServerDetails
-	GitProvider          GitProvider
-}
-
-type VcsServerDetails struct {
-	Url         string `json:"url,omitempty"`
-	User        string `json:"user,omitempty"`
-	Password    string `json:"-"`
-	AccessToken string `json:"-"`
-}
-
-func (cc *CiSetupCommand) SetData(data *CiSetupData) *CiSetupCommand {
-	cc.data = data
-	return cc
-}
-
-func (cc *CiSetupCommand) SetDefaultData(data *CiSetupData) *CiSetupCommand {
-	cc.defaultData = data
-	return cc
+	defaultData *cisetup.CiSetupData
+	data        *cisetup.CiSetupData
 }
 
 func RunCiSetupCmd() error {
@@ -130,7 +93,7 @@ func logBeginningInstructions() error {
 		colorTitle("Important"),
 		" 1. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
 		" 2. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
-		"",
+		"", "",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
@@ -145,7 +108,7 @@ func colorTitle(title string) string {
 func (cc *CiSetupCommand) prepareConfigurationData() error {
 	// If data is nil, initialize a new one
 	if cc.data == nil {
-		cc.data = new(CiSetupData)
+		cc.data = new(cisetup.CiSetupData)
 	}
 
 	// Get previous vcs data if exists
@@ -154,8 +117,8 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 	return err
 }
 
-func readVcsConf() (conf *CiSetupData, err error) {
-	conf = &CiSetupData{}
+func readVcsConf() (conf *cisetup.CiSetupData, err error) {
+	conf = &cisetup.CiSetupData{}
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return
@@ -168,7 +131,7 @@ func readVcsConf() (conf *CiSetupData, err error) {
 	return
 }
 
-func saveVcsConf(conf *CiSetupData) error {
+func saveVcsConf(conf *cisetup.CiSetupData) error {
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return err
@@ -229,7 +192,7 @@ func (cc *CiSetupCommand) Run() error {
 	return cc.logCompletionInstruction(pipelineName)
 }
 
-func saveIfNoError(errCheck error, conf *CiSetupData) error {
+func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
 	if errCheck != nil {
 		return errCheck
 	}
@@ -237,7 +200,7 @@ func saveIfNoError(errCheck error, conf *CiSetupData) error {
 }
 
 func runIdePhase() error {
-	serverDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	serverDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -311,14 +274,14 @@ func getPipelinesToken() (string, error) {
 
 func runConfigCmd() (err error) {
 	for {
-		configCmd := corecommoncommands.NewConfigCommand().SetInteractive(true).SetServerId(ConfigServerId).SetEncPassword(true)
+		configCmd := corecommoncommands.NewConfigCommand().SetInteractive(true).SetServerId(cisetup.ConfigServerId).SetEncPassword(true)
 		err = configCmd.Config()
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		// Validate JFrog credentials by excute ping command
-		serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+		// Validate JFrog credentials by execute ping command
+		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
@@ -331,19 +294,22 @@ func runConfigCmd() (err error) {
 }
 
 func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
-	var pipelinesYamlBytes []byte
-	var pipelineName string
+	var vcsIntName string
+	var rtIntName string
 	var err error
+	configurator := cisetup.JFrogPipelinesConfigurator{
+		SetupData: cc.data, PipelinesToken: "",
+	}
 	// Ask for token and config pipelines. Run again if authentication problem.
 	for {
 		// Ask for pipelines token.
-		pipelinesToken, err := getPipelinesToken()
+		configurator.PipelinesToken, err = getPipelinesToken()
 		if err != nil {
 			return "", err
 		}
 		// Run Pipelines setup
-		pipelinesYamlBytes, pipelineName, err = configAndGeneratePipelines(cc.data, pipelinesToken)
-		// If no error, continue with flow. Elseif unauthorized error, ask for token again.
+		vcsIntName, rtIntName, err = configurator.Config()
+		// If no error occurred, continue with flow. Elseif unauthorized error, ask for token again.
 		if err == nil {
 			break
 		}
@@ -353,12 +319,21 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 		log.Debug(err.Error())
 		log.Info("There seems to be an authorization problem with the pipelines token you entered. Please try again.")
 	}
+	generator := cisetup.JFrogPipelinesYamlGenerator{
+		VcsIntName: vcsIntName,
+		RtIntName:  rtIntName,
+		SetupData:  cc.data,
+	}
+	pipelinesYamlBytes, pipelineName, err := generator.Generate()
+	if err != nil {
+		return "", err
+	}
 
 	err = cc.saveYamlToFile(pipelinesYamlBytes)
 	if err != nil {
 		return "", err
 	}
-	err = cc.stagePipelinesYaml(pipelinesYamlPath)
+	err = cc.stagePipelinesYaml(cisetup.PipelinesYamlPath)
 	if err != nil {
 		return "", err
 	}
@@ -366,13 +341,13 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 }
 
 func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {
-	path := filepath.Join(cc.data.LocalDirPath, pipelinesYamlPath)
+	path := filepath.Join(cc.data.LocalDirPath, cisetup.PipelinesYamlPath)
 	log.Info("Generating pipelines.yml at: '" + path + "'...")
 	return ioutil.WriteFile(path, yaml, 0644)
 }
 
 func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -401,7 +376,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${vcs.repo.name}", cc.data.RepositoryName, -1)
 	cc.data.BuildName = strings.Replace(cc.data.BuildName, "${branch}", cc.data.GitBranch, -1)
 	// Run BAG Command (in order to publish the first, empty, build info)
-	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(ConfigServerId) //.SetConfigFilePath(c.String("config"))
+	buildAddGitConfigurationCmd := buildinfo.NewBuildAddGitCommand().SetDotGitPath(cc.data.LocalDirPath).SetServerId(cisetup.ConfigServerId) //.SetConfigFilePath(c.String("config"))
 	buildConfiguration := rtutils.BuildConfiguration{BuildName: cc.data.BuildName, BuildNumber: DefaultFirstBuildNumber}
 	buildAddGitConfigurationCmd = buildAddGitConfigurationCmd.SetBuildConfiguration(&buildConfiguration)
 	log.Info("Generating an initial build-info...")
@@ -410,7 +385,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 		return err
 	}
 	// Run BP Command.
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -420,7 +395,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 }
 
 func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -488,7 +463,7 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 
 func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 
-	cc.data.ArtifactoryVirtualRepos = make(map[Technology]string)
+	cc.data.ArtifactoryVirtualRepos = make(map[cisetup.Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
@@ -504,8 +479,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 	return nil
 }
 
-func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType Technology) (err error) {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(ConfigServerId, false, false)
+func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technology) (err error) {
+	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
 	}
@@ -597,12 +572,12 @@ func promptARepoSelection(repoDetails *[]services.RepositoryDetails, promptMsg s
 }
 
 func promptGitProviderSelection() (selected string, err error) {
-	gitProviders := []GitProvider{
-		Github,
-		GithubEnterprise,
-		Bitbucket,
-		BitbucketServer,
-		Gitlab,
+	gitProviders := []cisetup.GitProvider{
+		cisetup.Github,
+		cisetup.GithubEnterprise,
+		cisetup.Bitbucket,
+		cisetup.BitbucketServer,
+		cisetup.Gitlab,
 	}
 
 	var selectableItems []ioutils.PromptItem
@@ -692,12 +667,12 @@ func (cc *CiSetupCommand) extractRepositoryName() {
 }
 
 func (cc *CiSetupCommand) detectTechnologies() (err error) {
-	indicators := GetTechIndicators()
+	indicators := cisetup.GetTechIndicators()
 	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(cc.data.LocalDirPath, false)
 	if err != nil {
 		return
 	}
-	cc.data.DetectedTechnologies = make(map[Technology]bool)
+	cc.data.DetectedTechnologies = make(map[cisetup.Technology]bool)
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
@@ -710,7 +685,7 @@ func (cc *CiSetupCommand) detectTechnologies() (err error) {
 	return
 }
 
-func createCredentials(serviceDetails *VcsServerDetails) (auth transport.AuthMethod) {
+func createCredentials(serviceDetails *cisetup.VcsServerDetails) (auth transport.AuthMethod) {
 	var password, username string
 	if serviceDetails.AccessToken != "" {
 		password = serviceDetails.AccessToken
@@ -730,7 +705,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 			log.Error(err)
 			continue
 		}
-		cc.data.GitProvider = GitProvider(gitProvider)
+		cc.data.GitProvider = cisetup.GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &cc.data.VcsCredentials.Url, cc.defaultData.VcsCredentials.Url)
 		ioutils.ScanFromConsole("Git username", &cc.data.VcsCredentials.User, cc.defaultData.VcsCredentials.User)
 		err = writeToScreen("Git access token: ")
