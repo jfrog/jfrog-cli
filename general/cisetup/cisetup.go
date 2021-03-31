@@ -49,7 +49,7 @@ const (
 	permissionTargetTemplate = `{"build":{"include-patterns":"**","actions-groups":{"%s":"read"}},"name":"%s"}`
 	pttFileName              = "ci-setup-ptt"
 	ideGroupName             = "jfrog-ide-developer-group"
-	ideUserName              = "ide-user"
+	ideUserName              = "developer"
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
 	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
