@@ -34,6 +34,7 @@ func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageTyp
 	filterParams := services.RepositoriesFilterParams{RepoType: repoType, PackageType: packageType}
 	return servicesManager.GetAllRepositoriesFiltered(filterParams)
 }
+
 func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (*services.VirtualRepositoryBaseParams, error) {
 	servicesManager, err := artUtils.CreateServiceManager(serviceDetails, false)
 	if err != nil {

@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gookit/color"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/gookit/color"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
+	"github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -464,8 +465,6 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	watchParams.Name = "ci-pipeline-watch-all"
 	watchParams.Description = "CI Pipeline Build Watch"
 	watchParams.Active = true
-
-	// Need to be verified before merging
 	watchParams.Builds.Type = xrayutils.WatchBuildAll
 	watchParams.Policies = []xrayutils.AssignedPolicy{
 		{
@@ -661,10 +660,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	// Clone the given repository to the given directory from the given branch
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", cc.data.RepositoryName, cc.data.VcsCredentials.Url, cc.data.LocalDirPath))
 	_, err = git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	return
+	return errorutils.CheckError(err)
 }
 
 func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
