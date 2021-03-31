@@ -6,6 +6,8 @@ require (
 	github.com/buger/jsonparser v0.0.0-20180910192245-6acdf747ae99
 	github.com/codegangsta/cli v1.20.0
 	github.com/frankban/quicktest v1.11.3 // indirect
+	github.com/go-git/go-git/v5 v5.2.0
+	github.com/gookit/color v1.3.2
 	github.com/jfrog/gocmd v0.1.19
 	github.com/jfrog/gofrog v1.0.6
 	github.com/jfrog/jfrog-cli-core v1.4.2
@@ -18,12 +20,12 @@ require (
 	github.com/vbauerster/mpb/v4 v4.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.20.3-0.20210330122654-dd4b12664384
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.20.3-0.20210331152013-5a17bc8b62d7
 
-replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.4.3-0.20210330182328-a8186dce25ab
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.4.3-0.20210331155910-d029473a6fee
 
 replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.1.20-0.20210330134550-459be3fc0ee8
 
