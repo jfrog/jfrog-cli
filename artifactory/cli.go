@@ -282,7 +282,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-append",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildAppend),
 			Aliases:      []string{"ba"},
-			Description:  buildadddependencies.Description,
+			Description:  buildappend.Description,
 			HelpName:     corecommon.CreateUsage("rt build-append", buildappend.Description, buildappend.Usage),
 			UsageText:    buildappend.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
