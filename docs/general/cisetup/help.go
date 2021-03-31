@@ -1,6 +1,6 @@
 package cisetup
 
-const Description = "Init a JFrog CI setup process"
+const Description = "Set up a CI pipeline with the JFrog Platform"
 
 var Usage = []string{"jfrog ci-setup "}
 

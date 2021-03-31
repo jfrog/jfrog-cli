@@ -18,7 +18,7 @@ const (
 	pipelinesYamlPath = "pipelines.yml"
 )
 
-func configAndGeneratePipelines(vcsData *VcsData, pipelinesToken string) (pipelinesYaml []byte, pipelineName string, err error) {
+func configAndGeneratePipelines(vcsData *CiSetupData, pipelinesToken string) (pipelinesYaml []byte, pipelineName string, err error) {
 	log.Info("Configuring JFrog Pipelines...")
 	serviceDetails, err := config.GetSpecificConfig(ConfigServerId, false, false)
 	if err != nil {
@@ -47,7 +47,7 @@ func configAndGeneratePipelines(vcsData *VcsData, pipelinesToken string) (pipeli
 	return createPipelinesYaml(vcsIntName, rtIntName, vcsData)
 }
 
-func doAddPipelineSource(psm *pipelines.PipelinesServicesManager, vcsData *VcsData, projectIntegrationId int) (err error) {
+func doAddPipelineSource(psm *pipelines.PipelinesServicesManager, vcsData *CiSetupData, projectIntegrationId int) (err error) {
 	_, err = psm.AddPipelineSource(projectIntegrationId, getRepoFullName(vcsData), vcsData.GitBranch, pipelinesYamlPath)
 	if err != nil {
 		// If source already exists, ignore error.
@@ -87,7 +87,7 @@ func createPipelinesServiceManager(details *config.ServerDetails, pipelinesToken
 	return pipelines.New(&pAuth, serviceConfig)
 }
 
-func createVcsIntegration(gitProvider GitProvider, psm *pipelines.PipelinesServicesManager, vcsData *VcsData) (integrationName string, integrationId int, err error) {
+func createVcsIntegration(gitProvider GitProvider, psm *pipelines.PipelinesServicesManager, vcsData *CiSetupData) (integrationName string, integrationId int, err error) {
 	switch gitProvider {
 	case Github:
 		integrationName = createIntegrationName(services.GithubName, vcsData)
@@ -119,7 +119,7 @@ func createVcsIntegration(gitProvider GitProvider, psm *pipelines.PipelinesServi
 	return
 }
 
-func createArtifactoryIntegration(psm *pipelines.PipelinesServicesManager, details *config.ServerDetails, vcsData *VcsData) (string, error) {
+func createArtifactoryIntegration(psm *pipelines.PipelinesServicesManager, details *config.ServerDetails, vcsData *CiSetupData) (string, error) {
 	integrationName := createIntegrationName("rt", vcsData)
 	apiKey, err := getApiKey(details)
 	if err != nil {
@@ -163,11 +163,11 @@ func getApiKey(details *config.ServerDetails) (string, error) {
 	return asm.CreateAPIKey()
 }
 
-func createIntegrationName(intType string, data *VcsData) string {
+func createIntegrationName(intType string, data *CiSetupData) string {
 	return intType + "_" + createPipelinesSuitableName(data, "integration")
 }
 
-func createPipelinesSuitableName(data *VcsData, suffix string) string {
+func createPipelinesSuitableName(data *CiSetupData, suffix string) string {
 	name := strings.Join([]string{data.ProjectDomain, data.RepositoryName, suffix}, "_")
 	// Pipelines does not allow "-" which might exist in repo names.
 	return strings.Replace(name, "-", "_", -1)
@@ -194,6 +194,6 @@ func createRtServiceManager(artDetails *config.ServerDetails) (artifactory.Artif
 	return artifactory.New(&artAuth, serviceConfig)
 }
 
-func getRepoFullName(data *VcsData) string {
+func getRepoFullName(data *CiSetupData) string {
 	return data.ProjectDomain + "/" + data.RepositoryName
 }

@@ -40,15 +40,15 @@ import (
 )
 
 const (
-	ConfigServerId           = "vcs-integration-platform"
+	ConfigServerId           = "ci-setup-cmd"
 	VcsConfigFile            = "jfrog-cli-vcs.conf"
 	DefaultFirstBuildNumber  = "0"
 	DefaultWorkspace         = "./jfrog-vcs-workspace"
 	pipelineUiPath           = "ui/pipelines/myPipelines/default/"
-	permissionTargetName     = "ide-pt"
+	permissionTargetName     = "jfrog-ide-developer-pt"
 	permissionTargetTemplate = `{"build":{"include-patterns":"**","actions-groups":{"%s":"read"}},"name":"%s"}`
 	pttFileName              = "ci-setup-ptt"
-	ideGroupName             = "ide-group"
+	ideGroupName             = "jfrog-ide-developer-group"
 	ideUserName              = "ide-user"
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
@@ -66,11 +66,11 @@ const (
 )
 
 type CiSetupCommand struct {
-	defaultData *VcsData
-	data        *VcsData
+	defaultData *CiSetupData
+	data        *CiSetupData
 }
 
-type VcsData struct {
+type CiSetupData struct {
 	RepositoryName          string
 	ProjectDomain           string
 	LocalDirPath            string
@@ -83,6 +83,7 @@ type VcsData struct {
 	VcsCredentials       VcsServerDetails
 	GitProvider          GitProvider
 }
+
 type VcsServerDetails struct {
 	Url         string `json:"url,omitempty"`
 	User        string `json:"user,omitempty"`
@@ -90,11 +91,12 @@ type VcsServerDetails struct {
 	AccessToken string `json:"-"`
 }
 
-func (cc *CiSetupCommand) SetData(data *VcsData) *CiSetupCommand {
+func (cc *CiSetupCommand) SetData(data *CiSetupData) *CiSetupCommand {
 	cc.data = data
 	return cc
 }
-func (cc *CiSetupCommand) SetDefaultData(data *VcsData) *CiSetupCommand {
+
+func (cc *CiSetupCommand) SetDefaultData(data *CiSetupData) *CiSetupCommand {
 	cc.defaultData = data
 	return cc
 }
@@ -142,7 +144,7 @@ func colorTitle(title string) string {
 func (cc *CiSetupCommand) prepareConfigurationData() error {
 	// If data is nil, initialize a new one
 	if cc.data == nil {
-		cc.data = new(VcsData)
+		cc.data = new(CiSetupData)
 	}
 
 	// Get previous vcs data if exists
@@ -151,8 +153,8 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 	return err
 }
 
-func readVcsConf() (conf *VcsData, err error) {
-	conf = &VcsData{}
+func readVcsConf() (conf *CiSetupData, err error) {
+	conf = &CiSetupData{}
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return
@@ -165,7 +167,7 @@ func readVcsConf() (conf *VcsData, err error) {
 	return
 }
 
-func saveVcsConf(conf *VcsData) error {
+func saveVcsConf(conf *CiSetupData) error {
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
 		return err
@@ -180,10 +182,7 @@ func saveVcsConf(conf *VcsData) error {
 		return errorutils.CheckError(err)
 	}
 	err = ioutil.WriteFile(filepath.Join(path, VcsConfigFile), []byte(content.String()), 0600)
-	if err != nil {
-		return errorutils.CheckError(err)
-	}
-	return nil
+	return errorutils.CheckError(err)
 }
 
 func (cc *CiSetupCommand) Run() error {
@@ -194,33 +193,46 @@ func (cc *CiSetupCommand) Run() error {
 	}
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = cc.gitPhase()
-	if err != nil || saveVcsConf(cc.data) != nil {
+	err = saveIfNoError(err, cc.data)
+	if err != nil {
 		return err
 	}
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
 	err = cc.artifactoryConfigPhase()
-	if err != nil || saveVcsConf(cc.data) != nil {
+	err = saveIfNoError(err, cc.data)
+	if err != nil {
 		return err
 	}
 	// Publish empty build info.
 	err = cc.publishFirstBuild()
-	if err != nil || saveVcsConf(cc.data) != nil {
+	err = saveIfNoError(err, cc.data)
+	if err != nil {
 		return err
 	}
 	// Configure Xray to scan the new build.
 	err = cc.xrayConfigPhase()
-	if err != nil || saveVcsConf(cc.data) != nil {
+	err = saveIfNoError(err, cc.data)
+	if err != nil {
 		return err
 	}
+	// Configure pipelines, create and stage pipeline.yml.
 	pipelineName, err := cc.runPipelinesPhase()
 	if err != nil {
 		return err
 	}
+	// Create group and permission target if needed.
 	err = runIdePhase()
 	if err != nil {
 		return err
 	}
 	return cc.logCompletionInstruction(pipelineName)
+}
+
+func saveIfNoError(errCheck error, conf *CiSetupData) error {
+	if errCheck != nil {
+		return errCheck
+	}
+	return saveVcsConf(conf)
 }
 
 func runIdePhase() error {
@@ -403,12 +415,7 @@ func (cc *CiSetupCommand) publishFirstBuild() (err error) {
 	}
 	buildInfoConfiguration := buildinfocmd.Configuration{DryRun: false}
 	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(serviceDetails).SetBuildConfiguration(&buildConfiguration).SetConfig(&buildInfoConfiguration)
-	err = commands.Exec(buildPublishCmd)
-	if err != nil {
-		return err
-
-	}
-	return
+	return commands.Exec(buildPublishCmd)
 }
 
 func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
@@ -427,12 +434,12 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	if err != nil {
 		return err
 	}
-	// AddBuildsToIndexing.
+	// Index the build.
 	buildsToIndex := []string{cc.data.BuildName}
 	err = xrayManager.AddBuildsToIndexing(buildsToIndex)
 	// Create new default policy.
 	policyParams := xrayutils.NewPolicyParams()
-	policyParams.Name = "vcs-integration-security-policy"
+	policyParams.Name = "ci-pipeline-security-policy"
 	policyParams.Type = xrayutils.Security
 	policyParams.Description = "Basic Security policy."
 	policyParams.Rules = []xrayutils.PolicyRule{
@@ -454,8 +461,8 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 	}
 	// Create new default watcher.
 	watchParams := xrayutils.NewWatchParams()
-	watchParams.Name = "vcs-integration-watch-all"
-	watchParams.Description = "VCS Configured Build Watch"
+	watchParams.Name = "ci-pipeline-watch-all"
+	watchParams.Description = "CI Pipeline Build Watch"
 	watchParams.Active = true
 
 	// Need to be verified before merging
@@ -641,7 +648,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	// Create the desired path if necessary
 	err = os.MkdirAll(cc.data.LocalDirPath, os.ModePerm)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	cloneOption := &git.CloneOptions{
 		URL:           cc.data.VcsCredentials.Url,
@@ -655,7 +662,7 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	log.Info(fmt.Sprintf("Cloning project %q from: %q into: %q", cc.data.RepositoryName, cc.data.VcsCredentials.Url, cc.data.LocalDirPath))
 	_, err = git.PlainClone(cc.data.LocalDirPath, false, cloneOption)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	return
 }
@@ -664,14 +671,14 @@ func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
 	log.Info("Staging pipelines.yml for git commit...")
 	repo, err := git.PlainOpen(cc.data.LocalDirPath)
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return err
+		return errorutils.CheckError(err)
 	}
 	_, err = worktree.Add(path)
-	return err
+	return errorutils.CheckError(err)
 }
 
 func (cc *CiSetupCommand) extractRepositoryName() {
@@ -692,14 +699,14 @@ func (cc *CiSetupCommand) detectTechnologies() (err error) {
 	indicators := GetTechIndicators()
 	filesList, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(cc.data.LocalDirPath, false)
 	if err != nil {
-		return err
+		return
 	}
 	cc.data.DetectedTechnologies = make(map[Technology]bool)
 	for _, file := range filesList {
 		for _, indicator := range indicators {
 			if indicator.Indicates(file) {
 				cc.data.DetectedTechnologies[indicator.GetTechnology()] = true
-				// Same file can't indicate on more than one technology.
+				// Same file can't indicate more than one technology.
 				break
 			}
 		}

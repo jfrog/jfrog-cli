@@ -37,7 +37,7 @@ const (
 	apikeyFlag = "apikey"
 )
 
-func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([]byte, string, error) {
+func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *CiSetupData) ([]byte, string, error) {
 	pipelineName := createPipelineName(vcsData)
 	gitResourceName := createGitResourceName(vcsData)
 	serverId := createServerIdName(vcsData)
@@ -61,7 +61,7 @@ func createPipelinesYaml(gitProvider, rtIntegration string, vcsData *VcsData) ([
 	return pipelineBytes, pipelineName, nil
 }
 
-func getPipelineCommands(rtIntegration, serverId, gitResourceName, convertedBuildCmd string, vcsData *VcsData) []string {
+func getPipelineCommands(rtIntegration, serverId, gitResourceName, convertedBuildCmd string, vcsData *CiSetupData) []string {
 	var commandsArray []string
 	commandsArray = append(commandsArray, getCdToResourceCmd(gitResourceName))
 	commandsArray = append(commandsArray, getExportsCommands(vcsData)...)
@@ -118,7 +118,7 @@ func getJfrogCliConfigCmd(rtIntName, serverId string) string {
 	}, " ")
 }
 
-func getTechConfigsCommands(serverId string, data *VcsData) []string {
+func getTechConfigsCommands(serverId string, data *CiSetupData) []string {
 	var configs []string
 	if used, ok := data.DetectedTechnologies[Maven]; ok && used {
 		configs = append(configs, m2pathCmd)
@@ -150,7 +150,7 @@ func getBuildToolConfigCmd(configCmd, serverId, repo string) string {
 	}, " ")
 }
 
-func getExportsCommands(vcsData *VcsData) []string {
+func getExportsCommands(vcsData *CiSetupData) []string {
 	return []string{
 		getExportCmd(coreutils.CI, strconv.FormatBool(true)),
 		getExportCmd(buildNameEnvVar, vcsData.BuildName),
@@ -338,14 +338,14 @@ func getUpdateCommitStatusCmd(gitResourceName string) string {
 	return updateCommitStatusCmd + " " + gitResourceName
 }
 
-func createGitResourceName(data *VcsData) string {
+func createGitResourceName(data *CiSetupData) string {
 	return createPipelinesSuitableName(data, "gitResource")
 }
 
-func createPipelineName(data *VcsData) string {
+func createPipelineName(data *CiSetupData) string {
 	return createPipelinesSuitableName(data, "pipeline")
 }
 
-func createServerIdName(data *VcsData) string {
+func createServerIdName(data *CiSetupData) string {
 	return createPipelinesSuitableName(data, "serverId")
 }
