@@ -7,6 +7,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	"github.com/jfrog/jfrog-cli-core/general/cisetup"
 	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
@@ -14,12 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-
-	"github.com/gookit/color"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
-	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
-	"github.com/jfrog/jfrog-client-go/utils"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
