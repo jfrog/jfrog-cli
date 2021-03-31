@@ -875,7 +875,7 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/", "--explode=true", "--flat=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/checkFlat/dir/", "--explode=true", "--flat=true", "--min-split=50"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlatFalse)
 
