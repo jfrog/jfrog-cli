@@ -112,18 +112,26 @@ func (cc *CiSetupCommand) prepareConfigurationData() error {
 	return err
 }
 
-func readVcsConf() (conf *cisetup.CiSetupData, err error) {
-	conf = &cisetup.CiSetupData{}
+func readVcsConf() (*cisetup.CiSetupData, error) {
+	conf := &cisetup.CiSetupData{}
 	path, err := coreutils.GetJfrogHomeDir()
 	if err != nil {
-		return
+		return nil, err
 	}
-	configFile, err := fileutils.ReadFile(filepath.Join(path, VcsConfigFile))
+	confPath := filepath.Join(path, VcsConfigFile)
+	exists, err := fileutils.IsFileExists(confPath, false)
 	if err != nil {
-		return
+		return nil, err
+	}
+	if !exists {
+		return conf, nil
+	}
+	configFile, err := fileutils.ReadFile(confPath)
+	if err != nil {
+		return nil, err
 	}
 	err = json.Unmarshal(configFile, conf)
-	return
+	return conf, errorutils.CheckError(err)
 }
 
 func saveVcsConf(conf *cisetup.CiSetupData) error {
