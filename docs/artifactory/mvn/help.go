@@ -7,14 +7,9 @@ var Usage = []string{`jfrog rt mvn <goals and options> [command options]`}
 const Arguments string = `	goals and options
 		Goals and options to run with mvn command. For example  -f path/to/pom.xml`
 
-const EnvVar string = `	JFROG_CLI_JCENTER_REMOTE_SERVER
-		Configured Artifactory server ID from which to download the jar needed by the mvn command.
-		The Artifactory server should include a remote maven repository named jcenter, which proxies jcenter.
-
-	JFROG_CLI_JCENTER_REMOTE_REPO
-		[Default: jcenter]
-		Can be optionally used with the JFROG_CLI_JCENTER_REMOTE_SERVER environment variable.
-		Determines the name of the remote repository to use.
+const EnvVar string = `	JFROG_CLI_EXTRACTORS_REMOTE
+		Configured Artifactory server ID and repository name from which to download the jar needed by the mvn command.
+		This environemt variable’s value format should be <server ID>/<repo name>. The repository should proxy https://oss.jfrog.org.
 
 	JFROG_CLI_DEPENDENCIES_DIR
 		[Default: $JFROG_CLI_HOME_DIR/dependencies]
