@@ -24,12 +24,20 @@ type OnError string
 func init() {
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
-	if cliUserAgent == "" {
-		cliUserAgent = ClientAgent + "/" + CliVersion
+	if cliUserAgent != "" {
+		lastSlashIndex := strings.LastIndex(cliUserAgent, "/")
+		if lastSlashIndex == -1 {
+			coreutils.SetCliUserAgentName(cliUserAgent)
+		} else {
+			coreutils.SetCliUserAgentName(cliUserAgent[:lastSlashIndex])
+			coreutils.SetCliUserAgentVersion(cliUserAgent[lastSlashIndex+1:])
+		}
+	} else {
+		coreutils.SetCliUserAgentName(ClientAgent)
+		coreutils.SetCliUserAgentVersion(CliVersion)
 	}
-	coreutils.SetCliUserAgent(cliUserAgent)
-	coreutils.SetClientAgent(ClientAgent)
-	coreutils.SetVersion(CliVersion)
+	coreutils.SetClientAgentName(ClientAgent)
+	coreutils.SetClientAgentVersion(CliVersion)
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {
