@@ -30,6 +30,7 @@ import (
 	"github.com/jfrog/jfrog-cli/docs/artifactory/permissiontargetupdate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpull"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/podmanpush"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/usercreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/userscreate"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/usersdelete"
 	logUtils "github.com/jfrog/jfrog-cli/utils/log"
@@ -282,7 +283,7 @@ func GetCommands() []cli.Command {
 			Name:         "build-append",
 			Flags:        cliutils.GetCommandFlags(cliutils.BuildAppend),
 			Aliases:      []string{"ba"},
-			Description:  buildadddependencies.Description,
+			Description:  buildappend.Description,
 			HelpName:     corecommon.CreateUsage("rt build-append", buildappend.Description, buildappend.Usage),
 			UsageText:    buildappend.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
@@ -931,6 +932,17 @@ func GetCommands() []cli.Command {
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return permissionTargetDeleteCmd(c)
+			},
+		},
+		{
+			Name:         "user-create",
+			Flags:        cliutils.GetCommandFlags(cliutils.UserCreate),
+			Description:  usercreate.Description,
+			HelpName:     corecommon.CreateUsage("rt user-create", usercreate.Description, usercreate.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return userCreateCmd(c)
 			},
 		},
 		{
@@ -2855,6 +2867,35 @@ func permissionTargetDeleteCmd(c *cli.Context) error {
 	return commands.Exec(permissionTargetDeleteCmd)
 }
 
+func userCreateCmd(c *cli.Context) error {
+	if c.NArg() != 3 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	rtDetails, err := createArtifactoryDetailsByFlags(c, false)
+	if err != nil {
+		return err
+	}
+
+	usersCreateCmd := usersmanagement.NewUsersCreateCommand()
+	userDetails := services.User{}
+	userDetails.Name = c.Args().Get(0)
+	userDetails.Password = c.Args().Get(1)
+	userDetails.Email = c.Args().Get(2)
+
+	user := []services.User{userDetails}
+	var usersGroups []string
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
+	}
+	if c.String(cliutils.Admin) != "" {
+		userDetails.Admin = c.Bool(cliutils.Admin)
+	}
+	// Run command.
+	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(user).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
+	return commands.Exec(usersCreateCmd)
+}
+
 func usersCreateCmd(c *cli.Context) error {
 	if c.NArg() != 0 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
@@ -2875,14 +2916,14 @@ func usersCreateCmd(c *cli.Context) error {
 		return err
 	}
 	if len(usersList) < 1 {
-		return fmt.Errorf("An empty input file was provided.")
+		return errorutils.CheckError(errors.New("an empty input file was provided"))
 	}
 	var usersGroups []string
-	if c.String("user-groups") != "" {
-		usersGroups = strings.Split(c.String("user-groups"), ",")
+	if c.String(cliutils.UsersGroups) != "" {
+		usersGroups = strings.Split(c.String(cliutils.UsersGroups), ",")
 	}
 	// Run command.
-	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool("replace"))
+	usersCreateCmd.SetServerDetails(rtDetails).SetUsers(usersList).SetUsersGroups(usersGroups).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(usersCreateCmd)
 }
 
@@ -2959,7 +3000,7 @@ func groupCreateCmd(c *cli.Context) error {
 
 	// Run command.
 	groupCreateCmd := usersmanagement.NewGroupCreateCommand()
-	groupCreateCmd.SetName(c.Args().Get(0)).SetServerDetails(rtDetails).SetReplaceIfExists(c.Bool("replace"))
+	groupCreateCmd.SetName(c.Args().Get(0)).SetServerDetails(rtDetails).SetReplaceIfExists(c.Bool(cliutils.Replace))
 	return commands.Exec(groupCreateCmd)
 }
 
