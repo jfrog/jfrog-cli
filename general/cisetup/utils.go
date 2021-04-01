@@ -30,7 +30,7 @@ const (
 	NpmVirtualDefaultName    = "npm-virtual"
 
 	MinSupportedArtifactoryVersion = "7.16.3"
-	MinSupportedXrayVersion        = "3.20.0"
+	MinSupportedXrayVersion        = "3.21.2"
 )
 
 // IsMinRequiredVersions returns true iff both Artifactory and Xray version are above the minimal requirement.
