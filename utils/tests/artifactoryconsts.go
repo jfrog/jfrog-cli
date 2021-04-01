@@ -568,7 +568,7 @@ func GetExtractedDownloadFlatFalse() []string {
 	}
 }
 
-func GetExtractedTarDownloadFlatFalse() []string {
+func GetExtractedDownloadTarFileFlatFalse() []string {
 	return []string{
 		filepath.Join(Out, "checkFlat", "dir", "file1"),
 	}

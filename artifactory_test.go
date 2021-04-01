@@ -881,7 +881,7 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	// Explode 'flat.tar' while the file exists in the file system using --flat
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/checkFlat/dir/", "--explode=true", "--flat", "--min-split=50"))
-	verifyExistAndCleanDir(t, tests.GetExtractedTarDownloadFlatFalse)
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileFlatFalse)
 
 	cleanArtifactoryTest()
 }
