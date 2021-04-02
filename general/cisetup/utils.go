@@ -6,7 +6,6 @@ import (
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	"github.com/jfrog/jfrog-client-go/config"
-	"github.com/jfrog/jfrog-client-go/utils/version"
 	"github.com/jfrog/jfrog-client-go/xray"
 )
 
@@ -32,27 +31,6 @@ const (
 	MinSupportedArtifactoryVersion = "7.16.3"
 	MinSupportedXrayVersion        = "3.20.0"
 )
-
-// IsMinRequiredVersions returns true iff both Artifactory and Xray version are above the minimal requirement.
-func IsMinRequiredVersions(serviceDetails *utilsconfig.ServerDetails) (compatible bool, err error) {
-	artifactoryServicesManager, err := artUtils.CreateServiceManager(serviceDetails, false)
-	if err != nil {
-		return
-	}
-	artifactoryVersion, err := artifactoryServicesManager.GetVersion()
-	if err != nil {
-		return
-	}
-	xrServicesManager, err := CreateXrayServiceManager(serviceDetails)
-	if err != nil {
-		return
-	}
-	xrVersion, err := xrServicesManager.GetVersion()
-	if err != nil {
-		return
-	}
-	return version.NewVersion(artifactoryVersion).AtLeast(MinSupportedArtifactoryVersion) && version.NewVersion(xrVersion).AtLeast(MinSupportedXrayVersion), nil
-}
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
 	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
