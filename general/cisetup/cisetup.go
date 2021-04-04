@@ -496,11 +496,16 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-
-	// Ask if the user would like us to create a new remote or to choose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
-	if err != nil {
-		return nil
+	shouldPromptSelection := len(*remoteRepos) > 0
+	var remoteRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new remote or to choose from the exist repositories list
+		remoteRepo, err = promptARepoSelection(remoteRepos, "Select remote repository")
+		if err != nil {
+			return err
+		}
+	} else {
+		remoteRepo = NewRepository
 	}
 	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
@@ -534,8 +539,17 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+	shouldPromptSelection = len(*virtualRepos) > 0
+	var virtualRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
+		virtualRepo, err = promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+		if err != nil {
+			return err
+		}
+	} else {
+		virtualRepo = NewRepository
+	}
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
