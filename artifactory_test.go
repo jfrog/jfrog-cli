@@ -4307,7 +4307,7 @@ func TestArtifactoryUploadInflatedPath(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestGetJcenterRemoteDetails(t *testing.T) {
+func TestGetExtractorsRemoteDetails(t *testing.T) {
 	initArtifactoryTest(t)
 	_, err := createServerConfigAndReturnPassphrase()
 	defer deleteServerConfig()
@@ -4318,42 +4318,51 @@ func TestGetJcenterRemoteDetails(t *testing.T) {
 		assert.NoError(t, err)
 		err = os.Unsetenv(utils.JCenterRemoteRepoEnv)
 		assert.NoError(t, err)
+		err = os.Unsetenv(utils.ExtractorsRemoteEnv)
+		assert.NoError(t, err)
 	}
 	unsetEnvVars()
 	defer unsetEnvVars()
 
-	// The utils.JCenterRemoteServerEnv env var is not set, so extractor1.jar should be downloaded from jcenter.
+	// Make sure extractor1.jar downloaded from oss.jfrog.org.
 	downloadPath := "org/jfrog/buildinfo/build-info-extractor/extractor1.jar"
-	expectedRemotePath := path.Join("bintray/jcenter", downloadPath)
-	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
+	expectedRemotePath := path.Join("oss-release-local", downloadPath)
+	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Still, the utils.JCenterRemoteServerEnv env var is not set, so the download should be from jcenter.
-	// Expecting a different download path this time.
+	// Make sure extractor2.jar also downloaded from oss.jfrog.org.
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor2.jar"
-	expectedRemotePath = path.Join("bintray/jcenter", downloadPath)
-	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
+	expectedRemotePath = path.Join("oss-release-local", downloadPath)
+	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
 
-	// Setting the utils.JCenterRemoteServerEnv env var now,
-	// Expecting therefore the download to be from the the server ID configured by this env var.
-	err = os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
+	// Set 'JFROG_CLI_EXTRACTORS_REMOTE' and make sure extractor3.jar downloaded from a remote repo 'test-remote-repo' in RtServerId.
+	testRemoteRepo := "test-remote-repo"
+	err = os.Setenv(utils.ExtractorsRemoteEnv, tests.RtServerId+"/"+testRemoteRepo)
 	assert.NoError(t, err)
 	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor3.jar"
-	expectedRemotePath = path.Join("jcenter", downloadPath)
-	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
+	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
+	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
+	err = os.Unsetenv(utils.ExtractorsRemoteEnv)
+	assert.NoError(t, err)
 
-	// Still expecting the download to be from the same server ID, but this time, not through a remote repo named
-	// jcenter, but through test-remote-repo.
-	testRemoteRepo := "test-remote-repo"
+	// Set 'JFROG_CLI_JCENTER_REMOTE_SERVER' and make sure extractor4.jar downloaded from the default 'jcenter' repo in RtServerId.
+	err = os.Setenv(utils.JCenterRemoteServerEnv, tests.RtServerId)
+	assert.NoError(t, err)
+	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
+	expectedRemotePath = path.Join("jcenter", downloadPath)
+	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
+
+	// Set 'JFROG_CLI_JCENTER_REMOTE_REPO' to 'test-remote-repo' and make sure extractor5.jar downloaded from this repository.
 	err = os.Setenv(utils.JCenterRemoteRepoEnv, testRemoteRepo)
 	assert.NoError(t, err)
-	downloadPath = "1org/jfrog/buildinfo/build-info-extractor/extractor4.jar"
+	downloadPath = "org/jfrog/buildinfo/build-info-extractor/extractor5.jar"
 	expectedRemotePath = path.Join(testRemoteRepo, downloadPath)
-	validateJcenterRemoteDetails(t, downloadPath, expectedRemotePath)
+	validateExtractorRemoteDetails(t, downloadPath, expectedRemotePath)
+
 	cleanArtifactoryTest()
 }
 
-func validateJcenterRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
-	serverDetails, remotePath, err := utils.GetJcenterRemoteDetails(downloadPath)
+func validateExtractorRemoteDetails(t *testing.T, downloadPath, expectedRemotePath string) {
+	serverDetails, remotePath, err := utils.GetExtractorsRemoteDetails(downloadPath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRemotePath, remotePath)
 	assert.False(t, os.Getenv(utils.JCenterRemoteServerEnv) != "" && serverDetails == nil, "Expected a server to be returned")
