@@ -52,7 +52,7 @@ const (
 	ideUserName              = "ide-developer"
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
-	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
+	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --server-id="%s"`
 )
 
 type CiSetupCommand struct {
@@ -372,7 +372,7 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of JFrog Plugin is installed on IntelliJ IDEA.",
 		" 2. Create a JFrog user for the IDE by running the following command:", "",
-		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName), "",
+		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
 		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
