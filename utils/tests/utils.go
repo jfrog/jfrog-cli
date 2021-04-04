@@ -191,7 +191,7 @@ func GetFilePathForBintray(filename, path string, a ...string) string {
 }
 
 func GetFilePathForArtifactory(fileName string) string {
-	return GetTestResourcesPath() + "specs/" + fileName
+	return GetTestResourcesPath() + "filespecs/" + fileName
 }
 
 func GetTestsLogsDir() (string, error) {
