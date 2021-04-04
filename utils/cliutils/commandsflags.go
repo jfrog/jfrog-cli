@@ -1233,7 +1233,7 @@ var flagsMap = map[string]cli.Flag{
 		Usage: "[Optional] JFrog Platform access token. ` `",
 	},
 	configInsecureTls: cli.StringFlag{
-		Name: insecureTls,
+		Name:  insecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
 }
