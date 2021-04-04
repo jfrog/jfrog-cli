@@ -23,7 +23,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
@@ -285,12 +284,12 @@ func runConfigCmd() (err error) {
 			log.Error(err)
 			continue
 		}
-		// Validate JFrog credentials by execute ping command
+		// Validate JFrog credentials by execute get repo command
 		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
-		err = generic.NewPingCommand().SetServerDetails(serviceDetails).Run()
+		_, err = GetAllRepos(serviceDetails, "", "")
 		if err == nil {
 			return nil
 		}
@@ -478,6 +477,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 			if err != nil {
 				return
 			}
+		} else {
+			cc.data.DetectedTechnologies[tech] = false
 		}
 	}
 	// Ask for working build command
