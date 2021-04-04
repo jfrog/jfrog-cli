@@ -82,7 +82,7 @@ func logBeginningInstructions() error {
 		"",
 		colorTitle("About this command"),
 		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
-		"It currently supports maven, gradle and npm, but additional package managers will be added in the future.",
+		"It currently supports Maven, Gradle and npm, but additional package managers will be added in the future.",
 		"The generated CI pipeline is based on JFrog Pipelines, but additional CI providers will be added in the future.",
 		"The command takes care of configuring JFrog Artifactory, JFrog Xray and JFrog Pipelines for you.",
 		"",
@@ -375,7 +375,7 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName), "",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
-		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab and then click on the 'Refresh' button.", "",
+		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
 }

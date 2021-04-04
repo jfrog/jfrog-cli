@@ -27,9 +27,6 @@ const (
 	NpmRemoteDefaultName     = "npm-remote"
 	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
 	NpmVirtualDefaultName    = "npm-virtual"
-
-	MinSupportedArtifactoryVersion = "7.16.3"
-	MinSupportedXrayVersion        = "3.20.0"
 )
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
