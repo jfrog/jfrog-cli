@@ -184,7 +184,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Configure pipelines, create and stage pipeline.yml.
+	// Configure pipelines, create and stage pipelines.yml.
 	pipelineName, err := cc.runPipelinesPhase()
 	if err != nil {
 		return err
@@ -359,8 +359,8 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 
 	instructions := []string{
 		"", colorTitle("Completing the setup"),
-		"We configured the JFrog Platform and generated a pipeline.yml for you.",
-		"To complete the setup, add the new pipeline.yml to your git repository by running the following commands:", "",
+		"We configured the JFrog Platform and generated a pipelines.yml for you.",
+		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
 		"cd " + cc.data.LocalDirPath,
 		"git commit -m \"Add pipelines.yml\"",
 		"git push", "",
