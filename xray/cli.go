@@ -106,7 +106,7 @@ func curlCmd(c *cli.Context) error {
 func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	curlCommand := corecommon.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	xrCurlCommand := curl.NewXrCurlCommand(*curlCommand)
-	xrDetails, err := curlCommand.GetServerDetails()
+	xrDetails, err := xrCurlCommand.GetServerDetails()
 	if err != nil {
 		return nil, err
 	}
