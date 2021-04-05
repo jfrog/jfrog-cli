@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.46.1 (April 5, 2021)
+- Bug fix - "jfrog xr curl" and "jfrog rt curl" don't recognize the --server-id option.
+
 ## 1.46.0 (April 4, 2021)
 - Breaking change - The "jfrog rt go-recursive-command" is now removed
 - New "jfrog xr curl" command
