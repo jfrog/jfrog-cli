@@ -52,7 +52,7 @@ const (
 	ideUserName              = "ide-developer"
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
-	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
+	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --server-id="%s"`
 )
 
 type CiSetupCommand struct {
@@ -184,7 +184,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Configure pipelines, create and stage pipeline.yml.
+	// Configure pipelines, create and stage pipelines.yml.
 	pipelineName, err := cc.runPipelinesPhase()
 	if err != nil {
 		return err
@@ -359,8 +359,8 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 
 	instructions := []string{
 		"", colorTitle("Completing the setup"),
-		"We configured the JFrog Platform and generated a pipeline.yml for you.",
-		"To complete the setup, add the new pipeline.yml to your git repository by running the following commands:", "",
+		"We configured the JFrog Platform and generated a pipelines.yml for you.",
+		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
 		"cd " + cc.data.LocalDirPath,
 		"git commit -m \"Add pipelines.yml\"",
 		"git push", "",
@@ -372,7 +372,7 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of JFrog Plugin is installed on IntelliJ IDEA.",
 		" 2. Create a JFrog user for the IDE by running the following command:", "",
-		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName), "",
+		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
 		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
