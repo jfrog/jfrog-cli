@@ -15,6 +15,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+github.com/RobiNino/jfrog-cli-core v0.0.0-20210405131508-79657b7e7288 h1:FTOI9B3JZVJv9/zAr6lBwsVO7T802UJYXLm53qTmmtY=
+github.com/RobiNino/jfrog-cli-core v0.0.0-20210405131508-79657b7e7288/go.mod h1:rEUWUeKeVVJN5xcNB3o0oD/MeTXVW9i6HwgbqrC8/74=
 github.com/VividCortex/ewma v1.1.1 h1:MnEK4VOv6n0RSY4vtRe3h11qjxL3+t0B8yOL8iMXdcM=
 github.com/VividCortex/ewma v1.1.1/go.mod h1:2Tkkvm3sRDVXaiyucHiACn4cqf7DpdyLvmxzcbUokwA=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 h1:uSoVVbwJiQipAclBbw+8quDsfcvFjOpI5iCf4p/cqCs=
@@ -150,8 +152,6 @@ github.com/jfrog/gocmd v0.2.0 h1:nw4Jy8lg8q54thJ88cU8QQDZk83NFgxMXwMadl78II4=
 github.com/jfrog/gocmd v0.2.0/go.mod h1:TeZBKJw38D3aKpkIH6tCCztECdhNLIkwHbnCZG8umKE=
 github.com/jfrog/gofrog v1.0.6 h1:yUDxSCw8gTK6vC4PvtG0HTnEOQJSZ+O4lWGCgkev1nU=
 github.com/jfrog/gofrog v1.0.6/go.mod h1:HkDzg+tMNw23UryoOv0+LB94BzYcl6MCIoz8Tmlb+s8=
-github.com/jfrog/jfrog-cli-core v1.5.0 h1:weIHQvbPev+kXYyeJtpC4d5WktxvaMpuaALX/fDSF1s=
-github.com/jfrog/jfrog-cli-core v1.5.0/go.mod h1:NP9VhYbnAWYZW7R4tqYlMtJMbItnQ7SFKV4nO/zM/u0=
 github.com/jfrog/jfrog-client-go v0.21.0 h1:M8o4EhoxFYCQlXyv2DVTfm4l/WzE6TgtYpTO4YDq0Qs=
 github.com/jfrog/jfrog-client-go v0.21.0/go.mod h1:0RYDrQKCIdJbx6pjopwtwXh4/PaEW9FqFc4b4ox8fl0=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=

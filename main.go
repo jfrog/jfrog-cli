@@ -1,6 +1,9 @@
 package main
 
 import (
+	corecommon "github.com/jfrog/jfrog-cli-core/docs/common"
+	"github.com/jfrog/jfrog-cli/docs/general/cisetup"
+	commands "github.com/jfrog/jfrog-cli/general/cisetup"
 	"os"
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -141,18 +144,17 @@ func getCommands() []cli.Command {
 			Description: "Config commands",
 			Subcommands: config.GetCommands(),
 		},
-		// Disabled
-		//{
-		//	Name:         "ci-setup",
-		//	Usage:        cisetup.Description,
-		//	HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
-		//	UsageText:    cisetup.Arguments,
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Action: func(c *cli.Context) error {
-		//		return commands.RunCiSetupCmd()
-		//	},
-		//},
+		{
+			Name:         "ci-setup",
+			Usage:        cisetup.Description,
+			HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
+			UsageText:    cisetup.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return commands.RunCiSetupCmd()
+			},
+		},
 	}
 	return append(cliNameSpaces, utils.GetPlugins()...)
 }
