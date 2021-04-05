@@ -37,7 +37,7 @@ func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.
 	if err != nil {
 		return nil, err
 	}
-	return xray.New(&xrayDetails, serviceConfig)
+	return xray.New(serviceConfig)
 }
 
 func GetAllRepos(serviceDetails *utilsconfig.ServerDetails, repoType, packageType string) (*[]services.RepositoryDetails, error) {
