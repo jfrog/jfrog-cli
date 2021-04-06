@@ -903,6 +903,29 @@ func TestArtifactoryDownloadAndExplodeConcurrent(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadAndExplodeSpecialChars(t *testing.T) {
+	initArtifactoryTest(t)
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file $+~&^a#1"), 1000)
+	assert.NoError(t, err)
+	err = archiver.Tar.Make(filepath.Join(tests.Out, "a$+~&^a#.tar"), []string{file1.Name()})
+	assert.NoError(t, err)
+
+	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/dir/", "--flat=true")
+	os.RemoveAll(tests.Out)
+	err = fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=true", "--explode")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=false", "--explode")
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileSpecialChars)
+	// Concurrently download
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=true", "--explode", "--min-split=50")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=false", "--explode", "--min-split=50")
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileSpecialChars)
+	cleanArtifactoryTest()
+}
+
 func verifyExistAndCleanDir(t *testing.T, GetExtractedDownload func() []string) {
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)

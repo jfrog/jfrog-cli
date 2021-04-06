@@ -574,6 +574,13 @@ func GetExtractedDownloadTarFileFlatFalse() []string {
 	}
 }
 
+func GetExtractedDownloadTarFileSpecialChars() []string {
+	return []string{
+		filepath.Join(Out, "dir $+~&^a# test", "dir", "file $+~&^a#1"),
+		filepath.Join(Out, "dir $+~&^a# test", "file $+~&^a#1"),
+	}
+}
+
 func GetExtractedDownloadConcurrent() []string {
 	return []string{
 		filepath.Join(Out, "a/a1.in"),
