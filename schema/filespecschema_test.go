@@ -16,8 +16,8 @@ func TestFileSpecSchema(t *testing.T) {
 	assert.NoError(t, err)
 	schemaLoader := gojsonschema.NewBytesLoader(schema)
 
-	// Validate all specs in ../testdata/specs against the filespec-schema.json
-	filepath.Walk(filepath.Join("..", "testdata", "specs"), func(path string, info os.FileInfo, err error) error {
+	// Validate all specs in ../testdata/filespecs against the filespec-schema.json
+	filepath.Walk(filepath.Join("..", "testdata", "filespecs"), func(path string, info os.FileInfo, err error) error {
 		assert.NoError(t, err)
 		if info.IsDir() {
 			return nil

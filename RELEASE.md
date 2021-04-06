@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.46.1 (April 5, 2021)
+- Bug fix - "jfrog xr curl" and "jfrog rt curl" don't recognize the --server-id option.
+
+## 1.46.0 (April 4, 2021)
+- Breaking change - The "jfrog rt go-recursive-command" is now removed
+- New "jfrog xr curl" command
+- New "transitive" option has been added to Artifactory's search and download commands, to expand the search to include remote repos (requires Artifactory 7.17)
+- The JFROG_CLI_JCENTER_REMOTE_SERVER and JFROG_CLI_JCENTER_REMOTE_REPO environment variables are now deprecated, and replaced with the new (single) JFROG_CLI_EXTRACTORS_REMOTE environment variable
+- The "jfrog rt go-publish" command now uses the configuration added by the "jfrog rt go-config" command.
+
 ## 1.45.2 (March 18, 2021)
 - Bug fix - Uploading files to Artifactory with "archive=zip" causes high memory consumption.
 - Add VCS commit message to buildinfo.

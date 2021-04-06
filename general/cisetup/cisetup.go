@@ -23,7 +23,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
@@ -52,7 +51,7 @@ const (
 	ideUserName              = "ide-developer"
 	ideUserPassPlaceholder   = "<INSERT-PASSWORD>"
 	ideUserEmailPlaceholder  = "<INSERT-EMAIL>"
-	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --admin=false`
+	createUserTemplate       = `jfrog rt user-create "%s" "%s" "%s" --users-groups="%s" --server-id="%s"`
 )
 
 type CiSetupCommand struct {
@@ -82,12 +81,14 @@ func logBeginningInstructions() error {
 		"",
 		colorTitle("About this command"),
 		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
-		"It currently supports maven, gradle and npm, but additional package managers will be added in the future.",
+		"It currently supports Maven, Gradle and npm, but additional package managers will be added in the future.",
 		"The generated CI pipeline is based on JFrog Pipelines, but additional CI providers will be added in the future.",
+		"The command takes care of configuring JFrog Artifactory, JFrog Xray and JFrog Pipelines for you.",
 		"",
 		colorTitle("Important"),
-		" 1. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
-		" 2. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
+		" 1. If you don't have a JFrog Platform instance with admin credentials, head over to https://jfrog.com/start-free/ and get one for free.",
+		" 2. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
+		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
 		"", "",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
@@ -158,11 +159,6 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Validate min required versions of Artifactory and Xray
-	err = validateVersions()
-	if err != nil {
-		return err
-	}
 	// Basic VCS questionnaire (URLs, Credentials, etc'...)
 	err = cc.gitPhase()
 	err = saveIfNoError(err, cc.data)
@@ -187,7 +183,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Configure pipelines, create and stage pipeline.yml.
+	// Configure pipelines, create and stage pipelines.yml.
 	pipelineName, err := cc.runPipelinesPhase()
 	if err != nil {
 		return err
@@ -198,22 +194,6 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	return cc.logCompletionInstruction(pipelineName)
-}
-
-func validateVersions() error {
-	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
-	if err != nil {
-		return err
-	}
-	ok, err := IsMinRequiredVersions(serviceDetails)
-	if err != nil {
-		return err
-
-	}
-	if !ok {
-		return errorutils.CheckError(errors.New(fmt.Sprintf("This operation requires Artifactory version %s or higher as well as Xray version %s or higher", MinSupportedArtifactoryVersion, MinSupportedXrayVersion)))
-	}
-	return nil
 }
 
 func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
@@ -304,12 +284,12 @@ func runConfigCmd() (err error) {
 			log.Error(err)
 			continue
 		}
-		// Validate JFrog credentials by execute ping command
+		// Validate JFrog credentials by execute get repo command
 		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
-		err = generic.NewPingCommand().SetServerDetails(serviceDetails).Run()
+		_, err = GetAllRepos(serviceDetails, "", "")
 		if err == nil {
 			return nil
 		}
@@ -377,15 +357,24 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 	}
 
 	instructions := []string{
-		colorTitle("To complete the setup, run the following commands:"), "",
+		"", colorTitle("Completing the setup"),
+		"We configured the JFrog Platform and generated a pipelines.yml for you.",
+		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
 		"cd " + cc.data.LocalDirPath,
 		"git commit -m \"Add pipelines.yml\"",
 		"git push", "",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
 		getPipelineUiPath(serviceDetails.Url, pipelineName), "",
-		"To create a user for your ide, that can access the builds generated by this setup, run the following command with fields of your choice:", "",
-		fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName), "",
+		colorTitle("Allowing developers to access this pipeline from their IDE"),
+		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA. More IDEs will be supported in the future.",
+		"To achieve this, follow these steps:",
+		" 1. Make sure the latest version of JFrog Plugin is installed on IntelliJ IDEA.",
+		" 2. Create a JFrog user for the IDE by running the following command:", "",
+		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
+		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
+		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
+		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
@@ -488,6 +477,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 			if err != nil {
 				return
 			}
+		} else {
+			cc.data.DetectedTechnologies[tech] = false
 		}
 	}
 	// Ask for working build command
@@ -506,11 +497,16 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-
-	// Ask if the user would like us to create a new remote or to choose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
-	if err != nil {
-		return nil
+	shouldPromptSelection := len(*remoteRepos) > 0
+	var remoteRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new remote or to choose from the exist repositories list
+		remoteRepo, err = promptARepoSelection(remoteRepos, "Select remote repository")
+		if err != nil {
+			return err
+		}
+	} else {
+		remoteRepo = NewRepository
 	}
 	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
@@ -544,8 +540,17 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+	shouldPromptSelection = len(*virtualRepos) > 0
+	var virtualRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
+		virtualRepo, err = promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+		if err != nil {
+			return err
+		}
+	} else {
+		virtualRepo = NewRepository
+	}
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
