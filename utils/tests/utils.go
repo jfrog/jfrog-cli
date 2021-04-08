@@ -66,6 +66,7 @@ var HideUnitTestLog *bool
 var TestPip *bool
 var PipVirtualEnv *string
 var TestPlugins *bool
+var timestampAdded bool
 
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
@@ -476,6 +477,9 @@ func getSubstitutionMap() map[string]string {
 
 // Add timestamp to builds and repositories names
 func AddTimestampToGlobalVars() {
+	if timestampAdded {
+		return
+	}
 	timestampSuffix := "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	// Repositories
 	BintrayRepo += timestampSuffix
@@ -521,6 +525,8 @@ func AddTimestampToGlobalVars() {
 	rand.Seed(time.Now().Unix())
 	Password1 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
 	Password2 += timestampSuffix + strconv.FormatFloat(rand.Float64(), 'f', 2, 32)
+
+	timestampAdded = true
 }
 
 func ReplaceTemplateVariables(path, destPath string) (string, error) {
