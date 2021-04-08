@@ -23,7 +23,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
@@ -285,12 +284,12 @@ func runConfigCmd() (err error) {
 			log.Error(err)
 			continue
 		}
-		// Validate JFrog credentials by execute ping command
+		// Validate JFrog credentials by execute get repo command
 		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
-		err = generic.NewPingCommand().SetServerDetails(serviceDetails).Run()
+		_, err = GetAllRepos(serviceDetails, "", "")
 		if err == nil {
 			return nil
 		}
@@ -478,6 +477,8 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 			if err != nil {
 				return
 			}
+		} else {
+			cc.data.DetectedTechnologies[tech] = false
 		}
 	}
 	// Ask for working build command
@@ -496,11 +497,16 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-
-	// Ask if the user would like us to create a new remote or to choose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
-	if err != nil {
-		return nil
+	shouldPromptSelection := len(*remoteRepos) > 0
+	var remoteRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new remote or to choose from the exist repositories list
+		remoteRepo, err = promptARepoSelection(remoteRepos, "Select remote repository")
+		if err != nil {
+			return err
+		}
+	} else {
+		remoteRepo = NewRepository
 	}
 	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
@@ -534,8 +540,17 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+	shouldPromptSelection = len(*virtualRepos) > 0
+	var virtualRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
+		virtualRepo, err = promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+		if err != nil {
+			return err
+		}
+	} else {
+		virtualRepo = NewRepository
+	}
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {

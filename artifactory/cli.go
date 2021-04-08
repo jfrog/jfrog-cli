@@ -2679,7 +2679,7 @@ func curlCmd(c *cli.Context) error {
 func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
-	rtDetails, err := curlCommand.GetServerDetails()
+	rtDetails, err := rtCurlCommand.GetServerDetails()
 	if err != nil {
 		return nil, err
 	}

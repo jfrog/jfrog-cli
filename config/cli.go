@@ -218,9 +218,6 @@ func validateServerExistence(serverId string, expectExist bool) error {
 }
 
 func validateConfigFlags(configCommandConfiguration *commands.ConfigCommandConfiguration) error {
-	if !configCommandConfiguration.Interactive && configCommandConfiguration.ServerDetails.ArtifactoryUrl == "" {
-		return errors.New("the --artifactory-url option is mandatory when the --interactive option is set to false or the CI environment variable is set to true.")
-	}
 	// Validate the option is not used along with an access token
 	if configCommandConfiguration.BasicAuthOnly && configCommandConfiguration.ServerDetails.AccessToken != "" {
 		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
