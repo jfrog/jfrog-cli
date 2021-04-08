@@ -477,7 +477,7 @@ func getSubstitutionMap() map[string]string {
 
 // Add timestamp to builds and repositories names
 func AddTimestampToGlobalVars() {
-	 // Make sure the global timestamp is added only once even in case of multiple tests flags
+	// Make sure the global timestamp is added only once even in case of multiple tests flags
 	if timestampAdded {
 		return
 	}

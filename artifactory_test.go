@@ -482,6 +482,7 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 	defer func() {
 		err = artifactoryCli.Exec("users-delete", "--csv="+randomUsersCSVPath)
 		assert.NoError(t, err)
+		cleanArtifactoryTest()
 	}()
 	assert.NoError(t, err)
 
