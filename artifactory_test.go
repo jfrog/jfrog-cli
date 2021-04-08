@@ -4818,3 +4818,22 @@ func assertPermissionTargetDeleted(t *testing.T, manager artifactory.Artifactory
 func cleanPermissionTarget() {
 	_ = artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName)
 }
+
+func TestArtifactoryCurl(t *testing.T) {
+	initArtifactoryTest(t)
+	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	// Check curl command with config default server
+	err := artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version")
+	assert.NoError(t, err)
+	// Check curl command with '--server-id' flag
+	_, err = createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
+	assert.NoError(t, err)
+	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
+	assert.NoError(t, err)
+	// Check curl command with invalid server id - should get an error.
+	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version", "--server-id=invalid_name"+tests.RtServerId)
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
+}
