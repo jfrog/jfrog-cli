@@ -4820,13 +4820,14 @@ func cleanPermissionTarget() {
 
 func TestArtifactoryCurl(t *testing.T) {
 	initArtifactoryTest(t)
+	_, err := createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
 	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Check curl command with config default server
-	err := artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version")
+	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version")
 	assert.NoError(t, err)
 	// Check curl command with '--server-id' flag
-	_, err = createServerConfigAndReturnPassphrase()
-	defer deleteServerConfig()
+
 	assert.NoError(t, err)
 	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
 	assert.NoError(t, err)
