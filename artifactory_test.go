@@ -482,6 +482,7 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 	defer func() {
 		err = artifactoryCli.Exec("users-delete", "--csv="+randomUsersCSVPath)
 		assert.NoError(t, err)
+		cleanArtifactoryTest()
 	}()
 	assert.NoError(t, err)
 
@@ -932,7 +933,6 @@ func verifyExistAndCleanDir(t *testing.T, GetExtractedDownload func() []string) 
 	tests.VerifyExistLocally(GetExtractedDownload(), paths, t)
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-
 }
 
 func TestArtifactoryUploadAsArchive(t *testing.T) {
@@ -962,12 +962,9 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 			}
 			return properties[i].Key < properties[j].Key
 		})
-		assert.Equal(t, "k1", properties[0].Key)
-		assert.Equal(t, "v11", properties[0].Value)
-		assert.Equal(t, "k1", properties[1].Key)
-		assert.Equal(t, "v12", properties[1].Value)
-		assert.Equal(t, "k2", properties[2].Key)
-		assert.Equal(t, "v2", properties[2].Value)
+		assert.Contains(t, properties, rtutils.Property{Key: "k1", Value: "v11"})
+		assert.Contains(t, properties, rtutils.Property{Key: "k1", Value: "v12"})
+		assert.Contains(t, properties, rtutils.Property{Key: "k2", Value: "v2"})
 	}
 
 	// Check the files inside the archives by downloading and exploding them
@@ -3966,6 +3963,8 @@ func cleanArtifactoryTest() {
 		return
 	}
 	os.Unsetenv(coreutils.HomeDir)
+	os.Unsetenv(coreutils.BuildName)
+	os.Unsetenv(coreutils.BuildNumber)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()
