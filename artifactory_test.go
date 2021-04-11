@@ -4822,17 +4822,16 @@ func TestArtifactoryCurl(t *testing.T) {
 	initArtifactoryTest(t)
 	_, err := createServerConfigAndReturnPassphrase()
 	defer deleteServerConfig()
-	artifactoryCommandExecutor := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	// Check curl command with config default server
-	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version")
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
 	assert.NoError(t, err)
 	// Check curl command with '--server-id' flag
 
 	assert.NoError(t, err)
-	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
-	err = artifactoryCommandExecutor.Exec("curl", "-XGET", "/api/system/version", "--server-id=invalid_name"+tests.RtServerId)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=invalid_name"+tests.RtServerId)
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
