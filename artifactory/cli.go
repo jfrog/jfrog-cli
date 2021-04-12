@@ -1759,7 +1759,7 @@ func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd f
 		return err
 	}
 	// Verify config file is found.
-	// Falback to legcy use if version & repo arges are passed.
+	// Fallback to legacy use if version & repo args are passed.
 	if exists && c.NArg() == 1 {
 		log.Debug("Go config file was found in:", configFilePath)
 		return goCmd(c, configFilePath)
