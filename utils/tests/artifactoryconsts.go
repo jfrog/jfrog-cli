@@ -563,8 +563,21 @@ func GetArchiveConcurrent() []string {
 
 func GetExtractedDownloadFlatFalse() []string {
 	return []string{
-		filepath.Join(Out, "file1"),
+		filepath.Join(Out, "checkFlat", "file1"),
 		filepath.Join(Out, "checkFlat", "dir", "flat.tar"),
+	}
+}
+
+func GetExtractedDownloadTarFileFlatFalse() []string {
+	return []string{
+		filepath.Join(Out, "checkFlat", "dir", "file1"),
+	}
+}
+
+func GetExtractedDownloadTarFileSpecialChars() []string {
+	return []string{
+		filepath.Join(Out, "dir $+~&^a# test", "dir", "file $+~&^a#1"),
+		filepath.Join(Out, "dir $+~&^a# test", "file $+~&^a#1"),
 	}
 }
 
