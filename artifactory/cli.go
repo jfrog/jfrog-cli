@@ -1764,7 +1764,6 @@ func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd f
 		log.Debug("Go config file was found in:", configFilePath)
 		return goCmd(c, configFilePath)
 	}
-	// If config file not found, use Go legacy command
 	return legacyGoCmd(c)
 }
 
