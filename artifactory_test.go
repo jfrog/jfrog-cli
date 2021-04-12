@@ -4826,12 +4826,11 @@ func TestArtifactoryCurl(t *testing.T) {
 	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
 	assert.NoError(t, err)
 	// Check curl command with '--server-id' flag
-
 	assert.NoError(t, err)
 	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
 	assert.NoError(t, err)
 	// Check curl command with invalid server id - should get an error.
-	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=invalid_name"+tests.RtServerId)
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configed_name_"+tests.RtServerId)
 	assert.Error(t, err)
 
 	cleanArtifactoryTest()
