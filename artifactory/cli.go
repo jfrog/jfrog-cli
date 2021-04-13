@@ -1639,7 +1639,11 @@ func npmPublishCmd(c *cli.Context) error {
 		}
 		npmCmd := npm.NewNpmPublishCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
+		err = commands.Exec(npmCmd)
+		if err != nil {
+			return err
+		}
+		return cliutils.PrintSummaryReport(-1, -1, npmCmd.TransferDetailsReader, "", err)
 	}
 	// If config file not found, use Npm legacy command
 	return npmLegacyPublishCmd(c)
