@@ -52,6 +52,7 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 type detailedSummaryRecord struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
+	Sha256 string `json:"sha256,omitempty"`
 }
 
 // Print summary report.
@@ -93,6 +94,7 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 		record := detailedSummaryRecord{
 			Source: transferDetails.SourcePath,
 			Target: transferDetails.TargetPath,
+			Sha256: transferDetails.Sha256,
 		}
 		writer.Write(record)
 	}
