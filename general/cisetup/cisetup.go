@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 
@@ -23,7 +24,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/buildinfo"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
@@ -89,7 +89,7 @@ func logBeginningInstructions() error {
 		colorTitle("Important"),
 		" 1. If you don't have a JFrog Platform instance with admin credentials, head over to https://jfrog.com/start-free/ and get one for free.",
 		" 2. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
-		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next tine you run the command.",
+		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next time you run the command.",
 		"", "",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
@@ -285,12 +285,12 @@ func runConfigCmd() (err error) {
 			log.Error(err)
 			continue
 		}
-		// Validate JFrog credentials by execute ping command
+		// Validate JFrog credentials by execute get repo command
 		serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 		if err != nil {
 			return err
 		}
-		err = generic.NewPingCommand().SetServerDetails(serviceDetails).Run()
+		_, err = GetAllRepos(serviceDetails, "", "")
 		if err == nil {
 			return nil
 		}
@@ -469,24 +469,46 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 }
 
 func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
-
+	atLeastOneTechBuilt := false
 	cc.data.ArtifactoryVirtualRepos = make(map[cisetup.Technology]string)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
-			err = cc.interactivelyCreatRepos(tech)
+			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
 				return
 			}
+			atLeastOneTechBuilt = true
+		} else {
+			cc.data.DetectedTechnologies[tech] = false
 		}
 	}
-	// Ask for working build command
-	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported"
-	ioutils.ScanFromConsole(prompt, &cc.data.BuildCommand, cc.defaultData.BuildCommand)
+	if !atLeastOneTechBuilt {
+		return errorutils.CheckError(errors.New("at least one of the supported technologies is expected to be chosen for building"))
+	}
+	cc.getBuildCmd()
 	return nil
 }
 
-func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technology) (err error) {
+func (cc *CiSetupCommand) getBuildCmd() {
+	defaultBuildCmd := cc.defaultData.BuildCommand
+	// If technologies are not the same as in history, generate new default build cmd.
+	if !reflect.DeepEqual(cc.data.DetectedTechnologies, cc.defaultData.DetectedTechnologies) {
+		var buildCommands []string
+		for tech, detected := range cc.data.DetectedTechnologies {
+			if detected {
+				buildCommands = append(buildCommands, buildCmdByTech[tech])
+			}
+			defaultBuildCmd = strings.Join(buildCommands, " && ")
+		}
+	}
+
+	// Ask for working build command
+	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported"
+	ioutils.ScanFromConsole(prompt, &cc.data.BuildCommand, defaultBuildCmd)
+}
+
+func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -496,11 +518,16 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-
-	// Ask if the user would like us to create a new remote or to choose from the exist repositories list
-	remoteRepo, err := promptARepoSelection(remoteRepos, "Select remote repository")
-	if err != nil {
-		return nil
+	shouldPromptSelection := len(*remoteRepos) > 0
+	var remoteRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new remote or to choose from the exist repositories list
+		remoteRepo, err = promptARepoSelection(remoteRepos, "Select remote repository")
+		if err != nil {
+			return err
+		}
+	} else {
+		remoteRepo = NewRepository
 	}
 	// The user choose to create a new remote repo
 	if remoteRepo == NewRepository {
@@ -534,8 +561,17 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 	if err != nil {
 		return err
 	}
-	// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
-	virtualRepo, err := promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+	shouldPromptSelection = len(*virtualRepos) > 0
+	var virtualRepo string
+	if shouldPromptSelection {
+		// Ask if the user would like us to create a new virtual or to choose from the exist repositories list
+		virtualRepo, err = promptARepoSelection(virtualRepos, fmt.Sprintf("Select a virtual repository, which includes %s or choose to create a new repo:", remoteRepo))
+		if err != nil {
+			return err
+		}
+	} else {
+		virtualRepo = NewRepository
+	}
 	if virtualRepo == NewRepository {
 		// Create virtual repository
 		for {
@@ -557,7 +593,7 @@ func (cc *CiSetupCommand) interactivelyCreatRepos(technologyType cisetup.Technol
 		}
 		if !contains(chosenVirtualRepo.Repositories, remoteRepo) {
 			log.Error(fmt.Sprintf("The chosen virtual repo %q does not contain the chosen remote repo %q", virtualRepo, remoteRepo))
-			return cc.interactivelyCreatRepos(technologyType)
+			return cc.interactivelyCreateRepos(technologyType)
 		}
 	}
 	// Saves the new created repo name (key) in the results data structure.
@@ -724,7 +760,7 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		cc.data.GitProvider = cisetup.GitProvider(gitProvider)
 		ioutils.ScanFromConsole("Git project URL", &cc.data.VcsCredentials.Url, cc.defaultData.VcsCredentials.Url)
 		ioutils.ScanFromConsole("Git username", &cc.data.VcsCredentials.User, cc.defaultData.VcsCredentials.User)
-		err = writeToScreen("Git access token: ")
+		err = writeToScreen("Git access token (requires admin permissions): ")
 		if err != nil {
 			return err
 		}

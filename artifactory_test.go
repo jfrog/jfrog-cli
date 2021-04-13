@@ -482,6 +482,7 @@ func TestArtifactoryCreateUsers(t *testing.T) {
 	defer func() {
 		err = artifactoryCli.Exec("users-delete", "--csv="+randomUsersCSVPath)
 		assert.NoError(t, err)
+		cleanArtifactoryTest()
 	}()
 	assert.NoError(t, err)
 
@@ -812,7 +813,6 @@ func TestArtifactoryDownloadAndExplode(t *testing.T) {
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "concurrent.tar.gz"), tests.Out+"/", "--explode=false"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "bulk.tar"), tests.Out+"/", "--explode=true"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true"))
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "zipFile.zip"), tests.Out+"/", "--explode=true"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownload)
 
 	cleanArtifactoryTest()
@@ -876,9 +876,13 @@ func TestArtifactoryDownloadAndExplodeFlat(t *testing.T) {
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
 
-	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/", "--explode=true", "--flat=true"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/checkFlat/", "--explode=true", "--flat=true", "--min-split=50"))
 	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
 	verifyExistAndCleanDir(t, tests.GetExtractedDownloadFlatFalse)
+	// Explode 'flat.tar' while the file exists in the file system using --flat
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "tarZipFile.zip"), tests.Out+"/", "--explode=true", "--flat=false"))
+	assert.NoError(t, artifactoryCli.Exec("download", path.Join(tests.RtRepo1, "checkFlat", "dir", "flat.tar"), tests.Out+"/checkFlat/dir/", "--explode=true", "--flat", "--min-split=50"))
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileFlatFalse)
 
 	cleanArtifactoryTest()
 }
@@ -900,13 +904,35 @@ func TestArtifactoryDownloadAndExplodeConcurrent(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestArtifactoryDownloadAndExplodeSpecialChars(t *testing.T) {
+	initArtifactoryTest(t)
+	err := fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+	file1, err := gofrogio.CreateRandFile(filepath.Join(tests.Out, "file $+~&^a#1"), 1000)
+	assert.NoError(t, err)
+	err = archiver.Tar.Make(filepath.Join(tests.Out, "a$+~&^a#.tar"), []string{file1.Name()})
+	assert.NoError(t, err)
+
+	artifactoryCli.Exec("upload", tests.Out+"/*", tests.RtRepo1+"/dir/", "--flat=true")
+	os.RemoveAll(tests.Out)
+	err = fileutils.CreateDirIfNotExist(tests.Out)
+	assert.NoError(t, err)
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=true", "--explode")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=false", "--explode")
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileSpecialChars)
+	// Concurrently download
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=true", "--explode", "--min-split=50")
+	artifactoryCli.Exec("dl", tests.RtRepo1+"/dir/a$+~&^a#.tar", tests.Out+"/dir $+~&^a# test/", "--flat=false", "--explode", "--min-split=50")
+	verifyExistAndCleanDir(t, tests.GetExtractedDownloadTarFileSpecialChars)
+	cleanArtifactoryTest()
+}
+
 func verifyExistAndCleanDir(t *testing.T, GetExtractedDownload func() []string) {
 	paths, err := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	assert.NoError(t, err)
 	tests.VerifyExistLocally(GetExtractedDownload(), paths, t)
 	os.RemoveAll(tests.Out)
 	assert.NoError(t, fileutils.CreateDirIfNotExist(tests.Out))
-
 }
 
 func TestArtifactoryUploadAsArchive(t *testing.T) {
@@ -936,12 +962,9 @@ func TestArtifactoryUploadAsArchive(t *testing.T) {
 			}
 			return properties[i].Key < properties[j].Key
 		})
-		assert.Equal(t, "k1", properties[0].Key)
-		assert.Equal(t, "v11", properties[0].Value)
-		assert.Equal(t, "k1", properties[1].Key)
-		assert.Equal(t, "v12", properties[1].Value)
-		assert.Equal(t, "k2", properties[2].Key)
-		assert.Equal(t, "v2", properties[2].Value)
+		assert.Contains(t, properties, rtutils.Property{Key: "k1", Value: "v11"})
+		assert.Contains(t, properties, rtutils.Property{Key: "k1", Value: "v12"})
+		assert.Contains(t, properties, rtutils.Property{Key: "k2", Value: "v2"})
 	}
 
 	// Check the files inside the archives by downloading and exploding them
@@ -3940,6 +3963,8 @@ func cleanArtifactoryTest() {
 		return
 	}
 	os.Unsetenv(coreutils.HomeDir)
+	os.Unsetenv(coreutils.BuildName)
+	os.Unsetenv(coreutils.BuildNumber)
 	log.Info("Cleaning test data...")
 	cleanArtifactory()
 	tests.CleanFileSystem()

@@ -1758,12 +1758,12 @@ func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd f
 	if err != nil {
 		return err
 	}
-	if exists {
+	// Verify config file is found.
+	// Fallback to legacy use if version & repo args are passed.
+	if exists && c.NArg() == 1 {
 		log.Debug("Go config file was found in:", configFilePath)
 		return goCmd(c, configFilePath)
 	}
-	log.Debug("Go config file wasn't found.")
-	// If config file not found, use Go legacy command
 	return legacyGoCmd(c)
 }
 
@@ -1808,9 +1808,6 @@ func goLegacyCmd(c *cli.Context) error {
 }
 
 func goPublishCmd(c *cli.Context, configFilePath string) error {
-	if c.NArg() != 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
 	buildConfiguration, err := createBuildConfigurationWithModule(c)
 	if err != nil {
 		return err
@@ -2679,7 +2676,7 @@ func curlCmd(c *cli.Context) error {
 func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 	curlCommand := coreCommonCommands.NewCurlCommand().SetArguments(cliutils.ExtractCommand(c))
 	rtCurlCommand := curl.NewRtCurlCommand(*curlCommand)
-	rtDetails, err := curlCommand.GetServerDetails()
+	rtDetails, err := rtCurlCommand.GetServerDetails()
 	if err != nil {
 		return nil, err
 	}

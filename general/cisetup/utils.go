@@ -27,7 +27,18 @@ const (
 	NpmRemoteDefaultName     = "npm-remote"
 	NpmRemoteDefaultUrl      = "https://registry.npmjs.org"
 	NpmVirtualDefaultName    = "npm-virtual"
+
+	// Build commands defaults
+	mavenDefaultBuildCmd  = "mvn clean install"
+	gradleDefaultBuildCmd = "gradle clean artifactoryPublish"
+	npmDefaultBuildCmd    = "npm install"
 )
+
+var buildCmdByTech = map[cisetup.Technology]string{
+	cisetup.Maven:  mavenDefaultBuildCmd,
+	cisetup.Gradle: gradleDefaultBuildCmd,
+	cisetup.Npm:    npmDefaultBuildCmd,
+}
 
 func CreateXrayServiceManager(serviceDetails *utilsconfig.ServerDetails) (*xray.XrayServicesManager, error) {
 	xrayDetails, err := serviceDetails.CreateXrayAuthConfig()
@@ -54,9 +65,9 @@ func GetVirtualRepo(serviceDetails *utilsconfig.ServerDetails, repoKey string) (
 	if err != nil {
 		return nil, err
 	}
-	virtualRepoDetailes := services.VirtualRepositoryBaseParams{}
-	err = servicesManager.GetRepository(repoKey, &virtualRepoDetailes)
-	return &virtualRepoDetailes, err
+	virtualRepoDetails := services.VirtualRepositoryBaseParams{}
+	err = servicesManager.GetRepository(repoKey, &virtualRepoDetails)
+	return &virtualRepoDetails, err
 }
 
 func contains(arr []string, str string) bool {
