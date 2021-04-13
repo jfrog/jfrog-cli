@@ -63,7 +63,6 @@ func runTestNpm(t *testing.T, native bool) {
 		{command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmScopedProjectPath, validationFunc: validateNpmInstall},
 		{command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmInstall},
 		{command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "--production"},
-		{command: "npm-install", repo: tests.NpmRemoteRepo, wd: npmProjectPath, validationFunc: validateNpmInstall, npmArgs: "-only=dev"},
 		{command: "npmi", repo: tests.NpmRemoteRepo, wd: npmNpmrcProjectPath, validationFunc: validateNpmPackInstall, npmArgs: "yaml"},
 		{command: "npmp", repo: tests.NpmRepo, wd: npmScopedProjectPath, moduleName: ModuleNameJFrogTest, validationFunc: validateNpmScopedPublish},
 		{command: "npm-publish", repo: tests.NpmRepo, wd: npmProjectPath, validationFunc: validateNpmPublish},
@@ -210,10 +209,7 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 		id     string
 		scopes []string
 	}
-	var expectedDependencies []expectedDependency
-	if !strings.Contains(npmTestParams.npmArgs, "-only=dev") {
-		expectedDependencies = append(expectedDependencies, expectedDependency{id: "xml:1.0.1", scopes: []string{"production"}})
-	}
+	expectedDependencies := []expectedDependency{{id: "xml:1.0.1", scopes: []string{"production"}}}
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"development"}})
 	}
