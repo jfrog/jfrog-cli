@@ -239,3 +239,7 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 	}
 	return
 }
+
+func IsLegacyGoPublish(c *cli.Context) bool {
+	return c.Command.Name == "go-publish" && c.NArg() > 1
+}
