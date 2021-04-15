@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.46.2 (April 15, 2021)
+- Bug fix - "jfrog xr dl" with --explode can fail on windows
+
 ## 1.46.1 (April 5, 2021)
 - Bug fix - "jfrog xr curl" and "jfrog rt curl" don't recognize the --server-id option.
 
