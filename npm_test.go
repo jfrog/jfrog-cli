@@ -209,9 +209,9 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 		id     string
 		scopes []string
 	}
-	expectedDependencies := []expectedDependency{{id: "xml:1.0.1", scopes: []string{"production"}}}
+	expectedDependencies := []expectedDependency{{id: "xml:1.0.1", scopes: []string{"prod"}}}
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
-		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"development"}})
+		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"dev"}})
 	}
 	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.NpmBuildName, npmTestParams.buildNumber)
 	if err != nil {
