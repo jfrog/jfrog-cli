@@ -1643,8 +1643,11 @@ func npmPublishCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		result := npmCmd.Result()
-		return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), "", err)
+		if npmCmd.IsDetailedSummary() {
+			result := npmCmd.Result()
+			return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), "", err)
+		}
+		return nil
 	}
 	// If config file not found, use Npm legacy command
 	return npmLegacyPublishCmd(c)

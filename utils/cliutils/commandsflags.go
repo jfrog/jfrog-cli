@@ -1368,7 +1368,7 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, project,
+		buildNumber, module, project, detailedSummary,
 	},
 	NugetConfig: {
 		global, ServerIdResolve, RepoResolve, nugetV2,
