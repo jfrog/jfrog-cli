@@ -2303,9 +2303,20 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	return commands.Exec(buildPublishCmd)
+	err = commands.Exec(buildPublishCmd)
+	if buildPublishCmd.IsDetailedSummary() {
+		summary := buildPublishCmd.GetSummary()
+		if summary != nil {
+			if summary.IsSucceeded() {
+				return cliutils.PrintBuildInfoSummaryReport(1, 0, summary.GetSha256(), err)
+			}
+		} else {
+			return cliutils.PrintBuildInfoSummaryReport(0, 1, "", err)
+		}
+	}
+	return err
 }
 
 func buildAppendCmd(c *cli.Context) error {

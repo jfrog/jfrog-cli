@@ -102,6 +102,29 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	return summaryPrintError(mErr, originalErr)
 }
 
+func PrintBuildInfoSummaryReport(success, failed int, sha256 string, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	// When publishing build info to artifactory there is only 1 file deployed.
+	if success != 1 {
+		printBasicSummaryForFailure(basicSummary)
+		return summaryPrintError(mErr, originalErr)
+	}
+
+	printBuildInfoSummary(basicSummary, sha256)
+	return summaryPrintError(mErr, originalErr)
+}
+
+func printBasicSummaryForFailure(basicSummary string) {
+	log.Output(strings.TrimSuffix(basicSummary, "\n}") + ",\n" + " \"files\": []\n}")
+}
+
+func printBuildInfoSummary(basicSummary, sha256 string) {
+	log.Output(strings.TrimSuffix(basicSummary, "\n}") + ",\n" + " \"files\": [\n    {\n      \"sha256\": \"" + sha256 + "\"\n    }\n  ]\n}")
+}
+
 func CreateSummaryReportString(success, failed int, err error) (string, error) {
 	summaryReport := summary.New(err)
 	summaryReport.Totals.Success = success

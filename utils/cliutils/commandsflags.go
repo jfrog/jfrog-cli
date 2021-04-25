@@ -1295,7 +1295,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		envInclude, envExclude, insecureTls, project, detailedSummary,
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
