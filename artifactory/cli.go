@@ -2309,11 +2309,7 @@ func buildPublishCmd(c *cli.Context) error {
 	if buildPublishCmd.IsDetailedSummary() {
 		summary := buildPublishCmd.GetSummary()
 		if summary != nil {
-			if summary.IsSucceeded() {
-				return cliutils.PrintBuildInfoSummaryReport(1, 0, summary.GetSha256(), err)
-			}
-		} else {
-			return cliutils.PrintBuildInfoSummaryReport(0, 1, "", err)
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
 	}
 	return err

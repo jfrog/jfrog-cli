@@ -138,37 +138,31 @@ func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails,
 	return record
 }
 
-func PrintBuildInfoSummaryReport(success, failed int, sha256 string, originalErr error) error {
-	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr error) error {
+	success, failed := 1, 0
+	if !succeeded {
+		success, failed = 0, 1
+	}
+	summary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
 	}
-	// When publishing build info to artifactory there is only 1 file deployed.
-	if success != 1 {
-		printBasicSummaryForFailure(basicSummary)
-		return summaryPrintError(mErr, originalErr)
-	}
-
-	printBuildInfoSummary(basicSummary, sha256)
+	log.Output(summary)
 	return summaryPrintError(mErr, originalErr)
 }
 
-func printBasicSummaryForFailure(basicSummary string) {
-	log.Output(strings.TrimSuffix(basicSummary, "\n}") + ",\n" + " \"files\": []\n}")
-}
-
-func printBuildInfoSummary(basicSummary, sha256 string) {
-	log.Output(strings.TrimSuffix(basicSummary, "\n}") + ",\n" + " \"files\": [\n    {\n      \"sha256\": \"" + sha256 + "\"\n    }\n  ]\n}")
-}
-
 func CreateSummaryReportString(success, failed int, err error) (string, error) {
-	summaryReport := summary.New(err)
-	summaryReport.Totals.Success = success
-	summaryReport.Totals.Failure = failed
-	if err == nil && summaryReport.Totals.Failure != 0 {
-		summaryReport.Status = summary.Failure
-	}
+	summaryReport := summary.GetSummaryReport(success, failed, err)
 	content, mErr := summaryReport.Marshal()
+	if errorutils.CheckError(mErr) != nil {
+		return "", mErr
+	}
+	return utils.IndentJson(content), mErr
+}
+
+func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
+	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
+	content, mErr := buildInfoSummary.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
