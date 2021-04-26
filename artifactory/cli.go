@@ -3297,6 +3297,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
+	promotionParamsImpl.ProjectKey = c.String("project")
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.
