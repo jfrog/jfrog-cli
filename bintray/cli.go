@@ -877,7 +877,7 @@ func downloadVersion(c *cli.Context) error {
 		return err
 	}
 	downloaded, failed, err := commands.DownloadVersion(btConfig, params)
-	err = cliutils.PrintSummaryReport(downloaded, failed, nil, "", err)
+	err = cliutils.PrintSummaryReport(downloaded, failed, err)
 	if err != nil {
 		return err
 	}
@@ -931,7 +931,7 @@ func upload(c *cli.Context) error {
 		return err
 	}
 	uploaded, failed, err := commands.Upload(uploadConfig, params)
-	err = cliutils.PrintSummaryReport(uploaded, failed, nil, "", err)
+	err = cliutils.PrintSummaryReport(uploaded, failed, err)
 	if err != nil {
 		return err
 	}
@@ -973,7 +973,7 @@ func downloadFile(c *cli.Context) error {
 		return err
 	}
 	downloaded, failed, err := commands.DownloadFile(btConfig, params)
-	return cliutils.PrintSummaryReport(downloaded, failed, nil, "", err)
+	return cliutils.PrintSummaryReport(downloaded, failed, err)
 }
 
 func signUrl(c *cli.Context) error {
