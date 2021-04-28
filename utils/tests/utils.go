@@ -71,7 +71,7 @@ var timestampAdded bool
 func init() {
 	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "Gg0546790011!", "Artifactory password")
+	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
