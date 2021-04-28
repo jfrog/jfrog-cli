@@ -228,6 +228,7 @@ const (
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
+	bpDetailedSummary  = buildPublishPrefix + detailedSummary
 	envInclude         = "env-include"
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
@@ -787,6 +788,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
 	},
+	bpDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the build info artifact.` `",
+	},
 	envInclude: cli.StringFlag{
 		Name:  envInclude,
 		Usage: "[Default: *] List of patterns in the form of \"value1;value2;...\" Only environment variables match those patterns will be included.` `",
@@ -1295,7 +1300,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		envInclude, envExclude, insecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
