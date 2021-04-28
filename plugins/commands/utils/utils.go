@@ -106,12 +106,12 @@ func CreatePluginsHttpDetails(rtDetails *config.ServerDetails) httputils.HttpCli
 		ApiKey:   rtDetails.ApiKey}
 }
 
-// Asserts a plugin's version is as expected by parsing the output of the version command.
+// Asserts a plugin's version is as expected, by parsing the output of the version command.
 func AssertPluginVersion(versionCmdOut string, expectedPluginVersion string) error {
 	// Get the actual version which is after the last space. (expected output to -v for example: "plugin-name version v1.0.0")
 	split := strings.Split(strings.TrimSpace(versionCmdOut), " ")
 	if len(split) != 3 {
-		return errorutils.CheckError(errors.New("failed verifying plugin version. Unexpected plugin output for version command"))
+		return errorutils.CheckError(errors.New("failed verifying plugin version. Unexpected plugin output for version command: '" + versionCmdOut + "'"))
 	}
 	if split[2] != expectedPluginVersion {
 		return errorutils.CheckError(errors.New("provided version does not match the plugin's actual version. " +
