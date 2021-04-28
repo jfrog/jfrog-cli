@@ -1655,6 +1655,14 @@ func GetUploadExpectedRepo1SyncDeleteStep4() []string {
 	}
 }
 
+func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
+	path1, path2, path3 := "testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in"
+	file1 := clientutils.FileTransferDetails{SourcePath: path1, TargetPath: RtUrl + filepath.Join(RtRepo1, path1), Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"}
+	file2 := clientutils.FileTransferDetails{SourcePath: path2, TargetPath: RtUrl + filepath.Join(RtRepo1, path2), Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"}
+	file3 := clientutils.FileTransferDetails{SourcePath: path3, TargetPath: RtUrl + filepath.Join(RtRepo1, path3), Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"}
+	return []clientutils.FileTransferDetails{file3, file2, file1}
+}
+
 func GetReplicationConfig() []clientutils.ReplicationParams {
 	return []clientutils.ReplicationParams{
 		{

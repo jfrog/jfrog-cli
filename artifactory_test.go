@@ -3608,6 +3608,7 @@ func TestSummaryReport(t *testing.T) {
 }
 
 func TestUploadDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t)
 	uploadCmd := generic.NewUploadCommand()
 	fileSpec := spec.NewBuilder().Pattern("testdata/a/a*.in").Target(tests.RtRepo1).BuildSpec()
 	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails).SetDetailedSummary(true)
@@ -3618,16 +3619,13 @@ func TestUploadDetailedSummary(t *testing.T) {
 	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
-	assert.Equal(t, files, expected())
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Sha256 < files[j].Sha256
+	})
+	assert.Equal(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	cleanArtifactoryTest()
 }
 
-func expected() []serviceutils.FileTransferDetails {
-	path1, path2, path3 := "testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in"
-	file1 := serviceutils.FileTransferDetails{SourcePath: path1, TargetPath: *tests.RtUrl + filepath.Join(tests.RtRepo1, path1), Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"}
-	file2 := serviceutils.FileTransferDetails{SourcePath: path2, TargetPath: *tests.RtUrl + filepath.Join(tests.RtRepo1, path2), Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"}
-	file3 := serviceutils.FileTransferDetails{SourcePath: path3, TargetPath: *tests.RtUrl + filepath.Join(tests.RtRepo1, path3), Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"}
-	return []serviceutils.FileTransferDetails{file3, file2, file1}
-}
 func createUploadConfiguration() *utils.UploadConfiguration {
 	uploadConfiguration := new(utils.UploadConfiguration)
 	uploadConfiguration.Retries = cliutils.Retries
