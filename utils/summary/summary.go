@@ -2,6 +2,7 @@ package summary
 
 import (
 	"encoding/json"
+	"strings"
 )
 
 type StatusType int
@@ -18,6 +19,21 @@ var StatusTypes = []string{
 
 func (statusType StatusType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(StatusTypes[statusType])
+}
+
+func (statusType *StatusType) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	switch strings.ToLower(s) {
+	default:
+		*statusType = Failure
+	case "success":
+		*statusType = Success
+
+	}
+	return nil
 }
 
 func NewSummary(err error) *Summary {

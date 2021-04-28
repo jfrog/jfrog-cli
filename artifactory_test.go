@@ -3615,14 +3615,13 @@ func TestUploadDetailedSummary(t *testing.T) {
 	commands.Exec(uploadCmd)
 	result := uploadCmd.Result()
 	reader := result.Reader()
+	assert.NoError(t, reader.GetError())
+	defer reader.Close()
 	var files []serviceutils.FileTransferDetails
 	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].Sha256 < files[j].Sha256
-	})
-	assert.Equal(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
 	cleanArtifactoryTest()
 }
 
