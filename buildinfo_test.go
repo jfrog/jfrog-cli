@@ -221,7 +221,7 @@ func verifyBuildInfoDetailedSummary(t *testing.T, buffer *bytes.Buffer, logger l
 	// Verify a sha256 was returned
 	assert.NotEqual(t, 0, len(summary.Sha256Array), "Summary validation failed - no sha256 has returned from artifactory.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
-	assert.NotEqual(t, 256, len(summary.Sha256Array[0].Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
+	assert.Equal(t, 64, len(summary.Sha256Array[0].Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
 }
 
 type BuildInfoDetailedSummary struct {
