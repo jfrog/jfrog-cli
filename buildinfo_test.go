@@ -193,7 +193,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
 
 	// Upload files with build name & number.
-	specFile, err := tests.CreateSpec(tests.UploadFlatRecursive)
+	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
 	assert.NoError(t, err)
 	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
 	// Verify build dir is not empty

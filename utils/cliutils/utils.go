@@ -49,13 +49,13 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 	}
 }
 
-type detailedSummaryRecord struct {
+type DetailedSummaryRecord struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
 }
 
-type uploadDetailedSummaryRecord struct {
-	detailedSummaryRecord
+type UploadDetailedSummaryRecord struct {
+	DetailedSummaryRecord
 	Sha256 string `json:"sha256"`
 }
 
@@ -97,7 +97,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	defer reader.Close()
 	writer, mErr := content.NewContentWriter("files", false, true)
 	if mErr != nil {
-		printFailureDetailedSummary(basicSummary)
+		log.Output(basicSummary)
 		return summaryPrintError(mErr, originalErr)
 	}
 	// We remove the closing curly bracket in order to append the affected files array using a responseWriter to write directly to stdout.
@@ -117,20 +117,16 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	return summaryPrintError(mErr, originalErr)
 }
 
-func printFailureDetailedSummary(basicSummary string) {
-	log.Output(strings.TrimSuffix(basicSummary, "\n}") + ",\n" + " \"files\": []\n}")
-}
-
 // Get the detailed summary record.
 // In case of an upload command we want to print sha256 of the uploaded file in addition to the source and the target.
 func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails, isUploadCommand bool) interface{} {
-	record := detailedSummaryRecord{
+	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
 	}
 	if isUploadCommand {
-		uploadRecord := uploadDetailedSummaryRecord{
-			detailedSummaryRecord: record,
+		uploadRecord := UploadDetailedSummaryRecord{
+			DetailedSummaryRecord: record,
 			Sha256:                transferDetails.Sha256,
 		}
 		return uploadRecord
