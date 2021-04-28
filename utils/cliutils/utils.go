@@ -24,12 +24,32 @@ type OnError string
 func init() {
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
-	if cliUserAgent == "" {
-		cliUserAgent = ClientAgent + "/" + CliVersion
+	if cliUserAgent != "" {
+		cliUserAgentName, cliUserAgentVersion := splitAgentNameAndVersion(cliUserAgent)
+		coreutils.SetCliUserAgentName(cliUserAgentName)
+		coreutils.SetCliUserAgentVersion(cliUserAgentVersion)
+	} else {
+		coreutils.SetCliUserAgentName(ClientAgent)
+		coreutils.SetCliUserAgentVersion(CliVersion)
 	}
-	coreutils.SetCliUserAgent(cliUserAgent)
-	coreutils.SetClientAgent(ClientAgent)
-	coreutils.SetVersion(CliVersion)
+	coreutils.SetClientAgentName(ClientAgent)
+	coreutils.SetClientAgentVersion(CliVersion)
+}
+
+// Splits the full agent name to its name and version.
+// The full agent name needs to be the agent name and version separated by a slash ('/').
+// If the full agent name doesn't include a version, then it's returned as the agent name and an empty string is returned as the agent version.
+func splitAgentNameAndVersion(fullAgentName string) (string, string) {
+	var agentName, agentVersion string
+	lastSlashIndex := strings.LastIndex(fullAgentName, "/")
+	if lastSlashIndex == -1 {
+		agentName = fullAgentName
+	} else {
+		agentName = fullAgentName[:lastSlashIndex]
+		agentVersion = fullAgentName[lastSlashIndex+1:]
+	}
+
+	return agentName, agentVersion
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {
@@ -289,4 +309,8 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 		details.ApiKey = ""
 	}
 	return
+}
+
+func IsLegacyGoPublish(c *cli.Context) bool {
+	return c.Command.Name == "go-publish" && c.NArg() > 1
 }

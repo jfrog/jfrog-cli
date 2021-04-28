@@ -1759,8 +1759,8 @@ func goCmd(c *cli.Context, goCmd func(*cli.Context, string) error, legacyGoCmd f
 		return err
 	}
 	// Verify config file is found.
-	// Fallback to legacy use if version & repo args are passed.
-	if exists && c.NArg() == 1 {
+	// Fallback to legacy use if version & repo args are passed along with go-publish command.
+	if exists && !cliutils.IsLegacyGoPublish(c) {
 		log.Debug("Go config file was found in:", configFilePath)
 		return goCmd(c, configFilePath)
 	}
@@ -3304,6 +3304,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
+	promotionParamsImpl.ProjectKey = c.String("project")
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.
