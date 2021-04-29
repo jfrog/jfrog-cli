@@ -845,7 +845,7 @@ var flagsMap = map[string]cli.Flag{
 		Name:  copyFlag,
 		Usage: "[Default: false] If set true, the build artifacts and dependencies are copied to the target repository, otherwise they are moved.` `",
 	},
-	failFast: cli.BoolFlag{
+	failFast: cli.BoolTFlag{
 		Name:  failFast,
 		Usage: "[Default: true] If set true, fail and abort the operation upon receiving an error.` `",
 	},
