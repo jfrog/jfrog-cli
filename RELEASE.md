@@ -1,5 +1,30 @@
 # Release Notes
 
+## 1.47.0 (April 28, 2021)
+- "jfrog rt bp" -  New --detailed-summary option added
+- "jfrog rt u" - The --detailed-summary option now also returns sha256 of the uploaded files
+- The maven and gradle extractors were upgraded
+- The value of the JFROG_CLI_USER_AGENT environment variable now also controls the agent name in the build-info
+- Bug fix - The dryRun option of release bundle management APIs returns an error 
+- Bug fix - Cannot install a jfrog-cli plugin before uninstalling the installed version
+- Bug fix - The "jfrog rt bpr" command ignores the --project option
+
+## 1.46.4 (April 19, 2021)
+- Bug fix - Download fails with panic, if filtered build does not exist
+- Bug fix - Remove rt URL validation on config command
+- Bug fix - 'jfrog --version' shows error an error on windows 2012
+- Bug fix - Panic is thrown when providing a wrong image tag
+- Bug fix - Config import can fail is some scenarios
+- Ignores the transitive option when downloading, if Artifactory version is not compatible
+- Modify the separator used for creating the temp dir, which stored the build-info before it is published
+- Support for npm 7.7
+
+## 1.46.3 (April 16, 2021)
+- Bug fix - "jfrog rt u" can fail while reading the latest git commit message
+
+## 1.46.2 (April 15, 2021)
+- Bug fix - "jfrog rt dl" with --explode can fail on windows
+
 ## 1.46.1 (April 5, 2021)
 - Bug fix - "jfrog xr curl" and "jfrog rt curl" don't recognize the --server-id option.
 

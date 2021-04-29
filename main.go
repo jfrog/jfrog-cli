@@ -87,7 +87,7 @@ func main() {
 
 func execMain() error {
 	// Set JFrog CLI's user-agent on the jfrog-client-go.
-	clientutils.SetUserAgent(coreutils.GetUserAgent())
+	clientutils.SetUserAgent(coreutils.GetCliUserAgent())
 
 	app := cli.NewApp()
 	app.Name = "jfrog"
@@ -142,17 +142,19 @@ func getCommands() []cli.Command {
 			Subcommands: config.GetCommands(),
 		},
 		// Disabled
-		//{
-		//	Name:         "ci-setup",
-		//	Usage:        cisetup.Description,
-		//	HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
-		//	UsageText:    cisetup.Arguments,
-		//	ArgsUsage:    common.CreateEnvVars(),
-		//	BashComplete: corecommon.CreateBashCompletionFunc(),
-		//	Action: func(c *cli.Context) error {
-		//		return commands.RunCiSetupCmd()
-		//	},
-		//},
+		/*
+			{
+				Name:         "ci-setup",
+				Usage:        cisetup.Description,
+				HelpName:     corecommon.CreateUsage("ci-setup", cisetup.Description, cisetup.Usage),
+				UsageText:    cisetup.Arguments,
+				ArgsUsage:    common.CreateEnvVars(),
+				BashComplete: corecommon.CreateBashCompletionFunc(),
+				Action: func(c *cli.Context) error {
+					return commands.RunCiSetupCmd()
+				},
+			},
+		*/
 	}
 	return append(cliNameSpaces, utils.GetPlugins()...)
 }
