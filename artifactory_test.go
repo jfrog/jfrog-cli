@@ -3610,7 +3610,7 @@ func TestSummaryReport(t *testing.T) {
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t)
 	uploadCmd := generic.NewUploadCommand()
-	fileSpec := spec.NewBuilder().Pattern("testdata/a/a*.in").Target(tests.RtRepo1).BuildSpec()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
 	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails).SetDetailedSummary(true)
 	commands.Exec(uploadCmd)
 	result := uploadCmd.Result()
