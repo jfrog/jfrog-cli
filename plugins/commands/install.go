@@ -60,7 +60,7 @@ func runInstallCmd(requestedPlugin string) error {
 		return err
 	}
 	if !should {
-		return errorutils.CheckError(errors.New("requested plugin already exists locally"))
+		return errorutils.CheckError(errors.New("the plugin with the requested version already exists locally"))
 	}
 
 	return downloadPlugin(pluginsDir, pluginName, downloadUrl, httpDetails)
@@ -115,8 +115,11 @@ func getServerDetails() (string, httputils.HttpClientDetails, error) {
 // Checks if the requested plugin exists in registry and does not exists locally.
 func shouldDownloadPlugin(pluginsDir, pluginName, downloadUrl string, httpDetails httputils.HttpClientDetails) (bool, error) {
 	exists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, commandsUtils.GetLocalPluginExecutableName(pluginName)), false)
-	if err != nil || exists {
+	if err != nil {
 		return false, err
+	}
+	if !exists {
+		return true, nil
 	}
 	log.Debug("Verifying plugin download is needed...")
 	client, err := httpclient.ClientBuilder().Build()

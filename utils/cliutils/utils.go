@@ -24,12 +24,32 @@ type OnError string
 func init() {
 	// Initialize cli-core values.
 	cliUserAgent := os.Getenv(UserAgent)
-	if cliUserAgent == "" {
-		cliUserAgent = ClientAgent + "/" + CliVersion
+	if cliUserAgent != "" {
+		cliUserAgentName, cliUserAgentVersion := splitAgentNameAndVersion(cliUserAgent)
+		coreutils.SetCliUserAgentName(cliUserAgentName)
+		coreutils.SetCliUserAgentVersion(cliUserAgentVersion)
+	} else {
+		coreutils.SetCliUserAgentName(ClientAgent)
+		coreutils.SetCliUserAgentVersion(CliVersion)
 	}
-	coreutils.SetCliUserAgent(cliUserAgent)
-	coreutils.SetClientAgent(ClientAgent)
-	coreutils.SetVersion(CliVersion)
+	coreutils.SetClientAgentName(ClientAgent)
+	coreutils.SetClientAgentVersion(CliVersion)
+}
+
+// Splits the full agent name to its name and version.
+// The full agent name needs to be the agent name and version separated by a slash ('/').
+// If the full agent name doesn't include a version, then it's returned as the agent name and an empty string is returned as the agent version.
+func splitAgentNameAndVersion(fullAgentName string) (string, string) {
+	var agentName, agentVersion string
+	lastSlashIndex := strings.LastIndex(fullAgentName, "/")
+	if lastSlashIndex == -1 {
+		agentName = fullAgentName
+	} else {
+		agentName = fullAgentName[:lastSlashIndex]
+		agentVersion = fullAgentName[lastSlashIndex+1:]
+	}
+
+	return agentName, agentVersion
 }
 
 func GetCliError(err error, success, failed int, failNoOp bool) error {
@@ -49,10 +69,14 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 	}
 }
 
-type detailedSummaryRecord struct {
+type DetailedSummaryRecord struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
-	Sha256 string `json:"sha256,omitempty"`
+}
+
+type UploadDetailedSummaryRecord struct {
+	DetailedSummaryRecord
+	Sha256 string `json:"sha256"`
 }
 
 // Print summary report.
@@ -68,8 +92,18 @@ func summaryPrintError(summaryError, originalError error) error {
 	return summaryError
 }
 
+func PrintSummaryReport(success, failed int, originalErr error) error {
+	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	log.Output(basicSummary)
+	return summaryPrintError(mErr, originalErr)
+}
+
+// Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUrl string, originalErr error) error {
+func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, isUploadCommand bool, originalErr error) error {
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
@@ -90,26 +124,61 @@ func PrintSummaryReport(success, failed int, reader *content.ContentReader, rtUr
 	basicSummary = strings.TrimSuffix(basicSummary, "\n}") + ","
 	log.Output(basicSummary)
 	defer log.Output("}")
-	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
-		record := detailedSummaryRecord{
-			Source: transferDetails.SourcePath,
-			Target: transferDetails.TargetPath,
-			Sha256: transferDetails.Sha256,
+	readerLength, _ := reader.Length()
+	// If the reader is empty we will print an empty array.
+	if readerLength == 0 {
+		log.Output("  files: []")
+	} else {
+		for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+			writer.Write(getDetailedSummaryRecord(transferDetails, isUploadCommand))
 		}
-		writer.Write(record)
 	}
 	mErr = writer.Close()
 	return summaryPrintError(mErr, originalErr)
 }
 
-func CreateSummaryReportString(success, failed int, err error) (string, error) {
-	summaryReport := summary.New(err)
-	summaryReport.Totals.Success = success
-	summaryReport.Totals.Failure = failed
-	if err == nil && summaryReport.Totals.Failure != 0 {
-		summaryReport.Status = summary.Failure
+// Get the detailed summary record.
+// In case of an upload command we want to print sha256 of the uploaded file in addition to the source and the target.
+func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails, isUploadCommand bool) interface{} {
+	record := DetailedSummaryRecord{
+		Source: transferDetails.SourcePath,
+		Target: transferDetails.TargetPath,
 	}
+	if isUploadCommand {
+		uploadRecord := UploadDetailedSummaryRecord{
+			DetailedSummaryRecord: record,
+			Sha256:                transferDetails.Sha256,
+		}
+		return uploadRecord
+	}
+	return record
+}
+
+func PrintBuildInfoSummaryReport(succeeded bool, sha256 string, originalErr error) error {
+	success, failed := 1, 0
+	if !succeeded {
+		success, failed = 0, 1
+	}
+	summary, mErr := CreateBuildInfoSummaryReportString(success, failed, sha256, originalErr)
+	if mErr != nil {
+		return summaryPrintError(mErr, originalErr)
+	}
+	log.Output(summary)
+	return summaryPrintError(mErr, originalErr)
+}
+
+func CreateSummaryReportString(success, failed int, err error) (string, error) {
+	summaryReport := summary.GetSummaryReport(success, failed, err)
 	content, mErr := summaryReport.Marshal()
+	if errorutils.CheckError(mErr) != nil {
+		return "", mErr
+	}
+	return utils.IndentJson(content), mErr
+}
+
+func CreateBuildInfoSummaryReportString(success, failed int, sha256 string, err error) (string, error) {
+	buildInfoSummary := summary.NewBuildInfoSummary(success, failed, sha256, err)
+	content, mErr := buildInfoSummary.Marshal()
 	if errorutils.CheckError(mErr) != nil {
 		return "", mErr
 	}
@@ -240,4 +309,8 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 		details.ApiKey = ""
 	}
 	return
+}
+
+func IsLegacyGoPublish(c *cli.Context) bool {
+	return c.Command.Name == "go-publish" && c.NArg() > 1
 }

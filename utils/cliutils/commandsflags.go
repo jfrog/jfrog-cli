@@ -228,6 +228,7 @@ const (
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
+	bpDetailedSummary  = buildPublishPrefix + detailedSummary
 	envInclude         = "env-include"
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
@@ -286,14 +287,14 @@ const (
 
 	// Build tool config flags
 	global          = "global"
-	ServerIdResolve = "server-id-resolve"
+	serverIdResolve = "server-id-resolve"
 	serverIdDeploy  = "server-id-deploy"
-	RepoResolve     = "repo-resolve"
+	repoResolve     = "repo-resolve"
 	repoDeploy      = "repo-deploy"
 
 	// Unique maven-config flags
-	RepoResolveReleases  = "repo-resolve-releases"
-	RepoResolveSnapshots = "repo-resolve-snapshots"
+	repoResolveReleases  = "repo-resolve-releases"
+	repoResolveSnapshots = "repo-resolve-snapshots"
 	repoDeployReleases   = "repo-deploy-releases"
 	repoDeploySnapshots  = "repo-deploy-snapshots"
 
@@ -787,6 +788,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
 	},
+	bpDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the build info artifact.` `",
+	},
 	envInclude: cli.StringFlag{
 		Name:  envInclude,
 		Usage: "[Default: *] List of patterns in the form of \"value1;value2;...\" Only environment variables match those patterns will be included.` `",
@@ -927,20 +932,20 @@ var flagsMap = map[string]cli.Flag{
 		Name:  global,
 		Usage: "[Default: false] Set to true if you'd like the configuration to be global (for all projects). Specific projects can override the global configuration.` `",
 	},
-	ServerIdResolve: cli.StringFlag{
-		Name:  ServerIdResolve,
-		Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog rt c' command.` `",
+	serverIdResolve: cli.StringFlag{
+		Name:  serverIdResolve,
+		Usage: "[Optional] Artifactory server ID for resolution. The server should configured using the 'jfrog c add' command.` `",
 	},
 	serverIdDeploy: cli.StringFlag{
 		Name:  serverIdDeploy,
-		Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog rt c' command.` `",
+		Usage: "[Optional] Artifactory server ID for deployment. The server should configured using the 'jfrog c add' command.` `",
 	},
-	RepoResolveReleases: cli.StringFlag{
-		Name:  RepoResolveReleases,
+	repoResolveReleases: cli.StringFlag{
+		Name:  repoResolveReleases,
 		Usage: "[Optional] Resolution repository for release dependencies.` `",
 	},
-	RepoResolveSnapshots: cli.StringFlag{
-		Name:  RepoResolveSnapshots,
+	repoResolveSnapshots: cli.StringFlag{
+		Name:  repoResolveSnapshots,
 		Usage: "[Optional] Resolution repository for snapshot dependencies.` `",
 	},
 	repoDeployReleases: cli.StringFlag{
@@ -951,8 +956,8 @@ var flagsMap = map[string]cli.Flag{
 		Name:  repoDeploySnapshots,
 		Usage: "[Optional] Deployment repository for snapshot artifacts.` `",
 	},
-	RepoResolve: cli.StringFlag{
-		Name:  RepoResolve,
+	repoResolve: cli.StringFlag{
+		Name:  repoResolve,
 		Usage: "[Optional] Repository for dependencies resolution.` `",
 	},
 	repoDeploy: cli.StringFlag{
@@ -1295,7 +1300,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		envInclude, envExclude, insecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
@@ -1335,10 +1340,10 @@ var commandFlags = map[string][]string{
 		glcQuiet, insecureTls,
 	},
 	MvnConfig: {
-		global, ServerIdResolve, serverIdDeploy, RepoResolveReleases, RepoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots,
 	},
 	GradleConfig: {
-		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, useWrapper, deployMavenDesc,
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
@@ -1360,7 +1365,7 @@ var commandFlags = map[string][]string{
 		serverId, skipLogin, project,
 	},
 	NpmConfig: {
-		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	Npm: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
@@ -1371,20 +1376,20 @@ var commandFlags = map[string][]string{
 		buildNumber, module, project, detailedSummary,
 	},
 	NugetConfig: {
-		global, ServerIdResolve, RepoResolve, nugetV2,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Nuget: {
 		NugetArgs, SolutionRoot, LegacyNugetV2, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,
 		deprecatedAccessToken, buildName, buildNumber, module, project,
 	},
 	DotnetConfig: {
-		global, ServerIdResolve, RepoResolve, nugetV2,
+		global, serverIdResolve, repoResolve, nugetV2,
 	},
 	Dotnet: {
 		buildName, buildNumber, module, project,
 	},
 	GoConfig: {
-		global, ServerIdResolve, serverIdDeploy, RepoResolve, repoDeploy,
+		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
 		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project,
@@ -1404,7 +1409,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	PipConfig: {
-		global, ServerIdResolve, RepoResolve,
+		global, serverIdResolve, repoResolve,
 	},
 	PipInstall: {
 		buildName, buildNumber, module, project,

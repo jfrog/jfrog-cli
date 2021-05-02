@@ -256,15 +256,5 @@ To learn how to use JFrog CLI, please visit the [JFrog CLI User Guide](https://w
 # JFrog CLI Plugins
 JFrog CLI plugins support enhancing the functionality of JFrog CLI to meet the specific user and organization needs. The source code of a plugin is maintained as an open source Go project on GitHub. All public plugins are registered in JFrog CLI's Plugins Registry, which is hosted in the [jfrog-cli-plugins-reg](https://github.com/jfrog/jfrog-cli-plugins-reg) GitHub repository. We encourage you, as developers, to create plugins and share them publically with the rest of the community. Read more about this in the [JFrog CLI Plugin Developer Guide](guides/jfrog-cli-plugins-developer-guide.md).
 
-## Using JFrog CLI Docker Image
-The docker image of JFrog CLI can be pulled from Bintray by running the following command:
-````
-docker pull docker.bintray.io/jfrog/jfrog-cli-go:latest
-````
-Run a JFrog CLI command using docker as follows:
-````
-docker run docker.bintray.io/jfrog/jfrog-cli-go:latest jfrog <COMMAND>
-````
-
 # Release Notes
 The release notes are available [here](RELEASE.md#release-notes).
