@@ -1645,7 +1645,7 @@ func npmPublishCmd(c *cli.Context) error {
 		}
 		if npmCmd.IsDetailedSummary() {
 			result := npmCmd.Result()
-			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, err)
+			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 		}
 		return nil
 	}

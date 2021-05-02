@@ -321,9 +321,10 @@ const (
 	imageFile = "image-file"
 
 	// Unique npm flags
-	npmPrefix  = "npm-"
-	npmThreads = npmPrefix + threads
-	npmArgs    = "npm-args"
+	npmPrefix          = "npm-"
+	npmThreads         = npmPrefix + threads
+	npmDetailedSummary = npmPrefix + detailedSummary
+	npmArgs            = "npm-args"
 
 	// Unique nuget flags
 	NugetArgs    = "nuget-args"
@@ -1007,6 +1008,10 @@ var flagsMap = map[string]cli.Flag{
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
+	npmDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
+	},
 	NugetArgs: cli.StringFlag{
 		Name:   NugetArgs,
 		Usage:  "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
@@ -1373,7 +1378,7 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, project, detailedSummary,
+		buildNumber, module, project, npmDetailedSummary,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
