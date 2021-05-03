@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.47.1 (April 29, 2021)
+- Bug fix - Error when unmarshalling response received from JFrog Distribution
+
 ## 1.47.0 (April 28, 2021)
 - "jfrog rt bp" -  New --detailed-summary option added
 - "jfrog rt u" - The --detailed-summary option now also returns sha256 of the uploaded files
