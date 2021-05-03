@@ -20,7 +20,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 const pluginVersionCommandName = "-v"
@@ -119,16 +118,7 @@ func verifyMatchingVersion(pluginFullPath, pluginVersion string) error {
 	if err != nil {
 		return err
 	}
-	// Get the actual version which is after the last space. (expected output to -v for example: "plugin-name version v1.0.0")
-	split := strings.Split(strings.TrimSpace(output), " ")
-	if len(split) != 3 {
-		return errorutils.CheckError(errors.New("failed verifying plugin version. Unexpected plugin output for version command"))
-	}
-	if split[2] != pluginVersion {
-		return errorutils.CheckError(errors.New("provided version does not match the plugin's actual version. " +
-			"Provided: '" + pluginVersion + "', Actual: '" + split[2] + "'"))
-	}
-	return nil
+	return utils.AssertPluginVersion(output, pluginVersion)
 }
 
 func buildPlugin(pluginName, tmpDir string, arc utils.Architecture) (string, error) {

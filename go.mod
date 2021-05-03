@@ -7,11 +7,11 @@ require (
 	github.com/codegangsta/cli v1.20.0
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-git/go-git/v5 v5.2.0
-	github.com/gookit/color v1.3.2
+	github.com/gookit/color v1.4.2
 	github.com/jfrog/gocmd v0.2.0
 	github.com/jfrog/gofrog v1.0.6
-	github.com/jfrog/jfrog-cli-core v1.5.0
-	github.com/jfrog/jfrog-client-go v0.21.0
+	github.com/jfrog/jfrog-cli-core v1.6.1
+	github.com/jfrog/jfrog-client-go v0.22.1
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
@@ -23,9 +23,9 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.21.1-0.20210407150845-9ef28ec5a8cc
+replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.22.2-0.20210503105157-854e855c7267
 
-replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.5.1-0.20210408081431-c6c781b6fcdb
+replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.6.2-0.20210503111647-9303f9984f76
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 

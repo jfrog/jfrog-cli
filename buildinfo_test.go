@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jfrog/jfrog-cli/utils/summary"
+	"github.com/jfrog/jfrog-client-go/utils/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -179,6 +182,50 @@ func TestBuildAddDependenciesDryRun(t *testing.T) {
 
 	os.Chdir(wd)
 	cleanArtifactoryTest()
+}
+
+func TestBuildPublishDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t)
+	buildNumber := "11"
+
+	// Clean old build tests if exists.
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	assert.NoError(t, utils.RemoveBuildDir(tests.RtBuildName1, buildNumber, ""))
+
+	// Upload files with build name & number.
+	specFile, err := tests.CreateSpec(tests.UploadFlatNonRecursive)
+	assert.NoError(t, err)
+	assert.NoError(t, artifactoryCli.Exec("upload", "--spec="+specFile, "--build-name="+tests.RtBuildName1, "--build-number="+buildNumber))
+	// Verify build dir is not empty
+	assert.NotEmpty(t, getFilesFromBuildDir(t, tests.RtBuildName1, buildNumber, ""))
+
+	buffer, previousLog := tests.RedirectLogOutputToBuffer()
+	// Restore previous logger when the function returns
+	defer log.SetLogger(previousLog)
+	// Execute the bp command with --detailed-summary.
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--detailed-summary=true"))
+	verifyBuildInfoDetailedSummary(t, buffer, previousLog)
+
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
+	cleanArtifactoryTest()
+}
+
+func verifyBuildInfoDetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.Log) {
+	content := buffer.Bytes()
+	buffer.Reset()
+	logger.Output(string(content))
+
+	var result summary.BuildInfoSummary
+	err := json.Unmarshal(content, &result)
+	assert.NoError(t, err)
+
+	assert.Equal(t, summary.Success, result.Status)
+	assert.Equal(t, 1, result.Totals.Success)
+	assert.Equal(t, 0, result.Totals.Failure)
+	// Verify a sha256 was returned
+	assert.NotEqual(t, 0, len(result.Sha256Array), "Summary validation failed - no sha256 has returned from artifactory.")
+	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
+	assert.Equal(t, 64, len(result.Sha256Array[0].Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
 }
 
 func TestBuildPublishDryRun(t *testing.T) {

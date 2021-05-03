@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
@@ -3603,6 +3605,31 @@ func TestSummaryReport(t *testing.T) {
 	verifySummary(t, buffer, 3, 0, previousLog)
 
 	cleanArtifactoryTest()
+}
+
+func TestUploadDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t)
+	uploadCmd := generic.NewUploadCommand()
+	fileSpec := spec.NewBuilder().Pattern("testdata/a/a*.in").Target(tests.RtRepo1).BuildSpec()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails).SetDetailedSummary(true)
+	commands.Exec(uploadCmd)
+	result := uploadCmd.Result()
+	reader := result.Reader()
+	assert.NoError(t, reader.GetError())
+	defer reader.Close()
+	var files []serviceutils.FileTransferDetails
+	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	cleanArtifactoryTest()
+}
+
+func createUploadConfiguration() *utils.UploadConfiguration {
+	uploadConfiguration := new(utils.UploadConfiguration)
+	uploadConfiguration.Retries = cliutils.Retries
+	uploadConfiguration.Threads = cliutils.Threads
+	return uploadConfiguration
 }
 
 func TestArtifactoryBuildDiscard(t *testing.T) {
