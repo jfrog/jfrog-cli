@@ -27,6 +27,8 @@ require (
 
 replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210502141218-45f72a8ed50f
 
+//replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
+
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6

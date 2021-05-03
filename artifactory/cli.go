@@ -1632,7 +1632,7 @@ func npmPublishCmd(c *cli.Context) error {
 	if exists {
 		// Found a config file. Continue as native command.
 		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number, module and detailed-summary.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
 			return err
