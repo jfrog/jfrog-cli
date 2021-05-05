@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
 	"github.com/jfrog/jfrog-cli-core/general/cisetup"
+	"github.com/jfrog/jfrog-client-go/pipelines"
 	pipelinesservices "github.com/jfrog/jfrog-client-go/pipelines/services"
 	"github.com/jfrog/jfrog-client-go/utils"
 
@@ -27,11 +28,13 @@ import (
 	rtutils "github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommoncommands "github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/utils/config"
 	utilsconfig "github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
+	clientConfig "github.com/jfrog/jfrog-client-go/config"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -91,6 +94,15 @@ func logBeginningInstructions() error {
 		" 2. When asked to provide credentials for your JFrog Platform and Git provider, please make sure the credentials have admin privileges.",
 		" 3. You can exit the command by hitting 'control + C' at any time. The values you provided before exiting are saved (with the exception of passwords and tokens) and will be set as defaults the next time you run the command.",
 		"", "",
+	}
+	return writeToScreen(strings.Join(instructions, "\n"))
+}
+
+func logActivatePipelinesInstructions() error {
+	instructions := []string{
+		"",
+		colorTitle("Free"),
+		"",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
@@ -166,6 +178,12 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
+	// Ask the user which CI he tries to setup
+	err = cc.desiredOutputPhase()
+	err = saveIfNoError(err, cc.data)
+	if err != nil {
+		return err
+	}
 	// Interactively create Artifactory repository based on the detected technologies and on going user input
 	err = cc.artifactoryConfigPhase()
 	err = saveIfNoError(err, cc.data)
@@ -184,17 +202,34 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	// Configure pipelines, create and stage pipelines.yml.
-	pipelineName, err := cc.runPipelinesPhase()
-	if err != nil {
-		return err
+	var ciFileName string
+	switch cc.data.CiType {
+	case cisetup.Pipelines:
+		// Configure pipelines, create and stage pipelines.yml.
+		ciFileName, err = cc.runPipelinesPhase()
+		if err != nil {
+			return err
+		}
+	case cisetup.Jenkins:
+		// Create and stage Jenkinsfile.
+		ciFileName, err = cc.runJenkinsPhase()
+		if err != nil {
+			return err
+		}
+	case cisetup.GithubActions:
+		// Create and stage main.yml.
+		ciFileName, err = cc.runGithubActionsPhase()
+		if err != nil {
+			return err
+		}
+
 	}
 	// Create group and permission target if needed.
 	err = runIdePhase()
 	if err != nil {
 		return err
 	}
-	return cc.logCompletionInstruction(pipelineName)
+	return cc.logCompletionInstruction(ciFileName)
 }
 
 func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
@@ -298,6 +333,30 @@ func runConfigCmd() (err error) {
 	}
 }
 
+func (cc *CiSetupCommand) runJenkinsPhase() (string, error) {
+	return "", nil
+}
+
+func (cc *CiSetupCommand) runGithubActionsPhase() (string, error) {
+	generator := cisetup.JFrogPipelinesYamlGenerator{
+		SetupData: cc.data,
+	}
+	pipelinesYamlBytes, pipelineName, err := generator.Generate()
+	if err != nil {
+		return "", err
+	}
+
+	err = cc.saveCiConfigToFile(pipelinesYamlBytes, cisetup.PipelinesYamlName)
+	if err != nil {
+		return "", err
+	}
+	err = cc.stageCiConfigFile(cisetup.PipelinesYamlName)
+	if err != nil {
+		return "", err
+	}
+	return pipelineName, nil
+}
+
 func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 	var vcsIntName string
 	var rtIntName string
@@ -334,20 +393,20 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 		return "", err
 	}
 
-	err = cc.saveYamlToFile(pipelinesYamlBytes)
+	err = cc.saveCiConfigToFile(pipelinesYamlBytes, cisetup.PipelinesYamlName)
 	if err != nil {
 		return "", err
 	}
-	err = cc.stagePipelinesYaml(cisetup.PipelinesYamlPath)
+	err = cc.stageCiConfigFile(cisetup.PipelinesYamlName)
 	if err != nil {
 		return "", err
 	}
 	return pipelineName, nil
 }
 
-func (cc *CiSetupCommand) saveYamlToFile(yaml []byte) error {
-	path := filepath.Join(cc.data.LocalDirPath, cisetup.PipelinesYamlPath)
-	log.Info("Generating pipelines.yml at: '" + path + "'...")
+func (cc *CiSetupCommand) saveCiConfigToFile(yaml []byte, fileName string) error {
+	path := filepath.Join(cc.data.LocalDirPath, fileName)
+	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, path))
 	return ioutil.WriteFile(path, yaml, 0644)
 }
 
@@ -634,6 +693,24 @@ func promptGitProviderSelection() (selected string, err error) {
 	return
 }
 
+func promptCiTypeSelection() (selected string, err error) {
+	ciTypes := []cisetup.CiType{
+		cisetup.Pipelines,
+		cisetup.Jenkins,
+		cisetup.GithubActions,
+	}
+
+	var selectableItems []ioutils.PromptItem
+	for _, ci := range ciTypes {
+		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
+	}
+	println("Choose the desired CI type:")
+	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
+		*item.TargetValue = item.Option
+	})
+	return
+}
+
 func (cc *CiSetupCommand) prepareVcsData() (err error) {
 	cc.data.LocalDirPath = DefaultWorkspace
 	for {
@@ -684,8 +761,8 @@ func (cc *CiSetupCommand) cloneProject() (err error) {
 	return errorutils.CheckError(err)
 }
 
-func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
-	log.Info("Staging pipelines.yml for git commit...")
+func (cc *CiSetupCommand) stageCiConfigFile(ciFileName string) error {
+	log.Info(fmt.Sprintf("Staging %s for git commit...", ciFileName))
 	repo, err := git.PlainOpen(cc.data.LocalDirPath)
 	if err != nil {
 		return errorutils.CheckError(err)
@@ -694,7 +771,7 @@ func (cc *CiSetupCommand) stagePipelinesYaml(path string) error {
 	if err != nil {
 		return errorutils.CheckError(err)
 	}
-	_, err = worktree.Add(path)
+	_, err = worktree.Add(ciFileName)
 	return errorutils.CheckError(err)
 }
 
@@ -777,6 +854,61 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 		if err != nil {
 			log.Error(err)
 		} else {
+			return nil
+		}
+	}
+}
+
+func (cc *CiSetupCommand) desiredOutputPhase() (err error) {
+	var ciType string
+	for {
+		ciType, err = promptCiTypeSelection()
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		if ciType == cisetup.Pipelines {
+			// validate that pipelines is aviable
+			serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			pipelinesDetails := *serviceDetails
+			pipelinesDetails.AccessToken = ""
+			pipelinesDetails.User = ""
+			pipelinesDetails.Password = ""
+			pipelinesDetails.ApiKey = ""
+
+			pAuth, err := pipelinesDetails.CreatePipelinesAuthConfig()
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			serviceConfig, err := clientConfig.NewConfigBuilder().
+				SetServiceDetails(pAuth).
+				SetDryRun(false).
+				Build()
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			pipelinesMgr, err := pipelines.New(serviceConfig)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			_, err = pipelinesMgr.GetSystemInfo()
+			if err == nil {
+				cc.data.CiType = cisetup.CiType(ciType)
+				return nil
+			}
+			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
+				logActivatePipelinesInstructions()
+			}
+			log.Error(err)
+		} else { // The user doesn't choose Pipelines.
+			cc.data.CiType = cisetup.CiType(ciType)
 			return nil
 		}
 	}
