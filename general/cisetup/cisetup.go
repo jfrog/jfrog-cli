@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"syscall"
 
@@ -528,15 +527,21 @@ func (cc *CiSetupCommand) xrayConfigPhase() (err error) {
 }
 
 func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
+	err = cc.printDetectedTechs()
+	if err != nil {
+		return err
+	}
 	atLeastOneTechBuilt := false
-	cc.data.ArtifactoryVirtualRepos = make(map[cisetup.Technology]string)
+	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo) // todo is pointer init
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range cc.data.DetectedTechnologies {
-		if detected && coreutils.AskYesNo(fmt.Sprintf("It looks like the source code is built using %s. Would you like to resolve the %s dependencies from Artifactory?", tech, tech), true) {
+		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
+			cc.data.BuiltTechnologies[tech] = &cisetup.TechnologyInfo{}
 			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
 				return
 			}
+			cc.getBuildCmd(tech)
 			atLeastOneTechBuilt = true
 		} else {
 			cc.data.DetectedTechnologies[tech] = false
@@ -545,26 +550,41 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 	if !atLeastOneTechBuilt {
 		return errorutils.CheckError(errors.New("at least one of the supported technologies is expected to be chosen for building"))
 	}
-	cc.getBuildCmd()
 	return nil
 }
 
-func (cc *CiSetupCommand) getBuildCmd() {
-	defaultBuildCmd := cc.defaultData.BuildCommand
-	// If technologies are not the same as in history, generate new default build cmd.
-	if !reflect.DeepEqual(cc.data.DetectedTechnologies, cc.defaultData.DetectedTechnologies) {
-		var buildCommands []string
-		for tech, detected := range cc.data.DetectedTechnologies {
-			if detected {
-				buildCommands = append(buildCommands, buildCmdByTech[tech])
-			}
-			defaultBuildCmd = strings.Join(buildCommands, " && ")
+func (cc *CiSetupCommand) printDetectedTechs() error {
+	var techs []string
+	for tech, detected := range cc.data.DetectedTechnologies {
+		if detected {
+			techs = append(techs, string(tech))
 		}
 	}
+	if len(techs) == 0 {
+		return errorutils.CheckError(errors.New("no supported technology was found in the project"))
+	}
+	log.Info("The next step is to provide the commands to build your code. It looks like the code can be built with " + getExplicitTechsListByNumber(techs) + ".")
+	return nil
+}
 
-	// Ask for working build command
-	prompt := "Please provide a single-line build command. You may use the && operator. Currently scripts (such as bash scripts) are not supported"
-	ioutils.ScanFromConsole(prompt, &cc.data.BuildCommand, defaultBuildCmd)
+// Get the explicit list of technologies, for ex: "maven, gradle and npm"
+func getExplicitTechsListByNumber(techs []string) string {
+	if len(techs) == 1 {
+		return techs[0]
+	}
+	return strings.Join(techs[0:len(techs)-1], ", ") + " and " + techs[len(techs)-1]
+}
+
+func (cc *CiSetupCommand) getBuildCmd(tech cisetup.Technology) {
+	defaultBuildCmd := buildCmdByTech[tech]
+	if info, built := cc.defaultData.BuiltTechnologies[tech]; built {
+		if info.BuildCmd != "" {
+			defaultBuildCmd = info.BuildCmd
+		}
+	}
+	// Ask for working build command.
+	prompt := "Please provide a single-line " + string(tech) + " build command."
+	ioutils.ScanFromConsole(prompt, &cc.data.BuiltTechnologies[tech].BuildCmd, defaultBuildCmd)
 }
 
 func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
@@ -608,7 +628,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 						log.Error(err)
 					} else {
 						// we created both remote and virtual repositories successfully
-						cc.data.ArtifactoryVirtualRepos[technologyType] = repoName
+						cc.data.BuiltTechnologies[technologyType].VirtualRepo = repoName
 						return
 					}
 				}
@@ -656,7 +676,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		}
 	}
 	// Saves the new created repo name (key) in the results data structure.
-	cc.data.ArtifactoryVirtualRepos[technologyType] = virtualRepo
+	cc.data.BuiltTechnologies[technologyType].VirtualRepo = virtualRepo
 	return
 }
 
