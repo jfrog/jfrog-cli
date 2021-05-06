@@ -49,7 +49,7 @@ func TestGradleBuildWithServerID(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
 
 	cleanGradleTest()
 }
@@ -83,7 +83,7 @@ func TestNativeGradleBuildWithServerID(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
 	cleanGradleTest()
 }
 
@@ -108,7 +108,7 @@ func TestGradleBuildWithServerIDWithUsesPlugin(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
 	cleanGradleTest()
 }
 
@@ -142,7 +142,7 @@ func TestGradleBuildWithCredentials(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId)
+	validateBuildInfo(buildInfo, t, 0, 1, gradleModuleId, buildinfo.Gradle)
 	cleanGradleTest()
 }
 

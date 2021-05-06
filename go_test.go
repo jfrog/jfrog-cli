@@ -78,7 +78,7 @@ func TestGoBuildInfo(t *testing.T) {
 		expectedDependencies = 4
 		expectedArtifacts = 3
 	}
-	validateBuildInfo(buildInfo, t, expectedDependencies, 0, module)
+	validateBuildInfo(buildInfo, t, expectedDependencies, 0, module, buildinfo.Go)
 
 	// Now, using a new build number, do the following:
 	// 1. Build the project again.
@@ -115,7 +115,7 @@ func TestGoBuildInfo(t *testing.T) {
 		return
 	}
 	buildInfo = publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, ModuleNameJFrogTest, buildinfo.Go)
 
 	assert.NoError(t, os.Chdir(filepath.Join(wd, "testdata", "go")))
 
@@ -201,7 +201,7 @@ func TestGoPublishWithConfig(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 3, ModuleNameJFrogTest)
+	validateBuildInfo(buildInfo, t, 0, 3, ModuleNameJFrogTest, buildinfo.Go)
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.GoBuildName, artHttpDetails)
 	assert.NoError(t, os.Chdir(wd))
 	cleanGoTest(t)
@@ -264,7 +264,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
 
-	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote")
+	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote", buildinfo.Go)
 
 	// Cleanup
 	assert.NoError(t, os.Chdir(wd))
@@ -303,9 +303,9 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	// Since Artifactory doesn't support info file before version 6.10.0, the artifacts count in the build info is different between versions
 	ver := version.NewVersion(artifactoryVersion)
 	if ver.AtLeast(_go.ArtifactoryMinSupportedVersionForInfoFile) {
-		validateBuildInfo(buildInfo, t, 4, 0, module)
+		validateBuildInfo(buildInfo, t, 4, 0, module, buildinfo.Go)
 	} else {
-		validateBuildInfo(buildInfo, t, 8, 0, module)
+		validateBuildInfo(buildInfo, t, 8, 0, module, buildinfo.Go)
 	}
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
