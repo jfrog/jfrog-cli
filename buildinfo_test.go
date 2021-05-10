@@ -272,7 +272,7 @@ func TestBuildPublishDryRun(t *testing.T) {
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1)
+	validateBuildInfo(buildInfo, t, 0, 9, tests.RtBuildName1, buildinfo.Generic)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()
@@ -795,7 +795,7 @@ func uploadFilesAndGetBuildInfo(t *testing.T, buildName, buildNumber, buildUrl s
 		return buildinfo.BuildInfo{}, err
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, 0, 9, buildName)
+	validateBuildInfo(buildInfo, t, 0, 9, buildName, buildinfo.Generic)
 	return buildInfo, nil
 }
 
@@ -856,7 +856,7 @@ func TestModuleName(t *testing.T) {
 				return
 			}
 			buildInfo := publishedBuildInfo.BuildInfo
-			validateBuildInfo(buildInfo, t, test.expectedDependencies, test.expectedArtifacts, test.moduleName)
+			validateBuildInfo(buildInfo, t, test.expectedDependencies, test.expectedArtifacts, test.moduleName, buildinfo.Generic)
 		})
 	}
 

@@ -122,7 +122,7 @@ func cleanBuildToolsTest() {
 	}
 }
 
-func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string) {
+func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDependencies int, expectedArtifacts int, moduleName string, moduleType buildinfo.ModuleType) {
 	if buildInfo.Modules == nil || len(buildInfo.Modules) == 0 {
 		assert.Fail(t, "build info was not generated correctly, no modules were created.")
 		return
@@ -130,6 +130,7 @@ func validateBuildInfo(buildInfo buildinfo.BuildInfo, t *testing.T, expectedDepe
 	assert.Equal(t, moduleName, buildInfo.Modules[0].Id, "Unexpected module name")
 	assert.Len(t, buildInfo.Modules[0].Dependencies, expectedDependencies, "Incorrect number of dependencies found in the build-info")
 	assert.Len(t, buildInfo.Modules[0].Artifacts, expectedArtifacts, "Incorrect number of artifacts found in the build-info")
+	assert.Equal(t, buildInfo.Modules[0].Type, moduleType)
 }
 
 func initArtifactoryCli() {
