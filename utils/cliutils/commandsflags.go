@@ -347,6 +347,7 @@ const (
 	rbRepo              = releaseBundlePrefix + repo
 	rbPassphrase        = releaseBundlePrefix + passphrase
 	distTarget          = releaseBundlePrefix + target
+	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
 	sign                = "sign"
 	desc                = "desc"
 	releaseNotesPath    = "release-notes-path"
@@ -1050,6 +1051,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
 	},
+	rbDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the release bundle artifact.` `",
+	},
 	sign: cli.BoolFlag{
 		Name:  sign,
 		Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
@@ -1416,15 +1421,15 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
-		insecureTls,
+		insecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,

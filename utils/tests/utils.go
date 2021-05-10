@@ -69,14 +69,14 @@ var TestPlugins *bool
 var timestampAdded bool
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
+	RtUrl = flag.String("rt.url", "https://artifactory-dist-pipe2.jfrogdev.co/artifactory", "Artifactory url")
 	RtUser = flag.String("rt.user", "admin", "Artifactory username")
 	RtPassword = flag.String("rt.password", "password", "Artifactory password")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
 	RtAccessToken = flag.String("rt.accessToken", "", "Artifactory access token")
-	RtDistributionUrl = flag.String("rt.distUrl", "", "Distribution url")
+	RtDistributionUrl = flag.String("rt.distUrl", "https://artifactory-dist-pipe2.jfrogdev.co/distribution", "Distribution url")
 	RtDistributionAccessToken = flag.String("rt.distAccessToken", "", "Distribution access token")
 	TestArtifactory = flag.Bool("test.artifactory", false, "Test Artifactory")
 	TestArtifactoryProxy = flag.Bool("test.artifactoryProxy", false, "Test Artifactory proxy")
@@ -84,7 +84,7 @@ func init() {
 	BtUser = flag.String("bt.user", "", "Bintray username")
 	BtKey = flag.String("bt.key", "", "Bintray API Key")
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
-	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
+	TestDistribution = flag.Bool("test.distribution", true, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
