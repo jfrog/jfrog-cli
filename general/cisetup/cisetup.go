@@ -333,7 +333,23 @@ func runConfigCmd() (err error) {
 }
 
 func (cc *CiSetupCommand) runJenkinsPhase() (string, error) {
-	return "", nil
+	generator := cisetup.JenkinsfileGenerator{
+		SetupData: cc.data,
+	}
+	jenkinsfileBytes, jenkinsfileName, err := generator.Generate()
+	if err != nil {
+		return "", err
+	}
+
+	err = cc.saveCiConfigToFile(jenkinsfileBytes, cisetup.JenkinsfileName)
+	if err != nil {
+		return "", err
+	}
+	err = cc.stageCiConfigFile(cisetup.JenkinsfileName)
+	if err != nil {
+		return "", err
+	}
+	return jenkinsfileName, nil
 }
 
 func (cc *CiSetupCommand) runGithubActionsPhase() (string, error) {
@@ -409,7 +425,7 @@ func (cc *CiSetupCommand) saveCiConfigToFile(yaml []byte, fileName string) error
 	return ioutil.WriteFile(path, yaml, 0644)
 }
 
-func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
+func (cc *CiSetupCommand) logCompletionInstruction(ciFileName string) error {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return err
@@ -420,11 +436,11 @@ func (cc *CiSetupCommand) logCompletionInstruction(pipelineName string) error {
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
 		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
 		"cd " + cc.data.LocalDirPath,
-		"git commit -m \"Add pipelines.yml\"",
+		"git commit -m \"Add " + ciFileName + "\"",
 		"git push", "",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
-		getPipelineUiPath(serviceDetails.Url, pipelineName), "",
+		getPipelineUiPath(serviceDetails.Url, ciFileName), "",
 		colorTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA. More IDEs will be supported in the future.",
 		"To achieve this, follow these steps:",
