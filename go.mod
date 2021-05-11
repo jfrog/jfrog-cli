@@ -11,7 +11,7 @@ require (
 	github.com/jfrog/gocmd v0.2.0
 	github.com/jfrog/gofrog v1.0.6
 	github.com/jfrog/jfrog-cli-core v1.6.0
-	github.com/jfrog/jfrog-client-go v0.22.0
+	github.com/jfrog/jfrog-client-go v0.22.2
 	github.com/jszwec/csvutil v1.4.0
 	github.com/mholt/archiver v2.1.0+incompatible
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
@@ -23,9 +23,13 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.21.4-0.20210428124835-93843e118224
+// replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go
+//replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20210505153433-0d6c45db48c8
 
-// replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.5.4-0.20210428131428-bcb7fe2084bb
+//replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core
+//replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
+replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210511074440-70315281d612
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd master
 
