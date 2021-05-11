@@ -2307,8 +2307,7 @@ func buildPublishCmd(c *cli.Context) error {
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
-		summary := buildPublishCmd.GetSummary()
-		if summary != nil {
+		if summary := buildPublishCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
 	}
@@ -2509,6 +2508,9 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
+	}
 	var releaseBundleCreateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
@@ -2535,8 +2537,8 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	}
 	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	err = commands.Exec(releaseBundleCreateCmd)
-	if releaseBundleCreateCmd.IsDetailedSummary() && releaseBundleCreateCmd.IsSignImmediately() {
+	commands.Exec(releaseBundleCreateCmd)
+	if releaseBundleCreateCmd.IsDetailedSummary() {
 		if summary := releaseBundleCreateCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
@@ -2547,6 +2549,9 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 func releaseBundleUpdateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
 	}
 	var releaseBundleUpdateSpec *spec.SpecFiles
 	var err error
@@ -2575,7 +2580,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	releaseBundleUpdateCmd.SetServerDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
 	err = commands.Exec(releaseBundleUpdateCmd)
-	if releaseBundleUpdateCmd.IsDetailedSummary() && releaseBundleUpdateCmd.IsSignImmediately() {
+	if releaseBundleUpdateCmd.IsDetailedSummary() {
 		if summary := releaseBundleUpdateCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
