@@ -548,7 +548,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	atLeastOneTechBuilt := false
-	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo) // todo is pointer init
+	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
