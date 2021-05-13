@@ -4716,7 +4716,11 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 func TestArtifactorySimpleUploadAntPattern(t *testing.T) {
 	initArtifactoryTest(t)
 
+	// --ant and --regexp together: should get an error
 	uploadUsingAntAndRegexpTogether(t)
+	// Upload empty dir
+	uploadUsingAntAIncludeDirsAndFlat(t)
+	// Simple uploads
 	simpleUploadAntIsTrueRegexpIsFalse(t)
 	simpleUploadWithAntPatternSpec(t)
 
@@ -4751,6 +4755,17 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
+}
+
+func uploadUsingAntAIncludeDirsAndFlat(t *testing.T) {
+	filePath := "testdata/*/empt?/**"
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=true")
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=false")
+	assert.NoError(t, err)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetAntPatternUploadWithIncludeDirsExpectedRepo1(), searchFilePath, t)
 }
 
 func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {

@@ -91,6 +91,7 @@ const (
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchRepo1IncludeDirs                 = "search_repo1_include_dirs.json"
 	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
 	SearchRepo1NonExistFileAntExclusions   = "search_repo1_ant_and_exclusions_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
@@ -228,6 +229,17 @@ func GetAntPatternUploadWithExclusionsExpectedRepo1() []string {
 		RtRepo1 + "/c1.in",
 		RtRepo1 + "/c2.in",
 		RtRepo1 + "/c3.in",
+	}
+}
+
+func GetAntPatternUploadWithIncludeDirsExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/",
+		RtRepo1 + "/folder",
+		RtRepo1 + "/testdata",
+		RtRepo1 + "/testdata/an",
+		RtRepo1 + "/testdata/an/empty",
+		RtRepo1 + "/testdata/an/empty/folder",
 	}
 }
 
