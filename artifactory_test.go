@@ -4476,6 +4476,17 @@ func initVcsTestDir(t *testing.T) string {
 	return path
 }
 
+func TestConfigAddOverwrite(t *testing.T) {
+	initArtifactoryTest(t)
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
+	assert.NoError(t, err)
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	assert.Error(t, err)
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	assert.NoError(t, err)
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials

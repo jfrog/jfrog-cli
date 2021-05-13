@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "add",
 			Description:  add.Description,
-			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			Flags:        cliutils.GetCommandFlags(cliutils.AddConfig),
 			HelpName:     corecommon.CreateUsage("c add", add.Description, add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -36,7 +36,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "edit",
 			Description:  edit.Description,
-			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			Flags:        cliutils.GetCommandFlags(cliutils.EditConfig),
 			HelpName:     corecommon.CreateUsage("c edit", edit.Description, edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
@@ -100,17 +100,22 @@ func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return addOrEdit(c, false)
+	if c.Bool("overwrite") {
+		return addOrEdit(c, nil)
+	}
+	expectExists := false
+	return addOrEdit(c, &expectExists)
 }
 
 func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return addOrEdit(c, true)
+	expectExists := true
+	return addOrEdit(c, &expectExists)
 }
 
-func addOrEdit(c *cli.Context, expectExists bool) error {
+func addOrEdit(c *cli.Context, expectExists *bool) error {
 	configCommandConfiguration, err := CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
@@ -122,8 +127,10 @@ func addOrEdit(c *cli.Context, expectExists bool) error {
 		if err := ValidateServerId(serverId); err != nil {
 			return err
 		}
-		if err := validateServerExistence(serverId, expectExists); err != nil {
-			return err
+		if expectExists != nil {
+			if err := validateServerExistence(serverId, *expectExists); err != nil {
+				return err
+			}
 		}
 	}
 	err = validateConfigFlags(configCommandConfiguration)
