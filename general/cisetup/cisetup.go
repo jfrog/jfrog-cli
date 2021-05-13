@@ -353,23 +353,26 @@ func (cc *CiSetupCommand) runJenkinsPhase() (string, error) {
 }
 
 func (cc *CiSetupCommand) runGithubActionsPhase() (string, error) {
-	generator := cisetup.JFrogPipelinesYamlGenerator{
+	generator := cisetup.GithubActionsGenerator{
 		SetupData: cc.data,
 	}
-	pipelinesYamlBytes, pipelineName, err := generator.Generate()
+	GithubActionsYamlBytes, GithubActionsName, err := generator.Generate()
 	if err != nil {
 		return "", err
 	}
-
-	err = cc.saveCiConfigToFile(pipelinesYamlBytes, cisetup.PipelinesYamlName)
+	err = os.MkdirAll(cisetup.GithubActionsDir, 0644)
 	if err != nil {
 		return "", err
 	}
-	err = cc.stageCiConfigFile(cisetup.PipelinesYamlName)
+	err = cc.saveCiConfigToFile(GithubActionsYamlBytes, cisetup.GithubActionsFilePath)
 	if err != nil {
 		return "", err
 	}
-	return pipelineName, nil
+	err = cc.stageCiConfigFile(cisetup.GithubActionsFilePath)
+	if err != nil {
+		return "", err
+	}
+	return GithubActionsName, nil
 }
 
 func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
@@ -419,10 +422,10 @@ func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
 	return pipelineName, nil
 }
 
-func (cc *CiSetupCommand) saveCiConfigToFile(yaml []byte, fileName string) error {
+func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) error {
 	path := filepath.Join(cc.data.LocalDirPath, fileName)
 	log.Info(fmt.Sprintf("Generating %s at: %q ...", fileName, path))
-	return ioutil.WriteFile(path, yaml, 0644)
+	return ioutil.WriteFile(path, ciConfig, 0644)
 }
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciFileName string) error {
