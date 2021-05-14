@@ -101,21 +101,30 @@ func addCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	if c.Bool("overwrite") {
-		return addOrEdit(c, nil)
+		return addOrEdit(c, overwriteOperation)
 	}
-	expectExists := false
-	return addOrEdit(c, &expectExists)
+	return addOrEdit(c, addOperation)
 }
 
 func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	expectExists := true
-	return addOrEdit(c, &expectExists)
+	return addOrEdit(c, editOperation)
 }
 
-func addOrEdit(c *cli.Context, expectExists *bool) error {
+type configOperation int
+
+const (
+	// "config add" comment
+	addOperation configOperation = iota
+	// "config edit" comment
+	editOperation
+	// "config add with --overwrite" comment
+	overwriteOperation
+)
+
+func addOrEdit(c *cli.Context, operation configOperation) error {
 	configCommandConfiguration, err := CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
@@ -127,8 +136,8 @@ func addOrEdit(c *cli.Context, expectExists *bool) error {
 		if err := ValidateServerId(serverId); err != nil {
 			return err
 		}
-		if expectExists != nil {
-			if err := validateServerExistence(serverId, *expectExists); err != nil {
+		if operation != overwriteOperation {
+			if err := validateServerExistence(serverId, operation); err != nil {
 				return err
 			}
 		}
@@ -213,12 +222,12 @@ func ValidateServerId(serverId string) error {
 	return nil
 }
 
-func validateServerExistence(serverId string, expectExist bool) error {
+func validateServerExistence(serverId string, operation configOperation) error {
 	config, err := commands.GetConfig(serverId, false)
 	serverExist := err == nil && config.ServerId != ""
-	if expectExist && !serverExist {
+	if operation == editOperation && !serverExist {
 		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' doesn't exist.", serverId)))
-	} else if !expectExist && serverExist {
+	} else if operation == addOperation && serverExist {
 		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' already exists.", serverId)))
 	}
 	return nil

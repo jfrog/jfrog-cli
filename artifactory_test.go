@@ -4489,7 +4489,7 @@ func TestConfigAddOverwrite(t *testing.T) {
 	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
 	assert.Error(t, err)
 	// Now create it again, this time with the --overwrite option and expect no error.
-	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
 	assert.NoError(t, err)
 }
 
