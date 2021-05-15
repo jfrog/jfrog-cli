@@ -4476,6 +4476,23 @@ func initVcsTestDir(t *testing.T) string {
 	return path
 }
 
+func TestConfigAddOverwrite(t *testing.T) {
+	initArtifactoryTest(t)
+	// Add a new instance.
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	// Remove the instance at the end of the test.
+	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Try creating an instance with the same ID, and expect to fail, because an instance with the
+	// same ID already exists.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	assert.Error(t, err)
+	// Now create it again, this time with the --overwrite option and expect no error.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
+	assert.NoError(t, err)
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
