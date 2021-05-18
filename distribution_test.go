@@ -472,9 +472,6 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	assert.NoError(t, err)
 	runRt(t, "u", "--spec="+specFile)
 
-	// Check error: The --detailed-summary option can't be used without --sign
-	runRbWithError(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in", "--detailed-summary")
-
 	buffer, previousLog := tests.RedirectLogOutputToBuffer()
 	// Restore previous logger when the function returns
 	defer log.SetLogger(previousLog)
@@ -504,9 +501,6 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	// Create a release bundle with b2.in
 	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
-
-	// Check error: The --detailed-summary option can't be used without --sign
-	runRbWithError(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--detailed-summary")
 
 	// Update release bundle to have b1.in
 	runRb(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign", "--detailed-summary")
@@ -546,13 +540,6 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 func runRb(t *testing.T, args ...string) {
 	err := distributionCli.Exec(args...)
 	assert.NoError(t, err)
-}
-
-// Run `jfrog rt rb*` command`. The first arg is the distribution command, such as 'rbc', 'rbu', etc.
-// Expect to get an error.
-func runRbWithError(t *testing.T, args ...string) {
-	err := distributionCli.Exec(args...)
-	assert.Error(t, err)
 }
 
 // Run `jfrog rt` command
