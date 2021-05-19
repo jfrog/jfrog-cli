@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	utils2 "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -109,7 +109,7 @@ func runTestNpm(t *testing.T, native bool) {
 }
 
 func readModuleId(t *testing.T, wd string) string {
-	packageInfo, err := npm.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
+	packageInfo, err := utils2.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }

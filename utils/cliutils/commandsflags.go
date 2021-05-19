@@ -40,6 +40,8 @@ const (
 	NpmConfig               = "npm-config"
 	Npm                     = "npm"
 	NpmPublish              = "npmPublish"
+	YarnConfig              = "yarn-config"
+	Yarn                    = "yarn"
 	NugetConfig             = "nuget-config"
 	Nuget                   = "nuget"
 	Dotnet                  = "dotnet"
@@ -1369,6 +1371,12 @@ var commandFlags = map[string][]string{
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
 		buildNumber, module, project,
+	},
+	YarnConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	Yarn: {
+		buildName, buildNumber, module, project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,

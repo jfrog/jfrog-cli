@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -574,6 +577,30 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmPublishCmd(c)
+			},
+		},
+		{
+			Name:         "yarn-config",
+			Aliases:      []string{"yarnc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
+			Description:  yarnconfig.Description,
+			HelpName:     corecommon.CreateUsage("rt yarn-config", yarnconfig.Description, yarnconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createYarnConfigCmd(c)
+			},
+		},
+		{
+			Name:            "yarn",
+			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
+			Description:     yarndocs.Description,
+			HelpName:        corecommon.CreateUsage("rt yarn", yarndocs.Description, yarndocs.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return yarnCmd(c)
 			},
 		},
 		{
@@ -1668,6 +1695,24 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	return commands.Exec(npmPublicCmd)
 }
 
+func yarnCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Yarn)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New(fmt.Sprintf("JFrog CLI's Yarn configuration file was not found.\n" +
+			"Run 'jfrog rt yarn-config' command to create it prior to running 'jfrog rt yarn'."))
+	}
+
+	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
+	return commands.Exec(yarnCmd)
+}
+
 // This function checks whether the command received --help as a single option.
 // If it did, the command's help is shown and true is returned.
 // This function should be uesd iff the SkipFlagParsing option is used.
@@ -1891,6 +1936,13 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commandUtils.CreateBuildConfig(c, utils.Npm)
+}
+
+func createYarnConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Yarn)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {
