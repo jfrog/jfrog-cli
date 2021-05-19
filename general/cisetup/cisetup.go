@@ -34,6 +34,7 @@ import (
 	buildinfocmd "github.com/jfrog/jfrog-client-go/artifactory/buildinfo"
 	"github.com/jfrog/jfrog-client-go/artifactory/services"
 	clientConfig "github.com/jfrog/jfrog-client-go/config"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	"github.com/jfrog/jfrog-client-go/utils/log"
@@ -766,6 +767,7 @@ func (cc *CiSetupCommand) prepareVcsData() (err error) {
 		} else {
 			log.Error("The '" + cc.data.LocalDirPath + "' directory isn't empty.")
 			ioutils.ScanFromConsole("Choose a name for a directory to be used as the command's workspace", &cc.data.LocalDirPath, "")
+			cc.data.LocalDirPath = clientutils.ReplaceTildeWithUserHome(cc.data.LocalDirPath)
 		}
 
 	}
