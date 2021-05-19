@@ -83,7 +83,8 @@ const (
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
-	Config = "config"
+	AddConfig  = "config-add"
+	EditConfig = "config-edit"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -161,6 +162,7 @@ const (
 	interactive   = "interactive"
 	encPassword   = "enc-password"
 	basicAuthOnly = "basic-auth-only"
+	overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix          = "upload-"
@@ -230,6 +232,7 @@ const (
 	// Unique build-publish flags
 	buildPublishPrefix = "bp-"
 	bpDryRun           = buildPublishPrefix + dryRun
+	bpDetailedSummary  = buildPublishPrefix + detailedSummary
 	envInclude         = "env-include"
 	envExclude         = "env-exclude"
 	buildUrl           = "build-url"
@@ -592,6 +595,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  encPassword,
 		Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
 	},
+	overwrite: cli.BoolFlag{
+		Name:  overwrite,
+		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
+	},
 	basicAuthOnly: cli.BoolFlag{
 		Name: basicAuthOnly,
 		Usage: "[Default: false] Set to true to disable replacing username and password/API key with automatically created access token that's refreshed hourly. " +
@@ -788,6 +795,10 @@ var flagsMap = map[string]cli.Flag{
 	bpDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to get a preview of the recorded build info, without publishing it to Artifactory.` `",
+	},
+	bpDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the build info artifact.` `",
 	},
 	envInclude: cli.StringFlag{
 		Name:  envInclude,
@@ -1241,7 +1252,11 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
-	Config: {
+	AddConfig: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
+	},
+	EditConfig: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
@@ -1297,7 +1312,7 @@ var commandFlags = map[string][]string{
 	},
 	BuildPublish: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,
-		envInclude, envExclude, insecureTls, project,
+		envInclude, envExclude, insecureTls, project, bpDetailedSummary,
 	},
 	BuildAppend: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, buildUrl, bpDryRun,

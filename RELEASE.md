@@ -1,5 +1,30 @@
 # Release Notes
 
+## 1.47.3 (May 15, 2021)
+- Bug fix - "jfrog rt upload" - using ANT patterns fails to convert doube asteriks to directory range.
+- Bug fix - "jfrog rt npm-install" can fail when .npmrc includes 'json=true'.
+- Bug fix - "jfrog rt nuget" & "jfrog rt dotnet" can fail when there are multiple .net projects in the same directory.
+- Bug fix - "jfrog rt build-publish" module type is missing in build-info modules.
+- JFrog CLI binaries are now also published for the ppc64 and ppc64le Linux architectures.
+- "jfrog config add" - New --overwrite option.
+
+## 1.47.2 (May 5, 2021)
+- Bug fix - the "jfrog rt bpr" command ignores the JFROG_CLI_BUILD_PROJECT environment variable.
+- Bug fix - Unable to upload a file if its name includes semicolons.
+- Bug fix - Upgrade jfrog-client-go, which includes the upgrade of go-git v4.7.1, to resolve errors that occur when collecting data from the local git repository.
+
+## 1.47.1 (April 29, 2021)
+- Bug fix - Error when unmarshalling response received from JFrog Distribution
+
+## 1.47.0 (April 28, 2021)
+- "jfrog rt bp" -  New --detailed-summary option added
+- "jfrog rt u" - The --detailed-summary option now also returns sha256 of the uploaded files
+- The maven and gradle extractors were upgraded
+- The value of the JFROG_CLI_USER_AGENT environment variable now also controls the agent name in the build-info
+- Bug fix - The dryRun option of release bundle management APIs returns an error 
+- Bug fix - Cannot install a jfrog-cli plugin before uninstalling the installed version
+- Bug fix - The "jfrog rt bpr" command ignores the --project option
+
 ## 1.46.4 (April 19, 2021)
 - Bug fix - Download fails with panic, if filtered build does not exist
 - Bug fix - Remove rt URL validation on config command

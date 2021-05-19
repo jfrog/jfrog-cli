@@ -39,6 +39,12 @@ else
         s390x)
             ARCH="s390x"
             ;;
+        ppc64)
+           ARCH="ppc64"
+           ;;
+        ppc64le)
+           ARCH="ppc64le"
+           ;;
         *)
             echo "Unknown machine type: $MACHINE_TYPE"
             exit -1

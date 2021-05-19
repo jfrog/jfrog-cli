@@ -1825,7 +1825,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	goArg, err := coreutils.ParseArgs(strings.Split(c.Args().Get(0), " "))
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
+		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	targetRepo := c.Args().Get(1)
 	details, err := createArtifactoryDetailsByFlags(c, false)
@@ -1847,7 +1847,7 @@ func goLegacyCmd(c *cli.Context) error {
 	}
 	err = commands.Exec(goCmd)
 	if err != nil {
-		err = cliutils.PrintSummaryReport(0, 1, nil, "", err)
+		err = cliutils.PrintSummaryReport(0, 1, err)
 	}
 	return err
 }
@@ -1862,7 +1862,7 @@ func goPublishCmd(c *cli.Context, configFilePath string) error {
 	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 }
 
 func goLegacyPublishCmd(c *cli.Context) error {
@@ -1891,7 +1891,7 @@ func goLegacyPublishCmd(c *cli.Context) error {
 	goPublishCmd.SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetTargetRepo(targetRepo).SetServerDetails(details)
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 }
 
 func goNativeCmd(c *cli.Context, configFilePath string) error {
@@ -2031,7 +2031,7 @@ func downloadCmd(c *cli.Context) error {
 
 	err = execWithProgress(downloadCommand)
 	result := downloadCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), serverDetails.ArtifactoryUrl, err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), false, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2080,7 +2080,7 @@ func uploadCmd(c *cli.Context) error {
 	}
 	err = execWithProgress(uploadCmd)
 	result := uploadCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), "", err)
+	err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2138,7 +2138,7 @@ func moveCmd(c *cli.Context) error {
 	moveCmd.SetThreads(threads).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(moveSpec)
 	err = commands.Exec(moveCmd)
 	result := moveCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2178,7 +2178,7 @@ func copyCmd(c *cli.Context) error {
 	copyCommand.SetThreads(threads).SetSpec(copySpec).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails)
 	err = commands.Exec(copyCommand)
 	result := copyCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2219,7 +2219,7 @@ func deleteCmd(c *cli.Context) error {
 	deleteCommand.SetThreads(threads).SetQuiet(cliutils.GetQuietValue(c)).SetDryRun(c.Bool("dry-run")).SetServerDetails(rtDetails).SetSpec(deleteSpec)
 	err = commands.Exec(deleteCommand)
 	result := deleteCommand.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2323,7 +2323,7 @@ func setPropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewSetPropsCommand().SetPropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2337,7 +2337,7 @@ func deletePropsCmd(c *cli.Context) error {
 	propsCmd := generic.NewDeletePropsCommand().DeletePropsCommand(*cmd)
 	err = commands.Exec(propsCmd)
 	result := propsCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
@@ -2355,9 +2355,16 @@ func buildPublishCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration)
+	buildPublishCmd := buildinfo.NewBuildPublishCommand().SetServerDetails(rtDetails).SetBuildConfiguration(buildConfiguration).SetConfig(buildInfoConfiguration).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	return commands.Exec(buildPublishCmd)
+	err = commands.Exec(buildPublishCmd)
+	if buildPublishCmd.IsDetailedSummary() {
+		summary := buildPublishCmd.GetSummary()
+		if summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
 }
 
 func buildAppendCmd(c *cli.Context) error {
@@ -2416,7 +2423,7 @@ func buildAddDependenciesCmd(c *cli.Context) error {
 	buildAddDependenciesCmd := buildinfo.NewBuildAddDependenciesCommand().SetDryRun(c.Bool("dry-run")).SetBuildConfiguration(buildConfiguration).SetDependenciesSpec(dependenciesSpec).SetServerDetails(rtDetails)
 	err = commands.Exec(buildAddDependenciesCmd)
 	result := buildAddDependenciesCmd.Result()
-	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), nil, "", err)
+	err = cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
 	if err != nil {
 		return err
 	}
@@ -3349,7 +3356,7 @@ func createBuildPromoteConfiguration(c *cli.Context) services.PromotionParams {
 	promotionParamsImpl.IncludeDependencies = c.Bool("include-dependencies")
 	promotionParamsImpl.Copy = c.Bool("copy")
 	promotionParamsImpl.Properties = c.String("props")
-	promotionParamsImpl.ProjectKey = c.String("project")
+	promotionParamsImpl.ProjectKey = utils.GetBuildProject(c.String("project"))
 
 	// If the command received 3 args, read the build name, build number
 	// and target repo as ags.

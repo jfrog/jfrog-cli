@@ -17,7 +17,9 @@ import (
 	"testing"
 )
 
-const pluginTemplateName = "hello-frog"
+const officialPluginForTest = "rt-fs"
+const officialPluginVersion = "v1.0.0"
+const customPluginName = "custom-plugin"
 
 func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 	initPluginsTest(t)
@@ -40,42 +42,59 @@ func TestPluginInstallUninstallOfficialRegistry(t *testing.T) {
 
 	jfrogCli := tests.NewJfrogCli(execMain, "jfrog", "")
 
-	// Install plugin from registry.
-	err = jfrogCli.Exec("plugin", "install", pluginTemplateName)
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	err = verifyPluginInPluginsDir(t, true)
+	// Try installing a plugin with specific version.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, officialPluginVersion)
 	if err != nil {
 		return
 	}
 
-	err = verifyPluginSignature(t, jfrogCli)
-	if err != nil {
-		return
-	}
-
-	err = verifyPluginCommand(t, jfrogCli)
+	// Try installing the latest version of the plugin. Also verifies replacement was successful.
+	err = installAndAssertPlugin(t, jfrogCli, officialPluginForTest, "")
 	if err != nil {
 		return
 	}
 
 	// Uninstall plugin from home dir.
-	err = jfrogCli.Exec("plugin", "uninstall", pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "uninstall", officialPluginForTest)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, false)
+	err = verifyPluginInPluginsDir(t, officialPluginForTest, false)
 	if err != nil {
 		return
 	}
 }
 
+func installAndAssertPlugin(t *testing.T, jfrogCli *tests.JfrogCli, pluginName, pluginVersion string) error {
+	// If version required, concat to plugin name
+	identifier := pluginName
+	if pluginVersion != "" {
+		identifier += "@" + pluginVersion
+	}
+
+	// Install plugin from registry.
+	err := jfrogCli.Exec("plugin", "install", identifier)
+	if err != nil {
+		assert.NoError(t, err)
+		return err
+	}
+	err = verifyPluginInPluginsDir(t, pluginName, true)
+	if err != nil {
+		return err
+	}
+
+	err = verifyPluginSignature(t, jfrogCli)
+	if err != nil {
+		return err
+	}
+
+	return verifyPluginVersion(t, jfrogCli, pluginVersion)
+}
+
 func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	// Get signature from plugin.
-	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, plugins.SignatureCommandName)
+	content, err := getCmdOutput(t, jfrogCli, officialPluginForTest, plugins.SignatureCommandName)
 	if err != nil {
 		return err
 	}
@@ -86,7 +105,7 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 		assert.NoError(t, err)
 		return err
 	}
-	assert.Equal(t, pluginTemplateName, name)
+	assert.Equal(t, officialPluginForTest, name)
 
 	// Extract the the usage from the output.
 	usage, err := jsonparser.GetString(content, "usage")
@@ -98,15 +117,16 @@ func verifyPluginSignature(t *testing.T, jfrogCli *tests.JfrogCli) error {
 	return nil
 }
 
-func verifyPluginCommand(t *testing.T, jfrogCli *tests.JfrogCli) error {
-	// Run plugin's command.
-	content, err := getCmdOutput(t, jfrogCli, pluginTemplateName, "hello", "\"hello world\"", "--shout")
+func verifyPluginVersion(t *testing.T, jfrogCli *tests.JfrogCli, expectedVersion string) error {
+	// Run plugin's -v command.
+	content, err := getCmdOutput(t, jfrogCli, officialPluginForTest, "-v")
 	if err != nil {
 		return err
 	}
-
-	assert.Contains(t, string(content), "HELLO WORLD")
-	return nil
+	if expectedVersion != "" {
+		assert.NoError(t, utils.AssertPluginVersion(string(content), expectedVersion))
+	}
+	return err
 }
 
 func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte, error) {
@@ -137,14 +157,14 @@ func getCmdOutput(t *testing.T, jfrogCli *tests.JfrogCli, cmd ...string) ([]byte
 	return content, err
 }
 
-func verifyPluginInPluginsDir(t *testing.T, shouldExist bool) error {
+func verifyPluginInPluginsDir(t *testing.T, pluginName string, shouldExist bool) error {
 	pluginsDir, err := coreutils.GetJfrogPluginsDir()
 	if err != nil {
 		assert.NoError(t, err)
 		return err
 	}
 
-	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginTemplateName)), false)
+	actualExists, err := fileutils.IsFileExists(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginName)), false)
 	if err != nil {
 		assert.NoError(t, err)
 		return err
@@ -198,7 +218,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	}
 
 	// Publish the CLI as a plugin to the registry.
-	err = jfrogCli.Exec("plugin", "p", pluginTemplateName, cliutils.GetVersion())
+	err = jfrogCli.Exec("plugin", "p", customPluginName, cliutils.GetVersion())
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -210,12 +230,12 @@ func TestPublishInstallCustomServer(t *testing.T) {
 	}
 
 	// Install plugin from registry.
-	err = jfrogCli.Exec("plugin", "install", pluginTemplateName)
+	err = jfrogCli.Exec("plugin", "install", customPluginName)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
-	err = verifyPluginInPluginsDir(t, true)
+	err = verifyPluginInPluginsDir(t, customPluginName, true)
 	if err != nil {
 		return
 	}
@@ -224,7 +244,7 @@ func TestPublishInstallCustomServer(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
-	assert.NoError(t, os.Remove(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(pluginTemplateName))))
+	assert.NoError(t, os.Remove(filepath.Join(pluginsDir, utils.GetLocalPluginExecutableName(customPluginName))))
 }
 
 func verifyPluginExistsInRegistry(t *testing.T) error {
@@ -238,7 +258,7 @@ func verifyPluginExistsInRegistry(t *testing.T) error {
 		assert.NoError(t, err)
 		return err
 	}
-	expectedPath := utils.GetPluginPathInArtifactory(pluginTemplateName, cliutils.GetVersion(), localArc)
+	expectedPath := utils.GetPluginPathInArtifactory(customPluginName, cliutils.GetVersion(), localArc)
 	// Expected to find the plugin in the version and latest dir.
 	expected := []string{
 		expectedPath,

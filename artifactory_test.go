@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-client-go/artifactory"
 	"io"
 	"io/ioutil"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
@@ -3605,6 +3607,31 @@ func TestSummaryReport(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
+func TestUploadDetailedSummary(t *testing.T) {
+	initArtifactoryTest(t)
+	uploadCmd := generic.NewUploadCommand()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
+	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails).SetDetailedSummary(true)
+	commands.Exec(uploadCmd)
+	result := uploadCmd.Result()
+	reader := result.Reader()
+	assert.NoError(t, reader.GetError())
+	defer reader.Close()
+	var files []serviceutils.FileTransferDetails
+	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
+	cleanArtifactoryTest()
+}
+
+func createUploadConfiguration() *utils.UploadConfiguration {
+	uploadConfiguration := new(utils.UploadConfiguration)
+	uploadConfiguration.Retries = cliutils.Retries
+	uploadConfiguration.Threads = cliutils.Threads
+	return uploadConfiguration
+}
+
 func TestArtifactoryBuildDiscard(t *testing.T) {
 	// Initialize
 	initArtifactoryTest(t)
@@ -4449,6 +4476,23 @@ func initVcsTestDir(t *testing.T) string {
 	return path
 }
 
+func TestConfigAddOverwrite(t *testing.T) {
+	initArtifactoryTest(t)
+	// Add a new instance.
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	// Remove the instance at the end of the test.
+	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Try creating an instance with the same ID, and expect to fail, because an instance with the
+	// same ID already exists.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	assert.Error(t, err)
+	// Now create it again, this time with the --overwrite option and expect no error.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
+	assert.NoError(t, err)
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
@@ -4689,7 +4733,11 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 func TestArtifactorySimpleUploadAntPattern(t *testing.T) {
 	initArtifactoryTest(t)
 
+	// --ant and --regexp together: should get an error
 	uploadUsingAntAndRegexpTogether(t)
+	// Upload empty dir
+	uploadUsingAntAIncludeDirsAndFlat(t)
+	// Simple uploads
 	simpleUploadAntIsTrueRegexpIsFalse(t)
 	simpleUploadWithAntPatternSpec(t)
 
@@ -4724,6 +4772,17 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyExistInArtifactory(tests.GetSimpleAntPatternUploadExpectedRepo1(), searchFilePath, t)
 	searchFilePath, err = tests.CreateSpec(tests.SearchRepo1NonExistFile)
 	verifyDoesntExistInArtifactory(searchFilePath, t)
+}
+
+func uploadUsingAntAIncludeDirsAndFlat(t *testing.T) {
+	filePath := "testdata/*/empt?/**"
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=true")
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=false")
+	assert.NoError(t, err)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetAntPatternUploadWithIncludeDirsExpectedRepo1(), searchFilePath, t)
 }
 
 func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
@@ -4816,4 +4875,22 @@ func assertPermissionTargetDeleted(t *testing.T, manager artifactory.Artifactory
 
 func cleanPermissionTarget() {
 	_ = artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName)
+}
+
+func TestArtifactoryCurl(t *testing.T) {
+	initArtifactoryTest(t)
+	_, err := createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
+	assert.NoError(t, err)
+	// Check curl command with config default server
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
+	assert.NoError(t, err)
+	// Check curl command with '--server-id' flag
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
+	assert.NoError(t, err)
+	// Check curl command with invalid server id - should get an error.
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.RtServerId)
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
 }
