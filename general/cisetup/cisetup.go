@@ -45,7 +45,7 @@ import (
 const (
 	VcsConfigFile            = "jfrog-cli-vcs.conf"
 	DefaultFirstBuildNumber  = "0"
-	DefaultWorkspace         = "./jfrog-vcs-workspace"
+	DefaultWorkspace         = "./ci-setup-workspace"
 	pipelineUiPath           = "ui/pipelines/myPipelines/default/"
 	permissionTargetName     = "jfrog-ide-developer-pt"
 	permissionTargetTemplate = `{"build":{"include-patterns":"**","actions-groups":{"%s":"read"}},"name":"%s"}`
@@ -85,8 +85,8 @@ func logBeginningInstructions() error {
 		colorTitle("About this command"),
 		"This command sets up a basic CI pipeline which uses the JFrog Platform.",
 		"It currently supports Maven, Gradle and npm, but additional package managers will be added in the future.",
-		"The generated CI pipeline is based on JFrog Pipelines, but additional CI providers will be added in the future.",
-		"The command takes care of configuring JFrog Artifactory, JFrog Xray and JFrog Pipelines for you.",
+		"The following CI providers are currently supported: JFrog Pipelines, Jenkins and GitHub Actions.",
+		"The command takes care of configuring JFrog Artifactory and JFrog Xray for you.",
 		"",
 		colorTitle("Important"),
 		" 1. If you don't have a JFrog Platform instance with admin credentials, head over to https://jfrog.com/start-free/ and get one for free.",
@@ -582,7 +582,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 	if len(techs) == 0 {
 		return errorutils.CheckError(errors.New("no supported technology was found in the project"))
 	}
-	log.Info("The next step is to provide the commands to build your code. It looks like the code can be built with " + getExplicitTechsListByNumber(techs) + ".")
+	writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
 	return nil
 }
 
@@ -690,7 +690,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 			return err
 		}
 		if !contains(chosenVirtualRepo.Repositories, remoteRepo) {
-			log.Error(fmt.Sprintf("The chosen virtual repo %q does not contain the chosen remote repo %q", virtualRepo, remoteRepo))
+			log.Error(fmt.Sprintf("The chosen virtual repo %q does not include the chosen remote repo %q", virtualRepo, remoteRepo))
 			return cc.interactivelyCreateRepos(technologyType)
 		}
 	}
