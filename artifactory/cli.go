@@ -1632,14 +1632,22 @@ func npmPublishCmd(c *cli.Context) error {
 	if exists {
 		// Found a config file. Continue as native command.
 		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number, module and detailed-summary.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
 			return err
 		}
 		npmCmd := npm.NewNpmPublishCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
+		err = commands.Exec(npmCmd)
+		if err != nil {
+			return err
+		}
+		if npmCmd.IsDetailedSummary() {
+			result := npmCmd.Result()
+			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+		}
+		return nil
 	}
 	// If config file not found, use Npm legacy command
 	return npmLegacyPublishCmd(c)
