@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"io/ioutil"
@@ -17,7 +18,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
