@@ -35,6 +35,8 @@ var ArchitecturesMap = map[string]Architecture{
 	"linux-s390x":   {"linux", "s390x", ""},
 	"linux-arm64":   {"linux", "arm64", ""},
 	"linux-arm":     {"linux", "arm", ""},
+	"linux-ppc6":    {"linux", "ppc64", ""},
+	"linux-ppc64le": {"linux", "ppc64le", ""},
 	"mac-386":       {"darwin", "amd64", ""},
 	"windows-amd64": {"windows", "amd64", ".exe"},
 }
@@ -92,6 +94,10 @@ func GetLocalArchitecture() (string, error) {
 		return "linux-386", nil
 	case "s390x":
 		return "linux-s390x", nil
+	case "ppc64":
+		return "linux-ppc64", nil
+	case "ppc64le":
+		return "linux-ppc64le", nil
 	}
 	return "", errorutils.CheckError(errors.New("no compatible plugin architecture was found for the architecture of this machine"))
 }

@@ -1,5 +1,18 @@
 # Release Notes
 
+## 1.47.3 (May 15, 2021)
+- Bug fix - "jfrog rt upload" - using ANT patterns fails to convert doube asteriks to directory range.
+- Bug fix - "jfrog rt npm-install" can fail when .npmrc includes 'json=true'.
+- Bug fix - "jfrog rt nuget" & "jfrog rt dotnet" can fail when there are multiple .net projects in the same directory.
+- Bug fix - "jfrog rt build-publish" module type is missing in build-info modules.
+- JFrog CLI binaries are now also published for the ppc64 and ppc64le Linux architectures.
+- "jfrog config add" - New --overwrite option.
+
+## 1.47.2 (May 5, 2021)
+- Bug fix - the "jfrog rt bpr" command ignores the JFROG_CLI_BUILD_PROJECT environment variable.
+- Bug fix - Unable to upload a file if its name includes semicolons.
+- Bug fix - Upgrade jfrog-client-go, which includes the upgrade of go-git v4.7.1, to resolve errors that occur when collecting data from the local git repository.
+
 ## 1.47.1 (April 29, 2021)
 - Bug fix - Error when unmarshalling response received from JFrog Distribution
 

@@ -81,7 +81,8 @@ const (
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
-	Config = "config"
+	AddConfig  = "config-add"
+	EditConfig = "config-edit"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -159,6 +160,7 @@ const (
 	interactive   = "interactive"
 	encPassword   = "enc-password"
 	basicAuthOnly = "basic-auth-only"
+	overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix          = "upload-"
@@ -348,6 +350,7 @@ const (
 	rbRepo              = releaseBundlePrefix + repo
 	rbPassphrase        = releaseBundlePrefix + passphrase
 	distTarget          = releaseBundlePrefix + target
+	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
 	sign                = "sign"
 	desc                = "desc"
 	releaseNotesPath    = "release-notes-path"
@@ -591,6 +594,10 @@ var flagsMap = map[string]cli.Flag{
 	encPassword: cli.BoolTFlag{
 		Name:  encPassword,
 		Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
+	},
+	overwrite: cli.BoolFlag{
+		Name:  overwrite,
+		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
 	},
 	basicAuthOnly: cli.BoolFlag{
 		Name: basicAuthOnly,
@@ -1055,6 +1062,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
 	},
+	rbDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the release bundle artifact.` `",
+	},
 	sign: cli.BoolFlag{
 		Name:  sign,
 		Usage: "[Default: false] If set to true, automatically signs the release bundle version.` `",
@@ -1249,7 +1260,11 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
-	Config: {
+	AddConfig: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
+	},
+	EditConfig: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
@@ -1421,15 +1436,15 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
-		insecureTls,
+		insecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
