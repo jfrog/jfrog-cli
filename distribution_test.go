@@ -524,7 +524,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	defer log.SetLogger(previousLog)
 
 	// Create a release bundle with b2.in
-	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in", "--detailed-summary")
+	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 
 	// Update release bundle to have b1.in
