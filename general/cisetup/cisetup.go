@@ -180,7 +180,7 @@ func (cc *CiSetupCommand) Run() error {
 		return err
 	}
 	// Ask the user which CI he tries to setup
-	err = cc.desiredOutputPhase()
+	err = cc.ciProviderPhase()
 	err = saveIfNoError(err, cc.data)
 	if err != nil {
 		return err
@@ -376,17 +376,15 @@ func (cc *CiSetupCommand) runGithubActionsPhase() (string, error) {
 	}
 	err = os.MkdirAll(filepath.Join(cc.data.LocalDirPath, cisetup.GithubActionsDir), 0744)
 	if err != nil {
-		return "", err
+		return "", errorutils.CheckError(err)
 	}
 	err = cc.saveCiConfigToFile(GithubActionsYamlBytes, cisetup.GithubActionsFilePath)
 	if err != nil {
 		return "", err
 	}
 	err = cc.stageCiConfigFile(cisetup.GithubActionsFilePath)
-	if err != nil {
-		return "", err
-	}
-	return GithubActionsName, nil
+
+	return GithubActionsName, err
 }
 
 func (cc *CiSetupCommand) runPipelinesPhase() (string, error) {
@@ -613,7 +611,6 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 	if err != nil {
 		return err
 	}
-	atLeastOneTechBuilt := false
 	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo)
 	// First create repositories for each technology in Artifactory according to user input
 	for tech, detected := range cc.data.DetectedTechnologies {
@@ -624,15 +621,10 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 				return
 			}
 			cc.getBuildCmd(tech)
-			atLeastOneTechBuilt = true
-		} else {
-			cc.data.DetectedTechnologies[tech] = false
+			return nil
 		}
 	}
-	if !atLeastOneTechBuilt {
-		return errorutils.CheckError(errors.New("at least one of the supported technologies is expected to be chosen for building"))
-	}
-	return nil
+	return errorutils.CheckError(errors.New("at least one of the supported technologies is expected to be chosen for building"))
 }
 
 func (cc *CiSetupCommand) printDetectedTechs() error {
@@ -709,7 +701,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 					if err != nil {
 						log.Error(err)
 					} else {
-						// we created both remote and virtual repositories successfully
+						// We created both remote and virtual repositories successfully
 						cc.data.BuiltTechnologies[technologyType].VirtualRepo = repoName
 						return
 					}
@@ -795,7 +787,7 @@ func promptGitProviderSelection() (selected string, err error) {
 	return
 }
 
-func promptCiTypeSelection() (selected string, err error) {
+func promptCiProviderSelection() (selected string, err error) {
 	ciTypes := []cisetup.CiType{
 		cisetup.Pipelines,
 		cisetup.Jenkins,
@@ -806,7 +798,7 @@ func promptCiTypeSelection() (selected string, err error) {
 	for _, ci := range ciTypes {
 		selectableItems = append(selectableItems, ioutils.PromptItem{Option: string(ci), TargetValue: &selected})
 	}
-	println("Choose the desired CI type:")
+	println("Select a CI provider:")
 	err = ioutils.SelectString(selectableItems, "", func(item ioutils.PromptItem) {
 		*item.TargetValue = item.Option
 	})
@@ -962,10 +954,10 @@ func (cc *CiSetupCommand) gitPhase() (err error) {
 	}
 }
 
-func (cc *CiSetupCommand) desiredOutputPhase() (err error) {
+func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 	var ciType string
 	for {
-		ciType, err = promptCiTypeSelection()
+		ciType, err = promptCiProviderSelection()
 		if err != nil {
 			log.Error(err)
 			continue
