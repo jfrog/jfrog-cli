@@ -98,10 +98,11 @@ func logBeginningInstructions() error {
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
 
-func logActivatePipelinesInstructions() error {
+func inactivePipelinesNote() error {
 	instructions := []string{
 		"",
-		colorTitle("Free"),
+		colorTitle("JFrog Pipelines"),
+		"It looks like your JFrog platform dose not include JFrog Pipelines or it is currently inactive.",
 		"",
 	}
 	return writeToScreen(strings.Join(instructions, "\n"))
@@ -202,23 +203,35 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	var ciFileName string
+	var ciSpecificInstructions []string
 	switch cc.data.CiType {
 	case cisetup.Pipelines:
 		// Configure pipelines, create and stage pipelines.yml.
-		ciFileName, err = cc.runPipelinesPhase()
+		ciFileName, err := cc.runPipelinesPhase()
+		if err != nil {
+			return err
+		}
+		ciSpecificInstructions, err = cc.getPiplinesCompletionInstruction(ciFileName)
 		if err != nil {
 			return err
 		}
 	case cisetup.Jenkins:
 		// Create and stage Jenkinsfile.
-		ciFileName, err = cc.runJenkinsPhase()
+		ciFileName, err := cc.runJenkinsPhase()
+		if err != nil {
+			return err
+		}
+		ciSpecificInstructions, err = cc.getJenkinsCompletionInstruction(ciFileName)
 		if err != nil {
 			return err
 		}
 	case cisetup.GithubActions:
 		// Create and stage main.yml.
-		ciFileName, err = cc.runGithubActionsPhase()
+		ciFileName, err := cc.runGithubActionsPhase()
+		if err != nil {
+			return err
+		}
+		ciSpecificInstructions, err = cc.getGithubActionsCompletionInstruction(ciFileName)
 		if err != nil {
 			return err
 		}
@@ -229,7 +242,7 @@ func (cc *CiSetupCommand) Run() error {
 	if err != nil {
 		return err
 	}
-	return cc.logCompletionInstruction(ciFileName)
+	return cc.logCompletionInstruction(ciSpecificInstructions)
 }
 
 func saveIfNoError(errCheck error, conf *cisetup.CiSetupData) error {
@@ -429,32 +442,81 @@ func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) e
 	return ioutil.WriteFile(path, ciConfig, 0644)
 }
 
-func (cc *CiSetupCommand) logCompletionInstruction(ciFileName string) error {
+func (cc *CiSetupCommand) getPiplinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
-		return err
+		return []string{}, err
 	}
 
-	instructions := []string{
-		"", colorTitle("Completing the setup"),
+	return []string{"", colorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
 		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
 		"cd " + cc.data.LocalDirPath,
-		"git commit -m \"Add " + ciFileName + "\"",
+		"git commit -m \"Add " + pipelinesFileName + "\"",
 		"git push", "",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
-		getPipelineUiPath(serviceDetails.Url, ciFileName), "",
+		getPipelineUiPath(serviceDetails.Url, pipelinesFileName), ""}, nil
+}
+
+func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string) ([]string, error) {
+
+	JenkinsCompletionInstruction := []string{"", colorTitle("Completing the setup"),
+		"We configured the JFrog Platform and generated a Jenkinsfile file for you under" + cc.data.LocalDirPath,
+		"To complete the setup, follow these steps:",
+		" Open the Jenkinsfile for edit."}
+	// M2_HOME instructions relevant only for Maven
+	if cc.data.DetectedTechnologies[cisetup.Maven] {
+		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
+			" Inside the 'environment' section, set the value of the M2_HOME variable,",
+			" to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
+	}
+
+	JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
+		" Inside the 'environment' section, set the value of the JFROG_CLI_BUILD_URL variable,",
+		" so that it includes the URL to the job run console log in Jenkins. You may need to look at URLs of other job runs, to build the URL.",
+		"",
+		" If cloning the code from git requires credentials, modify the 'git' step as described in the comment inside the 'Clone' step.",
+		" Define the RT_USERNAME environment variable and the RT_PASSWORD as a secret environment variable in Jenkins.",
+		" These environment variables should store the credentials to the JFrog Platform.",
+		"",
+		" Add the new Jenkinsfile to your git repository by running the following commands:",
+		"\t cd "+cc.data.LocalDirPath,
+		"\t git commit -m \"Add Jenkinsfile\"",
+		"\t git push",
+		" Create a Pipelines job in Jenkins, and configure it to pull the new Jenkinsfile from git.",
+		" Run the new Jenkins job. ", "")
+
+	return JenkinsCompletionInstruction, nil
+}
+
+func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) ([]string, error) {
+	return []string{"", colorTitle("Completing the setup"),
+		"We configured the JFrog Platform and generated a " + githubActionFileName + " for you.",
+		"To complete the setup, follow these steps:",
+		" Run the following JFrog CLI command:",
+		"\t jfrog rt c export " + cisetup.ConfigServerId,
+		" Copy the given token to your clipboard and save it as a secret named JF_ARTIFACTORY_SECRET_1 on GitHub.",
+		" Add the new Jenkinsfile to your git repository by running the following commands:",
+		"\t cd " + cc.data.LocalDirPath,
+		"\t git commit -m \" Add " + githubActionFileName + "\"",
+		"\t git push",
+		" View the build running on GitHub.",
+		""}, nil
+}
+
+func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstractions []string) error {
+	instructions := append(ciSpecificInstractions,
 		colorTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA. More IDEs will be supported in the future.",
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of JFrog Plugin is installed on IntelliJ IDEA.",
 		" 2. Create a JFrog user for the IDE by running the following command:", "",
-		"    " + fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
+		"    "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
 		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
-	}
+	)
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
 
@@ -945,7 +1007,7 @@ func (cc *CiSetupCommand) desiredOutputPhase() (err error) {
 				return nil
 			}
 			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
-				logActivatePipelinesInstructions()
+				inactivePipelinesNote()
 			}
 			log.Error(err)
 		} else { // The user doesn't choose Pipelines.
