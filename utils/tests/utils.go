@@ -647,7 +647,7 @@ func VerifySha256DetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.
 	assert.Equal(t, 1, result.Totals.Success)
 	assert.Equal(t, 0, result.Totals.Failure)
 	// Verify a sha256 was returned
-	assert.NotEqual(t, 0, len(result.Sha256Array), "Summary validation failed - no sha256 has returned from artifactory.")
+	assert.NotEmpty(t, result.Sha256Array, "Summary validation failed - no sha256 has returned from Artifactory.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(result.Sha256Array[0].Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
 }
