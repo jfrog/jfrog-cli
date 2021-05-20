@@ -380,7 +380,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	}
 	// Verify deploy details
 	expectedSourcePath := npmProjectPath + "jfrog-cli-tests-v1.0.0.tgz"
-	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz"
+	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-v1.0.0.tgz"
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
