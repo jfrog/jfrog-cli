@@ -81,7 +81,8 @@ const (
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
-	Config = "config"
+	AddConfig  = "config-add"
+	EditConfig = "config-edit"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -159,6 +160,7 @@ const (
 	interactive   = "interactive"
 	encPassword   = "enc-password"
 	basicAuthOnly = "basic-auth-only"
+	overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix          = "upload-"
@@ -591,6 +593,10 @@ var flagsMap = map[string]cli.Flag{
 	encPassword: cli.BoolTFlag{
 		Name:  encPassword,
 		Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
+	},
+	overwrite: cli.BoolFlag{
+		Name:  overwrite,
+		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
 	},
 	basicAuthOnly: cli.BoolFlag{
 		Name: basicAuthOnly,
@@ -1249,7 +1255,11 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
-	Config: {
+	AddConfig: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
+	},
+	EditConfig: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},

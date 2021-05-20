@@ -26,7 +26,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "add",
 			Description:  add.Description,
-			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			Flags:        cliutils.GetCommandFlags(cliutils.AddConfig),
 			HelpName:     corecommon.CreateUsage("c add", add.Description, add.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
@@ -36,7 +36,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "edit",
 			Description:  edit.Description,
-			Flags:        cliutils.GetCommandFlags(cliutils.Config),
+			Flags:        cliutils.GetCommandFlags(cliutils.EditConfig),
 			HelpName:     corecommon.CreateUsage("c edit", edit.Description, edit.Usage),
 			BashComplete: corecommon.CreateBashCompletionFunc(commands.GetAllServerIds()...),
 			Action: func(c *cli.Context) error {
@@ -100,17 +100,31 @@ func addCmd(c *cli.Context) error {
 	if c.NArg() > 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return addOrEdit(c, false)
+	if c.Bool("overwrite") {
+		return addOrEdit(c, overwriteOperation)
+	}
+	return addOrEdit(c, addOperation)
 }
 
 func editCmd(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
-	return addOrEdit(c, true)
+	return addOrEdit(c, editOperation)
 }
 
-func addOrEdit(c *cli.Context, expectExists bool) error {
+type configOperation int
+
+const (
+	// "config add" comment
+	addOperation configOperation = iota
+	// "config edit" comment
+	editOperation
+	// "config add with --overwrite" comment
+	overwriteOperation
+)
+
+func addOrEdit(c *cli.Context, operation configOperation) error {
 	configCommandConfiguration, err := CreateConfigCommandConfiguration(c)
 	if err != nil {
 		return err
@@ -122,8 +136,10 @@ func addOrEdit(c *cli.Context, expectExists bool) error {
 		if err := ValidateServerId(serverId); err != nil {
 			return err
 		}
-		if err := validateServerExistence(serverId, expectExists); err != nil {
-			return err
+		if operation != overwriteOperation {
+			if err := validateServerExistence(serverId, operation); err != nil {
+				return err
+			}
 		}
 	}
 	err = validateConfigFlags(configCommandConfiguration)
@@ -206,12 +222,12 @@ func ValidateServerId(serverId string) error {
 	return nil
 }
 
-func validateServerExistence(serverId string, expectExist bool) error {
+func validateServerExistence(serverId string, operation configOperation) error {
 	config, err := commands.GetConfig(serverId, false)
 	serverExist := err == nil && config.ServerId != ""
-	if expectExist && !serverExist {
+	if operation == editOperation && !serverExist {
 		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' doesn't exist.", serverId)))
-	} else if !expectExist && serverExist {
+	} else if operation == addOperation && serverExist {
 		return errorutils.CheckError(errors.New(fmt.Sprintf("Server ID '%s' already exists.", serverId)))
 	}
 	return nil
