@@ -1659,14 +1659,22 @@ func npmPublishCmd(c *cli.Context) error {
 	if exists {
 		// Found a config file. Continue as native command.
 		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number, module and detailed-summary.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
 			return err
 		}
 		npmCmd := npm.NewNpmPublishCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
+		err = commands.Exec(npmCmd)
+		if err != nil {
+			return err
+		}
+		if npmCmd.IsDetailedSummary() {
+			result := npmCmd.Result()
+			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+		}
+		return nil
 	}
 	// If config file not found, use Npm legacy command
 	return npmLegacyPublishCmd(c)
@@ -2359,8 +2367,7 @@ func buildPublishCmd(c *cli.Context) error {
 
 	err = commands.Exec(buildPublishCmd)
 	if buildPublishCmd.IsDetailedSummary() {
-		summary := buildPublishCmd.GetSummary()
-		if summary != nil {
+		if summary := buildPublishCmd.GetSummary(); summary != nil {
 			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
 		}
 	}
@@ -2561,6 +2568,9 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
+	}
 	var releaseBundleCreateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
@@ -2585,14 +2595,23 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run"))
+	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	return commands.Exec(releaseBundleCreateCmd)
+	commands.Exec(releaseBundleCreateCmd)
+	if releaseBundleCreateCmd.IsDetailedSummary() {
+		if summary := releaseBundleCreateCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
 }
 
 func releaseBundleUpdateCmd(c *cli.Context) error {
 	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
 	}
 	var releaseBundleUpdateSpec *spec.SpecFiles
 	var err error
@@ -2618,9 +2637,15 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleUpdateCmd.SetServerDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run"))
+	releaseBundleUpdateCmd.SetServerDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
 
-	return commands.Exec(releaseBundleUpdateCmd)
+	err = commands.Exec(releaseBundleUpdateCmd)
+	if releaseBundleUpdateCmd.IsDetailedSummary() {
+		if summary := releaseBundleUpdateCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
 }
 
 func releaseBundleSignCmd(c *cli.Context) error {
@@ -2636,8 +2661,14 @@ func releaseBundleSignCmd(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	releaseBundleSignCmd.SetServerDetails(rtDetails).SetReleaseBundleSignParams(params)
-	return commands.Exec(releaseBundleSignCmd)
+	releaseBundleSignCmd.SetServerDetails(rtDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(c.Bool("detailed-summary"))
+	err = commands.Exec(releaseBundleSignCmd)
+	if releaseBundleSignCmd.IsDetailedSummary() {
+		if summary := releaseBundleSignCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
 }
 
 func releaseBundleDistributeCmd(c *cli.Context) error {
