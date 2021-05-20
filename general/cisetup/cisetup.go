@@ -361,7 +361,7 @@ func (cc *CiSetupCommand) runGithubActionsPhase() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = os.MkdirAll(cisetup.GithubActionsDir, 0644)
+	err = os.MkdirAll(filepath.Join(cc.data.LocalDirPath, cisetup.GithubActionsDir), 0744)
 	if err != nil {
 		return "", err
 	}
