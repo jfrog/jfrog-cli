@@ -228,7 +228,7 @@ func (cc *CiSetupCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		ciSpecificInstructions= cc.getGithubActionsCompletionInstruction(ciFileName)
+		ciSpecificInstructions = cc.getGithubActionsCompletionInstruction(ciFileName)
 	}
 	// Create group and permission target if needed.
 	err = runIdePhase()
@@ -441,10 +441,12 @@ func (cc *CiSetupCommand) getPiplinesCompletionInstruction(pipelinesFileName str
 
 	return []string{"", colorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
-		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
-		"cd " + cc.data.LocalDirPath,
-		"git commit -m \"Add " + pipelinesFileName + "\"",
-		"git push", "",
+		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:",
+		"",
+		"\t cd " + cc.data.LocalDirPath,
+		"\t git commit -m \"Add " + pipelinesFileName + "\"",
+		"\t git push",
+		"",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
 		getPipelineUiPath(serviceDetails.Url, pipelinesFileName), ""}, nil
@@ -486,7 +488,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string
 func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) []string {
 	return []string{"", colorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a GitHub Actions workflow file",
-		"under " + filepath.Join(cc.data.LocalDirPath, ".github", "workflows", githubActionFileName) + " for you.",
+		"named " + cisetup.GithubActionsFileName + " for you under " + cisetup.GithubActionsDir + ".",
 		"",
 		"To complete the setup, follow these steps:",
 		"* Run the following JFrog CLI command:",
@@ -511,11 +513,14 @@ func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstractions []stri
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
 		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA.",
-		" 2. Create a JFrog user for the IDE by running the following command:", "",
-		"    "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
+		" 2. Create a JFrog user for the IDE by running the following command:",
+		"",
+		"\t "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId),
+		"",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
-		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
+		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.",
+		"",
 	)
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
@@ -614,7 +619,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo)
-	// First create repositories for each technology in Artifactory according to user input
+	// First create repositories for the selected technology.
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
 			cc.data.BuiltTechnologies[tech] = &cisetup.TechnologyInfo{}
