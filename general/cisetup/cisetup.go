@@ -221,21 +221,14 @@ func (cc *CiSetupCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		ciSpecificInstructions, err = cc.getJenkinsCompletionInstruction(ciFileName)
-		if err != nil {
-			return err
-		}
+		ciSpecificInstructions = cc.getJenkinsCompletionInstruction(ciFileName)
 	case cisetup.GithubActions:
 		// Create and stage main.yml.
 		ciFileName, err := cc.runGithubActionsPhase()
 		if err != nil {
 			return err
 		}
-		ciSpecificInstructions, err = cc.getGithubActionsCompletionInstruction(ciFileName)
-		if err != nil {
-			return err
-		}
-
+		ciSpecificInstructions = cc.getGithubActionsCompletionInstruction(ciFileName)
 	}
 	// Create group and permission target if needed.
 	err = runIdePhase()
@@ -448,72 +441,86 @@ func (cc *CiSetupCommand) getPiplinesCompletionInstruction(pipelinesFileName str
 
 	return []string{"", colorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a pipelines.yml for you.",
-		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:", "",
-		"cd " + cc.data.LocalDirPath,
-		"git commit -m \"Add " + pipelinesFileName + "\"",
-		"git push", "",
+		"To complete the setup, add the new pipelines.yml to your git repository by running the following commands:",
+		"",
+		"\t cd " + cc.data.LocalDirPath,
+		"\t git commit -m \"Add " + pipelinesFileName + "\"",
+		"\t git push",
+		"",
 		"Although your pipeline is configured, it hasn't run yet.",
 		"It will run and become visible in the following URL, after the next git commit:",
 		getPipelineUiPath(serviceDetails.Url, pipelinesFileName), ""}, nil
 }
 
-func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string) ([]string, error) {
-
+func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string) []string {
 	JenkinsCompletionInstruction := []string{"", colorTitle("Completing the setup"),
-		"We configured the JFrog Platform and generated a Jenkinsfile file for you under" + cc.data.LocalDirPath,
+		"We configured the JFrog Platform and generated a Jenkinsfile file for you under " + cc.data.LocalDirPath,
 		"To complete the setup, follow these steps:",
-		" Open the Jenkinsfile for edit."}
+		"* Open the Jenkinsfile for edit."}
 	// M2_HOME instructions relevant only for Maven
-	if cc.data.DetectedTechnologies[cisetup.Maven] {
+	if cc.data.BuiltTechnologies[cisetup.Maven] != nil {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
-			" Inside the 'environment' section, set the value of the M2_HOME variable,",
-			" to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
+			"* Inside the 'environment' section, set the value of the M2_HOME variable,",
+			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
 	}
 
 	JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
-		" Inside the 'environment' section, set the value of the JFROG_CLI_BUILD_URL variable,",
-		" so that it includes the URL to the job run console log in Jenkins. You may need to look at URLs of other job runs, to build the URL.",
+		"* Inside the 'environment' section, set the value of the JFROG_CLI_BUILD_URL variable,",
+		"  so that it includes the URL to the job run console log in Jenkins.",
+		"  You may need to look at URLs of other job runs, to build the URL.",
+		"* If cloning the code from git requires credentials, modify the 'git' step as described",
+		"  in the comment inside the 'Clone' step.",
+		"* Define an environment variable named RT_USERNAME with your JFrog Platform username as its value.",
+		"* Create credentials with 'rt-password' as its ID, with your JFrog Platform password as",
+		"  its value. Read more about this here - https://www.jenkins.io/doc/book/using/using-credentials/",
+		"* Add the new Jenkinsfile to your git repository by running the following commands:",
 		"",
-		" If cloning the code from git requires credentials, modify the 'git' step as described in the comment inside the 'Clone' step.",
-		" Define the RT_USERNAME environment variable and the RT_PASSWORD as a secret environment variable in Jenkins.",
-		" These environment variables should store the credentials to the JFrog Platform.",
-		"",
-		" Add the new Jenkinsfile to your git repository by running the following commands:",
 		"\t cd "+cc.data.LocalDirPath,
 		"\t git commit -m \"Add Jenkinsfile\"",
 		"\t git push",
-		" Create a Pipelines job in Jenkins, and configure it to pull the new Jenkinsfile from git.",
-		" Run the new Jenkins job. ", "")
+		"",
+		"* Create a Pipelines job in Jenkins, and configure it to pull the new Jenkinsfile from git.",
+		"* Run the new Jenkins job. ", "")
 
-	return JenkinsCompletionInstruction, nil
+	return JenkinsCompletionInstruction
 }
 
-func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) ([]string, error) {
+func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFileName string) []string {
 	return []string{"", colorTitle("Completing the setup"),
-		"We configured the JFrog Platform and generated a " + githubActionFileName + " for you.",
+		"We configured the JFrog Platform and generated a GitHub Actions workflow file",
+		"named " + cisetup.GithubActionsFileName + " for you under " + cisetup.GithubActionsDir + ".",
+		"",
 		"To complete the setup, follow these steps:",
-		" Run the following JFrog CLI command:",
-		"\t jfrog rt c export " + cisetup.ConfigServerId,
-		" Copy the given token to your clipboard and save it as a secret named JF_ARTIFACTORY_SECRET_1 on GitHub.",
-		" Add the new Jenkinsfile to your git repository by running the following commands:",
+		"* Run the following JFrog CLI command:",
+		"",
+		"\t jfrog c export " + cisetup.ConfigServerId,
+		"",
+		"* Copy the displayed token into your clipboard and save it as a secret",
+		"  named JF_ARTIFACTORY_SECRET_1 on GitHub.",
+		"* Add the new workflow file to your git repository by running the following commands:",
+		"",
 		"\t cd " + cc.data.LocalDirPath,
-		"\t git commit -m \" Add " + githubActionFileName + "\"",
+		"\t git commit -m \"Add " + githubActionFileName + "\"",
 		"\t git push",
-		" View the build running on GitHub.",
-		""}, nil
+		"",
+		"* View the build running on GitHub.",
+		""}
 }
 
 func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstractions []string) error {
 	instructions := append(ciSpecificInstractions,
 		colorTitle("Allowing developers to access this pipeline from their IDE"),
-		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA. More IDEs will be supported in the future.",
+		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
-		" 1. Make sure the latest version of JFrog Plugin is installed on IntelliJ IDEA.",
-		" 2. Create a JFrog user for the IDE by running the following command:", "",
-		"    "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId), "",
+		" 1. Make sure the latest version of the JFrog Plugin is installed on IntelliJ IDEA.",
+		" 2. Create a JFrog user for the IDE by running the following command:",
+		"",
+		"\t "+fmt.Sprintf(createUserTemplate, ideUserName, ideUserPassPlaceholder, ideUserEmailPlaceholder, ideGroupName, cisetup.ConfigServerId),
+		"",
 		" 3. In IDEA, under 'JFrog Global Configuration', set the JFrog Platform URL and the user you created.",
 		" 4. In IDEA, under 'JFrog CI Integration', set * as the 'Build name pattern'.",
-		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.", "",
+		" 5. In IDEA, open the 'JFrog' panel at the bottom of the screen, choose the 'CI' tab to see the CI information.",
+		"",
 	)
 	return writeToScreen(strings.Join(instructions, "\n"))
 }
@@ -612,7 +619,7 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 		return err
 	}
 	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo)
-	// First create repositories for each technology in Artifactory according to user input
+	// First create repositories for the selected technology.
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
 			cc.data.BuiltTechnologies[tech] = &cisetup.TechnologyInfo{}
