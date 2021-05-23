@@ -47,9 +47,9 @@ func TestExtractRepositoryName(t *testing.T) {
 
 func TestGetExplicitTechsListByNumber(t *testing.T) {
 	tests := []struct {
-		name                  string
-		techs               []string
-		expected				string
+		name     string
+		techs    []string
+		expected string
 	}{
 		{"one tech", []string{"maven"}, "maven"},
 		{"two techs", []string{"maven", "gradle"}, "maven and gradle"},
