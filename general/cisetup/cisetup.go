@@ -458,7 +458,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
 	// M2_HOME instructions relevant only for Maven
-	if cc.data.BuiltTechnologies[cisetup.Maven] != nil {
+	if cc.data.BuiltTechnology.TechnologyType == cisetup.Maven {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
 			"* Inside the 'environment' section, set the value of the M2_HOME variable,",
 			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
@@ -618,16 +618,15 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 	if err != nil {
 		return err
 	}
-	cc.data.BuiltTechnologies = make(map[cisetup.Technology]*cisetup.TechnologyInfo)
-	// First create repositories for the selected technology.
+	/// First create repositories for the selected technology.
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
-			cc.data.BuiltTechnologies[tech] = &cisetup.TechnologyInfo{}
+			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{TechnologyType: tech}
 			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
 				return
 			}
-			cc.getBuildCmd(tech)
+			cc.getBuildCmd()
 			return nil
 		}
 	}
@@ -656,16 +655,17 @@ func getExplicitTechsListByNumber(techs []string) string {
 	return strings.Join(techs[0:len(techs)-1], ", ") + " and " + techs[len(techs)-1]
 }
 
-func (cc *CiSetupCommand) getBuildCmd(tech cisetup.Technology) {
-	defaultBuildCmd := buildCmdByTech[tech]
-	if info, built := cc.defaultData.BuiltTechnologies[tech]; built {
-		if info.BuildCmd != "" {
-			defaultBuildCmd = info.BuildCmd
+func (cc *CiSetupCommand) getBuildCmd() {
+	defaultBuildCmd := buildCmdByTech[cc.data.BuiltTechnology.TechnologyType]
+	// Use the cached build command only if the chosen built technology wasn't changed.
+	if cc.defaultData.BuiltTechnology.TechnologyType == cc.data.BuiltTechnology.TechnologyType {
+		if cc.data.BuiltTechnology.BuildCmd != "" {
+			defaultBuildCmd = cc.data.BuiltTechnology.BuildCmd
 		}
 	}
 	// Ask for working build command.
-	prompt := "Please provide a single-line " + string(tech) + " build command."
-	ioutils.ScanFromConsole(prompt, &cc.data.BuiltTechnologies[tech].BuildCmd, defaultBuildCmd)
+	prompt := "Please provide a single-line " + string(cc.data.BuiltTechnology.TechnologyType) + " build command."
+	ioutils.ScanFromConsole(prompt, &cc.data.BuiltTechnology.BuildCmd, defaultBuildCmd)
 }
 
 func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Technology) (err error) {
@@ -709,7 +709,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 						log.Error(err)
 					} else {
 						// We created both remote and virtual repositories successfully
-						cc.data.BuiltTechnologies[technologyType].VirtualRepo = repoName
+						cc.data.BuiltTechnology.VirtualRepo = repoName
 						return
 					}
 				}
@@ -757,7 +757,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType cisetup.Techno
 		}
 	}
 	// Saves the new created repo name (key) in the results data structure.
-	cc.data.BuiltTechnologies[technologyType].VirtualRepo = virtualRepo
+	cc.data.BuiltTechnology.VirtualRepo = virtualRepo
 	return
 }
 
