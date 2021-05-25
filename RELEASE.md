@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.48.0 (May 23, 2021)
+- New "jfrog ci-setup" command
+- Support for yarn - new "jfrog rt yarn" command
+- New --detailed-summary option added to the "jfrog rt npm-publish" command
+- New --detailed-summary option added to the release-bundle create and sign commands
+- Bug fix - Temp files are not deleted after download
+- Bug fix - Change the permission of the npmrc file created by the "jfrog rt npmi" command
+
 ## 1.47.3 (May 15, 2021)
 - Bug fix - "jfrog rt upload" - using ANT patterns fails to convert doube asteriks to directory range.
 - Bug fix - "jfrog rt npm-install" can fail when .npmrc includes 'json=true'.

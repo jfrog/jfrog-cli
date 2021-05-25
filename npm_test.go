@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	npmcoreutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,9 +15,9 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/npm"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	"github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/utils/ioutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
 	"github.com/jfrog/jfrog-cli/utils/tests"
@@ -109,7 +112,7 @@ func runTestNpm(t *testing.T, native bool) {
 }
 
 func readModuleId(t *testing.T, wd string) string {
-	packageInfo, err := npm.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
+	packageInfo, err := npmcoreutils.ReadPackageInfoFromPackageJson(filepath.Dir(wd))
 	assert.NoError(t, err)
 	return packageInfo.BuildInfoModuleId()
 }
@@ -169,6 +172,17 @@ func initNpmFilesTest(t *testing.T, native bool) (npmProjectPath, npmScopedProje
 	if native {
 		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath), filepath.Dir(npmScopedProjectPath),
 			filepath.Dir(npmNpmrcProjectPath), filepath.Dir(npmProjectCi)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
+		assert.NoError(t, err)
+	}
+	return
+}
+
+func initNpmProjectTest(t *testing.T, native bool) (npmProjectPath string) {
+	npmProjectPath, err := filepath.Abs(createNpmProject(t, "npmproject"))
+	assert.NoError(t, err)
+	prepareArtifactoryForNpmBuild(t, filepath.Dir(npmProjectPath))
+	if native {
+		err = createConfigFileForTest([]string{filepath.Dir(npmProjectPath)}, tests.NpmRemoteRepo, tests.NpmRepo, t, utils.Npm, false)
 		assert.NoError(t, err)
 	}
 	return
@@ -340,4 +354,38 @@ func runNpm(t *testing.T, native bool, args ...string) {
 		err = artifactoryCli.Exec(args...)
 	}
 	assert.NoError(t, err)
+}
+
+func TestNpmPublishDetailedSummary(t *testing.T) {
+	initNpmTest(t)
+	// Init npm project & npmp command for testing
+	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t, true), "package.json")
+	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
+	args := []string{"--detailed-summary=true"}
+	npmpCmd := npm.NewNpmPublishCommand()
+	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+
+	err := commands.Exec(npmpCmd)
+	assert.NoError(t, err)
+
+	result := npmpCmd.Result()
+	assert.NotNil(t, result)
+	reader := result.Reader()
+	assert.NoError(t, reader.GetError())
+	defer reader.Close()
+	// Read result
+	var files []serviceutils.FileTransferDetails
+	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+		files = append(files, *transferDetails)
+	}
+	// Verify deploy details
+	expectedSourcePath := npmProjectPath + "jfrog-cli-tests-1.0.0.tgz"
+	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz"
+	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
+	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
+	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
+	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
+	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
+
+	cleanNpmTest()
 }

@@ -74,7 +74,7 @@ type DetailedSummaryRecord struct {
 	Target string `json:"target"`
 }
 
-type UploadDetailedSummaryRecord struct {
+type ExtendedDetailedSummaryRecord struct {
 	DetailedSummaryRecord
 	Sha256 string `json:"sha256"`
 }
@@ -103,7 +103,7 @@ func PrintSummaryReport(success, failed int, originalErr error) error {
 
 // Prints a summary report.
 // If a resultReader is provided, we will iterate over the result and print a detailed summary including the affected files.
-func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, isUploadCommand bool, originalErr error) error {
+func PrintDetailedSummaryReport(success, failed int, reader *content.ContentReader, printExtendedDetails bool, originalErr error) error {
 	basicSummary, mErr := CreateSummaryReportString(success, failed, originalErr)
 	if mErr != nil {
 		return summaryPrintError(mErr, originalErr)
@@ -130,7 +130,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 		log.Output("  files: []")
 	} else {
 		for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
-			writer.Write(getDetailedSummaryRecord(transferDetails, isUploadCommand))
+			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
 		}
 	}
 	mErr = writer.Close()
@@ -138,18 +138,18 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 }
 
 // Get the detailed summary record.
-// In case of an upload command we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails, isUploadCommand bool) interface{} {
+// In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
+func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,
 	}
-	if isUploadCommand {
-		uploadRecord := UploadDetailedSummaryRecord{
+	if extendDetailedSummary {
+		extendedRecord := ExtendedDetailedSummaryRecord{
 			DetailedSummaryRecord: record,
 			Sha256:                transferDetails.Sha256,
 		}
-		return uploadRecord
+		return extendedRecord
 	}
 	return record
 }

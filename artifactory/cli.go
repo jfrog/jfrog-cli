@@ -3,6 +3,9 @@ package artifactory
 import (
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -574,6 +577,30 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommon.CreateBashCompletionFunc(),
 			Action: func(c *cli.Context) error {
 				return npmPublishCmd(c)
+			},
+		},
+		{
+			Name:         "yarn-config",
+			Aliases:      []string{"yarnc"},
+			Flags:        cliutils.GetCommandFlags(cliutils.YarnConfig),
+			Description:  yarnconfig.Description,
+			HelpName:     corecommon.CreateUsage("rt yarn-config", yarnconfig.Description, yarnconfig.Usage),
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return createYarnConfigCmd(c)
+			},
+		},
+		{
+			Name:            "yarn",
+			Flags:           cliutils.GetCommandFlags(cliutils.Yarn),
+			Description:     yarndocs.Description,
+			HelpName:        corecommon.CreateUsage("rt yarn", yarndocs.Description, yarndocs.Usage),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return yarnCmd(c)
 			},
 		},
 		{
@@ -1632,14 +1659,22 @@ func npmPublishCmd(c *cli.Context) error {
 	if exists {
 		// Found a config file. Continue as native command.
 		args := cliutils.ExtractCommand(c)
-		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number and module.
+		// Validates the npm command. If a config file is found, the only flags that can be used are build-name, build-number, module and detailed-summary.
 		// Otherwise, throw an error.
 		if err := validateCommand(args, cliutils.GetLegacyNpmFlags()); err != nil {
 			return err
 		}
 		npmCmd := npm.NewNpmPublishCommand()
 		npmCmd.SetConfigFilePath(configFilePath).SetArgs(args)
-		return commands.Exec(npmCmd)
+		err = commands.Exec(npmCmd)
+		if err != nil {
+			return err
+		}
+		if npmCmd.IsDetailedSummary() {
+			result := npmCmd.Result()
+			return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+		}
+		return nil
 	}
 	// If config file not found, use Npm legacy command
 	return npmLegacyPublishCmd(c)
@@ -1666,6 +1701,24 @@ func npmLegacyPublishCmd(c *cli.Context) error {
 	npmPublicCmd.SetBuildConfiguration(buildConfiguration).SetRepo(c.Args().Get(0)).SetNpmArgs(npmPublicArgs).SetServerDetails(rtDetails)
 
 	return commands.Exec(npmPublicCmd)
+}
+
+func yarnCmd(c *cli.Context) error {
+	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
+
+	configFilePath, exists, err := utils.GetProjectConfFilePath(utils.Yarn)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New(fmt.Sprintf("JFrog CLI's Yarn configuration file was not found.\n" +
+			"Run 'jfrog rt yarn-config' command to create it prior to running 'jfrog rt yarn'."))
+	}
+
+	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
+	return commands.Exec(yarnCmd)
 }
 
 // This function checks whether the command received --help as a single option.
@@ -1891,6 +1944,13 @@ func createNpmConfigCmd(c *cli.Context) error {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 	return commandUtils.CreateBuildConfig(c, utils.Npm)
+}
+
+func createYarnConfigCmd(c *cli.Context) error {
+	if c.NArg() != 0 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	return commandUtils.CreateBuildConfig(c, utils.Yarn)
 }
 
 func createNugetConfigCmd(c *cli.Context) error {

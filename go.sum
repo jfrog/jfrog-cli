@@ -74,8 +74,8 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/gailazar300/gocmd v0.1.20-0.20210524151348-57c4af0be75b h1:MYSrKCld/WjFifYFODB6ZknUA195gKrPYJEivId67Gk=
 github.com/gailazar300/gocmd v0.1.20-0.20210524151348-57c4af0be75b/go.mod h1:ANm3NLFP6n8XXDdj2RoFePTYTtJKRf27LSnYylHbUnM=
-github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210524150933-3e6956ef03d8 h1:9nRAC9Y9hrLEJ37f9SkE2fYpr9ySDj1mMaOe5VlGigs=
-github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210524150933-3e6956ef03d8/go.mod h1:SffB+RieMpFMgI7qCkldEFn4vsnKPbDogtcmQQikELk=
+github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210525081458-b5a9ef53cc38 h1:WK1eJB9z79Eu8Q8I6LFHdSafIa/EGJ8deBqBZqa0SIo=
+github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210525081458-b5a9ef53cc38/go.mod h1:5jSLq5I9rB4ISr5RMOaOxOL6Js3DVdbBaYlr6X6KifI=
 github.com/gailazar300/jfrog-client-go v0.18.1-0.20210524150650-af3726fee5c2 h1:Z5n22ZJAA0oFUme3h81V1PuwDIY4z1wSwkDfnejmVXw=
 github.com/gailazar300/jfrog-client-go v0.18.1-0.20210524150650-af3726fee5c2/go.mod h1:1XMLr/yzslzV9uABPrX4gpA0Bvc51ZX6LRvu/L0WQPc=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
