@@ -92,12 +92,15 @@ environment:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.plugins=true"
 
-for:
-  - matrix:
-      only:
-        - job_name: npm_tests
-    install:
-      - ps: Install-Product node 15
+#for:
+#  - matrix:
+#      only:
+#        - job_name: npm_tests
+#    install:
+#      - ps: Install-Product node 15
+
+install:
+  - ps: Install-Product node 15
 
 test_script:
   - "%TEST_SUIT%"
