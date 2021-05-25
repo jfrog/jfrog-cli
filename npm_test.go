@@ -95,7 +95,7 @@ func runTestNpm(t *testing.T, native bool) {
 			npmTest.moduleName = readModuleId(t, npmTest.wd)
 			runNpm(t, native, commandArgs...)
 		}
-		validatePartialsBuildInfo(t, buildNumber, npmTest.moduleName)
+		validatePartialsBuildInfo(t, tests.NpmBuildName, buildNumber, npmTest.moduleName)
 		artifactoryCli.Exec("bp", tests.NpmBuildName, buildNumber)
 		npmTest.buildNumber = buildNumber
 		npmTest.validationFunc(t, npmTest)
@@ -127,13 +127,13 @@ func TestNpmWithGlobalConfig(t *testing.T) {
 	runNpm(t, true, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
 	err = os.Chdir(wd)
 	assert.NoError(t, err)
-	validatePartialsBuildInfo(t, "1", ModuleNameJFrogTest)
+	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
 	cleanNpmTest()
 
 }
 
-func validatePartialsBuildInfo(t *testing.T, buildNumber, moduleName string) {
-	partials, err := utils.ReadPartialBuildInfoFiles(tests.NpmBuildName, buildNumber, "")
+func validatePartialsBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
+	partials, err := utils.ReadPartialBuildInfoFiles(buildName, buildNumber, "")
 	assert.NoError(t, err)
 	for _, module := range partials {
 		assert.Equal(t, moduleName, module.ModuleId)
@@ -219,10 +219,6 @@ func createNpmProject(t *testing.T, dir string) string {
 }
 
 func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
-	type expectedDependency struct {
-		id     string
-		scopes []string
-	}
 	expectedDependencies := []expectedDependency{{id: "xml:1.0.1", scopes: []string{"prod"}}}
 	if !strings.Contains(npmTestParams.npmArgs, "-only=prod") && !strings.Contains(npmTestParams.npmArgs, "-production") {
 		expectedDependencies = append(expectedDependencies, expectedDependency{id: "json:9.0.6", scopes: []string{"dev"}})
@@ -242,23 +238,13 @@ func validateNpmInstall(t *testing.T, npmTestParams npmTestParams) {
 		t.Error(fmt.Sprintf("npm install test with command '%s' and repo '%s' failed", npmTestParams.command, npmTestParams.repo))
 		return
 	}
-	// The checksums are ignored when comparing the actual and the expected
-	assert.Equal(t, len(expectedDependencies), len(buildInfo.Modules[0].Dependencies), "npm install test with the arguments: \n%v \nexpected to have the following dependencies: \n%v \nbut has: \n%v",
-		npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
-	for _, expectedDependency := range expectedDependencies {
-		found := false
-		for _, actualDependency := range buildInfo.Modules[0].Dependencies {
-			if actualDependency.Id == expectedDependency.id &&
-				len(actualDependency.Scopes) == len(expectedDependency.scopes) &&
-				actualDependency.Scopes[0] == expectedDependency.scopes[0] {
-				found = true
-				break
-			}
-		}
-		// The checksums are ignored when comparing the actual and the expected
-		assert.True(t, found, "npm install test with the arguments: \n%v \nexpected to have the following dependencies: \n%v \nbut has: \n%v",
-			npmTestParams, expectedDependencies, dependenciesToPrintableArray(buildInfo.Modules[0].Dependencies))
-	}
+
+	equalDependenciesSlices(t, expectedDependencies, buildInfo.Modules[0].Dependencies)
+}
+
+type expectedDependency struct {
+	id     string
+	scopes []string
 }
 
 func validateNpmPackInstall(t *testing.T, npmTestParams npmTestParams) {
@@ -358,6 +344,8 @@ func runNpm(t *testing.T, native bool, args ...string) {
 
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
 	// Init npm project & npmp command for testing
 	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t, true), "package.json")
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
@@ -365,7 +353,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	npmpCmd := npm.NewNpmPublishCommand()
 	npmpCmd.SetConfigFilePath(configFilePath).SetArgs(args)
 
-	err := commands.Exec(npmpCmd)
+	err = commands.Exec(npmpCmd)
 	assert.NoError(t, err)
 
 	result := npmpCmd.Result()
@@ -379,7 +367,7 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 		files = append(files, *transferDetails)
 	}
 	// Verify deploy details
-	expectedSourcePath := npmProjectPath + "jfrog-cli-tests-1.0.0.tgz"
+	expectedSourcePath := npmProjectPath + "jfrog-cli-tests-v1.0.0.tgz"
 	expectedTargetPath := serverDetails.ArtifactoryUrl + tests.NpmRepo + "/jfrog-cli-tests/-/jfrog-cli-tests-1.0.0.tgz"
 	assert.Equal(t, expectedSourcePath, files[0].SourcePath, "Summary validation failed - unmatched SourcePath.")
 	assert.Equal(t, expectedTargetPath, files[0].TargetPath, "Summary validation failed - unmatched TargetPath.")
@@ -387,5 +375,66 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
 
+	err = os.Chdir(wd)
+	assert.NoError(t, err)
 	cleanNpmTest()
+}
+
+func TestYarn(t *testing.T) {
+	initNpmTest(t)
+
+	testDataSource := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "yarn")
+	testDataTarget := filepath.Join(tests.Out, "yarn")
+	err := fileutils.CopyDir(testDataSource, testDataTarget, true, nil)
+	assert.NoError(t, err)
+
+	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
+	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
+	assert.NoError(t, err)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	err = os.Chdir(yarnProjectPath)
+	assert.NoError(t, err)
+
+	err = artifactoryCli.WithoutCredentials().Exec("yarn", "--build-name="+tests.YarnBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
+	assert.NoError(t, err)
+
+	validatePartialsBuildInfo(t, tests.YarnBuildName, "1", ModuleNameJFrogTest)
+
+	err = artifactoryCli.WithoutCredentials().Exec("bp", tests.YarnBuildName, "1")
+	assert.NoError(t, err)
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.YarnBuildName, "1")
+	assert.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, 1, len(publishedBuildInfo.BuildInfo.Modules))
+	assert.Equal(t, buildinfo.Npm, publishedBuildInfo.BuildInfo.Modules[0].Type)
+	assert.Equal(t, "jfrog-test", publishedBuildInfo.BuildInfo.Modules[0].Id)
+	assert.Equal(t, 0, len(publishedBuildInfo.BuildInfo.Modules[0].Artifacts))
+
+	expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
+	equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
+
+	err = os.Chdir(wd)
+	assert.NoError(t, err)
+	cleanNpmTest()
+	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
+}
+
+// Checks if the expected dependencies match the actual dependencies. Only the dependencies' IDs and scopes (not more than one scope) are compared.
+func equalDependenciesSlices(t *testing.T, expectedDependencies []expectedDependency, actualDependencies []buildinfo.Dependency) {
+	assert.Equal(t, len(expectedDependencies), len(actualDependencies))
+	for _, dependency := range expectedDependencies {
+		found := false
+		for _, actualDependency := range actualDependencies {
+			if actualDependency.Id == dependency.id &&
+				len(actualDependency.Scopes) == len(dependency.scopes) &&
+				(len(actualDependency.Scopes) == 0 || actualDependency.Scopes[0] == dependency.scopes[0]) {
+				found = true
+				break
+			}
+		}
+		// The checksums are ignored when comparing the actual and the expected
+		assert.True(t, found, "The dependencies from the build-info did not match the expected. expected: %v, actual: %v",
+			expectedDependencies, dependenciesToPrintableArray(actualDependencies))
+	}
 }
