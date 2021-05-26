@@ -54,50 +54,43 @@ environment:
     --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
-    - job_name: vet
+    - VET:
       TEST_SUIT:
         go vet github.com\jfrog\jfrog-cli &&
         .\\build\\build.bat &&
         .\\jfrog.exe --version
-    - job_name: artifactory_tests
+    - ARTIFACTORY_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS%  --test.artifactory=true"
-    - job_name: bintray_tests
+    - BINTRAY_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS% --test.bintray=true"
-    - job_name: npm_tests
+    - NPM_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.npm=true"
-    - job_name: maven_tests
+    - MAVEN_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.maven=true"
-    - job_name: gradle_tests
+    - GRADLE_TESTS:
       TEST_SUIT:
         "choco install gradle -s %JFROG_CLI_RT_URL%/api/nuget/choco -u %JFROG_CLI_RT_USER% -p %JFROG_CLI_RT_PASSWORD% &&
       %COMMON_TESTS_ARGS% --test.gradle=true"
-    - job_name: nuget_tests
+    - NUGET_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.nuget=true"
-    - job_name: go_tests
+    - GO_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.go=true"
-    - job_name: pip_tests
+    - PIP_TESTS:
       TEST_SUIT:
         "C:\\Python37-x64\\python -m venv pip-venv &&
       %COMMON_TESTS_ARGS% --test.pip=true --rt.pipVirtualEnv=C:\\gopath\\src\\github.com\\jfrog\\jfrog-cli\\pip-venv\\Scripts"
-    - job_name: distribution_tests
+    - DISTRIBUTION_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --rt.distUrl=%JFROG_CLI_DIST_URL% --test.distribution=true"
-    - job_name: plugins_tests
+    - PLUGINS_TESTS:
       TEST_SUIT:
         "%COMMON_TESTS_ARGS% --test.plugins=true"
-
-#for:
-#  - matrix:
-#      only:
-#        - job_name: npm_tests
-#    install:
-#      - ps: Install-Product node 15
 
 install:
   - ps: Install-Product node 15
