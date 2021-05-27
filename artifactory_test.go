@@ -4813,25 +4813,12 @@ func TestPermissionTargets(t *testing.T) {
 
 	// Create permission target on specific repo.
 	assert.NoError(t, artifactoryCli.Exec("ptc", templatePath, createPermissionTargetsTemplateVars(tests.RtRepo1)))
-	err = getAndAssertExpectedPermissionTarget(t, servicesManager, tests.RtRepo1)
-	if err != nil {
-		return
-	}
-
-	permissionDeleted := false
-	defer func() {
-		if !permissionDeleted {
-			cleanPermissionTarget()
-		}
-	}()
+	assertPermissionTarget(t, servicesManager, tests.RtRepo1)
 
 	// Update permission target to ANY repo.
 	any := "ANY"
 	assert.NoError(t, artifactoryCli.Exec("ptu", templatePath, createPermissionTargetsTemplateVars(any)))
-	err = getAndAssertExpectedPermissionTarget(t, servicesManager, any)
-	if err != nil {
-		return
-	}
+	assertPermissionTarget(t, servicesManager, any)
 
 	// Delete permission target.
 	assert.NoError(t, artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName))
@@ -4846,15 +4833,14 @@ func createPermissionTargetsTemplateVars(reposValue string) string {
 	return fmt.Sprintf("--vars=%s=%s;%s=%s", ptNameVarKey, tests.RtPermissionTargetName, reposVarKey, reposValue)
 }
 
-func getAndAssertExpectedPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) error {
+func assertPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) {
 	actual, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
 	if err != nil {
 		assert.NoError(t, err)
-		return err
+		return
 	}
 	expected := tests.GetExpectedPermissionTarget(repoValue)
 	assert.EqualValues(t, expected, *actual)
-	return nil
 }
 
 func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) {
