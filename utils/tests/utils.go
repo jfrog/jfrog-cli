@@ -329,6 +329,8 @@ var reposConfigMap = map[*string]string{
 	&DistRepo2:        DistributionRepoConfig2,
 	&DockerRepo:       DockerRepoConfig,
 	&GoRepo:           GoLocalRepositoryConfig,
+	&GoRemoteRepo:     GoRemoteRepositoryConfig,
+	&GoVirtualRepo:    GoVirtualRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
 	&MvnRepo1:         MavenRepositoryConfig1,
 	&MvnRepo2:         MavenRepositoryConfig2,
@@ -378,7 +380,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
 		TestDocker:       {&DockerRepo},
-		TestGo:           {&GoRepo},
+		TestGo:           {&GoRepo, &GoRemoteRepo, &GoVirtualRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
@@ -455,6 +457,8 @@ func getSubstitutionMap() map[string]string {
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
 		"${GO_REPO}":                   GoRepo,
+		"${GO_REMOTE_REPO}":            GoRemoteRepo,
+		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
 		"${RT_SERVER_ID}":              RtServerId,
 		"${RT_URL}":                    *RtUrl,
 		"${RT_API_KEY}":                *RtApiKey,
@@ -490,6 +494,8 @@ func AddTimestampToGlobalVars() {
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
 	GoRepo += timestampSuffix
+	GoRemoteRepo += timestampSuffix
+	GoVirtualRepo += timestampSuffix
 	GradleRemoteRepo += timestampSuffix
 	GradleRepo += timestampSuffix
 	MvnRemoteRepo += timestampSuffix

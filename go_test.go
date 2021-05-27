@@ -143,7 +143,7 @@ func TestGoConfigWithModuleNameChange(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 
-	prepareGoProject("", t, true)
+	prepareGoProject("", "project1", t, true)
 	runGo(ModuleNameJFrogTest, tests.GoBuildName, buildNumber, t, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 
 	assert.NoError(t, os.Chdir(wd))
@@ -161,7 +161,7 @@ func TestGoConfigWithoutModuleChange(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 
-	prepareGoProject("", t, true)
+	prepareGoProject("", "project1", t, true)
 	runGo("", tests.GoBuildName, buildNumber, t, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 
 	assert.NoError(t, os.Chdir(wd))
@@ -178,7 +178,7 @@ func TestGoPublishWithConfig(t *testing.T) {
 	wd, err := os.Getwd()
 	defer os.Chdir(wd)
 	assert.NoError(t, err)
-	prepareGoProject("", t, true)
+	prepareGoProject("", "project1", t, true)
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
 	err = artifactoryGoCli.Exec("gp", "v1.0.0", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2", "--module="+ModuleNameJFrogTest)
 	if err != nil {
@@ -218,7 +218,7 @@ func TestGoWithGlobalConfig(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
 
-	prepareGoProject(newHomeDir, t, false)
+	prepareGoProject(newHomeDir, "project1", t, false)
 	runGo(ModuleNameJFrogTest, tests.GoBuildName, buildNumber, t, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 	assert.NoError(t, os.Chdir(wd))
 
@@ -234,7 +234,7 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	defer os.RemoveAll(newHomeDir)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
-	prepareGoProject("", t, true)
+	prepareGoProject("", "project1", t, true)
 	// Build and publish a go project.
 	// We do so in order to make sure the rsc.io/quote:v1.5.2 will be available for the get command
 	runGo("", tests.GoBuildName, buildNumber, t, "go", "build", "--mod=mod", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
@@ -267,6 +267,24 @@ func TestGoGetSpecificVersion(t *testing.T) {
 	validateBuildInfo(buildInfo, t, 2, 0, "rsc.io/quote", buildinfo.Go)
 
 	// Cleanup
+	assert.NoError(t, os.Chdir(wd))
+	cleanGoTest(t)
+}
+
+func TestGoGetVirtualRepoTransitivePackageName(t *testing.T) {
+	initGoTest(t)
+	buildNumber := "1"
+	oldHomeDir, newHomeDir := prepareHomeDir(t)
+	defer os.Setenv(coreutils.HomeDir, oldHomeDir)
+	defer os.RemoveAll(newHomeDir)
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	prepareGoProject("", "project3", t, true)
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	err = execGo(t, artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+	}
 	assert.NoError(t, os.Chdir(wd))
 	cleanGoTest(t)
 }
@@ -311,20 +329,20 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
-	project1Path := createGoProject(t, "project1", copyDirs)
+func prepareGoProject(configDestDir, projectName string, t *testing.T, copyDirs bool) {
+	projectPath := createGoProject(t, projectName, copyDirs)
 	testdataTarget := filepath.Join(tests.Out, "testdata")
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
 	err := fileutils.CopyDir(testdataSrc, testdataTarget, copyDirs, nil)
 	assert.NoError(t, err)
 	if configDestDir == "" {
-		configDestDir = filepath.Join(project1Path, ".jfrog")
+		configDestDir = filepath.Join(projectPath, ".jfrog")
 	}
-	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "project1", ".jfrog", "projects")
+	configFileDir := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", projectName, ".jfrog", "projects")
 	configFileDir, err = tests.ReplaceTemplateVariables(filepath.Join(configFileDir, "go.yaml"), filepath.Join(configDestDir, "projects"))
 	assert.NoError(t, err)
-	assert.NoError(t, os.Chdir(project1Path))
-	log.Info("Using Go project located at ", project1Path)
+	assert.NoError(t, os.Chdir(projectPath))
+	log.Info("Using Go project located at ", projectPath)
 }
 
 // Testing publishing and resolution capabilities for go projects.

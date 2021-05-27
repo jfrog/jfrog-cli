@@ -1,0 +1,6 @@
+{
+  "key": "${GO_REMOTE_REPO}",
+  "rclass": "remote",
+  "packageType": "GO",
+  "url": "https://goproxy.io"
+}
