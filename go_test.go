@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jfrog/gocmd/executers"
+	executersutils "github.com/jfrog/gocmd/executers/utils"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/inttestutils"
@@ -290,6 +291,10 @@ func TestGoGetVirtualRepoTransitivePackageName(t *testing.T) {
 	if err != nil {
 		assert.NoError(t, err)
 	}
+	packageCachePath, err := executersutils.GetGoModCachePath()
+	exists, err := fileutils.IsDirExists(filepath.Join(packageCachePath, "github.com/golang/mock@v1.4.1"), false)
+	assert.NoError(t, err)
+	assert.True(t, exists)
 	assert.NoError(t, os.Chdir(wd))
 	cleanGoTest(t)
 }
