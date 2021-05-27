@@ -134,7 +134,7 @@ var (
 	DistRepo1        = "cli-tests-dist1"
 	DistRepo2        = "cli-tests-dist2"
 	DockerRepo       = "cli-tests-docker"
-	GoRepo           = "cli-tests-go"
+	GoLocalRepo      = "cli-tests-go-local"
 	GoRemoteRepo     = "cli-tests-go-remote"
 	GoVirtualRepo    = "cli-tests-go-virtual"
 	GradleRepo       = "cli-tests-gradle"

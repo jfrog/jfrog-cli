@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "pattern": "${GO_REPO}/github.com/jfrog/dependency/@v/v1.0.0*"
+      "pattern": "${GO_LOCAL_REPO}/github.com/jfrog/dependency/@v/v1.0.0*"
     }
   ]
 }

@@ -71,9 +71,9 @@ var TestPlugins *bool
 var timestampAdded bool
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "password", "Artifactory password")
+	RtUrl = flag.String("rt.url", "https://ecosysjfrog.jfrog.io/artifactory", "Artifactoryurl")
+	RtUser = flag.String("rt.user", "gail", "Artifactoryusername")
+	RtPassword = flag.String("rt.password", "Gg0506420800!", "Artifactorypassword")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
@@ -88,7 +88,7 @@ func init() {
 	BtOrg = flag.String("bt.org", "", "Bintray organization")
 	TestDistribution = flag.Bool("test.distribution", false, "Test distribution")
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
-	TestGo = flag.Bool("test.go", false, "Test Go")
+	TestGo = flag.Bool("test.go", true, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
 	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
 	TestMaven = flag.Bool("test.maven", false, "Test Maven")
@@ -328,7 +328,7 @@ var reposConfigMap = map[*string]string{
 	&DistRepo1:        DistributionRepoConfig1,
 	&DistRepo2:        DistributionRepoConfig2,
 	&DockerRepo:       DockerRepoConfig,
-	&GoRepo:           GoLocalRepositoryConfig,
+	&GoLocalRepo:      GoLocalRepositoryConfig,
 	&GoRemoteRepo:     GoRemoteRepositoryConfig,
 	&GoVirtualRepo:    GoVirtualRepositoryConfig,
 	&GradleRepo:       GradleRepositoryConfig,
@@ -380,7 +380,7 @@ func GetNonVirtualRepositories() map[*string]string {
 		TestArtifactory:  {&RtRepo1, &RtRepo2, &RtLfsRepo, &RtDebianRepo},
 		TestDistribution: {&DistRepo1, &DistRepo2},
 		TestDocker:       {&DockerRepo},
-		TestGo:           {&GoRepo, &GoRemoteRepo, &GoVirtualRepo},
+		TestGo:           {&GoLocalRepo, &GoRemoteRepo, &GoVirtualRepo},
 		TestGradle:       {&GradleRepo, &GradleRemoteRepo},
 		TestMaven:        {&MvnRepo1, &MvnRepo2, &MvnRemoteRepo},
 		TestNpm:          {&NpmRepo, &NpmRemoteRepo},
@@ -456,7 +456,7 @@ func getSubstitutionMap() map[string]string {
 		"${GRADLE_REPO}":               GradleRepo,
 		"${NPM_REPO}":                  NpmRepo,
 		"${NPM_REMOTE_REPO}":           NpmRemoteRepo,
-		"${GO_REPO}":                   GoRepo,
+		"${GO_LOCAL_REPO}":             GoLocalRepo,
 		"${GO_REMOTE_REPO}":            GoRemoteRepo,
 		"${GO_VIRTUAL_REPO}":           GoVirtualRepo,
 		"${RT_SERVER_ID}":              RtServerId,
@@ -493,7 +493,7 @@ func AddTimestampToGlobalVars() {
 	DockerRepo += timestampSuffix
 	DistRepo1 += timestampSuffix
 	DistRepo2 += timestampSuffix
-	GoRepo += timestampSuffix
+	GoLocalRepo += timestampSuffix
 	GoRemoteRepo += timestampSuffix
 	GoVirtualRepo += timestampSuffix
 	GradleRemoteRepo += timestampSuffix

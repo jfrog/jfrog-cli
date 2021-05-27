@@ -2,8 +2,8 @@ version: 1
 type: go
 
 resolver:
-  repo: ${GO_REPO}
+  repo: ${GO_LOCAL_REPO}
   serverID: default
 deployer:
-  repo: ${GO_REPO}
+  repo: ${GO_LOCAL_REPO}
   serverID: default

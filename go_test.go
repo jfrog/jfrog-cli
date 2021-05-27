@@ -44,7 +44,7 @@ func TestGoBuildInfo(t *testing.T) {
 	// 3. Validate the total count of dependencies added to the build-info.
 	buildNumber := "1"
 
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -88,13 +88,13 @@ func TestGoBuildInfo(t *testing.T) {
 	// 4. Validate that the artifacts are tagged with the build.name and build.number properties.
 	buildNumber = "2"
 
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo, "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest)
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
-	err = execGo(t, artifactoryCli, "gp", tests.GoRepo, "v1.0.0", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2", "--module="+ModuleNameJFrogTest)
+	err = execGo(t, artifactoryCli, "gp", tests.GoLocalRepo, "v1.0.0", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--deps=rsc.io/quote:v1.5.2", "--module="+ModuleNameJFrogTest)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -371,14 +371,14 @@ func TestGoPublishResolve(t *testing.T) {
 	assert.NoError(t, os.Chdir(project1Path))
 
 	// Download dependencies without Artifactory
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo, "--publish-deps=true")
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo, "--publish-deps=true")
 	if err != nil {
 		assert.NoError(t, err)
 		return
 	}
 
 	// Publish dependency project to Artifactory
-	err = execGo(t, artifactoryCli, "gp", tests.GoRepo, "v1.0.0")
+	err = execGo(t, artifactoryCli, "gp", tests.GoLocalRepo, "v1.0.0")
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -387,7 +387,7 @@ func TestGoPublishResolve(t *testing.T) {
 	assert.NoError(t, os.Chdir(project2Path))
 
 	// Build the second project, download dependencies from Artifactory
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo)
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo)
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -412,7 +412,7 @@ func TestGoFallback(t *testing.T) {
 
 	assert.NoError(t, os.Chdir(projectBuild))
 
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo)
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo)
 	if err != nil {
 		log.Warn(err)
 		assert.Contains(t, err.Error(), executers.FailedToRetrieve)
@@ -440,7 +440,7 @@ func TestGoWithPublishDeps(t *testing.T) {
 	defer os.Chdir(wd)
 
 	log.Info("Using Go project located at ", project1Path)
-	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoRepo, "--publish-deps=true")
+	err = execGo(t, artifactoryCli, "go", "build --mod=mod", tests.GoLocalRepo, "--publish-deps=true")
 	if err != nil {
 		assert.NoError(t, err)
 		return
@@ -466,7 +466,7 @@ func initGoTest(t *testing.T) {
 func cleanGoTest(t *testing.T) {
 	cleanGoCache(t)
 	assert.NoError(t, os.Unsetenv("GONOSUMDB"))
-	deleteSpec := spec.NewBuilder().Pattern(tests.GoRepo).BuildSpec()
+	deleteSpec := spec.NewBuilder().Pattern(tests.GoLocalRepo).BuildSpec()
 	_, _, err := tests.DeleteFiles(deleteSpec, serverDetails)
 	assert.NoError(t, err)
 	cleanBuildToolsTest()
@@ -475,7 +475,7 @@ func cleanGoTest(t *testing.T) {
 func uploadGoProject(projectPath string, t *testing.T) {
 	assert.NoError(t, os.Chdir(projectPath))
 	// Publish project to Artifactory
-	err := execGo(t, artifactoryCli, "gp", tests.GoRepo, "v1.0.0")
+	err := execGo(t, artifactoryCli, "gp", tests.GoLocalRepo, "v1.0.0")
 	if err != nil {
 		assert.NoError(t, err)
 		return
