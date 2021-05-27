@@ -279,8 +279,13 @@ func TestGoGetVirtualRepoTransitivePackageName(t *testing.T) {
 	defer os.RemoveAll(newHomeDir)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	// In project3 the resolver is config to be a virtual repository with a remote repository to "https://goproxy.io".
 	prepareGoProject("", "project3", t, true)
 	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	//  When running 'go get github.com/golang/mock/mockgen@v1.4.1':
+	//		* "mockgen" is a directory inside "mock" package ("mockgen" doesn't contain "go.mod").
+	//		* go download and save the whole "mock" package in local cache under 'github.com/golang/mock@v1.4.1' -- >
+	//		 "go get" downloads and saves the whole "mock" package in the local cache under 'github.com/golang/mock@v1.4.1'
 	err = execGo(t, artifactoryGoCli, "go", "get", "github.com/golang/mock/mockgen@v1.4.1", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber)
 	if err != nil {
 		assert.NoError(t, err)
