@@ -458,7 +458,7 @@ func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string
 		"To complete the setup, follow these steps:",
 		"* Open the Jenkinsfile for edit."}
 	// M2_HOME instructions relevant only for Maven
-	if cc.data.BuiltTechnology.TechnologyType == cisetup.Maven {
+	if cc.data.BuiltTechnology.Type == cisetup.Maven {
 		JenkinsCompletionInstruction = append(JenkinsCompletionInstruction,
 			"* Inside the 'environment' section, set the value of the M2_HOME variable,",
 			"  to the Maven installation directory on the Jenkins agent (the directory which includes the 'bin' directory).")
@@ -618,10 +618,10 @@ func (cc *CiSetupCommand) artifactoryConfigPhase() (err error) {
 	if err != nil {
 		return err
 	}
-	/// First create repositories for the selected technology.
+	// First create repositories for the selected technology.
 	for tech, detected := range cc.data.DetectedTechnologies {
 		if detected && coreutils.AskYesNo(fmt.Sprintf("Would you like to use %s to build the code?", tech), true) {
-			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{TechnologyType: tech}
+			cc.data.BuiltTechnology = &cisetup.TechnologyInfo{Type: tech}
 			err = cc.interactivelyCreateRepos(tech)
 			if err != nil {
 				return
@@ -656,15 +656,15 @@ func getExplicitTechsListByNumber(techs []string) string {
 }
 
 func (cc *CiSetupCommand) getBuildCmd() {
-	defaultBuildCmd := buildCmdByTech[cc.data.BuiltTechnology.TechnologyType]
+	defaultBuildCmd := buildCmdByTech[cc.data.BuiltTechnology.Type]
 	// Use the cached build command only if the chosen built technology wasn't changed.
-	if cc.defaultData.BuiltTechnology.TechnologyType == cc.data.BuiltTechnology.TechnologyType {
+	if cc.defaultData.BuiltTechnology.Type == cc.data.BuiltTechnology.Type {
 		if cc.data.BuiltTechnology.BuildCmd != "" {
 			defaultBuildCmd = cc.data.BuiltTechnology.BuildCmd
 		}
 	}
 	// Ask for working build command.
-	prompt := "Please provide a single-line " + string(cc.data.BuiltTechnology.TechnologyType) + " build command."
+	prompt := "Please provide a single-line " + string(cc.data.BuiltTechnology.Type) + " build command."
 	ioutils.ScanFromConsole(prompt, &cc.data.BuiltTechnology.BuildCmd, defaultBuildCmd)
 }
 
