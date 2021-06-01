@@ -4,7 +4,7 @@ Release:        %{cli_release}
 Summary:        Smart client that provides a simple interface that automates access to JFrog products
 Vendor:         JFrog Ltd.
 Group:          Development/Tools
-License:        Commercial
+License:        Apache-2.0 License
 URL:            http://www.jfrog.org
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
 BuildArch:      %{build_arch}
