@@ -1,5 +1,8 @@
 # Release Notes
 
+## 1.48.1 (May 28, 2021)
+- Bug fix - "jfrog rt go get" fails to collect build-info, if used with an internal module package
+
 ## 1.48.0 (May 23, 2021)
 - New "jfrog ci-setup" command
 - Support for yarn - new "jfrog rt yarn" command
