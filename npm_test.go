@@ -55,8 +55,10 @@ func TestNativeNpm(t *testing.T) {
 
 func runTestNpm(t *testing.T, native bool) {
 	initNpmTest(t)
+	defer cleanNpmTest()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer os.Chdir(wd)
 
 	npmProjectPath, npmScopedProjectPath, npmNpmrcProjectPath, npmProjectCi := initNpmFilesTest(t, native)
 	var npmTests = []npmTestParams{
@@ -105,9 +107,6 @@ func runTestNpm(t *testing.T, native bool) {
 		validateNpmrcFileInfo(t, npmTest, npmrcFileInfo, postTestFileInfo, err, postTestFileInfoErr)
 	}
 
-	err = os.Chdir(wd)
-	assert.NoError(t, err)
-	cleanNpmTest()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.NpmBuildName, artHttpDetails)
 }
 
@@ -119,17 +118,15 @@ func readModuleId(t *testing.T, wd string) string {
 
 func TestNpmWithGlobalConfig(t *testing.T) {
 	initNpmTest(t)
+	defer cleanNpmTest()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer os.Chdir(wd)
 	npmProjectPath := initGlobalNpmFilesTest(t)
 	err = os.Chdir(filepath.Dir(npmProjectPath))
 	assert.NoError(t, err)
 	runNpm(t, true, "npm-install", "--build-name="+tests.NpmBuildName, "--build-number=1", "--module="+ModuleNameJFrogTest)
-	err = os.Chdir(wd)
-	assert.NoError(t, err)
 	validatePartialsBuildInfo(t, tests.NpmBuildName, "1", ModuleNameJFrogTest)
-	cleanNpmTest()
-
 }
 
 func validatePartialsBuildInfo(t *testing.T, buildName, buildNumber, moduleName string) {
@@ -344,8 +341,10 @@ func runNpm(t *testing.T, native bool, args ...string) {
 
 func TestNpmPublishDetailedSummary(t *testing.T) {
 	initNpmTest(t)
+	defer cleanNpmTest()
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer os.Chdir(wd)
 	// Init npm project & npmp command for testing
 	npmProjectPath := strings.TrimSuffix(initNpmProjectTest(t, true), "package.json")
 	configFilePath := filepath.Join(npmProjectPath, ".jfrog", "projects", "npm.yaml")
@@ -374,10 +373,6 @@ func TestNpmPublishDetailedSummary(t *testing.T) {
 	assert.Equal(t, 1, len(files), "Summary validation failed - only one archive should be deployed.")
 	// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 	assert.Equal(t, 64, len(files[0].Sha256), "Summary validation failed - sha256 should be in size 64 digits.")
-
-	err = os.Chdir(wd)
-	assert.NoError(t, err)
-	cleanNpmTest()
 }
 
 func TestYarn(t *testing.T) {
@@ -387,12 +382,14 @@ func TestYarn(t *testing.T) {
 	testDataTarget := filepath.Join(tests.Out, "yarn")
 	err := fileutils.CopyDir(testDataSource, testDataTarget, true, nil)
 	assert.NoError(t, err)
+	defer cleanNpmTest()
 
 	yarnProjectPath := filepath.Join(testDataTarget, "yarnproject")
 	err = createConfigFileForTest([]string{yarnProjectPath}, tests.NpmRemoteRepo, "", t, utils.Yarn, false)
 	assert.NoError(t, err)
 	wd, err := os.Getwd()
 	assert.NoError(t, err)
+	defer os.Chdir(wd)
 	err = os.Chdir(yarnProjectPath)
 	assert.NoError(t, err)
 
@@ -414,9 +411,6 @@ func TestYarn(t *testing.T) {
 	expectedDependencies := []expectedDependency{{id: "xml:1.0.1"}, {id: "json:9.0.6"}}
 	equalDependenciesSlices(t, expectedDependencies, publishedBuildInfo.BuildInfo.Modules[0].Dependencies)
 
-	err = os.Chdir(wd)
-	assert.NoError(t, err)
-	cleanNpmTest()
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.YarnBuildName, artHttpDetails)
 }
 
