@@ -211,17 +211,17 @@ func (cc *CiSetupCommand) Run() error {
 		if err != nil {
 			return err
 		}
-		ciSpecificInstructions, err = cc.getPiplinesCompletionInstruction(ciFileName)
+		ciSpecificInstructions, err = cc.getPipelinesCompletionInstruction(ciFileName)
 		if err != nil {
 			return err
 		}
 	case cisetup.Jenkins:
 		// Create and stage Jenkinsfile.
-		ciFileName, err := cc.runJenkinsPhase()
+		_, err := cc.runJenkinsPhase()
 		if err != nil {
 			return err
 		}
-		ciSpecificInstructions = cc.getJenkinsCompletionInstruction(ciFileName)
+		ciSpecificInstructions = cc.getJenkinsCompletionInstruction()
 	case cisetup.GithubActions:
 		// Create and stage main.yml.
 		ciFileName, err := cc.runGithubActionsPhase()
@@ -433,7 +433,7 @@ func (cc *CiSetupCommand) saveCiConfigToFile(ciConfig []byte, fileName string) e
 	return ioutil.WriteFile(path, ciConfig, 0644)
 }
 
-func (cc *CiSetupCommand) getPiplinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
+func (cc *CiSetupCommand) getPipelinesCompletionInstruction(pipelinesFileName string) ([]string, error) {
 	serviceDetails, err := utilsconfig.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 	if err != nil {
 		return []string{}, err
@@ -452,7 +452,7 @@ func (cc *CiSetupCommand) getPiplinesCompletionInstruction(pipelinesFileName str
 		getPipelineUiPath(serviceDetails.Url, pipelinesFileName), ""}, nil
 }
 
-func (cc *CiSetupCommand) getJenkinsCompletionInstruction(jenkinsFileName string) []string {
+func (cc *CiSetupCommand) getJenkinsCompletionInstruction() []string {
 	JenkinsCompletionInstruction := []string{"", colorTitle("Completing the setup"),
 		"We configured the JFrog Platform and generated a Jenkinsfile file for you under " + cc.data.LocalDirPath,
 		"To complete the setup, follow these steps:",
@@ -507,8 +507,8 @@ func (cc *CiSetupCommand) getGithubActionsCompletionInstruction(githubActionFile
 		""}
 }
 
-func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstractions []string) error {
-	instructions := append(ciSpecificInstractions,
+func (cc *CiSetupCommand) logCompletionInstruction(ciSpecificInstructions []string) error {
+	instructions := append(ciSpecificInstructions,
 		colorTitle("Allowing developers to access this pipeline from their IDE"),
 		"You have the option of viewing the new pipeline's runs from within IntelliJ IDEA.",
 		"To achieve this, follow these steps:",
@@ -643,8 +643,7 @@ func (cc *CiSetupCommand) printDetectedTechs() error {
 	if len(techs) == 0 {
 		return errorutils.CheckError(errors.New("no supported technology was found in the project"))
 	}
-	writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
-	return nil
+	return writeToScreen("The next step is to provide the commands to build your code. It looks like the code is built with " + getExplicitTechsListByNumber(techs) + ".\n")
 }
 
 // Get the explicit list of technologies, for ex: "maven, gradle and npm"
@@ -659,8 +658,8 @@ func (cc *CiSetupCommand) getBuildCmd() {
 	defaultBuildCmd := buildCmdByTech[cc.data.BuiltTechnology.Type]
 	// Use the cached build command only if the chosen built technology wasn't changed.
 	if cc.defaultData.BuiltTechnology.Type == cc.data.BuiltTechnology.Type {
-		if cc.data.BuiltTechnology.BuildCmd != "" {
-			defaultBuildCmd = cc.data.BuiltTechnology.BuildCmd
+		if cc.defaultData.BuiltTechnology.BuildCmd != "" {
+			defaultBuildCmd = cc.defaultData.BuiltTechnology.BuildCmd
 		}
 	}
 	// Ask for working build command.
@@ -970,7 +969,7 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 			continue
 		}
 		if ciType == cisetup.Pipelines {
-			// validate that pipelines is aviable
+			// validate that pipelines is available.
 			serviceDetails, err := config.GetSpecificConfig(cisetup.ConfigServerId, false, false)
 			if err != nil {
 				log.Error(err)
@@ -1005,10 +1004,13 @@ func (cc *CiSetupCommand) ciProviderPhase() (err error) {
 				cc.data.CiType = cisetup.CiType(ciType)
 				return nil
 			}
-			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
-				inactivePipelinesNote()
-			}
 			log.Error(err)
+			if _, ok := err.(*pipelinesservices.PipelinesNotAvailableError); ok {
+				err = inactivePipelinesNote()
+				if err != nil {
+					log.Error(err)
+				}
+			}
 		} else { // The user doesn't choose Pipelines.
 			cc.data.CiType = cisetup.CiType(ciType)
 			return nil
