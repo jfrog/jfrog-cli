@@ -657,7 +657,7 @@ func getExplicitTechsListByNumber(techs []string) string {
 func (cc *CiSetupCommand) getBuildCmd() {
 	defaultBuildCmd := buildCmdByTech[cc.data.BuiltTechnology.Type]
 	// Use the cached build command only if the chosen built technology wasn't changed.
-	if cc.defaultData.BuiltTechnology.Type == cc.data.BuiltTechnology.Type {
+	if cc.defaultData.BuiltTechnology != nil && cc.defaultData.BuiltTechnology.Type == cc.data.BuiltTechnology.Type {
 		if cc.defaultData.BuiltTechnology.BuildCmd != "" {
 			defaultBuildCmd = cc.defaultData.BuiltTechnology.BuildCmd
 		}
