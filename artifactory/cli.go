@@ -1244,8 +1244,20 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls)
-		return commands.Exec(mvnCmd)
+		filteredMavenArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredMavenArgs)
+		if err != nil {
+			return err
+		}
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
+		err = commands.Exec(mvnCmd)
+		if err != nil {
+			return err
+		}
+		if mvnCmd.IsDetailedSummary() {
+			result := mvnCmd.Result()
+			err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+			return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+		}
 	}
 	return mvnLegacyCmd(c)
 }
@@ -1278,7 +1290,7 @@ func gradleCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads)
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary"))
 		return commands.Exec(gradleCmd)
 	}
 	return gradleLegacyCmd(c)
