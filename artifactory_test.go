@@ -379,37 +379,48 @@ func TestAqlFindingItemOnRoot(t *testing.T) {
 func TestExitCode(t *testing.T) {
 	initArtifactoryTest(t)
 
+	// Upload dummy file in order to test move and copy commands
+	artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), tests.RtRepo1)
+
+	// Discard output logging to prevent negative logs
+	previousLogger := tests.RedirectLogOutputToNil()
+	defer log.SetLogger(previousLogger)
+
+	// Test upload commands
 	err := artifactoryCli.Exec("upload", "DummyText", tests.RtRepo1, "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeError, err)
-	err = artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), "tests.Repo1")
+	err = artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("upload", "testdata/a/(*.dummyExt)", tests.RtRepo1+"/{1}.in", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
+	// Test download command
 	err = artifactoryCli.Exec("dl", "DummyFolder", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
-	//upload dummy file inorder to test move & copy
-	artifactoryCli.Exec("upload", path.Join("testdata", "a", "a1.in"), tests.RtRepo1)
+	// Test move commands
 	err = artifactoryCli.Exec("move", tests.RtRepo1, "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("move", "DummyText", tests.RtRepo1, "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
+	// Test copy commands
 	err = artifactoryCli.Exec("copy", tests.RtRepo1, "DummyTargetPath")
 	checkExitCode(t, coreutils.ExitCodeError, err)
 	err = artifactoryCli.Exec("copy", "DummyText", tests.RtRepo1, "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
+	// Test delete command
 	err = artifactoryCli.Exec("delete", "DummyText", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
+	// Test search command
 	err = artifactoryCli.Exec("s", "DummyText", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
+	// Test props commands
 	err = artifactoryCli.Exec("sp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
-
 	err = artifactoryCli.Exec("delp", "DummyText", "prop=val;key=value", "--fail-no-op=true")
 	checkExitCode(t, coreutils.ExitCodeFailNoOp, err)
 
