@@ -1994,12 +1994,12 @@ func pingCmd(c *cli.Context) error {
 	return err
 }
 
-func downloadCmd(c *cli.Context) error {
+func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
+		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
 	if !(c.NArg() == 1 || c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var downloadSpec *spec.SpecFiles
@@ -2010,9 +2010,17 @@ func downloadCmd(c *cli.Context) error {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = spec.ValidateSpec(downloadSpec.Files, false, true, false)
+	if err != nil {
+		return nil, err
+	}
+	return downloadSpec, nil
+}
+
+func downloadCmd(c *cli.Context) error {
+	downloadSpec, err := prepareDownloadCommand(c)
 	if err != nil {
 		return err
 	}
@@ -2112,25 +2120,33 @@ func execWithProgress(cmd CommandWithProgress) error {
 	return commands.Exec(cmd)
 }
 
-func moveCmd(c *cli.Context) error {
+func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
+		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec")))) {
+		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
-	var moveSpec *spec.SpecFiles
+	var copyMoveSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		moveSpec, err = getSpec(c, false)
+		copyMoveSpec, err = getSpec(c, false)
 	} else {
-		moveSpec, err = createDefaultCopyMoveSpec(c)
+		copyMoveSpec, err = createDefaultCopyMoveSpec(c)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = spec.ValidateSpec(moveSpec.Files, true, true, false)
+	err = spec.ValidateSpec(copyMoveSpec.Files, true, true, false)
+	if err != nil {
+		return nil, err
+	}
+	return copyMoveSpec, nil
+}
+
+func moveCmd(c *cli.Context) error {
+	moveSpec, err := prepareCopyMoveCommand(c)
 	if err != nil {
 		return err
 	}
@@ -2152,24 +2168,7 @@ func moveCmd(c *cli.Context) error {
 }
 
 func copyCmd(c *cli.Context) error {
-	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
-	}
-	if !(c.NArg() == 2 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
-
-	var copySpec *spec.SpecFiles
-	var err error
-	if c.IsSet("spec") {
-		copySpec, err = getSpec(c, false)
-	} else {
-		copySpec, err = createDefaultCopyMoveSpec(c)
-	}
-	if err != nil {
-		return err
-	}
-	err = spec.ValidateSpec(copySpec.Files, true, true, false)
+	copySpec, err := prepareCopyMoveCommand(c)
 	if err != nil {
 		return err
 	}
@@ -2191,12 +2190,12 @@ func copyCmd(c *cli.Context) error {
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
-func deleteCmd(c *cli.Context) error {
+func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
+		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var deleteSpec *spec.SpecFiles
@@ -2207,9 +2206,17 @@ func deleteCmd(c *cli.Context) error {
 		deleteSpec, err = createDefaultDeleteSpec(c)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = spec.ValidateSpec(deleteSpec.Files, false, true, false)
+	if err != nil {
+		return nil, err
+	}
+	return deleteSpec, nil
+}
+
+func deleteCmd(c *cli.Context) error {
+	deleteSpec, err := prepareDeleteCommand(c)
 	if err != nil {
 		return err
 	}
@@ -2232,12 +2239,12 @@ func deleteCmd(c *cli.Context) error {
 	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
-func searchCmd(c *cli.Context) error {
+func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	if c.NArg() > 0 && c.IsSet("spec") {
-		return cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
+		return nil, cliutils.PrintHelpAndReturnError("No arguments should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build")))) {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	if !(c.NArg() == 1 || (c.NArg() == 0 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
+		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
 	var searchSpec *spec.SpecFiles
@@ -2248,9 +2255,17 @@ func searchCmd(c *cli.Context) error {
 		searchSpec, err = createDefaultSearchSpec(c)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = spec.ValidateSpec(searchSpec.Files, false, true, false)
+	if err != nil {
+		return nil, err
+	}
+	return searchSpec, err
+}
+
+func searchCmd(c *cli.Context) error {
+	searchSpec, err := prepareSearchCommand(c)
 	if err != nil {
 		return err
 	}
@@ -2285,7 +2300,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	if c.NArg() > 1 && c.IsSet("spec") {
 		return nil, cliutils.PrintHelpAndReturnError("Only the 'artifact properties' argument should be sent when the spec option is used.", c)
 	}
-	if !(c.NArg() == 2 || (c.NArg() == 1 && c.IsSet("spec"))) {
+	if !(c.NArg() == 2 || (c.NArg() == 1 && (c.IsSet("spec") || c.IsSet("build") || c.IsSet("bundle")))) {
 		return nil, cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
 
@@ -2296,8 +2311,13 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 		props = c.Args()[0]
 		propsSpec, err = getSpec(c, false)
 	} else {
-		props = c.Args()[1]
 		propsSpec, err = createDefaultPropertiesSpec(c)
+		if c.NArg() == 1 {
+			props = c.Args()[0]
+			propsSpec.Get(0).Pattern = "*"
+		} else {
+			props = c.Args()[1]
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -3301,6 +3321,7 @@ func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		Build(c.String("build")).
 		ExcludeArtifacts(c.Bool("exclude-artifacts")).
 		IncludeDeps(c.Bool("include-deps")).
+		Bundle(c.String("bundle")).
 		Offset(offset).
 		Limit(limit).
 		SortOrder(c.String("sort-order")).
