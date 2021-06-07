@@ -7,7 +7,9 @@ node("docker") {
             [pkg: 'jfrog-cli-linux-arm64', goos: 'linux', goarch: 'arm64', fileExtention: ''],
             [pkg: 'jfrog-cli-linux-arm', goos: 'linux', goarch: 'arm', fileExtention: ''],
             [pkg: 'jfrog-cli-mac-386', goos: 'darwin', goarch: 'amd64', fileExtention: ''],
-            [pkg: 'jfrog-cli-linux-s390x', goos: 'linux', goarch: 's390x', fileExtention: '']
+            [pkg: 'jfrog-cli-linux-s390x', goos: 'linux', goarch: 's390x', fileExtention: ''],
+            [pkg: 'jfrog-cli-linux-ppc64', goos: 'linux', goarch: 'ppc64', fileExtention: ''],
+            [pkg: 'jfrog-cli-linux-ppc64le', goos: 'linux', goarch: 'ppc64le', fileExtention: '']
     ]
 
     subject = 'jfrog'

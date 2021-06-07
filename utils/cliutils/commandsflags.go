@@ -40,6 +40,8 @@ const (
 	NpmConfig               = "npm-config"
 	Npm                     = "npm"
 	NpmPublish              = "npmPublish"
+	YarnConfig              = "yarn-config"
+	Yarn                    = "yarn"
 	NugetConfig             = "nuget-config"
 	Nuget                   = "nuget"
 	Dotnet                  = "dotnet"
@@ -81,7 +83,8 @@ const (
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
-	Config = "config"
+	AddConfig  = "config-add"
+	EditConfig = "config-edit"
 
 	// *** Artifactory Commands' flags ***
 	// Base flags
@@ -159,6 +162,7 @@ const (
 	interactive   = "interactive"
 	encPassword   = "enc-password"
 	basicAuthOnly = "basic-auth-only"
+	overwrite     = "overwrite"
 
 	// Unique upload flags
 	uploadPrefix          = "upload-"
@@ -322,9 +326,10 @@ const (
 	imageFile = "image-file"
 
 	// Unique npm flags
-	npmPrefix  = "npm-"
-	npmThreads = npmPrefix + threads
-	npmArgs    = "npm-args"
+	npmPrefix          = "npm-"
+	npmThreads         = npmPrefix + threads
+	npmDetailedSummary = npmPrefix + detailedSummary
+	npmArgs            = "npm-args"
 
 	// Unique nuget flags
 	NugetArgs    = "nuget-args"
@@ -348,6 +353,7 @@ const (
 	rbRepo              = releaseBundlePrefix + repo
 	rbPassphrase        = releaseBundlePrefix + passphrase
 	distTarget          = releaseBundlePrefix + target
+	rbDetailedSummary   = releaseBundlePrefix + detailedSummary
 	sign                = "sign"
 	desc                = "desc"
 	releaseNotesPath    = "release-notes-path"
@@ -591,6 +597,10 @@ var flagsMap = map[string]cli.Flag{
 	encPassword: cli.BoolTFlag{
 		Name:  encPassword,
 		Usage: "[Default: true] If set to false then the configured password will not be encrypted using Artifactory's encryption API.` `",
+	},
+	overwrite: cli.BoolFlag{
+		Name:  overwrite,
+		Usage: "[Default: false] Overwrites the instance configuration if an instance with the same ID already exists.` `",
 	},
 	basicAuthOnly: cli.BoolFlag{
 		Name: basicAuthOnly,
@@ -1012,6 +1022,10 @@ var flagsMap = map[string]cli.Flag{
 		Value: "",
 		Usage: "[Default: 3] Number of working threads for build-info collection.` `",
 	},
+	npmDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to include a list of the affected files in the command summary.` `",
+	},
 	NugetArgs: cli.StringFlag{
 		Name:   NugetArgs,
 		Usage:  "[Deprecated] [Optional] A list of NuGet arguments and options in the form of \"arg1 arg2 arg3\"` `",
@@ -1054,6 +1068,10 @@ var flagsMap = map[string]cli.Flag{
 	rbDryRun: cli.BoolFlag{
 		Name:  dryRun,
 		Usage: "[Default: false] Set to true to disable communication with JFrog Distribution.` `",
+	},
+	rbDetailedSummary: cli.BoolFlag{
+		Name:  detailedSummary,
+		Usage: "[Default: false] Set to true to get a command summary with details about the release bundle artifact.` `",
 	},
 	sign: cli.BoolFlag{
 		Name:  sign,
@@ -1249,7 +1267,11 @@ var flagsMap = map[string]cli.Flag{
 }
 
 var commandFlags = map[string][]string{
-	Config: {
+	AddConfig: {
+		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
+		clientCertKeyPath, basicAuthOnly, configInsecureTls, overwrite,
+	},
+	EditConfig: {
 		interactive, encPassword, configPlatformUrl, configRtUrl, distUrl, configXrUrl, configMcUrl, configPlUrl, configUser, configPassword, configApiKey, configAccessToken, sshKeyPath, clientCertPath,
 		clientCertKeyPath, basicAuthOnly, configInsecureTls,
 	},
@@ -1378,7 +1400,13 @@ var commandFlags = map[string][]string{
 	},
 	NpmPublish: {
 		npmArgs, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey, deprecatedAccessToken, buildName,
-		buildNumber, module, project,
+		buildNumber, module, project, npmDetailedSummary,
+	},
+	YarnConfig: {
+		global, serverIdResolve, repoResolve,
+	},
+	Yarn: {
+		buildName, buildNumber, module, project,
 	},
 	NugetConfig: {
 		global, serverIdResolve, repoResolve, nugetV2,
@@ -1421,15 +1449,15 @@ var commandFlags = map[string][]string{
 	},
 	ReleaseBundleCreate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleUpdate: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, spec, specVars, targetProps,
-		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget,
+		rbDryRun, sign, desc, exclusions, releaseNotesPath, releaseNotesSyntax, rbPassphrase, rbRepo, insecureTls, distTarget, rbDetailedSummary,
 	},
 	ReleaseBundleSign: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbPassphrase, rbRepo,
-		insecureTls,
+		insecureTls, rbDetailedSummary,
 	},
 	ReleaseBundleDistribute: {
 		url, distUrl, user, password, apikey, accessToken, sshKeyPath, sshPassPhrase, serverId, rbDryRun, distRules,
