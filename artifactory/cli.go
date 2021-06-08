@@ -1104,7 +1104,7 @@ func configCmd(c *cli.Context) error {
 }
 
 func mvnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1147,7 +1147,7 @@ func mvnCmd(c *cli.Context) error {
 }
 
 func gradleCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1295,7 +1295,7 @@ func BuildDockerCreateCmd(c *cli.Context) error {
 }
 
 func nugetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 	if c.NArg() < 1 {
@@ -1348,7 +1348,7 @@ func nugetDepsTreeCmd(c *cli.Context) error {
 }
 
 func dotnetCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1409,7 +1409,7 @@ func getNugetAndDotnetConfigFields(configFilePath string) (rtDetails *coreConfig
 }
 
 func npmInstallOrCiCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.showCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1428,7 +1428,7 @@ func npmInstallOrCiCmd(c *cli.Context) error {
 }
 
 func npmPublishCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1454,7 +1454,7 @@ func npmPublishCmd(c *cli.Context) error {
 }
 
 func yarnCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 
@@ -1469,20 +1469,6 @@ func yarnCmd(c *cli.Context) error {
 
 	yarnCmd := yarn.NewYarnCommand().SetConfigFilePath(configFilePath).SetArgs(c.Args())
 	return commands.Exec(yarnCmd)
-}
-
-// This function checks whether the command received --help as a single option.
-// If it did, the command's help is shown and true is returned.
-// This function should be uesd iff the SkipFlagParsing option is used.
-func showCmdHelpIfNeeded(c *cli.Context) (bool, error) {
-	if len(c.Args()) != 1 {
-		return false, nil
-	}
-	if c.Args()[0] == "--help" {
-		err := cli.ShowCommandHelp(c, c.Command.Name)
-		return true, err
-	}
-	return false, nil
 }
 
 func shouldSkipGoFlagParsing() bool {
@@ -2341,7 +2327,7 @@ func newRtCurlCommand(c *cli.Context) (*curl.RtCurlCommand, error) {
 }
 
 func pipInstallCmd(c *cli.Context) error {
-	if show, err := showCmdHelpIfNeeded(c); show || err != nil {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
 		return err
 	}
 

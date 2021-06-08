@@ -108,6 +108,9 @@ func offlineUpdates(c *cli.Context) error {
 }
 
 func curlCmd(c *cli.Context) error {
+	if show, err := cliutils.ShowCmdHelpIfNeeded(c); show || err != nil {
+		return err
+	}
 	if c.NArg() < 1 {
 		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
 	}
