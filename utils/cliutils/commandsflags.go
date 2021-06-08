@@ -370,6 +370,9 @@ const (
 	version   = "version"
 	target    = "target"
 
+	// Audit commands
+	path = "path"
+
 	// *** Mission Control Commands' flags ***
 	missionControlPrefix = "mc-"
 
@@ -1117,6 +1120,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
+	path: cli.StringFlag{
+		Name:  path,
+		Usage: "[Default: ./] Path for working directory.` `",
+	},
 	// Mission Control's commands Flags
 	mcUrl: cli.StringFlag{
 		Name:  url,
@@ -1422,7 +1429,7 @@ var commandFlags = map[string][]string{
 		serverId,
 	},
 	XrAuditNpm: {
-		serverId,
+		serverId, path,
 	},
 	// Mission Control's commands
 	McConfig: {
