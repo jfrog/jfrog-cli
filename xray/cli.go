@@ -36,16 +36,15 @@ func GetCommands() []cli.Command {
 			Action:          curlCmd,
 		},
 		{
-			Name:            "audit-npm",
-			Flags:           cliutils.GetCommandFlags(cliutils.XrAuditNpm),
-			Aliases:         []string{"an"},
-			Description:     auditnpmdocs.Description,
-			HelpName:        corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
-			UsageText:       auditnpmdocs.Arguments,
-			ArgsUsage:       common.CreateEnvVars(),
-			BashComplete:    corecommondocs.CreateBashCompletionFunc(),
-			SkipFlagParsing: true,
-			Action:          auditNpmCmd,
+			Name:         "audit-npm",
+			Flags:        cliutils.GetCommandFlags(cliutils.XrAuditNpm),
+			Aliases:      []string{"an"},
+			Description:  auditnpmdocs.Description,
+			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
+			UsageText:    auditnpmdocs.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action:       auditNpmCmd,
 		},
 		{
 			Name:         "offline-update",
@@ -134,15 +133,13 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditNpmCmd(c *cli.Context) error {
-	if c.NArg() > 1 {
-		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
-	}
+
 	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
 	if err != nil {
 		return err
 	}
-
-	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetArguments(cliutils.ExtractCommand(c))
+	print(c.String("path"))
+	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetArguments(cliutils.ExtractCommand(c)).SetWorkingDirectory(c.String("path"))
 
 	return commands.Exec(xrAuditNpmCmd)
 
