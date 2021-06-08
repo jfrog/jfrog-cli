@@ -14,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
+
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"

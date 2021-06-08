@@ -78,6 +78,7 @@ const (
 	JpdDelete      = "jpd-delete"
 	// XRay's Commands Keys
 	XrCurl        = "xr-curl"
+	XrAuditNpm    = "xr-audit-npm"
 	OfflineUpdate = "offline-update"
 
 	// Config commands keys
@@ -1418,6 +1419,9 @@ var commandFlags = map[string][]string{
 		licenseId, from, to, version, target,
 	},
 	XrCurl: {
+		serverId,
+	},
+	XrAuditNpm: {
 		serverId,
 	},
 	// Mission Control's commands
