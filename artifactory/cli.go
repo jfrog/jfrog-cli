@@ -3,14 +3,15 @@ package artifactory
 import (
 	"errors"
 	"fmt"
-	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
-	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
-	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
@@ -1053,7 +1054,7 @@ func GetCommands() []cli.Command {
 }
 
 func createArtifactoryDetailsByFlags(c *cli.Context, distribution bool) (*coreConfig.ServerDetails, error) {
-	artDetails, err := createArtifactoryDetailsWithConfigOffer(c, distribution)
+	artDetails, err := cliutils.CreateServerDetailsWithConfigOffer(c, distribution)
 	if err != nil {
 		return nil, err
 	}
@@ -3169,73 +3170,6 @@ func validateBuildConfiguration(c *cli.Context, buildConfiguration *utils.BuildC
 		return cliutils.PrintHelpAndReturnError("Build name and build number are expected as command arguments or environment variables.", c)
 	}
 	return nil
-}
-
-func offerConfig(c *cli.Context) (*coreConfig.ServerDetails, error) {
-	confirmed, err := cliutils.ShouldOfferConfig()
-	if !confirmed || err != nil {
-		return nil, err
-	}
-	details := createArtifactoryDetailsFromFlags(c)
-	configCmd := coreCommonCommands.NewConfigCommand().SetDefaultDetails(details).SetInteractive(true).SetEncPassword(true)
-	err = configCmd.Config()
-	if err != nil {
-		return nil, err
-	}
-
-	return configCmd.ServerDetails()
-}
-
-func createArtifactoryDetailsWithConfigOffer(c *cli.Context, excludeRefreshableTokens bool) (*coreConfig.ServerDetails, error) {
-	createdDetails, err := offerConfig(c)
-	if err != nil {
-		return nil, err
-	}
-	if createdDetails != nil {
-		return createdDetails, err
-	}
-
-	details := createArtifactoryDetailsFromFlags(c)
-	// If urls or credentials were passed as options, use options as they are.
-	// For security reasons, we'd like to avoid using part of the connection details from command options and the rest from the config.
-	// Either use command options only or config only.
-	if credentialsChanged(details) {
-		return details, nil
-	}
-
-	// Else, use details from config for requested serverId, or for default server if empty.
-	confDetails, err := coreCommonCommands.GetConfig(details.ServerId, excludeRefreshableTokens)
-	if err != nil {
-		return nil, err
-	}
-
-	// Take InsecureTls value from options since it is not saved in config.
-	confDetails.InsecureTls = details.InsecureTls
-	confDetails.Url = clientutils.AddTrailingSlashIfNeeded(confDetails.Url)
-	confDetails.DistributionUrl = clientutils.AddTrailingSlashIfNeeded(confDetails.DistributionUrl)
-
-	// Create initial access token if needed.
-	if !excludeRefreshableTokens {
-		err = coreConfig.CreateInitialRefreshableTokensIfNeeded(confDetails)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return confDetails, nil
-}
-
-func createArtifactoryDetailsFromFlags(c *cli.Context) (details *coreConfig.ServerDetails) {
-	details = cliutils.CreateServerDetailsFromFlags(c)
-	details.ArtifactoryUrl = details.Url
-	details.Url = ""
-	return
-}
-
-func credentialsChanged(details *coreConfig.ServerDetails) bool {
-	return details.Url != "" || details.ArtifactoryUrl != "" || details.DistributionUrl != "" || details.User != "" || details.Password != "" ||
-		details.ApiKey != "" || details.SshKeyPath != "" || details.SshPassphrase != "" || details.AccessToken != "" ||
-		details.ClientCertKeyPath != "" || details.ClientCertPath != ""
 }
 
 func getDebFlag(c *cli.Context) (deb string, err error) {

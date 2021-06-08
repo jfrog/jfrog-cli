@@ -2,18 +2,21 @@ package xray
 
 import (
 	"errors"
+	"time"
+
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommon "github.com/jfrog/jfrog-cli-core/common/commands"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
+	scan "github.com/jfrog/jfrog-cli-core/xray/commands/audit"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/curl"
 	"github.com/jfrog/jfrog-cli-core/xray/commands/offlineupdate"
 	"github.com/jfrog/jfrog-cli/docs/common"
+	auditnpmdocs "github.com/jfrog/jfrog-cli/docs/xray/auditnpm"
 	curldocs "github.com/jfrog/jfrog-cli/docs/xray/curl"
 	offlineupdatedocs "github.com/jfrog/jfrog-cli/docs/xray/offlineupdate"
 	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
-	"time"
 )
 
 const DATE_FORMAT = "2006-01-02"
@@ -31,6 +34,18 @@ func GetCommands() []cli.Command {
 			BashComplete:    corecommondocs.CreateBashCompletionFunc(),
 			SkipFlagParsing: true,
 			Action:          curlCmd,
+		},
+		{
+			Name:            "audit-npm",
+			Flags:           cliutils.GetCommandFlags(cliutils.XrAuditNpm),
+			Aliases:         []string{"an"},
+			Description:     auditnpmdocs.Description,
+			HelpName:        corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
+			UsageText:       auditnpmdocs.Arguments,
+			ArgsUsage:       common.CreateEnvVars(),
+			BashComplete:    corecommondocs.CreateBashCompletionFunc(),
+			SkipFlagParsing: true,
+			Action:          auditNpmCmd,
 		},
 		{
 			Name:         "offline-update",
@@ -113,4 +128,19 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 	xrCurlCommand.SetServerDetails(xrDetails)
 	xrCurlCommand.SetUrl(xrDetails.XrayUrl)
 	return xrCurlCommand, err
+}
+
+func auditNpmCmd(c *cli.Context) error {
+	if c.NArg() > 1 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
+	if err != nil {
+		return err
+	}
+
+	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetArguments(cliutils.ExtractCommand(c))
+
+	return commands.Exec(xrAuditNpmCmd)
+
 }
