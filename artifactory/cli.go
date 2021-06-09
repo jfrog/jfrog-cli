@@ -13,6 +13,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	commandsutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -1254,10 +1255,9 @@ func mvnCmd(c *cli.Context) error {
 			return err
 		}
 		if mvnCmd.IsDetailedSummary() {
-			result := mvnCmd.Result()
-			err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
-			return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+			return PrintDetailedSummaryReport(c, err, mvnCmd.Result())
 		}
+		return nil
 	}
 	return mvnLegacyCmd(c)
 }
@@ -1300,12 +1300,20 @@ func gradleCmd(c *cli.Context) error {
 			return err
 		}
 		if gradleCmd.IsDetailedSummary() {
-			result := gradleCmd.Result()
-			err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
-			return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+			return PrintDetailedSummaryReport(c, err, gradleCmd.Result())
 		}
+		return nil
 	}
 	return gradleLegacyCmd(c)
+}
+
+func PrintDetailedSummaryReport(c *cli.Context, originalErr error, result *commandsutils.Result) error {
+	if len(result.Reader().GetFilesPaths()) == 0 {
+		return errorutils.CheckError(errors.New("Empty reader - no files paths."))
+	}
+	defer os.Remove(result.Reader().GetFilesPaths()[0])
+	err := cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, originalErr)
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
