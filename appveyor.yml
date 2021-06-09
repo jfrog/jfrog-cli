@@ -1,5 +1,5 @@
 # ~~~ How to use Appveyor ~~~
-# Preconditions: Artifactory with external access and Bintray oss user.
+# Preconditions: JFrog Platform instance
 #
 # = Trigger tests on commits =
 #   1. Create a new project in Appveyor and choose jfrog-cli-go.
@@ -14,8 +14,8 @@
 #
 # = Override credentials in Appveyor in case of a fork =
 #   1. In the project at Appveyor - Go to settings -> Environment.
-#   2. Override 'JFROG_CLI_RT_URL', 'JFROG_CLI_RT_USER' and 'JFROG_CLI_BINTRAY_USER'.
-#   3. Override 'JFROG_CLI_RT_PASSWORD' and 'JFROG_CLI_BINTRAY_APIKEY' with variable encryption.
+#   2. Override 'JFROG_CLI_RT_URL' and 'JFROG_CLI_RT_USER' 
+#   3. Override 'JFROG_CLI_RT_PASSWORD' with variable encryption.
 
 image:
   - Visual Studio 2019
@@ -43,15 +43,9 @@ environment:
     secure: Um8o75MQIieSavIemF4ySA==
   JFROG_CLI_DIST_URL:
     secure: RIh0gGFDn2JAnLUEEqLsQrfLmtDrzDd5Qphea4gOE0Lu1Uz2Xa/y+D0Mld917gwy
-  JFROG_CLI_BINTRAY_USER:
-    secure: 86Gh1wUR9EjUYrNPws+0DQ==
-  JFROG_CLI_BINTRAY_APIKEY:
-    secure: Bm9R9Zveb6Rxc6M4IWvpVi1j1txDSBwz2L+CHKDoxwDHDfPs7vMb8+gSbB63XAq+
 
   COMMON_TESTS_ARGS:
     go test -v github.com\jfrog\jfrog-cli --timeout 0 --rt.url="%JFROG_CLI_RT_URL%" --rt.user="%JFROG_CLI_RT_USER%" --rt.password="%JFROG_CLI_RT_PASSWORD%"
-  BT_CREDENTIALS_ARGS:
-    --bt.user="%JFROG_CLI_BINTRAY_USER%" --bt.key="%JFROG_CLI_BINTRAY_APIKEY%"
 
   matrix:
   - VET:
@@ -62,9 +56,6 @@ environment:
   - ARTIFACTORY_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS%  --test.artifactory=true"
-  - BINTRAY_TESTS:
-    TEST_SUIT:
-      "%COMMON_TESTS_ARGS% %BT_CREDENTIALS_ARGS% --test.bintray=true"
   - NPM_TESTS:
     TEST_SUIT:
       "%COMMON_TESTS_ARGS% --test.npm=true"

@@ -91,6 +91,7 @@ const (
 	SearchGo                               = "search_go.json"
 	SearchDistRepoByInSuffix               = "search_dist_repo_by_in_suffix.json"
 	SearchRepo1ByInSuffix                  = "search_repo1_by_in_suffix.json"
+	SearchRepo1IncludeDirs                 = "search_repo1_include_dirs.json"
 	SearchRepo1NonExistFile                = "search_repo1_ant_test_file.json"
 	SearchRepo1NonExistFileAntExclusions   = "search_repo1_ant_and_exclusions_test_file.json"
 	SearchRepo1TestResources               = "search_repo1_test_resources.json"
@@ -228,6 +229,17 @@ func GetAntPatternUploadWithExclusionsExpectedRepo1() []string {
 		RtRepo1 + "/c1.in",
 		RtRepo1 + "/c2.in",
 		RtRepo1 + "/c3.in",
+	}
+}
+
+func GetAntPatternUploadWithIncludeDirsExpectedRepo1() []string {
+	return []string{
+		RtRepo1 + "/",
+		RtRepo1 + "/folder",
+		RtRepo1 + "/testdata",
+		RtRepo1 + "/testdata/an",
+		RtRepo1 + "/testdata/an/empty",
+		RtRepo1 + "/testdata/an/empty/folder",
 	}
 }
 
@@ -1656,11 +1668,11 @@ func GetUploadExpectedRepo1SyncDeleteStep4() []string {
 }
 
 func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDetails {
-	path1, path2, path3 := "testdata/a/a1.in", "testdata/a/a2.in", "testdata/a/a3.in"
+	path1, path2, path3 := filepath.Join("testdata", "a", "a1.in"), filepath.Join("testdata", "a", "a2.in"), filepath.Join("testdata", "a", "a3.in")
 	return []clientutils.FileTransferDetails{
-		{SourcePath: path1, TargetPath: RtUrl + filepath.Join(RtRepo1, path1), Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
-		{SourcePath: path2, TargetPath: RtUrl + filepath.Join(RtRepo1, path2), Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
-		{SourcePath: path3, TargetPath: RtUrl + filepath.Join(RtRepo1, path3), Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
+		{SourcePath: path1, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a1.in", Sha256: "4eb341b5d2762a853d79cc25e622aa8b978eb6e12c3259e2d99dc9dc60d82c5d"},
+		{SourcePath: path2, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a2.in", Sha256: "3e3deb6628658a48cf0d280a2210211f9d977ec2e10a4619b95d5fb85cb10450"},
+		{SourcePath: path3, TargetPath: RtUrl + RtRepo1 + "/testdata/a/a3.in", Sha256: "14e3dc4749bf42df13a67a271065b0f334d0ad36bb34a74cc57c6e137f9af09e"},
 	}
 }
 

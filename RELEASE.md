@@ -1,5 +1,32 @@
 # Release Notes
 
+## 1.48.1 (May 28, 2021)
+- Bug fix - "jfrog rt go get" fails to collect build-info, if used with an internal module package
+
+## 1.48.0 (May 23, 2021)
+- New "jfrog ci-setup" command
+- Support for yarn - new "jfrog rt yarn" command
+- New --detailed-summary option added to the "jfrog rt npm-publish" command
+- New --detailed-summary option added to the release-bundle create and sign commands
+- Bug fix - Temp files are not deleted after download
+- Bug fix - Change the permission of the npmrc file created by the "jfrog rt npmi" command
+
+## 1.47.3 (May 15, 2021)
+- Bug fix - "jfrog rt upload" - using ANT patterns fails to convert doube asteriks to directory range.
+- Bug fix - "jfrog rt npm-install" can fail when .npmrc includes 'json=true'.
+- Bug fix - "jfrog rt nuget" & "jfrog rt dotnet" can fail when there are multiple .net projects in the same directory.
+- Bug fix - "jfrog rt build-publish" module type is missing in build-info modules.
+- JFrog CLI binaries are now also published for the ppc64 and ppc64le Linux architectures.
+- "jfrog config add" - New --overwrite option.
+
+## 1.47.2 (May 5, 2021)
+- Bug fix - the "jfrog rt bpr" command ignores the JFROG_CLI_BUILD_PROJECT environment variable.
+- Bug fix - Unable to upload a file if its name includes semicolons.
+- Bug fix - Upgrade jfrog-client-go, which includes the upgrade of go-git v4.7.1, to resolve errors that occur when collecting data from the local git repository.
+
+## 1.47.1 (April 29, 2021)
+- Bug fix - Error when unmarshalling response received from JFrog Distribution
+
 ## 1.47.0 (April 28, 2021)
 - "jfrog rt bp" -  New --detailed-summary option added
 - "jfrog rt u" - The --detailed-summary option now also returns sha256 of the uploaded files

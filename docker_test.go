@@ -178,7 +178,7 @@ func TestContainerFatManifestPull(t *testing.T) {
 				return
 			}
 			buildInfo := publishedBuildInfo.BuildInfo
-			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2")
+			validateBuildInfo(buildInfo, t, 6, 0, imageName+":2.2", buildinfo.Docker)
 
 			inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.DockerBuildName, artHttpDetails)
 			inttestutils.DeleteTestContainerImage(t, imageTag, containerManager)
@@ -223,7 +223,7 @@ func validateContainerBuild(buildName, buildNumber, imagePath, module string, ex
 		return
 	}
 	buildInfo := publishedBuildInfo.BuildInfo
-	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module)
+	validateBuildInfo(buildInfo, t, expectedDependencies, expectedArtifacts, module, buildinfo.Docker)
 }
 
 func validateContainerImage(t *testing.T, imagePath string, expectedItemsInArtifactory int) {
@@ -262,7 +262,7 @@ func TestKanikoBuildCollect(t *testing.T) {
 			return
 		}
 		buildInfo := publishedBuildInfo.BuildInfo
-		validateBuildInfo(buildInfo, t, 0, 3, imageTag)
+		validateBuildInfo(buildInfo, t, 0, 3, imageTag, buildinfo.Docker)
 
 		// Cleanup.
 		inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)

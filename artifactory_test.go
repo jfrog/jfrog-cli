@@ -3610,7 +3610,7 @@ func TestSummaryReport(t *testing.T) {
 func TestUploadDetailedSummary(t *testing.T) {
 	initArtifactoryTest(t)
 	uploadCmd := generic.NewUploadCommand()
-	fileSpec := spec.NewBuilder().Pattern("testdata/a/a*.in").Target(tests.RtRepo1).BuildSpec()
+	fileSpec := spec.NewBuilder().Pattern(filepath.Join("testdata", "a", "a*.in")).Target(tests.RtRepo1).BuildSpec()
 	uploadCmd.SetUploadConfiguration(createUploadConfiguration()).SetSpec(fileSpec).SetServerDetails(serverDetails).SetDetailedSummary(true)
 	commands.Exec(uploadCmd)
 	result := uploadCmd.Result()
@@ -4476,6 +4476,23 @@ func initVcsTestDir(t *testing.T) string {
 	return path
 }
 
+func TestConfigAddOverwrite(t *testing.T) {
+	initArtifactoryTest(t)
+	// Add a new instance.
+	err := tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	// Remove the instance at the end of the test.
+	defer tests.NewJfrogCli(execMain, "jfrog config", "").Exec("rm", tests.RtServerId, "--quiet")
+	// Expect no error, because the instance we created has a unique ID.
+	assert.NoError(t, err)
+	// Try creating an instance with the same ID, and expect to fail, because an instance with the
+	// same ID already exists.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--artifactory-url="+*tests.RtUrl, "--user=admin", "--password=password", "--enc-password=false")
+	assert.Error(t, err)
+	// Now create it again, this time with the --overwrite option and expect no error.
+	err = tests.NewJfrogCli(execMain, "jfrog config", "").Exec("add", tests.RtServerId, "--overwrite", "--artifactory-url="+*tests.RtUrl, "--user=admin2", "--password=password", "--enc-password=false")
+	assert.NoError(t, err)
+}
+
 func TestArtifactoryReplicationCreate(t *testing.T) {
 	initArtifactoryTest(t)
 	// Configure server with dummy credentials
@@ -4716,7 +4733,11 @@ func uploadWithSpecificServerAndVerify(t *testing.T, cli *tests.JfrogCli, server
 func TestArtifactorySimpleUploadAntPattern(t *testing.T) {
 	initArtifactoryTest(t)
 
+	// --ant and --regexp together: should get an error
 	uploadUsingAntAndRegexpTogether(t)
+	// Upload empty dir
+	uploadUsingAntAIncludeDirsAndFlat(t)
+	// Simple uploads
 	simpleUploadAntIsTrueRegexpIsFalse(t)
 	simpleUploadWithAntPatternSpec(t)
 
@@ -4753,6 +4774,17 @@ func simpleUploadWithAntPatternSpec(t *testing.T) {
 	verifyDoesntExistInArtifactory(searchFilePath, t)
 }
 
+func uploadUsingAntAIncludeDirsAndFlat(t *testing.T) {
+	filePath := "testdata/*/empt?/**"
+	err := artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=true")
+	assert.NoError(t, err)
+	err = artifactoryCli.Exec("upload", filePath, tests.RtRepo1, "--ant", "--include-dirs=true", "--flat=false")
+	assert.NoError(t, err)
+	searchFilePath, err := tests.CreateSpec(tests.SearchRepo1IncludeDirs)
+	assert.NoError(t, err)
+	verifyExistInArtifactory(tests.GetAntPatternUploadWithIncludeDirsExpectedRepo1(), searchFilePath, t)
+}
+
 func TestUploadWithAntPatternAndExclusionsSpec(t *testing.T) {
 	initArtifactoryTest(t)
 	// Init tmp dir
@@ -4781,32 +4813,16 @@ func TestPermissionTargets(t *testing.T) {
 
 	// Create permission target on specific repo.
 	assert.NoError(t, artifactoryCli.Exec("ptc", templatePath, createPermissionTargetsTemplateVars(tests.RtRepo1)))
-	err = getAndAssertExpectedPermissionTarget(t, servicesManager, tests.RtRepo1)
-	if err != nil {
-		return
-	}
-
-	permissionDeleted := false
-	defer func() {
-		if !permissionDeleted {
-			cleanPermissionTarget()
-		}
-	}()
+	assertPermissionTarget(t, servicesManager, tests.RtRepo1)
 
 	// Update permission target to ANY repo.
 	any := "ANY"
 	assert.NoError(t, artifactoryCli.Exec("ptu", templatePath, createPermissionTargetsTemplateVars(any)))
-	err = getAndAssertExpectedPermissionTarget(t, servicesManager, any)
-	if err != nil {
-		return
-	}
+	assertPermissionTarget(t, servicesManager, any)
 
 	// Delete permission target.
 	assert.NoError(t, artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName))
-	permissionDeleted, err = assertPermissionTargetDeleted(t, servicesManager)
-	if err != nil {
-		return
-	}
+	assertPermissionTargetDeleted(t, servicesManager)
 
 	cleanArtifactoryTest()
 }
@@ -4817,30 +4833,43 @@ func createPermissionTargetsTemplateVars(reposValue string) string {
 	return fmt.Sprintf("--vars=%s=%s;%s=%s", ptNameVarKey, tests.RtPermissionTargetName, reposVarKey, reposValue)
 }
 
-func getAndAssertExpectedPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) error {
+func assertPermissionTarget(t *testing.T, manager artifactory.ArtifactoryServicesManager, repoValue string) {
 	actual, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
 	if err != nil {
 		assert.NoError(t, err)
-		return err
+		return
 	}
 	expected := tests.GetExpectedPermissionTarget(repoValue)
 	assert.EqualValues(t, expected, *actual)
-	return nil
 }
 
-func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) (bool, error) {
+func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) {
 	_, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
 	if err == nil {
 		assert.Error(t, err)
-		return false, nil
+		return
 	}
-	if strings.Contains(err.Error(), "404 Not Found") {
-		return true, nil
-	}
-	assert.Contains(t, err.Error(), "404 Not Found")
-	return false, err
+	assert.Contains(t, err.Error(), "404")
 }
 
 func cleanPermissionTarget() {
 	_ = artifactoryCli.Exec("ptdel", tests.RtPermissionTargetName)
+}
+
+func TestArtifactoryCurl(t *testing.T) {
+	initArtifactoryTest(t)
+	_, err := createServerConfigAndReturnPassphrase()
+	defer deleteServerConfig()
+	assert.NoError(t, err)
+	// Check curl command with config default server
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version")
+	assert.NoError(t, err)
+	// Check curl command with '--server-id' flag
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id="+tests.RtServerId)
+	assert.NoError(t, err)
+	// Check curl command with invalid server id - should get an error.
+	err = artifactoryCli.WithoutCredentials().Exec("curl", "-XGET", "/api/system/version", "--server-id=not_configured_name_"+tests.RtServerId)
+	assert.Error(t, err)
+
+	cleanArtifactoryTest()
 }
