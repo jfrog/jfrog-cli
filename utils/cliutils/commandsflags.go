@@ -326,8 +326,7 @@ const (
 	npmArgs    = "npm-args"
 
 	// Unique mvn flags
-	mvnPrefix          = "mvn-"
-	mvnDetailedSummary = mvnPrefix + detailedSummary
+	mvnPrefix = "mvn-"
 
 	// Unique nuget flags
 	NugetArgs    = "nuget-args"
@@ -1245,10 +1244,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  insecureTls,
 		Usage: "[Default: false] Set to true to skip TLS certificates verification, while encrypting the Artifactory password during the config process.` `",
 	},
-	mvnDetailedSummary: cli.BoolFlag{
-		Name:  detailedSummary,
-		Usage: "[Default: false] Set to true to get a command summary with details about deployed artifact.` `",
-	},
 }
 
 var commandFlags = map[string][]string{
@@ -1355,10 +1350,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls, project, mvnDetailedSummary,
+		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,

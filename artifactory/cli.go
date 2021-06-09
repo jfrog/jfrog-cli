@@ -1290,8 +1290,20 @@ func gradleCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary"))
-		return commands.Exec(gradleCmd)
+		filteredGradleArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredGradleArgs)
+		if err != nil {
+			return err
+		}
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
+		err = commands.Exec(gradleCmd)
+		if err != nil {
+			return err
+		}
+		if gradleCmd.IsDetailedSummary() {
+			result := gradleCmd.Result()
+			err = cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+			return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
+		}
 	}
 	return gradleLegacyCmd(c)
 }
