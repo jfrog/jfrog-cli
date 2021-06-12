@@ -634,7 +634,7 @@ func RedirectLogOutputToBuffer() (buffer *bytes.Buffer, previousLog log.Log) {
 	return buffer, previousLog
 }
 
-// Set new logger with output redirection to a null logger. This is usable for negative tests.
+// Set new logger with output redirection to a null logger. This is useful for negative tests.
 // Caller is responsible to set the old log back.
 func RedirectLogOutputToNil() (previousLog log.Log) {
 	previousLog = log.Logger
