@@ -128,7 +128,7 @@ func TestPreparePropsCmd(t *testing.T) {
 			context, buffer := createContext(test.flags, test.args)
 			propsCommand, err := preparePropsCmd(context)
 			var actualSpec *spec.SpecFiles
-			if !test.expectError {
+			if propsCommand != nil {
 				actualSpec = propsCommand.Spec()
 				assert.Equal(t, test.expectedProps, propsCommand.Props())
 			}
@@ -149,14 +149,10 @@ func assertGenericCommand(t *testing.T, err error, buffer *bytes.Buffer, expectE
 }
 
 func createContext(testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
-	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
-	flags := append(setStringFlags(flagSet, testFlags...), testArgs...)
-	flagSet.Parse(flags)
-
-	buffer := &bytes.Buffer{}
+	flagSet := createFlagSet(testFlags, testArgs)
 	app := cli.NewApp()
 	app.Writer = &bytes.Buffer{}
-	return cli.NewContext(app, flagSet, nil), buffer
+	return cli.NewContext(app, flagSet, nil), &bytes.Buffer{}
 }
 
 func getSpecPath(t *testing.T, spec string) string {
@@ -165,14 +161,16 @@ func getSpecPath(t *testing.T, spec string) string {
 	return filepath.Join(path.Dir(dir), "testdata", "filespecs", spec)
 }
 
-// Set string flags. Return a slice of their values.
-func setStringFlags(flagSet *flag.FlagSet, flags ...string) []string {
+// Create flagset with input flags and arguments.
+func createFlagSet(flags []string, args []string) *flag.FlagSet {
+	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
 	cmdFlags := []string{}
 	for _, flag := range flags {
 		flagSet.String(strings.Split(flag, "=")[0], "", "")
 		cmdFlags = append(cmdFlags, "--"+flag)
 	}
+	cmdFlags = append(cmdFlags, args...)
 	flagSet.Parse(cmdFlags)
 
-	return cmdFlags
+	return flagSet
 }
