@@ -2,6 +2,7 @@ package summary
 
 import (
 	"encoding/json"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"strings"
 )
 
@@ -76,6 +77,11 @@ type Totals struct {
 type BuildInfoSummary struct {
 	Summary
 	Sha256Array []Sha256 `json:"files"`
+}
+
+type GoPublishSummary struct {
+	Summary
+	Files []clientutils.FileTransferDetails `json:"files"`
 }
 
 type Sha256 struct {

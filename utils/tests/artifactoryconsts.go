@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
-	clientutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	servicesutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 )
 
 const (
@@ -1676,8 +1677,8 @@ func GetExpectedUploadSummaryDetails(RtUrl string) []clientutils.FileTransferDet
 	}
 }
 
-func GetReplicationConfig() []clientutils.ReplicationParams {
-	return []clientutils.ReplicationParams{
+func GetReplicationConfig() []servicesutils.ReplicationParams {
+	return []servicesutils.ReplicationParams{
 		{
 			Url:                    *RtUrl + "targetRepo",
 			Username:               "admin",

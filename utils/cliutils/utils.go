@@ -9,7 +9,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/config"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/jfrog/jfrog-cli/utils/summary"
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/utils"
 	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -129,7 +128,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 	if readerLength == 0 {
 		log.Output("  files: []")
 	} else {
-		for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+		for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 			writer.Write(getDetailedSummaryRecord(transferDetails, printExtendedDetails))
 		}
 	}
@@ -139,7 +138,7 @@ func PrintDetailedSummaryReport(success, failed int, reader *content.ContentRead
 
 // Get the detailed summary record.
 // In case of an upload/publish commands we want to print sha256 of the uploaded file in addition to the source and the target.
-func getDetailedSummaryRecord(transferDetails *serviceutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
+func getDetailedSummaryRecord(transferDetails *clientutils.FileTransferDetails, extendDetailedSummary bool) interface{} {
 	record := DetailedSummaryRecord{
 		Source: transferDetails.SourcePath,
 		Target: transferDetails.TargetPath,

@@ -1899,10 +1899,10 @@ func goPublishCmd(c *cli.Context, configFilePath string) error {
 	}
 	version := c.Args().Get(0)
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps"))
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 }
 
 func goLegacyPublishCmd(c *cli.Context) error {

@@ -27,7 +27,6 @@ import (
 
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	coretests "github.com/jfrog/jfrog-cli-core/utils/tests"
-	serviceutils "github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 
 	"github.com/buger/jsonparser"
 	gofrogio "github.com/jfrog/gofrog/io"
@@ -3617,8 +3616,8 @@ func TestUploadDetailedSummary(t *testing.T) {
 	reader := result.Reader()
 	assert.NoError(t, reader.GetError())
 	defer reader.Close()
-	var files []serviceutils.FileTransferDetails
-	for transferDetails := new(serviceutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(serviceutils.FileTransferDetails) {
+	var files []clientutils.FileTransferDetails
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
 		files = append(files, *transferDetails)
 	}
 	assert.ElementsMatch(t, files, tests.GetExpectedUploadSummaryDetails(*tests.RtUrl))
