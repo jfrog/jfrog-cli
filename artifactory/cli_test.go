@@ -164,6 +164,7 @@ func getSpecPath(t *testing.T, spec string) string {
 // Create flagset with input flags and arguments.
 func createFlagSet(flags []string, args []string) *flag.FlagSet {
 	flagSet := flag.NewFlagSet("TestFlagSet", flag.ContinueOnError)
+	flags = append(flags, "url=http://127.0.0.1:8081/artifactory")
 	cmdFlags := []string{}
 	for _, flag := range flags {
 		flagSet.String(strings.Split(flag, "=")[0], "", "")
