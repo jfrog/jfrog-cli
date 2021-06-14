@@ -41,7 +41,6 @@ func GetCommands() []cli.Command {
 			Aliases:      []string{"an"},
 			Description:  auditnpmdocs.Description,
 			HelpName:     corecommondocs.CreateUsage("xr audit-npm", auditnpmdocs.Description, auditnpmdocs.Usage),
-			UsageText:    auditnpmdocs.Arguments,
 			ArgsUsage:    common.CreateEnvVars(),
 			BashComplete: corecommondocs.CreateBashCompletionFunc(),
 			Action:       auditNpmCmd,
@@ -133,14 +132,12 @@ func newXrCurlCommand(c *cli.Context) (*curl.XrCurlCommand, error) {
 }
 
 func auditNpmCmd(c *cli.Context) error {
-
 	serverDetailes, err := cliutils.CreateServerDetailsWithConfigOffer(c, false)
 	if err != nil {
 		return err
 	}
 	print(c.String("path"))
 	xrAuditNpmCmd := scan.NewXrAuditNpmCommand().SetServerDetails(serverDetailes).SetArguments(cliutils.ExtractCommand(c)).SetWorkingDirectory(c.String("path"))
-
 	return commands.Exec(xrAuditNpmCmd)
 
 }
