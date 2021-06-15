@@ -69,7 +69,7 @@ func GetCliError(err error, success, failed int, failNoOp bool) error {
 }
 
 type DetailedSummaryRecord struct {
-	Source string `json:"source"`
+	Source string `json:"source,omitempty"`
 	Target string `json:"target"`
 }
 

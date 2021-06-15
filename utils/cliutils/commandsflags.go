@@ -330,9 +330,6 @@ const (
 	npmDetailedSummary = npmPrefix + detailedSummary
 	npmArgs            = "npm-args"
 
-	// Unique mvn flags
-	mvnPrefix = "mvn-"
-
 	// Unique nuget flags
 	NugetArgs    = "nuget-args"
 	SolutionRoot = "solution-root"
