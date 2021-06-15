@@ -299,6 +299,10 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
+github.com/talarian1/jfrog-cli-core v0.0.0-20210614135138-dbf43998c7a1 h1:R7lKVJx0JzEKHJT0CxR2Ywi72MMo/v89ZC6j1q2YC1A=
+github.com/talarian1/jfrog-cli-core v0.0.0-20210614135138-dbf43998c7a1/go.mod h1:omBLbzCPysLbap4eB+1T7pfSvC4/VHC7rb/6Fn9Y3eQ=
+github.com/talarian1/jfrog-client-go v0.13.4-0.20210614134553-8863a446c974 h1:JB7/HyeuV3SgyvIb8fDPHRXE/rO8+R1bSOxDb/mOgpU=
+github.com/talarian1/jfrog-client-go v0.13.4-0.20210614134553-8863a446c974/go.mod h1:1XMLr/yzslzV9uABPrX4gpA0Bvc51ZX6LRvu/L0WQPc=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
