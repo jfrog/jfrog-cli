@@ -24,10 +24,12 @@ require (
 )
 
 //replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
-replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20210615115848-6828bbc1f899
+
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20210616073713-9ef7504e1303
 
 //replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
-replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210615120041-28ff78ac99aa
+
+replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210616080753-66294d4ea30a
 
 replace github.com/jfrog/gocmd => github.com/gailazar300/gocmd v0.1.20-0.20210614090054-09f56aa12883
 
