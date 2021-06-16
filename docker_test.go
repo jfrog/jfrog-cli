@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"os"
 	"path"
 	"path/filepath"
@@ -8,6 +10,7 @@ import (
 	"testing"
 
 	gofrogcmd "github.com/jfrog/gofrog/io"
+	corecontainer "github.com/jfrog/jfrog-cli-core/artifactory/commands/container"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/generic"
 	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
@@ -57,6 +60,49 @@ func TestContainerPushWithModuleName(t *testing.T) {
 	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
 		for _, containerManager := range containerManagers {
 			runPushTest(containerManager, tests.DockerImageName, ModuleNameJFrogTest, true, t, repo)
+		}
+	}
+}
+
+func TestContainerPushWithDetailedSummary(t *testing.T) {
+	containerManagers := initContainerTest(t)
+	for _, repo := range []string{*tests.DockerLocalRepo, *tests.DockerVirtualRepo} {
+		for _, containerManager := range containerManagers {
+			imageName := tests.DockerImageName
+			module := tests.DockerImageName + ":1"
+			imageTag := inttestutils.BuildTestContainerImage(t, imageName, containerManager)
+			buildNumber := "1"
+			dockerPushCommand := corecontainer.NewPushCommand(containerManager)
+
+			// Testing detailed summary without buildinfo
+			dockerPushCommand.SetThreads(1).SetDetailedSummary(true).SetBuildConfiguration(new(utils.BuildConfiguration)).SetRepo(*tests.DockerLocalRepo).SetServerDetails(serverDetails).SetImageTag(imageTag)
+			assert.NoError(t, dockerPushCommand.Run())
+			result := dockerPushCommand.Result()
+			result.Reader()
+			reader := result.Reader()
+			defer reader.Close()
+			assert.NoError(t, reader.GetError())
+			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+			}
+			// Testing detailed summary with buildinfo
+			reader.Close()
+			buildConf := utils.BuildConfiguration{BuildName: tests.DockerBuildName, BuildNumber: buildNumber}
+			dockerPushCommand.SetBuildConfiguration(&buildConf)
+			assert.NoError(t, dockerPushCommand.Run())
+			result = dockerPushCommand.Result()
+			reader = result.Reader()
+			assert.NoError(t, reader.GetError())
+			for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+				assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
+			}
+
+			inttestutils.ValidateGeneratedBuildInfoModule(t, tests.DockerBuildName, buildNumber, "", []string{module}, buildinfo.Docker)
+			artifactoryCli.Exec("build-publish", tests.DockerBuildName, buildNumber)
+
+			imagePath := path.Join(repo, imageName, "1") + "/"
+			validateContainerBuild(tests.DockerBuildName, buildNumber, imagePath, module, 7, 5, 7, t)
+			inttestutils.ContainerTestCleanup(t, serverDetails, artHttpDetails, imageName, tests.DockerBuildName, repo)
 		}
 	}
 }

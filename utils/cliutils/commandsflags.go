@@ -1369,10 +1369,10 @@ var commandFlags = map[string][]string{
 		deployIvyDesc, ivyDescPattern, ivyArtifactsPattern,
 	},
 	Mvn: {
-		buildName, buildNumber, deploymentThreads, insecureTls, project,
+		buildName, buildNumber, deploymentThreads, insecureTls, project, detailedSummary,
 	},
 	Gradle: {
-		buildName, buildNumber, deploymentThreads, project,
+		buildName, buildNumber, deploymentThreads, project, detailedSummary,
 	},
 	DockerPromote: {
 		targetDockerImage, sourceTag, targetTag, dockerPromoteCopy, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1380,7 +1380,7 @@ var commandFlags = map[string][]string{
 	},
 	ContainerPush: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
-		serverId, skipLogin, threads, project,
+		serverId, skipLogin, threads, project, detailedSummary,
 	},
 	ContainerPull: {
 		buildName, buildNumber, module, url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath,
@@ -1420,7 +1420,7 @@ var commandFlags = map[string][]string{
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy,
 	},
 	GoPublish: {
-		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project,
+		deps, self, url, user, password, apikey, accessToken, deprecatedserverId, buildName, buildNumber, module, project, detailedSummary,
 	},
 	Go: {
 		noRegistry, publishDeps, deprecatedUrl, deprecatedUser, deprecatedPassword, deprecatedApikey,

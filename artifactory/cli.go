@@ -16,6 +16,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/dotnet"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/permissiontarget"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/usersmanagement"
+	commandsutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	containerutils "github.com/jfrog/jfrog-cli-core/artifactory/utils/container"
 	coreCommonCommands "github.com/jfrog/jfrog-cli-core/common/commands"
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
@@ -1271,8 +1272,19 @@ func mvnCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls)
-		return commands.Exec(mvnCmd)
+		filteredMavenArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredMavenArgs)
+		if err != nil {
+			return err
+		}
+		mvnCmd := mvn.NewMvnCommand().SetConfiguration(buildConfiguration).SetConfigPath(configFilePath).SetGoals(filteredMavenArgs).SetThreads(threads).SetInsecureTls(insecureTls).SetDetailedSummary(detailedSummary)
+		err = commands.Exec(mvnCmd)
+		if err != nil {
+			return err
+		}
+		if mvnCmd.IsDetailedSummary() {
+			return PrintDetailedSummaryReport(c, err, mvnCmd.Result())
+		}
+		return nil
 	}
 	return mvnLegacyCmd(c)
 }
@@ -1305,10 +1317,30 @@ func gradleCmd(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads)
-		return commands.Exec(gradleCmd)
+		filteredGradleArgs, detailedSummary, err := coreutils.ExtractDetailedSummaryFromArgs(filteredGradleArgs)
+		if err != nil {
+			return err
+		}
+		gradleCmd := gradle.NewGradleCommand().SetConfiguration(buildConfiguration).SetTasks(strings.Join(filteredGradleArgs, " ")).SetConfigPath(configFilePath).SetThreads(threads).SetDetailedSummary(detailedSummary)
+		err = commands.Exec(gradleCmd)
+		if err != nil {
+			return err
+		}
+		if gradleCmd.IsDetailedSummary() {
+			return PrintDetailedSummaryReport(c, err, gradleCmd.Result())
+		}
+		return nil
 	}
 	return gradleLegacyCmd(c)
+}
+
+func PrintDetailedSummaryReport(c *cli.Context, originalErr error, result *commandsutils.Result) error {
+	if len(result.Reader().GetFilesPaths()) == 0 {
+		return errorutils.CheckError(errors.New("Empty reader - no files paths."))
+	}
+	defer os.Remove(result.Reader().GetFilesPaths()[0])
+	err := cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, originalErr)
+	return cliutils.GetCliError(err, result.SuccessCount(), result.FailCount(), isFailNoOp(c))
 }
 
 func gradleLegacyCmd(c *cli.Context) error {
@@ -1371,9 +1403,17 @@ func containerPushCmd(c *cli.Context, containerManagerType containerutils.Contai
 	if err != nil {
 		return err
 	}
-	dockerPushCommand.SetThreads(threads).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetImageTag(imageTag)
+	dockerPushCommand.SetThreads(threads).SetDetailedSummary(c.Bool("detailed-summary")).SetBuildConfiguration(buildConfiguration).SetRepo(targetRepo).SetSkipLogin(skipLogin).SetServerDetails(artDetails).SetImageTag(imageTag)
 
-	return commands.Exec(dockerPushCommand)
+	err = commands.Exec(dockerPushCommand)
+	if err != nil {
+		return err
+	}
+	if dockerPushCommand.IsDetailedSummary() {
+		result := dockerPushCommand.Result()
+		return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
+	}
+	return nil
 }
 
 func containerPullCmd(c *cli.Context, containerManagerType containerutils.ContainerManagerType) error {
@@ -1867,10 +1907,10 @@ func goPublishCmd(c *cli.Context, configFilePath string) error {
 	}
 	version := c.Args().Get(0)
 	goPublishCmd := golang.NewGoPublishCommand()
-	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps"))
+	goPublishCmd.SetConfigFilePath(configFilePath).SetBuildConfiguration(buildConfiguration).SetVersion(version).SetDependencies(c.String("deps")).SetDetailedSummary(c.Bool("detailed-summary"))
 	err = commands.Exec(goPublishCmd)
 	result := goPublishCmd.Result()
-	return cliutils.PrintSummaryReport(result.SuccessCount(), result.FailCount(), err)
+	return cliutils.PrintDetailedSummaryReport(result.SuccessCount(), result.FailCount(), result.Reader(), true, err)
 }
 
 func goLegacyPublishCmd(c *cli.Context) error {
