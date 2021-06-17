@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/golang"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -311,7 +314,7 @@ func runGo(module, buildName, buildNumber string, t *testing.T, args ...string) 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, buildName, artHttpDetails)
 }
 
-func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
+func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) string {
 	project1Path := createGoProject(t, "project1", copyDirs)
 	testdataTarget := filepath.Join(tests.Out, "testdata")
 	testdataSrc := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "go", "testdata")
@@ -325,6 +328,7 @@ func prepareGoProject(configDestDir string, t *testing.T, copyDirs bool) {
 	assert.NoError(t, err)
 	assert.NoError(t, os.Chdir(project1Path))
 	log.Info("Using Go project located at ", project1Path)
+	return project1Path
 }
 
 // Testing publishing and resolution capabilities for go projects.
@@ -364,6 +368,51 @@ func TestGoPublishResolve(t *testing.T) {
 		assert.NoError(t, err)
 		return
 	}
+
+	// Restore workspace
+	assert.NoError(t, os.Chdir(wd))
+	cleanGoTest(t)
+}
+
+func TestGoPublishWithDetailedSummary(t *testing.T) {
+	initGoTest(t)
+
+	// Init environment
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	projectPath := prepareGoProject("", t, true)
+
+	// Publish with detailed summary and buildinfo.
+	// Build project
+	buildNumber := "1"
+	artifactoryGoCli := tests.NewJfrogCli(execMain, "jfrog rt", "")
+	assert.NoError(t, execGo(t, artifactoryGoCli, "go", "build", "--build-name="+tests.GoBuildName, "--build-number="+buildNumber, "--module="+ModuleNameJFrogTest))
+
+	// GoPublish with detailed summary without buildinfo.
+	goPublishCmd := golang.NewGoPublishCommand()
+	goPublishCmd.SetConfigFilePath(filepath.Join(projectPath, ".jfrog", "projects", "go.yaml")).SetBuildConfiguration(new(utils.BuildConfiguration)).SetVersion("v1.0.0").SetDetailedSummary(true)
+	assert.NoError(t, commands.Exec(goPublishCmd))
+	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
+
+	// GoPublish with buildinfo configuration
+	buildConf := utils.BuildConfiguration{BuildName: tests.GoBuildName, BuildNumber: buildNumber, Module: ModuleNameJFrogTest}
+	goPublishCmd.SetBuildConfiguration(&buildConf)
+	assert.NoError(t, commands.Exec(goPublishCmd))
+	tests.VerifySha256DetailedSummaryFromResult(t, goPublishCmd.Result())
+
+	// Build publish
+	assert.NoError(t, artifactoryCli.Exec("bp", tests.GoBuildName, buildNumber))
+	publishedBuildInfo, found, err := tests.GetBuildInfo(serverDetails, tests.GoBuildName, buildNumber)
+	if err != nil {
+		assert.NoError(t, err)
+		return
+	}
+	if !found {
+		assert.True(t, found, "build info was expected to be found")
+		return
+	}
+	buildInfo := publishedBuildInfo.BuildInfo
+	validateBuildInfo(buildInfo, t, 4, 3, ModuleNameJFrogTest, buildinfo.Go)
 
 	// Restore workspace
 	assert.NoError(t, os.Chdir(wd))
@@ -433,6 +482,7 @@ func initGoTest(t *testing.T) {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
 	assert.NoError(t, os.Setenv("GONOSUMDB", "github.com/jfrog"))
+	createJfrogHomeConfig(t, true)
 }
 
 func cleanGoTest(t *testing.T) {

@@ -202,7 +202,7 @@ func TestBuildPublishDetailedSummary(t *testing.T) {
 	defer log.SetLogger(previousLog)
 	// Execute the bp command with --detailed-summary.
 	assert.NoError(t, artifactoryCli.Exec("bp", tests.RtBuildName1, buildNumber, "--detailed-summary=true"))
-	tests.VerifySha256DetailedSummary(t, buffer, previousLog)
+	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	inttestutils.DeleteBuild(serverDetails.ArtifactoryUrl, tests.RtBuildName1, artHttpDetails)
 	cleanArtifactoryTest()

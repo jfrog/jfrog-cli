@@ -480,7 +480,7 @@ func TestReleaseBundleCreateDetailedSummary(t *testing.T) {
 	runRb(t, "rbc", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b2.in", "--sign", "--detailed-summary")
 	inttestutils.VerifyLocalBundleExistence(t, tests.BundleName, bundleVersion, true, distHttpDetails)
 
-	tests.VerifySha256DetailedSummary(t, buffer, previousLog)
+	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	// Cleanup
 	cleanDistributionTest(t)
@@ -505,7 +505,7 @@ func TestReleaseBundleUpdateDetailedSummary(t *testing.T) {
 	// Update release bundle to have b1.in
 	runRb(t, "rbu", tests.BundleName, bundleVersion, tests.DistRepo1+"/data/b1.in", "--sign", "--detailed-summary")
 
-	tests.VerifySha256DetailedSummary(t, buffer, previousLog)
+	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	// Cleanup
 	cleanDistributionTest(t)
@@ -530,7 +530,7 @@ func TestReleaseBundleSignDetailedSummary(t *testing.T) {
 	// Update release bundle to have b1.in
 	runRb(t, "rbs", tests.BundleName, bundleVersion, "--detailed-summary")
 
-	tests.VerifySha256DetailedSummary(t, buffer, previousLog)
+	tests.VerifySha256DetailedSummaryFromBuffer(t, buffer, previousLog)
 
 	// Cleanup
 	cleanDistributionTest(t)

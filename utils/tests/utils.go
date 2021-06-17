@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/utils/summary"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -31,6 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/stretchr/testify/assert"
 
+	commandutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -645,7 +647,7 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	return previousLog
 }
 
-func VerifySha256DetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.Log) {
+func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, logger log.Log) {
 	content := buffer.Bytes()
 	buffer.Reset()
 	logger.Output(string(content))
@@ -662,5 +664,15 @@ func VerifySha256DetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.
 	for _, sha256 := range result.Sha256Array {
 		// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 		assert.Equal(t, 64, len(sha256.Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
+	}
+}
+
+func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
+	result.Reader()
+	reader := result.Reader()
+	defer reader.Close()
+	assert.NoError(t, reader.GetError())
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 	}
 }
