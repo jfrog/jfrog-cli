@@ -3,8 +3,6 @@ package artifactory
 import (
 	"bytes"
 	"flag"
-	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -156,9 +154,7 @@ func createContext(testFlags, testArgs []string) (*cli.Context, *bytes.Buffer) {
 }
 
 func getSpecPath(t *testing.T, spec string) string {
-	dir, err := os.Getwd()
-	assert.NoError(t, err)
-	return filepath.Join(path.Dir(dir), "testdata", "filespecs", spec)
+	return filepath.Join("..", "testdata", "filespecs", spec)
 }
 
 // Create flagset with input flags and arguments.
