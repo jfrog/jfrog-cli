@@ -4854,12 +4854,9 @@ func assertPermissionTarget(t *testing.T, manager artifactory.ArtifactoryService
 }
 
 func assertPermissionTargetDeleted(t *testing.T, manager artifactory.ArtifactoryServicesManager) {
-	_, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
-	if err == nil {
-		assert.Error(t, err)
-		return
-	}
-	assert.Contains(t, err.Error(), "404")
+	permission, err := manager.GetPermissionTarget(tests.RtPermissionTargetName)
+	assert.NoError(t, err)
+	assert.Nil(t, permission)
 }
 
 func cleanPermissionTarget() {
