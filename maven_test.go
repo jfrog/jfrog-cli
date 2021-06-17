@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/mvn"
+	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
 	"io/ioutil"
 	"net/url"
 	"os"

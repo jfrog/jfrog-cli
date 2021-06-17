@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jfrog/jfrog-cli/utils/summary"
+	clientutils "github.com/jfrog/jfrog-client-go/utils"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -31,6 +32,7 @@ import (
 	"github.com/jfrog/jfrog-cli-core/utils/coreutils"
 	"github.com/stretchr/testify/assert"
 
+	commandutils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
 	"github.com/jfrog/jfrog-client-go/artifactory/services/utils"
 	"github.com/jfrog/jfrog-client-go/auth"
 	"github.com/jfrog/jfrog-client-go/utils/errorutils"
@@ -71,9 +73,9 @@ var TestPlugins *bool
 var timestampAdded bool
 
 func init() {
-	RtUrl = flag.String("rt.url", "http://127.0.0.1:8081/artifactory/", "Artifactory url")
-	RtUser = flag.String("rt.user", "admin", "Artifactory username")
-	RtPassword = flag.String("rt.password", "password", "Artifactory password")
+	RtUrl = flag.String("rt.url", "https://ecosysjfrog.jfrog.io/artifactory", "Artifactoryurl")
+	RtUser = flag.String("rt.user", "gail", "Artifactoryusername")
+	RtPassword = flag.String("rt.password", "Gg0506420800!", "Artifactorypassword")
 	RtApiKey = flag.String("rt.apikey", "", "Artifactory user API key")
 	RtSshKeyPath = flag.String("rt.sshKeyPath", "", "Ssh key file path")
 	RtSshPassphrase = flag.String("rt.sshPassphrase", "", "Ssh key passphrase")
@@ -90,12 +92,12 @@ func init() {
 	TestDocker = flag.Bool("test.docker", false, "Test Docker build")
 	TestGo = flag.Bool("test.go", false, "Test Go")
 	TestNpm = flag.Bool("test.npm", false, "Test Npm")
-	TestGradle = flag.Bool("test.gradle", false, "Test Gradle")
-	TestMaven = flag.Bool("test.maven", false, "Test Maven")
-	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "", "Docker repository domain")
-	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "", "Docker virtual repo")
-	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "", "Docker remote repo")
-	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "", "Docker local repo")
+	TestGradle = flag.Bool("test.gradle", true, "Test Gradle")
+	TestMaven = flag.Bool("test.maven", true, "Test Maven")
+	DockerRepoDomain = flag.String("rt.dockerRepoDomain", "ecosysjfrog-docker-virtual.jfrog.io", "Docker repository domain")
+	DockerVirtualRepo = flag.String("rt.dockerVirtualRepo", "docker-virtual", "Docker virtual repo")
+	DockerRemoteRepo = flag.String("rt.dockerRemoteRepo", "docker-remote", "Docker remote repo")
+	DockerLocalRepo = flag.String("rt.DockerLocalRepo", "docker-local", "Docker local repo")
 	TestNuget = flag.Bool("test.nuget", false, "Test Nuget")
 	HideUnitTestLog = flag.Bool("test.hideUnitTestLog", false, "Hide unit tests logs and print it in a file")
 	TestPip = flag.Bool("test.pip", false, "Test Pip")
@@ -645,7 +647,7 @@ func RedirectLogOutputToNil() (previousLog log.Log) {
 	return previousLog
 }
 
-func VerifySha256DetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.Log) {
+func VerifySha256DetailedSummaryFromBuffer(t *testing.T, buffer *bytes.Buffer, logger log.Log) {
 	content := buffer.Bytes()
 	buffer.Reset()
 	logger.Output(string(content))
@@ -662,5 +664,15 @@ func VerifySha256DetailedSummary(t *testing.T, buffer *bytes.Buffer, logger log.
 	for _, sha256 := range result.Sha256Array {
 		// Verify sha256 is valid (a string size 256 characters) and not an empty string.
 		assert.Equal(t, 64, len(sha256.Sha256Str), "Summary validation failed - invalid sha256 has returned from artifactory")
+	}
+}
+
+func VerifySha256DetailedSummaryFromResult(t *testing.T, result *commandutils.Result) {
+	result.Reader()
+	reader := result.Reader()
+	defer reader.Close()
+	assert.NoError(t, reader.GetError())
+	for transferDetails := new(clientutils.FileTransferDetails); reader.NextRecord(transferDetails) == nil; transferDetails = new(clientutils.FileTransferDetails) {
+		assert.Equal(t, 64, len(transferDetails.Sha256), "Summary validation failed - invalid sha256 has returned from artifactory")
 	}
 }
