@@ -10,6 +10,7 @@ const (
 	CmdBintray        = "bt"
 	CmdMissionControl = "mc"
 	CmdXray           = "xr"
+	CmdDistribution   = "ds"
 	CmdCompletion     = "completion"
 	CmdPlugin         = "plugin"
 	CmdConfig         = "config"

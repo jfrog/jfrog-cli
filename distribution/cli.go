@@ -1,0 +1,334 @@
+package distribution
+
+import (
+	"errors"
+	"github.com/codegangsta/cli"
+	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
+	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
+	"github.com/jfrog/jfrog-cli-core/common/commands"
+	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
+	"github.com/jfrog/jfrog-cli/artifactory"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledelete"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundledistribute"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlesign"
+	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundleupdate"
+	"github.com/jfrog/jfrog-cli/docs/common"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
+	distributionServices "github.com/jfrog/jfrog-client-go/distribution/services"
+	distributionServicesUtils "github.com/jfrog/jfrog-client-go/distribution/services/utils"
+	"github.com/jfrog/jfrog-client-go/utils/errorutils"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+)
+
+func GetCommands() []cli.Command {
+	return cliutils.GetSortedCommands(cli.CommandsByName{
+		{
+			Name:         "release-bundle-create",
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleCreate),
+			Aliases:      []string{"rbc"},
+			Description:  releasebundlecreate.Description,
+			HelpName:     corecommondocs.CreateUsage("ds rbc", releasebundlecreate.Description, releasebundlecreate.Usage),
+			UsageText:    releasebundlecreate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleCreateCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-update",
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleUpdate),
+			Aliases:      []string{"rbu"},
+			Description:  releasebundleupdate.Description,
+			HelpName:     corecommondocs.CreateUsage("ds rbu", releasebundleupdate.Description, releasebundleupdate.Usage),
+			UsageText:    releasebundleupdate.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleUpdateCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-sign",
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleSign),
+			Aliases:      []string{"rbs"},
+			Description:  releasebundlesign.Description,
+			HelpName:     corecommondocs.CreateUsage("ds rbs", releasebundlesign.Description, releasebundlesign.Usage),
+			UsageText:    releasebundlesign.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleSignCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-distribute",
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDistribute),
+			Aliases:      []string{"rbd"},
+			Description:  releasebundledistribute.Description,
+			HelpName:     corecommondocs.CreateUsage("ds rbd", releasebundledistribute.Description, releasebundledistribute.Usage),
+			UsageText:    releasebundledistribute.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleDistributeCmd(c)
+			},
+		},
+		{
+			Name:         "release-bundle-delete",
+			Flags:        cliutils.GetCommandFlags(cliutils.ReleaseBundleDelete),
+			Aliases:      []string{"rbdel"},
+			Description:  releasebundledelete.Description,
+			HelpName:     corecommondocs.CreateUsage("ds rbdel", releasebundledelete.Description, releasebundledelete.Usage),
+			UsageText:    releasebundledelete.Arguments,
+			ArgsUsage:    common.CreateEnvVars(),
+			BashComplete: corecommondocs.CreateBashCompletionFunc(),
+			Action: func(c *cli.Context) error {
+				return releaseBundleDeleteCmd(c)
+			},
+		},
+	})
+}
+
+func releaseBundleCreateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
+	}
+	var releaseBundleCreateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleCreateSpec, err = artifactory.GetSpec(c, true)
+	} else {
+		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleCreateSpec.Files, false, true, false)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd := distribution.NewReleaseBundleCreateCommand()
+	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleCreateCmd.SetServerDetails(rtDetails).SetReleaseBundleCreateParams(params).SetSpec(releaseBundleCreateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+
+	commands.Exec(releaseBundleCreateCmd)
+	if releaseBundleCreateCmd.IsDetailedSummary() {
+		if summary := releaseBundleCreateCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
+}
+
+func releaseBundleUpdateCmd(c *cli.Context) error {
+	if !(c.NArg() == 2 && c.IsSet("spec") || (c.NArg() == 3 && !c.IsSet("spec"))) {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if c.IsSet("detailed-summary") && !c.IsSet("sign") {
+		return cliutils.PrintHelpAndReturnError("The --detailed-summary option can't be used without --sign", c)
+	}
+	var releaseBundleUpdateSpec *spec.SpecFiles
+	var err error
+	if c.IsSet("spec") {
+		releaseBundleUpdateSpec, err = artifactory.GetSpec(c, true)
+	} else {
+		releaseBundleUpdateSpec = createDefaultReleaseBundleSpec(c)
+	}
+	if err != nil {
+		return err
+	}
+	err = spec.ValidateSpec(releaseBundleUpdateSpec.Files, false, true, false)
+	if err != nil {
+		return err
+	}
+
+	params, err := createReleaseBundleCreateUpdateParams(c, c.Args().Get(0), c.Args().Get(1))
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd := distribution.NewReleaseBundleUpdateCommand()
+	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleUpdateCmd.SetServerDetails(rtDetails).SetReleaseBundleUpdateParams(params).SetSpec(releaseBundleUpdateSpec).SetDryRun(c.Bool("dry-run")).SetDetailedSummary(c.Bool("detailed-summary"))
+
+	err = commands.Exec(releaseBundleUpdateCmd)
+	if releaseBundleUpdateCmd.IsDetailedSummary() {
+		if summary := releaseBundleUpdateCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
+}
+
+func releaseBundleSignCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+
+	params := distributionServices.NewSignBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.StoringRepository = c.String("repo")
+	params.GpgPassphrase = c.String("passphrase")
+	releaseBundleSignCmd := distribution.NewReleaseBundleSignCommand()
+	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	releaseBundleSignCmd.SetServerDetails(rtDetails).SetReleaseBundleSignParams(params).SetDetailedSummary(c.Bool("detailed-summary"))
+	err = commands.Exec(releaseBundleSignCmd)
+	if releaseBundleSignCmd.IsDetailedSummary() {
+		if summary := releaseBundleSignCmd.GetSummary(); summary != nil {
+			return cliutils.PrintBuildInfoSummaryReport(summary.IsSucceeded(), summary.GetSha256(), err)
+		}
+	}
+	return err
+}
+
+func releaseBundleDistributeCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	if c.IsSet("max-wait-minutes") && !c.IsSet("sync") {
+		return cliutils.PrintHelpAndReturnError("The --max-wait-minutes option can't be used without --sync", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("The --dist-rules option can't be used with --site, --city or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	params := distributionServices.NewDistributeReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	releaseBundleDistributeCmd := distribution.NewReleaseBundleDistributeCommand()
+	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	maxWaitMinutes, err := cliutils.GetIntFlagValue(c, "max-wait-minutes", 0)
+	if err != nil {
+		return err
+	}
+	releaseBundleDistributeCmd.SetServerDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run")).SetSync(c.Bool("sync")).SetMaxWaitMinutes(maxWaitMinutes)
+
+	return commands.Exec(releaseBundleDistributeCmd)
+}
+
+func releaseBundleDeleteCmd(c *cli.Context) error {
+	if c.NArg() != 2 {
+		return cliutils.PrintHelpAndReturnError("Wrong number of arguments.", c)
+	}
+	var distributionRules *spec.DistributionRules
+	if c.IsSet("dist-rules") {
+		if c.IsSet("site") || c.IsSet("city") || c.IsSet("country-code") {
+			return cliutils.PrintHelpAndReturnError("flag --dist-rules can't be used with --site, --city or --country-code", c)
+		}
+		var err error
+		distributionRules, err = spec.CreateDistributionRulesFromFile(c.String("dist-rules"))
+		if err != nil {
+			return err
+		}
+	} else {
+		distributionRules = createDefaultDistributionRules(c)
+	}
+
+	params := distributionServices.NewDeleteReleaseBundleParams(c.Args().Get(0), c.Args().Get(1))
+	params.DeleteFromDistribution = c.BoolT("delete-from-dist")
+	distributeBundleCmd := distribution.NewReleaseBundleDeleteParams()
+	rtDetails, err := artifactory.CreateArtifactoryDetailsByFlags(c, true)
+	if err != nil {
+		return err
+	}
+	distributeBundleCmd.SetQuiet(cliutils.GetQuietValue(c)).SetServerDetails(rtDetails).SetDistributeBundleParams(params).SetDistributionRules(distributionRules).SetDryRun(c.Bool("dry-run"))
+
+	return commands.Exec(distributeBundleCmd)
+}
+
+func createDefaultReleaseBundleSpec(c *cli.Context) *spec.SpecFiles {
+	return spec.NewBuilder().
+		Pattern(c.Args().Get(2)).
+		Target(c.String("target")).
+		Props(c.String("props")).
+		Build(c.String("build")).
+		Bundle(c.String("bundle")).
+		Exclusions(cliutils.GetStringsArrFlagValue(c, "exclusions")).
+		Regexp(c.Bool("regexp")).
+		TargetProps(c.String("target-props")).
+		Ant(c.Bool("ant")).
+		BuildSpec()
+}
+
+func createDefaultDistributionRules(c *cli.Context) *spec.DistributionRules {
+	return &spec.DistributionRules{
+		DistributionRules: []spec.DistributionRule{{
+			SiteName:     c.String("site"),
+			CityName:     c.String("city"),
+			CountryCodes: cliutils.GetStringsArrFlagValue(c, "country-codes"),
+		}},
+	}
+}
+
+func createReleaseBundleCreateUpdateParams(c *cli.Context, bundleName, bundleVersion string) (distributionServicesUtils.ReleaseBundleParams, error) {
+	releaseBundleParams := distributionServicesUtils.NewReleaseBundleParams(bundleName, bundleVersion)
+	releaseBundleParams.SignImmediately = c.Bool("sign")
+	releaseBundleParams.StoringRepository = c.String("repo")
+	releaseBundleParams.GpgPassphrase = c.String("passphrase")
+	releaseBundleParams.Description = c.String("desc")
+	if c.IsSet("release-notes-path") {
+		bytes, err := ioutil.ReadFile(c.String("release-notes-path"))
+		if err != nil {
+			return releaseBundleParams, errorutils.CheckError(err)
+		}
+		releaseBundleParams.ReleaseNotes = string(bytes)
+		releaseBundleParams.ReleaseNotesSyntax, err = populateReleaseNotesSyntax(c)
+		if err != nil {
+			return releaseBundleParams, err
+		}
+	}
+	return releaseBundleParams, nil
+}
+
+func populateReleaseNotesSyntax(c *cli.Context) (distributionServicesUtils.ReleaseNotesSyntax, error) {
+	// If release notes syntax is set, use it
+	releaseNotexSyntax := c.String("release-notes-syntax")
+	if releaseNotexSyntax != "" {
+		switch releaseNotexSyntax {
+		case "markdown":
+			return distributionServicesUtils.Markdown, nil
+		case "asciidoc":
+			return distributionServicesUtils.Asciidoc, nil
+		case "plain_text":
+			return distributionServicesUtils.PlainText, nil
+		default:
+			return distributionServicesUtils.PlainText, errorutils.CheckError(errors.New("--release-notes-syntax must be one of: markdown, asciidoc or plain_text."))
+		}
+	}
+	// If the file extension is ".md" or ".markdown", use the markdonwn syntax
+	extension := strings.ToLower(filepath.Ext(c.String("release-notes-path")))
+	if extension == ".md" || extension == ".markdown" {
+		return distributionServicesUtils.Markdown, nil
+	}
+	return distributionServicesUtils.PlainText, nil
+}
