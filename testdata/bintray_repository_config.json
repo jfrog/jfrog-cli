@@ -1,8 +1,0 @@
-{
-  "name": "${BINTRAY_REPO}",
-  "type": "generic",
-  "desc": "Testing repository for Jfrog Cli",
-  "gpg_sign_metadata": false,
-  "gpg_sign_files":false,
-  "gpg_use_owner_key":false
-}
