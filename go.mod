@@ -25,12 +25,12 @@ require (
 
 // replace github.com/jfrog/jfrog-client-go => github.com/jfrog/jfrog-client-go v0.23.2-0.20210617164909-62762d2bc8b2
 //replace github.com/jfrog/jfrog-client-go => ../jfrog-client-go
-replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go remove-bintray
+replace github.com/jfrog/jfrog-client-go => github.com/gailazar300/jfrog-client-go v0.18.1-0.20210621080958-875f288cc9c3
 
 // replace github.com/jfrog/jfrog-cli-core => github.com/jfrog/jfrog-cli-core v1.7.2-0.20210617173353-f527001c4aad
 
 // replace github.com/jfrog/gocmd => github.com/jfrog/gocmd v0.2.1-0.20210616181221-7159cf844cc3
 // replace github.com/jfrog/jfrog-cli-core => ../jfrog-cli-core
-replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core remove-bintray
+replace github.com/jfrog/jfrog-cli-core => github.com/gailazar300/jfrog-cli-core v1.2.7-0.20210621135901-da25cce26b42
 
 // replace github.com/jfrog/gofrog => github.com/jfrog/gofrog v1.0.6
