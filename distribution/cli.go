@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/codegangsta/cli"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/distribution"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	corecommondocs "github.com/jfrog/jfrog-cli-core/docs/common"
 	"github.com/jfrog/jfrog-cli/artifactory"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/releasebundlecreate"
@@ -103,7 +103,7 @@ func releaseBundleCreateCmd(c *cli.Context) error {
 	var releaseBundleCreateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		releaseBundleCreateSpec, err = artifactory.GetSpec(c, true)
+		releaseBundleCreateSpec, err = cliutils.GetSpec(c, true)
 	} else {
 		releaseBundleCreateSpec = createDefaultReleaseBundleSpec(c)
 	}
@@ -145,7 +145,7 @@ func releaseBundleUpdateCmd(c *cli.Context) error {
 	var releaseBundleUpdateSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		releaseBundleUpdateSpec, err = artifactory.GetSpec(c, true)
+		releaseBundleUpdateSpec, err = cliutils.GetSpec(c, true)
 	} else {
 		releaseBundleUpdateSpec = createDefaultReleaseBundleSpec(c)
 	}

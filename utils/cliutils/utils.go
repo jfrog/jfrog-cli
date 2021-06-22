@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	speccore "github.com/jfrog/jfrog-cli-core/common/spec"
 	"os"
 	"strings"
 
@@ -312,4 +313,67 @@ func CreateServerDetailsFromFlags(c *cli.Context) (details *config.ServerDetails
 
 func IsLegacyGoPublish(c *cli.Context) bool {
 	return c.Command.Name == "go-publish" && c.NArg() > 1
+}
+
+func GetSpec(c *cli.Context, isDownload bool) (specFiles *speccore.SpecFiles, err error) {
+	specFiles, err = speccore.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
+	if err != nil {
+		return nil, err
+	}
+	// Override spec with CLI options
+	for i := 0; i < len(specFiles.Files); i++ {
+		if isDownload {
+			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
+		}
+		OverrideFieldsIfSet(specFiles.Get(i), c)
+	}
+	return
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as a string.
+func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.String(fieldName)
+	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
+func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = nil
+		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
+			*field = append(*field, singleValue)
+		}
+	}
+}
+
+// If `fieldName` exist in the cli args, read it to `field` as a int.
+func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
+	if c.IsSet(fieldName) {
+		*field = c.Int(fieldName)
+	}
+}
+
+func OverrideFieldsIfSet(spec *speccore.File, c *cli.Context) {
+	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
+	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
+	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
+	overrideIntIfSet(&spec.Offset, c, "offset")
+	overrideIntIfSet(&spec.Limit, c, "limit")
+	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
+	overrideStringIfSet(&spec.Props, c, "props")
+	overrideStringIfSet(&spec.TargetProps, c, "target-props")
+	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
+	overrideStringIfSet(&spec.Build, c, "build")
+	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
+	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
+	overrideStringIfSet(&spec.Bundle, c, "bundle")
+	overrideStringIfSet(&spec.Recursive, c, "recursive")
+	overrideStringIfSet(&spec.Flat, c, "flat")
+	overrideStringIfSet(&spec.Explode, c, "explode")
+	overrideStringIfSet(&spec.Regexp, c, "regexp")
+	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
+	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
+	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
+	overrideStringIfSet(&spec.Transitive, c, "transitive")
 }

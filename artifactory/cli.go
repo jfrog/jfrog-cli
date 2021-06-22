@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/yarn"
+	"github.com/jfrog/jfrog-cli-core/common/spec"
 	yarndocs "github.com/jfrog/jfrog-cli/docs/artifactory/yarn"
 	"github.com/jfrog/jfrog-cli/docs/artifactory/yarnconfig"
 	"io/ioutil"
@@ -53,7 +54,6 @@ import (
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/replication"
 	"github.com/jfrog/jfrog-cli-core/artifactory/commands/repository"
 	commandUtils "github.com/jfrog/jfrog-cli-core/artifactory/commands/utils"
-	"github.com/jfrog/jfrog-cli-core/artifactory/spec"
 	"github.com/jfrog/jfrog-cli-core/artifactory/utils"
 	npmUtils "github.com/jfrog/jfrog-cli-core/artifactory/utils/npm"
 	"github.com/jfrog/jfrog-cli-core/common/commands"
@@ -1971,7 +1971,7 @@ func prepareDownloadCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var downloadSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		downloadSpec, err = GetSpec(c, true)
+		downloadSpec, err = cliutils.GetSpec(c, true)
 	} else {
 		downloadSpec, err = createDefaultDownloadSpec(c)
 	}
@@ -2097,7 +2097,7 @@ func prepareCopyMoveCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var copyMoveSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		copyMoveSpec, err = GetSpec(c, false)
+		copyMoveSpec, err = cliutils.GetSpec(c, false)
 	} else {
 		copyMoveSpec, err = createDefaultCopyMoveSpec(c)
 	}
@@ -2167,7 +2167,7 @@ func prepareDeleteCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var deleteSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		deleteSpec, err = GetSpec(c, false)
+		deleteSpec, err = cliutils.GetSpec(c, false)
 	} else {
 		deleteSpec, err = createDefaultDeleteSpec(c)
 	}
@@ -2216,7 +2216,7 @@ func prepareSearchCommand(c *cli.Context) (*spec.SpecFiles, error) {
 	var searchSpec *spec.SpecFiles
 	var err error
 	if c.IsSet("spec") {
-		searchSpec, err = GetSpec(c, false)
+		searchSpec, err = cliutils.GetSpec(c, false)
 	} else {
 		searchSpec, err = createDefaultSearchSpec(c)
 	}
@@ -2275,7 +2275,7 @@ func preparePropsCmd(c *cli.Context) (*generic.PropsCommand, error) {
 	var props string
 	if c.IsSet("spec") {
 		props = c.Args()[0]
-		propsSpec, err = GetSpec(c, false)
+		propsSpec, err = cliutils.GetSpec(c, false)
 	} else {
 		propsSpec, err = createDefaultPropertiesSpec(c)
 		if c.NArg() == 1 {
@@ -3087,21 +3087,6 @@ func createDefaultCopyMoveSpec(c *cli.Context) (*spec.SpecFiles, error) {
 		BuildSpec(), nil
 }
 
-func GetSpec(c *cli.Context, isDownload bool) (specFiles *spec.SpecFiles, err error) {
-	specFiles, err = spec.CreateSpecFromFile(c.String("spec"), coreutils.SpecVarsStringToMap(c.String("spec-vars")))
-	if err != nil {
-		return nil, err
-	}
-	// Override spec with CLI options
-	for i := 0; i < len(specFiles.Files); i++ {
-		if isDownload {
-			specFiles.Get(i).Pattern = strings.TrimPrefix(specFiles.Get(i).Pattern, "/")
-		}
-		overrideFieldsIfSet(specFiles.Get(i), c)
-	}
-	return
-}
-
 func createDefaultDeleteSpec(c *cli.Context) (*spec.SpecFiles, error) {
 	offset, limit, err := getOffsetAndLimitValues(c)
 	if err != nil {
@@ -3361,7 +3346,7 @@ func getFileSystemSpec(c *cli.Context) (fsSpec *spec.SpecFiles, err error) {
 	// Override spec with CLI options
 	for i := 0; i < len(fsSpec.Files); i++ {
 		fsSpec.Get(i).Target = strings.TrimPrefix(fsSpec.Get(i).Target, "/")
-		overrideFieldsIfSet(fsSpec.Get(i), c)
+		cliutils.OverrideFieldsIfSet(fsSpec.Get(i), c)
 	}
 	return
 }
@@ -3437,54 +3422,6 @@ func validateConfigFlags(configCommandConfiguration *coreCommonCommands.ConfigCo
 		return errors.New("the --basic-auth-only option is only supported when username and password/API key are provided")
 	}
 	return nil
-}
-
-// If `fieldName` exist in the cli args, read it to `field` as a string.
-func overrideStringIfSet(field *string, c *cli.Context, fieldName string) {
-	if c.IsSet(fieldName) {
-		*field = c.String(fieldName)
-	}
-}
-
-// If `fieldName` exist in the cli args, read it to `field` as an array split by `;`.
-func overrideArrayIfSet(field *[]string, c *cli.Context, fieldName string) {
-	if c.IsSet(fieldName) {
-		*field = nil
-		for _, singleValue := range strings.Split(c.String(fieldName), ";") {
-			*field = append(*field, singleValue)
-		}
-	}
-}
-
-// If `fieldName` exist in the cli args, read it to `field` as a int.
-func overrideIntIfSet(field *int, c *cli.Context, fieldName string) {
-	if c.IsSet(fieldName) {
-		*field = c.Int(fieldName)
-	}
-}
-
-func overrideFieldsIfSet(spec *spec.File, c *cli.Context) {
-	overrideArrayIfSet(&spec.ExcludePatterns, c, "exclude-patterns")
-	overrideArrayIfSet(&spec.Exclusions, c, "exclusions")
-	overrideArrayIfSet(&spec.SortBy, c, "sort-by")
-	overrideIntIfSet(&spec.Offset, c, "offset")
-	overrideIntIfSet(&spec.Limit, c, "limit")
-	overrideStringIfSet(&spec.SortOrder, c, "sort-order")
-	overrideStringIfSet(&spec.Props, c, "props")
-	overrideStringIfSet(&spec.TargetProps, c, "target-props")
-	overrideStringIfSet(&spec.ExcludeProps, c, "exclude-props")
-	overrideStringIfSet(&spec.Build, c, "build")
-	overrideStringIfSet(&spec.ExcludeArtifacts, c, "exclude-artifacts")
-	overrideStringIfSet(&spec.IncludeDeps, c, "include-deps")
-	overrideStringIfSet(&spec.Bundle, c, "bundle")
-	overrideStringIfSet(&spec.Recursive, c, "recursive")
-	overrideStringIfSet(&spec.Flat, c, "flat")
-	overrideStringIfSet(&spec.Explode, c, "explode")
-	overrideStringIfSet(&spec.Regexp, c, "regexp")
-	overrideStringIfSet(&spec.IncludeDirs, c, "include-dirs")
-	overrideStringIfSet(&spec.ValidateSymlinks, c, "validate-symlinks")
-	overrideStringIfSet(&spec.Symlinks, c, "symlinks")
-	overrideStringIfSet(&spec.Transitive, c, "transitive")
 }
 
 func getOffsetAndLimitValues(c *cli.Context) (offset, limit int, err error) {
