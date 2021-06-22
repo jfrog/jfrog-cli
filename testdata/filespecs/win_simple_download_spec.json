@@ -4,7 +4,7 @@
       "pattern": "${REPO1}/*",
       "target": "out\\win\\",
       "flat": "true",
-      "excludePatterns": ["*a1.in", "*a3.in"]
+      "exclusions": ["${REPO1}/*a1.in", "${REPO1}/*a3.in"]
     }
   ]
 }

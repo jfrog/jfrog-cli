@@ -712,36 +712,11 @@ func TestArtifactoryCopyExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Copy by pattern
-	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
+	artifactoryCli.Exec("cp", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
 
 	// Validate files are moved by build number
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
 	assert.NoError(t, err)
-	verifyExistInArtifactory(tests.GetBuildCopyExclude(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryCopyExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	// Copy by spec
-	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("cp", "--spec="+specFile)
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	// Validate files are moved by build number
 	verifyExistInArtifactory(tests.GetBuildCopyExclude(), cpMvDlByBuildAssertSpec, t)
 
 	// Cleanup
@@ -1041,7 +1016,7 @@ func TestArtifactoryDownloadAndSyncDeletes(t *testing.T) {
 	checkSyncedDirContent(tests.GetExpectedSyncDeletesDownloadStep4(), paths, t)
 
 	// Download repo1/syncDir/ to out/, exclude the pattern "*c*.in" and sync out/
-	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclude-patterns=syncDir/testdata/*c*in")
+	artifactoryCli.Exec("download", tests.RtRepo1+"/syncDir/", outDirPath, "--sync-deletes="+outDirPath+"syncDir"+string(os.PathSeparator), "--exclusions=*/syncDir/testdata/*c*in")
 	paths, err = fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out+string(os.PathSeparator)+"syncDir"+string(os.PathSeparator), false)
 	assert.NoError(t, err)
 	checkSyncedDirContent(tests.GetSyncExpectedDeletesDownloadStep5(), paths, t)
@@ -1460,7 +1435,7 @@ func TestArtifactorySetPropertiesOnSpecialCharsArtifact(t *testing.T) {
 func TestArtifactorySetPropertiesExcludeByCli(t *testing.T) {
 	initArtifactoryTest(t)
 	artifactoryCli.Exec("upload", "testdata/a/a*.in", tests.RtRepo1+"/")
-	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val", "--exclude-patterns=*a1.in;*a2.in")
+	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val", "--exclusions=*/*a1.in;*/*a2.in")
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
 	for _, item := range resultItems {
@@ -1527,7 +1502,7 @@ func TestArtifactoryDeletePropertiesWithExclude(t *testing.T) {
 	artifactoryCli.Exec("upload", "testdata/a/a*.in", tests.RtRepo1+"/")
 	artifactoryCli.Exec("sp", tests.RtRepo1+"/*", "prop=val")
 
-	artifactoryCli.Exec("delp", tests.RtRepo1+"/*", "prop", "--exclude-patterns=*a1.in;*a2.in")
+	artifactoryCli.Exec("delp", tests.RtRepo1+"/*", "prop", "--exclusions=*/*a1.in;*/*a2.in")
 	resultItems := searchItemsInArtifactory(t, tests.SearchRepo1ByInSuffix)
 	assert.NotZero(t, len(resultItems), "No artifacts were found.")
 
@@ -2076,7 +2051,7 @@ func TestArtifactoryDeleteExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Delete by pattern
-	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclude-patterns=*b1.in;*b2.in;*b3.in;*c1.in")
+	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclusions=*/*b1.in;*/*b2.in;*/*b3.in;*/*c1.in")
 
 	// Validate files are deleted
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -2102,32 +2077,6 @@ func TestArtifactoryDeleteExclusionsByCli(t *testing.T) {
 
 	// Delete by pattern
 	artifactoryCli.Exec("del", tests.RtRepo1+"/data/", "--exclusions=*/*b1.in;*/*b2.in;*/*b3.in;*/*c1.in")
-
-	// Validate files are deleted
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetBuildDeleteExpected(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDeleteExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	specFile, err := tests.CreateSpec(tests.DelSpecExclude)
-	assert.NoError(t, err)
-
-	// Delete by pattern
-	artifactoryCli.Exec("del", "--spec="+specFile)
 
 	// Validate files are deleted
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -2987,7 +2936,7 @@ func TestArtifactoryDownloadExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true")
 
 	// Download by pattern
-	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/aql_by_artifacts/", "--exclude-patterns=*/a1.in;*a2.*;data/c2.in")
+	artifactoryCli.Exec("download", tests.RtRepo1, "out/download/aql_by_artifacts/", "--exclusions=*/*/a1.in;*/*a2.*;*/data/c2.in")
 
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
@@ -3021,31 +2970,6 @@ func TestArtifactoryDownloadExclusionsByCli(t *testing.T) {
 	cleanArtifactoryTest()
 }
 
-func TestArtifactoryDownloadExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
-	assert.NoError(t, err)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
-
-	// Download by spec
-	artifactoryCli.Exec("download", "--spec="+specFile)
-
-	// Validate files are excluded
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownloadBySpec(), paths)
-	assert.NoError(t, err)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
 func TestArtifactoryDownloadExclusionsBySpec(t *testing.T) {
 	initArtifactoryTest(t)
 	specFile, err := tests.CreateSpec(tests.DownloadSpecExclusions)
@@ -3065,31 +2989,6 @@ func TestArtifactoryDownloadExclusionsBySpec(t *testing.T) {
 	// Validate files are excluded
 	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
 	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownloadBySpec(), paths)
-	assert.NoError(t, err)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryDownloadExcludeBySpecOverride(t *testing.T) {
-	initArtifactoryTest(t)
-
-	// Upload files with buildName and buildNumber
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA, "--recursive=true", "--flat=false")
-	artifactoryCli.Exec("upload", "--spec="+specFileB, "--recursive=true", "--flat=false")
-
-	// Download by spec
-	specFile, err := tests.CreateSpec(tests.DownloadSpecExclude)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("download", "--spec="+specFile, "--exclude-patterns=*a1.in;*a2.in;*c2.in")
-
-	// Validate files are downloaded by build number
-	paths, _ := fileutils.ListFilesRecursiveWalkIntoDirSymlink(tests.Out, false)
-	err = tests.ValidateListsIdentical(tests.GetBuildExcludeDownload(), paths)
 	assert.NoError(t, err)
 
 	// Cleanup
@@ -3444,7 +3343,7 @@ func TestArtifactoryMoveExcludeByCli(t *testing.T) {
 	artifactoryCli.Exec("upload", "--spec="+specFileB)
 
 	// Move by pattern
-	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclude-patterns=*b*;*c*")
+	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
 
 	// Validate excluded files didn't move
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
@@ -3469,32 +3368,6 @@ func TestArtifactoryMoveExclusionsByCli(t *testing.T) {
 
 	// Move by pattern
 	artifactoryCli.Exec("move", tests.RtRepo1+"/data/", tests.RtRepo2+"/", "--exclusions=*/*b*;*/*c*")
-
-	// Validate excluded files didn't move
-	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)
-	assert.NoError(t, err)
-
-	verifyExistInArtifactory(tests.GetBuildMoveExpected(), cpMvDlByBuildAssertSpec, t)
-
-	// Cleanup
-	cleanArtifactoryTest()
-}
-
-func TestArtifactoryMoveExcludeBySpec(t *testing.T) {
-	initArtifactoryTest(t)
-	specFile, err := tests.CreateSpec(tests.MoveCopySpecExclude)
-	assert.NoError(t, err)
-
-	// Upload files
-	specFileA, err := tests.CreateSpec(tests.SplitUploadSpecA)
-	assert.NoError(t, err)
-	specFileB, err := tests.CreateSpec(tests.SplitUploadSpecB)
-	assert.NoError(t, err)
-	artifactoryCli.Exec("upload", "--spec="+specFileA)
-	artifactoryCli.Exec("upload", "--spec="+specFileB)
-
-	// Move by spec
-	artifactoryCli.Exec("move", "--spec="+specFile)
 
 	// Validate excluded files didn't move
 	cpMvDlByBuildAssertSpec, err := tests.CreateSpec(tests.CpMvDlByBuildAssertSpec)

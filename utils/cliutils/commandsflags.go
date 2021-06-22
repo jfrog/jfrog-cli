@@ -130,7 +130,6 @@ const (
 	module      = "module"
 
 	// Generic commands flags
-	excludePatterns  = "exclude-patterns"
 	exclusions       = "exclusions"
 	recursive        = "recursive"
 	flat             = "flat"
@@ -165,21 +164,20 @@ const (
 	overwrite     = "overwrite"
 
 	// Unique upload flags
-	uploadPrefix          = "upload-"
-	uploadExcludePatterns = uploadPrefix + excludePatterns
-	uploadExclusions      = uploadPrefix + exclusions
-	uploadRecursive       = uploadPrefix + recursive
-	uploadFlat            = uploadPrefix + flat
-	uploadRegexp          = uploadPrefix + regexpFlag
-	uploadRetries         = uploadPrefix + retries
-	uploadExplode         = uploadPrefix + explode
-	uploadProps           = uploadPrefix + props
-	uploadTargetProps     = uploadPrefix + targetProps
-	uploadSyncDeletes     = uploadPrefix + syncDeletes
-	uploadArchive         = uploadPrefix + archive
-	deb                   = "deb"
-	symlinks              = "symlinks"
-	uploadAnt             = uploadPrefix + antFlag
+	uploadPrefix      = "upload-"
+	uploadExclusions  = uploadPrefix + exclusions
+	uploadRecursive   = uploadPrefix + recursive
+	uploadFlat        = uploadPrefix + flat
+	uploadRegexp      = uploadPrefix + regexpFlag
+	uploadRetries     = uploadPrefix + retries
+	uploadExplode     = uploadPrefix + explode
+	uploadProps       = uploadPrefix + props
+	uploadTargetProps = uploadPrefix + targetProps
+	uploadSyncDeletes = uploadPrefix + syncDeletes
+	uploadArchive     = uploadPrefix + archive
+	deb               = "deb"
+	symlinks          = "symlinks"
+	uploadAnt         = uploadPrefix + antFlag
 
 	// Unique download flags
 	downloadPrefix       = "download-"
@@ -530,19 +528,9 @@ var flagsMap = map[string]cli.Flag{
 		Name:  module,
 		Usage: "[Optional] Optional module name for the build-info. Build name and number options are mandatory when this option is provided.` `",
 	},
-	excludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards. Unlike the Source path, it must not include the repository name at the beginning of the path.` `",
-		Hidden: true,
-	},
 	exclusions: cli.StringFlag{
 		Name:  exclusions,
 		Usage: "[Optional] Semicolon-separated list of exclusions. Exclusions can include the * and the ? wildcards.` `",
-	},
-	uploadExcludePatterns: cli.StringFlag{
-		Name:   excludePatterns,
-		Usage:  "[Optional] Semicolon-separated list of exclude patterns. Exclude patterns may contain the * and the ? wildcards or a regex pattern, according to the value of the 'regexp' option.` `",
-		Hidden: true,
 	},
 	uploadExclusions: cli.StringFlag{
 		Name:  exclusions,
@@ -1280,43 +1268,43 @@ var commandFlags = map[string][]string{
 	},
 	Upload: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath, targetProps,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExcludePatterns, uploadExclusions, deb,
+		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, uploadExclusions, deb,
 		uploadRecursive, uploadFlat, uploadRegexp, uploadRetries, dryRun, uploadExplode, symlinks, includeDirs,
 		uploadProps, failNoOp, threads, uploadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 		uploadAnt, uploadArchive,
 	},
 	Download: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, excludePatterns, exclusions, sortBy,
+		clientCertKeyPath, spec, specVars, buildName, buildNumber, module, exclusions, sortBy,
 		sortOrder, limit, offset, downloadRecursive, downloadFlat, build, includeDeps, excludeArtifacts, minSplit, splitCount,
 		downloadRetries, dryRun, downloadExplode, validateSymlinks, bundle, includeDirs, downloadProps, downloadExcludeProps,
 		failNoOp, threads, archiveEntries, downloadSyncDeletes, syncDeletesQuiet, insecureTls, detailedSummary, project,
 	},
 	Move: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, moveRecursive,
 		moveFlat, dryRun, build, includeDeps, excludeArtifacts, moveProps, moveExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Copy: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset, copyRecursive,
 		copyFlat, dryRun, build, includeDeps, excludeArtifacts, bundle, copyProps, copyExcludeProps, failNoOp, threads, archiveEntries, insecureTls,
 	},
 	Delete: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		deleteRecursive, dryRun, build, includeDeps, excludeArtifacts, deleteQuiet, deleteProps, deleteExcludeProps, failNoOp, threads, archiveEntries,
 		insecureTls,
 	},
 	Search: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		searchRecursive, build, includeDeps, excludeArtifacts, count, bundle, includeDirs, searchProps, searchExcludeProps, failNoOp, archiveEntries,
 		insecureTls, searchTransitive,
 	},
 	Properties: {
 		url, user, password, apikey, accessToken, sshPassPhrase, sshKeyPath, serverId, clientCertPath,
-		clientCertKeyPath, spec, specVars, excludePatterns, exclusions, sortBy, sortOrder, limit, offset,
+		clientCertKeyPath, spec, specVars, exclusions, sortBy, sortOrder, limit, offset,
 		propsRecursive, build, includeDeps, excludeArtifacts, bundle, includeDirs, failNoOp, threads, archiveEntries, propsProps, propsExcludeProps,
 		insecureTls,
 	},
@@ -1329,7 +1317,7 @@ var commandFlags = map[string][]string{
 		envInclude, envExclude, insecureTls, project,
 	},
 	BuildAddDependencies: {
-		spec, specVars, uploadExcludePatterns, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
+		spec, specVars, uploadExclusions, badRecursive, badRegexp, badDryRun, project, badFromRt, serverId,
 	},
 	BuildAddGit: {
 		configFlag, serverId, project,
